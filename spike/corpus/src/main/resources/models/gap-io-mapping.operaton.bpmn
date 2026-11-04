@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GAP set (SANGAM.md XI.3, CF-13 / R34): input/output mapping on an activity. OPERATON 2.2.0 VARIANT.
+  BPMN 2.0.2 has no executable I/O-mapping syntax that either engine honours (ioSpecification /
+  dataInputAssociation are parsed for structure only), so each engine's own extension is used:
+    V-05 gap_io_mappedTask  external task + operaton:inputOutput
+  Mapping under test (identical intent on both engines):
+    in : feeBase  <- ${amount}           (visible to the worker that fetches the task)
+    out: ioResult <- workerResult        (variable sent by the worker on complete)
+  Pass: the worker sees feeBase == amount; after complete, process variable ioResult == workerResult
+  and the instance waits in gap_io_probe.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+             id="gap-io-mapping-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <process id="gap-io-mapping" name="GAP I/O mapping on an activity" isExecutable="true">
+    <startEvent id="gap_io_start"/>
+    <sequenceFlow id="gap_io_f1" sourceRef="gap_io_start" targetRef="gap_io_mappedTask"/>
+
+    <!-- V-05 (Operaton): inputParameter becomes a LOCAL variable of the activity; outputParameter is
+         evaluated when the activity ends and written to the parent scope. -->
+    <serviceTask id="gap_io_mappedTask" name="I/O mapped work" operaton:type="external" operaton:topic="io-mapping">
+      <extensionElements>
+        <operaton:inputOutput>
+          <operaton:inputParameter name="feeBase">${amount}</operaton:inputParameter>
+          <operaton:outputParameter name="ioResult">${workerResult}</operaton:outputParameter>
+        </operaton:inputOutput>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="gap_io_f2" sourceRef="gap_io_mappedTask" targetRef="gap_io_probe"/>
+
+    <userTask id="gap_io_probe" name="Reached after I/O mapping"/>
+    <sequenceFlow id="gap_io_f3" sourceRef="gap_io_probe" targetRef="gap_io_end"/>
+    <endEvent id="gap_io_end"/>
+  </process>
+</definitions>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_probe_mi">
+  <!-- Diagnostic for GP-47 / GP-55: parallel multi-instance external work with the engine defaults (no exclusive flag). -->
+  <process id="probe-mi-external" name="Probe: parallel MI external work, default settings" isExecutable="true">
+    <startEvent id="pm_start"/>
+    <sequenceFlow id="f1" sourceRef="pm_start" targetRef="pm_work"/>
+    <serviceTask id="pm_work" @@ext|probe-mi@@>
+      <multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">3</loopCardinality></multiInstanceLoopCharacteristics>
+    </serviceTask>
+    <sequenceFlow id="f2" sourceRef="pm_work" targetRef="pm_end"/>
+    <endEvent id="pm_end"/>
+  </process>
+</definitions>

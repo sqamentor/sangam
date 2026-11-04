@@ -1,0 +1,274 @@
+{
+  "experiment": "E17-c",
+  "title": "Domain end-to-end models: bank guarantee, contract variation, court case, stores verification, land acquisition, audit para",
+  "engines": {
+    "flowable": {
+      "engineId": "flowable-8.0.0.0",
+      "generatedAt": "2026-11-04T12:45:09.534290200Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "configuration": ["adapter as built by FlowableEngineAdapter.create (DMN + CMMN configurators, async executor off, continuation AFTER_COMMIT)", "history level raised from the adapter default (audit) to FULL after build through ProcessEngineConfigurationImpl.setHistoryLevel (impl class), to match Operaton's adapter (FULL)", "one fresh engine + database per scenario"],
+      "summary": {
+        "PASS": 2,
+        "PASS-WITH-WORKAROUND": 4,
+        "FAIL": 0,
+        "UNSUPPORTED": 0
+      },
+      "items": [
+        {
+          "id": "D-STORES-VERIFICATION",
+          "name": "Annual stock verification (GFR 213) -> discrepancy cases -> survey board -> write-off / recovery",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["timer start event (yearly)", "parallel multi-instance verification with local results (native)", "case started per discrepancy by external work", "committee multi-instance (all sign)", "stock ledger in the engine transaction"],
+          "nativeApis": ["TaskService.createTaskQuery().getExecutionId", "RuntimeService.getVariable", "RuntimeService.setVariablesLocal", "HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey"],
+          "variants": ["d-stores-verification.bpmn: ext(stock-register)", "d-stores-verification.bpmn: ext(open-discrepancy;nonexclusive)", "d-stores-discrepancy.bpmn: ext(stock-ledger-adjust)"],
+          "workarounds": [
+            {
+              "what": "per-branch verification result written as LOCAL variables of the branch (setVariablesLocal on the task's execution) before completion",
+              "lines": 4
+            },
+            {
+              "what": "multi-instance external task needs flowable:exclusive=\"false\" (exclusive external-worker jobs of one instance cannot be fetched together)",
+              "lines": 1
+            }
+          ],
+          "workaroundLines": 5,
+          "checks": ["OK   campaign started on 31 March", "OK   external work on topic stock-register fetched", "OK   2 discrepancy cases (items 2 and 5)", "OK   exactly one task dsv_report (found 1, active=[dsv_report])", "OK   dsv_report offered to group hod", "OK   campaign closed, next one armed for 2028-03-31", "OK   exactly one task dsd_investigate (found 1, active=[dsd_investigate])", "OK   dsd_investigate offered to group stores-officer", "OK   survey board: 3 members must sign", "OK   external work on topic stock-ledger-adjust fetched", "OK   exactly one task dsd_responsibility (found 1, active=[dsd_responsibility])", "OK   dsd_responsibility offered to group hod", "OK   item 2 written off: ledger 8 -> 5, responsibility fixed", "OK   exactly one task dsd_investigate (found 1, active=[dsd_investigate])", "OK   dsd_investigate offered to group stores-officer", "OK   exactly one task dsd_recover (found 1, active=[dsd_recover])", "OK   dsd_recover offered to group accounts", "OK   item 5 recovered, ledger unchanged (40)"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 2028,
+          "scenarioMs": 3375
+        },
+        {
+          "id": "D-LAND-ACQUISITION",
+          "name": "RFCTLARR: s4 SIA -> s11 -> s15 objections -> s19 -> s23 award -> s31, with statutory lapses",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["statutory windows as interrupting boundary timers (12 months, calendar)", "per-landholder objection window (MI + event gateway)", "per-branch message delivery (native)", "lapse outcomes as end events"],
+          "nativeApis": ["RuntimeService.createExecutionQuery().messageEventSubscriptionName", "RuntimeService.getVariable", "RuntimeService.createExecutionQuery().variableValueEquals (local)", "RuntimeService.setVariablesLocal", "RuntimeService.messageEventReceived(messageName, executionId)"],
+          "variants": [],
+          "workarounds": [
+            {
+              "what": "per-landholder objection: delivered to the landholder's branch found by loopCounter (RuntimeService.messageEventReceived on that execution)",
+              "lines": 12
+            }
+          ],
+          "workaroundLines": 12,
+          "checks": ["OK   exactly one task dla_sia (found 1, active=[dla_sia])", "OK   dla_sia offered to group sia-unit", "OK   exactly one task dla_appraisal (found 1, active=[dla_appraisal])", "OK   dla_appraisal offered to group expert-group", "OK   s11 window: 12 calendar months from the appraisal", "OK   exactly one task dla_s11 (found 1, active=[dla_s11, dla_siaLapse])", "OK   dla_s11 offered to group collector", "OK   4 landholder windows open, 60 days", "OK   landholder 1 objects", "OK   landholder 3 objects", "OK   window closed: 2 objected, 2 silent", "OK   exactly one task dla_s15Hearing (found 1, active=[dla_s15Hearing])", "OK   dla_s15Hearing offered to group collector", "OK   s19 lapse date = s11 + 12 months", "OK   exactly one task dla_s19 (found 1, active=[dla_s19, dla_s19Lapse])", "OK   dla_s19 offered to group government", "OK   award lapse date = s19 + 12 months", "OK   exactly one task dla_s23 (found 1, active=[dla_s23, dla_awardLapse])", "OK   dla_s23 offered to group collector", "OK   exactly one task dla_s31 (found 1, active=[dla_s31])", "OK   dla_s31 offered to group collector", "OK   acquisition completed through s31", "OK   exactly one task dla_sia (found 1, active=[dla_sia])", "OK   dla_sia offered to group sia-unit", "OK   exactly one task dla_appraisal (found 1, active=[dla_appraisal])", "OK   dla_appraisal offered to group expert-group", "OK   exactly one task dla_s11 (found 1, active=[dla_s11, dla_siaLapse])", "OK   dla_s11 offered to group collector", "OK   exactly one task dla_s15Hearing (found 1, active=[dla_s15Hearing])", "OK   dla_s15Hearing offered to group collector", "OK   exactly one task dla_s19 (found 1, active=[dla_s19, dla_s19Lapse])", "OK   s19 lapse after 12 months", "OK   late declaration blocked", "OK   exactly one task dla_sia (found 1, active=[dla_sia])", "OK   dla_sia offered to group sia-unit", "OK   exactly one task dla_appraisal (found 1, active=[dla_appraisal])", "OK   dla_appraisal offered to group expert-group", "OK   SIA lapsed (s14)"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 2347,
+          "scenarioMs": 2609
+        },
+        {
+          "id": "D-BANK-GUARANTEE",
+          "name": "Contract with performance security as a long-lived child: extension, encashment, release, cancel",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["call activity (child BG, business key inherited)", "parallel execution + DLP timer", "BG timers re-armed by the model", "message correlation to the child by business key", "parent cancel removes the child"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId"],
+          "variants": ["d-bg-contract.bpmn: callbk", "d-bg-contract.bpmn: callio(in=bgExpiry,reminderAt,bgAmount;bk)"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task dbg_issueLoA (found 1, active=[dbg_issueLoA])", "OK   dbg_issueLoA offered to group contracts", "OK   BG child started", "OK   child carries the contract number as business key", "OK   bank confirmation reaches the child by business key", "OK   exactly one task dbg_execute (found 1, active=[dbg_security, dbg_execute])", "OK   dbg_execute offered to group ee", "OK   exactly one task gp41_requestExtension (found 1, active=[gp41_requestExtension])", "OK   gp41_requestExtension offered to group contracts", "OK   extended BG watched until +670d", "OK   exactly one task dbg_finalBill (found 1, active=[dbg_security, dbg_finalBill])", "OK   dbg_finalBill offered to group accounts", "OK   contract waits for the security branch", "OK   exactly one task gp41_release (found 1, active=[gp41_release])", "OK   gp41_release offered to group accounts", "OK   exactly one task dbg_close (found 1, active=[dbg_close])", "OK   dbg_close offered to group contracts", "OK   contract 1 closed, BG released", "OK   exactly one task dbg_issueLoA (found 1, active=[dbg_issueLoA])", "OK   dbg_issueLoA offered to group contracts", "OK   exactly one task gp41_requestExtension (found 1, active=[gp41_requestExtension])", "OK   gp41_requestExtension offered to group contracts", "OK   exactly one task gp41_encash (found 1, active=[gp41_encash])", "OK   gp41_encash offered to group accounts", "OK   BG encashed, contract still running", "OK   exactly one task dbg_execute (found 1, active=[dbg_execute])", "OK   dbg_execute offered to group ee", "OK   exactly one task dbg_finalBill (found 1, active=[dbg_finalBill])", "OK   dbg_finalBill offered to group accounts", "OK   release request after encashment is refused (no BG instance waiting)", "OK   exactly one task dbg_close (found 1, active=[dbg_close])", "OK   dbg_close offered to group contracts", "OK   contract 2 closed", "OK   exactly one task dbg_issueLoA (found 1, active=[dbg_issueLoA])", "OK   dbg_issueLoA offered to group contracts", "OK   cancelled contract removed its BG child"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 3165,
+          "scenarioMs": 3094
+        },
+        {
+          "id": "D-CONTRACT-VARIATION",
+          "name": "Running works contract: EoT (LD timer moves), extra item (CE level), LD levy and waiver",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["non-interrupting message event sub-process", "approval chain as child with in/out mapping", "gateway on the variation size (5 % / 90 days)", "LD boundary timer re-armed natively", "history of variable updates"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId", "RepositoryService.getBpmnModel", "ManagementService.rescheduleTimeDateJob(expression)", "HistoryService.createHistoricDetailQuery().variableUpdates"],
+          "variants": ["d-works-contract.bpmn: callio(in=varType,days,amount,contractValue,proposedCompletion;out=approved,approvedCompletion,approvedAmount,approvalLevel)", "d-works-contract.bpmn: expr(${execution.setVariable('completionDate', approvedCompletion)})", "d-works-contract.bpmn: expr(${execution.setVariable('contractValue', contractValue + approvedAmount)})", "d-works-contract.bpmn: expr(${execution.setVariable('ldWaived', true)})"],
+          "workarounds": [
+            {
+              "what": "no recalculate operation: timer expression read from RepositoryService.getBpmnModel and passed to ManagementService.rescheduleTimeDateJob (evaluated against the job's execution)",
+              "lines": 18
+            }
+          ],
+          "workaroundLines": 18,
+          "checks": ["OK   exactly one task dvar_examine (found 1, active=[dvar_examine])", "OK   dvar_examine offered to group ee", "OK   EoT of 60 days stays at SE level", "OK   exactly one task dvar_seApprove (found 1, active=[dvar_seApprove])", "OK   dvar_seApprove offered to group se", "OK   completion date of the running contract moved", "OK   LD timer still at the old date until the engine is told", "OK   LD timer re-armed to the EoT date", "OK   exactly one task dvar_examine (found 1, active=[dvar_examine])", "OK   dvar_examine offered to group ee", "OK   exactly one task dvar_seRecommend (found 1, active=[dvar_seRecommend])", "OK   dvar_seRecommend offered to group se", "OK   exactly one task dvar_ceApprove (found 1, active=[dvar_ceApprove])", "OK   dvar_ceApprove offered to group ce", "OK   6 % extra item went to the CE and raised the value to 10,600,000", "OK   exactly one task dcv_extraItem (found 1, active=[dcv_execute, dcv_ldStart, dcv_varSub, dcv_extraItem])", "OK   dcv_extraItem offered to group ee", "OK   LD accrual notice the day after the EoT date", "OK   LD = 0.05 %/day x 10 days x 10,600,000 = 53,000", "OK   exactly one task dcv_ldAccrues (found 1, active=[dcv_ldAccrues, dcv_execute, dcv_ldStart])", "OK   dcv_ldAccrues offered to group ee", "OK   exactly one task dcv_execute (found 1, active=[dcv_execute, dcv_ldStart])", "OK   dcv_execute offered to group ee", "OK   exactly one task dvar_examine (found 1, active=[dvar_examine])", "OK   dvar_examine offered to group ee", "OK   exactly one task dvar_seApprove (found 1, active=[dvar_seApprove])", "OK   dvar_seApprove offered to group se", "OK   LD waived on the running contract", "OK   exactly one task dcv_finalBill (found 1, active=[dcv_finalBill])", "OK   dcv_finalBill offered to group accounts", "OK   contract closed with LD 0 after waiver", "OK   three variation children ran", "OK   history keeps the stipulated and the EoT completion dates", "OK   history keeps the value before and after the extra item"],
+          "details": {
+            "daysLate": 10,
+            "ldComputed": 53000
+          },
+          "error": null,
+          "engineBootMs": 1847,
+          "scenarioMs": 1923
+        },
+        {
+          "id": "D-AUDIT-PARA",
+          "name": "ATN due in 3 months: reminder at 2, escalation at 3, return by audit on the same para",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["non-interrupting boundary timers P2M / P3M (calendar months) on a sub-process", "return loop with counter", "timers removed when the cycle completes"],
+          "nativeApis": [],
+          "variants": ["d-audit-para.bpmn: expr(${execution.setVariable('returnCount', returnCount + 1)})"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   reminder due at +2 calendar months", "OK   ATN due at +3 calendar months", "OK   exactly one task dap_draftAtn (found 1, active=[dap_cycle, dap_reminder, dap_draftAtn, dap_due])", "OK   dap_draftAtn offered to group department", "OK   exactly one task dap_vet (found 1, active=[dap_cycle, dap_reminder, dap_vet, dap_due])", "OK   dap_vet offered to group audit", "OK   returned to the department on the same para", "OK   reminder raised", "OK   escalated to the Secretary once", "OK   exactly one task dap_remind (found 1, active=[dap_escalate, dap_remind, dap_cycle, dap_reminder, dap_draftAtn, dap_due])", "OK   dap_remind offered to group department-head", "OK   exactly one task dap_escalate (found 1, active=[dap_escalate, dap_cycle, dap_reminder, dap_draftAtn, dap_due])", "OK   dap_escalate offered to group secretary", "OK   exactly one task dap_draftAtn (found 1, active=[dap_cycle, dap_reminder, dap_draftAtn, dap_due])", "OK   dap_draftAtn offered to group department", "OK   exactly one task dap_vet (found 1, active=[dap_cycle, dap_reminder, dap_vet, dap_due])", "OK   dap_vet offered to group audit", "OK   exactly one task dap_pac (found 1, active=[dap_pac])", "OK   dap_pac offered to group pac-cell", "OK   para settled; exactly one reminder and one escalation", "OK   exactly one task dap_draftAtn (found 1, active=[dap_cycle, dap_due, dap_reminder, dap_draftAtn])", "OK   dap_draftAtn offered to group department", "OK   exactly one task dap_vet (found 1, active=[dap_cycle, dap_due, dap_reminder, dap_vet])", "OK   dap_vet offered to group audit", "OK   ATN vetted within a month: timers removed", "OK   exactly one task dap_pac (found 1, active=[dap_pac])", "OK   dap_pac offered to group pac-cell", "OK   no reminder, no escalation"],
+          "details": {
+            "reminderDue": "2027-03-04T04:30:00Z",
+            "atnDue": "2027-04-04T04:30:00Z"
+          },
+          "error": null,
+          "engineBootMs": 1682,
+          "scenarioMs": 2120
+        },
+        {
+          "id": "D-COURT-CASE",
+          "name": "Litigation with court-set hearings, reschedule, stay (suspends the impugned action), appeal, compliance",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["hearing dates from messages / recorded orders", "event-gateway re-arm of the hearing timer", "brief deadline re-armed natively", "suspension of another instance (stay)", "appeal loop", "compliance deadline"],
+          "nativeApis": ["RepositoryService.getBpmnModel", "ManagementService.rescheduleTimeDateJob(expression)", "RuntimeService.suspendProcessInstanceById", "RuntimeService.activateProcessInstanceById"],
+          "variants": [],
+          "workarounds": [
+            {
+              "what": "no recalculate operation: timer expression read from RepositoryService.getBpmnModel and passed to ManagementService.rescheduleTimeDateJob (evaluated against the job's execution)",
+              "lines": 18
+            }
+          ],
+          "workaroundLines": 18,
+          "checks": ["OK   exactly one task dcc_examine (found 1, active=[dcc_examine])", "OK   dcc_examine offered to group nodal-officer", "OK   exactly one task dcc_lawVetting (found 1, active=[dcc_lawVetting])", "OK   dcc_lawVetting offered to group law-ministry", "OK   after reschedule: hearing +40d (model), counter due +33d (native)", "OK   counter overdue on +33d -> JS (Legal)", "OK   exactly one task dcc_escalate (found 1, active=[dcc_rescheduled, dcc_counter, dcc_briefDue, dcc_hearingDay, dcc_escalate])", "OK   dcc_escalate offered to group js-legal", "OK   exactly one task dcc_counter (found 1, active=[dcc_rescheduled, dcc_counter, dcc_briefDue, dcc_hearingDay])", "OK   dcc_counter offered to group law-officer", "OK   exactly one task dcc_hearing (found 1, active=[dcc_hearing])", "OK   dcc_hearing offered to group law-officer", "OK   exactly one task dimp_implement (found 1, active=[dimp_implement])", "OK   exactly one task dcc_stay (found 1, active=[dcc_stay])", "OK   dcc_stay offered to group department", "OK   stay: impugned action suspended, cannot be implemented", "OK   exactly one task dcc_counter (found 1, active=[dcc_counter, dcc_briefDue, dcc_hearingDay, dcc_rescheduled])", "OK   dcc_counter offered to group law-officer", "OK   exactly one task dcc_hearing (found 1, active=[dcc_hearing])", "OK   dcc_hearing offered to group law-officer", "OK   exactly one task dcc_decideAppeal (found 1, active=[dcc_decideAppeal])", "OK   dcc_decideAppeal offered to group law-ministry", "OK   exactly one task dcc_fileAppeal (found 1, active=[dcc_fileAppeal])", "OK   dcc_fileAppeal offered to group law-officer", "OK   appeal: new hearing series armed at +150d", "OK   exactly one task dcc_counter (found 1, active=[dcc_hearingDay, dcc_rescheduled, dcc_counter, dcc_briefDue])", "OK   dcc_counter offered to group law-officer", "OK   exactly one task dcc_hearing (found 1, active=[dcc_hearing])", "OK   dcc_hearing offered to group law-officer", "OK   exactly one task dcc_decideAppeal (found 1, active=[dcc_decideAppeal])", "OK   dcc_decideAppeal offered to group law-ministry", "OK   stay vacated: impugned action active again", "OK   compliance overdue raises contempt risk", "OK   exactly one task dcc_contemptRisk (found 1, active=[dcc_comply, dcc_complianceDue, dcc_contemptRisk])", "OK   dcc_contemptRisk offered to group js-legal", "OK   exactly one task dcc_comply (found 1, active=[dcc_comply, dcc_complianceDue])", "OK   dcc_comply offered to group department", "OK   exactly one task dimp_implement (found 1, active=[dimp_implement])", "OK   dimp_implement offered to group department", "OK   case closed after 3 hearings and 1 appeal"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 2775,
+          "scenarioMs": 2890
+        }
+      ]
+    },
+    "operaton": {
+      "engineId": "operaton-2.2.0",
+      "generatedAt": "2026-11-04T12:47:43.138174100Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "configuration": ["adapter as built by OperatonEngineAdapter: history FULL, enforceHistoryTimeToLive=false (ledger W-3)", "job executor off; timers and jobs run through executeDueJobs(); ClockUtil is JVM-wide (W-7)", "one fresh engine + database per scenario"],
+      "summary": {
+        "PASS": 4,
+        "PASS-WITH-WORKAROUND": 2,
+        "FAIL": 0,
+        "UNSUPPORTED": 0
+      },
+      "items": [
+        {
+          "id": "D-STORES-VERIFICATION",
+          "name": "Annual stock verification (GFR 213) -> discrepancy cases -> survey board -> write-off / recovery",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["timer start event (yearly)", "parallel multi-instance verification with local results (native)", "case started per discrepancy by external work", "committee multi-instance (all sign)", "stock ledger in the engine transaction"],
+          "nativeApis": ["TaskService.createTaskQuery().getExecutionId", "RuntimeService.getVariable", "RuntimeService.setVariablesLocal", "HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey"],
+          "variants": ["d-stores-verification.bpmn: ext(stock-register)", "d-stores-verification.bpmn: ext(open-discrepancy;nonexclusive)", "d-stores-discrepancy.bpmn: ext(stock-ledger-adjust)"],
+          "workarounds": [
+            {
+              "what": "per-branch verification result written as LOCAL variables of the branch (setVariablesLocal on the task's execution) before completion",
+              "lines": 4
+            }
+          ],
+          "workaroundLines": 4,
+          "checks": ["OK   campaign started on 31 March", "OK   external work on topic stock-register fetched", "OK   2 discrepancy cases (items 2 and 5)", "OK   exactly one task dsv_report (found 1, active=[dsv_report])", "OK   dsv_report offered to group hod", "OK   campaign closed, next one armed for 2028-03-31", "OK   exactly one task dsd_investigate (found 1, active=[dsd_investigate])", "OK   dsd_investigate offered to group stores-officer", "OK   survey board: 3 members must sign", "OK   external work on topic stock-ledger-adjust fetched", "OK   exactly one task dsd_responsibility (found 1, active=[dsd_responsibility])", "OK   dsd_responsibility offered to group hod", "OK   item 2 written off: ledger 8 -> 5, responsibility fixed", "OK   exactly one task dsd_investigate (found 1, active=[dsd_investigate])", "OK   dsd_investigate offered to group stores-officer", "OK   exactly one task dsd_recover (found 1, active=[dsd_recover])", "OK   dsd_recover offered to group accounts", "OK   item 5 recovered, ledger unchanged (40)"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 2575,
+          "scenarioMs": 2864
+        },
+        {
+          "id": "D-LAND-ACQUISITION",
+          "name": "RFCTLARR: s4 SIA -> s11 -> s15 objections -> s19 -> s23 award -> s31, with statutory lapses",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["statutory windows as interrupting boundary timers (12 months, calendar)", "per-landholder objection window (MI + event gateway)", "per-branch message delivery (native)", "lapse outcomes as end events"],
+          "nativeApis": ["RuntimeService.createExecutionQuery().messageEventSubscriptionName", "RuntimeService.getVariable", "RuntimeService.createExecutionQuery().variableValueEquals (local)", "RuntimeService.setVariablesLocal", "RuntimeService.messageEventReceived(messageName, executionId)"],
+          "variants": [],
+          "workarounds": [
+            {
+              "what": "per-landholder objection: delivered to the landholder's branch found by loopCounter (RuntimeService.messageEventReceived on that execution)",
+              "lines": 12
+            }
+          ],
+          "workaroundLines": 12,
+          "checks": ["OK   exactly one task dla_sia (found 1, active=[dla_sia])", "OK   dla_sia offered to group sia-unit", "OK   exactly one task dla_appraisal (found 1, active=[dla_appraisal])", "OK   dla_appraisal offered to group expert-group", "OK   s11 window: 12 calendar months from the appraisal", "OK   exactly one task dla_s11 (found 1, active=[dla_s11])", "OK   dla_s11 offered to group collector", "OK   4 landholder windows open, 60 days", "OK   landholder 1 objects", "OK   landholder 3 objects", "OK   window closed: 2 objected, 2 silent", "OK   exactly one task dla_s15Hearing (found 1, active=[dla_s15Hearing])", "OK   dla_s15Hearing offered to group collector", "OK   s19 lapse date = s11 + 12 months", "OK   exactly one task dla_s19 (found 1, active=[dla_s19])", "OK   dla_s19 offered to group government", "OK   award lapse date = s19 + 12 months", "OK   exactly one task dla_s23 (found 1, active=[dla_s23])", "OK   dla_s23 offered to group collector", "OK   exactly one task dla_s31 (found 1, active=[dla_s31])", "OK   dla_s31 offered to group collector", "OK   acquisition completed through s31", "OK   exactly one task dla_sia (found 1, active=[dla_sia])", "OK   dla_sia offered to group sia-unit", "OK   exactly one task dla_appraisal (found 1, active=[dla_appraisal])", "OK   dla_appraisal offered to group expert-group", "OK   exactly one task dla_s11 (found 1, active=[dla_s11])", "OK   dla_s11 offered to group collector", "OK   exactly one task dla_s15Hearing (found 1, active=[dla_s15Hearing])", "OK   dla_s15Hearing offered to group collector", "OK   exactly one task dla_s19 (found 1, active=[dla_s19])", "OK   s19 lapse after 12 months", "OK   late declaration blocked", "OK   exactly one task dla_sia (found 1, active=[dla_sia])", "OK   dla_sia offered to group sia-unit", "OK   exactly one task dla_appraisal (found 1, active=[dla_appraisal])", "OK   dla_appraisal offered to group expert-group", "OK   SIA lapsed (s14)"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 4673,
+          "scenarioMs": 2773
+        },
+        {
+          "id": "D-BANK-GUARANTEE",
+          "name": "Contract with performance security as a long-lived child: extension, encashment, release, cancel",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["call activity (child BG, business key inherited)", "parallel execution + DLP timer", "BG timers re-armed by the model", "message correlation to the child by business key", "parent cancel removes the child"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId"],
+          "variants": ["d-bg-contract.bpmn: callbk", "d-bg-contract.bpmn: callio(in=bgExpiry,reminderAt,bgAmount;bk)"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task dbg_issueLoA (found 1, active=[dbg_issueLoA])", "OK   dbg_issueLoA offered to group contracts", "OK   BG child started", "OK   child carries the contract number as business key", "OK   bank confirmation reaches the child by business key", "OK   exactly one task dbg_execute (found 1, active=[dbg_security, dbg_execute])", "OK   dbg_execute offered to group ee", "OK   exactly one task gp41_requestExtension (found 1, active=[gp41_requestExtension])", "OK   gp41_requestExtension offered to group contracts", "OK   extended BG watched until +670d", "OK   exactly one task dbg_finalBill (found 1, active=[dbg_security, dbg_finalBill])", "OK   dbg_finalBill offered to group accounts", "OK   contract waits for the security branch", "OK   exactly one task gp41_release (found 1, active=[gp41_release])", "OK   gp41_release offered to group accounts", "OK   exactly one task dbg_close (found 1, active=[dbg_close])", "OK   dbg_close offered to group contracts", "OK   contract 1 closed, BG released", "OK   exactly one task dbg_issueLoA (found 1, active=[dbg_issueLoA])", "OK   dbg_issueLoA offered to group contracts", "OK   exactly one task gp41_requestExtension (found 1, active=[gp41_requestExtension])", "OK   gp41_requestExtension offered to group contracts", "OK   exactly one task gp41_encash (found 1, active=[gp41_encash])", "OK   gp41_encash offered to group accounts", "OK   BG encashed, contract still running", "OK   exactly one task dbg_execute (found 1, active=[dbg_execute])", "OK   dbg_execute offered to group ee", "OK   exactly one task dbg_finalBill (found 1, active=[dbg_finalBill])", "OK   dbg_finalBill offered to group accounts", "OK   release request after encashment is refused (no BG instance waiting)", "OK   exactly one task dbg_close (found 1, active=[dbg_close])", "OK   dbg_close offered to group contracts", "OK   contract 2 closed", "OK   exactly one task dbg_issueLoA (found 1, active=[dbg_issueLoA])", "OK   dbg_issueLoA offered to group contracts", "OK   cancelled contract removed its BG child"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 3434,
+          "scenarioMs": 2815
+        },
+        {
+          "id": "D-CONTRACT-VARIATION",
+          "name": "Running works contract: EoT (LD timer moves), extra item (CE level), LD levy and waiver",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["non-interrupting message event sub-process", "approval chain as child with in/out mapping", "gateway on the variation size (5 % / 90 days)", "LD boundary timer re-armed natively", "history of variable updates"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId", "ManagementService.recalculateJobDuedate", "HistoryService.createHistoricDetailQuery().variableUpdates"],
+          "variants": ["d-works-contract.bpmn: callio(in=varType,days,amount,contractValue,proposedCompletion;out=approved,approvedCompletion,approvedAmount,approvalLevel)", "d-works-contract.bpmn: expr(${execution.setVariable('completionDate', approvedCompletion)})", "d-works-contract.bpmn: expr(${execution.setVariable('contractValue', contractValue + approvedAmount)})", "d-works-contract.bpmn: expr(${execution.setVariable('ldWaived', true)})"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task dvar_examine (found 1, active=[dvar_examine])", "OK   dvar_examine offered to group ee", "OK   EoT of 60 days stays at SE level", "OK   exactly one task dvar_seApprove (found 1, active=[dvar_seApprove])", "OK   dvar_seApprove offered to group se", "OK   completion date of the running contract moved", "OK   LD timer still at the old date until the engine is told", "OK   LD timer re-armed to the EoT date", "OK   exactly one task dvar_examine (found 1, active=[dvar_examine])", "OK   dvar_examine offered to group ee", "OK   exactly one task dvar_seRecommend (found 1, active=[dvar_seRecommend])", "OK   dvar_seRecommend offered to group se", "OK   exactly one task dvar_ceApprove (found 1, active=[dvar_ceApprove])", "OK   dvar_ceApprove offered to group ce", "OK   6 % extra item went to the CE and raised the value to 10,600,000", "OK   exactly one task dcv_extraItem (found 1, active=[dcv_execute, dcv_extraItem])", "OK   dcv_extraItem offered to group ee", "OK   LD accrual notice the day after the EoT date", "OK   LD = 0.05 %/day x 10 days x 10,600,000 = 53,000", "OK   exactly one task dcv_ldAccrues (found 1, active=[dcv_execute, dcv_ldAccrues])", "OK   dcv_ldAccrues offered to group ee", "OK   exactly one task dcv_execute (found 1, active=[dcv_execute])", "OK   dcv_execute offered to group ee", "OK   exactly one task dvar_examine (found 1, active=[dvar_examine])", "OK   dvar_examine offered to group ee", "OK   exactly one task dvar_seApprove (found 1, active=[dvar_seApprove])", "OK   dvar_seApprove offered to group se", "OK   LD waived on the running contract", "OK   exactly one task dcv_finalBill (found 1, active=[dcv_finalBill])", "OK   dcv_finalBill offered to group accounts", "OK   contract closed with LD 0 after waiver", "OK   three variation children ran", "OK   history keeps the stipulated and the EoT completion dates", "OK   history keeps the value before and after the extra item"],
+          "details": {
+            "daysLate": 10,
+            "ldComputed": 53000
+          },
+          "error": null,
+          "engineBootMs": 4470,
+          "scenarioMs": 2082
+        },
+        {
+          "id": "D-AUDIT-PARA",
+          "name": "ATN due in 3 months: reminder at 2, escalation at 3, return by audit on the same para",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["non-interrupting boundary timers P2M / P3M (calendar months) on a sub-process", "return loop with counter", "timers removed when the cycle completes"],
+          "nativeApis": [],
+          "variants": ["d-audit-para.bpmn: expr(${execution.setVariable('returnCount', returnCount + 1)})"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   reminder due at +2 calendar months", "OK   ATN due at +3 calendar months", "OK   exactly one task dap_draftAtn (found 1, active=[dap_draftAtn])", "OK   dap_draftAtn offered to group department", "OK   exactly one task dap_vet (found 1, active=[dap_vet])", "OK   dap_vet offered to group audit", "OK   returned to the department on the same para", "OK   reminder raised", "OK   escalated to the Secretary once", "OK   exactly one task dap_remind (found 1, active=[dap_draftAtn, dap_remind, dap_escalate])", "OK   dap_remind offered to group department-head", "OK   exactly one task dap_escalate (found 1, active=[dap_draftAtn, dap_escalate])", "OK   dap_escalate offered to group secretary", "OK   exactly one task dap_draftAtn (found 1, active=[dap_draftAtn])", "OK   dap_draftAtn offered to group department", "OK   exactly one task dap_vet (found 1, active=[dap_vet])", "OK   dap_vet offered to group audit", "OK   exactly one task dap_pac (found 1, active=[dap_pac])", "OK   dap_pac offered to group pac-cell", "OK   para settled; exactly one reminder and one escalation", "OK   exactly one task dap_draftAtn (found 1, active=[dap_draftAtn])", "OK   dap_draftAtn offered to group department", "OK   exactly one task dap_vet (found 1, active=[dap_vet])", "OK   dap_vet offered to group audit", "OK   ATN vetted within a month: timers removed", "OK   exactly one task dap_pac (found 1, active=[dap_pac])", "OK   dap_pac offered to group pac-cell", "OK   no reminder, no escalation"],
+          "details": {
+            "reminderDue": "2027-03-04T04:30:00Z",
+            "atnDue": "2027-04-04T04:30:00Z"
+          },
+          "error": null,
+          "engineBootMs": 3594,
+          "scenarioMs": 1653
+        },
+        {
+          "id": "D-COURT-CASE",
+          "name": "Litigation with court-set hearings, reschedule, stay (suspends the impugned action), appeal, compliance",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["hearing dates from messages / recorded orders", "event-gateway re-arm of the hearing timer", "brief deadline re-armed natively", "suspension of another instance (stay)", "appeal loop", "compliance deadline"],
+          "nativeApis": ["ManagementService.recalculateJobDuedate", "RuntimeService.suspendProcessInstanceById", "RuntimeService.activateProcessInstanceById"],
+          "variants": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task dcc_examine (found 1, active=[dcc_examine])", "OK   dcc_examine offered to group nodal-officer", "OK   exactly one task dcc_lawVetting (found 1, active=[dcc_lawVetting])", "OK   dcc_lawVetting offered to group law-ministry", "OK   after reschedule: hearing +40d (model), counter due +33d (native)", "OK   counter overdue on +33d -> JS (Legal)", "OK   exactly one task dcc_escalate (found 1, active=[dcc_counter, dcc_waitHearing, dcc_escalate])", "OK   dcc_escalate offered to group js-legal", "OK   exactly one task dcc_counter (found 1, active=[dcc_counter, dcc_waitHearing])", "OK   dcc_counter offered to group law-officer", "OK   exactly one task dcc_hearing (found 1, active=[dcc_hearing])", "OK   dcc_hearing offered to group law-officer", "OK   exactly one task dimp_implement (found 1, active=[dimp_implement])", "OK   exactly one task dcc_stay (found 1, active=[dcc_stay])", "OK   dcc_stay offered to group department", "OK   stay: impugned action suspended, cannot be implemented", "OK   exactly one task dcc_counter (found 1, active=[dcc_counter, dcc_waitHearing])", "OK   dcc_counter offered to group law-officer", "OK   exactly one task dcc_hearing (found 1, active=[dcc_hearing])", "OK   dcc_hearing offered to group law-officer", "OK   exactly one task dcc_decideAppeal (found 1, active=[dcc_decideAppeal])", "OK   dcc_decideAppeal offered to group law-ministry", "OK   exactly one task dcc_fileAppeal (found 1, active=[dcc_fileAppeal])", "OK   dcc_fileAppeal offered to group law-officer", "OK   appeal: new hearing series armed at +150d", "OK   exactly one task dcc_counter (found 1, active=[dcc_counter, dcc_waitHearing])", "OK   dcc_counter offered to group law-officer", "OK   exactly one task dcc_hearing (found 1, active=[dcc_hearing])", "OK   dcc_hearing offered to group law-officer", "OK   exactly one task dcc_decideAppeal (found 1, active=[dcc_decideAppeal])", "OK   dcc_decideAppeal offered to group law-ministry", "OK   stay vacated: impugned action active again", "OK   compliance overdue raises contempt risk", "OK   exactly one task dcc_contemptRisk (found 1, active=[dcc_comply, dcc_contemptRisk])", "OK   dcc_contemptRisk offered to group js-legal", "OK   exactly one task dcc_comply (found 1, active=[dcc_comply])", "OK   dcc_comply offered to group department", "OK   exactly one task dimp_implement (found 1, active=[dimp_implement])", "OK   dimp_implement offered to group department", "OK   case closed after 3 hearings and 1 appeal"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 3977,
+          "scenarioMs": 3063
+        }
+      ]
+    }
+  }
+}

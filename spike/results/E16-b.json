@@ -1,0 +1,861 @@
+{
+  "experiment" : "E16-b",
+  "title" : "Government process patterns GP-21..GP-40 on both engines",
+  "runs" : {
+    "operaton" : {
+      "engineId" : "operaton-2.2.0",
+      "database" : "PostgreSQL 17 (Testcontainers postgres:17-alpine)",
+      "jdbcUrl" : "jdbc:postgresql://localhost:1116/e16b_operaton_1",
+      "jdk" : "Microsoft 21.0.10+7-LTS",
+      "os" : "Windows 11 10.0",
+      "threads" : 4,
+      "generatedAt" : "2026-11-04T12:25:38.441384900Z"
+    },
+    "flowable" : {
+      "engineId" : "flowable-8.0.0.0",
+      "database" : "PostgreSQL 17 (Testcontainers postgres:17-alpine)",
+      "jdbcUrl" : "jdbc:postgresql://localhost:51454/e16b_flowable_1",
+      "jdk" : "Microsoft 21.0.10+7-LTS",
+      "os" : "Windows 11 10.0",
+      "threads" : 4,
+      "generatedAt" : "2026-11-04T12:34:43.986039600Z"
+    }
+  },
+  "items" : {
+    "GP-21" : {
+      "name" : "Ad-hoc / case handling",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "CMMN 1.1 casePlanModel autoComplete", "humanTask", "manualActivationRule (ad-hoc action)", "repetitionRule", "requiredRule", "sentry (planItemOnPart complete)" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Operaton CaseService.createCaseExecutionQuery().activityId().enabled()", "Operaton CaseService.manuallyStartCaseExecution" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 3875,
+        "timingsMs" : { },
+        "subChecks" : {
+          "repetitionRule: a completed ad-hoc action is offered again" : "PASS",
+          "autoComplete with enabled (unstarted) ad-hoc items left" : "PASS: case completed",
+          "BPMN adHocSubProcess" : "UNSUPPORTED: ParseException: ENGINE-09005 Could not parse BPMN process. Errors: Invalid destination 'gp21b_adhoc' of sequence flow 'gp21b_f1'; Invalid source 'gp21b_adhoc' of sequence flow 'gp21b_f2'",
+          "CMMN timerEventListener (P21D) -> escalation task" : "NOT EXECUTED: deployed, but the listener never occurred (no timer job)"
+        },
+        "notes" : [ "Ad-hoc actions are started through the engine's own case API (not in EngineAdapter)." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "CMMN 1.1 casePlanModel autoComplete", "humanTask", "manualActivationRule (ad-hoc action)", "repetitionRule", "requiredRule", "sentry (planItemOnPart complete)", "BPMN adHocSubProcess + completionCondition" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Flowable CmmnRuntimeService.createPlanItemInstanceQuery().planItemInstanceStateEnabled()", "Flowable CmmnRuntimeService.startPlanItemInstance", "Flowable RuntimeService.getEnabledActivitiesFromAdhocSubProcess", "Flowable RuntimeService.executeActivityInAdhocSubProcess" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 2422,
+        "timingsMs" : { },
+        "subChecks" : {
+          "repetitionRule: a completed ad-hoc action is offered again" : "PASS",
+          "autoComplete with enabled (unstarted) ad-hoc items left" : "PASS: case completed",
+          "BPMN adHocSubProcess" : "PASS (native ad-hoc API)",
+          "CMMN timerEventListener (P21D) -> escalation task" : "PASS"
+        },
+        "notes" : [ "Ad-hoc actions are started through the engine's own case API (not in EngineAdapter)." ]
+      }
+    },
+    "GP-22" : {
+      "name" : "Appeal / reopen after closure",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "linked new instance (business key chain)", "history lookup of the closed instance", "exclusive gateway (remand)" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Operaton HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 916,
+        "timingsMs" : {
+          "historyLookupMs" : 28
+        },
+        "notes" : [ "The engines have no 'reopen a completed process instance'; appeal and reopen are new instances linked by business key and an originalInstanceId variable, with the closed record read from history (adapter getInstance reads history after the end)." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "linked new instance (business key chain)", "history lookup of the closed instance", "exclusive gateway (remand)" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Flowable HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 763,
+        "timingsMs" : {
+          "historyLookupMs" : 20
+        },
+        "notes" : [ "The engines have no 'reopen a completed process instance'; appeal and reopen are new instances linked by business key and an originalInstanceId variable, with the closed record read from history (adapter getInstance reads history after the end)." ]
+      }
+    },
+    "GP-23" : {
+      "name" : "Two-envelope opening, gated by time and committee",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "timer intermediate catch (timeDate from variable, +05:30)", "parallel multi-instance user task", "loopCardinality", "potentialOwner user(${...[loopCounter]})", "exclusive gateway" ],
+        "variants" : [ ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1719,
+        "timingsMs" : { },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "timer intermediate catch (timeDate from variable, +05:30)", "parallel multi-instance user task", "loopCardinality", "potentialOwner user(${...[loopCounter]})", "exclusive gateway" ],
+        "variants" : [ ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1294,
+        "timingsMs" : { },
+        "notes" : [ ]
+      }
+    },
+    "GP-24" : {
+      "name" : "Time-locked action (not allowed before a date)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "timer intermediate catch, timeDate = ISO-8601 string variable with +05:30 offset" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Operaton ManagementService.createJobQuery().timers()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 294,
+        "timingsMs" : { },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "timer intermediate catch, timeDate = ISO-8601 string variable with +05:30 offset" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Flowable ManagementService.createTimerJobQuery()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 247,
+        "timingsMs" : { },
+        "notes" : [ ]
+      }
+    },
+    "GP-25" : {
+      "name" : "Negotiation loop, retender if failed",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "exclusive gateway loops (back to same task and to an earlier stage)", "history activity count" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Operaton HistoryService.createHistoricActivityInstanceQuery()", "Operaton HistoricProcessInstance.getEndActivityId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1127,
+        "timingsMs" : { },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "exclusive gateway loops (back to same task and to an earlier stage)", "history activity count" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Flowable HistoryService.createHistoricActivityInstanceQuery()", "Flowable HistoricProcessInstance.getEndActivityId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 954,
+        "timingsMs" : { },
+        "notes" : [ ]
+      }
+    },
+    "GP-26" : {
+      "name" : "Merit list with reservation/roster rules",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "DMN 1.3 decision table hit policy COLLECT", "DMN called from BPMN", "product merit-list code" ],
+        "variants" : [ "gp26-merit.bpmn: DMN COLLECT call 'reservationPools' (operaton:mapDecisionResult=collectEntries -> List / flowable:type=dmn -> JSON array variable named after the decision)" ],
+        "nativeApi" : [ "Operaton HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey()", "Operaton DecisionService.evaluateDecisionTableByKey" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 20148,
+        "timingsMs" : {
+          "nativeDecisionEvaluations1000Ms" : 18486
+        },
+        "scale" : {
+          "rawResultType" : "java.util.Collections$UnmodifiableRandomAccessList",
+          "selected" : "{C1=UR, C2=UR, C7=UR, C4=OBC, C3=SC}",
+          "decisionEvaluationsPerSecond" : 54.09
+        },
+        "notes" : [ "COLLECT result shape differs: Operaton collectEntries gives List<String>; Flowable gives a JSON array of {\"pool\": ..} objects in a variable named after the decision key. Each is directly usable on its own engine; a product spanning both needs an 18-line normaliser (GovTestBase.collected)." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "DMN 1.3 decision table hit policy COLLECT", "DMN called from BPMN", "product merit-list code" ],
+        "variants" : [ "gp26-merit.bpmn: DMN COLLECT call 'reservationPools' (operaton:mapDecisionResult=collectEntries -> List / flowable:type=dmn -> JSON array variable named after the decision)" ],
+        "nativeApi" : [ "Flowable HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey()", "Flowable DmnDecisionService.createExecuteDecisionBuilder().executeDecision()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 3546,
+        "timingsMs" : {
+          "nativeDecisionEvaluations1000Ms" : 2835
+        },
+        "scale" : {
+          "rawResultType" : "tools.jackson.databind.node.ArrayNode",
+          "selected" : "{C1=UR, C2=UR, C7=UR, C4=OBC, C3=SC}",
+          "decisionEvaluationsPerSecond" : 352.73
+        },
+        "notes" : [ "COLLECT result shape differs: Operaton collectEntries gives List<String>; Flowable gives a JSON array of {\"pool\": ..} objects in a variable named after the decision key. Each is directly usable on its own engine; a product spanning both needs an 18-line normaliser (GovTestBase.collected)." ]
+      }
+    },
+    "GP-27" : {
+      "name" : "Bulk document generation (admit cards)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "external task / external worker job in bulk", "fetchAndLock batches", "parallel workers" ],
+        "variants" : [ "gp27-admit-card.bpmn: external task topic 'admit-card' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Operaton RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 33521,
+        "timingsMs" : {
+          "startInstancesMs" : 11780,
+          "workersMs" : 21703,
+          "continuationJobsMs" : 8
+        },
+        "scale" : {
+          "instances" : 1000,
+          "workers" : 4,
+          "fetchBatch" : 50,
+          "fetchCalls" : 79,
+          "completeErrors" : 0,
+          "continuationJobs" : 0,
+          "docsPerSecond" : 46.06
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "external task / external worker job in bulk", "fetchAndLock batches", "parallel workers" ],
+        "variants" : [ "gp27-admit-card.bpmn: external task topic 'admit-card' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Flowable RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 49133,
+        "timingsMs" : {
+          "startInstancesMs" : 9249,
+          "workersMs" : 39839,
+          "continuationJobsMs" : 10
+        },
+        "scale" : {
+          "instances" : 1000,
+          "workers" : 4,
+          "fetchBatch" : 50,
+          "fetchCalls" : 80,
+          "completeErrors" : 0,
+          "continuationJobs" : 0,
+          "docsPerSecond" : 25.09
+        },
+        "notes" : [ ]
+      }
+    },
+    "GP-28" : {
+      "name" : "Waitlist promotion when a candidate declines",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "signal intermediate throw", "signal START event (one new instance per vacancy)", "message catch correlated by business key", "external task (promotion worker)" ],
+        "variants" : [ "gp28-waitlist.bpmn: external task topic 'waitlist-promote' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Operaton RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()", "Operaton HistoryService.createHistoricProcessInstanceQuery().finished()", "Operaton HistoricProcessInstance.getEndActivityId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1084,
+        "timingsMs" : { },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "signal intermediate throw", "signal START event (one new instance per vacancy)", "message catch correlated by business key", "external task (promotion worker)" ],
+        "variants" : [ "gp28-waitlist.bpmn: external task topic 'waitlist-promote' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Flowable RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()", "Flowable HistoryService.createHistoricProcessInstanceQuery().finished()", "Flowable HistoricProcessInstance.getEndActivityId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 939,
+        "timingsMs" : { },
+        "notes" : [ ]
+      }
+    },
+    "GP-29" : {
+      "name" : "Auto-approve below threshold, else route",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "DMN FIRST called from BPMN", "exclusive gateway on DMN output", "candidate group from DMN output" ],
+        "variants" : [ "leave.bpmn: DMN call 'leaveRouting' outputs route (V-01 style: businessRuleTask operaton:decisionRef + output mapping / serviceTask flowable:type=dmn)" ],
+        "nativeApi" : [ "Operaton HistoricProcessInstance.getEndActivityId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 681,
+        "timingsMs" : { },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "DMN FIRST called from BPMN", "exclusive gateway on DMN output", "candidate group from DMN output" ],
+        "variants" : [ "leave.bpmn: DMN call 'leaveRouting' outputs route (V-01 style: businessRuleTask operaton:decisionRef + output mapping / serviceTask flowable:type=dmn)" ],
+        "nativeApi" : [ "Flowable HistoricProcessInstance.getEndActivityId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 399,
+        "timingsMs" : { },
+        "notes" : [ ]
+      }
+    },
+    "GP-30" : {
+      "name" : "Periodic generation (monthly pension/salary bills)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "timer start event timeCycle ISO-8601 R12/<start +05:30>/P1M", "timer start event cron" ],
+        "variants" : [ ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 447,
+        "timingsMs" : { },
+        "scale" : {
+          "isoBillsAfterMissedFebruary" : 3,
+          "cronBillsAfterMissedFebruary" : 3
+        },
+        "subChecks" : {
+          "missed cycle (Feb) while the engine was down" : "ISO: 1 instance(s) created on 1 Mar for Feb+Mar; cron: 1"
+        },
+        "notes" : [ "Cron (timeCycle '0 0 6 1 * ?') is read in the JVM default time zone (Asia/Kolkata); the ISO cycle carries its own +05:30 offset.", "A missed cycle is NOT replayed: the engine creates one instance on catch-up and schedules the next future date; the product must detect the missing month (pension rolls)." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "timer start event timeCycle ISO-8601 R12/<start +05:30>/P1M", "timer start event cron" ],
+        "variants" : [ ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 410,
+        "timingsMs" : { },
+        "scale" : {
+          "isoBillsAfterMissedFebruary" : 3,
+          "cronBillsAfterMissedFebruary" : 3
+        },
+        "subChecks" : {
+          "missed cycle (Feb) while the engine was down" : "ISO: 1 instance(s) created on 1 Mar for Feb+Mar; cron: 1"
+        },
+        "notes" : [ "Cron (timeCycle '0 0 6 1 * ?') is read in the JVM default time zone (Asia/Kolkata); the ISO cycle carries its own +05:30 offset.", "A missed cycle is NOT replayed: the engine creates one instance on catch-up and schedules the next future date; the product must detect the missing month (pension rolls)." ]
+      }
+    },
+    "GP-31" : {
+      "name" : "Bank / treasury file reconciliation (challan matching)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "event-based gateway (message vs timer)", "message correlation by business key in bulk", "external task reading a bank scroll file", "timer T+3 days" ],
+        "variants" : [ "gp31-challan.bpmn: external task topic 'bank-scroll' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Operaton RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 41777,
+        "timingsMs" : {
+          "startChallansMs" : 15392,
+          "correlateMs" : 23485
+        },
+        "scale" : {
+          "challans" : 1000,
+          "matched" : 950,
+          "unknownCredits" : 10,
+          "unmatchedAfterT+3" : 50,
+          "correlationsPerSecond" : 40.45,
+          "conflictRetries" : 0
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "event-based gateway (message vs timer)", "message correlation by business key in bulk", "external task reading a bank scroll file", "timer T+3 days" ],
+        "variants" : [ "gp31-challan.bpmn: external task topic 'bank-scroll' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Flowable RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 39536,
+        "timingsMs" : {
+          "startChallansMs" : 9979,
+          "correlateMs" : 25926
+        },
+        "scale" : {
+          "challans" : 1000,
+          "matched" : 950,
+          "unknownCredits" : 10,
+          "unmatchedAfterT+3" : 50,
+          "correlationsPerSecond" : 36.64,
+          "conflictRetries" : 0
+        },
+        "notes" : [ ]
+      }
+    },
+    "GP-32" : {
+      "name" : "Inter-department referral (call activity across tenants)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "call activity to a definition of ANOTHER tenant", "call activity in/out variable mapping", "tenant-scoped task queries" ],
+        "variants" : [ "gp32-works.bpmn: call activity to 'concurrence' in tenant dept-fin (operaton:calledElementTenantId / flowable:calledElementType=id + definition id variable finConcurrenceDefId)", "gp32-works.bpmn: call activity in/out mapping in=fileNo>fileNo,amount>amount;out=concurred>finConcurred,remarks>finRemarks (operaton:in/out / flowable:in/out)" ],
+        "nativeApi" : [ "Operaton HistoricProcessInstanceQuery.superProcessInstanceId", "Operaton HistoricProcessInstance.getTenantId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 757,
+        "timingsMs" : { },
+        "subChecks" : {
+          "tenant of the called instance (no hook)" : "dept-fin"
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS-WITH-WORKAROUND",
+        "features" : [ "call activity to a definition of ANOTHER tenant", "call activity in/out variable mapping", "tenant-scoped task queries" ],
+        "variants" : [ "gp32-works.bpmn: call activity to 'concurrence' in tenant dept-fin (operaton:calledElementTenantId / flowable:calledElementType=id + definition id variable finConcurrenceDefId)", "gp32-works.bpmn: call activity in/out mapping in=fileNo>fileNo,amount>amount;out=concurred>finConcurred,remarks>finRemarks (operaton:in/out / flowable:in/out)" ],
+        "nativeApi" : [ "Flowable RepositoryService.createProcessDefinitionQuery()", "Flowable HistoricProcessInstanceQuery.superProcessInstanceId", "Flowable HistoricProcessInstance.getTenantId", "Flowable ProcessEngineConfigurationImpl.setStartProcessInstanceInterceptor + ExecutionEntity.setTenantId (impl)" ],
+        "workarounds" : [ {
+          "what" : "Flowable call activity resolves the callee by key only in the caller's tenant (or the default tenant): calledElementType=id + the callee definition id looked up by the product and passed as a start variable",
+          "lines" : 3
+        }, {
+          "what" : "called instance inherits the CALLER's tenant (task lands in the Works tenant, invisible to Finance): engine StartProcessInstanceInterceptor re-tenants the sub-process instance and its first execution (impl ExecutionEntity.setTenantId)",
+          "lines" : 22
+        } ],
+        "workaroundLines" : 25,
+        "totalMs" : 826,
+        "timingsMs" : { },
+        "subChecks" : {
+          "tenant of the called instance (no hook)" : "dept-works"
+        },
+        "notes" : [ ]
+      }
+    },
+    "GP-33" : {
+      "name" : "Notifications at each step (SMS, DLT)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "external task per notification step", "worker picks template by activity id", "failure with retries 0 -> incident / dead letter", "DLT simulator (template, header, URL whitelist)" ],
+        "variants" : [ "gp33-notify.bpmn: external task topic 'sms' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Operaton RuntimeService.createIncidentQuery()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1269,
+        "timingsMs" : { },
+        "scale" : {
+          "smsAccepted" : 2,
+          "smsRejected" : 1
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "external task per notification step", "worker picks template by activity id", "failure with retries 0 -> incident / dead letter", "DLT simulator (template, header, URL whitelist)" ],
+        "variants" : [ "gp33-notify.bpmn: external task topic 'sms' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Flowable ManagementService.createDeadLetterJobQuery() / createExternalWorkerJobQuery()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 757,
+        "timingsMs" : { },
+        "scale" : {
+          "smsAccepted" : 2,
+          "smsRejected" : 1
+        },
+        "notes" : [ ]
+      }
+    },
+    "GP-34" : {
+      "name" : "Digital signature bound to the approval",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "external task (eSign v2.1 simulator)", "payload hash in the approval", "BPMN error from the worker -> error boundary event -> re-approval" ],
+        "variants" : [ "gp34-esign.bpmn: external task topic 'esign' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Operaton RuntimeService.setVariable" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 952,
+        "timingsMs" : { },
+        "scale" : {
+          "esignCalls" : 2
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "external task (eSign v2.1 simulator)", "payload hash in the approval", "BPMN error from the worker -> error boundary event -> re-approval" ],
+        "variants" : [ "gp34-esign.bpmn: external task topic 'esign' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Flowable RuntimeService.setVariable" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 917,
+        "timingsMs" : { },
+        "scale" : {
+          "esignCalls" : 2
+        },
+        "notes" : [ ]
+      }
+    },
+    "GP-35" : {
+      "name" : "Statutory clocks (RTI 30 days / 48 hours) with appeal",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "non-interrupting timer boundary, duration from a JUEL ternary over a variable", "event-based gateway (appeal message vs 30-day window)", "linked appeal instance + history" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Operaton ManagementService.createJobQuery().timers()", "Operaton HistoryService.createHistoricActivityInstanceQuery()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1065,
+        "timingsMs" : { },
+        "notes" : [ "Calendar days, as the RTI Act counts them; a business-day calendar is not needed for RTI." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "non-interrupting timer boundary, duration from a JUEL ternary over a variable", "event-based gateway (appeal message vs 30-day window)", "linked appeal instance + history" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Flowable ManagementService.createTimerJobQuery()", "Flowable HistoryService.createHistoricActivityInstanceQuery()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 683,
+        "timingsMs" : { },
+        "notes" : [ "Calendar days, as the RTI Act counts them; a business-day calendar is not needed for RTI." ]
+      }
+    },
+    "GP-36" : {
+      "name" : "MIS / audit queries over history",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "historic process / task / activity / variable queries", "durations", "completeness checks" ],
+        "variants" : [ "leave.bpmn: DMN call 'leaveRouting' outputs route (V-01 style: businessRuleTask operaton:decisionRef + output mapping / serviceTask flowable:type=dmn)" ],
+        "nativeApi" : [ "Operaton HistoryService.createHistoricProcessInstanceQuery().finished()", "Operaton HistoricProcessInstance.getEndActivityId", "Operaton HistoryService.createHistoricTaskInstanceQuery().finished()", "Operaton HistoricProcessInstanceQuery.variableValueEquals", "Operaton HistoricProcessInstance.getDurationInMillis" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 14515,
+        "timingsMs" : {
+          "finishedCountMs" : 9,
+          "byOutcome:lv_endNoBalanceMs" : 12,
+          "byOutcome:lv_endAutoMs" : 10,
+          "byOutcome:lv_endRejectedMs" : 21,
+          "byOutcome:lv_endApprovedMs" : 15,
+          "tasksByAssigneeMs" : 8,
+          "historicVariableQueryMs" : 8
+        },
+        "scale" : {
+          "instances" : 120,
+          "open" : 14,
+          "byOfficer" : "{officer-0=19, officer-1=18, officer-2=19}",
+          "avgDurationHours" : 24.22
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "historic process / task / activity / variable queries", "durations", "completeness checks" ],
+        "variants" : [ "leave.bpmn: DMN call 'leaveRouting' outputs route (V-01 style: businessRuleTask operaton:decisionRef + output mapping / serviceTask flowable:type=dmn)" ],
+        "nativeApi" : [ "Flowable HistoryService.createHistoricProcessInstanceQuery().finished()", "Flowable HistoricProcessInstance.getEndActivityId", "Flowable HistoryService.createHistoricTaskInstanceQuery().finished()", "Flowable HistoricProcessInstanceQuery.variableValueEquals", "Flowable HistoricProcessInstance.getDurationInMillis" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 8398,
+        "timingsMs" : {
+          "finishedCountMs" : 2,
+          "byOutcome:lv_endNoBalanceMs" : 6,
+          "byOutcome:lv_endAutoMs" : 5,
+          "byOutcome:lv_endRejectedMs" : 6,
+          "byOutcome:lv_endApprovedMs" : 7,
+          "tasksByAssigneeMs" : 6,
+          "historicVariableQueryMs" : 5
+        },
+        "scale" : {
+          "instances" : 120,
+          "open" : 14,
+          "byOfficer" : "{officer-0=19, officer-1=18, officer-2=19}",
+          "avgDurationHours" : 24.22
+        },
+        "notes" : [ ]
+      }
+    },
+    "GP-37" : {
+      "name" : "Same model, department-specific rule overrides (multi-tenant)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "tenant-scoped deployment (same BPMN in two tenants)", "same DMN key, different table per tenant", "DMN resolved in the calling definition's tenant" ],
+        "variants" : [ "leave.bpmn: DMN call 'leaveRouting' outputs route (V-01 style: businessRuleTask operaton:decisionRef + output mapping / serviceTask flowable:type=dmn)" ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 405,
+        "timingsMs" : { },
+        "notes" : [ "Shared (tenant-less) BPMN with per-tenant DMN was not used: on both engines it needs a tenant hint on the decision call (Operaton decisionRefTenantId expression / Flowable fallbackToDefaultTenant semantics), i.e. a variant. Per-tenant deployment of the same file needs none." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "tenant-scoped deployment (same BPMN in two tenants)", "same DMN key, different table per tenant", "DMN resolved in the calling definition's tenant" ],
+        "variants" : [ "leave.bpmn: DMN call 'leaveRouting' outputs route (V-01 style: businessRuleTask operaton:decisionRef + output mapping / serviceTask flowable:type=dmn)" ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 311,
+        "timingsMs" : { },
+        "notes" : [ "Shared (tenant-less) BPMN with per-tenant DMN was not used: on both engines it needs a tenant hint on the decision call (Operaton decisionRefTenantId expression / Flowable fallbackToDefaultTenant semantics), i.e. a variant. Per-tenant deployment of the same file needs none." ]
+      }
+    },
+    "GP-38" : {
+      "name" : "Hindi / Unicode data round trip",
+      "operaton" : {
+        "result" : "PASS-WITH-WORKAROUND",
+        "features" : [ "Devanagari in model names, business key, candidate group, variables, gateway literal", "variable equals / like queries", "history", "DMN string literals" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Operaton ProcessInstanceQuery.variableValueEquals", "Operaton ProcessInstanceQuery.variableValueLike", "Operaton TaskQuery.processVariableValueEquals", "Operaton HistoricProcessInstance.getEndActivityId", "Operaton HistoricProcessInstanceQuery.variableValueEquals", "Operaton HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey()", "Operaton DecisionService.evaluateDecisionTableByKey" ],
+        "workarounds" : [ {
+          "what" : "long String (> 4000 chars) stored as byte[] UTF-8 variable and decoded by the product",
+          "lines" : 4
+        } ],
+        "workaroundLines" : 4,
+        "totalMs" : 912,
+        "timingsMs" : { },
+        "scale" : {
+          "longTextChars" : 5590
+        },
+        "subChecks" : {
+          "query with a different Unicode normal form" : "exact form: 1, NFC form: 0 (byte comparison; the product must normalise to NFC on input)",
+          "Devanagari variable name as JUEL identifier in a gateway" : "PASS",
+          "String variable of 5590 Devanagari chars" : "FAIL as String: PSQLException: ERROR: value too long for type character varying(4000)",
+          "java.util.ArrayList variable" : "PASS (ArrayList)"
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "Devanagari in model names, business key, candidate group, variables, gateway literal", "variable equals / like queries", "history", "DMN string literals" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Flowable ProcessInstanceQuery.variableValueEquals", "Flowable ProcessInstanceQuery.variableValueLike", "Flowable TaskQuery.processVariableValueEquals", "Flowable HistoricProcessInstance.getEndActivityId", "Flowable HistoricProcessInstanceQuery.variableValueEquals", "Flowable HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey()", "Flowable DmnDecisionService.createExecuteDecisionBuilder().executeDecision()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 594,
+        "timingsMs" : { },
+        "scale" : {
+          "longTextChars" : 5590
+        },
+        "subChecks" : {
+          "query with a different Unicode normal form" : "exact form: 1, NFC form: 0 (byte comparison; the product must normalise to NFC on input)",
+          "Devanagari variable name as JUEL identifier in a gateway" : "PASS",
+          "String variable of 5590 Devanagari chars" : "PASS (stored as String)",
+          "java.util.ArrayList variable" : "PASS (ArrayList)"
+        },
+        "notes" : [ ]
+      }
+    },
+    "GP-39" : {
+      "name" : "Officer inbox with >= 10k tasks and filters under authorization (VI.4)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "task query by tenant + candidate groups (adapter)", "VI.4 SQL predicate AND-ed into a SQL list/count over ACT_RU_TASK / ACT_RU_IDENTITYLINK", "explicit deny wins" ],
+        "variants" : [ ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 414905,
+        "timingsMs" : {
+          "createTasksMs" : 177091,
+          "grantSetupMs" : 236
+        },
+        "scale" : {
+          "tasksInTenant" : 10000,
+          "tasksOtherTenant" : 1000,
+          "seats" : 300,
+          "startRetries" : 0,
+          "visibleTasks20groups" : 630,
+          "visibleTasks300groups" : 9950,
+          "perf" : {
+            "vi4List50_20groups" : {
+              "n" : 100,
+              "p50Ms" : 46.59,
+              "p95Ms" : 52.87,
+              "maxMs" : 65.85,
+              "meanMs" : 45.32
+            },
+            "vi4Count_20groups" : {
+              "n" : 100,
+              "p50Ms" : 45.55,
+              "p95Ms" : 54.37,
+              "maxMs" : 61.4,
+              "meanMs" : 43.78
+            },
+            "vi4List50_300groups" : {
+              "n" : 100,
+              "p50Ms" : 207.94,
+              "p95Ms" : 466.82,
+              "maxMs" : 477.51,
+              "meanMs" : 242.07
+            },
+            "vi4Count_300groups" : {
+              "n" : 100,
+              "p50Ms" : 227.54,
+              "p95Ms" : 432.21,
+              "maxMs" : 463.38,
+              "meanMs" : 251.21
+            },
+            "adapterList50_20groups" : {
+              "n" : 100,
+              "p50Ms" : 459.46,
+              "p95Ms" : 507.33,
+              "maxMs" : 700.1,
+              "meanMs" : 465.31
+            },
+            "adapterCount_20groups" : {
+              "n" : 100,
+              "p50Ms" : 8.51,
+              "p95Ms" : 18.0,
+              "maxMs" : 34.7,
+              "meanMs" : 9.62
+            },
+            "adapterList50_300groups" : {
+              "n" : 100,
+              "p50Ms" : 810.39,
+              "p95Ms" : 1384.97,
+              "maxMs" : 1427.45,
+              "meanMs" : 830.53
+            },
+            "adapterCount_300groups" : {
+              "n" : 100,
+              "p50Ms" : 23.8,
+              "p95Ms" : 80.66,
+              "maxMs" : 95.15,
+              "meanMs" : 34.97
+            }
+          }
+        },
+        "notes" : [ "T38 target: p95 list < 200 ms with 10k tasks x 300 groups; measured VI.4 list p95 = 466.82 ms on PostgreSQL 17 (Testcontainers postgres:17-alpine).", "The VI.4 predicate is product SQL over the engine's task and identity-link tables (same table and column names on both engines); the adapter list projects variables per task as well." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "task query by tenant + candidate groups (adapter)", "VI.4 SQL predicate AND-ed into a SQL list/count over ACT_RU_TASK / ACT_RU_IDENTITYLINK", "explicit deny wins" ],
+        "variants" : [ ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 165786,
+        "timingsMs" : {
+          "createTasksMs" : 97661,
+          "grantSetupMs" : 171
+        },
+        "scale" : {
+          "tasksInTenant" : 10000,
+          "tasksOtherTenant" : 1000,
+          "seats" : 300,
+          "startRetries" : 0,
+          "visibleTasks20groups" : 630,
+          "visibleTasks300groups" : 9950,
+          "perf" : {
+            "vi4List50_20groups" : {
+              "n" : 100,
+              "p50Ms" : 15.05,
+              "p95Ms" : 45.86,
+              "maxMs" : 60.1,
+              "meanMs" : 19.02
+            },
+            "vi4Count_20groups" : {
+              "n" : 100,
+              "p50Ms" : 10.35,
+              "p95Ms" : 30.54,
+              "maxMs" : 48.75,
+              "meanMs" : 13.3
+            },
+            "vi4List50_300groups" : {
+              "n" : 100,
+              "p50Ms" : 90.11,
+              "p95Ms" : 251.81,
+              "maxMs" : 402.99,
+              "meanMs" : 121.12
+            },
+            "vi4Count_300groups" : {
+              "n" : 100,
+              "p50Ms" : 78.0,
+              "p95Ms" : 299.22,
+              "maxMs" : 336.27,
+              "meanMs" : 107.13
+            },
+            "adapterList50_20groups" : {
+              "n" : 100,
+              "p50Ms" : 54.27,
+              "p95Ms" : 133.18,
+              "maxMs" : 157.55,
+              "meanMs" : 71.92
+            },
+            "adapterCount_20groups" : {
+              "n" : 100,
+              "p50Ms" : 8.85,
+              "p95Ms" : 17.25,
+              "maxMs" : 19.57,
+              "meanMs" : 9.87
+            },
+            "adapterList50_300groups" : {
+              "n" : 100,
+              "p50Ms" : 179.03,
+              "p95Ms" : 273.91,
+              "maxMs" : 343.64,
+              "meanMs" : 188.19
+            },
+            "adapterCount_300groups" : {
+              "n" : 100,
+              "p50Ms" : 30.62,
+              "p95Ms" : 118.99,
+              "maxMs" : 130.18,
+              "meanMs" : 49.17
+            }
+          }
+        },
+        "notes" : [ "T38 target: p95 list < 200 ms with 10k tasks x 300 groups; measured VI.4 list p95 = 251.81 ms on PostgreSQL 17 (Testcontainers postgres:17-alpine).", "The VI.4 predicate is product SQL over the engine's task and identity-link tables (same table and column names on both engines); the adapter list projects variables per task as well." ]
+      }
+    },
+    "GP-40" : {
+      "name" : "Suspend / resume instance (court stay)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "suspend / activate process instance", "suspended: task completion, message correlation and timers blocked", "timer due date moved by the stay period" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Operaton ManagementService.createJobQuery().timers()", "Operaton RuntimeService.suspendProcessInstanceById", "Operaton ProcessInstance.isSuspended", "Operaton RuntimeService.activateProcessInstanceById", "Operaton ManagementService.setJobDuedate" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 529,
+        "timingsMs" : { },
+        "subChecks" : {
+          "complete task while suspended" : "REJECTED: SuspendedEntityInteractionException: ENGINE-03043 task with id '152213' is suspended.",
+          "correlate message while suspended" : "REJECTED: MismatchingMessageCorrelationException: Cannot correlate message 'replyReceived': No process definition or execution matches the parameters",
+          "timer while suspended" : "not fired"
+        },
+        "notes" : [ "Without the reschedule, the overdue timer fires at once on activation: the engines do not stop the statutory clock during a stay." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "suspend / activate process instance", "suspended: task completion, message correlation and timers blocked", "timer due date moved by the stay period" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Flowable ManagementService.createTimerJobQuery()", "Flowable RuntimeService.suspendProcessInstanceById", "Flowable ProcessInstance.isSuspended", "Flowable RuntimeService.activateProcessInstanceById", "Flowable ManagementService.rescheduleTimeDateJob" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 476,
+        "timingsMs" : { },
+        "subChecks" : {
+          "complete task while suspended" : "REJECTED: FlowableException: Cannot complete a suspended Task[id=135608, key=gp40_hearing, name=Conduct hearing, processInstanceId=135596, executionId=135598, processDefinitionId=gp40Proceeding:1:135595]",
+          "correlate message while suspended" : "REJECTED: FlowableException: Cannot receive message for a suspended Execution[ id '135602' ] - definition 'gp40Proceeding:1:135595' - activity 'gp40_reply' - parent '135596' - tenantId 'court'",
+          "timer while suspended" : "not fired"
+        },
+        "notes" : [ "Without the reschedule, the overdue timer fires at once on activation: the engines do not stop the statutory clock during a stay." ]
+      }
+    }
+  },
+  "summary" : {
+    "operaton" : {
+      "PASS" : 19,
+      "PASS-WITH-WORKAROUND" : 1,
+      "FAIL" : 0,
+      "UNSUPPORTED" : 0,
+      "nativeApiUses" : 37,
+      "variantElements" : 11,
+      "workaroundLines" : 4
+    },
+    "flowable" : {
+      "PASS" : 19,
+      "PASS-WITH-WORKAROUND" : 1,
+      "FAIL" : 0,
+      "UNSUPPORTED" : 0,
+      "nativeApiUses" : 41,
+      "variantElements" : 11,
+      "workaroundLines" : 25
+    }
+  }
+}

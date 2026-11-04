@@ -1,0 +1,422 @@
+{
+  "experiment": "E8",
+  "title": "Timers across DST: R/PT1H cycle, exactly one fire per elapsed interval (T22)",
+  "engines": {
+    "flowable-Asia_Kolkata": {
+      "engineId": "flowable-8.0.0.0",
+      "generatedAt": "2026-11-04T08:41:21.869071900Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "summary": {
+        "scenarios": 2,
+        "pass": 1,
+        "fail": 0,
+        "info": 1,
+        "fireCounts": {
+          "E8-KOLKATA-24H-step5m": "24/24",
+          "E8-KOLKATA-24H-catchup": "after one call: 1, after two: 1"
+        }
+      },
+      "model": "inline e8-cycle.bpmn: userTask e8_hold + non-interrupting boundary timeCycle R/PT1H -> userTask e8_tick",
+      "jvmDefaultZone": "Asia/Kolkata",
+      "jobRunner": "EngineHooks.executeDueJobsBounded (adapter executeDueJobs steps, max 20 job executions per clock step) - runaway guard; the adapters' own bounds are 100 rounds (Flowable) and 10,000 executions (Operaton) per call",
+      "scenarios": [
+        {
+          "id": "E8-KOLKATA-24H-step5m",
+          "group": "E8",
+          "description": "no-DST control: 24 h from local midnight IST (Asia/Kolkata, 24 h from 2026-10-24T18:30:00Z, clock step 5 min)",
+          "status": "pass",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   no runaway (more than 3x the expected fires)", "OK   exactly 24 fires (got 24)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-10-24T19:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H"],
+            "expectedFires": 24,
+            "actualFires": 24,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-10-25T01:00+05:30", "2026-10-25T02:00+05:30", "2026-10-25T03:00+05:30", "2026-10-25T04:00+05:30", "2026-10-25T05:00+05:30", "2026-10-25T06:00+05:30", "2026-10-25T07:00+05:30", "2026-10-25T08:00+05:30", "2026-10-25T09:00+05:30", "2026-10-25T10:00+05:30", "2026-10-25T11:00+05:30", "2026-10-25T12:00+05:30", "2026-10-25T13:00+05:30", "2026-10-25T14:00+05:30", "2026-10-25T15:00+05:30", "2026-10-25T16:00+05:30", "2026-10-25T17:00+05:30", "2026-10-25T18:00+05:30", "2026-10-25T19:00+05:30", "2026-10-25T20:00+05:30", "2026-10-25T21:00+05:30", "2026-10-25T22:00+05:30", "2026-10-25T23:00+05:30", "2026-10-26T00:00+05:30"],
+            "minutesBetweenFires": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+            "bursts": [],
+            "runaway": false,
+            "timerAfterFire": ["2026-10-25T01:00+05:30 -> [due=2026-10-24T20:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]", "2026-10-25T02:00+05:30 -> [due=2026-10-24T21:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]", "2026-10-25T03:00+05:30 -> [due=2026-10-24T22:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]", "2026-10-25T04:00+05:30 -> [due=2026-10-24T23:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]", "2026-10-25T05:00+05:30 -> [due=2026-10-25T00:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]", "2026-10-25T06:00+05:30 -> [due=2026-10-25T01:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]", "2026-10-25T07:00+05:30 -> [due=2026-10-25T02:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]", "2026-10-25T08:00+05:30 -> [due=2026-10-25T03:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]", "2026-10-25T09:00+05:30 -> [due=2026-10-25T04:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]", "2026-10-25T10:00+05:30 -> [due=2026-10-25T05:30:00Z repeat=R/2026-10-24T18:30:00Z/PT1H]"]
+          },
+          "error": null,
+          "millis": 22791
+        },
+        {
+          "id": "E8-KOLKATA-24H-catchup",
+          "group": "E8",
+          "description": "informational: single jump of 24 h + 5 min, then one executeDueJobs (Asia/Kolkata)",
+          "status": "info",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": [],
+          "details": {
+            "jobsExecuted": 1,
+            "firesAfterOneCall": 1,
+            "firesAfterSecondCall": 1
+          },
+          "error": null,
+          "millis": 863
+        }
+      ]
+    },
+    "flowable-Europe_Berlin": {
+      "engineId": "flowable-8.0.0.0",
+      "generatedAt": "2026-11-04T08:42:54.193674200Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "summary": {
+        "scenarios": 6,
+        "pass": 2,
+        "fail": 2,
+        "info": 2,
+        "fireCounts": {
+          "E8-BERLIN-AUTUMN-FOLD-step5m": "21/6",
+          "E8-BERLIN-SPRING-GAP-step5m": "6/6",
+          "E8-BERLIN-AUTUMN-FOLD-step1m": "21/6",
+          "E8-BERLIN-SPRING-GAP-step1m": "6/6",
+          "E8-BERLIN-AUTUMN-FOLD-catchup": "after one call: 1, after two: 1",
+          "E8-BERLIN-SPRING-GAP-catchup": "after one call: 1, after two: 1"
+        }
+      },
+      "model": "inline e8-cycle.bpmn: userTask e8_hold + non-interrupting boundary timeCycle R/PT1H -> userTask e8_tick",
+      "jvmDefaultZone": "Europe/Berlin",
+      "jobRunner": "EngineHooks.executeDueJobsBounded (adapter executeDueJobs steps, max 20 job executions per clock step) - runaway guard; the adapters' own bounds are 100 rounds (Flowable) and 10,000 executions (Operaton) per call",
+      "scenarios": [
+        {
+          "id": "E8-BERLIN-AUTUMN-FOLD-step5m",
+          "group": "E8",
+          "description": "autumn fold 2026-10-25 03:00 CEST -> 02:00 CET (01:00Z): local 02:xx occurs twice (Europe/Berlin, 6 h from 2026-10-24T22:00:00Z, clock step 5 min)",
+          "status": "fail",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["FAIL no runaway (more than 3x the expected fires)", "FAIL exactly 6 fires (got 21)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-10-24T23:00:00Z repeat=R/2026-10-24T22:00:00Z/PT1H"],
+            "runawayStoppedAt": "2026-10-25T02:00+02:00 (2026-10-25T00:00:00Z) with 21 fires",
+            "timerAtRunaway": ["due=2026-10-25T01:00:00Z repeat=R/2026-10-24T22:00:00Z/PT1H"],
+            "expectedFires": 6,
+            "actualFires": 21,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-10-25T01:00+02:00"],
+            "minutesBetweenFires": [],
+            "bursts": ["2026-10-25T02:00+02:00: +20 fires in one step"],
+            "runaway": true,
+            "timerAfterFire": ["2026-10-25T01:00+02:00 -> [due=2026-10-25T01:00:00Z repeat=R/2026-10-24T22:00:00Z/PT1H]", "2026-10-25T02:00+02:00 -> [due=2026-10-25T01:00:00Z repeat=R/2026-10-24T22:00:00Z/PT1H]"]
+          },
+          "error": null,
+          "millis": 6808
+        },
+        {
+          "id": "E8-BERLIN-SPRING-GAP-step5m",
+          "group": "E8",
+          "description": "spring gap 2026-03-29 02:00 CET -> 03:00 CEST (01:00Z): local 02:xx does not exist (Europe/Berlin, 6 h from 2026-03-28T23:00:00Z, clock step 5 min)",
+          "status": "pass",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   no runaway (more than 3x the expected fires)", "OK   exactly 6 fires (got 6)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-03-29T00:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H"],
+            "expectedFires": 6,
+            "actualFires": 6,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-03-29T01:00+01:00", "2026-03-29T03:00+02:00", "2026-03-29T04:00+02:00", "2026-03-29T05:00+02:00", "2026-03-29T06:00+02:00", "2026-03-29T07:00+02:00"],
+            "minutesBetweenFires": [60, 60, 60, 60, 60],
+            "bursts": [],
+            "runaway": false,
+            "timerAfterFire": ["2026-03-29T01:00+01:00 -> [due=2026-03-29T01:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T03:00+02:00 -> [due=2026-03-29T02:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T04:00+02:00 -> [due=2026-03-29T03:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T05:00+02:00 -> [due=2026-03-29T04:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T06:00+02:00 -> [due=2026-03-29T05:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T07:00+02:00 -> [due=2026-03-29T06:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]"]
+          },
+          "error": null,
+          "millis": 4698
+        },
+        {
+          "id": "E8-BERLIN-AUTUMN-FOLD-step1m",
+          "group": "E8",
+          "description": "autumn fold 2026-10-25 03:00 CEST -> 02:00 CET (01:00Z): local 02:xx occurs twice (Europe/Berlin, 6 h from 2026-10-24T22:00:00Z, clock step 1 min)",
+          "status": "fail",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["FAIL no runaway (more than 3x the expected fires)", "FAIL exactly 6 fires (got 21)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-10-24T23:00:00Z repeat=R/2026-10-24T22:00:00Z/PT1H"],
+            "runawayStoppedAt": "2026-10-25T02:00+02:00 (2026-10-25T00:00:00Z) with 21 fires",
+            "timerAtRunaway": ["due=2026-10-25T01:00:00Z repeat=R/2026-10-24T22:00:00Z/PT1H"],
+            "expectedFires": 6,
+            "actualFires": 21,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-10-25T01:00+02:00"],
+            "minutesBetweenFires": [],
+            "bursts": ["2026-10-25T02:00+02:00: +20 fires in one step"],
+            "runaway": true,
+            "timerAfterFire": ["2026-10-25T01:00+02:00 -> [due=2026-10-25T01:00:00Z repeat=R/2026-10-24T22:00:00Z/PT1H]", "2026-10-25T02:00+02:00 -> [due=2026-10-25T01:00:00Z repeat=R/2026-10-24T22:00:00Z/PT1H]"]
+          },
+          "error": null,
+          "millis": 8501
+        },
+        {
+          "id": "E8-BERLIN-SPRING-GAP-step1m",
+          "group": "E8",
+          "description": "spring gap 2026-03-29 02:00 CET -> 03:00 CEST (01:00Z): local 02:xx does not exist (Europe/Berlin, 6 h from 2026-03-28T23:00:00Z, clock step 1 min)",
+          "status": "pass",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   no runaway (more than 3x the expected fires)", "OK   exactly 6 fires (got 6)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-03-29T00:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H"],
+            "expectedFires": 6,
+            "actualFires": 6,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-03-29T01:00+01:00", "2026-03-29T03:00+02:00", "2026-03-29T04:00+02:00", "2026-03-29T05:00+02:00", "2026-03-29T06:00+02:00", "2026-03-29T07:00+02:00"],
+            "minutesBetweenFires": [60, 60, 60, 60, 60],
+            "bursts": [],
+            "runaway": false,
+            "timerAfterFire": ["2026-03-29T01:00+01:00 -> [due=2026-03-29T01:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T03:00+02:00 -> [due=2026-03-29T02:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T04:00+02:00 -> [due=2026-03-29T03:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T05:00+02:00 -> [due=2026-03-29T04:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T06:00+02:00 -> [due=2026-03-29T05:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]", "2026-03-29T07:00+02:00 -> [due=2026-03-29T06:00:00Z repeat=R/2026-03-28T23:00:00Z/PT1H]"]
+          },
+          "error": null,
+          "millis": 14136
+        },
+        {
+          "id": "E8-BERLIN-AUTUMN-FOLD-catchup",
+          "group": "E8",
+          "description": "informational: single jump of 6 h + 5 min, then one executeDueJobs (Europe/Berlin)",
+          "status": "info",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": [],
+          "details": {
+            "jobsExecuted": 1,
+            "firesAfterOneCall": 1,
+            "firesAfterSecondCall": 1
+          },
+          "error": null,
+          "millis": 445
+        },
+        {
+          "id": "E8-BERLIN-SPRING-GAP-catchup",
+          "group": "E8",
+          "description": "informational: single jump of 6 h + 5 min, then one executeDueJobs (Europe/Berlin)",
+          "status": "info",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": [],
+          "details": {
+            "jobsExecuted": 1,
+            "firesAfterOneCall": 1,
+            "firesAfterSecondCall": 1
+          },
+          "error": null,
+          "millis": 436
+        }
+      ]
+    },
+    "operaton-Asia_Kolkata": {
+      "engineId": "operaton-2.2.0",
+      "generatedAt": "2026-11-04T08:44:44.556388100Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "summary": {
+        "scenarios": 2,
+        "pass": 1,
+        "fail": 0,
+        "info": 1,
+        "fireCounts": {
+          "E8-KOLKATA-24H-step5m": "24/24",
+          "E8-KOLKATA-24H-catchup": "after one call: 1, after two: 1"
+        }
+      },
+      "model": "inline e8-cycle.bpmn: userTask e8_hold + non-interrupting boundary timeCycle R/PT1H -> userTask e8_tick",
+      "jvmDefaultZone": "Asia/Kolkata",
+      "jobRunner": "EngineHooks.executeDueJobsBounded (adapter executeDueJobs steps, max 20 job executions per clock step) - runaway guard; the adapters' own bounds are 100 rounds (Flowable) and 10,000 executions (Operaton) per call",
+      "scenarios": [
+        {
+          "id": "E8-KOLKATA-24H-step5m",
+          "group": "E8",
+          "description": "no-DST control: 24 h from local midnight IST (Asia/Kolkata, 24 h from 2026-10-24T18:30:00Z, clock step 5 min)",
+          "status": "pass",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   no runaway (more than 3x the expected fires)", "OK   exactly 24 fires (got 24)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-10-24T19:30:00Z repeat=R/2026-10-25T00:00:00/PT1H"],
+            "expectedFires": 24,
+            "actualFires": 24,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-10-25T01:00+05:30", "2026-10-25T02:00+05:30", "2026-10-25T03:00+05:30", "2026-10-25T04:00+05:30", "2026-10-25T05:00+05:30", "2026-10-25T06:00+05:30", "2026-10-25T07:00+05:30", "2026-10-25T08:00+05:30", "2026-10-25T09:00+05:30", "2026-10-25T10:00+05:30", "2026-10-25T11:00+05:30", "2026-10-25T12:00+05:30", "2026-10-25T13:00+05:30", "2026-10-25T14:00+05:30", "2026-10-25T15:00+05:30", "2026-10-25T16:00+05:30", "2026-10-25T17:00+05:30", "2026-10-25T18:00+05:30", "2026-10-25T19:00+05:30", "2026-10-25T20:00+05:30", "2026-10-25T21:00+05:30", "2026-10-25T22:00+05:30", "2026-10-25T23:00+05:30", "2026-10-26T00:00+05:30"],
+            "minutesBetweenFires": [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60],
+            "bursts": [],
+            "runaway": false,
+            "timerAfterFire": ["2026-10-25T01:00+05:30 -> [due=2026-10-24T20:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T02:00+05:30 -> [due=2026-10-24T21:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T03:00+05:30 -> [due=2026-10-24T22:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T04:00+05:30 -> [due=2026-10-24T23:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T05:00+05:30 -> [due=2026-10-25T00:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T06:00+05:30 -> [due=2026-10-25T01:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T07:00+05:30 -> [due=2026-10-25T02:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T08:00+05:30 -> [due=2026-10-25T03:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T09:00+05:30 -> [due=2026-10-25T04:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T10:00+05:30 -> [due=2026-10-25T05:30:00Z repeat=R/2026-10-25T00:00:00/PT1H]"]
+          },
+          "error": null,
+          "millis": 29895
+        },
+        {
+          "id": "E8-KOLKATA-24H-catchup",
+          "group": "E8",
+          "description": "informational: single jump of 24 h + 5 min, then one executeDueJobs (Asia/Kolkata)",
+          "status": "info",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": [],
+          "details": {
+            "jobsExecuted": 1,
+            "firesAfterOneCall": 1,
+            "firesAfterSecondCall": 1
+          },
+          "error": null,
+          "millis": 644
+        }
+      ]
+    },
+    "operaton-Europe_Berlin": {
+      "engineId": "operaton-2.2.0",
+      "generatedAt": "2026-11-04T08:47:12.438567900Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "summary": {
+        "scenarios": 6,
+        "pass": 2,
+        "fail": 2,
+        "info": 2,
+        "fireCounts": {
+          "E8-BERLIN-AUTUMN-FOLD-step5m": "21/6",
+          "E8-BERLIN-SPRING-GAP-step5m": "6/6",
+          "E8-BERLIN-AUTUMN-FOLD-step1m": "21/6",
+          "E8-BERLIN-SPRING-GAP-step1m": "6/6",
+          "E8-BERLIN-AUTUMN-FOLD-catchup": "after one call: 1, after two: 1",
+          "E8-BERLIN-SPRING-GAP-catchup": "after one call: 1, after two: 1"
+        }
+      },
+      "model": "inline e8-cycle.bpmn: userTask e8_hold + non-interrupting boundary timeCycle R/PT1H -> userTask e8_tick",
+      "jvmDefaultZone": "Europe/Berlin",
+      "jobRunner": "EngineHooks.executeDueJobsBounded (adapter executeDueJobs steps, max 20 job executions per clock step) - runaway guard; the adapters' own bounds are 100 rounds (Flowable) and 10,000 executions (Operaton) per call",
+      "scenarios": [
+        {
+          "id": "E8-BERLIN-AUTUMN-FOLD-step5m",
+          "group": "E8",
+          "description": "autumn fold 2026-10-25 03:00 CEST -> 02:00 CET (01:00Z): local 02:xx occurs twice (Europe/Berlin, 6 h from 2026-10-24T22:00:00Z, clock step 5 min)",
+          "status": "fail",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["FAIL no runaway (more than 3x the expected fires)", "FAIL exactly 6 fires (got 21)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-10-24T23:00:00Z repeat=R/2026-10-25T00:00:00/PT1H"],
+            "runawayStoppedAt": "2026-10-25T02:00+02:00 (2026-10-25T00:00:00Z) with 21 fires",
+            "timerAtRunaway": ["due=2026-10-25T01:00:00Z repeat=R/2026-10-25T00:00:00/PT1H"],
+            "expectedFires": 6,
+            "actualFires": 21,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-10-25T01:00+02:00"],
+            "minutesBetweenFires": [],
+            "bursts": ["2026-10-25T02:00+02:00: +20 fires in one step"],
+            "runaway": true,
+            "timerAfterFire": ["2026-10-25T01:00+02:00 -> [due=2026-10-25T01:00:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T02:00+02:00 -> [due=2026-10-25T01:00:00Z repeat=R/2026-10-25T00:00:00/PT1H]"]
+          },
+          "error": null,
+          "millis": 5737
+        },
+        {
+          "id": "E8-BERLIN-SPRING-GAP-step5m",
+          "group": "E8",
+          "description": "spring gap 2026-03-29 02:00 CET -> 03:00 CEST (01:00Z): local 02:xx does not exist (Europe/Berlin, 6 h from 2026-03-28T23:00:00Z, clock step 5 min)",
+          "status": "pass",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   no runaway (more than 3x the expected fires)", "OK   exactly 6 fires (got 6)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-03-29T00:00:00Z repeat=R/2026-03-29T00:00:00/PT1H"],
+            "expectedFires": 6,
+            "actualFires": 6,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-03-29T01:00+01:00", "2026-03-29T03:00+02:00", "2026-03-29T04:00+02:00", "2026-03-29T05:00+02:00", "2026-03-29T06:00+02:00", "2026-03-29T07:00+02:00"],
+            "minutesBetweenFires": [60, 60, 60, 60, 60],
+            "bursts": [],
+            "runaway": false,
+            "timerAfterFire": ["2026-03-29T01:00+01:00 -> [due=2026-03-29T01:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T03:00+02:00 -> [due=2026-03-29T02:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T04:00+02:00 -> [due=2026-03-29T03:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T05:00+02:00 -> [due=2026-03-29T04:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T06:00+02:00 -> [due=2026-03-29T05:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T07:00+02:00 -> [due=2026-03-29T06:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]"]
+          },
+          "error": null,
+          "millis": 5607
+        },
+        {
+          "id": "E8-BERLIN-AUTUMN-FOLD-step1m",
+          "group": "E8",
+          "description": "autumn fold 2026-10-25 03:00 CEST -> 02:00 CET (01:00Z): local 02:xx occurs twice (Europe/Berlin, 6 h from 2026-10-24T22:00:00Z, clock step 1 min)",
+          "status": "fail",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["FAIL no runaway (more than 3x the expected fires)", "FAIL exactly 6 fires (got 21)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-10-24T23:00:00Z repeat=R/2026-10-25T00:00:00/PT1H"],
+            "runawayStoppedAt": "2026-10-25T02:00+02:00 (2026-10-25T00:00:00Z) with 21 fires",
+            "timerAtRunaway": ["due=2026-10-25T01:00:00Z repeat=R/2026-10-25T00:00:00/PT1H"],
+            "expectedFires": 6,
+            "actualFires": 21,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-10-25T01:00+02:00"],
+            "minutesBetweenFires": [],
+            "bursts": ["2026-10-25T02:00+02:00: +20 fires in one step"],
+            "runaway": true,
+            "timerAfterFire": ["2026-10-25T01:00+02:00 -> [due=2026-10-25T01:00:00Z repeat=R/2026-10-25T00:00:00/PT1H]", "2026-10-25T02:00+02:00 -> [due=2026-10-25T01:00:00Z repeat=R/2026-10-25T00:00:00/PT1H]"]
+          },
+          "error": null,
+          "millis": 8860
+        },
+        {
+          "id": "E8-BERLIN-SPRING-GAP-step1m",
+          "group": "E8",
+          "description": "spring gap 2026-03-29 02:00 CET -> 03:00 CEST (01:00Z): local 02:xx does not exist (Europe/Berlin, 6 h from 2026-03-28T23:00:00Z, clock step 1 min)",
+          "status": "pass",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   no runaway (more than 3x the expected fires)", "OK   exactly 6 fires (got 6)", "OK   every fire inside its own interval (misplaced 0)"],
+          "details": {
+            "timerAtStart": ["due=2026-03-29T00:00:00Z repeat=R/2026-03-29T00:00:00/PT1H"],
+            "expectedFires": 6,
+            "actualFires": 6,
+            "misplacedFires": 0,
+            "fireTimesLocal": ["2026-03-29T01:00+01:00", "2026-03-29T03:00+02:00", "2026-03-29T04:00+02:00", "2026-03-29T05:00+02:00", "2026-03-29T06:00+02:00", "2026-03-29T07:00+02:00"],
+            "minutesBetweenFires": [60, 60, 60, 60, 60],
+            "bursts": [],
+            "runaway": false,
+            "timerAfterFire": ["2026-03-29T01:00+01:00 -> [due=2026-03-29T01:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T03:00+02:00 -> [due=2026-03-29T02:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T04:00+02:00 -> [due=2026-03-29T03:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T05:00+02:00 -> [due=2026-03-29T04:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T06:00+02:00 -> [due=2026-03-29T05:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]", "2026-03-29T07:00+02:00 -> [due=2026-03-29T06:00:00Z repeat=R/2026-03-29T00:00:00/PT1H]"]
+          },
+          "error": null,
+          "millis": 20054
+        },
+        {
+          "id": "E8-BERLIN-AUTUMN-FOLD-catchup",
+          "group": "E8",
+          "description": "informational: single jump of 6 h + 5 min, then one executeDueJobs (Europe/Berlin)",
+          "status": "info",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": [],
+          "details": {
+            "jobsExecuted": 1,
+            "firesAfterOneCall": 1,
+            "firesAfterSecondCall": 1
+          },
+          "error": null,
+          "millis": 996
+        },
+        {
+          "id": "E8-BERLIN-SPRING-GAP-catchup",
+          "group": "E8",
+          "description": "informational: single jump of 6 h + 5 min, then one executeDueJobs (Europe/Berlin)",
+          "status": "info",
+          "variantFiles": ["inline e8-cycle.bpmn"],
+          "workarounds": [],
+          "checks": [],
+          "details": {
+            "jobsExecuted": 1,
+            "firesAfterOneCall": 1,
+            "firesAfterSecondCall": 1
+          },
+          "error": null,
+          "millis": 921
+        }
+      ]
+    }
+  }
+}

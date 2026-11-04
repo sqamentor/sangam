@@ -1,0 +1,664 @@
+{
+  "experiment": "E16-c",
+  "title": "Government pattern tests GP-41..GP-55 (added after validation)",
+  "engines": {
+    "flowable": {
+      "engineId": "flowable-8.0.0.0",
+      "generatedAt": "2026-11-04T12:44:39.487916800Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "configuration": ["adapter as built by FlowableEngineAdapter.create (DMN + CMMN configurators, async executor off, continuation AFTER_COMMIT)", "history level raised from the adapter default (audit) to FULL after build through ProcessEngineConfigurationImpl.setHistoryLevel (impl class), to match Operaton's adapter (FULL)", "one fresh engine + database per scenario"],
+      "summary": {
+        "PASS": 6,
+        "PASS-WITH-WORKAROUND": 9,
+        "FAIL": 0,
+        "UNSUPPORTED": 0
+      },
+      "items": [
+        {
+          "id": "GP-41",
+          "name": "Security-instrument (BG) lifecycle: verify, extend or encash before expiry, release",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["message correlation by business key", "event-based gateway (message + timer)", "timeDate timer from a variable", "timer re-armed by the model (event-gateway loop)", "timer re-armed on the running instance (native)", "extension/expiry race"],
+          "nativeApis": ["RuntimeService.setVariable", "RepositoryService.getBpmnModel", "ManagementService.rescheduleTimeDateJob(expression)", "ManagementService.rescheduleTimeDateJob"],
+          "variants": [],
+          "workarounds": [
+            {
+              "what": "no recalculate operation: timer expression read from RepositoryService.getBpmnModel and passed to ManagementService.rescheduleTimeDateJob (evaluated against the job's execution)",
+              "lines": 18
+            }
+          ],
+          "workaroundLines": 18,
+          "checks": ["OK   after bank confirmation: reminder timer due at reminderAt (+150d)", "OK   native recalculation moved the reminder to the new reminderAt (+120d)", "OK   native set-due-date moved the reminder to +125d", "OK   still exactly one timer", "OK   model re-arm: one timer, due at the new reminderAt (+335d)", "OK   exactly one task gp41_requestExtension (found 1, active=[gp41_requestExtension])", "OK   gp41_requestExtension offered to group contracts", "OK   expiry timer armed at bgExpiry (+365d)", "OK   race: extension correlated before the overdue expiry job ran -> no encashment", "OK   race: watch re-armed at +470d", "OK   exactly one task gp41_requestExtension (found 1, active=[gp41_requestExtension])", "OK   gp41_requestExtension offered to group contracts", "OK   expiry fired -> encash task", "OK   late extension after expiry is refused (no waiting subscription)", "OK   exactly one task gp41_encash (found 1, active=[gp41_encash])", "OK   gp41_encash offered to group accounts", "OK   instance ended at gp41_end_encashed", "OK   exactly one task gp41_release (found 1, active=[gp41_release])", "OK   gp41_release offered to group accounts", "OK   release path ended", "OK   non-genuine BG goes to vigilance"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 17830,
+          "scenarioMs": 3164
+        },
+        {
+          "id": "GP-42",
+          "name": "Cumulative-threshold re-sanction (10 % over AA) while work continues",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["expression service task (aggregate)", "exclusive gateway on aggregate", "non-interrupting conditional boundary event", "call activity with in/out mapping", "history of variable updates"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId", "RuntimeService.evaluateConditionalEvents", "HistoryService.createHistoricDetailQuery().variableUpdates"],
+          "variants": ["gp42-cumulative.bpmn: expr(${execution.setVariable('cumulative', cumulative + billAmount)})", "gp42-cumulative.bpmn: expr(${execution.setVariable('revisionPending', true)})", "gp42-cumulative.bpmn: callio(in=cumulative,sanctioned;out=revisedSanction)", "gp42-cumulative.bpmn: expr(${execution.setVariable('sanctioned', revisedSanction)})", "gp42-cumulative.bpmn: expr(${execution.setVariable('revisionPending', false)})"],
+          "workarounds": [
+            {
+              "what": "conditional boundary event is not evaluated on variable change: the product must call RuntimeService.evaluateConditionalEvents(processInstanceId) after every change that can affect a condition",
+              "lines": 3
+            }
+          ],
+          "workaroundLines": 3,
+          "checks": ["OK   exactly one task gp42_raBill (found 1, active=[gp42_billing, gp42_overLimit, gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   exactly one task gp42_raBill (found 1, active=[gp42_billing, gp42_overLimit, gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   exactly one task gp42_raBill (found 1, active=[gp42_billing, gp42_overLimit, gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   cumulative 1,050,000 within 10 %: excess noted by SE", "OK   exactly one task gp42_excessApproval (found 1, active=[gp42_billing, gp42_overLimit, gp42_excessApproval])", "OK   gp42_excessApproval offered to group se", "OK   no revision yet", "OK   exactly one task gp42_raBill (found 1, active=[gp42_billing, gp42_overLimit, gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   cumulative 1,150,000 > 110 %: revised-sanction child started", "OK   billing continues meanwhile (RA bill task open)", "OK   child exists", "OK   exactly one task gp42r_approve (found 1, active=[gp42r_approve])", "OK   gp42r_approve offered to group aa-authority", "OK   parent sanction updated from the child (out-mapping): 1,300,000", "OK   exactly one task gp42_raBill (found 1, active=[gp42_billing, gp42_overLimit, gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   revision ran exactly once", "OK   instance ended", "OK   cumulative = 1,200,000", "OK   history keeps old and new sanction [1000000, 1300000]"],
+          "details": {
+            "conditionalEvaluatedByEngineOnVariableChange": false,
+            "sanctionedHistory": [1000000, 1300000]
+          },
+          "error": null,
+          "engineBootMs": 2935,
+          "scenarioMs": 2250
+        },
+        {
+          "id": "GP-43",
+          "name": "Live contract amendment: EoT re-arms the LD timer, child updates parent, extra item added",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["non-interrupting message event sub-process", "call activity in/out mapping", "boundary timeDate timer", "parent variable update from a running child (native)", "timer re-armed on the running instance (native)", "instance modification: start an extra activity (native)", "history of variable updates"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId", "ProcessInstanceQuery.subProcessInstanceId", "RuntimeService.setVariable", "RepositoryService.getBpmnModel", "ManagementService.rescheduleTimeDateJob(expression)", "RuntimeService.createChangeActivityStateBuilder().moveSingleActivityIdToActivityIds", "HistoryService.createHistoricDetailQuery().variableUpdates"],
+          "variants": ["gp43-contract.bpmn: callio(in=amendType,proposedCompletion,extraAmount,completionDate;out=approved,approvedCompletion,approvedExtra)", "gp43-contract.bpmn: expr(${execution.setVariable('completionDate', approvedCompletion)})", "gp43-contract.bpmn: expr(${execution.setVariable('contractValue', contractValue + approvedExtra)})"],
+          "workarounds": [
+            {
+              "what": "no recalculate operation: timer expression read from RepositoryService.getBpmnModel and passed to ManagementService.rescheduleTimeDateJob (evaluated against the job's execution)",
+              "lines": 18
+            },
+            {
+              "what": "no 'start an activity' operation: the running activity gp43_execution is moved to {itself, gp43_extraItem} and therefore re-created (its task gets a new id)",
+              "lines": 1
+            }
+          ],
+          "workaroundLines": 19,
+          "checks": ["OK   exactly one task gp43_execution (found 1, active=[gp43_execution, gp43_ldStart])", "OK   LD timer at the stipulated date", "OK   amendment child started", "OK   child finds its parent", "OK   parent sees the child's update while the child is still running", "OK   exactly one task gp43a_examine (found 1, active=[gp43a_examine])", "OK   gp43a_examine offered to group ee", "OK   exactly one task gp43a_approve (found 1, active=[gp43a_approve])", "OK   gp43a_approve offered to group se", "OK   parent completionDate updated from the child result", "OK   without engine action the LD timer still points at the OLD date (timers are not re-evaluated)", "OK   LD timer re-armed to the extended date", "OK   extra item task created in the running instance", "OK   main work task still exactly one", "OK   LD timer still at the extended date after the modification", "OK   exactly one task gp43a_examine (found 1, active=[gp43a_examine])", "OK   gp43a_examine offered to group ee", "OK   exactly one task gp43a_approve (found 1, active=[gp43a_approve])", "OK   gp43a_approve offered to group se", "OK   contract value increased to 10,450,000", "OK   exactly one task gp43_extraItem (found 1, active=[gp43_execution, gp43_ldStart, gp43_extraItem])", "OK   gp43_extraItem offered to group ee", "OK   no LD notice the day after the OLD date", "OK   LD notice the day after the EXTENDED date", "OK   history keeps old and new completion date", "OK   exactly one task gp43_ldNotice (found 1, active=[gp43_execution, gp43_ldStart, gp43_ldNotice])", "OK   gp43_ldNotice offered to group ee", "OK   exactly one task gp43_execution (found 1, active=[gp43_execution, gp43_ldStart])", "OK   gp43_execution offered to group ee", "OK   exactly one task gp43_finalBill (found 1, active=[gp43_finalBill])", "OK   gp43_finalBill offered to group accounts", "OK   contract ended"],
+          "details": {
+            "ldTimerFollowedVariableByItself": false,
+            "mainWorkTaskKeptItsId": false,
+            "completionDateHistory": ["Tue Jan 04 10:00:00 IST 2028", "Mon Apr 03 10:00:00 IST 2028", "Mon Apr 03 10:00:00 IST 2028"]
+          },
+          "error": null,
+          "engineBootMs": 3550,
+          "scenarioMs": 2658
+        },
+        {
+          "id": "GP-44",
+          "name": "Deemed outcome on timeout (RTI s7(2) deemed refusal opens the appeal)",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["interrupting boundary timer (P30D)", "outcome as an event in history", "event-based gateway appeal window"],
+          "nativeApis": [],
+          "variants": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   deadline at +30 days", "OK   exactly one task gp44_pioDecide (found 1, active=[gp44_pioDecide, gp44_deadline])", "OK   deemed refusal reached", "OK   PIO task withdrawn", "OK   late decision by the PIO is blocked (task no longer exists)", "OK   first appeal goes to the FAA", "OK   exactly one task gp44_pioDecide (found 1, active=[gp44_pioDecide, gp44_deadline])", "OK   gp44_pioDecide offered to group pio", "OK   decided in time ends normally", "OK   no appeal within 30 days of the deemed refusal -> lapsed"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 2756,
+          "scenarioMs": 817
+        },
+        {
+          "id": "GP-45",
+          "name": "Pausable statutory clock (RTI s7(3) fee period excluded) with remaining-time resume",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["interrupting boundary timeDate timer", "instance suspension (native)", "timer due date set on resume (native)", "remaining-time arithmetic"],
+          "nativeApis": ["RuntimeService.suspendProcessInstanceById", "ManagementService.rescheduleTimeDateJob", "RuntimeService.activateProcessInstanceById"],
+          "variants": [],
+          "workarounds": [
+            {
+              "what": "remaining time (due - pausedAt) and net elapsed time are computed and kept by the product; neither engine keeps a paused-clock balance",
+              "lines": 6
+            },
+            {
+              "what": "a suspended timer cannot be re-dated (no effect or error); activate first and re-date in a second transaction, which leaves a window in which the overdue timer can fire",
+              "lines": 4
+            }
+          ],
+          "workaroundLines": 10,
+          "checks": ["OK   exactly one task gp45_process (found 1, active=[gp45_process, gp45_sla])", "OK   instance suspended", "OK   SLA timer suspended with the instance", "OK   officer cannot complete the task while the clock is stopped", "OK   suspended timer did not fire past its original due date", "OK   resumed with the remaining 20 days: due = day 65", "OK   day 64: no breach, net elapsed 29 days", "OK   day 66: SLA breached after 30 net days"],
+          "details": {
+            "resumeAttempts": ["A: no error", "A: afterwards suspended=false due=2027-02-03T04:30:00Z"],
+            "resumePath": "C: activate, then set the due date (two transactions: an overdue timer can fire in between under a running job executor)",
+            "netElapsedDays": 29
+          },
+          "error": null,
+          "engineBootMs": 3076,
+          "scenarioMs": 800
+        },
+        {
+          "id": "GP-46",
+          "name": "Third-party objection window (RTI s11 / LA s15): per-party message or window close",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["parallel multi-instance sub-process (loopCardinality)", "event-based gateway per party", "per-branch message delivery (native, by loopCounter)", "timeDate window"],
+          "nativeApis": ["RuntimeService.createExecutionQuery().messageEventSubscriptionName", "RuntimeService.getVariable", "RuntimeService.createExecutionQuery().variableValueEquals (local)", "RuntimeService.setVariablesLocal", "RuntimeService.messageEventReceived(messageName, executionId)"],
+          "variants": [],
+          "workarounds": [
+            {
+              "what": "per-party correlation: the product finds the waiting execution whose loopCounter is the party and delivers to that execution (RuntimeService.messageEventReceived(name, executionId)); the adapter's correlateMessage(businessKey) is ambiguous with several branches waiting",
+              "lines": 12
+            }
+          ],
+          "workaroundLines": 12,
+          "checks": ["OK   exactly one task gp46_notice (found 1, active=[gp46_notice])", "OK   gp46_notice offered to group pio", "OK   three party branches waiting", "OK   party 0 objects", "OK   party 2 objects", "OK   decision waits for the silent party", "OK   window closed -> decision", "OK   2 objections, 1 silent", "OK   late objection finds no waiting branch", "OK   exactly one task gp46_notice (found 1, active=[gp46_notice])", "OK   gp46_notice offered to group pio", "OK   all parties answered early -> decision at once"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 3074,
+          "scenarioMs": 2068
+        },
+        {
+          "id": "GP-47",
+          "name": "Provisional result -> paid challenge window -> bulk recompute -> final",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["timer-gated window", "one instance per challenge with fee callback", "parallel multi-instance external work (bulk)", "product result table in the engine transaction"],
+          "nativeApis": [],
+          "variants": ["gp47-answer-key.bpmn: ext(recompute;nonexclusive)", "probe-mi-external.bpmn: ext(probe-mi)"],
+          "workarounds": [
+            {
+              "what": "external-worker jobs are exclusive by default; with exclusive jobs a fetch of several jobs of ONE instance returns nothing (second process-instance lock fails, acquire rolled back), so the multi-instance task carries flowable:exclusive=\"false\" (Flowable-only attribute)",
+              "lines": 1
+            }
+          ],
+          "workaroundLines": 1,
+          "checks": ["OK   exactly one task gp47_publishProvisional (found 1, active=[gp47_publishProvisional])", "OK   gp47_publishProvisional offered to group exam-cell", "OK   late fee after the window is refused", "OK   4 paid challenges admitted, 2 lapsed", "OK   exactly one task gp47_review (found 1, active=[gp47_review])", "OK   gp47_review offered to group expert-committee", "OK   all 300 candidates recomputed", "OK   recomputed scores correct (+2 where candidate % 3 == 0)", "OK   exactly one task gp47_publishFinal (found 1, active=[gp47_publishFinal])", "OK   gp47_publishFinal offered to group exam-cell", "OK   final published, instance ended"],
+          "details": {
+            "probeDefaultMiFetch10": 0,
+            "probeDefaultMiFetch1": 0,
+            "candidates": 300,
+            "recomputeMs": 22392,
+            "workItemsWithoutLoopCounterVariable": 0
+          },
+          "error": null,
+          "engineBootMs": 2082,
+          "scenarioMs": 25380
+        },
+        {
+          "id": "GP-48",
+          "name": "Ledger shared across instances and years (leave account) under concurrency",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["external work + product ledger in the engine transaction", "BPMN error boundary on external work", "8 concurrent workers on one ledger row", "idempotent debit", "timer start event (yearly cycle)"],
+          "nativeApis": [],
+          "variants": ["gp48-leave.bpmn: ext(leave-debit)", "gp48-yearend.bpmn: ext(leave-carry-forward)"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly 20 granted, 10 refused (balance 20, 30 requests of 1 day)", "OK   ledger balance 0, never negative", "OK   20 instances granted, 10 routed to 'inform' by the BPMN error", "OK   replayed debit of an applied request is a no-op", "OK   year-end timer armed for 2027-12-31T18:30Z (1 Jan IST)", "OK   year-end instance started", "OK   external work on topic leave-carry-forward fetched", "OK   2028 balances: E1 = 30 (0 + 30), E2 = 45 (cap 15 + 30)", "OK   next year-end timer armed for 2028-12-31T18:30Z"],
+          "details": {
+            "threads": 8,
+            "ledgerMs": 2078,
+            "retriesAfterConflict": 0,
+            "errors": []
+          },
+          "error": null,
+          "engineBootMs": 2273,
+          "scenarioMs": 7197
+        },
+        {
+          "id": "GP-49",
+          "name": "Partial batch failure: per-item result, routing by reason code, resend only failures",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["parallel multi-instance sub-process", "per-item message delivery to one branch (native)", "local variable per branch (native)", "gateway routing by reason code", "loop back with a smaller batch", "product item table"],
+          "nativeApis": ["RuntimeService.createExecutionQuery().messageEventSubscriptionName", "RuntimeService.getVariable", "RuntimeService.createExecutionQuery().variableValueEquals (local)", "RuntimeService.setVariablesLocal", "RuntimeService.messageEventReceived(messageName, executionId)"],
+          "variants": ["gp49-dbt.bpmn: ext(dbt-send)", "gp49-dbt.bpmn: ext(dbt-close-round)"],
+          "workarounds": [
+            {
+              "what": "per-item correlation: the product finds the waiting branch by its loopCounter and delivers to that execution, with the result as LOCAL variables of that branch (setVariablesLocal on the branch execution found by its local loopCounter + messageEventReceived, one transaction)",
+              "lines": 14
+            }
+          ],
+          "workaroundLines": 14,
+          "checks": ["OK   external work on topic dbt-send fetched", "OK   round 1: one waiting branch per sent item (10)", "OK   ACCOUNT_INVALID -> bank desk", "OK   AADHAAR_NOT_SEEDED -> DBT cell", "OK   other reason -> DDO", "OK   exactly one task gp49_fixAccount (found 1, active=[gp49_items, gp49_ddoReview, gp49_items, gp49_fixAccount, gp49_items, gp49_seedAadhaar])", "OK   gp49_fixAccount offered to group bank-desk", "OK   exactly one task gp49_seedAadhaar (found 1, active=[gp49_items, gp49_ddoReview, gp49_items, gp49_seedAadhaar])", "OK   gp49_seedAadhaar offered to group dbt-cell", "OK   exactly one task gp49_ddoReview (found 1, active=[gp49_items, gp49_ddoReview])", "OK   gp49_ddoReview offered to group ddo", "OK   external work on topic dbt-close-round fetched", "OK   external work on topic dbt-send fetched", "OK   round 2: one waiting branch per sent item (3)", "OK   external work on topic dbt-close-round fetched", "OK   round 2 resent exactly the 3 failures [7, 8, 9]", "OK   13 per-item results correlated", "OK   all items paid, batch instance ended"],
+          "details": {
+            "deliveries": 13,
+            "sentInRound2": [7, 8, 9]
+          },
+          "error": null,
+          "engineBootMs": 2000,
+          "scenarioMs": 2046
+        },
+        {
+          "id": "GP-50",
+          "name": "Return to the originating seat under the same identity (treasury objection loop)",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["message correlation by business key", "loop across a system boundary", "expression counter"],
+          "nativeApis": [],
+          "variants": ["gp50-objection-loop.bpmn: ext(treasury-submit)", "gp50-objection-loop.bpmn: expr(${execution.setVariable('objectionCount', objectionCount + 1)})"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   BILL-1 verdict reached its own instance", "OK   BILL-2 verdict reached its own instance", "OK   BILL-4 verdict reached its own instance", "OK   BILL-5 verdict reached its own instance", "OK   objection 0 correlated to the same instance", "OK   verdict for a bill not waiting is refused", "OK   exactly one task gp50_rectify (found 1, active=[gp50_rectify])", "OK   gp50_rectify offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   objection 1 correlated to the same instance", "OK   verdict for a bill not waiting is refused", "OK   exactly one task gp50_rectify (found 1, active=[gp50_rectify])", "OK   gp50_rectify offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   BILL-3 passed after 2 objections, same instance id and business key", "OK   3 submissions on the one identity", "OK   all 5 bills ended"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 1881,
+          "scenarioMs": 2504
+        },
+        {
+          "id": "GP-51",
+          "name": "Hearing series with dates set by the court; brief deadline follows a reschedule",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["message-supplied timer dates", "event-gateway loop (model re-arm of the hearing timer)", "boundary timer re-armed on the running instance (native)", "parallel branches", "adjournment loop"],
+          "nativeApis": ["RepositoryService.getBpmnModel", "ManagementService.rescheduleTimeDateJob(expression)"],
+          "variants": [],
+          "workarounds": [
+            {
+              "what": "no recalculate operation: timer expression read from RepositoryService.getBpmnModel and passed to ManagementService.rescheduleTimeDateJob (evaluated against the job's execution)",
+              "lines": 18
+            }
+          ],
+          "workaroundLines": 18,
+          "checks": ["OK   hearing timer +30d, brief deadline +23d", "OK   hearing timer re-armed by the model to +45d", "OK   brief deadline NOT moved by the model (still +23d)", "OK   brief deadline re-armed natively to +38d", "OK   no hearing and no escalation on the old dates", "OK   brief overdue on +38d -> escalated to JS (Legal)", "OK   exactly one task gp51_brief (found 1, active=[gp51_escalateBrief, gp51_brief, gp51_briefDue, gp51_rescheduled, gp51_hearingDay])", "OK   gp51_brief offered to group law-officer", "OK   exactly one task gp51_escalateBrief (found 1, active=[gp51_escalateBrief, gp51_rescheduled, gp51_hearingDay])", "OK   gp51_escalateBrief offered to group js-legal", "OK   exactly one task gp51_attend (found 1, active=[gp51_attend])", "OK   gp51_attend offered to group law-officer", "OK   adjourned: next hearing +75d armed", "OK   exactly one task gp51_brief (found 1, active=[gp51_hearingDay, gp51_rescheduled, gp51_brief, gp51_briefDue])", "OK   gp51_brief offered to group law-officer", "OK   exactly one task gp51_attend (found 1, active=[gp51_attend])", "OK   gp51_attend offered to group law-officer", "OK   exactly one task gp51_comply (found 1, active=[gp51_comply])", "OK   gp51_comply offered to group department", "OK   two hearings attended, one escalation, case closed"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 2755,
+          "scenarioMs": 1808
+        },
+        {
+          "id": "GP-52",
+          "name": "Record lifecycle after closure: retention, reopen, review, weed",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["long timer after closure", "reopen by message during retention", "review loop", "history lookup after end (business key)", "history deletion (weeding)"],
+          "nativeApis": ["HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey", "HistoryService.deleteHistoricProcessInstance"],
+          "variants": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp52_work (found 1, active=[gp52_work])", "OK   gp52_work offered to group section", "OK   exactly one task gp52_close (found 1, active=[gp52_close])", "OK   gp52_close offered to group section-officer", "OK   retention timer +3 years", "OK   reopened file back in work", "OK   exactly one task gp52_work (found 1, active=[gp52_work])", "OK   gp52_work offered to group section", "OK   exactly one task gp52_close (found 1, active=[gp52_close])", "OK   gp52_close offered to group section-officer", "OK   exactly one task gp52_review (found 1, active=[gp52_review])", "OK   gp52_review offered to group record-officer", "OK   retained: retention re-armed +5 years", "OK   exactly one task gp52_review (found 1, active=[gp52_review])", "OK   gp52_review offered to group record-officer", "OK   weeded: instance ended", "OK   reopen after closure: no waiting instance (refused)", "OK   history still finds the file by its number", "OK   after weeding the engine record is gone"],
+          "details": {
+            "note": "retention runs as a live wait state in the instance (one timer job per closed file); engine history TTL / cleanup was not used, the weed step deletes history explicitly"
+          },
+          "error": null,
+          "engineBootMs": 2206,
+          "scenarioMs": 1363
+        },
+        {
+          "id": "GP-53",
+          "name": "Physical artefact (measurement book) custody alongside the digital flow",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["gateway on a custody flag", "interrupting message boundary on a sub-process (loss)", "history of custody changes"],
+          "nativeApis": ["HistoryService.createHistoricDetailQuery().variableUpdates"],
+          "variants": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp53_record (found 1, active=[gp53_custody, gp53_record, gp53_lost])", "OK   gp53_record offered to group je", "OK   check blocked while the MB is with the JE (hand-over task instead)", "OK   loss interrupts the custody flow", "OK   exactly one task gp53_reportLoss (found 1, active=[gp53_reportLoss])", "OK   gp53_reportLoss offered to group ee", "OK   exactly one task gp53_reconstruct (found 1, active=[gp53_reconstruct])", "OK   gp53_reconstruct offered to group je", "OK   exactly one task gp53_record (found 1, active=[gp53_custody, gp53_record, gp53_lost])", "OK   gp53_record offered to group je", "OK   exactly one task gp53_transfer (found 1, active=[gp53_custody, gp53_transfer, gp53_lost])", "OK   gp53_transfer offered to group je", "OK   exactly one task gp53_check (found 1, active=[gp53_custody, gp53_check, gp53_lost])", "OK   gp53_check offered to group ae", "OK   ended after check by AE", "OK   custody trail recorded (ends with AE, at least 3 entries)"],
+          "details": {
+            "custodyHistory": ["JE", "JE", "JE", "AE"]
+          },
+          "error": null,
+          "engineBootMs": 2309,
+          "scenarioMs": 1316
+        },
+        {
+          "id": "GP-54",
+          "name": "Case split / part / link: part files as children, live parent update, linked file",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["non-interrupting message event sub-process", "call activity in/out mapping", "parent update from running child (native)", "sub-instance query (native)", "linked sibling instance (native reference / variables)", "gate on open parts"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId", "ProcessInstanceQuery.subProcessInstanceId", "RuntimeService.setVariable", "ProcessInstanceBuilder.referenceId/referenceType", "ProcessInstanceQuery.processInstanceReferenceId/Type"],
+          "variants": ["gp54-main.bpmn: expr(${execution.setVariable('openParts', openParts + 1)})", "gp54-main.bpmn: callio(in=fileNo,partSubject;out=partDecision)", "gp54-main.bpmn: expr(${execution.setVariable('openParts', openParts - 1)})"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   two part files running as children", "OK   2 parts", "OK   main file sees the part's live status", "OK   exactly one task gp54p_noting (found 1, active=[gp54p_noting])", "OK   gp54p_noting offered to group section", "OK   exactly one task gp54p_decide (found 1, active=[gp54p_decide])", "OK   gp54p_decide offered to group so", "OK   part 1 closed: openParts 1, decision mapped to main", "OK   exactly one task gp54_noting (found 1, active=[gp54_noting, gp54_partSub, gp54_part])", "OK   gp54_noting offered to group section", "OK   main disposal blocked while a part is open", "OK   exactly one task gp54p_noting (found 1, active=[gp54p_noting])", "OK   gp54p_noting offered to group section", "OK   exactly one task gp54p_decide (found 1, active=[gp54p_decide])", "OK   gp54p_decide offered to group so", "OK   exactly one task gp54_waitParts (found 1, active=[gp54_waitParts])", "OK   gp54_waitParts offered to group section", "OK   all parts closed -> disposal", "OK   linked file found from the main file", "OK   exactly one task gp54_dispose (found 1, active=[gp54_dispose])", "OK   gp54_dispose offered to group so", "OK   main ended, linked file still running"],
+          "details": {
+            "merge": "not tested: merge of files has no sourced stage (GP-coverage-validation GP-54)"
+          },
+          "error": null,
+          "engineBootMs": 2541,
+          "scenarioMs": 1515
+        },
+        {
+          "id": "GP-55",
+          "name": "Periodic verification campaign (GFR 213) that opens discrepancy cases",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["timer start event (yearly cycle)", "parallel multi-instance verification", "local variables per branch (native)", "conditional case creation by external work", "cases outlive the campaign"],
+          "nativeApis": ["TaskService.createTaskQuery().getExecutionId", "RuntimeService.getVariable", "RuntimeService.setVariablesLocal", "HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey"],
+          "variants": ["gp55-verification.bpmn: ext(stock-register)", "gp55-verification.bpmn: ext(open-discrepancy;nonexclusive)"],
+          "workarounds": [
+            {
+              "what": "per-branch result: the product writes physicalQty/bookQty as LOCAL variables of the branch (RuntimeService.setVariablesLocal on the task's execution) before completing, so concurrent completions never overwrite each other",
+              "lines": 4
+            },
+            {
+              "what": "external-worker jobs are exclusive by default; the multi-instance 'open case' task carries flowable:exclusive=\"false\" so several branches' jobs can be fetched together",
+              "lines": 1
+            }
+          ],
+          "workaroundLines": 5,
+          "checks": ["OK   campaign timer armed for 2027-03-31", "OK   one campaign started", "OK   external work on topic stock-register fetched", "OK   5 verification tasks", "OK   2 discrepancy cases opened (items 1 and 3)", "OK   exactly one task gp55_report (found 1, active=[gp55_report])", "OK   gp55_report offered to group hod", "OK   campaign ended while the cases continue", "OK   next campaign armed for 2028-03-31"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 2093,
+          "scenarioMs": 1447
+        }
+      ]
+    },
+    "operaton": {
+      "engineId": "operaton-2.2.0",
+      "generatedAt": "2026-11-04T12:47:04.836669Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "configuration": ["adapter as built by OperatonEngineAdapter: history FULL, enforceHistoryTimeToLive=false (ledger W-3)", "job executor off; timers and jobs run through executeDueJobs(); ClockUtil is JVM-wide (W-7)", "one fresh engine + database per scenario"],
+      "summary": {
+        "PASS": 10,
+        "PASS-WITH-WORKAROUND": 5,
+        "FAIL": 0,
+        "UNSUPPORTED": 0
+      },
+      "items": [
+        {
+          "id": "GP-41",
+          "name": "Security-instrument (BG) lifecycle: verify, extend or encash before expiry, release",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["message correlation by business key", "event-based gateway (message + timer)", "timeDate timer from a variable", "timer re-armed by the model (event-gateway loop)", "timer re-armed on the running instance (native)", "extension/expiry race"],
+          "nativeApis": ["RuntimeService.setVariable", "ManagementService.recalculateJobDuedate", "ManagementService.setJobDuedate"],
+          "variants": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   after bank confirmation: reminder timer due at reminderAt (+150d)", "OK   native recalculation moved the reminder to the new reminderAt (+120d)", "OK   native set-due-date moved the reminder to +125d", "OK   still exactly one timer", "OK   model re-arm: one timer, due at the new reminderAt (+335d)", "OK   exactly one task gp41_requestExtension (found 1, active=[gp41_requestExtension])", "OK   gp41_requestExtension offered to group contracts", "OK   expiry timer armed at bgExpiry (+365d)", "OK   race: extension correlated before the overdue expiry job ran -> no encashment", "OK   race: watch re-armed at +470d", "OK   exactly one task gp41_requestExtension (found 1, active=[gp41_requestExtension])", "OK   gp41_requestExtension offered to group contracts", "OK   expiry fired -> encash task", "OK   late extension after expiry is refused (no waiting subscription)", "OK   exactly one task gp41_encash (found 1, active=[gp41_encash])", "OK   gp41_encash offered to group accounts", "OK   instance ended at gp41_end_encashed", "OK   exactly one task gp41_release (found 1, active=[gp41_release])", "OK   gp41_release offered to group accounts", "OK   release path ended", "OK   non-genuine BG goes to vigilance"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 18571,
+          "scenarioMs": 2312
+        },
+        {
+          "id": "GP-42",
+          "name": "Cumulative-threshold re-sanction (10 % over AA) while work continues",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["expression service task (aggregate)", "exclusive gateway on aggregate", "non-interrupting conditional boundary event", "call activity with in/out mapping", "history of variable updates"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId", "HistoryService.createHistoricDetailQuery().variableUpdates"],
+          "variants": ["gp42-cumulative.bpmn: expr(${execution.setVariable('cumulative', cumulative + billAmount)})", "gp42-cumulative.bpmn: expr(${execution.setVariable('revisionPending', true)})", "gp42-cumulative.bpmn: callio(in=cumulative,sanctioned;out=revisedSanction)", "gp42-cumulative.bpmn: expr(${execution.setVariable('sanctioned', revisedSanction)})", "gp42-cumulative.bpmn: expr(${execution.setVariable('revisionPending', false)})"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp42_raBill (found 1, active=[gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   exactly one task gp42_raBill (found 1, active=[gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   exactly one task gp42_raBill (found 1, active=[gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   cumulative 1,050,000 within 10 %: excess noted by SE", "OK   exactly one task gp42_excessApproval (found 1, active=[gp42_excessApproval])", "OK   gp42_excessApproval offered to group se", "OK   no revision yet", "OK   exactly one task gp42_raBill (found 1, active=[gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   cumulative 1,150,000 > 110 %: revised-sanction child started", "OK   billing continues meanwhile (RA bill task open)", "OK   child exists", "OK   exactly one task gp42r_approve (found 1, active=[gp42r_approve])", "OK   gp42r_approve offered to group aa-authority", "OK   parent sanction updated from the child (out-mapping): 1,300,000", "OK   exactly one task gp42_raBill (found 1, active=[gp42_raBill])", "OK   gp42_raBill offered to group ee", "OK   revision ran exactly once", "OK   instance ended", "OK   cumulative = 1,200,000", "OK   history keeps old and new sanction [1000000, 1300000]"],
+          "details": {
+            "conditionalEvaluatedByEngineOnVariableChange": true,
+            "sanctionedHistory": [1000000, 1300000]
+          },
+          "error": null,
+          "engineBootMs": 3111,
+          "scenarioMs": 1095
+        },
+        {
+          "id": "GP-43",
+          "name": "Live contract amendment: EoT re-arms the LD timer, child updates parent, extra item added",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["non-interrupting message event sub-process", "call activity in/out mapping", "boundary timeDate timer", "parent variable update from a running child (native)", "timer re-armed on the running instance (native)", "instance modification: start an extra activity (native)", "history of variable updates"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId", "ProcessInstanceQuery.subProcessInstanceId", "RuntimeService.setVariable", "ManagementService.recalculateJobDuedate", "RuntimeService.createProcessInstanceModification().startBeforeActivity", "HistoryService.createHistoricDetailQuery().variableUpdates"],
+          "variants": ["gp43-contract.bpmn: callio(in=amendType,proposedCompletion,extraAmount,completionDate;out=approved,approvedCompletion,approvedExtra)", "gp43-contract.bpmn: expr(${execution.setVariable('completionDate', approvedCompletion)})", "gp43-contract.bpmn: expr(${execution.setVariable('contractValue', contractValue + approvedExtra)})"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp43_execution (found 1, active=[gp43_execution])", "OK   LD timer at the stipulated date", "OK   amendment child started", "OK   child finds its parent", "OK   parent sees the child's update while the child is still running", "OK   exactly one task gp43a_examine (found 1, active=[gp43a_examine])", "OK   gp43a_examine offered to group ee", "OK   exactly one task gp43a_approve (found 1, active=[gp43a_approve])", "OK   gp43a_approve offered to group se", "OK   parent completionDate updated from the child result", "OK   without engine action the LD timer still points at the OLD date (timers are not re-evaluated)", "OK   LD timer re-armed to the extended date", "OK   extra item task created in the running instance", "OK   main work task still exactly one", "OK   LD timer still at the extended date after the modification", "OK   exactly one task gp43a_examine (found 1, active=[gp43a_examine])", "OK   gp43a_examine offered to group ee", "OK   exactly one task gp43a_approve (found 1, active=[gp43a_approve])", "OK   gp43a_approve offered to group se", "OK   contract value increased to 10,450,000", "OK   exactly one task gp43_extraItem (found 1, active=[gp43_execution, gp43_extraItem])", "OK   gp43_extraItem offered to group ee", "OK   no LD notice the day after the OLD date", "OK   LD notice the day after the EXTENDED date", "OK   history keeps old and new completion date", "OK   exactly one task gp43_ldNotice (found 1, active=[gp43_execution, gp43_ldNotice])", "OK   gp43_ldNotice offered to group ee", "OK   exactly one task gp43_execution (found 1, active=[gp43_execution])", "OK   gp43_execution offered to group ee", "OK   exactly one task gp43_finalBill (found 1, active=[gp43_finalBill])", "OK   gp43_finalBill offered to group accounts", "OK   contract ended"],
+          "details": {
+            "ldTimerFollowedVariableByItself": false,
+            "mainWorkTaskKeptItsId": true,
+            "completionDateHistory": ["Tue Jan 04 10:00:00 IST 2028", "Mon Apr 03 10:00:00 IST 2028", "Mon Apr 03 10:00:00 IST 2028"]
+          },
+          "error": null,
+          "engineBootMs": 3146,
+          "scenarioMs": 1791
+        },
+        {
+          "id": "GP-44",
+          "name": "Deemed outcome on timeout (RTI s7(2) deemed refusal opens the appeal)",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["interrupting boundary timer (P30D)", "outcome as an event in history", "event-based gateway appeal window"],
+          "nativeApis": [],
+          "variants": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   deadline at +30 days", "OK   exactly one task gp44_pioDecide (found 1, active=[gp44_pioDecide])", "OK   deemed refusal reached", "OK   PIO task withdrawn", "OK   late decision by the PIO is blocked (task no longer exists)", "OK   first appeal goes to the FAA", "OK   exactly one task gp44_pioDecide (found 1, active=[gp44_pioDecide])", "OK   gp44_pioDecide offered to group pio", "OK   decided in time ends normally", "OK   no appeal within 30 days of the deemed refusal -> lapsed"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 3267,
+          "scenarioMs": 596
+        },
+        {
+          "id": "GP-45",
+          "name": "Pausable statutory clock (RTI s7(3) fee period excluded) with remaining-time resume",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["interrupting boundary timeDate timer", "instance suspension (native)", "timer due date set on resume (native)", "remaining-time arithmetic"],
+          "nativeApis": ["RuntimeService.suspendProcessInstanceById", "ManagementService.setJobDuedate", "RuntimeService.activateProcessInstanceById"],
+          "variants": [],
+          "workarounds": [
+            {
+              "what": "remaining time (due - pausedAt) and net elapsed time are computed and kept by the product; neither engine keeps a paused-clock balance",
+              "lines": 6
+            },
+            {
+              "what": "re-dating the suspended timer and activating cannot share one transaction; re-date while suspended, then activate in a second transaction",
+              "lines": 3
+            }
+          ],
+          "workaroundLines": 9,
+          "checks": ["OK   exactly one task gp45_process (found 1, active=[gp45_process])", "OK   instance suspended", "OK   SLA timer suspended with the instance", "OK   officer cannot complete the task while the clock is stopped", "OK   suspended timer did not fire past its original due date", "OK   resumed with the remaining 20 days: due = day 65", "OK   day 64: no breach, net elapsed 29 days", "OK   day 66: SLA breached after 30 net days"],
+          "details": {
+            "resumeAttempts": ["A: org.operaton.bpm.engine.OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE TimerEntity[11]' failed. Entity was updated by another transaction concurrently. @ E16cPatternTest.java:320", "A: afterwards suspended=true due=2027-02-03T04:30:00Z", "B1: no error, due now 2027-03-10T04:30:00Z"],
+            "resumePath": "B: set due date while suspended, then activate (two transactions, no window)",
+            "netElapsedDays": 29
+          },
+          "error": null,
+          "engineBootMs": 2482,
+          "scenarioMs": 418
+        },
+        {
+          "id": "GP-46",
+          "name": "Third-party objection window (RTI s11 / LA s15): per-party message or window close",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["parallel multi-instance sub-process (loopCardinality)", "event-based gateway per party", "per-branch message delivery (native, by loopCounter)", "timeDate window"],
+          "nativeApis": ["RuntimeService.createExecutionQuery().messageEventSubscriptionName", "RuntimeService.getVariable", "RuntimeService.createExecutionQuery().variableValueEquals (local)", "RuntimeService.setVariablesLocal", "RuntimeService.messageEventReceived(messageName, executionId)"],
+          "variants": [],
+          "workarounds": [
+            {
+              "what": "per-party correlation: the product finds the waiting execution whose loopCounter is the party and delivers to that execution (RuntimeService.messageEventReceived(name, executionId)); the adapter's correlateMessage(businessKey) is ambiguous with several branches waiting",
+              "lines": 12
+            }
+          ],
+          "workaroundLines": 12,
+          "checks": ["OK   exactly one task gp46_notice (found 1, active=[gp46_notice])", "OK   gp46_notice offered to group pio", "OK   three party branches waiting", "OK   party 0 objects", "OK   party 2 objects", "OK   decision waits for the silent party", "OK   window closed -> decision", "OK   2 objections, 1 silent", "OK   late objection finds no waiting branch", "OK   exactly one task gp46_notice (found 1, active=[gp46_notice])", "OK   gp46_notice offered to group pio", "OK   all parties answered early -> decision at once"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 3850,
+          "scenarioMs": 1197
+        },
+        {
+          "id": "GP-47",
+          "name": "Provisional result -> paid challenge window -> bulk recompute -> final",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["timer-gated window", "one instance per challenge with fee callback", "parallel multi-instance external work (bulk)", "product result table in the engine transaction"],
+          "nativeApis": [],
+          "variants": ["gp47-answer-key.bpmn: ext(recompute;nonexclusive)", "probe-mi-external.bpmn: ext(probe-mi)"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp47_publishProvisional (found 1, active=[gp47_publishProvisional])", "OK   gp47_publishProvisional offered to group exam-cell", "OK   late fee after the window is refused", "OK   4 paid challenges admitted, 2 lapsed", "OK   exactly one task gp47_review (found 1, active=[gp47_review])", "OK   gp47_review offered to group expert-committee", "OK   all 300 candidates recomputed", "OK   recomputed scores correct (+2 where candidate % 3 == 0)", "OK   exactly one task gp47_publishFinal (found 1, active=[gp47_publishFinal])", "OK   gp47_publishFinal offered to group exam-cell", "OK   final published, instance ended"],
+          "details": {
+            "probeDefaultMiFetch10": 3,
+            "probeDefaultMiFetch1": 0,
+            "candidates": 300,
+            "recomputeMs": 14294,
+            "workItemsWithoutLoopCounterVariable": 0
+          },
+          "error": null,
+          "engineBootMs": 2969,
+          "scenarioMs": 18187
+        },
+        {
+          "id": "GP-48",
+          "name": "Ledger shared across instances and years (leave account) under concurrency",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["external work + product ledger in the engine transaction", "BPMN error boundary on external work", "8 concurrent workers on one ledger row", "idempotent debit", "timer start event (yearly cycle)"],
+          "nativeApis": [],
+          "variants": ["gp48-leave.bpmn: ext(leave-debit)", "gp48-yearend.bpmn: ext(leave-carry-forward)"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly one task gp48_approve (found 1, active=[gp48_approve])", "OK   gp48_approve offered to group controlling-officer", "OK   exactly 20 granted, 10 refused (balance 20, 30 requests of 1 day)", "OK   ledger balance 0, never negative", "OK   20 instances granted, 10 routed to 'inform' by the BPMN error", "OK   replayed debit of an applied request is a no-op", "OK   year-end timer armed for 2027-12-31T18:30Z (1 Jan IST)", "OK   year-end instance started", "OK   external work on topic leave-carry-forward fetched", "OK   2028 balances: E1 = 30 (0 + 30), E2 = 45 (cap 15 + 30)", "OK   next year-end timer armed for 2028-12-31T18:30Z"],
+          "details": {
+            "threads": 8,
+            "ledgerMs": 2100,
+            "retriesAfterConflict": 0,
+            "errors": []
+          },
+          "error": null,
+          "engineBootMs": 2783,
+          "scenarioMs": 7297
+        },
+        {
+          "id": "GP-49",
+          "name": "Partial batch failure: per-item result, routing by reason code, resend only failures",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["parallel multi-instance sub-process", "per-item message delivery to one branch (native)", "local variable per branch (native)", "gateway routing by reason code", "loop back with a smaller batch", "product item table"],
+          "nativeApis": ["RuntimeService.createExecutionQuery().messageEventSubscriptionName", "RuntimeService.getVariable", "RuntimeService.createExecutionQuery().variableValueEquals (local)", "RuntimeService.setVariablesLocal", "RuntimeService.messageEventReceived(messageName, executionId)"],
+          "variants": ["gp49-dbt.bpmn: ext(dbt-send)", "gp49-dbt.bpmn: ext(dbt-close-round)"],
+          "workarounds": [
+            {
+              "what": "per-item correlation: the product finds the waiting branch by its loopCounter and delivers to that execution, with the result as LOCAL variables of that branch (setVariablesLocal on the branch execution found by its local loopCounter + messageEventReceived, one transaction)",
+              "lines": 14
+            }
+          ],
+          "workaroundLines": 14,
+          "checks": ["OK   external work on topic dbt-send fetched", "OK   round 1: one waiting branch per sent item (10)", "OK   ACCOUNT_INVALID -> bank desk", "OK   AADHAAR_NOT_SEEDED -> DBT cell", "OK   other reason -> DDO", "OK   exactly one task gp49_fixAccount (found 1, active=[gp49_fixAccount, gp49_seedAadhaar, gp49_ddoReview])", "OK   gp49_fixAccount offered to group bank-desk", "OK   exactly one task gp49_seedAadhaar (found 1, active=[gp49_seedAadhaar, gp49_ddoReview])", "OK   gp49_seedAadhaar offered to group dbt-cell", "OK   exactly one task gp49_ddoReview (found 1, active=[gp49_ddoReview])", "OK   gp49_ddoReview offered to group ddo", "OK   external work on topic dbt-close-round fetched", "OK   external work on topic dbt-send fetched", "OK   round 2: one waiting branch per sent item (3)", "OK   external work on topic dbt-close-round fetched", "OK   round 2 resent exactly the 3 failures [7, 8, 9]", "OK   13 per-item results correlated", "OK   all items paid, batch instance ended"],
+          "details": {
+            "deliveries": 13,
+            "sentInRound2": [7, 8, 9]
+          },
+          "error": null,
+          "engineBootMs": 3627,
+          "scenarioMs": 1807
+        },
+        {
+          "id": "GP-50",
+          "name": "Return to the originating seat under the same identity (treasury objection loop)",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["message correlation by business key", "loop across a system boundary", "expression counter"],
+          "nativeApis": [],
+          "variants": ["gp50-objection-loop.bpmn: ext(treasury-submit)", "gp50-objection-loop.bpmn: expr(${execution.setVariable('objectionCount', objectionCount + 1)})"],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   exactly one task gp50_prepare (found 1, active=[gp50_prepare])", "OK   gp50_prepare offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   BILL-1 verdict reached its own instance", "OK   BILL-2 verdict reached its own instance", "OK   BILL-4 verdict reached its own instance", "OK   BILL-5 verdict reached its own instance", "OK   objection 0 correlated to the same instance", "OK   verdict for a bill not waiting is refused", "OK   exactly one task gp50_rectify (found 1, active=[gp50_rectify])", "OK   gp50_rectify offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   objection 1 correlated to the same instance", "OK   verdict for a bill not waiting is refused", "OK   exactly one task gp50_rectify (found 1, active=[gp50_rectify])", "OK   gp50_rectify offered to group ddo", "OK   external work on topic treasury-submit fetched", "OK   BILL-3 passed after 2 objections, same instance id and business key", "OK   3 submissions on the one identity", "OK   all 5 bills ended"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 2732,
+          "scenarioMs": 1409
+        },
+        {
+          "id": "GP-51",
+          "name": "Hearing series with dates set by the court; brief deadline follows a reschedule",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["message-supplied timer dates", "event-gateway loop (model re-arm of the hearing timer)", "boundary timer re-armed on the running instance (native)", "parallel branches", "adjournment loop"],
+          "nativeApis": ["ManagementService.recalculateJobDuedate"],
+          "variants": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   hearing timer +30d, brief deadline +23d", "OK   hearing timer re-armed by the model to +45d", "OK   brief deadline NOT moved by the model (still +23d)", "OK   brief deadline re-armed natively to +38d", "OK   no hearing and no escalation on the old dates", "OK   brief overdue on +38d -> escalated to JS (Legal)", "OK   exactly one task gp51_brief (found 1, active=[gp51_brief, gp51_waitHearing, gp51_escalateBrief])", "OK   gp51_brief offered to group law-officer", "OK   exactly one task gp51_escalateBrief (found 1, active=[gp51_waitHearing, gp51_escalateBrief])", "OK   gp51_escalateBrief offered to group js-legal", "OK   exactly one task gp51_attend (found 1, active=[gp51_attend])", "OK   gp51_attend offered to group law-officer", "OK   adjourned: next hearing +75d armed", "OK   exactly one task gp51_brief (found 1, active=[gp51_brief, gp51_waitHearing])", "OK   gp51_brief offered to group law-officer", "OK   exactly one task gp51_attend (found 1, active=[gp51_attend])", "OK   gp51_attend offered to group law-officer", "OK   exactly one task gp51_comply (found 1, active=[gp51_comply])", "OK   gp51_comply offered to group department", "OK   two hearings attended, one escalation, case closed"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 3971,
+          "scenarioMs": 1364
+        },
+        {
+          "id": "GP-52",
+          "name": "Record lifecycle after closure: retention, reopen, review, weed",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["long timer after closure", "reopen by message during retention", "review loop", "history lookup after end (business key)", "history deletion (weeding)"],
+          "nativeApis": ["HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey", "HistoryService.deleteHistoricProcessInstance"],
+          "variants": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp52_work (found 1, active=[gp52_work])", "OK   gp52_work offered to group section", "OK   exactly one task gp52_close (found 1, active=[gp52_close])", "OK   gp52_close offered to group section-officer", "OK   retention timer +3 years", "OK   reopened file back in work", "OK   exactly one task gp52_work (found 1, active=[gp52_work])", "OK   gp52_work offered to group section", "OK   exactly one task gp52_close (found 1, active=[gp52_close])", "OK   gp52_close offered to group section-officer", "OK   exactly one task gp52_review (found 1, active=[gp52_review])", "OK   gp52_review offered to group record-officer", "OK   retained: retention re-armed +5 years", "OK   exactly one task gp52_review (found 1, active=[gp52_review])", "OK   gp52_review offered to group record-officer", "OK   weeded: instance ended", "OK   reopen after closure: no waiting instance (refused)", "OK   history still finds the file by its number", "OK   after weeding the engine record is gone"],
+          "details": {
+            "note": "retention runs as a live wait state in the instance (one timer job per closed file); engine history TTL / cleanup was not used, the weed step deletes history explicitly"
+          },
+          "error": null,
+          "engineBootMs": 3121,
+          "scenarioMs": 1292
+        },
+        {
+          "id": "GP-53",
+          "name": "Physical artefact (measurement book) custody alongside the digital flow",
+          "result": "PASS",
+          "unsupportedReason": null,
+          "features": ["gateway on a custody flag", "interrupting message boundary on a sub-process (loss)", "history of custody changes"],
+          "nativeApis": ["HistoryService.createHistoricDetailQuery().variableUpdates"],
+          "variants": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "checks": ["OK   exactly one task gp53_record (found 1, active=[gp53_record])", "OK   gp53_record offered to group je", "OK   check blocked while the MB is with the JE (hand-over task instead)", "OK   loss interrupts the custody flow", "OK   exactly one task gp53_reportLoss (found 1, active=[gp53_reportLoss])", "OK   gp53_reportLoss offered to group ee", "OK   exactly one task gp53_reconstruct (found 1, active=[gp53_reconstruct])", "OK   gp53_reconstruct offered to group je", "OK   exactly one task gp53_record (found 1, active=[gp53_record])", "OK   gp53_record offered to group je", "OK   exactly one task gp53_transfer (found 1, active=[gp53_transfer])", "OK   gp53_transfer offered to group je", "OK   exactly one task gp53_check (found 1, active=[gp53_check])", "OK   gp53_check offered to group ae", "OK   ended after check by AE", "OK   custody trail recorded (ends with AE, at least 3 entries)"],
+          "details": {
+            "custodyHistory": ["JE", "JE", "JE", "AE"]
+          },
+          "error": null,
+          "engineBootMs": 3239,
+          "scenarioMs": 909
+        },
+        {
+          "id": "GP-54",
+          "name": "Case split / part / link: part files as children, live parent update, linked file",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["non-interrupting message event sub-process", "call activity in/out mapping", "parent update from running child (native)", "sub-instance query (native)", "linked sibling instance (native reference / variables)", "gate on open parts"],
+          "nativeApis": ["ProcessInstanceQuery.superProcessInstanceId", "ProcessInstanceQuery.subProcessInstanceId", "RuntimeService.setVariable", "ProcessInstanceQuery.variableValueEquals"],
+          "variants": ["gp54-main.bpmn: expr(${execution.setVariable('openParts', openParts + 1)})", "gp54-main.bpmn: callio(in=fileNo,partSubject;out=partDecision)", "gp54-main.bpmn: expr(${execution.setVariable('openParts', openParts - 1)})"],
+          "workarounds": [
+            {
+              "what": "no reference field on a process instance: the link is two variables (linkRefId, linkRefType) queried with variableValueEquals",
+              "lines": 4
+            }
+          ],
+          "workaroundLines": 4,
+          "checks": ["OK   two part files running as children", "OK   2 parts", "OK   main file sees the part's live status", "OK   exactly one task gp54p_noting (found 1, active=[gp54p_noting])", "OK   gp54p_noting offered to group section", "OK   exactly one task gp54p_decide (found 1, active=[gp54p_decide])", "OK   gp54p_decide offered to group so", "OK   part 1 closed: openParts 1, decision mapped to main", "OK   exactly one task gp54_noting (found 1, active=[gp54_noting, gp54_part])", "OK   gp54_noting offered to group section", "OK   main disposal blocked while a part is open", "OK   exactly one task gp54p_noting (found 1, active=[gp54p_noting])", "OK   gp54p_noting offered to group section", "OK   exactly one task gp54p_decide (found 1, active=[gp54p_decide])", "OK   gp54p_decide offered to group so", "OK   exactly one task gp54_waitParts (found 1, active=[gp54_waitParts])", "OK   gp54_waitParts offered to group section", "OK   all parts closed -> disposal", "OK   linked file found from the main file", "OK   exactly one task gp54_dispose (found 1, active=[gp54_dispose])", "OK   gp54_dispose offered to group so", "OK   main ended, linked file still running"],
+          "details": {
+            "merge": "not tested: merge of files has no sourced stage (GP-coverage-validation GP-54)"
+          },
+          "error": null,
+          "engineBootMs": 3893,
+          "scenarioMs": 1549
+        },
+        {
+          "id": "GP-55",
+          "name": "Periodic verification campaign (GFR 213) that opens discrepancy cases",
+          "result": "PASS-WITH-WORKAROUND",
+          "unsupportedReason": null,
+          "features": ["timer start event (yearly cycle)", "parallel multi-instance verification", "local variables per branch (native)", "conditional case creation by external work", "cases outlive the campaign"],
+          "nativeApis": ["TaskService.createTaskQuery().getExecutionId", "RuntimeService.getVariable", "RuntimeService.setVariablesLocal", "HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey"],
+          "variants": ["gp55-verification.bpmn: ext(stock-register)", "gp55-verification.bpmn: ext(open-discrepancy;nonexclusive)"],
+          "workarounds": [
+            {
+              "what": "per-branch result: the product writes physicalQty/bookQty as LOCAL variables of the branch (RuntimeService.setVariablesLocal on the task's execution) before completing, so concurrent completions never overwrite each other",
+              "lines": 4
+            }
+          ],
+          "workaroundLines": 4,
+          "checks": ["OK   campaign timer armed for 2027-03-31", "OK   one campaign started", "OK   external work on topic stock-register fetched", "OK   5 verification tasks", "OK   2 discrepancy cases opened (items 1 and 3)", "OK   exactly one task gp55_report (found 1, active=[gp55_report])", "OK   gp55_report offered to group hod", "OK   campaign ended while the cases continue", "OK   next campaign armed for 2028-03-31"],
+          "details": {},
+          "error": null,
+          "engineBootMs": 3842,
+          "scenarioMs": 1214
+        }
+      ]
+    }
+  }
+}

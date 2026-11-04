@@ -1,0 +1,721 @@
+{
+ "experiment": "E13",
+ "title": "Project viability and governance",
+ "date": "2026-11-04",
+ "window_end": "2026-11-04",
+ "method": {
+  "api": "GitHub REST API (authenticated gh token, read-only). Commits on default branch; search API for issue/PR counts; first response = first non-author, non-bot comment, else first non-author issue event (label/assign/close/reference); sample = up to 50 issues closed in last 182 days.",
+  "score": "recency 0-2 (<3m=2, <12m=1) + cadence 0-2 (>=6 GA/24m=2, 2-5=1) + human commits/12m 0-1.5 (>=500=1.5, 100-499=1) + contributors 0-0.5 (>=20) + bus 0-1.5 (top-3 share <60%=1.5, 60-80%=0.75, >80%=0) + response 0-1 (median <24h=1, <72h=0.75, <168h=0.5) + governance 0-1 (legal entity + funding=1, community/legal entity in progress=0.5) + backlog 0-0.5 (open/(open+closed) <15%=0.5, 15-30%=0.25)"
+ },
+ "operaton": {
+  "license": "Apache-2.0",
+  "default_branch": "main",
+  "stars": 515,
+  "forks": 139,
+  "created_at": "2024-10-15T20:30:37Z",
+  "pushed_at": "2026-11-04T07:03:00Z",
+  "has_discussions": false,
+  "releases_24m": [
+   {
+    "tag": "v1.0.0-beta-2",
+    "published": "2024-12-03",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.0.0-beta-3",
+    "published": "2025-01-31",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.0.0-beta-4",
+    "published": "2025-05-07",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.0.0-beta-5",
+    "published": "2025-08-29",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.0.0-rc-1",
+    "published": "2025-10-15",
+    "prerelease": true
+   },
+   {
+    "tag": "v1.0.0-rc-2",
+    "published": "2025-10-31",
+    "prerelease": true
+   },
+   {
+    "tag": "v1.0.0",
+    "published": "2025-11-07",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.0.1",
+    "published": "2025-11-28",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.0.2",
+    "published": "2025-12-19",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.0.3",
+    "published": "2026-01-23",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.0.0-M2",
+    "published": "2026-02-05",
+    "prerelease": true
+   },
+   {
+    "tag": "v2.0.0-M3",
+    "published": "2026-02-20",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.1.0",
+    "published": "2026-02-20",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.1.1",
+    "published": "2026-03-20",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.0.0",
+    "published": "2026-03-20",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.1.2",
+    "published": "2026-04-24",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.1.0",
+    "published": "2026-04-24",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.1.3",
+    "published": "2026-05-22",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.1.1",
+    "published": "2026-05-22",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.1.4",
+    "published": "2026-06-19",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.1.2",
+    "published": "2026-06-19",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.1.3",
+    "published": "2026-07-24",
+    "prerelease": false
+   },
+   {
+    "tag": "v1.1.5",
+    "published": "2026-07-24",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.1.4",
+    "published": "2026-08-21",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.1.5",
+    "published": "2026-09-18",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.1.6",
+    "published": "2026-10-23",
+    "prerelease": false
+   },
+   {
+    "tag": "v2.2.0",
+    "published": "2026-10-23",
+    "prerelease": false
+   },
+   {
+    "tag": "2.2.1-SNAPSHOT",
+    "published": "2026-10-26",
+    "prerelease": true
+   },
+   {
+    "tag": "2.3.0-SNAPSHOT",
+    "published": "2026-10-27",
+    "prerelease": true
+   }
+  ],
+  "latest_release": [
+   "2.3.0-SNAPSHOT",
+   "2026-10-27"
+  ],
+  "commits_12m": 2394,
+  "commits_12m_humans": 1406,
+  "contributors_12m_all": 36,
+  "contributors_12m_humans": 34,
+  "top_authors_12m": [
+   [
+    "kthoms",
+    1020
+   ],
+   [
+    "dependabot[bot]",
+    941
+   ],
+   [
+    "Copilot",
+    94
+   ],
+   [
+    "javahippie",
+    71
+   ],
+   [
+    "github-actions[bot]",
+    47
+   ],
+   [
+    "hauptmedia",
+    44
+   ],
+   [
+    "LimpBizgit",
+    42
+   ],
+   [
+    "cachescrubber",
+    38
+   ],
+   [
+    "Karsten Thoms",
+    25
+   ],
+   [
+    "antonAtGit",
+    15
+   ],
+   [
+    "lambdaschmied2",
+    12
+   ],
+   [
+    "laurinbirchler",
+    7
+   ]
+  ],
+  "bots_12m": {
+   "github-actions[bot]": 47,
+   "dependabot[bot]": 941
+  },
+  "bus_top3_share_all": 0.858,
+  "bus_top3_share_humans": 0.843,
+  "top1_share_humans": 0.725,
+  "authors_for_50pct_humans": 1,
+  "commits_per_month_12m": {
+   "2025-11": 228,
+   "2025-12": 296,
+   "2026-01": 419,
+   "2026-02": 257,
+   "2026-03": 130,
+   "2026-04": 139,
+   "2026-05": 104,
+   "2026-06": 124,
+   "2026-07": 128,
+   "2026-08": 145,
+   "2026-09": 163,
+   "2026-10": 234,
+   "2026-11": 27
+  },
+  "commits_6m": 912,
+  "issues_open": 44,
+  "issues_closed": 575,
+  "prs_open": 22,
+  "prs_merged_12m": 2062,
+  "issues_opened_12m": 199,
+  "issues_closed_12m": 209,
+  "issues_closed_6m": 75,
+  "first_response_sample_size": 50,
+  "first_response_median_h": 76.2,
+  "first_response_p75_h": 182.2,
+  "first_response_by_comment_only_median_h": 55.5,
+  "first_response_none": 10,
+  "first_response_sample": [
+   {
+    "n": 4001,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3985,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3984,
+    "resp_h": 121.4,
+    "kind": "event:referenced"
+   },
+   {
+    "n": 3983,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3981,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3974,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3970,
+    "resp_h": 142.5,
+    "kind": "event:referenced"
+   },
+   {
+    "n": 3967,
+    "resp_h": 0.3,
+    "kind": "comment"
+   },
+   {
+    "n": 3914,
+    "resp_h": 15.6,
+    "kind": "event:milestoned"
+   },
+   {
+    "n": 3873,
+    "resp_h": 30.3,
+    "kind": "comment"
+   },
+   {
+    "n": 3872,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3870,
+    "resp_h": 166.1,
+    "kind": "event:milestoned"
+   },
+   {
+    "n": 3863,
+    "resp_h": 36.4,
+    "kind": "event:referenced"
+   },
+   {
+    "n": 3858,
+    "resp_h": 105.6,
+    "kind": "event:closed"
+   },
+   {
+    "n": 3856,
+    "resp_h": 5.5,
+    "kind": "comment"
+   },
+   {
+    "n": 3855,
+    "resp_h": 24.0,
+    "kind": "event:labeled"
+   },
+   {
+    "n": 3852,
+    "resp_h": 24.0,
+    "kind": "event:labeled"
+   },
+   {
+    "n": 3830,
+    "resp_h": 3.8,
+    "kind": "comment"
+   },
+   {
+    "n": 3713,
+    "resp_h": 134.9,
+    "kind": "comment"
+   },
+   {
+    "n": 3702,
+    "resp_h": 15.3,
+    "kind": "event:referenced"
+   },
+   {
+    "n": 3689,
+    "resp_h": 880.6,
+    "kind": "event:milestoned"
+   },
+   {
+    "n": 3687,
+    "resp_h": 880.7,
+    "kind": "event:milestoned"
+   },
+   {
+    "n": 3677,
+    "resp_h": 627.8,
+    "kind": "comment"
+   },
+   {
+    "n": 3667,
+    "resp_h": 106.3,
+    "kind": "comment"
+   },
+   {
+    "n": 3659,
+    "resp_h": 89.1,
+    "kind": "event:closed"
+   },
+   {
+    "n": 3645,
+    "resp_h": 164.5,
+    "kind": "event:closed"
+   },
+   {
+    "n": 3635,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3632,
+    "resp_h": 188.5,
+    "kind": "event:closed"
+   },
+   {
+    "n": 3631,
+    "resp_h": 188.9,
+    "kind": "event:closed"
+   },
+   {
+    "n": 3630,
+    "resp_h": 214.9,
+    "kind": "event:closed"
+   },
+   {
+    "n": 3629,
+    "resp_h": 218.8,
+    "kind": "event:closed"
+   },
+   {
+    "n": 3628,
+    "resp_h": 48.8,
+    "kind": "event:closed"
+   },
+   {
+    "n": 3627,
+    "resp_h": 48.7,
+    "kind": "event:closed"
+   },
+   {
+    "n": 3611,
+    "resp_h": 63.3,
+    "kind": "comment"
+   },
+   {
+    "n": 3610,
+    "resp_h": 63.3,
+    "kind": "comment"
+   },
+   {
+    "n": 3594,
+    "resp_h": 182.7,
+    "kind": "event:referenced"
+   },
+   {
+    "n": 3593,
+    "resp_h": 5.1,
+    "kind": "event:labeled"
+   },
+   {
+    "n": 3573,
+    "resp_h": 120.2,
+    "kind": "event:milestoned"
+   },
+   {
+    "n": 3557,
+    "resp_h": 181.4,
+    "kind": "comment"
+   },
+   {
+    "n": 3555,
+    "resp_h": 833.2,
+    "kind": "comment"
+   },
+   {
+    "n": 3553,
+    "resp_h": 182.5,
+    "kind": "comment"
+   },
+   {
+    "n": 3552,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3537,
+    "resp_h": 5.3,
+    "kind": "comment"
+   },
+   {
+    "n": 3521,
+    "resp_h": 32.1,
+    "kind": "comment"
+   },
+   {
+    "n": 3514,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3480,
+    "resp_h": 20.5,
+    "kind": "comment"
+   },
+   {
+    "n": 3479,
+    "resp_h": 27.1,
+    "kind": "comment"
+   },
+   {
+    "n": 3295,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 3274,
+    "resp_h": 12.1,
+    "kind": "event:assigned"
+   },
+   {
+    "n": 3215,
+    "resp_h": 55.5,
+    "kind": "comment"
+   }
+  ],
+  "repo_security_advisories": []
+ },
+ "flowable": {
+  "license": "Apache-2.0",
+  "default_branch": "main",
+  "stars": 9635,
+  "forks": 2904,
+  "created_at": "2016-10-13T07:21:43Z",
+  "pushed_at": "2026-10-18T02:10:15Z",
+  "has_discussions": false,
+  "releases_24m": [
+   {
+    "tag": "flowable-7.2.0",
+    "published": "2025-08-21",
+    "prerelease": false
+   },
+   {
+    "tag": "flowable-8.0.0",
+    "published": "2026-02-27",
+    "prerelease": false
+   }
+  ],
+  "latest_release": [
+   "flowable-8.0.0",
+   "2026-02-27"
+  ],
+  "commits_12m": 166,
+  "commits_12m_humans": 165,
+  "contributors_12m_all": 21,
+  "contributors_12m_humans": 20,
+  "top_authors_12m": [
+   [
+    "filiphr",
+    71
+   ],
+   [
+    "tijsrademakers",
+    52
+   ],
+   [
+    "vzickner",
+    8
+   ],
+   [
+    "jbarrez",
+    7
+   ],
+   [
+    "dbmalkovsky",
+    5
+   ],
+   [
+    "WelschChristopher",
+    4
+   ],
+   [
+    "BertMatthys",
+    3
+   ],
+   [
+    "panshaobin",
+    3
+   ],
+   [
+    "NathanL3",
+    1
+   ],
+   [
+    "hippi345",
+    1
+   ],
+   [
+    "chaserb",
+    1
+   ],
+   [
+    "roumn",
+    1
+   ]
+  ],
+  "bots_12m": {
+   "dependabot[bot]": 1
+  },
+  "bus_top3_share_all": 0.789,
+  "bus_top3_share_humans": 0.794,
+  "top1_share_humans": 0.43,
+  "authors_for_50pct_humans": 2,
+  "commits_per_month_12m": {
+   "2025-11": 13,
+   "2025-12": 16,
+   "2026-01": 12,
+   "2026-02": 18,
+   "2026-03": 20,
+   "2026-04": 24,
+   "2026-05": 12,
+   "2026-06": 6,
+   "2026-07": 15,
+   "2026-08": 14,
+   "2026-09": 4,
+   "2026-10": 12
+  },
+  "commits_6m": 63,
+  "issues_open": 382,
+  "issues_closed": 1045,
+  "prs_open": 62,
+  "prs_merged_12m": 57,
+  "issues_opened_12m": 56,
+  "issues_closed_12m": 31,
+  "issues_closed_6m": 9,
+  "first_response_sample_size": 9,
+  "first_response_median_h": 9.2,
+  "first_response_p75_h": 135.9,
+  "first_response_by_comment_only_median_h": 8.3,
+  "first_response_none": 2,
+  "first_response_sample": [
+   {
+    "n": 4304,
+    "resp_h": 8.3,
+    "kind": "comment"
+   },
+   {
+    "n": 4303,
+    "resp_h": 0.1,
+    "kind": "comment"
+   },
+   {
+    "n": 4297,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 4278,
+    "resp_h": null,
+    "self_closed_or_bot_only": true
+   },
+   {
+    "n": 4257,
+    "resp_h": 135.9,
+    "kind": "event:closed"
+   },
+   {
+    "n": 4218,
+    "resp_h": 9.2,
+    "kind": "comment"
+   },
+   {
+    "n": 4213,
+    "resp_h": 2.0,
+    "kind": "comment"
+   },
+   {
+    "n": 4211,
+    "resp_h": 23.5,
+    "kind": "comment"
+   },
+   {
+    "n": 2719,
+    "resp_h": 51402.7,
+    "kind": "event:referenced"
+   }
+  ],
+  "repo_security_advisories": []
+ },
+ "derived": {
+  "operaton": {
+   "ga_releases_24m": 19,
+   "pre_releases_24m": "betas 4 (beta-2..5), RC 2, milestones 2, SNAPSHOT tags 2",
+   "kthoms_incl_alias_share_humans": 0.743,
+   "note": "Copilot (94 commits) counted as human in the raw share; excluding it, kthoms+alias = 79.6% and top-3 = 86.5%",
+   "support_policy": "Each minor supported ~6 months, no LTS (https://operaton.org/roadmap, https://operaton.org/faq)",
+   "governing_entity": "Community fork of Camunda 7 CE; \"legal work in progress\", planned non-profit; 14 listed independent service providers (https://operaton.org/service-providers)",
+   "score_breakdown": {
+    "recency": 2,
+    "cadence": 2,
+    "commits": 1.5,
+    "contributors": 0.5,
+    "bus": 0,
+    "response": 0.5,
+    "governance": 0.5,
+    "backlog": 0.5
+   },
+   "score": 7.5
+  },
+  "flowable": {
+   "ga_releases_24m": 2,
+   "maven_central_versions_after_7.1.0": [
+    "7.2.0",
+    "8.0.0"
+   ],
+   "no_oss_patch_release_since": "2026-02-27",
+   "note": "Only 9 issues closed in 6 months, so the response median is low confidence.",
+   "support_policy": "No OSS maintenance/LTS policy found; vendor SLAs tied to subscription (https://www.flowable.com/support)",
+   "governing_entity": "Flowable AG (company-backed open core; engines Apache-2.0, enterprise platform commercial) (https://www.flowable.com/open-source)",
+   "score_breakdown": {
+    "recency": 1,
+    "cadence": 1,
+    "commits": 1,
+    "contributors": 0.5,
+    "bus": 0.75,
+    "response": 1,
+    "governance": 1,
+    "backlog": 0.25
+   },
+   "score": 6.5
+  }
+ },
+ "knock_out": {
+  "operaton": "PASS (AMBER: one maintainer ~73-80% of human commits; 34 human contributors)",
+  "flowable": "PASS (last release 2026-02-27, within 12 months)"
+ }
+}

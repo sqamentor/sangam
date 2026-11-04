@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp54">
+  <!-- GP-54 case split / part / link: a part file is a child (call activity) started on demand by a non-interrupting
+       message event sub-process; disposal of the main file is gated on all parts being closed. -->
+  <message id="m_part" name="createPart"/>
+  <process id="gp54-main" name="GP-54 Main file with parts" isExecutable="true">
+    <startEvent id="gp54_start"/>
+    <sequenceFlow id="f1" sourceRef="gp54_start" targetRef="gp54_noting"/>
+    <userTask id="gp54_noting" name="Noting on main file"><potentialOwner><resourceAssignmentExpression><formalExpression>group(section)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp54_noting" targetRef="gp54_gate"/>
+    <exclusiveGateway id="gp54_gate" default="f4"/>
+    <sequenceFlow id="f3" sourceRef="gp54_gate" targetRef="gp54_dispose"><conditionExpression xsi:type="tFormalExpression">${openParts == 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f4" sourceRef="gp54_gate" targetRef="gp54_waitParts"/>
+    <userTask id="gp54_waitParts" name="Await closure of part files"><potentialOwner><resourceAssignmentExpression><formalExpression>group(section)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f5" sourceRef="gp54_waitParts" targetRef="gp54_gate"/>
+    <userTask id="gp54_dispose" name="Dispose main file"><potentialOwner><resourceAssignmentExpression><formalExpression>group(so)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f6" sourceRef="gp54_dispose" targetRef="gp54_end"/>
+    <endEvent id="gp54_end"/>
+    <subProcess id="gp54_partSub" triggeredByEvent="true">
+      <startEvent id="gp54_partStart" isInterrupting="false"><messageEventDefinition messageRef="m_part"/></startEvent>
+      <sequenceFlow id="p1" sourceRef="gp54_partStart" targetRef="gp54_inc"/>
+      <serviceTask id="gp54_inc" @@expr|${execution.setVariable('openParts', openParts + 1)}@@/>
+      <sequenceFlow id="p2" sourceRef="gp54_inc" targetRef="gp54_part"/>
+      <callActivity id="gp54_part" name="Part file" calledElement="gp54-part">@@callio|in=fileNo,partSubject;out=partDecision@@</callActivity>
+      <sequenceFlow id="p3" sourceRef="gp54_part" targetRef="gp54_dec"/>
+      <serviceTask id="gp54_dec" @@expr|${execution.setVariable('openParts', openParts - 1)}@@/>
+      <sequenceFlow id="p4" sourceRef="gp54_dec" targetRef="gp54_partEnd"/>
+      <endEvent id="gp54_partEnd"/>
+    </subProcess>
+  </process>
+</definitions>

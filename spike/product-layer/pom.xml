@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam.spike</groupId>
+    <artifactId>spike-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>product-layer</artifactId>
+  <name>Product layer (authorization, ledger, idempotency, outbox/inbox, tombstones, audit)</name>
+
+
+  <properties>
+    <version.mysql-connector-j>8.4.0</version.mysql-connector-j>
+    <!-- -Dlayer.skipMysql=true skips the second (MySQL 8.4) test run -->
+    <layer.skipMysql>false</layer.skipMysql>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-api</artifactId>
+    </dependency>
+
+    <!-- Test scope only. JUnit 5 (EPL-2.0), Testcontainers (MIT), PostgreSQL JDBC (BSD-2), HikariCP (Apache-2.0). -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- MySQL (Tier 1, ADR-D-15): Testcontainers MySQL module (MIT) and MySQL Connector/J (GPL-2.0 with the
+         Universal FOSS Exception): TEST SCOPE ONLY, never bundled. -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>mysql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>${version.mysql-connector-j}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- merged with the parent's systemPropertyVariables (api.version=1.44 for Testcontainers 1.21.3 on Docker 29) -->
+          <systemPropertyVariables>
+            <org.slf4j.simpleLogger.defaultLogLevel>warn</org.slf4j.simpleLogger.defaultLogLevel>
+          </systemPropertyVariables>
+        </configuration>
+        <executions>
+          <!-- default-test runs on PostgreSQL (layer.db unset); this second run repeats every test on MySQL 8.4
+               in its own JVM, after the PostgreSQL container has stopped (one container at a time). -->
+          <execution>
+            <id>mysql</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${layer.skipMysql}</skip>
+              <reportsDirectory>${project.build.directory}/surefire-reports-mysql</reportsDirectory>
+              <systemPropertyVariables>
+                <layer.db>mysql</layer.db>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

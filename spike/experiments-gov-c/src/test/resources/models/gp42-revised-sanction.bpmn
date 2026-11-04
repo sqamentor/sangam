@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp42r">
+  <process id="gp42-revised-sanction" name="GP-42 Revised administrative approval" isExecutable="true">
+    <startEvent id="gp42r_start"/>
+    <sequenceFlow id="f1" sourceRef="gp42r_start" targetRef="gp42r_approve"/>
+    <userTask id="gp42r_approve" name="Accord revised AA"><potentialOwner><resourceAssignmentExpression><formalExpression>group(aa-authority)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp42r_approve" targetRef="gp42r_end"/>
+    <endEvent id="gp42r_end"/>
+  </process>
+</definitions>

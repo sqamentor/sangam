@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  E16-b (government patterns GP-21..GP-40) and E17-b (domain end-to-end models), on BOTH engines.
+  Test code only; nothing here is packaged.
+
+  One engine per JVM, selected by -Dgov.engine=operaton|flowable (Operaton's clock is JVM-wide, W-7).
+  Database: -Dgov.db=h2 (default, in-memory, development) or -Dgov.db=postgres (Testcontainers postgres:17-alpine,
+  the measured run). Only PostgreSQL runs write to ../results; H2 runs write to target/gov-results.
+
+      .\mvnw.cmd -q -pl experiments-gov-b verify -Dgov.engine=operaton
+      .\mvnw.cmd -q -pl experiments-gov-b verify -Dgov.engine=flowable -Dgov.db=postgres
+
+  The module is built against the INSTALLED product-api / adapter jars (no -am), so adapter work in progress elsewhere
+  does not change what is measured until the jars are re-installed.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam.spike</groupId>
+    <artifactId>spike-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>experiments-gov-b</artifactId>
+  <name>Experiments E16-b / E17-b (government patterns and domain models)</name>
+
+  <properties>
+    <version.h2>2.3.232</version.h2>
+    <gov.engine>operaton</gov.engine>
+    <gov.db>h2</gov.db>
+    <gov.results.dir>${project.basedir}/../results</gov.results.dir>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- HikariCP / Testcontainers bring slf4j-api 1.7.x; slf4j-simple 2.x needs the 2.x API. -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${version.slf4j}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-api</artifactId>
+    </dependency>
+    <!-- Test scope: both adapters (one is used per JVM), the product layer (VI.4 predicate), simulators -->
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>adapter-operaton</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>adapter-flowable</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-layer</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>simulators</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${version.h2}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- quoted: the project path contains spaces ("GITHUB  Project") -->
+          <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Xmx3g -Dfile.encoding=UTF-8</argLine>
+          <trimStackTrace>false</trimStackTrace>
+          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          <runOrder>alphabetical</runOrder>
+          <systemPropertyVariables>
+            <api.version>1.44</api.version>
+            <gov.engine>${gov.engine}</gov.engine>
+            <gov.db>${gov.db}</gov.db>
+            <gov.results.dir>${gov.results.dir}</gov.results.dir>
+            <org.slf4j.simpleLogger.defaultLogLevel>warn</org.slf4j.simpleLogger.defaultLogLevel>
+            <org.slf4j.simpleLogger.log.org.flowable.common.engine.impl.interceptor.CommandContext>off</org.slf4j.simpleLogger.log.org.flowable.common.engine.impl.interceptor.CommandContext>
+            <org.slf4j.simpleLogger.log.org.operaton.bpm.engine.context>off</org.slf4j.simpleLogger.log.org.operaton.bpm.engine.context>
+            <org.slf4j.simpleLogger.log.org.operaton.bpm.engine.cmd>off</org.slf4j.simpleLogger.log.org.operaton.bpm.engine.cmd>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

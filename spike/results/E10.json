@@ -1,0 +1,162 @@
+{
+  "experiment": "E10",
+  "title": "Platform fit (lite): JDK, engine start, licence exclusions, Jackson, Spring",
+  "engines": {
+    "flowable": {
+      "engineId": "flowable-8.0.0.0",
+      "generatedAt": "2026-11-04T08:35:53.647944500Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "summary": {
+        "scenarios": 1,
+        "pass": 1,
+        "fail": 0,
+        "info": 0
+      },
+      "scenarios": [
+        {
+          "id": "E10-flowable",
+          "group": "E10",
+          "description": "JDK / engine start / LIC-1..4 / Jackson / Spring",
+          "status": "pass",
+          "variantFiles": [],
+          "workarounds": [],
+          "checks": ["OK   engine starts, deploys and runs a process on JDK 21.0.10 + PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)", "OK   LIC-1 GraalJS absent from the test class path", "OK   LIC-2 Oracle JDBC absent from the test class path", "OK   LIC-3 MySQL JDBC absent from the test class path", "OK   LIC-4 Db2 JDBC absent from the test class path", "OK   no forbidden jar on the class path", "OK   no LIC-1..4 artifact in tree-experiments.txt", "OK   no LIC-1..4 artifact in tree-adapter-flowable.txt", "OK   no LIC-1..4 artifact in tree-adapter-operaton.txt", "OK   no LIC-1..4 artifact in runtime-adapter-flowable.txt", "OK   no LIC-1..4 artifact in runtime-adapter-operaton.txt"],
+          "details": {
+            "javaVersion": "21.0.10",
+            "javaRuntime": "Microsoft 21.0.10+7-LTS",
+            "engineId": "flowable-8.0.0.0",
+            "startsOnThisJdk": true,
+            "startError": null,
+            "jdk25": "not tested: JDK 25 is not installed on this host (not installed on purpose, per task)",
+            "classPathJarCount": 103,
+            "jacksonJars": ["jackson-annotations-2.22.jar", "jackson-core-3.0.1.jar", "jackson-databind-3.0.1.jar"],
+            "jackson3Present": true,
+            "jackson2Present": false,
+            "springJars": ["spring-beans-7.0.10.jar", "spring-core-7.0.10.jar"],
+            "springContextPresent": false,
+            "forbiddenJarsOnClassPath": [],
+            "LIC-1 GraalJS class org.graalvm.polyglot.Context": "absent",
+            "LIC-2 Oracle JDBC class oracle.jdbc.OracleDriver": "absent",
+            "LIC-3 MySQL JDBC class com.mysql.cj.jdbc.Driver": "absent",
+            "LIC-4 Db2 JDBC class com.ibm.db2.jcc.DB2Driver": "absent",
+            "jsr223ScriptEngines": ["juel 1.0"],
+            "classPathJars": ["HikariCP-6.3.0.jar", "adapter-flowable-0.1.0-SNAPSHOT.jar", "angus-activation-2.0.2.jar", "angus-mail-2.0.4.jar", "annotations-17.0.0.jar", "apiguardian-api-1.1.2.jar", "checker-qual-3.49.3.jar", "common-java5-3.5.3.jar", "commons-codec-1.20.0.jar", "commons-compress-1.24.0.jar", "commons-io-2.21.0.jar", "commons-lang3-3.20.0.jar", "commons-logging-1.3.5.jar", "corpus-0.1.0-SNAPSHOT.jar", "database-commons-1.21.4.jar", "docker-java-api-3.4.2.jar", "docker-java-transport-3.4.2.jar", "docker-java-transport-zerodep-3.4.2.jar", "duct-tape-1.0.8.jar", "flowable-batch-service-8.0.0.jar", "flowable-batch-service-api-8.0.0.jar", "flowable-bpmn-converter-8.0.0.jar", "flowable-bpmn-model-8.0.0.jar", "flowable-case-validation-8.0.0.jar", "flowable-cmmn-api-8.0.0.jar", "flowable-cmmn-converter-8.0.0.jar", "flowable-cmmn-engine-8.0.0.jar", "flowable-cmmn-engine-configurator-8.0.0.jar", "flowable-cmmn-image-generator-8.0.0.jar", "flowable-cmmn-model-8.0.0.jar", "flowable-content-api-8.0.0.jar", "flowable-dmn-api-8.0.0.jar", "flowable-dmn-engine-8.0.0.jar", "flowable-dmn-engine-configurator-8.0.0.jar", "flowable-dmn-image-generator-8.0.0.jar", "flowable-dmn-model-8.0.0.jar", "flowable-dmn-xml-converter-8.0.0.jar", "flowable-engine-8.0.0.jar", "flowable-engine-common-8.0.0.jar", "flowable-engine-common-api-8.0.0.jar", "flowable-entitylink-service-8.0.0.jar", "flowable-entitylink-service-api-8.0.0.jar", "flowable-event-registry-8.0.0.jar", "flowable-event-registry-api-8.0.0.jar", "flowable-event-registry-configurator-8.0.0.jar", "flowable-event-registry-json-converter-8.0.0.jar", "flowable-event-registry-model-8.0.0.jar", "flowable-eventsubscription-service-8.0.0.jar", "flowable-eventsubscription-service-api-8.0.0.jar", "flowable-form-api-8.0.0.jar", "flowable-form-model-8.0.0.jar", "flowable-http-common-8.0.0.jar", "flowable-identitylink-service-8.0.0.jar", "flowable-identitylink-service-api-8.0.0.jar", "flowable-idm-api-8.0.0.jar", "flowable-idm-engine-8.0.0.jar", "flowable-idm-engine-configurator-8.0.0.jar", "flowable-image-generator-8.0.0.jar", "flowable-job-service-8.0.0.jar", "flowable-job-service-api-8.0.0.jar", "flowable-mail-8.0.0.jar", "flowable-process-validation-8.0.0.jar", "flowable-task-service-8.0.0.jar", "flowable-task-service-api-8.0.0.jar", "flowable-variable-service-8.0.0.jar", "flowable-variable-service-api-8.0.0.jar", "h2-2.3.232.jar", "hamcrest-core-1.3.jar", "jackson-annotations-2.22.jar", "jackson-core-3.0.1.jar", "jackson-databind-3.0.1.jar", "jakarta.activation-api-2.1.3.jar", "jakarta.mail-api-2.1.3.jar", "java-uuid-generator-5.1.0.jar", "jcl-over-slf4j-2.0.17.jar", "jdbc-1.21.4.jar", "jna-5.13.0.jar", "joda-time-2.14.0.jar", "jspecify-1.0.1.jar", "junit-4.13.2.jar", "junit-jupiter-5.11.4.jar", "junit-jupiter-api-5.11.4.jar", "junit-jupiter-engine-5.11.4.jar", "junit-jupiter-params-5.11.4.jar", "junit-platform-commons-1.11.4.jar", "junit-platform-engine-1.11.4.jar", "junit-platform-launcher-1.11.4.jar", "mybatis-3.5.19.jar", "opentest4j-1.3.0.jar", "postgresql-1.21.4.jar", "postgresql-42.7.7.jar", "product-api-0.1.0-SNAPSHOT.jar", "slf4j-api-2.0.17.jar", "slf4j-simple-2.0.17.jar", "spring-beans-7.0.10.jar", "spring-core-7.0.10.jar", "surefire-api-3.5.3.jar", "surefire-booter-3.5.3.jar", "surefire-extensions-spi-3.5.3.jar", "surefire-junit-platform-3.5.3.jar", "surefire-logger-api-3.5.3.jar", "surefirebooter-20261104140431221_3.jar", "testcontainers-1.21.4.jar"],
+            "dependencyTrees": {
+              "tree-experiments.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.22:test", "com.fasterxml.jackson.core:jackson-core:jar:2.22.1:test", "com.fasterxml.jackson.core:jackson-databind:jar:2.22.1:test", "com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.1:test", "tools.jackson.core:jackson-core:jar:3.0.1:test", "tools.jackson.core:jackson-databind:jar:3.0.1:test"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.10:test", "org.springframework:spring-core:jar:7.0.10:test"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:test"]
+              },
+              "tree-adapter-flowable.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.20:compile", "tools.jackson.core:jackson-core:jar:3.0.1:compile", "tools.jackson.core:jackson-databind:jar:3.0.1:compile"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.3:compile", "org.springframework:spring-core:jar:7.0.3:compile"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:compile"]
+              },
+              "tree-adapter-operaton.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile", "com.fasterxml.jackson.core:jackson-core:jar:2.22.1:compile", "com.fasterxml.jackson.core:jackson-databind:jar:2.22.1:compile", "com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.1:compile"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.10:compile", "org.springframework:spring-core:jar:7.0.10:compile"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:compile"]
+              },
+              "runtime-adapter-flowable.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.20:compile", "tools.jackson.core:jackson-core:jar:3.0.1:compile", "tools.jackson.core:jackson-databind:jar:3.0.1:compile"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.3:compile", "org.springframework:spring-core:jar:7.0.3:compile"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:compile"]
+              },
+              "runtime-adapter-operaton.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile", "com.fasterxml.jackson.core:jackson-core:jar:2.22.1:compile", "com.fasterxml.jackson.core:jackson-databind:jar:2.22.1:compile", "com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.1:compile"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.10:compile", "org.springframework:spring-core:jar:7.0.10:compile"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:compile"]
+              }
+            }
+          },
+          "error": null,
+          "millis": 303
+        }
+      ]
+    },
+    "operaton": {
+      "engineId": "operaton-2.2.0",
+      "generatedAt": "2026-11-04T08:38:15.284800400Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "summary": {
+        "scenarios": 1,
+        "pass": 1,
+        "fail": 0,
+        "info": 0
+      },
+      "scenarios": [
+        {
+          "id": "E10-operaton",
+          "group": "E10",
+          "description": "JDK / engine start / LIC-1..4 / Jackson / Spring",
+          "status": "pass",
+          "variantFiles": [],
+          "workarounds": [],
+          "checks": ["OK   engine starts, deploys and runs a process on JDK 21.0.10 + PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)", "OK   LIC-1 GraalJS absent from the test class path", "OK   LIC-2 Oracle JDBC absent from the test class path", "OK   LIC-3 MySQL JDBC absent from the test class path", "OK   LIC-4 Db2 JDBC absent from the test class path", "OK   no forbidden jar on the class path", "OK   no LIC-1..4 artifact in tree-experiments.txt", "OK   no LIC-1..4 artifact in tree-adapter-flowable.txt", "OK   no LIC-1..4 artifact in tree-adapter-operaton.txt", "OK   no LIC-1..4 artifact in runtime-adapter-flowable.txt", "OK   no LIC-1..4 artifact in runtime-adapter-operaton.txt"],
+          "details": {
+            "javaVersion": "21.0.10",
+            "javaRuntime": "Microsoft 21.0.10+7-LTS",
+            "engineId": "operaton-2.2.0",
+            "startsOnThisJdk": true,
+            "startError": null,
+            "jdk25": "not tested: JDK 25 is not installed on this host (not installed on purpose, per task)",
+            "classPathJarCount": 69,
+            "jacksonJars": ["jackson-annotations-2.22.jar", "jackson-core-2.22.1.jar", "jackson-databind-2.22.1.jar", "jackson-module-scala_2.13-2.22.1.jar"],
+            "jackson3Present": false,
+            "jackson2Present": true,
+            "springJars": ["spring-beans-7.0.10.jar", "spring-core-7.0.10.jar"],
+            "springContextPresent": false,
+            "forbiddenJarsOnClassPath": [],
+            "LIC-1 GraalJS class org.graalvm.polyglot.Context": "absent",
+            "LIC-2 Oracle JDBC class oracle.jdbc.OracleDriver": "absent",
+            "LIC-3 MySQL JDBC class com.mysql.cj.jdbc.Driver": "absent",
+            "LIC-4 Db2 JDBC class com.ibm.db2.jcc.DB2Driver": "absent",
+            "jsr223ScriptEngines": ["feel-scala 1.0.0", "feel-scala-unary-tests 1.0.0", "juel 1.0"],
+            "classPathJars": ["HikariCP-6.3.0.jar", "adapter-operaton-0.1.0-SNAPSHOT.jar", "annotations-17.0.0.jar", "apiguardian-api-1.1.2.jar", "checker-qual-3.49.3.jar", "common-java5-3.5.3.jar", "commons-compress-1.24.0.jar", "commons-logging-1.3.5.jar", "corpus-0.1.0-SNAPSHOT.jar", "database-commons-1.21.4.jar", "docker-java-api-3.4.2.jar", "docker-java-transport-3.4.2.jar", "docker-java-transport-zerodep-3.4.2.jar", "duct-tape-1.0.8.jar", "fastparse_2.13-3.1.1.jar", "feel-engine-1.22.1.jar", "geny_2.13-1.1.0.jar", "h2-2.3.232.jar", "hamcrest-core-1.3.jar", "jackson-annotations-2.22.jar", "jackson-core-2.22.1.jar", "jackson-databind-2.22.1.jar", "jackson-module-scala_2.13-2.22.1.jar", "jakarta.el-api-6.0.1.jar", "java-uuid-generator-5.1.0.jar", "jdbc-1.21.4.jar", "jna-5.13.0.jar", "joda-time-2.14.0.jar", "jspecify-1.0.1.jar", "junit-4.13.2.jar", "junit-jupiter-5.11.4.jar", "junit-jupiter-api-5.11.4.jar", "junit-jupiter-engine-5.11.4.jar", "junit-jupiter-params-5.11.4.jar", "junit-platform-commons-1.11.4.jar", "junit-platform-engine-1.11.4.jar", "junit-platform-launcher-1.11.4.jar", "mybatis-3.5.19.jar", "opentest4j-1.3.0.jar", "operaton-bpmn-model-2.2.0.jar", "operaton-cmmn-model-2.2.0.jar", "operaton-commons-logging-2.2.0.jar", "operaton-commons-typed-values-2.2.0.jar", "operaton-commons-utils-2.2.0.jar", "operaton-dmn-model-2.2.0.jar", "operaton-engine-2.2.0.jar", "operaton-engine-dmn-2.2.0.jar", "operaton-engine-feel-api-2.2.0.jar", "operaton-engine-feel-juel-2.2.0.jar", "operaton-engine-feel-scala-2.2.0.jar", "operaton-juel-2.2.0.jar", "operaton-xml-model-2.2.0.jar", "paranamer-2.8.3.jar", "postgresql-1.21.4.jar", "postgresql-42.7.7.jar", "product-api-0.1.0-SNAPSHOT.jar", "scala-library-2.13.18.jar", "slf4j-api-2.0.17.jar", "slf4j-simple-2.0.17.jar", "sourcecode_2.13-0.4.0.jar", "spring-beans-7.0.10.jar", "spring-core-7.0.10.jar", "surefire-api-3.5.3.jar", "surefire-booter-3.5.3.jar", "surefire-extensions-spi-3.5.3.jar", "surefire-junit-platform-3.5.3.jar", "surefire-logger-api-3.5.3.jar", "surefirebooter-20261104140705778_19.jar", "testcontainers-1.21.4.jar"],
+            "dependencyTrees": {
+              "tree-experiments.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.22:test", "com.fasterxml.jackson.core:jackson-core:jar:2.22.1:test", "com.fasterxml.jackson.core:jackson-databind:jar:2.22.1:test", "com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.1:test", "tools.jackson.core:jackson-core:jar:3.0.1:test", "tools.jackson.core:jackson-databind:jar:3.0.1:test"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.10:test", "org.springframework:spring-core:jar:7.0.10:test"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:test"]
+              },
+              "tree-adapter-flowable.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.20:compile", "tools.jackson.core:jackson-core:jar:3.0.1:compile", "tools.jackson.core:jackson-databind:jar:3.0.1:compile"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.3:compile", "org.springframework:spring-core:jar:7.0.3:compile"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:compile"]
+              },
+              "tree-adapter-operaton.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile", "com.fasterxml.jackson.core:jackson-core:jar:2.22.1:compile", "com.fasterxml.jackson.core:jackson-databind:jar:2.22.1:compile", "com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.1:compile"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.10:compile", "org.springframework:spring-core:jar:7.0.10:compile"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:compile"]
+              },
+              "runtime-adapter-flowable.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.20:compile", "tools.jackson.core:jackson-core:jar:3.0.1:compile", "tools.jackson.core:jackson-databind:jar:3.0.1:compile"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.3:compile", "org.springframework:spring-core:jar:7.0.3:compile"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:compile"]
+              },
+              "runtime-adapter-operaton.txt": {
+                "forbidden": [],
+                "jackson": ["com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile", "com.fasterxml.jackson.core:jackson-core:jar:2.22.1:compile", "com.fasterxml.jackson.core:jackson-databind:jar:2.22.1:compile", "com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.1:compile"],
+                "spring": ["org.springframework:spring-beans:jar:7.0.10:compile", "org.springframework:spring-core:jar:7.0.10:compile"],
+                "mybatis": ["org.mybatis:mybatis:jar:3.5.19:compile"]
+              }
+            }
+          },
+          "error": null,
+          "millis": 515
+        }
+      ]
+    }
+  }
+}

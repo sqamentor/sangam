@@ -1,0 +1,670 @@
+{
+  "experiment": "E1",
+  "title": "Corpus coverage without engine patches (WF-1, WF-2, WF-3, CMMN case)",
+  "engines": {
+    "flowable": {
+      "engineId": "flowable-8.0.0.0",
+      "generatedAt": "2026-11-04T13:40:10.413021400Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "Oracle (Testcontainers gvenzl/oracle-free:23-slim-faststart, one user/schema per engine instance)",
+      "summary": {
+        "scenarios": 19,
+        "pass": 17,
+        "fail": 0,
+        "info": 2,
+        "scored": 17
+      },
+      "deployments": {
+        "wf1": {
+          "ok": true,
+          "deploymentId": "1",
+          "files": ["wf1-bill.bpmn", "wf1-delegation-of-powers.dmn"]
+        },
+        "wf2": {
+          "ok": true,
+          "deploymentId": "8",
+          "files": ["wf2-file.bpmn"]
+        },
+        "wf3": {
+          "ok": true,
+          "deploymentId": "11",
+          "files": ["wf3-licence.bpmn"]
+        },
+        "wf3-case": {
+          "ok": true,
+          "deploymentId": "14",
+          "files": ["wf3-licence-case.cmmn"]
+        }
+      },
+      "engineSpecificHandling": {
+        "variantFilesUsed": ["models/wf1-bill.flowable.bpmn", "models/wf3-licence.flowable.bpmn"],
+        "variantElements": 4,
+        "configurationItems": 2,
+        "runtimeItems": 0,
+        "total": 6,
+        "items": ["model variant V-01 DMN call from BPMN [wf1_delegationOfPowers]", "model variant V-02 external task (payment) [wf1_payment]", "model variant V-03 external task (esign) [wf3_esign]", "model variant V-04 external task (digilocker-push) [wf3_digilockerPush]", "configuration: DMN and CMMN engine configurators registered on the process engine (VARIANTS.md config table)", "configuration: async executor off; timers/jobs and external-worker continuations run through executeDueJobs()"]
+      },
+      "scenarios": [
+        {
+          "id": "WF1-APPROVE-100000",
+          "group": "WF-1",
+          "description": "approve by amount band 100000 (2059-MAINT) -> SECTION_OFFICER, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == SECTION_OFFICER", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group SECTION_OFFICER", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "SECTION_OFFICER",
+            "maxAmount": 100000.0,
+            "maxAmountType": "java.lang.Double",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 2704
+        },
+        {
+          "id": "WF1-APPROVE-100001",
+          "group": "WF-1",
+          "description": "approve by amount band 100001 (2059-MAINT) -> DDO, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == DDO", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group DDO", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "DDO",
+            "maxAmount": 1000000.0,
+            "maxAmountType": "java.lang.Double",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 726
+        },
+        {
+          "id": "WF1-APPROVE-1000000",
+          "group": "WF-1",
+          "description": "approve by amount band 1000000 (2059-MAINT) -> DDO, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == DDO", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group DDO", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "DDO",
+            "maxAmount": 1000000.0,
+            "maxAmountType": "java.lang.Double",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 605
+        },
+        {
+          "id": "WF1-APPROVE-1000001",
+          "group": "WF-1",
+          "description": "approve by amount band 1000001 (2059-MAINT) -> HOD, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == HOD", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group HOD", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "HOD",
+            "maxAmount": 1.0E7,
+            "maxAmountType": "java.lang.Double",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 639
+        },
+        {
+          "id": "WF1-APPROVE-10000000",
+          "group": "WF-1",
+          "description": "approve by amount band 10000000 (2059-MAINT) -> HOD, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == HOD", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group HOD", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "HOD",
+            "maxAmount": 1.0E7,
+            "maxAmountType": "java.lang.Double",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 557
+        },
+        {
+          "id": "WF1-APPROVE-10000001",
+          "group": "WF-1",
+          "description": "approve by amount band 10000001 (2059-MAINT) -> SECRETARY, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == SECRETARY", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group SECRETARY", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "SECRETARY",
+            "maxAmount": 1.0E9,
+            "maxAmountType": "java.lang.Double",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 739
+        },
+        {
+          "id": "WF1-APPROVE-CAPITAL-R1",
+          "group": "WF-1",
+          "description": "6000000 with 4059-CAPITAL -> SECRETARY (R1 wins under FIRST)",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == SECRETARY", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group SECRETARY", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "SECRETARY",
+            "maxAmount": 1.0E9,
+            "maxAmountType": "java.lang.Double",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 564
+        },
+        {
+          "id": "WF1-RETURN-REVISE",
+          "group": "WF-1",
+          "description": "checker return -> revise -> checker forward -> approver return -> revise -> forward -> approve -> payment",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   exactly one task wf1_reviseBill (found 1)", "OK   wf1_reviseBill offered to group SEAT-INITIATOR", "OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group DDO", "OK   exactly one task wf1_reviseBill (found 1)", "OK   wf1_reviseBill offered to group SEAT-INITIATOR", "OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group DDO", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   revise visited twice", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "payment.lockVersion": 1,
+            "reviseCount": 2
+          },
+          "error": null,
+          "millis": 1204
+        },
+        {
+          "id": "WF1-REJECT-CHECKER",
+          "group": "WF-1",
+          "description": "checker rejects",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   ended at wf1_rejectedEnd"],
+          "details": {},
+          "error": null,
+          "millis": 118
+        },
+        {
+          "id": "WF1-REJECT-APPROVER",
+          "group": "WF-1",
+          "description": "approver rejects",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group HOD", "OK   ended at wf1_rejectedEnd"],
+          "details": {},
+          "error": null,
+          "millis": 329
+        },
+        {
+          "id": "WF1-DIVERGENCE-NO-AMOUNT",
+          "group": "WF-1",
+          "description": "start without amount (VARIANTS.md V-01 divergence; informational)",
+          "status": "info",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER"],
+          "details": {
+            "outcome": "checker completion threw: org.flowable.common.engine.api.FlowableException: DMN decision with key wf1-delegation-of-powers execution failed in Execution[ id '507' ] - definition 'wf1-bill:1:4' - activity 'wf1_delegationOfPowers' - parent '501' <- org.flowable.dmn.engine.FlowableDmnExpressionException: error while executing input entry <- org.flowable.common.engine.api.FlowableException: Unknown property used in expression: #{amount > 5000000} with VariableContainerWrapper[instanceId='501', scopeType='null', tenantId=''] <- org.flowable.common.engine.impl.javax.el.PropertyNotFoundException: Cannot resolve identifier 'amount'"
+          },
+          "error": null,
+          "millis": 127
+        },
+        {
+          "id": "WF1-DIVERGENCE-NULL-AMOUNT",
+          "group": "WF-1",
+          "description": "amount = null (VARIANTS.md V-01 divergence; informational)",
+          "status": "info",
+          "variantFiles": ["models/wf1-bill.flowable.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER"],
+          "details": {
+            "outcome": "checker completion threw: org.flowable.common.engine.api.FlowableException: Unknown property used in expression: ${approverLevel == 'SECTION_OFFICER'} with Execution[ id '530' ] - definition 'wf1-bill:1:4' - activity 'wf1_approverLevelGw' - parent '523' <- org.flowable.common.engine.impl.javax.el.PropertyNotFoundException: Cannot resolve identifier 'approverLevel'"
+          },
+          "error": null,
+          "millis": 113
+        },
+        {
+          "id": "WF2-AC04-FORWARD3-RETURN2",
+          "group": "WF-2",
+          "description": "AC-04: L1 fwd, L2 fwd, L3 return, L2 return, L1 fwd, L2 fwd, L3 fwd, comments A and B (sequential), disposal",
+          "status": "pass",
+          "variantFiles": ["models/wf2-file.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l3Review (found 1)", "OK   wf2_l3Review offered to group SEAT-L3", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l3Review (found 1)", "OK   wf2_l3Review offered to group SEAT-L3", "OK   both comment branches open", "OK   exactly one task wf2_commentsSectionA (found 1)", "OK   wf2_commentsSectionA offered to group SEC-A", "OK   join waits after one branch (no disposal yet)", "OK   exactly one task wf2_commentsSectionB (found 1)", "OK   wf2_commentsSectionB offered to group SEC-B", "OK   exactly one task wf2_finalDisposal (found 1)", "OK   wf2_finalDisposal offered to group SEAT-DISPOSAL", "OK   ended at wf2_disposedEnd", "OK   L2 visited 3 times, L3 twice"],
+          "details": {
+            "l2Visits": 3
+          },
+          "error": null,
+          "millis": 1546
+        },
+        {
+          "id": "WF2-RETURN-TO-INITIATOR",
+          "group": "WF-2",
+          "description": "L1 return -> revise note -> L1..L3 fwd -> comments -> disposal",
+          "status": "pass",
+          "variantFiles": ["models/wf2-file.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_reviseNote (found 1)", "OK   wf2_reviseNote offered to group SEAT-INITIATOR", "OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l3Review (found 1)", "OK   wf2_l3Review offered to group SEAT-L3", "OK   exactly one task wf2_commentsSectionB (found 1)", "OK   wf2_commentsSectionB offered to group SEC-B", "OK   exactly one task wf2_commentsSectionA (found 1)", "OK   wf2_commentsSectionA offered to group SEC-A", "OK   exactly one task wf2_finalDisposal (found 1)", "OK   wf2_finalDisposal offered to group SEAT-DISPOSAL", "OK   ended at wf2_disposedEnd"],
+          "details": {},
+          "error": null,
+          "millis": 961
+        },
+        {
+          "id": "WF2-PARALLEL-JOIN-CONCURRENT",
+          "group": "WF-2",
+          "description": "complete both comment tasks concurrently (VI.1 join); retry on optimistic-lock failure; exactly one disposal task",
+          "status": "pass",
+          "variantFiles": ["models/wf2-file.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l3Review (found 1)", "OK   wf2_l3Review offered to group SEAT-L3", "OK   exactly one task wf2_commentsSectionA (found 1)", "OK   exactly one task wf2_commentsSectionB (found 1)", "OK   exactly one wf2_finalDisposal task after the join", "OK   exactly one task wf2_finalDisposal (found 1)", "OK   wf2_finalDisposal offered to group SEAT-DISPOSAL", "OK   ended"],
+          "details": {
+            "conflicts": 1,
+            "conflictTypes": ["FlowableOptimisticLockingException"]
+          },
+          "error": null,
+          "millis": 839
+        },
+        {
+          "id": "WF3-FULL-SLA-CLARIFY-ISSUE",
+          "group": "WF-3",
+          "description": "scrutiny + SLA timer (setClock/executeDueJobs), clarify message, second SLA, accept, inspection, approval, esign and digilocker external work",
+          "status": "pass",
+          "variantFiles": ["models/wf3-licence.flowable.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf3_scrutiny (found 1)", "OK   scrutiny offered to licence-scrutiny", "OK   no escalation at 71 h", "OK   one escalation at 73 h", "OK   scrutiny still open (non-interrupting)", "OK   escalation offered to licence-escalation", "OK   still one escalation 100 h later (duration timer fires once)", "OK   exactly one task wf3_slaEscalation (found 1)", "OK   wf3_slaEscalation offered to group licence-escalation", "OK   exactly one task wf3_scrutiny (found 1)", "OK   wf3_scrutiny offered to group licence-scrutiny", "OK   waiting for applicant message", "OK   message correlated to this instance", "OK   exactly one task wf3_scrutiny (found 1)", "OK   one escalation for the second scrutiny entry", "OK   exactly one task wf3_slaEscalation (found 1)", "OK   wf3_slaEscalation offered to group licence-escalation", "OK   exactly one task wf3_scrutiny (found 1)", "OK   wf3_scrutiny offered to group licence-scrutiny", "OK   exactly one task wf3_inspection (found 1)", "OK   wf3_inspection offered to group licence-inspector", "OK   exactly one task wf3_approval (found 1)", "OK   wf3_approval offered to group licence-approver", "OK   external work on topic esign fetched", "OK   esign: lockVersion > 0", "OK   esign: attemptId present", "OK   esign: stale lockVersion rejected (StaleLeaseException)", "OK   esign: non-owner rejected (StaleLeaseException)", "OK   external work on topic digilocker-push fetched", "OK   digilocker-push: lockVersion > 0", "OK   digilocker-push: attemptId present", "OK   ended at wf3_issuedEnd"],
+          "details": {
+            "escalationsPerScrutinyEntry": [1, 1],
+            "esign.lockVersion": 1,
+            "digilocker-push.lockVersion": 1,
+            "escalationActivities": 2
+          },
+          "error": null,
+          "millis": 1367
+        },
+        {
+          "id": "WF3-REJECT-AT-SCRUTINY",
+          "group": "WF-3",
+          "description": "scrutiny rejects; the pending SLA timer is cancelled",
+          "status": "pass",
+          "variantFiles": ["models/wf3-licence.flowable.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf3_scrutiny (found 1)", "OK   wf3_scrutiny offered to group licence-scrutiny", "OK   ended at wf3_rejectedEnd", "OK   no escalation after the instance ended"],
+          "details": {},
+          "error": null,
+          "millis": 166
+        },
+        {
+          "id": "WF3-REJECT-AT-APPROVAL",
+          "group": "WF-3",
+          "description": "accept, inspection, approval rejects",
+          "status": "pass",
+          "variantFiles": ["models/wf3-licence.flowable.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf3_scrutiny (found 1)", "OK   wf3_scrutiny offered to group licence-scrutiny", "OK   exactly one task wf3_inspection (found 1)", "OK   wf3_inspection offered to group licence-inspector", "OK   exactly one task wf3_approval (found 1)", "OK   wf3_approval offered to group licence-approver", "OK   ended at wf3_rejectedEnd"],
+          "details": {},
+          "error": null,
+          "millis": 313
+        },
+        {
+          "id": "WF3-CASE-CMMN",
+          "group": "WF-3 CMMN",
+          "description": "startCase, Scrutiny, Inspection (sentry), milestone Approved, case completes; history order Scrutiny -> Inspection -> Approved",
+          "status": "pass",
+          "variantFiles": ["models/wf3-licence-case.cmmn"],
+          "workarounds": [],
+          "checks": ["OK   one case task after start (found 1)", "OK   first task is Scrutiny", "OK   one case task after scrutiny (found 1)", "OK   second task is Inspection", "OK   case ended", "OK   history order Scrutiny -> Inspection -> Approved, each recorded COMPLETED (got [Scrutiny, Inspection, Approved])"],
+          "details": {
+            "scrutinyTaskDefinitionKey": "wf3c_scrutiny",
+            "scrutinyTaskInstanceIdIsCaseId": true,
+            "inspectionTaskDefinitionKey": "wf3c_inspection",
+            "jobsAfterInspection": 0,
+            "caseHistory": ["wf3c_pi_scrutiny:humantask:completed", "wf3c_pi_inspection:humantask:completed", "wf3c_pi_approved:milestone:completed"],
+            "endedOrder": ["wf3c_pi_scrutiny", "wf3c_pi_inspection", "wf3c_pi_approved"]
+          },
+          "error": null,
+          "millis": 776
+        }
+      ]
+    },
+    "operaton": {
+      "engineId": "operaton-2.2.0",
+      "generatedAt": "2026-11-04T13:42:21.606437300Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "Oracle (Testcontainers gvenzl/oracle-free:23-slim-faststart, one user/schema per engine instance)",
+      "summary": {
+        "scenarios": 19,
+        "pass": 16,
+        "fail": 1,
+        "info": 2,
+        "scored": 17
+      },
+      "deployments": {
+        "wf1": {
+          "ok": true,
+          "deploymentId": "1",
+          "files": ["wf1-bill.bpmn", "wf1-delegation-of-powers.dmn"]
+        },
+        "wf2": {
+          "ok": true,
+          "deploymentId": "7",
+          "files": ["wf2-file.bpmn"]
+        },
+        "wf3": {
+          "ok": true,
+          "deploymentId": "10",
+          "files": ["wf3-licence.bpmn"]
+        },
+        "wf3-case": {
+          "ok": true,
+          "deploymentId": "14",
+          "files": ["wf3-licence-case.cmmn"]
+        }
+      },
+      "engineSpecificHandling": {
+        "variantFilesUsed": ["models/wf1-bill.operaton.bpmn", "models/wf3-licence.operaton.bpmn"],
+        "variantElements": 4,
+        "configurationItems": 2,
+        "runtimeItems": 0,
+        "total": 6,
+        "items": ["model variant V-01 DMN call from BPMN [wf1_delegationOfPowers]", "model variant V-02 external task (payment) [wf1_payment]", "model variant V-03 external task (esign) [wf3_esign]", "model variant V-04 external task (digilocker-push) [wf3_digilockerPush]", "configuration: enforceHistoryTimeToLive=false (ledger W-3; else ENGINE-12018 on every shared model)", "configuration: job executor off; timers run through executeDueJobs(); ClockUtil is JVM-wide (W-7)"]
+      },
+      "scenarios": [
+        {
+          "id": "WF1-APPROVE-100000",
+          "group": "WF-1",
+          "description": "approve by amount band 100000 (2059-MAINT) -> SECTION_OFFICER, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == SECTION_OFFICER", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group SECTION_OFFICER", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "SECTION_OFFICER",
+            "maxAmount": 100000,
+            "maxAmountType": "java.lang.Long",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 2315
+        },
+        {
+          "id": "WF1-APPROVE-100001",
+          "group": "WF-1",
+          "description": "approve by amount band 100001 (2059-MAINT) -> DDO, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == DDO", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group DDO", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "DDO",
+            "maxAmount": 1000000,
+            "maxAmountType": "java.lang.Long",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 374
+        },
+        {
+          "id": "WF1-APPROVE-1000000",
+          "group": "WF-1",
+          "description": "approve by amount band 1000000 (2059-MAINT) -> DDO, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == DDO", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group DDO", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "DDO",
+            "maxAmount": 1000000,
+            "maxAmountType": "java.lang.Long",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 389
+        },
+        {
+          "id": "WF1-APPROVE-1000001",
+          "group": "WF-1",
+          "description": "approve by amount band 1000001 (2059-MAINT) -> HOD, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == HOD", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group HOD", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "HOD",
+            "maxAmount": 10000000,
+            "maxAmountType": "java.lang.Long",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 412
+        },
+        {
+          "id": "WF1-APPROVE-10000000",
+          "group": "WF-1",
+          "description": "approve by amount band 10000000 (2059-MAINT) -> HOD, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == HOD", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group HOD", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "HOD",
+            "maxAmount": 10000000,
+            "maxAmountType": "java.lang.Long",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 402
+        },
+        {
+          "id": "WF1-APPROVE-10000001",
+          "group": "WF-1",
+          "description": "approve by amount band 10000001 (2059-MAINT) -> SECRETARY, payment external work with lockVersion fencing",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == SECRETARY", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group SECRETARY", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "SECRETARY",
+            "maxAmount": 1000000000,
+            "maxAmountType": "java.lang.Long",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 382
+        },
+        {
+          "id": "WF1-APPROVE-CAPITAL-R1",
+          "group": "WF-1",
+          "description": "6000000 with 4059-CAPITAL -> SECRETARY (R1 wins under FIRST)",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   DMN approverLevel == SECRETARY", "OK   maxAmount >= amount (numeric compare)", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group SECRETARY", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   payment: stale lockVersion rejected (StaleLeaseException)", "OK   payment: non-owner rejected (StaleLeaseException)", "OK   instance ended", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "approverLevel": "SECRETARY",
+            "maxAmount": 1000000000,
+            "maxAmountType": "java.lang.Long",
+            "payment.lockVersion": 1
+          },
+          "error": null,
+          "millis": 419
+        },
+        {
+          "id": "WF1-RETURN-REVISE",
+          "group": "WF-1",
+          "description": "checker return -> revise -> checker forward -> approver return -> revise -> forward -> approve -> payment",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   exactly one task wf1_reviseBill (found 1)", "OK   wf1_reviseBill offered to group SEAT-INITIATOR", "OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group DDO", "OK   exactly one task wf1_reviseBill (found 1)", "OK   wf1_reviseBill offered to group SEAT-INITIATOR", "OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group DDO", "OK   external work on topic payment fetched", "OK   payment: lockVersion > 0", "OK   payment: attemptId present", "OK   revise visited twice", "OK   ended at wf1_paidEnd"],
+          "details": {
+            "payment.lockVersion": 1,
+            "reviseCount": 2
+          },
+          "error": null,
+          "millis": 760
+        },
+        {
+          "id": "WF1-REJECT-CHECKER",
+          "group": "WF-1",
+          "description": "checker rejects",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   ended at wf1_rejectedEnd"],
+          "details": {},
+          "error": null,
+          "millis": 110
+        },
+        {
+          "id": "WF1-REJECT-APPROVER",
+          "group": "WF-1",
+          "description": "approver rejects",
+          "status": "pass",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER", "OK   exactly one task wf1_approve (found 1)", "OK   wf1_approve offered to group HOD", "OK   ended at wf1_rejectedEnd"],
+          "details": {},
+          "error": null,
+          "millis": 170
+        },
+        {
+          "id": "WF1-DIVERGENCE-NO-AMOUNT",
+          "group": "WF-1",
+          "description": "start without amount (VARIANTS.md V-01 divergence; informational)",
+          "status": "info",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER"],
+          "details": {
+            "outcome": "ended at [wf1_start, wf1_reviewMergeGw, wf1_checkerReview, wf1_checkerDecisionGw, wf1_delegationOfPowers, wf1_approverLevelGw, wf1_noAuthorityEnd]"
+          },
+          "error": null,
+          "millis": 155
+        },
+        {
+          "id": "WF1-DIVERGENCE-NULL-AMOUNT",
+          "group": "WF-1",
+          "description": "amount = null (VARIANTS.md V-01 divergence; informational)",
+          "status": "info",
+          "variantFiles": ["models/wf1-bill.operaton.bpmn", "models/wf1-delegation-of-powers.dmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf1_checkerReview (found 1)", "OK   wf1_checkerReview offered to group SEAT-CHECKER"],
+          "details": {
+            "outcome": "ended at [wf1_start, wf1_reviewMergeGw, wf1_checkerReview, wf1_checkerDecisionGw, wf1_delegationOfPowers, wf1_approverLevelGw, wf1_noAuthorityEnd]"
+          },
+          "error": null,
+          "millis": 142
+        },
+        {
+          "id": "WF2-AC04-FORWARD3-RETURN2",
+          "group": "WF-2",
+          "description": "AC-04: L1 fwd, L2 fwd, L3 return, L2 return, L1 fwd, L2 fwd, L3 fwd, comments A and B (sequential), disposal",
+          "status": "pass",
+          "variantFiles": ["models/wf2-file.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l3Review (found 1)", "OK   wf2_l3Review offered to group SEAT-L3", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l3Review (found 1)", "OK   wf2_l3Review offered to group SEAT-L3", "OK   both comment branches open", "OK   exactly one task wf2_commentsSectionA (found 1)", "OK   wf2_commentsSectionA offered to group SEC-A", "OK   join waits after one branch (no disposal yet)", "OK   exactly one task wf2_commentsSectionB (found 1)", "OK   wf2_commentsSectionB offered to group SEC-B", "OK   exactly one task wf2_finalDisposal (found 1)", "OK   wf2_finalDisposal offered to group SEAT-DISPOSAL", "OK   ended at wf2_disposedEnd", "OK   L2 visited 3 times, L3 twice"],
+          "details": {
+            "l2Visits": 3
+          },
+          "error": null,
+          "millis": 873
+        },
+        {
+          "id": "WF2-RETURN-TO-INITIATOR",
+          "group": "WF-2",
+          "description": "L1 return -> revise note -> L1..L3 fwd -> comments -> disposal",
+          "status": "pass",
+          "variantFiles": ["models/wf2-file.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_reviseNote (found 1)", "OK   wf2_reviseNote offered to group SEAT-INITIATOR", "OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l3Review (found 1)", "OK   wf2_l3Review offered to group SEAT-L3", "OK   exactly one task wf2_commentsSectionB (found 1)", "OK   wf2_commentsSectionB offered to group SEC-B", "OK   exactly one task wf2_commentsSectionA (found 1)", "OK   wf2_commentsSectionA offered to group SEC-A", "OK   exactly one task wf2_finalDisposal (found 1)", "OK   wf2_finalDisposal offered to group SEAT-DISPOSAL", "OK   ended at wf2_disposedEnd"],
+          "details": {},
+          "error": null,
+          "millis": 632
+        },
+        {
+          "id": "WF2-PARALLEL-JOIN-CONCURRENT",
+          "group": "WF-2",
+          "description": "complete both comment tasks concurrently (VI.1 join); retry on optimistic-lock failure; exactly one disposal task",
+          "status": "pass",
+          "variantFiles": ["models/wf2-file.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf2_l1Review (found 1)", "OK   wf2_l1Review offered to group SEAT-L1", "OK   exactly one task wf2_l2Review (found 1)", "OK   wf2_l2Review offered to group SEAT-L2", "OK   exactly one task wf2_l3Review (found 1)", "OK   wf2_l3Review offered to group SEAT-L3", "OK   exactly one task wf2_commentsSectionA (found 1)", "OK   exactly one task wf2_commentsSectionB (found 1)", "OK   exactly one wf2_finalDisposal task after the join", "OK   exactly one task wf2_finalDisposal (found 1)", "OK   wf2_finalDisposal offered to group SEAT-DISPOSAL", "OK   ended"],
+          "details": {
+            "conflicts": 1,
+            "conflictTypes": ["OptimisticLockingException"]
+          },
+          "error": null,
+          "millis": 767
+        },
+        {
+          "id": "WF3-FULL-SLA-CLARIFY-ISSUE",
+          "group": "WF-3",
+          "description": "scrutiny + SLA timer (setClock/executeDueJobs), clarify message, second SLA, accept, inspection, approval, esign and digilocker external work",
+          "status": "pass",
+          "variantFiles": ["models/wf3-licence.operaton.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf3_scrutiny (found 1)", "OK   scrutiny offered to licence-scrutiny", "OK   no escalation at 71 h", "OK   one escalation at 73 h", "OK   scrutiny still open (non-interrupting)", "OK   escalation offered to licence-escalation", "OK   still one escalation 100 h later (duration timer fires once)", "OK   exactly one task wf3_slaEscalation (found 1)", "OK   wf3_slaEscalation offered to group licence-escalation", "OK   exactly one task wf3_scrutiny (found 1)", "OK   wf3_scrutiny offered to group licence-scrutiny", "OK   waiting for applicant message", "OK   message correlated to this instance", "OK   exactly one task wf3_scrutiny (found 1)", "OK   one escalation for the second scrutiny entry", "OK   exactly one task wf3_slaEscalation (found 1)", "OK   wf3_slaEscalation offered to group licence-escalation", "OK   exactly one task wf3_scrutiny (found 1)", "OK   wf3_scrutiny offered to group licence-scrutiny", "OK   exactly one task wf3_inspection (found 1)", "OK   wf3_inspection offered to group licence-inspector", "OK   exactly one task wf3_approval (found 1)", "OK   wf3_approval offered to group licence-approver", "OK   external work on topic esign fetched", "OK   esign: lockVersion > 0", "OK   esign: attemptId present", "OK   esign: stale lockVersion rejected (StaleLeaseException)", "OK   esign: non-owner rejected (StaleLeaseException)", "OK   external work on topic digilocker-push fetched", "OK   digilocker-push: lockVersion > 0", "OK   digilocker-push: attemptId present", "OK   ended at wf3_issuedEnd"],
+          "details": {
+            "escalationsPerScrutinyEntry": [1, 1],
+            "esign.lockVersion": 1,
+            "digilocker-push.lockVersion": 1,
+            "escalationActivities": 2
+          },
+          "error": null,
+          "millis": 2591
+        },
+        {
+          "id": "WF3-REJECT-AT-SCRUTINY",
+          "group": "WF-3",
+          "description": "scrutiny rejects; the pending SLA timer is cancelled",
+          "status": "pass",
+          "variantFiles": ["models/wf3-licence.operaton.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf3_scrutiny (found 1)", "OK   wf3_scrutiny offered to group licence-scrutiny", "OK   ended at wf3_rejectedEnd", "OK   no escalation after the instance ended"],
+          "details": {},
+          "error": null,
+          "millis": 398
+        },
+        {
+          "id": "WF3-REJECT-AT-APPROVAL",
+          "group": "WF-3",
+          "description": "accept, inspection, approval rejects",
+          "status": "pass",
+          "variantFiles": ["models/wf3-licence.operaton.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task wf3_scrutiny (found 1)", "OK   wf3_scrutiny offered to group licence-scrutiny", "OK   exactly one task wf3_inspection (found 1)", "OK   wf3_inspection offered to group licence-inspector", "OK   exactly one task wf3_approval (found 1)", "OK   wf3_approval offered to group licence-approver", "OK   ended at wf3_rejectedEnd"],
+          "details": {},
+          "error": null,
+          "millis": 415
+        },
+        {
+          "id": "WF3-CASE-CMMN",
+          "group": "WF-3 CMMN",
+          "description": "startCase, Scrutiny, Inspection (sentry), milestone Approved, case completes; history order Scrutiny -> Inspection -> Approved",
+          "status": "fail",
+          "variantFiles": ["models/wf3-licence-case.cmmn"],
+          "workarounds": [],
+          "checks": ["OK   one case task after start (found 1)", "OK   first task is Scrutiny", "OK   one case task after scrutiny (found 1)", "OK   second task is Inspection", "OK   case ended", "FAIL history order Scrutiny -> Inspection -> Approved, each recorded COMPLETED (got [Scrutiny, Approved])"],
+          "details": {
+            "scrutinyTaskDefinitionKey": "wf3c_pi_scrutiny",
+            "scrutinyTaskInstanceIdIsCaseId": true,
+            "inspectionTaskDefinitionKey": "wf3c_pi_inspection",
+            "jobsAfterInspection": 0,
+            "caseHistory": ["wf3c_pi_scrutiny:humanTask:completed", "wf3c_pi_inspection:humanTask:terminated", "wf3c_pi_approved:milestone:completed"],
+            "endedOrder": ["wf3c_pi_scrutiny", "wf3c_pi_inspection", "wf3c_pi_approved"]
+          },
+          "error": null,
+          "millis": 1807
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "experiment" : "E7",
+  "title" : "Cancel/delete with external work in flight (VI.5)",
+  "database" : "PostgreSQL 17 (Testcontainers postgres:17-alpine), one database per engine",
+  "module" : "spike/experiments-integration",
+  "engines" : {
+    "flowable-8.0.0" : {
+      "generatedAt" : "2026-11-04T14:33:45.535560500+05:30",
+      "scenariosCounted" : 3,
+      "scenariosPassed" : 3,
+      "passRatePercent" : 100.0,
+      "scenarios" : [ {
+        "id" : "E7-1",
+        "name" : "Delete while the payment worker is mid-call; the worker then completes: 410 GONE, late result audited, LATE_RESULT_AFTER_DELETE item, instance stays deleted",
+        "tests" : [ "T11", "T39" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "tombstoneState" : "CANCEL_REQUESTED",
+          "lateResultHttp" : "410 GONE_INSTANCE_DELETED",
+          "reconciliationItem" : "LATE_RESULT_AFTER_DELETE #1",
+          "auditINSTANCE_DELETED" : 1,
+          "auditLATE_RESULT_AFTER_DELETE" : 1,
+          "retryActionRefused" : true,
+          "instanceStaysDeleted" : true,
+          "ifmsPayments" : 1,
+          "rawAdapterLateCompleteWithoutTombstoneCheck" : "org.flowable.common.engine.api.FlowableObjectNotFoundException: No External Worker job found for id: 43",
+          "spikeLeaseRowsLeftAfterDelete" : 1
+        }
+      }, {
+        "id" : "E7-2",
+        "name" : "Delete while the worker holds the lease and never answers: the tombstoned lease expires without cancel ack and becomes UNKNOWN_OUTCOME (VI.5 rule 4)",
+        "tests" : [ "T11" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "tombstonesSwept" : 1,
+          "tombstoneState" : "UNKNOWN_OUTCOME",
+          "reconciliationItem" : "UNKNOWN_OUTCOME"
+        }
+      }, {
+        "id" : "E7-3",
+        "name" : "Late fail / outcomeUnknown after delete: 410; an item only when an effect may have happened; instance stays deleted",
+        "tests" : [ "T11" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "lateFail" : "410, item=null",
+          "lateOutcomeUnknown" : "410, item=3"
+        }
+      } ],
+      "notes" : {
+        "deleteCommand" : "one engine transaction: Tombstones.write per leased work of the root (from SPIKE_LEASE + the work->operation map), Tombstones.recordDeletion (INSTANCE_DELETED audit with open operationIds), EngineAdapter.cancelInstance",
+        "lateResultPath" : "PaymentWorker.complete: Tombstones.onLateResult before the ledger and completeExternal, same transaction",
+        "wallClockSeconds" : 19.51
+      }
+    },
+    "operaton-2.2.0" : {
+      "generatedAt" : "2026-11-04T14:34:04.440027700+05:30",
+      "scenariosCounted" : 3,
+      "scenariosPassed" : 3,
+      "passRatePercent" : 100.0,
+      "scenarios" : [ {
+        "id" : "E7-1",
+        "name" : "Delete while the payment worker is mid-call; the worker then completes: 410 GONE, late result audited, LATE_RESULT_AFTER_DELETE item, instance stays deleted",
+        "tests" : [ "T11", "T39" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "tombstoneState" : "CANCEL_REQUESTED",
+          "lateResultHttp" : "410 GONE_INSTANCE_DELETED",
+          "reconciliationItem" : "LATE_RESULT_AFTER_DELETE #1",
+          "auditINSTANCE_DELETED" : 1,
+          "auditLATE_RESULT_AFTER_DELETE" : 1,
+          "retryActionRefused" : true,
+          "instanceStaysDeleted" : true,
+          "ifmsPayments" : 1,
+          "rawAdapterLateCompleteWithoutTombstoneCheck" : "org.operaton.bpm.engine.exception.NotFoundException: Cannot find external task with id 52: externalTask is null",
+          "spikeLeaseRowsLeftAfterDelete" : 1
+        }
+      }, {
+        "id" : "E7-2",
+        "name" : "Delete while the worker holds the lease and never answers: the tombstoned lease expires without cancel ack and becomes UNKNOWN_OUTCOME (VI.5 rule 4)",
+        "tests" : [ "T11" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "tombstonesSwept" : 1,
+          "tombstoneState" : "UNKNOWN_OUTCOME",
+          "reconciliationItem" : "UNKNOWN_OUTCOME"
+        }
+      }, {
+        "id" : "E7-3",
+        "name" : "Late fail / outcomeUnknown after delete: 410; an item only when an effect may have happened; instance stays deleted",
+        "tests" : [ "T11" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "lateFail" : "410, item=null",
+          "lateOutcomeUnknown" : "410, item=3"
+        }
+      } ],
+      "notes" : {
+        "deleteCommand" : "one engine transaction: Tombstones.write per leased work of the root (from SPIKE_LEASE + the work->operation map), Tombstones.recordDeletion (INSTANCE_DELETED audit with open operationIds), EngineAdapter.cancelInstance",
+        "lateResultPath" : "PaymentWorker.complete: Tombstones.onLateResult before the ledger and completeExternal, same transaction",
+        "wallClockSeconds" : 18.844
+      }
+    }
+  }
+}

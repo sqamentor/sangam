@@ -1,0 +1,387 @@
+{
+  "experiment": "E11",
+  "title": "BPMN gap reproduction (GAP set)",
+  "engines": {
+    "flowable": {
+      "engineId": "flowable-8.0.0.0",
+      "generatedAt": "2026-11-04T08:36:16.997929300Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "summary": {
+        "scenarios": 8,
+        "pass": 3,
+        "fail": 5,
+        "info": 0,
+        "classification": {
+          "needs engine patch": 1,
+          "needs extension": 4,
+          "works": 3
+        }
+      },
+      "scenarios": [
+        {
+          "id": "E11-gap-link-events",
+          "group": "GAP set",
+          "description": "link throw -> link catch (LinkB)",
+          "status": "fail",
+          "variantFiles": ["models/gap-link-events.bpmn"],
+          "workarounds": [],
+          "checks": ["FAIL deploys", "FAIL runtime behaviour as specified"],
+          "details": {
+            "deployOk": false,
+            "deployError": "org.flowable.common.engine.api.FlowableException: Errors while parsing:\n[Validation set: 'flowable-executable-process' | Problem: 'flowable-intermediate-catch-event-no-eventdefinition'] : No event definition for intermediate catch event  - [Extra info : processDefinitionId = gap-link-events | processDefinitionName = GAP link events |  | id = gap_link_catch |  | activityName = B | ] ( line: 18, column: 58)\n",
+            "withoutValidation": {
+              "deployOk": true,
+              "runtime": "probe not reached; active=[]"
+            },
+            "runtimeCorrect": null,
+            "runtimeOutcome": null,
+            "classification": "needs extension",
+            "classificationNote": "needs extension: the 8.0.0 BPMN model has no LinkEventDefinition (converter drops it); a custom BpmnXMLConverter/parse handler or a pre-deploy model rewrite (link pair -> sequence flow) is needed"
+          },
+          "error": null,
+          "millis": 832
+        },
+        {
+          "id": "E11-gap-signal-end",
+          "group": "GAP set",
+          "description": "signal end event (gapSignal) starts catcher process",
+          "status": "fail",
+          "variantFiles": ["models/gap-signal-end.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   deploys", "FAIL runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "throwerEnded": true,
+            "catcherInstancesCreated": 0,
+            "catcherInstancesCreatedByApiBroadcast": 1,
+            "runtimeCorrect": false,
+            "runtimeOutcome": "thrower ended=true, catcher instances created by the end event=0",
+            "classification": "needs extension",
+            "classificationNote": "needs extension: signal end behaves as a none end; an end-event execution listener calling RuntimeService.signalEventReceived (public API) restores the semantics"
+          },
+          "error": null,
+          "millis": 940
+        },
+        {
+          "id": "E11-gap-message-end",
+          "group": "GAP set",
+          "description": "message end event (no implementation)",
+          "status": "pass",
+          "variantFiles": ["models/gap-message-end.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "ended": true,
+            "note": "none-end behaviour; nothing sent; no implementation attribute on message end; hook = execution listener",
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 701
+        },
+        {
+          "id": "E11-gap-message-throw",
+          "group": "GAP set",
+          "description": "message intermediate throw (no implementation)",
+          "status": "fail",
+          "variantFiles": ["models/gap-message-throw.bpmn"],
+          "workarounds": [],
+          "checks": ["FAIL deploys", "FAIL runtime behaviour as specified"],
+          "details": {
+            "deployOk": false,
+            "deployError": "org.flowable.common.engine.api.FlowableException: Errors while parsing:\n[Validation set: 'flowable-executable-process' | Problem: 'flowable-throw-event-invalid-eventdefinition'] : Unsupported intermediate throw event type - [Extra info : processDefinitionId = gap-message-throw | processDefinitionName = GAP message intermediate throw |  | id = gap_msgThrow_throw |  | activityName = Send gapMessageThrow | ] ( line: 18, column: 93)\n",
+            "withoutValidation": {
+              "deployOk": true,
+              "runtime": "runtime behaviour CORRECT once validation is skipped"
+            },
+            "runtimeCorrect": null,
+            "runtimeOutcome": null,
+            "classification": "needs extension",
+            "classificationNote": "needs extension: model as a send/service task, or deploy without validation if the runtime passes through"
+          },
+          "error": null,
+          "millis": 582
+        },
+        {
+          "id": "E11-gap-conditional-start",
+          "group": "GAP set",
+          "description": "process-level conditional start (feePaid == true)",
+          "status": "fail",
+          "variantFiles": ["models/gap-conditional-start.bpmn"],
+          "workarounds": [],
+          "checks": ["FAIL deploys", "FAIL runtime behaviour as specified"],
+          "details": {
+            "deployOk": false,
+            "deployError": "org.flowable.common.engine.api.FlowableException: Errors while parsing:\n[Validation set: 'flowable-executable-process' | Problem: 'flowable-start-event-invalid-event-definition'] : Unsupported event definition on start event - [Extra info : processDefinitionId = gap-conditional-start | processDefinitionName = GAP conditional start event |  | id = gap_condStart_start |  | activityName = Fee paid | ] ( line: 16, column: 63)\n",
+            "withoutValidation": {
+              "deployOk": true,
+              "runtime": "no API: Flowable 8.0.0 has no API to evaluate process-level conditional start events; RuntimeService.evaluateConditionalEvents(processInstanceId[, vars]) exists only for conditional events inside a RUNNING instance"
+            },
+            "runtimeCorrect": null,
+            "runtimeOutcome": null,
+            "classification": "needs extension",
+            "classificationNote": "needs extension: no conditional START support or API; product layer can evaluate the condition and call startProcess (or use a variable-listener/event-registry start) - engine semantics absent"
+          },
+          "error": null,
+          "millis": 178
+        },
+        {
+          "id": "E11-gap-compensation-event-subprocess",
+          "group": "GAP set",
+          "description": "compensation event sub-process inside sub-process",
+          "status": "fail",
+          "variantFiles": ["models/gap-compensation-event-subprocess.bpmn"],
+          "workarounds": [],
+          "checks": ["FAIL deploys", "FAIL runtime behaviour as specified"],
+          "details": {
+            "deployOk": false,
+            "deployError": "org.flowable.common.engine.api.FlowableException: Errors while parsing:\n[Validation set: 'flowable-executable-process' | Problem: 'flowable-event-subprocess-invalid-start-event-definition'] : start event of event subprocess must be of type 'error', 'timer', 'message' or 'signal' - [Extra info : processDefinitionId = gap-compensation-event-subprocess | processDefinitionName = GAP compensation event sub-process |  | id = gap_comp_handler |  | activ...",
+            "withoutValidation": {
+              "deployOk": true,
+              "runtime": "gap_comp_undo did not appear; active=[], ended=true"
+            },
+            "runtimeCorrect": null,
+            "runtimeOutcome": null,
+            "classification": "needs engine patch",
+            "classificationNote": "needs engine patch: the validator allows only error/timer/message/signal(/escalation...) event sub-process starts and there is no compensation-start behaviour in the 8.0.0 runtime; a compensation BOUNDARY event on the sub-process is the supported alternative (model change)"
+          },
+          "error": null,
+          "millis": 2049
+        },
+        {
+          "id": "E11-gap-adhoc-subprocess",
+          "group": "GAP set",
+          "description": "ad-hoc sub-process (parallel, completionCondition)",
+          "status": "pass",
+          "variantFiles": ["models/gap-adhoc-subprocess.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task gap_adhoc_taskA (found 1)", "OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "enabledActivities": ["gap_adhoc_taskA", "gap_adhoc_taskB"],
+            "innerTasksStarted": 2,
+            "taskBCancelled": true,
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 2297
+        },
+        {
+          "id": "E11-gap-io-mapping",
+          "group": "GAP set",
+          "description": "I/O mapping on external task (in feeBase<-amount, out ioResult<-workerResult)",
+          "status": "pass",
+          "variantFiles": ["models/gap-io-mapping.flowable.bpmn"],
+          "workarounds": ["executeDueJobs() after completeExternal (async continuation)"],
+          "checks": ["OK   io-mapping work fetched", "OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "workerSees": ["feeBase"],
+            "processVariablesAfter": ["amount", "ioResult"],
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 1843
+        }
+      ]
+    },
+    "operaton": {
+      "engineId": "operaton-2.2.0",
+      "generatedAt": "2026-11-04T08:38:35.082839800Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11)",
+      "summary": {
+        "scenarios": 8,
+        "pass": 7,
+        "fail": 1,
+        "info": 0,
+        "classification": {
+          "needs engine patch": 1,
+          "works": 7
+        }
+      },
+      "scenarios": [
+        {
+          "id": "E11-gap-link-events",
+          "group": "GAP set",
+          "description": "link throw -> link catch (LinkB)",
+          "status": "pass",
+          "variantFiles": ["models/gap-link-events.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "activeAfterStart": ["gap_link_probe"],
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 1599
+        },
+        {
+          "id": "E11-gap-signal-end",
+          "group": "GAP set",
+          "description": "signal end event (gapSignal) starts catcher process",
+          "status": "pass",
+          "variantFiles": ["models/gap-signal-end.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "throwerEnded": true,
+            "catcherInstancesCreated": 1,
+            "catcherInstancesCreatedByApiBroadcast": 1,
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 996
+        },
+        {
+          "id": "E11-gap-message-end",
+          "group": "GAP set",
+          "description": "message end event (no implementation)",
+          "status": "pass",
+          "variantFiles": ["models/gap-message-end.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "ended": true,
+            "note": "no implementation -> no-op; sending needs operaton:class/expression/delegateExpression/type=external on the event (same extension attributes as a service task)",
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 434
+        },
+        {
+          "id": "E11-gap-message-throw",
+          "group": "GAP set",
+          "description": "message intermediate throw (no implementation)",
+          "status": "pass",
+          "variantFiles": ["models/gap-message-throw.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "activeAfterStart": ["gap_msgThrow_probe"],
+            "note": "no implementation -> pass-through no-op; sending needs operaton:class/expression/type=external",
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 495
+        },
+        {
+          "id": "E11-gap-conditional-start",
+          "group": "GAP set",
+          "description": "process-level conditional start (feePaid == true)",
+          "status": "pass",
+          "variantFiles": ["models/gap-conditional-start.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "startedWithFalse": 0,
+            "startedWithTrue": 1,
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 630
+        },
+        {
+          "id": "E11-gap-compensation-event-subprocess",
+          "group": "GAP set",
+          "description": "compensation event sub-process inside sub-process",
+          "status": "pass",
+          "variantFiles": ["models/gap-compensation-event-subprocess.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   exactly one task gap_comp_decide (found 1)", "OK   exactly one task gap_comp_undo (found 1)", "OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "undoTaskAppeared": true,
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 1626
+        },
+        {
+          "id": "E11-gap-adhoc-subprocess",
+          "group": "GAP set",
+          "description": "ad-hoc sub-process (parallel, completionCondition)",
+          "status": "fail",
+          "variantFiles": ["models/gap-adhoc-subprocess.bpmn"],
+          "workarounds": [],
+          "checks": ["FAIL deploys", "FAIL runtime behaviour as specified"],
+          "details": {
+            "deployOk": false,
+            "deployError": "org.operaton.bpm.engine.ParseException: ENGINE-09005 Could not parse BPMN process. Errors: \n* Invalid destination 'gap_adhoc_sub' of sequence flow 'gap_adhoc_f1' | resource gap-adhoc-subprocess.bpmn | line 18 | column 92\n* Invalid source 'gap_adhoc_sub' of sequence flow 'gap_adhoc_f2' | resource gap-adhoc-subprocess.bpmn | line 25 | column 92",
+            "withoutValidation": "not available: Operaton 2.2.0 DeploymentBuilder has no switch to disable BPMN parse validation",
+            "runtimeCorrect": null,
+            "runtimeOutcome": null,
+            "classification": "needs engine patch",
+            "classificationNote": "needs engine patch: adHocSubProcess is not parsed by BpmnParse (no behaviour, no runtime API); adding it means a new parse path and ActivityBehavior (custom BpmnParseFactory at minimum); CMMN discretionary items are the native substitute"
+          },
+          "error": null,
+          "millis": 48
+        },
+        {
+          "id": "E11-gap-io-mapping",
+          "group": "GAP set",
+          "description": "I/O mapping on external task (in feeBase<-amount, out ioResult<-workerResult)",
+          "status": "pass",
+          "variantFiles": ["models/gap-io-mapping.operaton.bpmn"],
+          "workarounds": [],
+          "checks": ["OK   io-mapping work fetched", "OK   deploys", "OK   runtime behaviour as specified"],
+          "details": {
+            "deployOk": true,
+            "deployError": null,
+            "workerSees": ["amount", "feeBase"],
+            "processVariablesAfter": ["amount", "ioResult", "other", "workerResult"],
+            "runtimeCorrect": true,
+            "runtimeOutcome": "as specified",
+            "classification": "works",
+            "classificationNote": "works"
+          },
+          "error": null,
+          "millis": 1565
+        }
+      ]
+    }
+  }
+}

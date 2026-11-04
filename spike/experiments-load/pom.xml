@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  E6 (concurrency on PostgreSQL / Oracle Free / SQL Server) and E9 (functional-scale benchmark on PostgreSQL),
+  SANGAM.md XI.4. Everything is test code; nothing here is packaged.
+
+  Default build (fast, no Docker):
+      .\mvnw.cmd -q -pl experiments-load verify
+  runs only the unit tests (*UnitTest). The load runs are separate surefire executions, skipped unless enabled:
+
+      E6, all three databases in order (PostgreSQL, then Oracle Free, then SQL Server, one container at a time):
+      .\mvnw.cmd -q -pl experiments-load verify -De6.skip=false
+      E6 on a subset:            add  -De6.dbs=postgres   (comma list: postgres,oracle,sqlserver)
+      E9 (PostgreSQL only), one JVM per engine, Flowable then Operaton:
+      .\mvnw.cmd -q -pl experiments-load verify -De9.skip=false
+      E9 timing overrides:       -De9.warmupSeconds=20 -De9.steadySeconds=60 -De9.levels=full,audit
+
+  Results are merged into ../results/E6.json and ../results/E9.json after every (database, engine) or
+  (engine, workflow, history level) run, so a crash keeps what already finished.
+
+  Classpath: Flowable 8.0.0 and Operaton 2.2.0 are both test dependencies. E6 runs both engines in one JVM
+  (one engine at a time, each in its own database/schema). E9 forks one JVM per engine (two executions).
+  LIC-2: the Oracle and SQL Server JDBC drivers are TEST scope only (never compile/runtime).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam.spike</groupId>
+    <artifactId>spike-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>experiments-load</artifactId>
+  <name>Experiments E6 (concurrency) and E9 (benchmark)</name>
+
+  <properties>
+    <!-- Same driver versions as simulators/pom.xml -->
+    <version.ojdbc>23.8.0.25.04</version.ojdbc>
+    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <results.dir>${project.basedir}/../results</results.dir>
+
+    <e6.skip>true</e6.skip>
+    <e6.dbs>postgres,oracle,sqlserver</e6.dbs>
+    <e9.skip>true</e9.skip>
+    <e9.warmupSeconds>20</e9.warmupSeconds>
+    <e9.steadySeconds>60</e9.steadySeconds>
+    <e9.levels>full,audit</e9.levels>
+    <e9.workflows>r1,r5</e9.workflows>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- HikariCP / Testcontainers bring slf4j-api 1.7.x; slf4j-simple 2.x needs the 2.x API. -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${version.slf4j}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-api</artifactId>
+    </dependency>
+
+    <!-- Test scope: engines, corpus, DB harness -->
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>adapter-flowable</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>adapter-operaton</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>corpus</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>simulators</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- LIC-2: Oracle JDBC (Oracle Free Use Terms) is never bundled: test scope only. -->
+    <dependency>
+      <groupId>com.oracle.database.jdbc</groupId>
+      <artifactId>ojdbc11</artifactId>
+      <version>${version.ojdbc}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- SQL Server JDBC (MIT): test scope as well (XI.5: fetched at build time, not shipped). -->
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>${version.mssql-jdbc}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- quoted: the project path contains spaces ("GITHUB  Project") -->
+          <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Xmx3g</argLine>
+          <trimStackTrace>false</trimStackTrace>
+          <systemPropertyVariables>
+            <api.version>1.44</api.version>
+            <results.dir>${results.dir}</results.dir>
+            <org.slf4j.simpleLogger.defaultLogLevel>warn</org.slf4j.simpleLogger.defaultLogLevel>
+            <org.slf4j.simpleLogger.log.org.sangam>info</org.slf4j.simpleLogger.log.org.sangam>
+            <!-- every optimistic-lock failure is logged at ERROR by both engines; they are counted by the harness instead -->
+            <org.slf4j.simpleLogger.log.org.flowable.common.engine.impl.interceptor.CommandContext>off</org.slf4j.simpleLogger.log.org.flowable.common.engine.impl.interceptor.CommandContext>
+            <org.slf4j.simpleLogger.log.org.operaton.bpm.engine.context>off</org.slf4j.simpleLogger.log.org.operaton.bpm.engine.context>
+            <org.slf4j.simpleLogger.log.org.operaton.bpm.engine.cmd>off</org.slf4j.simpleLogger.log.org.operaton.bpm.engine.cmd>
+          </systemPropertyVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <!-- fast: classifier/statistics unit tests, no Docker -->
+            <id>default-test</id>
+            <configuration>
+              <includes>
+                <include>**/*UnitTest.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>e6</id>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${e6.skip}</skip>
+              <includes>
+                <include>**/E6ConcurrencyRun.java</include>
+              </includes>
+              <systemPropertyVariables>
+                <e6.dbs>${e6.dbs}</e6.dbs>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+          <execution>
+            <id>e9-flowable</id>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${e9.skip}</skip>
+              <includes>
+                <include>**/E9BenchmarkRun.java</include>
+              </includes>
+              <systemPropertyVariables>
+                <e9.engine>flowable</e9.engine>
+                <e9.warmupSeconds>${e9.warmupSeconds}</e9.warmupSeconds>
+                <e9.steadySeconds>${e9.steadySeconds}</e9.steadySeconds>
+                <e9.levels>${e9.levels}</e9.levels>
+                <e9.workflows>${e9.workflows}</e9.workflows>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+          <execution>
+            <id>e9-operaton</id>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${e9.skip}</skip>
+              <includes>
+                <include>**/E9BenchmarkRun.java</include>
+              </includes>
+              <systemPropertyVariables>
+                <e9.engine>operaton</e9.engine>
+                <e9.warmupSeconds>${e9.warmupSeconds}</e9.warmupSeconds>
+                <e9.steadySeconds>${e9.steadySeconds}</e9.steadySeconds>
+                <e9.levels>${e9.levels}</e9.levels>
+                <e9.workflows>${e9.workflows}</e9.workflows>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

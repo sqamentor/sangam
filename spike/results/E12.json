@@ -1,0 +1,757 @@
+{
+ "experiment": "E12",
+ "title": "Security: known vulnerabilities in runtime dependency trees",
+ "date": "2026-11-04",
+ "method": {
+  "tree": "mvnw -q -pl adapter-<engine> dependency:list -DincludeScope=runtime (spike modules; product-api excluded)",
+  "query": "POST https://api.osv.dev/v1/querybatch (ecosystem Maven), details from https://api.osv.dev/v1/vulns/{id}",
+  "engine_advisories": "GET https://api.github.com/repos/{repo}/security-advisories; GET https://api.github.com/advisories?ecosystem=maven&affects=<pkg>; GET https://api.github.com/advisories?cve_id=CVE-2026-91197",
+  "score": "10 - 3 per unfixed engine-level HIGH/CRITICAL - 0.25 per distinct HIGH in deps (fix available) - 0.1 per MODERATE; CRITICAL with no fix = knock-out"
+ },
+ "operaton": {
+  "dependency_count": 33,
+  "severity_counts": {
+   "CRITICAL": 0,
+   "HIGH": 5,
+   "MODERATE": 2,
+   "LOW": 0,
+   "UNKNOWN": 0
+  },
+  "engine_advisories": {
+   "repo_security_advisories": [],
+   "global_advisories": {
+    "org.operaton.bpm:operaton-engine": [],
+    "org.operaton.bpm:operaton-engine-rest-core": [],
+    "org.operaton.bpm.webapp:operaton-webapp": []
+   }
+  },
+  "dependencies": [
+   "org.operaton.bpm:operaton-engine:2.2.0:compile",
+   "org.operaton.bpm.model:operaton-bpmn-model:2.2.0:compile",
+   "org.operaton.commons:operaton-commons-utils:2.2.0:compile",
+   "org.operaton.bpm.model:operaton-xml-model:2.2.0:compile",
+   "org.operaton.bpm.model:operaton-cmmn-model:2.2.0:compile",
+   "org.operaton.bpm.juel:operaton-juel:2.2.0:compile",
+   "jakarta.el:jakarta.el-api:6.0.1:compile",
+   "org.operaton.bpm.dmn:operaton-engine-dmn:2.2.0:compile",
+   "org.operaton.bpm.model:operaton-dmn-model:2.2.0:compile",
+   "org.operaton.bpm.dmn:operaton-engine-feel-api:2.2.0:compile",
+   "org.operaton.bpm.dmn:operaton-engine-feel-juel:2.2.0:compile",
+   "org.operaton.bpm.dmn:operaton-engine-feel-scala:2.2.0:compile",
+   "org.scala-lang:scala-library:2.13.18:compile",
+   "org.camunda.feel:feel-engine:1.22.1:compile",
+   "com.lihaoyi:fastparse_2.13:3.1.1:compile",
+   "com.lihaoyi:sourcecode_2.13:0.4.0:compile",
+   "com.lihaoyi:geny_2.13:1.1.0:compile",
+   "com.fasterxml.uuid:java-uuid-generator:5.2.0:compile",
+   "com.fasterxml.jackson.module:jackson-module-scala_2.13:2.22.1:compile",
+   "com.thoughtworks.paranamer:paranamer:2.8.3:compile",
+   "org.operaton.commons:operaton-commons-logging:2.2.0:compile",
+   "org.operaton.commons:operaton-commons-typed-values:2.2.0:compile",
+   "org.jspecify:jspecify:1.0.1:compile",
+   "org.mybatis:mybatis:3.5.19:compile",
+   "org.springframework:spring-beans:7.0.10:compile",
+   "org.springframework:spring-core:7.0.10:compile",
+   "commons-logging:commons-logging:1.3.5:compile",
+   "joda-time:joda-time:2.15.0:compile",
+   "com.zaxxer:HikariCP:6.3.0:compile",
+   "org.slf4j:slf4j-api:2.0.17:compile",
+   "com.fasterxml.jackson.core:jackson-databind:2.22.1:compile",
+   "com.fasterxml.jackson.core:jackson-annotations:2.22:compile",
+   "com.fasterxml.jackson.core:jackson-core:2.22.1:compile"
+  ],
+  "vulnerabilities": [
+   {
+    "artifact": "com.fasterxml.jackson.core:jackson-databind",
+    "version": "2.22.1",
+    "scope": "compile",
+    "id": "GHSA-cxp5-3px4-pw24",
+    "aliases": [
+     "CVE-2026-91777"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": "jackson-databind quadratic forward-reference completion ",
+    "fixed": [
+     "2.21.7",
+     "2.18.11",
+     "2.22.3"
+    ],
+    "published": "2026-09-30T15:37:24Z",
+    "url": "https://osv.dev/vulnerability/GHSA-cxp5-3px4-pw24",
+    "reachability_judgement": "DoS on attacker-controlled JSON; reachable only where untrusted JSON reaches engine-side Jackson (FEEL/JSON variables). Low-moderate [I]"
+   },
+   {
+    "artifact": "com.fasterxml.jackson.core:jackson-databind",
+    "version": "2.22.1",
+    "scope": "compile",
+    "id": "GHSA-gx83-3vf8-gh7j",
+    "aliases": [
+     "CVE-2026-83557"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
+    ],
+    "summary": "jackson-databind: Comparable missing from DefaultBaseTypeLimitingValidator's unsafe base types (incomplete PolymorphicTypeValidator denylist)",
+    "fixed": [
+     "2.18.10",
+     "2.21.6",
+     "2.22.2"
+    ],
+    "published": "2026-09-28T20:44:25Z",
+    "url": "https://osv.dev/vulnerability/GHSA-gx83-3vf8-gh7j"
+   },
+   {
+    "artifact": "com.fasterxml.jackson.core:jackson-databind",
+    "version": "2.22.1",
+    "scope": "compile",
+    "id": "GHSA-q4xh-88c3-wmh7",
+    "aliases": [
+     "CVE-2026-68497"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": "jackson-databind: Duration XMLGregorianCalendar Unbounded Number Parse DoS",
+    "fixed": [
+     "2.18.10",
+     "2.21.6",
+     "2.22.2"
+    ],
+    "published": "2026-09-28T20:19:46Z",
+    "url": "https://osv.dev/vulnerability/GHSA-q4xh-88c3-wmh7",
+    "reachability_judgement": "DoS when deserializing Duration/XMLGregorianCalendar from untrusted JSON. Unlikely [I]"
+   },
+   {
+    "artifact": "com.fasterxml.jackson.core:jackson-databind",
+    "version": "2.22.1",
+    "scope": "compile",
+    "id": "GHSA-wjgm-6hv5-3cvf",
+    "aliases": [
+     "CVE-2026-19032"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+    ],
+    "summary": "jackson-databind: Path Deserialization Missing Scheme Allowlist for FileSystemProvider Resolution",
+    "fixed": [
+     "2.18.10",
+     "2.21.6",
+     "2.22.2"
+    ],
+    "published": "2026-09-28T20:19:19Z",
+    "url": "https://osv.dev/vulnerability/GHSA-wjgm-6hv5-3cvf"
+   },
+   {
+    "artifact": "com.fasterxml.jackson.core:jackson-databind",
+    "version": "2.22.1",
+    "scope": "compile",
+    "id": "GHSA-wv8q-qhhj-9h54",
+    "aliases": [
+     "CVE-2026-91776"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": "jackson-databind retains every unknown raw type ID ",
+    "fixed": [
+     "2.18.11",
+     "2.21.7",
+     "2.22.3"
+    ],
+    "published": "2026-09-30T15:36:55Z",
+    "url": "https://osv.dev/vulnerability/GHSA-wv8q-qhhj-9h54",
+    "reachability_judgement": "DoS via polymorphic type IDs; needs polymorphic typing on untrusted input. Unlikely [I]"
+   },
+   {
+    "artifact": "com.fasterxml.jackson.core:jackson-core",
+    "version": "2.22.1",
+    "scope": "compile",
+    "id": "GHSA-7hhh-6rmp-j9qf",
+    "aliases": [
+     "CVE-2026-89425"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": "jackson-core: UTF8DataInputJsonParser._reportInvalidToken() missing maxErrorTokenLength limit -> unbounded StringBuilder growth (DoS)",
+    "fixed": [
+     "2.21.7",
+     "2.22.3",
+     "2.18.11"
+    ],
+    "published": "2026-10-01T15:20:27Z",
+    "url": "https://osv.dev/vulnerability/GHSA-7hhh-6rmp-j9qf",
+    "reachability_judgement": "Parser DoS on untrusted JSON via DataInput parser. Low [I]"
+   },
+   {
+    "artifact": "com.fasterxml.jackson.core:jackson-core",
+    "version": "2.22.1",
+    "scope": "compile",
+    "id": "GHSA-p6pp-m3f8-5c89",
+    "aliases": [
+     "CVE-2026-89407"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": " jackson-core: ReDoS: quadratic backtracking in NumberInput.PATTERN_FLOAT via looksLikeValidNumber()",
+    "fixed": [
+     "2.18.11",
+     "2.21.7",
+     "2.22.3"
+    ],
+    "published": "2026-10-01T15:19:21Z",
+    "url": "https://osv.dev/vulnerability/GHSA-p6pp-m3f8-5c89",
+    "reachability_judgement": "ReDoS in number parsing on untrusted JSON. Low-moderate [I]"
+   }
+  ],
+  "note": "jackson 2.22.1 is pinned by the spike (adapter-operaton/pom.xml, ledger W-1) to the line required by jackson-module-scala 2.22.1; fixes are in 2.22.2/2.22.3 (same line).",
+  "score": 8.5,
+  "knock_out": "PASS"
+ },
+ "flowable": {
+  "dependency_count": 67,
+  "severity_counts": {
+   "CRITICAL": 0,
+   "HIGH": 10,
+   "MODERATE": 10,
+   "LOW": 1,
+   "UNKNOWN": 0
+  },
+  "engine_advisories": {
+   "repo_security_advisories": [],
+   "global_advisories": {
+    "org.flowable:flowable-engine": [],
+    "org.flowable:flowable-engine-common": [],
+    "org.flowable:flowable-rest": [],
+    "org.flowable:flowable-ui-modeler": [],
+    "org.flowable:flowable-bpmn-converter": []
+   },
+   "CVE-2026-91197": {
+    "ghsa": "GHSA-8x6x-vw5h-q563",
+    "type": "unreviewed",
+    "severity": "high",
+    "cvss_v3": {
+     "vector_string": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+     "score": 6.5
+    },
+    "cvss_v4_score": 7.1,
+    "cwe": "CWE-611",
+    "published": "2026-09-15T00:31:14Z",
+    "nvd_status": "Awaiting Analysis (NVD API, 2026-11-04)",
+    "affected": "flowable-engine through 8.0.0",
+    "fixed_version": "none released",
+    "upstream_issue": "https://github.com/flowable/flowable-engine/issues/4216 (open, 0 comments, opened 2026-06-15)",
+    "upstream_pr": "https://github.com/flowable/flowable-engine/pull/4254 (open, unmerged, opened 2026-08-09 by an external contributor)",
+    "package_mapping_in_advisory": "none (vulnerabilities: []), so OSV package queries do not match it",
+    "reachability_judgement": "Requires deployment privilege and a call to the diagram-layout API (RepositoryService.getProcessDiagramLayout / REST diagram-layout). No usage in the spike code (grep). Mitigable by R24 (DOCTYPE rejection at deploy) [I]",
+    "status_vs_SANGAM_X14": "CVE ID now verified: published in NVD and the GitHub Advisory Database (unreviewed). [U] -> [F]",
+    "urls": [
+     "https://github.com/advisories/GHSA-8x6x-vw5h-q563",
+     "https://nvd.nist.gov/vuln/detail/CVE-2026-91197"
+    ]
+   }
+  },
+  "dependencies": [
+   "org.flowable:flowable-engine:8.0.0:compile",
+   "org.flowable:flowable-bpmn-converter:8.0.0:compile",
+   "org.flowable:flowable-bpmn-model:8.0.0:compile",
+   "org.flowable:flowable-process-validation:8.0.0:compile",
+   "org.flowable:flowable-image-generator:8.0.0:compile",
+   "org.flowable:flowable-engine-common-api:8.0.0:compile",
+   "org.flowable:flowable-engine-common:8.0.0:compile",
+   "org.flowable:flowable-variable-service-api:8.0.0:compile",
+   "org.flowable:flowable-event-registry-api:8.0.0:compile",
+   "tools.jackson.core:jackson-databind:3.0.1:compile",
+   "tools.jackson.core:jackson-core:3.0.1:compile",
+   "org.flowable:flowable-variable-service:8.0.0:compile",
+   "org.flowable:flowable-identitylink-service:8.0.0:compile",
+   "org.flowable:flowable-identitylink-service-api:8.0.0:compile",
+   "org.flowable:flowable-entitylink-service:8.0.0:compile",
+   "org.flowable:flowable-entitylink-service-api:8.0.0:compile",
+   "org.flowable:flowable-event-registry:8.0.0:compile",
+   "org.flowable:flowable-event-registry-model:8.0.0:compile",
+   "org.flowable:flowable-event-registry-json-converter:8.0.0:compile",
+   "org.flowable:flowable-eventsubscription-service-api:8.0.0:compile",
+   "commons-io:commons-io:2.21.0:compile",
+   "com.fasterxml.uuid:java-uuid-generator:5.1.0:compile",
+   "org.flowable:flowable-event-registry-configurator:8.0.0:compile",
+   "org.flowable:flowable-eventsubscription-service:8.0.0:compile",
+   "org.flowable:flowable-task-service:8.0.0:compile",
+   "org.flowable:flowable-task-service-api:8.0.0:compile",
+   "org.flowable:flowable-job-service:8.0.0:compile",
+   "org.flowable:flowable-job-service-api:8.0.0:compile",
+   "org.flowable:flowable-batch-service:8.0.0:compile",
+   "org.flowable:flowable-batch-service-api:8.0.0:compile",
+   "org.flowable:flowable-idm-api:8.0.0:compile",
+   "org.flowable:flowable-idm-engine:8.0.0:compile",
+   "commons-codec:commons-codec:1.20.0:compile",
+   "org.flowable:flowable-idm-engine-configurator:8.0.0:compile",
+   "org.flowable:flowable-cmmn-api:8.0.0:compile",
+   "org.flowable:flowable-cmmn-model:8.0.0:compile",
+   "org.flowable:flowable-dmn-api:8.0.0:compile",
+   "org.flowable:flowable-dmn-model:8.0.0:compile",
+   "org.flowable:flowable-form-model:8.0.0:compile",
+   "org.flowable:flowable-form-api:8.0.0:compile",
+   "com.fasterxml.jackson.core:jackson-annotations:2.20:compile",
+   "org.flowable:flowable-content-api:8.0.0:compile",
+   "org.flowable:flowable-http-common:8.0.0:compile",
+   "org.flowable:flowable-mail:8.0.0:compile",
+   "org.eclipse.angus:angus-mail:2.0.4:compile",
+   "jakarta.activation:jakarta.activation-api:2.1.3:compile",
+   "jakarta.mail:jakarta.mail-api:2.1.3:compile",
+   "org.eclipse.angus:angus-activation:2.0.2:runtime",
+   "org.apache.commons:commons-lang3:3.20.0:compile",
+   "org.mybatis:mybatis:3.5.19:compile",
+   "joda-time:joda-time:2.14.0:compile",
+   "org.slf4j:slf4j-api:2.0.17:compile",
+   "org.slf4j:jcl-over-slf4j:2.0.17:compile",
+   "org.flowable:flowable-dmn-engine-configurator:8.0.0:compile",
+   "org.flowable:flowable-dmn-engine:8.0.0:compile",
+   "org.flowable:flowable-dmn-xml-converter:8.0.0:compile",
+   "org.flowable:flowable-dmn-image-generator:8.0.0:compile",
+   "org.springframework:spring-beans:7.0.3:compile",
+   "org.springframework:spring-core:7.0.3:compile",
+   "commons-logging:commons-logging:1.3.5:compile",
+   "org.jspecify:jspecify:1.0.0:compile",
+   "org.flowable:flowable-cmmn-engine-configurator:8.0.0:compile",
+   "org.flowable:flowable-cmmn-engine:8.0.0:compile",
+   "org.flowable:flowable-cmmn-image-generator:8.0.0:compile",
+   "org.flowable:flowable-cmmn-converter:8.0.0:compile",
+   "org.flowable:flowable-case-validation:8.0.0:compile",
+   "com.zaxxer:HikariCP:6.3.0:compile"
+  ],
+  "vulnerabilities": [
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-3pjw-73gf-8qr5",
+    "aliases": [
+     "CVE-2026-59888"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+    ],
+    "summary": "jackson-databind: @JsonIgnore on a Record property is bypassed with a PropertyNamingStrategy",
+    "fixed": [
+     "3.1.4"
+    ],
+    "published": "2026-07-21T19:33:06Z",
+    "url": "https://osv.dev/vulnerability/GHSA-3pjw-73gf-8qr5"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-5gvw-p9qm-jgwh",
+    "aliases": [
+     "CVE-2026-59889"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N"
+    ],
+    "summary": "jackson-databind: @JsonView bypassed for @JsonUnwrapped container properties on deserialization",
+    "fixed": [
+     "3.1.5",
+     "3.2.1"
+    ],
+    "published": "2026-07-21T22:00:43Z",
+    "url": "https://osv.dev/vulnerability/GHSA-5gvw-p9qm-jgwh"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-5hh8-q8hv-fr38",
+    "aliases": [
+     "CVE-2026-54517"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+    ],
+    "summary": "jackson-databind has @JsonView bypass for setterless creator properties",
+    "fixed": [
+     "3.1.4"
+    ],
+    "published": "2026-06-23T21:24:50Z",
+    "url": "https://osv.dev/vulnerability/GHSA-5hh8-q8hv-fr38"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-9fxm-vc8v-hj55",
+    "aliases": [
+     "CVE-2026-54516"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+    ],
+    "summary": "jackson-databind's renamed @JsonIgnore'd setters can deserialize via private fields",
+    "fixed": [
+     "3.1.4"
+    ],
+    "published": "2026-06-23T21:24:26Z",
+    "url": "https://osv.dev/vulnerability/GHSA-9fxm-vc8v-hj55"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-cxp5-3px4-pw24",
+    "aliases": [
+     "CVE-2026-91777"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": "jackson-databind quadratic forward-reference completion ",
+    "fixed": [
+     "3.1.7",
+     "3.2.3"
+    ],
+    "published": "2026-09-30T15:37:24Z",
+    "url": "https://osv.dev/vulnerability/GHSA-cxp5-3px4-pw24",
+    "reachability_judgement": "DoS on attacker-controlled JSON; reachable only where untrusted JSON reaches engine-side Jackson (FEEL/JSON variables). Low-moderate [I]"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-gx83-3vf8-gh7j",
+    "aliases": [
+     "CVE-2026-83557"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
+    ],
+    "summary": "jackson-databind: Comparable missing from DefaultBaseTypeLimitingValidator's unsafe base types (incomplete PolymorphicTypeValidator denylist)",
+    "fixed": [
+     "3.1.6",
+     "3.2.2"
+    ],
+    "published": "2026-09-28T20:44:25Z",
+    "url": "https://osv.dev/vulnerability/GHSA-gx83-3vf8-gh7j"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-hgj6-7826-r7m5",
+    "aliases": [
+     "CVE-2026-54514"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+    ],
+    "summary": "jackson-databind: InetSocketAddress deserialization triggers eager DNS resolution (SSRF)",
+    "fixed": [
+     "2.21.4",
+     "3.1.4"
+    ],
+    "published": "2026-06-23T21:22:54Z",
+    "url": "https://osv.dev/vulnerability/GHSA-hgj6-7826-r7m5"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-j3rv-43j4-c7qm",
+    "aliases": [
+     "CVE-2026-54512"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+    ],
+    "summary": "jackson-databind has a PolymorphicTypeValidator bypass via generic type parameters that allows arbitrary class instantiation",
+    "fixed": [
+     "3.1.4"
+    ],
+    "published": "2026-06-23T21:21:38Z",
+    "url": "https://osv.dev/vulnerability/GHSA-j3rv-43j4-c7qm",
+    "reachability_judgement": "PolymorphicTypeValidator bypass; needs default typing enabled on untrusted input. Unlikely in engine defaults [I]"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-q4xh-88c3-wmh7",
+    "aliases": [
+     "CVE-2026-68497"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": "jackson-databind: Duration XMLGregorianCalendar Unbounded Number Parse DoS",
+    "fixed": [
+     "3.2.2",
+     "3.1.6"
+    ],
+    "published": "2026-09-28T20:19:46Z",
+    "url": "https://osv.dev/vulnerability/GHSA-q4xh-88c3-wmh7",
+    "reachability_judgement": "DoS when deserializing Duration/XMLGregorianCalendar from untrusted JSON. Unlikely [I]"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-rcqc-6cw3-h962",
+    "aliases": [
+     "CVE-2026-54518"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+    ],
+    "summary": "jackson-databind has a @JsonView bypass for unwrapped creator parameters",
+    "fixed": [
+     "3.1.4"
+    ],
+    "published": "2026-06-23T21:17:02Z",
+    "url": "https://osv.dev/vulnerability/GHSA-rcqc-6cw3-h962"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-rmj7-2vxq-3g9f",
+    "aliases": [
+     "CVE-2026-54513"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+    ],
+    "summary": "jackson-databind has an array subtype allowlist bypass in BasicPolymorphicTypeValidator (allowIfSubTypeIsArray)",
+    "fixed": [
+     "3.1.4"
+    ],
+    "published": "2026-06-23T21:22:15Z",
+    "url": "https://osv.dev/vulnerability/GHSA-rmj7-2vxq-3g9f",
+    "reachability_judgement": "Array subtype allowlist bypass; needs polymorphic typing. Unlikely [I]"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-vvgp-rfg2-7rr6",
+    "aliases": [
+     "CVE-2026-77310"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+    ],
+    "summary": "jackson-databind: Incomplete fix for CVE-2026-54514: eager DNS resolution (SSRF) still present in InetAddress deserialization",
+    "fixed": [
+     "3.1.5",
+     "3.2.1"
+    ],
+    "published": "2026-09-28T20:17:41Z",
+    "url": "https://osv.dev/vulnerability/GHSA-vvgp-rfg2-7rr6"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-wjgm-6hv5-3cvf",
+    "aliases": [
+     "CVE-2026-19032"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+    ],
+    "summary": "jackson-databind: Path Deserialization Missing Scheme Allowlist for FileSystemProvider Resolution",
+    "fixed": [
+     "3.1.6",
+     "3.2.2"
+    ],
+    "published": "2026-09-28T20:19:19Z",
+    "url": "https://osv.dev/vulnerability/GHSA-wjgm-6hv5-3cvf"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-databind",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-wv8q-qhhj-9h54",
+    "aliases": [
+     "CVE-2026-91776"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": "jackson-databind retains every unknown raw type ID ",
+    "fixed": [
+     "3.1.7",
+     "3.2.3"
+    ],
+    "published": "2026-09-30T15:36:55Z",
+    "url": "https://osv.dev/vulnerability/GHSA-wv8q-qhhj-9h54",
+    "reachability_judgement": "DoS via polymorphic type IDs; needs polymorphic typing on untrusted input. Unlikely [I]"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-core",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-2m67-wjpj-xhg9",
+    "aliases": [],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": "Jackson Core: Document length constraint bypass in blocking, async, and DataInput parsers",
+    "fixed": [
+     "3.1.1"
+    ],
+    "published": "2026-04-04T04:17:07Z",
+    "url": "https://osv.dev/vulnerability/GHSA-2m67-wjpj-xhg9",
+    "reachability_judgement": "Document length constraint bypass (DoS) on untrusted JSON; JSON variables/event payloads. Low-moderate [I]"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-core",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-6v53-7c9g-w56r",
+    "aliases": [
+     "CVE-2026-29062"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+    ],
+    "summary": "jackson-core has Nesting Depth Constraint Bypass in `UTF8DataInputJsonParser` potentially allowing Resource Exhaustion",
+    "fixed": [
+     "3.1.0"
+    ],
+    "published": "2026-03-04T21:23:45Z",
+    "url": "https://osv.dev/vulnerability/GHSA-6v53-7c9g-w56r",
+    "reachability_judgement": "Nesting depth bypass (DoS) in DataInput parser. Low [I]"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-core",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-72hv-8253-57qq",
+    "aliases": [
+     "CVE-2026-18401"
+    ],
+    "severity": "MODERATE",
+    "cvss": [
+     "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N"
+    ],
+    "summary": "jackson-core: Number Length Constraint Bypass in Async Parser Leads to Potential DoS Condition",
+    "fixed": [
+     "3.1.0"
+    ],
+    "published": "2026-02-28T02:01:05Z",
+    "url": "https://osv.dev/vulnerability/GHSA-72hv-8253-57qq"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-core",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-7hhh-6rmp-j9qf",
+    "aliases": [
+     "CVE-2026-89425"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": "jackson-core: UTF8DataInputJsonParser._reportInvalidToken() missing maxErrorTokenLength limit -> unbounded StringBuilder growth (DoS)",
+    "fixed": [
+     "3.1.7",
+     "3.2.3"
+    ],
+    "published": "2026-10-01T15:20:27Z",
+    "url": "https://osv.dev/vulnerability/GHSA-7hhh-6rmp-j9qf",
+    "reachability_judgement": "Parser DoS on untrusted JSON via DataInput parser. Low [I]"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-core",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-p6pp-m3f8-5c89",
+    "aliases": [
+     "CVE-2026-89407"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+    ],
+    "summary": " jackson-core: ReDoS: quadratic backtracking in NumberInput.PATTERN_FLOAT via looksLikeValidNumber()",
+    "fixed": [
+     "3.1.7",
+     "3.2.2"
+    ],
+    "published": "2026-10-01T15:19:21Z",
+    "url": "https://osv.dev/vulnerability/GHSA-p6pp-m3f8-5c89",
+    "reachability_judgement": "ReDoS in number parsing on untrusted JSON. Low-moderate [I]"
+   },
+   {
+    "artifact": "tools.jackson.core:jackson-core",
+    "version": "3.0.1",
+    "scope": "compile",
+    "id": "GHSA-r7wm-3cxj-wff9",
+    "aliases": [
+     "CVE-2026-68494"
+    ],
+    "severity": "HIGH",
+    "cvss": [
+     "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+    ],
+    "summary": "jackson-core: Async parser maxNumberLength bypass via chunked digit accumulation (incomplete fix for GHSA-72hv-8253-57qq)",
+    "fixed": [
+     "3.1.4"
+    ],
+    "published": "2026-07-21T21:58:53Z",
+    "url": "https://osv.dev/vulnerability/GHSA-r7wm-3cxj-wff9",
+    "reachability_judgement": "Async parser number-length bypass (DoS); async parser not used by engine paths seen. Low [I]"
+   },
+   {
+    "artifact": "org.springframework:spring-core",
+    "version": "7.0.3",
+    "scope": "compile",
+    "id": "GHSA-659m-px2c-25wj",
+    "aliases": [
+     "CVE-2026-41848"
+    ],
+    "severity": "LOW",
+    "cvss": [
+     "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L"
+    ],
+    "summary": "Spring Framework Denial of Service via AntPathMatcher",
+    "fixed": [
+     "7.0.8",
+     "6.2.19"
+    ],
+    "published": "2026-06-09T06:31:58Z",
+    "url": "https://osv.dev/vulnerability/GHSA-659m-px2c-25wj"
+   }
+  ],
+  "note": "tools.jackson 3.0.1 comes from Flowable 8.0.0 itself (not pinned by the spike); fixes need 3.1.4-3.1.7 / 3.2.x, a minor-line override not tested with Flowable 8.0.0.",
+  "score": 3.5,
+  "knock_out": "PASS (conditional: unfixed engine XXE must be mitigated in the product layer)"
+ }
+}

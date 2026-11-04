@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  E16-a (government patterns GP-01..GP-20) and E17-a (domain end-to-end models) on BOTH engines.
+  See ../GOV-PATTERNS.md. Everything is test code; nothing here is packaged.
+
+  Quick pre-run on H2 (no Docker, results only under target/gov-results/h2):
+      .\mvnw.cmd -q -pl experiments-gov-a verify -Dgov.db=h2
+  Measured run on PostgreSQL (Testcontainers postgres:17-alpine, one container per engine JVM; writes
+  ../results/E16-a.json and ../results/E17-a.json). Run it inside the shared heavy lock:
+      .\mvnw.cmd -q -pl experiments-gov-a verify -Dgov.db=postgres
+  One engine only:  -Dgov.skip.flowable=true  or  -Dgov.skip.operaton=true
+  Scale size (GP-08 instances, GP-09 multi-instance items): -Dgov.scaleN=5000 (default 5000; H2 pre-runs may use less)
+
+  Each engine runs in its OWN surefire execution (own JVM), with identical models, thread counts and JVM options.
+  The system property gov.engine selects the engine kit (loaded by class name, so the other engine is never touched).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam.spike</groupId>
+    <artifactId>spike-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>experiments-gov-a</artifactId>
+  <name>Experiments E16-a / E17-a (government patterns and domain models)</name>
+
+  <properties>
+    <version.h2>2.3.232</version.h2>
+    <gov.db>h2</gov.db>
+    <gov.scaleN>5000</gov.scaleN>
+    <gov.skip.flowable>false</gov.skip.flowable>
+    <gov.skip.operaton>false</gov.skip.operaton>
+    <gov.resultsDir>${project.basedir}/../results</gov.resultsDir>
+    <gov.argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=Asia/Kolkata -Xmx2g</gov.argLine>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Same alignment as experiments (profile "both") / adapter-operaton W-1: Operaton 2.2.0 FEEL needs Jackson 2.22;
+           the simulators use Jackson 2 databind as well. Flowable 8 itself uses Jackson 3 (tools.jackson). -->
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${version.jackson}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${version.slf4j}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>adapter-flowable</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>adapter-operaton</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>simulators</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${version.h2}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <trimStackTrace>false</trimStackTrace>
+          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          <!-- A failing pattern is an experiment result (recorded in the JSON), not a broken build. -->
+          <testFailureIgnore>true</testFailureIgnore>
+          <includes>
+            <include>**/E16*Test.java</include>
+            <include>**/E17*Test.java</include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>flowable</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${gov.skip.flowable}</skip>
+              <argLine>${gov.argLine}</argLine>
+              <reportsDirectory>${project.build.directory}/surefire-reports/flowable</reportsDirectory>
+              <systemPropertyVariables>
+                <api.version>1.44</api.version>
+                <gov.engine>flowable</gov.engine>
+                <gov.db>${gov.db}</gov.db>
+                <gov.scaleN>${gov.scaleN}</gov.scaleN>
+                <gov.resultsDir>${gov.resultsDir}</gov.resultsDir>
+                <gov.fragmentDir>${project.build.directory}/gov-results</gov.fragmentDir>
+                <org.slf4j.simpleLogger.defaultLogLevel>warn</org.slf4j.simpleLogger.defaultLogLevel>
+                <org.slf4j.simpleLogger.log.org.flowable.common.engine.impl.interceptor.CommandContext>off</org.slf4j.simpleLogger.log.org.flowable.common.engine.impl.interceptor.CommandContext>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+          <execution>
+            <id>operaton</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${gov.skip.operaton}</skip>
+              <argLine>${gov.argLine}</argLine>
+              <reportsDirectory>${project.build.directory}/surefire-reports/operaton</reportsDirectory>
+              <systemPropertyVariables>
+                <api.version>1.44</api.version>
+                <gov.engine>operaton</gov.engine>
+                <gov.db>${gov.db}</gov.db>
+                <gov.scaleN>${gov.scaleN}</gov.scaleN>
+                <gov.resultsDir>${gov.resultsDir}</gov.resultsDir>
+                <gov.fragmentDir>${project.build.directory}/gov-results</gov.fragmentDir>
+                <org.slf4j.simpleLogger.defaultLogLevel>warn</org.slf4j.simpleLogger.defaultLogLevel>
+                <org.slf4j.simpleLogger.log.org.operaton.bpm.engine.context>off</org.slf4j.simpleLogger.log.org.operaton.bpm.engine.context>
+                <org.slf4j.simpleLogger.log.org.operaton.bpm.engine.cmd>off</org.slf4j.simpleLogger.log.org.operaton.bpm.engine.cmd>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

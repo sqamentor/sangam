@@ -1,0 +1,311 @@
+{
+ "experiment": "E15",
+ "title": "Ecosystem and compatibility",
+ "date": "2026-11-04",
+ "method": {
+  "score": "C7 compatibility 0-3 (documented in-place path, same schema = 3; model import with analysis tool = 1.5) + OSS modeller 0-2 (released OSS modeller usable = 2, usable but engine-native one unreleased = 1.5, proprietary only = 0.5) + worker clients 0-2 (official >=3 languages = 2, 1-2 = 1) + framework 0-2 (Spring Boot + Quarkus official = 2, one = 1) + Helm 0-1 (official chart updated in 12m = 1, stale = 0.5)"
+ },
+ "org_repos": {
+  "operaton": [
+   [
+    "operaton",
+    "2026-11-04",
+    "Apache-2.0",
+    false,
+    "BPMN-Process automation for everyone "
+   ],
+   [
+    "documentation",
+    "2026-11-04",
+    "NOASSERTION",
+    false,
+    "Content of documentation webpage for Operaton"
+   ],
+   [
+    "operaton-mcp",
+    "2026-11-04",
+    "Apache-2.0",
+    false,
+    "MCP Server for Operaton"
+   ],
+   [
+    "operaton-keycloak",
+    "2026-11-03",
+    "Apache-2.0",
+    false,
+    "Operaton keycloak plugin"
+   ],
+   [
+    "migrate-from-camunda-recipe",
+    "2026-11-02",
+    null,
+    false,
+    "An Open Rewrite Recipe to migrate a Camunda 7 Instance to Operaton"
+   ],
+   [
+    "operaton-docker",
+    "2026-10-30",
+    "Apache-2.0",
+    false,
+    " Docker images for Operaton BPM"
+   ],
+   [
+    "operaton.org",
+    "2026-10-29",
+    null,
+    false,
+    "Operatons website on operaton.org "
+   ],
+   [
+    "operaton-examples",
+    "2026-10-29",
+    "Apache-2.0",
+    false,
+    "Curated, bullet-proof Operaton example projects — dual Maven/Gradle builds, Test"
+   ],
+   [
+    "operaton-helm",
+    "2026-10-23",
+    "Apache-2.0",
+    false,
+    "Helm Charts for Operaton"
+   ],
+   [
+    "operaton-modeler",
+    "2026-10-15",
+    "MIT",
+    false,
+    ""
+   ],
+   [
+    "web-apps",
+    "2026-08-17",
+    "Apache-2.0",
+    true,
+    "New web apps for Operaton"
+   ],
+   [
+    "operaton-starter",
+    "2026-07-14",
+    "Apache-2.0",
+    false,
+    "Project generator application"
+   ],
+   [
+    "operaton-backports",
+    "2026-06-25",
+    "Apache-2.0",
+    false,
+    "Backports Staging Repository for Operaton"
+   ],
+   [
+    "branding",
+    "2026-06-03",
+    "Apache-2.0",
+    false,
+    "Branding assets for communicating about Operaton"
+   ],
+   [
+    "operaton-screenshot-automation",
+    "2026-03-02",
+    "Apache-2.0",
+    false,
+    "Automated toolkit for capturing Operaton webapp screenshots and running Front-en"
+   ],
+   [
+    "operaton-release-parent",
+    "2025-02-27",
+    "Apache-2.0",
+    false,
+    ""
+   ],
+   [
+    "homebrew-tap",
+    "2024-12-26",
+    "Apache-2.0",
+    false,
+    "🍺 Homebrew tap for Operaton"
+   ],
+   [
+    "docs-operaton-org",
+    "2024-12-10",
+    "NOASSERTION",
+    false,
+    "Will the future content of docs.operaton.org"
+   ],
+   [
+    ".github",
+    "2024-12-02",
+    null,
+    false,
+    ""
+   ],
+   [
+    "webpage",
+    "2024-10-31",
+    null,
+    true,
+    "Operaton webpage"
+   ]
+  ],
+  "flowable": [
+   [
+    "flowable-mockwebserver",
+    "2026-10-27",
+    null,
+    false,
+    ""
+   ],
+   [
+    "flowable-engine",
+    "2026-10-18",
+    "Apache-2.0",
+    false,
+    "A compact and highly efficient workflow and Business Process Management (BPM) pl"
+   ],
+   [
+    "flowable-training-getting-started",
+    "2026-09-16",
+    null,
+    false,
+    ""
+   ],
+   [
+    "flowable-external-client.net",
+    "2026-07-09",
+    "Apache-2.0",
+    false,
+    ""
+   ],
+   [
+    "flowable-upgrade",
+    "2026-04-21",
+    null,
+    false,
+    ""
+   ],
+   [
+    "flowable-external-client-golang",
+    "2026-04-06",
+    "Apache-2.0",
+    false,
+    ""
+   ],
+   [
+    "flowable-sql",
+    "2026-02-27",
+    "Apache-2.0",
+    false,
+    "Project to create SQL scripts for the Flowable engines"
+   ],
+   [
+    "flowable-external-client-java",
+    "2026-02-27",
+    "Apache-2.0",
+    false,
+    ""
+   ],
+   [
+    "flowable-external-client-js",
+    "2025-11-03",
+    "Apache-2.0",
+    false,
+    ""
+   ],
+   [
+    "flowable-external-client-python",
+    "2025-11-03",
+    "Apache-2.0",
+    false,
+    ""
+   ],
+   [
+    "helm",
+    "2024-10-09",
+    "Apache-2.0",
+    false,
+    "Flowable Helm chart repository"
+   ],
+   [
+    "flowable-enterprise-examples",
+    "2024-05-23",
+    null,
+    false,
+    ""
+   ],
+   [
+    "flowable-examples",
+    "2023-03-17",
+    "Apache-2.0",
+    false,
+    "Repository with example Flowable projects"
+   ],
+   [
+    "flowable.github.io",
+    "2022-08-16",
+    null,
+    false,
+    "Flowable site"
+   ],
+   [
+    "flowable-mongodb",
+    "2022-06-27",
+    null,
+    false,
+    ""
+   ],
+   [
+    "flowable-benchmark",
+    "2020-07-06",
+    "Apache-2.0",
+    false,
+    ""
+   ],
+   [
+    "flowable-serverless",
+    "2019-02-17",
+    "Apache-2.0",
+    false,
+    ""
+   ],
+   [
+    "flowable-upgrade-async",
+    "2019-01-08",
+    "Apache-2.0",
+    false,
+    ""
+   ],
+   [
+    "flowable-designer",
+    "2016-11-14",
+    null,
+    false,
+    ""
+   ]
+  ]
+ },
+ "operaton": {
+  "score_breakdown": {
+   "c7": 3,
+   "modeller": 1.5,
+   "workers": 1,
+   "framework": 2,
+   "helm": 1
+  },
+  "score": 8.5
+ },
+ "flowable": {
+  "score_breakdown": {
+   "c7": 1.5,
+   "modeller": 0.5,
+   "workers": 2,
+   "framework": 1,
+   "helm": 0.5
+  },
+  "score": 5.5
+ },
+ "knock_out": {
+  "operaton": "PASS",
+  "flowable": "PASS"
+ }
+}

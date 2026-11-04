@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sangam Stage B spike: one product layer over two engine adapters (SANGAM.md Part XI). -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.sangam.spike</groupId>
+  <artifactId>spike-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Sangam Stage B spike</name>
+
+  <modules>
+    <module>product-api</module>
+    <module>product-layer</module>
+    <module>adapter-flowable</module>
+    <module>adapter-operaton</module>
+    <module>corpus</module>
+    <module>simulators</module>
+    <module>experiments</module>
+    <module>experiments-integration</module>
+    <module>experiments-load</module>
+    <module>experiments-gov-a</module>
+    <module>experiments-gov-b</module>
+    <module>experiments-gov-c</module>
+  </modules>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Candidates pinned by SANGAM.md XI.1 -->
+    <version.flowable>8.0.0</version.flowable>
+    <version.operaton>2.2.0</version.operaton>
+    <version.junit>5.11.4</version.junit>
+    <!-- 1.21.4: 1.21.3 cannot reach Docker 29 (simulators README) -->
+    <version.testcontainers>1.21.4</version.testcontainers>
+    <version.postgresql>42.7.7</version.postgresql>
+    <!-- 2.22.1: Operaton 2.2.0 FEEL fails to start with 2.19.x (patch-ledger-operaton W-1) -->
+    <!-- 2.22.3 fixes the 5 HIGH OSV findings in 2.22.1 (results/E12-E15-report.md) -->
+    <version.jackson>2.22.3</version.jackson>
+    <version.slf4j>2.0.17</version.slf4j>
+    <version.hikari>6.3.0</version.hikari>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.sangam.spike</groupId>
+        <artifactId>product-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam.spike</groupId>
+        <artifactId>product-layer</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam.spike</groupId>
+        <artifactId>adapter-flowable</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam.spike</groupId>
+        <artifactId>adapter-operaton</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam.spike</groupId>
+        <artifactId>corpus</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam.spike</groupId>
+        <artifactId>simulators</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${version.junit}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${version.testcontainers}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>${version.postgresql}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>${version.hikari}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${version.jackson}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${version.slf4j}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.3</version>
+          <configuration>
+            <!-- JDK HttpServer/HttpClient loopback fails with the 8.3 user temp path on this Windows host -->
+            <!-- quoted: the project path contains spaces ("GITHUB  Project") -->
+            <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}"</argLine>
+            <systemPropertyVariables>
+              <!-- Testcontainers 1.21.3 needs an explicit Docker API version with Docker 29 (patch-ledger-operaton W-5) -->
+              <api.version>1.44</api.version>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.14.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

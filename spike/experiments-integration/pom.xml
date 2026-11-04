@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam.spike</groupId>
+    <artifactId>spike-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>experiments-integration</artifactId>
+  <name>Integration experiments E2, E3, E4, E5, E7, T08, T35</name>
+
+  <properties>
+    <!-- -Dspike.db=postgres|oracle|sqlserver (see README "Databases"); -Dspike.engines=operaton runs Operaton only -->
+    <spike.db>postgres</spike.db>
+    <spike.engines>operaton,flowable</spike.engines>
+    <!-- LIC-2: test scope only, same versions as simulators / experiments-load -->
+    <version.ojdbc>23.8.0.25.04</version.ojdbc>
+    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <version.mysql-connector-j>8.4.0</version.mysql-connector-j>
+    <version.mariadb-java-client>3.5.3</version.mariadb-java-client>
+    <!-- -Dspike.mysql.driver=mysql|mariadb (MySQL runs only) -->
+    <spike.mysql.driver>mysql</spike.mysql.driver>  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-layer</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>corpus</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>simulators</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>adapter-flowable</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>adapter-operaton</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Oracle JDBC (Oracle Free Use Terms) and SQL Server JDBC (MIT): TEST scope only, never bundled (LIC-2) -->
+    <dependency>
+      <groupId>com.oracle.database.jdbc</groupId>
+      <artifactId>ojdbc11</artifactId>
+      <version>${version.ojdbc}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- MySQL drivers, TEST scope only (never shipped): Connector/J (GPL + FOSS exception) is the default; the MariaDB
+         Connector/J (LGPL-2.1) is the driver the product plans to ship for MySQL (LIC-4): -Dspike.mysql.driver=mariadb -->
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>${version.mysql-connector-j}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mariadb.jdbc</groupId>
+      <artifactId>mariadb-java-client</artifactId>
+      <version>${version.mariadb-java-client}</version>
+      <scope>test</scope>
+    </dependency>    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>${version.mssql-jdbc}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- merged with the parent's argLine-free config: api.version=1.44 for Docker 29 comes from the parent -->
+          <systemPropertyVariables>
+            <results.dir>${project.basedir}/../results</results.dir>
+            <spike.db>${spike.db}</spike.db>
+            <spike.engines>${spike.engines}</spike.engines>
+            <spike.mysql.driver>${spike.mysql.driver}</spike.mysql.driver>
+            <org.slf4j.simpleLogger.defaultLogLevel>warn</org.slf4j.simpleLogger.defaultLogLevel>
+          </systemPropertyVariables>
+          <trimStackTrace>false</trimStackTrace>
+          <!-- A failing scenario is an experiment result (recorded in ../results/E*.json), not a broken build.
+               Compilation errors and setup crashes still show in the surefire reports. -->
+          <testFailureIgnore>true</testFailureIgnore>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

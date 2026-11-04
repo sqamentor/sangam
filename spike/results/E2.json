@@ -1,0 +1,710 @@
+{
+  "experiment" : "E2",
+  "title" : "Authorization equivalence over engine task tables (VI.4 + A-3)",
+  "database" : "PostgreSQL 17 (Testcontainers postgres:17-alpine), one database per engine",
+  "module" : "spike/experiments-integration",
+  "engines" : {
+    "flowable-8.0.0" : {
+      "generatedAt" : "2026-11-04T14:28:49.889155100+05:30",
+      "scenariosCounted" : 7,
+      "scenariosPassed" : 7,
+      "passRatePercent" : 100.0,
+      "scenarios" : [ {
+        "id" : "E2-1",
+        "name" : "Random policies: SQL list == {t : allow(t)} == in-memory model, count equal, for 3 seeds x 8 principals (0..300 groups)",
+        "tests" : [ "T14", "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalsChecked" : 24,
+          "tasks" : 2000,
+          "visibleTasksTotal" : 8230,
+          "mismatches" : 0,
+          "perSeed" : {
+            "seed 11" : {
+              "visiblePerPrincipal" : [ 5, 6, 15, 30, 921, 917, 886, 812 ],
+              "grantRows" : 4900
+            },
+            "seed 23" : {
+              "visiblePerPrincipal" : [ 5, 8, 11, 41, 916, 125, 442, 796 ],
+              "grantRows" : 5076
+            },
+            "seed 47" : {
+              "visiblePerPrincipal" : [ 5, 6, 13, 26, 79, 466, 890, 809 ],
+              "grantRows" : 4982
+            }
+          }
+        }
+      }, {
+        "id" : "E2-2",
+        "name" : "No post-filtering: LIMIT/OFFSET pages of the predicate query are full and their concatenation equals the full list",
+        "tests" : [ "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "pagesChecked" : 51,
+          "pageSize" : 50
+        }
+      }, {
+        "id" : "E2-3",
+        "name" : "Explicit deny wins (A-3): over a broader grant, over a user-level grant, a broader deny over a specific grant; conditional rows fail closed; a deny of another permission does not hide",
+        "tests" : [ "T14", "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "cases" : {
+            "groupGrantAll+groupDenyX" : "visible 380/381, x hidden",
+            "userGrantX+groupDenyX" : "x hidden",
+            "groupGrantY+groupDenyAll" : "nothing visible",
+            "grantZ+denyCompleteZ" : "z visible",
+            "conditionalGrant" : "not visible (fail closed)",
+            "conditionalDeny" : "applies (fail closed)"
+          }
+        }
+      }, {
+        "id" : "E2-4",
+        "name" : "Tenant binding: grant rows of another tenant never leak; a request tenant id only filters inside the allowed set",
+        "tests" : [ "T13" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "visibleForTnA" : 1,
+          "withRequestTenantTnB" : 0,
+          "tnBTasksCoveredByOtherTenantGrant" : 485
+        }
+      }, {
+        "id" : "E2-5",
+        "name" : "Revocation: a new deny (policy_version bump) applies to the very next list and object check (no cache)",
+        "tests" : [ "T15" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "policyVersions" : [ 1, 2, 3, 4 ]
+        }
+      }, {
+        "id" : "E2-6",
+        "name" : "Q2: the same predicate through the engine's own native task query API returns the same list and count, without engine patches",
+        "tests" : [ "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalsChecked" : 8,
+          "api" : "TaskService.createNativeTaskQuery().sql(..).parameter(..)  (Flowable 8.0.0)"
+        }
+      }, {
+        "id" : "E2-7",
+        "name" : "p95 list latency with a 300-group principal (plain SQL and engine native query), reduced scale; pass criterion p95 < 200 ms",
+        "tests" : [ "T38" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalIds" : 301,
+          "visibleTasks" : 812,
+          "tasks" : 2000,
+          "authEffectiveRows" : 4900,
+          "listPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 12.4,
+            "p95Ms" : 26.76,
+            "p99Ms" : 45.15,
+            "maxMs" : 66.83
+          },
+          "count" : {
+            "runs" : 300,
+            "rows" : 1,
+            "p50Ms" : 36.21,
+            "p95Ms" : 96.07,
+            "p99Ms" : 109.42,
+            "maxMs" : 113.98
+          },
+          "nativeQueryPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 13.88,
+            "p95Ms" : 28.04,
+            "p99Ms" : 41.11,
+            "maxMs" : 57.64
+          },
+          "explainAnalyzeListPage" : "Limit  (cost=129.38..1162.66 rows=50 width=25) (actual time=2.582..3.158 rows=50 loops=1)\n  Buffers: shared hit=144\n  ->  Incremental Sort  (cost=129.38..9346.23 rows=446 width=25) (actual time=2.580..3.151 rows=50 loops=1)\n        Sort Key: r.create_time_ DESC, r.id_\n        Presorted Key: r.create_time_\n        Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB\n        Buffers: shared hit=144\n        ->  Nested Loop Anti Join  (cost=108.70..9326.16 rows=446 width=25) (actual time=1.504..3.105 rows=51 loops=1)\n              Join Filter: (((d.resource_id)::text = (r.id_)::text) OR ((d.resource_id)::text = '*'::text))\n              Rows Removed by Join Filter: 7243\n              Buffers: shared hit=144\n              ->  Nested Loop Semi Join  (cost=54.60..7930.89 rows=494 width=30) (actual time=0.743..0.999 rows=60 loops=1)\n                    Join Filter: (((g.resource_id)::text = (r.id_)::text) OR ((g.resource_id)::text = '*'::text))\n                    Rows Removed by Join Filter: 656\n                    Buffers: shared hit=124\n                    ->  Index Scan Backward using act_idx_task_create on act_ru_task r  (cost=0.28..116.47 rows=861 width=30) (actual time=0.038..0.147 rows=60 loops=1)\n                          Filter: ((tenant_id_)::text = 'tn-a'::text)\n                          Rows Removed by Filter: 58\n                          Buffers: shared hit=115\n                    ->  Materialize  (cost=54.33..131.53 rows=1062 width=10) (actual time=0.012..0.012 rows=12 loops=60)\n                          Buffers: shared hit=9\n                          ->  Bitmap Heap Scan on auth_effective g  (cost=54.33..126.22 rows=1062 width=10) (actual time=0.690..0.695 rows=12 loops=1)\n                                Recheck Cond: (((tenant_id)::text = 'tn-a'::text) AND ((principal_id)::text = ANY ('{u-11-7,G027,G111,G174,G159,G165,G038,G248,G149,G221,G126,G279,G089,G073,G041,G211,G226,G085,G118,G127,G098,G299,G181,G082,G097,G171,G136,G066,G240,G275,G058,G104,G090,G036,G292,G201,G063,G256,G008,G223,G122,G220,G045,G281,G079,G263,G193,G218,G162,G081,G031,G016,G227,G003,G120,G022,G087,G005,G280,G228,G014,G105,G039,G004,G049,G194,G109,G167,G086,G246,G287,G033,G252,G121,G093,G132,G203,G273,G189,G007,G010,G262,G210,G161,G072,G074,G043,G245,G257,G205,G214,G278,G293,G258,G288,G277,G070,G055,G249,G154,G182,G116,G084,G207,G235,G177,G146,G239,G187,G233,G006,G222,G296,G071,G078,G077,G294,G272,G160,G013,G183,G284,G163,G065,G096,G076,G180,G123,G234,G200,G020,G156,G219,G009,G295,G002,G046,G107,G044,G231,G050,G106,G216,G139,G030,G062,G285,G152,G144,G276,G269,G034,G215,G198,G119,G224,G140,G001,G247,G176,G261,G101,G195,G266,G143,G011,G204,G145,G251,G255,G271,G243,G042,G128,G232,G260,G108,G148,G017,G138,G018,G169,G199,G056,G100,G035,G184,G103,G015,G133,G000,G208,G178,G061,G186,G025,G170,G236,G230,G172,G131,G037,G083,G068,G250,G129,G091,G158,G110,G095,G060,G164,G157,G021,G069,G268,G059,G241,G197,G113,G026,G196,G290,G135,G173,G151,G099,G150",
+          "scaleNote" : "REDUCED: 2000 tasks (spec 10,000), 300 groups, warm cache, single client"
+        }
+      }, {
+        "id" : "E2-8",
+        "name" : "Q2 probe: what the engine's own TaskQuery / authorization offers for this filter",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "engineCandidateGroupFilterCount" : 932,
+          "policyVisibleCount" : 812,
+          "engineTablesNamedLikeAuth" : [ ],
+          "engineAuthorizationService" : "none: Flowable 8.0.0 has no authorization service or permission tables (no ACT_RU_AUTHORIZATION); access is modelled only as identity links (ACT_RU_IDENTITYLINK: candidate user/group, assignee, owner)",
+          "taskQueryCanTakePredicate" : false,
+          "taskQueryOptions" : "taskCandidateUser / taskCandidateGroup(In) / taskInvolvedUser / taskTenantId: OR of identity links, no deny, no wildcard resource, no permission bits, no extension hook for an extra SQL clause",
+          "nativeTaskQuery" : "yes: TaskService.createNativeTaskQuery() accepts raw SQL with #{named} parameters and returns Task entities and counts (used in E2-6/E2-7); no engine patch",
+          "whatItWouldNeed" : "keep the product predicate: a product query builder over ACT_RU_TASK (plain SQL or NativeTaskQuery) plus the same for ACT_HI_* history tables; or a custom MyBatis mapper. Either way the engine's TaskQuery API cannot be the read path for protected lists (VI.4 rule 3)"
+        }
+      } ],
+      "notes" : {
+        "scale" : "REDUCED: 2000 engine tasks (target in XI.4: 10,000) x 300 groups; 4 tenants with skew 45/25/20/10 %",
+        "taskCreation" : {
+          "seconds" : 34.2,
+          "instancesStarted" : 2000,
+          "via" : "EngineAdapter.startProcess (WF-1 and WF-2, alternating), 8 threads"
+        },
+        "tasksPerTenant" : {
+          "tn-c" : 381,
+          "tn-d" : 202,
+          "tn-a" : 932,
+          "tn-b" : 485
+        },
+        "table" : "ACT_RU_TASK (engine-owned), columns TENANT_ID_ and ID_; predicate from AuthorizationPolicy.visible",
+        "wallClockSeconds" : 193.217
+      }
+    },
+    "operaton-2.2.0" : {
+      "generatedAt" : "2026-11-04T14:32:03.273410200+05:30",
+      "scenariosCounted" : 7,
+      "scenariosPassed" : 7,
+      "passRatePercent" : 100.0,
+      "scenarios" : [ {
+        "id" : "E2-1",
+        "name" : "Random policies: SQL list == {t : allow(t)} == in-memory model, count equal, for 3 seeds x 8 principals (0..300 groups)",
+        "tests" : [ "T14", "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalsChecked" : 24,
+          "tasks" : 2000,
+          "visibleTasksTotal" : 8230,
+          "mismatches" : 0,
+          "perSeed" : {
+            "seed 11" : {
+              "visiblePerPrincipal" : [ 5, 6, 15, 30, 921, 917, 886, 812 ],
+              "grantRows" : 4900
+            },
+            "seed 23" : {
+              "visiblePerPrincipal" : [ 5, 8, 11, 41, 916, 125, 442, 796 ],
+              "grantRows" : 5076
+            },
+            "seed 47" : {
+              "visiblePerPrincipal" : [ 5, 6, 13, 26, 79, 466, 890, 809 ],
+              "grantRows" : 4982
+            }
+          }
+        }
+      }, {
+        "id" : "E2-2",
+        "name" : "No post-filtering: LIMIT/OFFSET pages of the predicate query are full and their concatenation equals the full list",
+        "tests" : [ "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "pagesChecked" : 51,
+          "pageSize" : 50
+        }
+      }, {
+        "id" : "E2-3",
+        "name" : "Explicit deny wins (A-3): over a broader grant, over a user-level grant, a broader deny over a specific grant; conditional rows fail closed; a deny of another permission does not hide",
+        "tests" : [ "T14", "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "cases" : {
+            "groupGrantAll+groupDenyX" : "visible 380/381, x hidden",
+            "userGrantX+groupDenyX" : "x hidden",
+            "groupGrantY+groupDenyAll" : "nothing visible",
+            "grantZ+denyCompleteZ" : "z visible",
+            "conditionalGrant" : "not visible (fail closed)",
+            "conditionalDeny" : "applies (fail closed)"
+          }
+        }
+      }, {
+        "id" : "E2-4",
+        "name" : "Tenant binding: grant rows of another tenant never leak; a request tenant id only filters inside the allowed set",
+        "tests" : [ "T13" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "visibleForTnA" : 1,
+          "withRequestTenantTnB" : 0,
+          "tnBTasksCoveredByOtherTenantGrant" : 485
+        }
+      }, {
+        "id" : "E2-5",
+        "name" : "Revocation: a new deny (policy_version bump) applies to the very next list and object check (no cache)",
+        "tests" : [ "T15" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "policyVersions" : [ 1, 2, 3, 4 ]
+        }
+      }, {
+        "id" : "E2-6",
+        "name" : "Q2: the same predicate through the engine's own native task query API returns the same list and count, without engine patches",
+        "tests" : [ "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalsChecked" : 8,
+          "api" : "TaskService.createNativeTaskQuery().sql(..).parameter(..)  (Operaton 2.2.0)"
+        }
+      }, {
+        "id" : "E2-7",
+        "name" : "p95 list latency with a 300-group principal (plain SQL and engine native query), reduced scale; pass criterion p95 < 200 ms",
+        "tests" : [ "T38" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalIds" : 301,
+          "visibleTasks" : 812,
+          "tasks" : 2000,
+          "authEffectiveRows" : 4900,
+          "listPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 31.79,
+            "p95Ms" : 54.77,
+            "p99Ms" : 80.69,
+            "maxMs" : 164.72
+          },
+          "count" : {
+            "runs" : 300,
+            "rows" : 1,
+            "p50Ms" : 74.5,
+            "p95Ms" : 125.1,
+            "p99Ms" : 141.67,
+            "maxMs" : 177.55
+          },
+          "nativeQueryPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 31.81,
+            "p95Ms" : 77.93,
+            "p99Ms" : 95.54,
+            "maxMs" : 148.52
+          },
+          "explainAnalyzeListPage" : "Limit  (cost=131.70..1280.66 rows=50 width=25) (actual time=14.136..14.991 rows=50 loops=1)\n  Buffers: shared hit=149\n  ->  Incremental Sort  (cost=131.70..10541.29 rows=453 width=25) (actual time=14.134..14.983 rows=50 loops=1)\n        Sort Key: r.create_time_ DESC, r.id_\n        Presorted Key: r.create_time_\n        Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB\n        Buffers: shared hit=149\n        ->  Nested Loop Anti Join  (cost=108.70..10520.90 rows=453 width=25) (actual time=2.999..14.909 rows=51 loops=1)\n              Join Filter: (((d.resource_id)::text = (r.id_)::text) OR ((d.resource_id)::text = '*'::text))\n              Rows Removed by Join Filter: 7193\n              Buffers: shared hit=149\n              ->  Nested Loop Semi Join  (cost=54.60..9106.88 rows=499 width=30) (actual time=1.235..1.728 rows=60 loops=1)\n                    Join Filter: (((g.resource_id)::text = (r.id_)::text) OR ((g.resource_id)::text = '*'::text))\n                    Rows Removed by Join Filter: 650\n                    Buffers: shared hit=129\n                    ->  Index Scan Backward using act_idx_task_create on act_ru_task r  (cost=0.28..110.27 rows=932 width=30) (actual time=0.046..0.242 rows=60 loops=1)\n                          Filter: ((tenant_id_)::text = 'tn-a'::text)\n                          Rows Removed by Filter: 58\n                          Buffers: shared hit=120\n                    ->  Materialize  (cost=54.33..131.53 rows=1062 width=10) (actual time=0.020..0.021 rows=12 loops=60)\n                          Buffers: shared hit=9\n                          ->  Bitmap Heap Scan on auth_effective g  (cost=54.33..126.22 rows=1062 width=10) (actual time=1.163..1.171 rows=12 loops=1)\n                                Recheck Cond: (((tenant_id)::text = 'tn-a'::text) AND ((principal_id)::text = ANY ('{u-11-7,G027,G111,G174,G159,G165,G038,G248,G149,G221,G126,G279,G089,G073,G041,G211,G226,G085,G118,G127,G098,G299,G181,G082,G097,G171,G136,G066,G240,G275,G058,G104,G090,G036,G292,G201,G063,G256,G008,G223,G122,G220,G045,G281,G079,G263,G193,G218,G162,G081,G031,G016,G227,G003,G120,G022,G087,G005,G280,G228,G014,G105,G039,G004,G049,G194,G109,G167,G086,G246,G287,G033,G252,G121,G093,G132,G203,G273,G189,G007,G010,G262,G210,G161,G072,G074,G043,G245,G257,G205,G214,G278,G293,G258,G288,G277,G070,G055,G249,G154,G182,G116,G084,G207,G235,G177,G146,G239,G187,G233,G006,G222,G296,G071,G078,G077,G294,G272,G160,G013,G183,G284,G163,G065,G096,G076,G180,G123,G234,G200,G020,G156,G219,G009,G295,G002,G046,G107,G044,G231,G050,G106,G216,G139,G030,G062,G285,G152,G144,G276,G269,G034,G215,G198,G119,G224,G140,G001,G247,G176,G261,G101,G195,G266,G143,G011,G204,G145,G251,G255,G271,G243,G042,G128,G232,G260,G108,G148,G017,G138,G018,G169,G199,G056,G100,G035,G184,G103,G015,G133,G000,G208,G178,G061,G186,G025,G170,G236,G230,G172,G131,G037,G083,G068,G250,G129,G091,G158,G110,G095,G060,G164,G157,G021,G069,G268,G059,G241,G197,G113,G026,G196,G290,G135,G173,G151,G0",
+          "scaleNote" : "REDUCED: 2000 tasks (spec 10,000), 300 groups, warm cache, single client"
+        }
+      }, {
+        "id" : "E2-8",
+        "name" : "Q2 probe: what the engine's own TaskQuery / authorization offers for this filter",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "engineCandidateGroupFilterCount" : 932,
+          "policyVisibleCount" : 812,
+          "engineTablesNamedLikeAuth" : [ "act_ru_authorization" ],
+          "engineAuthorizationService" : "yes: AuthorizationService + ACT_RU_AUTHORIZATION (GRANT / REVOKE / GLOBAL), applied to TaskQuery when authorizationEnabled and an authentication is set",
+          "caseA_groupGrantAll_plus_otherGroupRevokeX_xVisible" : false,
+          "caseA_visibleCount" : 201,
+          "caseB_userGrantX_plus_groupRevokeX_xVisible" : true,
+          "caseC_groupGrantX_plus_groupRevokeAll_xVisible" : true,
+          "productRuleExpects" : "x hidden in A, B and C (any matching deny wins, compiled as NOT EXISTS)",
+          "satisfiesA3DenyWins" : false,
+          "a3Reading" : "A and B are inside A-3's wording (deny vs a grant at the same or broader scope). C (a broader deny vs a narrower grant) is outside the wording but inside the compiled NOT EXISTS rule; Operaton lets the narrower grant win",
+          "builtInAuthorizedTaskQuery300GroupsPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 15.49,
+            "p95Ms" : 57.43,
+            "p99Ms" : 100.86,
+            "maxMs" : 185.46
+          },
+          "taskQueryCanTakePredicate" : false,
+          "taskQueryOptions" : "candidate user/group(In), tenantIdIn, OR-queries; no hook for an extra SQL clause",
+          "nativeTaskQuery" : "yes: TaskService.createNativeTaskQuery() with raw SQL and #{named} parameters (used in E2-6/E2-7); no engine patch; native queries are not checked by the engine's authorization",
+          "whatItWouldNeed" : "built-in authorization would need deny precedence over user-level grants and over grants in other groups (A-3), the product's permission bits/conditions and tenant binding; otherwise keep it off (as the adapter does) and use the product predicate through plain SQL or NativeTaskQuery"
+        }
+      } ],
+      "notes" : {
+        "scale" : "REDUCED: 2000 engine tasks (target in XI.4: 10,000) x 300 groups; 4 tenants with skew 45/25/20/10 %",
+        "taskCreation" : {
+          "seconds" : 41.0,
+          "instancesStarted" : 2000,
+          "via" : "EngineAdapter.startProcess (WF-1 and WF-2, alternating), 8 threads"
+        },
+        "tasksPerTenant" : {
+          "tn-c" : 381,
+          "tn-d" : 202,
+          "tn-a" : 932,
+          "tn-b" : 485
+        },
+        "table" : "ACT_RU_TASK (engine-owned), columns TENANT_ID_ and ID_; predicate from AuthorizationPolicy.visible",
+        "wallClockSeconds" : 193.21
+      }
+    },
+    "flowable-8.0.0 @10000 tasks (supplementary)" : {
+      "generatedAt" : "2026-11-04T14:08:45.556561100+05:30",
+      "scenariosCounted" : 7,
+      "scenariosPassed" : 6,
+      "passRatePercent" : 85.7,
+      "scenarios" : [ {
+        "id" : "E2-1",
+        "name" : "Random policies: SQL list == {t : allow(t)} == in-memory model, count equal, for 3 seeds x 8 principals (0..300 groups)",
+        "tests" : [ "T14", "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalsChecked" : 24,
+          "tasks" : 10000,
+          "visibleTasksTotal" : 41093,
+          "mismatches" : 0,
+          "perSeed" : {
+            "seed 11" : {
+              "grantRows" : 4908,
+              "visiblePerPrincipal" : [ 5, 6, 15, 30, 4513, 4509, 4477, 4396 ]
+            },
+            "seed 23" : {
+              "grantRows" : 5094,
+              "visiblePerPrincipal" : [ 5, 8, 11, 42, 4508, 137, 2499, 4383 ]
+            },
+            "seed 47" : {
+              "grantRows" : 4999,
+              "visiblePerPrincipal" : [ 5, 6, 14, 29, 89, 2524, 4484, 4398 ]
+            }
+          }
+        }
+      }, {
+        "id" : "E2-2",
+        "name" : "No post-filtering: LIMIT/OFFSET pages of the predicate query are full and their concatenation equals the full list",
+        "tests" : [ "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "pagesChecked" : 235,
+          "pageSize" : 50
+        }
+      }, {
+        "id" : "E2-3",
+        "name" : "Explicit deny wins (A-3): over a broader grant, over a user-level grant, a broader deny over a specific grant; conditional rows fail closed; a deny of another permission does not hide",
+        "tests" : [ "T14", "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "cases" : {
+            "groupGrantAll+groupDenyX" : "visible 1929/1930, x hidden",
+            "userGrantX+groupDenyX" : "x hidden",
+            "groupGrantY+groupDenyAll" : "nothing visible",
+            "grantZ+denyCompleteZ" : "z visible",
+            "conditionalGrant" : "not visible (fail closed)",
+            "conditionalDeny" : "applies (fail closed)"
+          }
+        }
+      }, {
+        "id" : "E2-4",
+        "name" : "Tenant binding: grant rows of another tenant never leak; a request tenant id only filters inside the allowed set",
+        "tests" : [ "T13" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "visibleForTnA" : 1,
+          "withRequestTenantTnB" : 0,
+          "tnBTasksCoveredByOtherTenantGrant" : 2543
+        }
+      }, {
+        "id" : "E2-5",
+        "name" : "Revocation: a new deny (policy_version bump) applies to the very next list and object check (no cache)",
+        "tests" : [ "T15" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "policyVersions" : [ 1, 2, 3, 4 ]
+        }
+      }, {
+        "id" : "E2-6",
+        "name" : "Q2: the same predicate through the engine's own native task query API returns the same list and count, without engine patches",
+        "tests" : [ "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalsChecked" : 8,
+          "api" : "TaskService.createNativeTaskQuery().sql(..).parameter(..)  (Flowable 8.0.0)"
+        }
+      }, {
+        "id" : "E2-7",
+        "name" : "p95 list latency with a 300-group principal (plain SQL and engine native query), reduced scale; pass criterion p95 < 200 ms",
+        "tests" : [ "T38" ],
+        "counted" : true,
+        "outcome" : "FAIL",
+        "pass" : false,
+        "error" : "AssertionFailedError: count p95 549.71 ==> expected: <true> but was: <false>",
+        "trace" : "org.opentest4j.AssertionFailedError: count p95 549.71 ==> expected: <true> but was: <false>\r\n\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)\r\n\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)\r\n\tat org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:63)\r\n\tat org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:36)\r\n\tat org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:214)\r\n\tat org.sangam.spike.it.e2.AbstractE2AuthorizationTest.latencyWith300Groups(AbstractE2AuthorizationTest.java:577)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)\r\n\tat org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)\r\n\tat org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)\r\n\tat org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)\r\n\tat org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)\r\n\tat org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)\r\n\tat org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)\r\n\tat org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)\r\n\tat org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)\r\n\tat org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescript",
+        "measurements" : {
+          "principalIds" : 301,
+          "visibleTasks" : 4396,
+          "tasks" : 10000,
+          "authEffectiveRows" : 4908,
+          "listPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 43.89,
+            "p95Ms" : 86.46,
+            "p99Ms" : 156.98,
+            "maxMs" : 210.25
+          },
+          "count" : {
+            "runs" : 300,
+            "rows" : 1,
+            "p50Ms" : 356.52,
+            "p95Ms" : 549.71,
+            "p99Ms" : 648.07,
+            "maxMs" : 734.9
+          },
+          "nativeQueryPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 58.47,
+            "p95Ms" : 179.77,
+            "p99Ms" : 294.15,
+            "maxMs" : 388.06
+          },
+          "explainAnalyzeListPage" : "Limit  (cost=259.45..7783.28 rows=50 width=26) (actual time=16.070..21.508 rows=50 loops=1)\n  Buffers: shared hit=150\n  ->  Incremental Sort  (cost=259.45..76701.54 rows=508 width=26) (actual time=16.067..21.497 rows=50 loops=1)\n        Sort Key: r.create_time_ DESC, r.id_\n        Presorted Key: r.create_time_\n        Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB\n        Buffers: shared hit=150\n        ->  Nested Loop Anti Join  (cost=108.71..76678.68 rows=508 width=26) (actual time=13.356..20.046 rows=52 loops=1)\n              Join Filter: (((d.resource_id)::text = (r.id_)::text) OR ((d.resource_id)::text = '*'::text))\n              Rows Removed by Join Filter: 6769\n              Buffers: shared hit=150\n              ->  Nested Loop Semi Join  (cost=54.61..75118.47 rows=522 width=31) (actual time=6.153..9.610 rows=54 loops=1)\n                    Join Filter: (((g.resource_id)::text = (r.id_)::text) OR ((g.resource_id)::text = '*'::text))\n                    Rows Removed by Join Filter: 594\n                    Buffers: shared hit=130\n                    ->  Index Scan Backward using act_idx_task_create on act_ru_task r  (cost=0.29..483.57 rows=4524 width=31) (actual time=3.420..3.811 rows=54 loops=1)\n                          Filter: ((tenant_id_)::text = 'tn-a'::text)\n                          Rows Removed by Filter: 63\n                          Buffers: shared hit=121\n                    ->  Materialize  (cost=54.33..131.52 rows=1061 width=11) (actual time=0.049..0.050 rows=12 loops=54)\n                          Buffers: shared hit=9\n                          ->  Bitmap Heap Scan on auth_effective g  (cost=54.33..126.22 rows=1061 width=11) (actual time=2.560..2.570 rows=12 loops=1)\n                                Recheck Cond: (((tenant_id)::text = 'tn-a'::text) AND ((principal_id)::text = ANY ('{u-11-7,G027,G111,G174,G159,G165,G038,G248,G149,G221,G126,G279,G089,G073,G041,G211,G226,G085,G118,G127,G098,G299,G181,G082,G097,G171,G136,G066,G240,G275,G058,G104,G090,G036,G292,G201,G063,G256,G008,G223,G122,G220,G045,G281,G079,G263,G193,G218,G162,G081,G031,G016,G227,G003,G120,G022,G087,G005,G280,G228,G014,G105,G039,G004,G049,G194,G109,G167,G086,G246,G287,G033,G252,G121,G093,G132,G203,G273,G189,G007,G010,G262,G210,G161,G072,G074,G043,G245,G257,G205,G214,G278,G293,G258,G288,G277,G070,G055,G249,G154,G182,G116,G084,G207,G235,G177,G146,G239,G187,G233,G006,G222,G296,G071,G078,G077,G294,G272,G160,G013,G183,G284,G163,G065,G096,G076,G180,G123,G234,G200,G020,G156,G219,G009,G295,G002,G046,G107,G044,G231,G050,G106,G216,G139,G030,G062,G285,G152,G144,G276,G269,G034,G215,G198,G119,G224,G140,G001,G247,G176,G261,G101,G195,G266,G143,G011,G204,G145,G251,G255,G271,G243,G042,G128,G232,G260,G108,G148,G017,G138,G018,G169,G199,G056,G100,G035,G184,G103,G015,G133,G000,G208,G178,G061,G186,G025,G170,G236,G230,G172,G131,G037,G083,G068,G250,G129,G091,G158,G110,G095,G060,G164,G157,G021,G069,G268,G059,G241,G197,G113,G026,G196,G290,G135,G173,G151",
+          "scaleNote" : "SPEC SCALE: 10000 tasks (spec 10,000), 300 groups, warm cache, single client"
+        }
+      }, {
+        "id" : "E2-8",
+        "name" : "Q2 probe: what the engine's own TaskQuery / authorization offers for this filter",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "engineCandidateGroupFilterCount" : 4524,
+          "policyVisibleCount" : 4396,
+          "engineTablesNamedLikeAuth" : [ ],
+          "engineAuthorizationService" : "none: Flowable 8.0.0 has no authorization service or permission tables (no ACT_RU_AUTHORIZATION); access is modelled only as identity links (ACT_RU_IDENTITYLINK: candidate user/group, assignee, owner)",
+          "taskQueryCanTakePredicate" : false,
+          "taskQueryOptions" : "taskCandidateUser / taskCandidateGroup(In) / taskInvolvedUser / taskTenantId: OR of identity links, no deny, no wildcard resource, no permission bits, no extension hook for an extra SQL clause",
+          "nativeTaskQuery" : "yes: TaskService.createNativeTaskQuery() accepts raw SQL with #{named} parameters and returns Task entities and counts (used in E2-6/E2-7); no engine patch",
+          "whatItWouldNeed" : "keep the product predicate: a product query builder over ACT_RU_TASK (plain SQL or NativeTaskQuery) plus the same for ACT_HI_* history tables; or a custom MyBatis mapper. Either way the engine's TaskQuery API cannot be the read path for protected lists (VI.4 rule 3)"
+        }
+      } ],
+      "notes" : {
+        "scale" : "SPEC SCALE: 10000 engine tasks (target in XI.4: 10,000) x 300 groups; 4 tenants with skew 45/25/20/10 %",
+        "taskCreation" : {
+          "seconds" : 198.3,
+          "via" : "EngineAdapter.startProcess (WF-1 and WF-2, alternating), 8 threads",
+          "instancesStarted" : 10000
+        },
+        "tasksPerTenant" : {
+          "tn-c" : 1930,
+          "tn-d" : 1003,
+          "tn-a" : 4524,
+          "tn-b" : 2543
+        },
+        "table" : "ACT_RU_TASK (engine-owned), columns TENANT_ID_ and ID_; predicate from AuthorizationPolicy.visible",
+        "wallClockSeconds" : 1138.169
+      }
+    },
+    "operaton-2.2.0 @10000 tasks (supplementary)" : {
+      "generatedAt" : "2026-11-04T14:24:26.877350100+05:30",
+      "scenariosCounted" : 7,
+      "scenariosPassed" : 6,
+      "passRatePercent" : 85.7,
+      "scenarios" : [ {
+        "id" : "E2-1",
+        "name" : "Random policies: SQL list == {t : allow(t)} == in-memory model, count equal, for 3 seeds x 8 principals (0..300 groups)",
+        "tests" : [ "T14", "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalsChecked" : 24,
+          "tasks" : 10000,
+          "visibleTasksTotal" : 41093,
+          "mismatches" : 0,
+          "perSeed" : {
+            "seed 11" : {
+              "grantRows" : 4908,
+              "visiblePerPrincipal" : [ 5, 6, 15, 30, 4513, 4509, 4477, 4396 ]
+            },
+            "seed 23" : {
+              "grantRows" : 5094,
+              "visiblePerPrincipal" : [ 5, 8, 11, 42, 4508, 137, 2499, 4383 ]
+            },
+            "seed 47" : {
+              "grantRows" : 4999,
+              "visiblePerPrincipal" : [ 5, 6, 14, 29, 89, 2524, 4484, 4398 ]
+            }
+          }
+        }
+      }, {
+        "id" : "E2-2",
+        "name" : "No post-filtering: LIMIT/OFFSET pages of the predicate query are full and their concatenation equals the full list",
+        "tests" : [ "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "pagesChecked" : 235,
+          "pageSize" : 50
+        }
+      }, {
+        "id" : "E2-3",
+        "name" : "Explicit deny wins (A-3): over a broader grant, over a user-level grant, a broader deny over a specific grant; conditional rows fail closed; a deny of another permission does not hide",
+        "tests" : [ "T14", "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "cases" : {
+            "groupGrantAll+groupDenyX" : "visible 1929/1930, x hidden",
+            "userGrantX+groupDenyX" : "x hidden",
+            "groupGrantY+groupDenyAll" : "nothing visible",
+            "grantZ+denyCompleteZ" : "z visible",
+            "conditionalGrant" : "not visible (fail closed)",
+            "conditionalDeny" : "applies (fail closed)"
+          }
+        }
+      }, {
+        "id" : "E2-4",
+        "name" : "Tenant binding: grant rows of another tenant never leak; a request tenant id only filters inside the allowed set",
+        "tests" : [ "T13" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "visibleForTnA" : 1,
+          "withRequestTenantTnB" : 0,
+          "tnBTasksCoveredByOtherTenantGrant" : 2543
+        }
+      }, {
+        "id" : "E2-5",
+        "name" : "Revocation: a new deny (policy_version bump) applies to the very next list and object check (no cache)",
+        "tests" : [ "T15" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "policyVersions" : [ 1, 2, 3, 4 ]
+        }
+      }, {
+        "id" : "E2-6",
+        "name" : "Q2: the same predicate through the engine's own native task query API returns the same list and count, without engine patches",
+        "tests" : [ "T37" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "principalsChecked" : 8,
+          "api" : "TaskService.createNativeTaskQuery().sql(..).parameter(..)  (Operaton 2.2.0)"
+        }
+      }, {
+        "id" : "E2-7",
+        "name" : "p95 list latency with a 300-group principal (plain SQL and engine native query), reduced scale; pass criterion p95 < 200 ms",
+        "tests" : [ "T38" ],
+        "counted" : true,
+        "outcome" : "FAIL",
+        "pass" : false,
+        "error" : "AssertionFailedError: count p95 385.84 ==> expected: <true> but was: <false>",
+        "trace" : "org.opentest4j.AssertionFailedError: count p95 385.84 ==> expected: <true> but was: <false>\r\n\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)\r\n\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)\r\n\tat org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:63)\r\n\tat org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:36)\r\n\tat org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:214)\r\n\tat org.sangam.spike.it.e2.AbstractE2AuthorizationTest.latencyWith300Groups(AbstractE2AuthorizationTest.java:577)\r\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\r\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\r\n\tat org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)\r\n\tat org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)\r\n\tat org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)\r\n\tat org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)\r\n\tat org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)\r\n\tat org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)\r\n\tat org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)\r\n\tat org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)\r\n\tat org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)\r\n\tat org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)\r\n\tat org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescript",
+        "measurements" : {
+          "principalIds" : 301,
+          "visibleTasks" : 4396,
+          "tasks" : 10000,
+          "authEffectiveRows" : 4908,
+          "listPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 19.39,
+            "p95Ms" : 34.08,
+            "p99Ms" : 43.38,
+            "maxMs" : 50.87
+          },
+          "count" : {
+            "runs" : 300,
+            "rows" : 1,
+            "p50Ms" : 164.53,
+            "p95Ms" : 385.84,
+            "p99Ms" : 449.38,
+            "maxMs" : 665.3
+          },
+          "nativeQueryPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 27.8,
+            "p95Ms" : 62.56,
+            "p99Ms" : 97.52,
+            "maxMs" : 2964.63
+          },
+          "explainAnalyzeListPage" : "Limit  (cost=260.80..7852.24 rows=50 width=26) (actual time=9.735..11.043 rows=50 loops=1)\n  Buffers: shared hit=146\n  ->  Incremental Sort  (cost=260.80..77693.43 rows=510 width=26) (actual time=9.733..11.032 rows=50 loops=1)\n        Sort Key: r.create_time_ DESC, r.id_\n        Presorted Key: r.create_time_\n        Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB\n        Buffers: shared hit=146\n        ->  Nested Loop Anti Join  (cost=108.71..77670.48 rows=510 width=26) (actual time=2.073..10.959 rows=51 loops=1)\n              Join Filter: (((d.resource_id)::text = (r.id_)::text) OR ((d.resource_id)::text = '*'::text))\n              Rows Removed by Join Filter: 6672\n              Buffers: shared hit=146\n              ->  Nested Loop Semi Join  (cost=54.61..76104.54 rows=524 width=31) (actual time=1.162..1.581 rows=53 loops=1)\n                    Join Filter: (((g.resource_id)::text = (r.id_)::text) OR ((g.resource_id)::text = '*'::text))\n                    Rows Removed by Join Filter: 583\n                    Buffers: shared hit=126\n                    ->  Index Scan Backward using act_idx_task_create on act_ru_task r  (cost=0.29..468.02 rows=4580 width=31) (actual time=0.051..0.251 rows=53 loops=1)\n                          Filter: ((tenant_id_)::text = 'tn-a'::text)\n                          Rows Removed by Filter: 62\n                          Buffers: shared hit=117\n                    ->  Materialize  (cost=54.33..131.52 rows=1061 width=11) (actual time=0.021..0.022 rows=12 loops=53)\n                          Buffers: shared hit=9\n                          ->  Bitmap Heap Scan on auth_effective g  (cost=54.33..126.22 rows=1061 width=11) (actual time=1.089..1.095 rows=12 loops=1)\n                                Recheck Cond: (((tenant_id)::text = 'tn-a'::text) AND ((principal_id)::text = ANY ('{u-11-7,G027,G111,G174,G159,G165,G038,G248,G149,G221,G126,G279,G089,G073,G041,G211,G226,G085,G118,G127,G098,G299,G181,G082,G097,G171,G136,G066,G240,G275,G058,G104,G090,G036,G292,G201,G063,G256,G008,G223,G122,G220,G045,G281,G079,G263,G193,G218,G162,G081,G031,G016,G227,G003,G120,G022,G087,G005,G280,G228,G014,G105,G039,G004,G049,G194,G109,G167,G086,G246,G287,G033,G252,G121,G093,G132,G203,G273,G189,G007,G010,G262,G210,G161,G072,G074,G043,G245,G257,G205,G214,G278,G293,G258,G288,G277,G070,G055,G249,G154,G182,G116,G084,G207,G235,G177,G146,G239,G187,G233,G006,G222,G296,G071,G078,G077,G294,G272,G160,G013,G183,G284,G163,G065,G096,G076,G180,G123,G234,G200,G020,G156,G219,G009,G295,G002,G046,G107,G044,G231,G050,G106,G216,G139,G030,G062,G285,G152,G144,G276,G269,G034,G215,G198,G119,G224,G140,G001,G247,G176,G261,G101,G195,G266,G143,G011,G204,G145,G251,G255,G271,G243,G042,G128,G232,G260,G108,G148,G017,G138,G018,G169,G199,G056,G100,G035,G184,G103,G015,G133,G000,G208,G178,G061,G186,G025,G170,G236,G230,G172,G131,G037,G083,G068,G250,G129,G091,G158,G110,G095,G060,G164,G157,G021,G069,G268,G059,G241,G197,G113,G026,G196,G290,G135,G173,G151,G0",
+          "scaleNote" : "SPEC SCALE: 10000 tasks (spec 10,000), 300 groups, warm cache, single client"
+        }
+      }, {
+        "id" : "E2-8",
+        "name" : "Q2 probe: what the engine's own TaskQuery / authorization offers for this filter",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "engineCandidateGroupFilterCount" : 4524,
+          "policyVisibleCount" : 4396,
+          "engineTablesNamedLikeAuth" : [ "act_ru_authorization" ],
+          "engineAuthorizationService" : "yes: AuthorizationService + ACT_RU_AUTHORIZATION (GRANT / REVOKE / GLOBAL), applied to TaskQuery when authorizationEnabled and an authentication is set",
+          "caseA_groupGrantAll_plus_otherGroupRevokeX_xVisible" : false,
+          "caseA_visibleCount" : 1002,
+          "caseB_userGrantX_plus_groupRevokeX_xVisible" : true,
+          "caseC_groupGrantX_plus_groupRevokeAll_xVisible" : true,
+          "productRuleExpects" : "x hidden in A, B and C (any matching deny wins, compiled as NOT EXISTS)",
+          "satisfiesA3DenyWins" : false,
+          "a3Reading" : "A and B are inside A-3's wording (deny vs a grant at the same or broader scope). C (a broader deny vs a narrower grant) is outside the wording but inside the compiled NOT EXISTS rule; Operaton lets the narrower grant win",
+          "builtInAuthorizedTaskQuery300GroupsPage50" : {
+            "runs" : 300,
+            "rows" : 50,
+            "p50Ms" : 36.39,
+            "p95Ms" : 72.67,
+            "p99Ms" : 106.29,
+            "maxMs" : 163.74
+          },
+          "taskQueryCanTakePredicate" : false,
+          "taskQueryOptions" : "candidate user/group(In), tenantIdIn, OR-queries; no hook for an extra SQL clause",
+          "nativeTaskQuery" : "yes: TaskService.createNativeTaskQuery() with raw SQL and #{named} parameters (used in E2-6/E2-7); no engine patch; native queries are not checked by the engine's authorization",
+          "whatItWouldNeed" : "built-in authorization would need deny precedence over user-level grants and over grants in other groups (A-3), the product's permission bits/conditions and tenant binding; otherwise keep it off (as the adapter does) and use the product predicate through plain SQL or NativeTaskQuery"
+        }
+      } ],
+      "notes" : {
+        "scale" : "SPEC SCALE: 10000 engine tasks (target in XI.4: 10,000) x 300 groups; 4 tenants with skew 45/25/20/10 %",
+        "taskCreation" : {
+          "seconds" : 347.4,
+          "via" : "EngineAdapter.startProcess (WF-1 and WF-2, alternating), 8 threads",
+          "instancesStarted" : 10000
+        },
+        "tasksPerTenant" : {
+          "tn-c" : 1930,
+          "tn-d" : 1003,
+          "tn-a" : 4524,
+          "tn-b" : 2543
+        },
+        "table" : "ACT_RU_TASK (engine-owned), columns TENANT_ID_ and ID_; predicate from AuthorizationPolicy.visible",
+        "wallClockSeconds" : 941.064
+      }
+    }
+  }
+}

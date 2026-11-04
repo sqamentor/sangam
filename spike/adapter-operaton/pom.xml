@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam.spike</groupId>
+    <artifactId>spike-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>adapter-operaton</artifactId>
+  <name>EngineAdapter on Operaton</name>
+
+  <properties>
+    <!-- H2 (EPL-1.0 / MPL-2.0) is test scope only; not managed by the parent. -->
+    <version.h2>2.3.232</version.h2>
+    <!-- Test-only JDBC drivers (same versions as simulators / experiments-load) -->
+    <version.ojdbc>23.8.0.25.04</version.ojdbc>
+    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <version.mysql-connector-j>8.4.0</version.mysql-connector-j>
+    <version.mariadb-java-client>3.5.3</version.mariadb-java-client>
+    <!-- Operaton 2.2.0's FEEL engine (org.camunda.feel:feel-engine 1.22.1) brings jackson-module-scala 2.22.1,
+         which refuses jackson-databind outside 2.22.x. This module aligns all of Jackson (bom, incl.
+         jackson-module-scala_2.13) to 2.22.3, the first 2.22.x with the E12 OSV fixes (ledger entry W-1). -->
+    <version.jackson.operaton>2.22.3</version.jackson.operaton>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${version.jackson.operaton}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${version.jackson.operaton}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- HikariCP 6.3.0 brings slf4j-api 1.7.36; slf4j-simple 2.0.x needs the 2.x API. -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${version.slf4j}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-api</artifactId>
+    </dependency>
+
+    <!-- Operaton 2.2.0 embedded engine (Apache-2.0). Includes BPMN, CMMN and DMN (operaton-engine-dmn). -->
+    <dependency>
+      <groupId>org.operaton.bpm</groupId>
+      <artifactId>operaton-engine</artifactId>
+      <version>${version.operaton}</version>
+      <exclusions>
+        <!-- LIC-1: never bundle GraalJS. 2.2.0 declares it only in test scope, so this is a guard. -->
+        <exclusion>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>js</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>polyglot</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.js</groupId>
+          <artifactId>js</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.js</groupId>
+          <artifactId>js-scriptengine</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+    </dependency>
+
+    <!-- Test scope -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${version.h2}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Database harness (one Testcontainers database at a time) -->
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>simulators</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Oracle JDBC (Oracle Free Use Terms) and SQL Server JDBC (MIT): TEST SCOPE ONLY, never bundled (LIC-2) -->
+    <dependency>
+      <groupId>com.oracle.database.jdbc</groupId>
+      <artifactId>ojdbc11</artifactId>
+      <version>${version.ojdbc}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>${version.mssql-jdbc}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- MySQL (Tier 1, ADR-D-15). MySQL Connector/J (GPL-2.0 + Universal FOSS Exception) and MariaDB Connector/J
+         (LGPL-2.1, the LIC-4 candidate): TEST SCOPE ONLY, never bundled. -Dspike.mysql.driver=mysql|mariadb -->
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>${version.mysql-connector-j}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mariadb.jdbc</groupId>
+      <artifactId>mariadb-java-client</artifactId>
+      <version>${version.mariadb-java-client}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <!-- Docker Engine 29 rejects docker-java's default API version 1.32 (HTTP 400) used by
+                 Testcontainers 1.21.3; pin a version the daemon accepts (ledger entry W-5). -->
+            <api.version>1.44</api.version>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

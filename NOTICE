@@ -1,0 +1,20 @@
+Sangam
+Copyright 2026 The Sangam authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Sangam builds on, and its evaluation spike depends on, the following open-source projects,
+both licensed under the Apache License, Version 2.0:
+
+- Operaton (https://github.com/operaton/operaton): Copyright the Operaton contributors;
+  derived from Camunda 7 (Copyright Camunda Services GmbH and contributors).
+- Flowable (https://github.com/flowable/flowable-engine): Copyright Flowable AG and contributors.
+
+Where code from those projects is ported into Sangam, the original copyright headers are kept and
+the files are marked as modified, as required by section 4 of the Apache License, Version 2.0.
+
+"Operaton", "Flowable" and "Camunda" are names and trademarks of their respective owners. Sangam is
+not affiliated with or endorsed by them.
+
+The bpmn-js, dmn-js and form-js libraries (if used by the UI) are distributed under the bpmn.io
+license, which requires the bpmn.io watermark to remain visible.

@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam.spike</groupId>
+    <artifactId>spike-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>experiments</artifactId>
+  <name>Experiments E1-E11</name>
+
+  <!--
+    E1 / E8 / E10 / E11 on both engines (SANGAM.md XI.4). See README.md.
+
+    Each engine runs in its OWN surefire execution (own JVM, own test class path):
+      - execution "flowable": adapter-operaton and every Operaton-only artifact are removed from the class path;
+      - execution "operaton": adapter-flowable and every Flowable-only artifact are removed.
+    The same test classes run in both; the system property exp.engine selects the adapter.
+    Profiles -Pflowable / -Poperaton put only ONE adapter on the dependency list (so Maven mediates exactly that
+    adapter's versions) and skip the other execution. The default profile (both) runs both executions.
+  -->
+
+  <properties>
+    <version.h2>2.3.232</version.h2>
+    <skip.flowable>false</skip.flowable>
+    <skip.operaton>false</skip.operaton>
+    <!-- E8 runs follow the engine selection; -Dskip.flowable.e8=true / -Dskip.operaton.e8=true skip only E8 -->
+    <skip.flowable.e8>${skip.flowable}</skip.flowable.e8>
+    <skip.operaton.e8>${skip.operaton}</skip.operaton.e8>
+    <!-- Database: -Dspike.db=postgres|oracle|sqlserver|mysql (postgres: Testcontainers postgres:17-alpine, the measured
+         Stage B run; oracle / sqlserver: Testcontainers through simulators' Databases). -Dexp.db=h2 is a quick pre-run. -->
+    <spike.db>postgres</spike.db>
+    <exp.db>${spike.db}</exp.db>
+    <!-- Engines: -Dspike.engines=operaton (or flowable) activates the profile of that engine; default both -->
+    <spike.engines>operaton,flowable</spike.engines>
+    <!-- LIC-2: test scope only, same versions as simulators / experiments-load -->
+    <version.ojdbc>23.8.0.25.04</version.ojdbc>
+    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <version.mysql-connector-j>8.4.0</version.mysql-connector-j>
+    <version.mariadb-java-client>3.5.3</version.mariadb-java-client>
+    <!-- -Dspike.mysql.driver=mysql|mariadb (MySQL runs only) -->
+    <spike.mysql.driver>mysql</spike.mysql.driver>    <exp.resultsDir>${project.basedir}/../results</exp.resultsDir>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>corpus</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Database harness (Databases: Oracle Free / SQL Server containers), test scope -->
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>simulators</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Oracle JDBC (Oracle Free Use Terms) and SQL Server JDBC (MIT): TEST scope only, never bundled (LIC-2) -->
+    <dependency>
+      <groupId>com.oracle.database.jdbc</groupId>
+      <artifactId>ojdbc11</artifactId>
+      <version>${version.ojdbc}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- MySQL drivers, TEST scope only (never shipped): Connector/J (GPL + FOSS exception) is the default; the MariaDB
+         Connector/J (LGPL-2.1) is the driver the product plans to ship for MySQL (LIC-4): -Dspike.mysql.driver=mariadb -->
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>${version.mysql-connector-j}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mariadb.jdbc</groupId>
+      <artifactId>mariadb-java-client</artifactId>
+      <version>${version.mariadb-java-client}</version>
+      <scope>test</scope>
+    </dependency>    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>${version.mssql-jdbc}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${version.h2}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${version.slf4j}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- E10: the module's own dependency tree (both adapters, test scope) for the LIC-1..4 scan -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.8.1</version>
+        <executions>
+          <execution>
+            <id>e10-tree</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>tree</goal>
+            </goals>
+            <configuration>
+              <outputFile>${project.build.directory}/e10/tree-experiments.txt</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <trimStackTrace>false</trimStackTrace>
+          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          <includes>
+            <include>**/E*Test.java</include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>flowable</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${skip.flowable}</skip>
+              <excludes>
+                <exclude>**/E8DstTimerTest.java</exclude>
+              </excludes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/flowable</reportsDirectory>
+              <systemPropertyVariables>
+                <api.version>1.44</api.version>
+                <exp.engine>flowable</exp.engine>
+                <exp.db>${exp.db}</exp.db>
+                <spike.mysql.driver>${spike.mysql.driver}</spike.mysql.driver>
+                <exp.resultsDir>${exp.resultsDir}</exp.resultsDir>
+                <exp.fragmentDir>${project.build.directory}/exp-results</exp.fragmentDir>
+              </systemPropertyVariables>
+              <classpathDependencyExcludes>
+                <exclude>org.sangam.spike:adapter-operaton</exclude>
+                <exclude>org.operaton.bpm:*</exclude>
+                <exclude>org.operaton.bpm.model:*</exclude>
+                <exclude>org.operaton.bpm.juel:*</exclude>
+                <exclude>org.operaton.bpm.dmn:*</exclude>
+                <exclude>org.operaton.commons:*</exclude>
+                <exclude>org.camunda.feel:*</exclude>
+                <exclude>org.scala-lang:*</exclude>
+                <exclude>com.lihaoyi:*</exclude>
+                <exclude>com.fasterxml.jackson.module:*</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+                <exclude>com.thoughtworks.paranamer:*</exclude>
+                <exclude>jakarta.el:*</exclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>operaton</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${skip.operaton}</skip>
+              <excludes>
+                <exclude>**/E8DstTimerTest.java</exclude>
+              </excludes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/operaton</reportsDirectory>
+              <systemPropertyVariables>
+                <api.version>1.44</api.version>
+                <exp.engine>operaton</exp.engine>
+                <exp.db>${exp.db}</exp.db>
+                <spike.mysql.driver>${spike.mysql.driver}</spike.mysql.driver>
+                <exp.resultsDir>${exp.resultsDir}</exp.resultsDir>
+                <exp.fragmentDir>${project.build.directory}/exp-results</exp.fragmentDir>
+              </systemPropertyVariables>
+              <classpathDependencyExcludes>
+                <exclude>org.sangam.spike:adapter-flowable</exclude>
+                <exclude>org.flowable:*</exclude>
+                <exclude>tools.jackson.core:*</exclude>
+                <exclude>org.eclipse.angus:*</exclude>
+                <exclude>jakarta.mail:*</exclude>
+                <exclude>jakarta.activation:*</exclude>
+                <exclude>commons-io:*</exclude>
+                <exclude>commons-codec:*</exclude>
+                <exclude>org.apache.commons:commons-lang3</exclude>
+                <exclude>org.slf4j:jcl-over-slf4j</exclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+
+          <!-- E8: one JVM per engine AND time zone (-Duser.timezone); the zone is never switched inside a JVM -->
+          <execution>
+            <id>flowable-e8-kolkata</id>
+            <phase>test</phase>
+            <goals><goal>test</goal></goals>
+            <configuration>
+              <skip>${skip.flowable.e8}</skip>
+              <test>E8DstTimerTest</test>
+              <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=Asia/Kolkata</argLine>
+              <reportsDirectory>${project.build.directory}/surefire-reports/flowable-e8-kolkata</reportsDirectory>
+              <systemPropertyVariables>
+                <api.version>1.44</api.version>
+                <exp.engine>flowable</exp.engine>
+                <exp.db>${exp.db}</exp.db>
+                <spike.mysql.driver>${spike.mysql.driver}</spike.mysql.driver>
+                <exp.resultsDir>${exp.resultsDir}</exp.resultsDir>
+                <exp.fragmentDir>${project.build.directory}/exp-results</exp.fragmentDir>
+              </systemPropertyVariables>
+              <classpathDependencyExcludes>
+                <exclude>org.sangam.spike:adapter-operaton</exclude>
+                <exclude>org.operaton.bpm:*</exclude>
+                <exclude>org.operaton.bpm.model:*</exclude>
+                <exclude>org.operaton.bpm.juel:*</exclude>
+                <exclude>org.operaton.bpm.dmn:*</exclude>
+                <exclude>org.operaton.commons:*</exclude>
+                <exclude>org.camunda.feel:*</exclude>
+                <exclude>org.scala-lang:*</exclude>
+                <exclude>com.lihaoyi:*</exclude>
+                <exclude>com.fasterxml.jackson.module:*</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+                <exclude>com.thoughtworks.paranamer:*</exclude>
+                <exclude>jakarta.el:*</exclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>flowable-e8-berlin</id>
+            <phase>test</phase>
+            <goals><goal>test</goal></goals>
+            <configuration>
+              <skip>${skip.flowable.e8}</skip>
+              <test>E8DstTimerTest</test>
+              <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=Europe/Berlin</argLine>
+              <reportsDirectory>${project.build.directory}/surefire-reports/flowable-e8-berlin</reportsDirectory>
+              <systemPropertyVariables>
+                <api.version>1.44</api.version>
+                <exp.engine>flowable</exp.engine>
+                <exp.db>${exp.db}</exp.db>
+                <spike.mysql.driver>${spike.mysql.driver}</spike.mysql.driver>
+                <exp.resultsDir>${exp.resultsDir}</exp.resultsDir>
+                <exp.fragmentDir>${project.build.directory}/exp-results</exp.fragmentDir>
+              </systemPropertyVariables>
+              <classpathDependencyExcludes>
+                <exclude>org.sangam.spike:adapter-operaton</exclude>
+                <exclude>org.operaton.bpm:*</exclude>
+                <exclude>org.operaton.bpm.model:*</exclude>
+                <exclude>org.operaton.bpm.juel:*</exclude>
+                <exclude>org.operaton.bpm.dmn:*</exclude>
+                <exclude>org.operaton.commons:*</exclude>
+                <exclude>org.camunda.feel:*</exclude>
+                <exclude>org.scala-lang:*</exclude>
+                <exclude>com.lihaoyi:*</exclude>
+                <exclude>com.fasterxml.jackson.module:*</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+                <exclude>com.thoughtworks.paranamer:*</exclude>
+                <exclude>jakarta.el:*</exclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>operaton-e8-kolkata</id>
+            <phase>test</phase>
+            <goals><goal>test</goal></goals>
+            <configuration>
+              <skip>${skip.operaton.e8}</skip>
+              <test>E8DstTimerTest</test>
+              <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=Asia/Kolkata</argLine>
+              <reportsDirectory>${project.build.directory}/surefire-reports/operaton-e8-kolkata</reportsDirectory>
+              <systemPropertyVariables>
+                <api.version>1.44</api.version>
+                <exp.engine>operaton</exp.engine>
+                <exp.db>${exp.db}</exp.db>
+                <spike.mysql.driver>${spike.mysql.driver}</spike.mysql.driver>
+                <exp.resultsDir>${exp.resultsDir}</exp.resultsDir>
+                <exp.fragmentDir>${project.build.directory}/exp-results</exp.fragmentDir>
+              </systemPropertyVariables>
+              <classpathDependencyExcludes>
+                <exclude>org.sangam.spike:adapter-flowable</exclude>
+                <exclude>org.flowable:*</exclude>
+                <exclude>tools.jackson.core:*</exclude>
+                <exclude>org.eclipse.angus:*</exclude>
+                <exclude>jakarta.mail:*</exclude>
+                <exclude>jakarta.activation:*</exclude>
+                <exclude>commons-io:*</exclude>
+                <exclude>commons-codec:*</exclude>
+                <exclude>org.apache.commons:commons-lang3</exclude>
+                <exclude>org.slf4j:jcl-over-slf4j</exclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>operaton-e8-berlin</id>
+            <phase>test</phase>
+            <goals><goal>test</goal></goals>
+            <configuration>
+              <skip>${skip.operaton.e8}</skip>
+              <test>E8DstTimerTest</test>
+              <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=Europe/Berlin</argLine>
+              <reportsDirectory>${project.build.directory}/surefire-reports/operaton-e8-berlin</reportsDirectory>
+              <systemPropertyVariables>
+                <api.version>1.44</api.version>
+                <exp.engine>operaton</exp.engine>
+                <exp.db>${exp.db}</exp.db>
+                <spike.mysql.driver>${spike.mysql.driver}</spike.mysql.driver>
+                <exp.resultsDir>${exp.resultsDir}</exp.resultsDir>
+                <exp.fragmentDir>${project.build.directory}/exp-results</exp.fragmentDir>
+              </systemPropertyVariables>
+              <classpathDependencyExcludes>
+                <exclude>org.sangam.spike:adapter-flowable</exclude>
+                <exclude>org.flowable:*</exclude>
+                <exclude>tools.jackson.core:*</exclude>
+                <exclude>org.eclipse.angus:*</exclude>
+                <exclude>jakarta.mail:*</exclude>
+                <exclude>jakarta.activation:*</exclude>
+                <exclude>commons-io:*</exclude>
+                <exclude>commons-codec:*</exclude>
+                <exclude>org.apache.commons:commons-lang3</exclude>
+                <exclude>org.slf4j:jcl-over-slf4j</exclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- Default: both adapters on the dependency list, both executions run. -->
+    <profile>
+      <id>both</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <!-- Classpath conflict found on the combined dependency list: Maven mediates jackson-annotations to Flowable's
+           2.20, but Operaton's jackson-databind 2.22.1 (FEEL) needs 2.22 (NoClassDefFoundError JsonSerializeAs).
+           Same alignment as adapter-operaton W-1; the Flowable execution then runs with jackson-annotations 2.22
+           instead of 2.20 (use -Pflowable for Flowable's exact mediation). See README. -->
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>com.fasterxml.jackson</groupId>
+            <artifactId>jackson-bom</artifactId>
+            <version>${version.jackson}</version>
+            <type>pom</type>
+            <scope>import</scope>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>org.sangam.spike</groupId>
+          <artifactId>adapter-flowable</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.sangam.spike</groupId>
+          <artifactId>adapter-operaton</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <!-- Flowable only: exactly adapter-flowable's dependency mediation; Operaton hooks are not compiled. -->
+    <profile>
+      <id>flowable</id>
+      <activation>
+        <property>
+          <name>spike.engines</name>
+          <value>flowable</value>
+        </property>
+      </activation>
+      <properties>
+        <skip.operaton>true</skip.operaton>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.sangam.spike</groupId>
+          <artifactId>adapter-flowable</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <testExcludes>
+                <testExclude>**/hooks/operaton/**</testExclude>
+              </testExcludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Operaton only: exactly adapter-operaton's dependency mediation; Flowable hooks are not compiled. -->
+    <profile>
+      <id>operaton</id>
+      <!-- also active with -Dspike.engines=operaton (the Oracle / SQL Server runs are Operaton only, ADR-D-1) -->
+      <activation>
+        <property>
+          <name>spike.engines</name>
+          <value>operaton</value>
+        </property>
+      </activation>
+      <properties>
+        <skip.flowable>true</skip.flowable>
+      </properties>
+      <dependencyManagement>
+        <dependencies>
+          <!-- same alignment as adapter-operaton (its ledger W-1 / W-6) -->
+          <dependency>
+            <groupId>com.fasterxml.jackson</groupId>
+            <artifactId>jackson-bom</artifactId>
+            <version>${version.jackson}</version>
+            <type>pom</type>
+            <scope>import</scope>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>org.sangam.spike</groupId>
+          <artifactId>adapter-operaton</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <testExcludes>
+                <testExclude>**/hooks/flowable/**</testExclude>
+              </testExcludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

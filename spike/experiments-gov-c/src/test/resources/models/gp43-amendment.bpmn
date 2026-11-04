@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp43a">
+  <process id="gp43-amendment" name="GP-43 Amendment approval" isExecutable="true">
+    <startEvent id="gp43a_start"/>
+    <sequenceFlow id="f1" sourceRef="gp43a_start" targetRef="gp43a_examine"/>
+    <userTask id="gp43a_examine" name="Examine hindrance / variation"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp43a_examine" targetRef="gp43a_approve"/>
+    <userTask id="gp43a_approve" name="Approve amendment"><potentialOwner><resourceAssignmentExpression><formalExpression>group(se)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="gp43a_approve" targetRef="gp43a_end"/>
+    <endEvent id="gp43a_end"/>
+  </process>
+</definitions>

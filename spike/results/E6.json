@@ -1,0 +1,1725 @@
+{
+  "experiment": "E6 concurrency (SANGAM.md XI.4; T10/T33)",
+  "environment": {
+    "label": "FUNCTIONAL SCALE on an 8-logical-CPU / 32 GB Windows 11 dev machine, database co-located in Docker on the same host. NOT the reference scale of R22.",
+    "javaVersion": "21.0.10",
+    "os": "Windows 11 10.0",
+    "jvmAvailableProcessors": 8,
+    "jvmMaxHeapMb": 3072,
+    "dockerInfo": "29.7.2 cpus=6 mem=14659231744",
+    "otherContainersAtStart": [
+      "container-registry.oracle.com/database/free:23.26.3.0 (Up 5 minutes (healthy))",
+      "testcontainers/ryuk:0.14.0 (Up 5 minutes)",
+      "18cfe3ef5e68 (Up 4 days (healthy))"
+    ]
+  },
+  "design": {
+    "wf2JoinStorm": "100 WF-2 instances; both comment branches completed at the same instant (barrier per pair)",
+    "threadsPerVariant": "one-root scenarios run once with 16 and once with 32 threads",
+    "classification": "PG 40P01 deadlock / 40001 serialization / 55P03 lock timeout; Oracle ORA-00060 deadlock / ORA-08177 / ORA-30006,00054; SQL Server 1205 deadlock / 3960 / 1222; engine *OptimisticLockingException = OLE",
+    "pass": "0 lost updates and 0 unrecovered failures after retries (raw OLE/deadlock counts are reported, not judged)",
+    "historyLevel": "as configured by the adapters: Flowable engine default (audit), Operaton FULL (set by the adapter)",
+    "oneRootUserTasks": "6 roots x 50 parallel user tasks (fork/join), completed concurrently",
+    "oneRootMessages": "10 roots x 32 parallel message catch events (fork/join), correlated concurrently",
+    "threads": 32,
+    "retry": "max 5 retries, exponential back-off with full jitter, base 20 ms, cap 1 s (VI.1.1 rule 7)",
+    "lostUpdateCheck": "after the concurrent phase: every variable written by a command that reported success must be present; then commands that failed after their retries are re-run sequentially (drain, not counted as successes) so the instance can finish, and the join must have fired exactly once and the instance ended exactly once (runtime, ACT_HI_PROCINST, ACT_HI_ACTINST)"
+  },
+  "runs": {
+    "postgres": {
+      "_database": {
+        "status": "STARTED",
+        "image": "postgres:17",
+        "startupSeconds": 18.15,
+        "containerMemAfterStart": "53.29MiB / 13.65GiB"
+      },
+      "flowable": {
+        "engine": "flowable-8.0.0.0",
+        "historyLevel": "audit",
+        "database": "PostgreSQL database e6_flowable (default isolation READ COMMITTED)",
+        "engineStartupSeconds": 7.68,
+        "adapterCorrelateMessageOnParallelBranch": {
+          "works": false,
+          "error": "IllegalStateException: Message 'e6msg_0' (businessKey=e6diag-flowable) matched 0 waiting executions; exactly one is required | top: IllegalStateException: Message 'e6msg_0' (businessKey=e6diag-flowable) matched 0 waiting executions; exactly one is required",
+          "pathUsedForE6": "harness: Flowable RuntimeService execution query by processInstanceId + messageEventReceived, one command"
+        },
+        "scenarios": {
+          "oneRootUserTasks_16threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 16,
+            "operations": 300,
+            "successes": 176,
+            "unrecoveredFailures": 124,
+            "attempts": 1334,
+            "retries": 1034,
+            "operationsThatNeededRetry": 247,
+            "exceptionsByKind": {
+              "OLE": 1158,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 53,
+              "2": 19,
+              "3": 15,
+              "4": 26,
+              "5": 28,
+              "6": 35
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1158
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[142] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[142] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 17.71,
+            "scenarioWallSecondsInclSetup": 27.1,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 124,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_16threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 16,
+            "operations": 320,
+            "successes": 226,
+            "unrecoveredFailures": 94,
+            "attempts": 1270,
+            "retries": 950,
+            "operationsThatNeededRetry": 226,
+            "exceptionsByKind": {
+              "OLE": 1044,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 94,
+              "2": 10,
+              "3": 19,
+              "4": 25,
+              "5": 33,
+              "6": 45
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1044
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[5770] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[5770] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 16.44,
+            "scenarioWallSecondsInclSetup": 24.38,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 94,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootUserTasks_32threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 32,
+            "operations": 300,
+            "successes": 135,
+            "unrecoveredFailures": 165,
+            "attempts": 1487,
+            "retries": 1187,
+            "operationsThatNeededRetry": 263,
+            "exceptionsByKind": {
+              "OLE": 1352,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 37,
+              "2": 9,
+              "3": 17,
+              "4": 10,
+              "5": 21,
+              "6": 41
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1352
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[11232] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[11232] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 15.05,
+            "scenarioWallSecondsInclSetup": 24.75,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 165,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_32threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 32,
+            "operations": 320,
+            "successes": 192,
+            "unrecoveredFailures": 128,
+            "attempts": 1495,
+            "retries": 1175,
+            "operationsThatNeededRetry": 274,
+            "exceptionsByKind": {
+              "OLE": 1303,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 46,
+              "2": 16,
+              "3": 20,
+              "4": 23,
+              "5": 25,
+              "6": 62
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1303
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[17442] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[17442] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 14.77,
+            "scenarioWallSecondsInclSetup": 23.29,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 128,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "wf2JoinStorm_32threads": {
+            "instances": 100,
+            "threads": 32,
+            "operations": 200,
+            "successes": 200,
+            "unrecoveredFailures": 0,
+            "attempts": 300,
+            "retries": 100,
+            "operationsThatNeededRetry": 100,
+            "exceptionsByKind": {
+              "OLE": 100,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 100,
+              "2": 100
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 100
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[23681] - definition 'wf2-file:1:9' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[23681] - definition 'wf2-file:1:9' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 4.35,
+            "setupSeconds": 19.48,
+            "scenarioWallSecondsInclSetup": 34.41,
+            "verification": {
+              "instancesChecked": 100,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 0,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          }
+        },
+        "setupAndVerifyCommands": {
+          "unrecoveredFailures": 0,
+          "operations": 1715,
+          "deadlocks": 0,
+          "OLE": 0
+        },
+        "summary": {
+          "operations": 1440,
+          "successes": 929,
+          "optimisticLockExceptions": 4957,
+          "deadlocks": 0,
+          "serializationFailures": 0,
+          "lockTimeouts": 0,
+          "otherErrors": 0,
+          "retries": 4446,
+          "unrecoveredFailures": 511,
+          "lostUpdates": 0,
+          "concurrentWallSeconds": 68.32,
+          "pass_T10_T33": false
+        },
+        "sqlServerShimRewrites": 0,
+        "status": "RAN",
+        "totalSeconds": 143.89,
+        "containerMemAfterRun": "86.56MiB / 13.65GiB"
+      },
+      "operaton": {
+        "engine": "operaton-2.2.0",
+        "historyLevel": "full",
+        "database": "PostgreSQL database e6_operaton (default isolation READ COMMITTED)",
+        "engineStartupSeconds": 8.57,
+        "adapterCorrelateMessageOnParallelBranch": {
+          "works": true,
+          "pathUsedForE6": "EngineAdapter.correlateMessage"
+        },
+        "scenarios": {
+          "oneRootUserTasks_16threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 16,
+            "operations": 300,
+            "successes": 185,
+            "unrecoveredFailures": 115,
+            "attempts": 1255,
+            "retries": 955,
+            "operationsThatNeededRetry": 230,
+            "exceptionsByKind": {
+              "OLE": 1070,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 70,
+              "2": 13,
+              "3": 24,
+              "4": 19,
+              "5": 33,
+              "6": 26
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1070
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[142]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[142]' failed. Entity was updated by another transaction concurrentl..."
+            },
+            "concurrentPhaseWallSeconds": 16.12,
+            "scenarioWallSecondsInclSetup": 25.57,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 115,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_16threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 16,
+            "operations": 320,
+            "successes": 203,
+            "unrecoveredFailures": 117,
+            "attempts": 1342,
+            "retries": 1022,
+            "operationsThatNeededRetry": 254,
+            "exceptionsByKind": {
+              "OLE": 1139,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 66,
+              "2": 24,
+              "3": 27,
+              "4": 23,
+              "5": 25,
+              "6": 38
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1139
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[5188]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[5188]' failed. Entity was updated by another transaction concurren..."
+            },
+            "concurrentPhaseWallSeconds": 16.69,
+            "scenarioWallSecondsInclSetup": 23.3,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 117,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootUserTasks_32threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 32,
+            "operations": 300,
+            "successes": 133,
+            "unrecoveredFailures": 167,
+            "attempts": 1490,
+            "retries": 1190,
+            "operationsThatNeededRetry": 272,
+            "exceptionsByKind": {
+              "OLE": 1357,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 28,
+              "2": 11,
+              "3": 18,
+              "4": 26,
+              "5": 20,
+              "6": 30
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1357
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[10905]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[10905]' failed. Entity was updated by another transaction concurr..."
+            },
+            "concurrentPhaseWallSeconds": 16.95,
+            "scenarioWallSecondsInclSetup": 27.4,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 167,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_32threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 32,
+            "operations": 320,
+            "successes": 160,
+            "unrecoveredFailures": 160,
+            "attempts": 1656,
+            "retries": 1336,
+            "operationsThatNeededRetry": 303,
+            "exceptionsByKind": {
+              "OLE": 1496,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 17,
+              "2": 14,
+              "3": 11,
+              "4": 27,
+              "5": 36,
+              "6": 55
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1496
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[16812]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[16812]' failed. Entity was updated by another transaction concurr..."
+            },
+            "concurrentPhaseWallSeconds": 16.15,
+            "scenarioWallSecondsInclSetup": 23.74,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 160,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "wf2JoinStorm_32threads": {
+            "instances": 100,
+            "threads": 32,
+            "operations": 200,
+            "successes": 200,
+            "unrecoveredFailures": 0,
+            "attempts": 300,
+            "retries": 100,
+            "operationsThatNeededRetry": 100,
+            "exceptionsByKind": {
+              "OLE": 100,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 100,
+              "2": 100
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 100
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[23800]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[23800]' failed. Entity was updated by another transaction concurr..."
+            },
+            "concurrentPhaseWallSeconds": 2.97,
+            "setupSeconds": 19.73,
+            "scenarioWallSecondsInclSetup": 32.5,
+            "verification": {
+              "instancesChecked": 100,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 0,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          }
+        },
+        "setupAndVerifyCommands": {
+          "unrecoveredFailures": 0,
+          "operations": 1763,
+          "deadlocks": 0,
+          "OLE": 0
+        },
+        "summary": {
+          "operations": 1440,
+          "successes": 881,
+          "optimisticLockExceptions": 5162,
+          "deadlocks": 0,
+          "serializationFailures": 0,
+          "lockTimeouts": 0,
+          "otherErrors": 0,
+          "retries": 4603,
+          "unrecoveredFailures": 559,
+          "lostUpdates": 0,
+          "concurrentWallSeconds": 68.88,
+          "pass_T10_T33": false
+        },
+        "sqlServerShimRewrites": 0,
+        "status": "RAN",
+        "totalSeconds": 142.45,
+        "containerMemAfterRun": "114.6MiB / 13.65GiB"
+      }
+    },
+    "oracle": {
+      "_database": {
+        "status": "STARTED",
+        "image": "gvenzl/oracle-free:23-slim-faststart",
+        "startupSeconds": 182.42,
+        "containerMemAfterStart": "3.901GiB / 13.65GiB"
+      },
+      "flowable": {
+        "engine": "flowable-8.0.0.0",
+        "historyLevel": "audit",
+        "database": "Oracle user/schema E6_FLOWABLE in FREEPDB1 (default isolation READ COMMITTED); spike_lease SQL rewritten by the test shim (product-api LeaseTable is PostgreSQL-only: BIGINT DDL fails on Oracle, IF NOT EXISTS / FOR UPDATE fail on SQL Server)",
+        "engineStartupSeconds": 40.58,
+        "adapterCorrelateMessageOnParallelBranch": {
+          "works": false,
+          "error": "IllegalStateException: Message 'e6msg_0' (businessKey=e6diag-flowable) matched 0 waiting executions; exactly one is required | top: IllegalStateException: Message 'e6msg_0' (businessKey=e6diag-flowable) matched 0 waiting executions; exactly one is required",
+          "pathUsedForE6": "harness: Flowable RuntimeService execution query by processInstanceId + messageEventReceived, one command"
+        },
+        "scenarios": {
+          "oneRootUserTasks_16threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 16,
+            "operations": 300,
+            "successes": 187,
+            "unrecoveredFailures": 113,
+            "attempts": 1278,
+            "retries": 978,
+            "operationsThatNeededRetry": 255,
+            "exceptionsByKind": {
+              "OLE": 1091,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 45,
+              "2": 34,
+              "3": 25,
+              "4": 28,
+              "5": 30,
+              "6": 25
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1091
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[142] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[142] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 37.39,
+            "scenarioWallSecondsInclSetup": 61.91,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 113,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_16threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 16,
+            "operations": 320,
+            "successes": 204,
+            "unrecoveredFailures": 116,
+            "attempts": 1385,
+            "retries": 1065,
+            "operationsThatNeededRetry": 274,
+            "exceptionsByKind": {
+              "OLE": 1181,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 46,
+              "2": 35,
+              "3": 24,
+              "4": 28,
+              "5": 37,
+              "6": 34
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1181
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[5569] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[5569] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 34.99,
+            "scenarioWallSecondsInclSetup": 55.58,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 116,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootUserTasks_32threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 32,
+            "operations": 300,
+            "successes": 133,
+            "unrecoveredFailures": 167,
+            "attempts": 1486,
+            "retries": 1186,
+            "operationsThatNeededRetry": 275,
+            "exceptionsByKind": {
+              "OLE": 1353,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 25,
+              "2": 18,
+              "3": 15,
+              "4": 24,
+              "5": 24,
+              "6": 27
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1353
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[11442] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[11442] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 25.15,
+            "scenarioWallSecondsInclSetup": 41.84,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 167,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_32threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 32,
+            "operations": 320,
+            "successes": 139,
+            "unrecoveredFailures": 181,
+            "attempts": 1663,
+            "retries": 1343,
+            "operationsThatNeededRetry": 306,
+            "exceptionsByKind": {
+              "OLE": 1524,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 14,
+              "2": 18,
+              "3": 20,
+              "4": 15,
+              "5": 25,
+              "6": 47
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1524
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[17655] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[17655] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 25.45,
+            "scenarioWallSecondsInclSetup": 43.27,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 181,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "wf2JoinStorm_32threads": {
+            "instances": 100,
+            "threads": 32,
+            "operations": 200,
+            "successes": 200,
+            "unrecoveredFailures": 0,
+            "attempts": 300,
+            "retries": 100,
+            "operationsThatNeededRetry": 100,
+            "exceptionsByKind": {
+              "OLE": 100,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 100,
+              "2": 100
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 100
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[24603] - definition 'wf2-file:1:9' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[24603] - definition 'wf2-file:1:9' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 8.65,
+            "setupSeconds": 50.17,
+            "scenarioWallSecondsInclSetup": 82.6,
+            "verification": {
+              "instancesChecked": 100,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 0,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          }
+        },
+        "setupAndVerifyCommands": {
+          "OLE": 0,
+          "deadlocks": 0,
+          "operations": 1781,
+          "unrecoveredFailures": 0
+        },
+        "summary": {
+          "operations": 1440,
+          "successes": 863,
+          "optimisticLockExceptions": 5249,
+          "deadlocks": 0,
+          "serializationFailures": 0,
+          "lockTimeouts": 0,
+          "otherErrors": 0,
+          "retries": 4672,
+          "unrecoveredFailures": 577,
+          "lostUpdates": 0,
+          "concurrentWallSeconds": 131.63,
+          "pass_T10_T33": false
+        },
+        "sqlServerShimRewrites": 1,
+        "status": "RAN",
+        "totalSeconds": 333.07,
+        "containerMemAfterRun": "4GiB / 13.65GiB"
+      },
+      "operaton": {
+        "engine": "operaton-2.2.0",
+        "historyLevel": "full",
+        "database": "Oracle user/schema E6_OPERATON in FREEPDB1 (default isolation READ COMMITTED); spike_lease SQL rewritten by the test shim (product-api LeaseTable is PostgreSQL-only: BIGINT DDL fails on Oracle, IF NOT EXISTS / FOR UPDATE fail on SQL Server)",
+        "engineStartupSeconds": 25.43,
+        "adapterCorrelateMessageOnParallelBranch": {
+          "works": true,
+          "pathUsedForE6": "EngineAdapter.correlateMessage"
+        },
+        "scenarios": {
+          "oneRootUserTasks_16threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 16,
+            "operations": 300,
+            "successes": 176,
+            "unrecoveredFailures": 124,
+            "attempts": 1301,
+            "retries": 1001,
+            "operationsThatNeededRetry": 249,
+            "exceptionsByKind": {
+              "OLE": 1125,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 51,
+              "2": 20,
+              "3": 26,
+              "4": 32,
+              "5": 22,
+              "6": 25
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1125
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[142]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[142]' failed. Entity was updated by another transaction concurrentl..."
+            },
+            "concurrentPhaseWallSeconds": 37.28,
+            "scenarioWallSecondsInclSetup": 58.28,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 124,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_16threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 16,
+            "operations": 320,
+            "successes": 208,
+            "unrecoveredFailures": 112,
+            "attempts": 1323,
+            "retries": 1003,
+            "operationsThatNeededRetry": 256,
+            "exceptionsByKind": {
+              "OLE": 1115,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 64,
+              "2": 26,
+              "3": 30,
+              "4": 24,
+              "5": 35,
+              "6": 29
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1115
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[5353]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[5353]' failed. Entity was updated by another transaction concurren..."
+            },
+            "concurrentPhaseWallSeconds": 38.73,
+            "scenarioWallSecondsInclSetup": 53.03,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 112,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootUserTasks_32threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 32,
+            "operations": 300,
+            "successes": 135,
+            "unrecoveredFailures": 165,
+            "attempts": 1462,
+            "retries": 1162,
+            "operationsThatNeededRetry": 273,
+            "exceptionsByKind": {
+              "OLE": 1327,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 27,
+              "2": 19,
+              "3": 23,
+              "4": 19,
+              "5": 20,
+              "6": 27
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1327
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[10998]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[10998]' failed. Entity was updated by another transaction concurr..."
+            },
+            "concurrentPhaseWallSeconds": 32.3,
+            "scenarioWallSecondsInclSetup": 52.48,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 165,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_32threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 32,
+            "operations": 320,
+            "successes": 158,
+            "unrecoveredFailures": 162,
+            "attempts": 1627,
+            "retries": 1307,
+            "operationsThatNeededRetry": 302,
+            "exceptionsByKind": {
+              "OLE": 1469,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 18,
+              "2": 21,
+              "3": 16,
+              "4": 18,
+              "5": 35,
+              "6": 50
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1469
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[16815]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[16815]' failed. Entity was updated by another transaction concurr..."
+            },
+            "concurrentPhaseWallSeconds": 60.55,
+            "scenarioWallSecondsInclSetup": 102.89,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 162,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "wf2JoinStorm_32threads": {
+            "instances": 100,
+            "threads": 32,
+            "operations": 200,
+            "successes": 200,
+            "unrecoveredFailures": 0,
+            "attempts": 300,
+            "retries": 100,
+            "operationsThatNeededRetry": 100,
+            "exceptionsByKind": {
+              "OLE": 100,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 100,
+              "2": 100
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 100
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[23522]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[23522]' failed. Entity was updated by another transaction concurr..."
+            },
+            "concurrentPhaseWallSeconds": 5.95,
+            "setupSeconds": 71.61,
+            "scenarioWallSecondsInclSetup": 113.76,
+            "verification": {
+              "instancesChecked": 100,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 0,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          }
+        },
+        "setupAndVerifyCommands": {
+          "OLE": 0,
+          "deadlocks": 0,
+          "operations": 1767,
+          "unrecoveredFailures": 0
+        },
+        "summary": {
+          "operations": 1440,
+          "successes": 877,
+          "optimisticLockExceptions": 5136,
+          "deadlocks": 0,
+          "serializationFailures": 0,
+          "lockTimeouts": 0,
+          "otherErrors": 0,
+          "retries": 4573,
+          "unrecoveredFailures": 563,
+          "lostUpdates": 0,
+          "concurrentWallSeconds": 174.81,
+          "pass_T10_T33": false
+        },
+        "sqlServerShimRewrites": 2,
+        "status": "RAN",
+        "totalSeconds": 411.44,
+        "containerMemAfterRun": "3.494GiB / 13.65GiB"
+      }
+    },
+    "sqlserver": {
+      "_database": {
+        "status": "STARTED",
+        "image": "mcr.microsoft.com/mssql/server:2022-latest",
+        "startupSeconds": 51.67,
+        "containerMemAfterStart": "1.153GiB / 13.65GiB"
+      },
+      "flowable": {
+        "engine": "flowable-8.0.0.0",
+        "historyLevel": "audit",
+        "database": "SQL Server database e6_flowable with READ_COMMITTED_SNAPSHOT ON; spike_lease SQL rewritten by the test shim (product-api LeaseTable is PostgreSQL-only: BIGINT DDL fails on Oracle, IF NOT EXISTS / FOR UPDATE fail on SQL Server)",
+        "engineStartupSeconds": 8.16,
+        "adapterCorrelateMessageOnParallelBranch": {
+          "works": false,
+          "error": "IllegalStateException: Message 'e6msg_0' (businessKey=e6diag-flowable) matched 0 waiting executions; exactly one is required | top: IllegalStateException: Message 'e6msg_0' (businessKey=e6diag-flowable) matched 0 waiting executions; exactly one is required",
+          "pathUsedForE6": "harness: Flowable RuntimeService execution query by processInstanceId + messageEventReceived, one command"
+        },
+        "scenarios": {
+          "oneRootUserTasks_16threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 16,
+            "operations": 300,
+            "successes": 150,
+            "unrecoveredFailures": 150,
+            "attempts": 1425,
+            "retries": 1125,
+            "operationsThatNeededRetry": 257,
+            "exceptionsByKind": {
+              "OLE": 1275,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 43,
+              "2": 8,
+              "3": 20,
+              "4": 19,
+              "5": 30,
+              "6": 30
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1275
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[142] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[142] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 22.03,
+            "scenarioWallSecondsInclSetup": 36.44,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 150,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_16threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 16,
+            "operations": 320,
+            "successes": 187,
+            "unrecoveredFailures": 133,
+            "attempts": 1445,
+            "retries": 1125,
+            "operationsThatNeededRetry": 269,
+            "exceptionsByKind": {
+              "OLE": 1258,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 51,
+              "2": 15,
+              "3": 25,
+              "4": 26,
+              "5": 33,
+              "6": 37
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1258
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[6121] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[6121] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 17.72,
+            "scenarioWallSecondsInclSetup": 30.46,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 133,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootUserTasks_32threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 32,
+            "operations": 300,
+            "successes": 99,
+            "unrecoveredFailures": 201,
+            "attempts": 1584,
+            "retries": 1284,
+            "operationsThatNeededRetry": 279,
+            "exceptionsByKind": {
+              "OLE": 1485,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 21,
+              "2": 11,
+              "3": 7,
+              "4": 13,
+              "5": 20,
+              "6": 27
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1485
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[12225] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[12225] - definition 'e6-fanout-tasks:1:3' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 27.28,
+            "scenarioWallSecondsInclSetup": 49.73,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 201,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_32threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 32,
+            "operations": 320,
+            "successes": 100,
+            "unrecoveredFailures": 220,
+            "attempts": 1726,
+            "retries": 1406,
+            "operationsThatNeededRetry": 304,
+            "exceptionsByKind": {
+              "OLE": 1626,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 16,
+              "2": 11,
+              "3": 11,
+              "4": 8,
+              "5": 21,
+              "6": 33
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 1626
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[18834] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[18834] - definition 'e6-fanout-msgs:1:6' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 39.17,
+            "scenarioWallSecondsInclSetup": 71.89,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 220,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "wf2JoinStorm_32threads": {
+            "instances": 100,
+            "threads": 32,
+            "operations": 200,
+            "successes": 200,
+            "unrecoveredFailures": 0,
+            "attempts": 300,
+            "retries": 100,
+            "operationsThatNeededRetry": 100,
+            "exceptionsByKind": {
+              "OLE": 100,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 100,
+              "2": 100
+            },
+            "exceptionClasses": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": 100
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.flowable.common.engine.api.FlowableOptimisticLockingException": "FlowableOptimisticLockingException: ProcessInstance[26272] - definition 'wf2-file:1:9' was updated by another transaction concurrently | top: FlowableOptimisticLockingException: ProcessInstance[26272] - definition 'wf2-file:1:9' was updated by another transaction concurrently"
+            },
+            "concurrentPhaseWallSeconds": 7.62,
+            "setupSeconds": 137.14,
+            "scenarioWallSecondsInclSetup": 183.91,
+            "verification": {
+              "instancesChecked": 100,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 0,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          }
+        },
+        "setupAndVerifyCommands": {
+          "unrecoveredFailures": 0,
+          "operations": 1908,
+          "deadlocks": 0,
+          "OLE": 0
+        },
+        "summary": {
+          "operations": 1440,
+          "successes": 736,
+          "optimisticLockExceptions": 5744,
+          "deadlocks": 0,
+          "serializationFailures": 0,
+          "lockTimeouts": 0,
+          "otherErrors": 0,
+          "retries": 5040,
+          "unrecoveredFailures": 704,
+          "lostUpdates": 0,
+          "concurrentWallSeconds": 113.82,
+          "pass_T10_T33": false
+        },
+        "sqlServerShimRewrites": 1,
+        "status": "RAN",
+        "totalSeconds": 383.84,
+        "containerMemAfterRun": "1.411GiB / 13.65GiB"
+      },
+      "operaton": {
+        "engine": "operaton-2.2.0",
+        "historyLevel": "full",
+        "database": "SQL Server database e6_operaton with READ_COMMITTED_SNAPSHOT ON; spike_lease SQL rewritten by the test shim (product-api LeaseTable is PostgreSQL-only: BIGINT DDL fails on Oracle, IF NOT EXISTS / FOR UPDATE fail on SQL Server)",
+        "engineStartupSeconds": 16.7,
+        "adapterCorrelateMessageOnParallelBranch": {
+          "works": true,
+          "pathUsedForE6": "EngineAdapter.correlateMessage"
+        },
+        "scenarios": {
+          "oneRootUserTasks_16threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 16,
+            "operations": 300,
+            "successes": 143,
+            "unrecoveredFailures": 157,
+            "attempts": 1388,
+            "retries": 1088,
+            "operationsThatNeededRetry": 258,
+            "exceptionsByKind": {
+              "OLE": 1245,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 42,
+              "2": 21,
+              "3": 21,
+              "4": 20,
+              "5": 15,
+              "6": 24
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1245
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[142]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[142]' failed. Entity was updated by another transaction concurrentl..."
+            },
+            "concurrentPhaseWallSeconds": 44.0,
+            "scenarioWallSecondsInclSetup": 71.51,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 157,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_16threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 16,
+            "operations": 320,
+            "successes": 161,
+            "unrecoveredFailures": 159,
+            "attempts": 1470,
+            "retries": 1150,
+            "operationsThatNeededRetry": 258,
+            "exceptionsByKind": {
+              "OLE": 1309,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 62,
+              "2": 13,
+              "3": 10,
+              "4": 17,
+              "5": 24,
+              "6": 35
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1309
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[5713]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[5713]' failed. Entity was updated by another transaction concurren..."
+            },
+            "concurrentPhaseWallSeconds": 50.72,
+            "scenarioWallSecondsInclSetup": 81.84,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 159,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootUserTasks_32threads": {
+            "roots": 6,
+            "parallelBranchesPerRoot": 50,
+            "threads": 32,
+            "operations": 300,
+            "successes": 97,
+            "unrecoveredFailures": 203,
+            "attempts": 1525,
+            "retries": 1225,
+            "operationsThatNeededRetry": 267,
+            "exceptionsByKind": {
+              "OLE": 1428,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 33,
+              "2": 12,
+              "3": 10,
+              "4": 10,
+              "5": 12,
+              "6": 20
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1428
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[11940]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[11940]' failed. Entity was updated by another transaction concurr..."
+            },
+            "concurrentPhaseWallSeconds": 44.11,
+            "scenarioWallSecondsInclSetup": 88.79,
+            "verification": {
+              "instancesChecked": 6,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 203,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "oneRootMessages_32threads": {
+            "roots": 10,
+            "parallelBranchesPerRoot": 32,
+            "threads": 32,
+            "operations": 320,
+            "successes": 81,
+            "unrecoveredFailures": 239,
+            "attempts": 1746,
+            "retries": 1426,
+            "operationsThatNeededRetry": 310,
+            "exceptionsByKind": {
+              "OLE": 1665,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 10,
+              "2": 12,
+              "3": 12,
+              "4": 13,
+              "5": 14,
+              "6": 20
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 1665
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[18060]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[18060]' failed. Entity was updated by another transaction concurr..."
+            },
+            "concurrentPhaseWallSeconds": 99.48,
+            "scenarioWallSecondsInclSetup": 196.03,
+            "verification": {
+              "instancesChecked": 10,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 239,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          },
+          "wf2JoinStorm_32threads": {
+            "instances": 100,
+            "threads": 32,
+            "operations": 200,
+            "successes": 200,
+            "unrecoveredFailures": 0,
+            "attempts": 300,
+            "retries": 100,
+            "operationsThatNeededRetry": 100,
+            "exceptionsByKind": {
+              "OLE": 100,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 100,
+              "2": 100
+            },
+            "exceptionClasses": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": 100
+            },
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {
+              "OLE org.operaton.bpm.engine.OptimisticLockingException": "OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[25355]' failed. Entity was updated by another transaction concurrently. | top: OptimisticLockingException: ENGINE-03005 Execution of 'UPDATE ExecutionEntity[25355]' failed. Entity was updated by another transaction concurr..."
+            },
+            "concurrentPhaseWallSeconds": 6.75,
+            "setupSeconds": 74.45,
+            "scenarioWallSecondsInclSetup": 121.47,
+            "verification": {
+              "instancesChecked": 100,
+              "lostUpdates": 0,
+              "lostSuccessfulWrites": 0,
+              "unrecoveredOpsReRunSequentially": 0,
+              "drainFailures": 0,
+              "finalStateConclusive": true,
+              "missingVariablesAfterDrain": 0,
+              "joinNotExactlyOnce": 0,
+              "leftoverBranchesOrSubscriptions": 0,
+              "endedNotExactlyOnce": 0,
+              "barrierTimeouts": 0,
+              "problems": []
+            }
+          }
+        },
+        "setupAndVerifyCommands": {
+          "unrecoveredFailures": 0,
+          "operations": 1962,
+          "deadlocks": 0,
+          "OLE": 0
+        },
+        "summary": {
+          "operations": 1440,
+          "successes": 682,
+          "optimisticLockExceptions": 5747,
+          "deadlocks": 0,
+          "serializationFailures": 0,
+          "lockTimeouts": 0,
+          "otherErrors": 0,
+          "retries": 4989,
+          "unrecoveredFailures": 758,
+          "lostUpdates": 0,
+          "concurrentWallSeconds": 245.06,
+          "pass_T10_T33": false
+        },
+        "sqlServerShimRewrites": 2,
+        "status": "RAN",
+        "totalSeconds": 579.63,
+        "containerMemAfterRun": "1.515GiB / 13.65GiB"
+      }
+    }
+  },
+  "updatedAt": "2026-11-04T09:25:00.430894900Z",
+  "notes": [
+    "Host contention: two or more other agents ran PostgreSQL/SQL Server containers and builds on the same machine during every run; machine CPU averaged 88-100% (JVM view) during the E9 steady windows. All E6/E9 runs here finished BEFORE the shared heavy-build lock rule was announced (about 14:45 local), so they overlapped other lanes; 0 minutes were spent waiting for the lock.",
+    "Test-harness workarounds (not adapter or engine changes): (1) product-api LeaseTable SQL rewritten by a JDBC proxy on Oracle (BIGINT -> NUMBER(19)) and SQL Server (IF NOT EXISTS, FOR UPDATE); without it neither adapter can be constructed on those DBs. (2) Flowable message correlation in E6 goes through RuntimeService because EngineAdapter.correlateMessage (Flowable) finds no execution for a catch event inside a parallel branch. (3) E9 starts Flowable's async executor and sets the history level on the built engine.",
+    "Runs: PostgreSQL 13:24-13:30, Oracle Free 14:21-14:36, SQL Server 14:37-14:55 (2026-11-04, local time), one container at a time."
+  ]
+}

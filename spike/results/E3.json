@@ -1,0 +1,274 @@
+{
+  "experiment" : "E3",
+  "title" : "Worker lease + operationId + unknown outcome (VI.3 + A-1/A-2/A-8)",
+  "database" : "PostgreSQL 17 (Testcontainers postgres:17-alpine), one database per engine",
+  "module" : "spike/experiments-integration",
+  "engines" : {
+    "flowable-8.0.0" : {
+      "generatedAt" : "2026-11-04T14:32:25.499090600+05:30",
+      "scenariosCounted" : 6,
+      "scenariosPassed" : 6,
+      "passRatePercent" : 100.0,
+      "scenarios" : [ {
+        "id" : "E3-i-a",
+        "name" : "Crash after successful PI before completion; lease expires; re-fetch with a new lockVersion; retry with the same operationId; class (a) pays once",
+        "tests" : [ "T02" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 1,
+          "operationId" : "776571eb-4a9d-559c-9607-4fefe762398a",
+          "lockVersions" : [ 1, 3 ],
+          "attemptIds" : [ "0414e3f7-5186-4c86-a90d-67f33dfe28ba", "d08c9c44-171f-4f5f-8be8-689bad7265f3" ],
+          "activityInstanceId" : "41",
+          "ifmsPaymentsForOperation" : 1,
+          "secondPiDuplicateFlag" : true,
+          "ledgerAttempts" : 2,
+          "instanceEnded" : true
+        }
+      }, {
+        "id" : "E3-i-b",
+        "name" : "Same crash with class (b): outcome lookup (PD) before any repeat; no second PI",
+        "tests" : [ "T02" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 1,
+          "operationId" : "94e4bb3f-7a16-5ec7-9e1d-5dfa260d1c9a",
+          "ifmsPaymentsForOperation" : 1,
+          "ifmsRequests" : 2,
+          "retryUsedLookup" : true
+        }
+      }, {
+        "id" : "E3-ii-c",
+        "name" : "Undeclared topic (A-8 default class c) on an IFMS without idempotency/lookup: no automatic repeat, UNKNOWN_OUTCOME reconciliation item, resolved by an officer",
+        "tests" : [ "T02", "T36" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 1,
+          "operationId" : "d4c0c1a4-fb51-5a16-8cf1-a85b1f83b660",
+          "ifmsPaymentsForOperation" : 1,
+          "pollsHeldWithoutDispatch" : 2,
+          "reconciliationItemId" : 1,
+          "resolution" : "CONFIRM_SUCCESS by officer-17, paymentRef JIT00000003",
+          "reconciliationAuditEvents" : 1,
+          "instanceEndedAfterResolution" : true
+        }
+      }, {
+        "id" : "E3-ctl",
+        "name" : "Control: the same class-(c) IFMS with the topic wrongly declared (a) pays twice (shows the duplicate check works and why A-8 defaults to c)",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "ifmsPaymentsForOperation" : 2,
+          "duplicatesDetected" : 2
+        }
+      }, {
+        "id" : "E3-iii",
+        "name" : "Stale worker completes after another worker re-acquired: rejected (409 STALE_LEASE), nothing changes; the current holder completes",
+        "tests" : [ "T03" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 2,
+          "staleCallsRejected" : 7,
+          "rejections" : [ "ledger:409 STALE_LEASE: operation d37d08ee-931b-5712-9e59-5d1b5070debd is INTENT at lockVersion 2", "adapter:STALE_VERSION", "adapter:STALE_VERSION", "adapter:STALE_VERSION", "adapter:STALE_VERSION", "adapter:STALE_VERSION", "adapter:NO_LEASE" ],
+          "lockVersions" : [ 1, 3 ],
+          "ifmsPaymentsForOperation" : 1
+        }
+      }, {
+        "id" : "E3-iv",
+        "name" : "Network cut: the lease expires (2x lease) while worker-1's PI is still running; no redispatch before expiry; exactly one completion; the second attempt reuses the operationId",
+        "tests" : [ "T04", "T36" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 1,
+          "operationId" : "4e363596-84f0-5c12-a9f1-d71dba0438ee",
+          "fetchBeforeExpiry" : "none (lease respected)",
+          "worker1LatePiDuplicateFlag" : true,
+          "worker1LateCompletion" : "ledger:409 STALE_LEASE: operation 4e363596-84f0-5c12-a9f1-d71dba0438ee is SUCCEEDED at lockVersion 3",
+          "paymentActivityCompletions" : 1,
+          "ifmsPaymentsForOperation" : 1,
+          "lockVersions" : [ 1, 3 ]
+        }
+      }, {
+        "id" : "E3-sum",
+        "name" : "Effects ledger: no operationId paid twice across counted scenarios",
+        "tests" : [ "T02" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "paymentsTotal" : 7,
+          "duplicateOperationIds" : 1,
+          "duplicatesOnlyFromControl" : "yes (E3-ctl only)"
+        }
+      }, {
+        "id" : "E3-hz",
+        "name" : "Probe: a lease ended inside the adapter (executeDueJobs, e.g. a timer run, before the product sweep) bypasses the A-8 decision; does class-(c) work get re-dispatched?",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "executeDueJobsRan" : 0,
+          "productSweepFound" : 0,
+          "secondAttemptOutcome" : "COMPLETED",
+          "ledgerStateAfter" : "SUCCEEDED",
+          "ifmsPaymentsForOperation" : 2,
+          "hazardConfirmed" : true,
+          "explanation" : "LeaseTable.expire runs inside fetchAndLock/executeDueJobs of both adapters without a product callback; OperationLedger.recordIntent then treats the higher lockVersion as a normal new attempt for any capability class, so the A-8 'no automatic repeat' rule depends on the product sweep running first"
+        }
+      } ],
+      "notes" : {
+        "leaseDuration" : "PT1M",
+        "clock" : "engine clock fixed and advanced by the test (Env.setClock); no real-time sleeps",
+        "leaseExpirySweep" : "product-side sweep (PaymentWorker.sweepExpiredLeases) at the engine clock: OperationLedger.onLeaseExpired(op, lockVersion+1) then LeaseTable.expire, one engine transaction, before every fetch",
+        "unknownOutcomeHold" : "work whose operation is UNKNOWN_OUTCOME is released (unlockExternal) and never dispatched until an officer resolves it; neither adapter offers a 'held' state for external work",
+        "wallClockSeconds" : 21.977
+      }
+    },
+    "operaton-2.2.0" : {
+      "generatedAt" : "2026-11-04T14:32:40.953794+05:30",
+      "scenariosCounted" : 6,
+      "scenariosPassed" : 6,
+      "passRatePercent" : 100.0,
+      "scenarios" : [ {
+        "id" : "E3-i-a",
+        "name" : "Crash after successful PI before completion; lease expires; re-fetch with a new lockVersion; retry with the same operationId; class (a) pays once",
+        "tests" : [ "T02" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 0,
+          "operationId" : "e461a8cc-60b0-5d76-a972-23b03f75cfad",
+          "lockVersions" : [ 1, 3 ],
+          "attemptIds" : [ "228de8bf-d12f-44f0-b72a-7219401089c7", "9ca80440-93c3-493e-9dd3-e6b45f1b2bbb" ],
+          "activityInstanceId" : "wf1_payment:51",
+          "ifmsPaymentsForOperation" : 1,
+          "secondPiDuplicateFlag" : true,
+          "ledgerAttempts" : 2,
+          "instanceEnded" : true
+        }
+      }, {
+        "id" : "E3-i-b",
+        "name" : "Same crash with class (b): outcome lookup (PD) before any repeat; no second PI",
+        "tests" : [ "T02" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 0,
+          "operationId" : "219c8f87-64b1-5475-b20e-c4377f70e793",
+          "ifmsPaymentsForOperation" : 1,
+          "ifmsRequests" : 2,
+          "retryUsedLookup" : true
+        }
+      }, {
+        "id" : "E3-ii-c",
+        "name" : "Undeclared topic (A-8 default class c) on an IFMS without idempotency/lookup: no automatic repeat, UNKNOWN_OUTCOME reconciliation item, resolved by an officer",
+        "tests" : [ "T02", "T36" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 0,
+          "operationId" : "f59fa38d-2d8d-5124-a47f-79c682e5ca17",
+          "ifmsPaymentsForOperation" : 1,
+          "pollsHeldWithoutDispatch" : 2,
+          "reconciliationItemId" : 1,
+          "resolution" : "CONFIRM_SUCCESS by officer-17, paymentRef JIT00000003",
+          "reconciliationAuditEvents" : 1,
+          "instanceEndedAfterResolution" : true
+        }
+      }, {
+        "id" : "E3-ctl",
+        "name" : "Control: the same class-(c) IFMS with the topic wrongly declared (a) pays twice (shows the duplicate check works and why A-8 defaults to c)",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "ifmsPaymentsForOperation" : 2,
+          "duplicatesDetected" : 2
+        }
+      }, {
+        "id" : "E3-iii",
+        "name" : "Stale worker completes after another worker re-acquired: rejected (409 STALE_LEASE), nothing changes; the current holder completes",
+        "tests" : [ "T03" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 0,
+          "staleCallsRejected" : 7,
+          "rejections" : [ "ledger:409 STALE_LEASE: operation 3662f31f-a3ba-5436-a83e-18708e3a01e4 is INTENT at lockVersion 2", "adapter:STALE_VERSION", "adapter:STALE_VERSION", "adapter:STALE_VERSION", "adapter:STALE_VERSION", "adapter:STALE_VERSION", "adapter:NO_LEASE" ],
+          "lockVersions" : [ 1, 3 ],
+          "ifmsPaymentsForOperation" : 1
+        }
+      }, {
+        "id" : "E3-iv",
+        "name" : "Network cut: the lease expires (2x lease) while worker-1's PI is still running; no redispatch before expiry; exactly one completion; the second attempt reuses the operationId",
+        "tests" : [ "T04", "T36" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "asyncJobsAfterCompletion" : 0,
+          "operationId" : "ab517e56-fa67-5349-ac6a-4861aad03d11",
+          "fetchBeforeExpiry" : "none (lease respected)",
+          "worker1LatePiDuplicateFlag" : true,
+          "worker1LateCompletion" : "ledger:409 STALE_LEASE: operation ab517e56-fa67-5349-ac6a-4861aad03d11 is SUCCEEDED at lockVersion 3",
+          "paymentActivityCompletions" : 1,
+          "ifmsPaymentsForOperation" : 1,
+          "lockVersions" : [ 1, 3 ]
+        }
+      }, {
+        "id" : "E3-sum",
+        "name" : "Effects ledger: no operationId paid twice across counted scenarios",
+        "tests" : [ "T02" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "paymentsTotal" : 7,
+          "duplicateOperationIds" : 1,
+          "duplicatesOnlyFromControl" : "yes (E3-ctl only)"
+        }
+      }, {
+        "id" : "E3-hz",
+        "name" : "Probe: a lease ended inside the adapter (executeDueJobs, e.g. a timer run, before the product sweep) bypasses the A-8 decision; does class-(c) work get re-dispatched?",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "executeDueJobsRan" : 0,
+          "productSweepFound" : 0,
+          "secondAttemptOutcome" : "COMPLETED",
+          "ledgerStateAfter" : "SUCCEEDED",
+          "ifmsPaymentsForOperation" : 2,
+          "hazardConfirmed" : true,
+          "explanation" : "LeaseTable.expire runs inside fetchAndLock/executeDueJobs of both adapters without a product callback; OperationLedger.recordIntent then treats the higher lockVersion as a normal new attempt for any capability class, so the A-8 'no automatic repeat' rule depends on the product sweep running first"
+        }
+      } ],
+      "notes" : {
+        "leaseDuration" : "PT1M",
+        "clock" : "engine clock fixed and advanced by the test (Env.setClock); no real-time sleeps",
+        "leaseExpirySweep" : "product-side sweep (PaymentWorker.sweepExpiredLeases) at the engine clock: OperationLedger.onLeaseExpired(op, lockVersion+1) then LeaseTable.expire, one engine transaction, before every fetch",
+        "unknownOutcomeHold" : "work whose operation is UNKNOWN_OUTCOME is released (unlockExternal) and never dispatched until an officer resolves it; neither adapter offers a 'held' state for external work",
+        "wallClockSeconds" : 15.344
+      }
+    }
+  }
+}

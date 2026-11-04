@@ -1,0 +1,21 @@
+# Third-party source checkouts used for study only (Operaton, Flowable): not part of this repository
+/reference/
+
+# Build output
+target/
+**/target/
+
+# Local tooling and session state
+.claude/
+.idea/
+*.iml
+.vscode/
+
+# Large or machine-specific run logs
+spike/results/run-queue/
+spike/results/*.console.log
+spike/results/run-queue.log
+
+# OS files
+Thumbs.db
+.DS_Store

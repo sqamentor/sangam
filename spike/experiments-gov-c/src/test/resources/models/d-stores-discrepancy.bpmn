@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_dsd">
+  <process id="d-stores-discrepancy" name="D-STORES-VERIFICATION Discrepancy case" isExecutable="true">
+    <startEvent id="dsd_start"/>
+    <sequenceFlow id="f1" sourceRef="dsd_start" targetRef="dsd_investigate"/>
+    <userTask id="dsd_investigate" name="Investigate shortage"><potentialOwner><resourceAssignmentExpression><formalExpression>group(stores-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="dsd_investigate" targetRef="dsd_board"/>
+    <userTask id="dsd_board" name="Survey board member signs"><potentialOwner><resourceAssignmentExpression><formalExpression>group(survey-board)</formalExpression></resourceAssignmentExpression></potentialOwner>
+      <multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">3</loopCardinality></multiInstanceLoopCharacteristics>
+    </userTask>
+    <sequenceFlow id="f3" sourceRef="dsd_board" targetRef="dsd_gw"/>
+    <exclusiveGateway id="dsd_gw" default="f5"/>
+    <sequenceFlow id="f4" sourceRef="dsd_gw" targetRef="dsd_writeOff"><conditionExpression xsi:type="tFormalExpression">${writeOff == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f5" sourceRef="dsd_gw" targetRef="dsd_recover"/>
+    <serviceTask id="dsd_writeOff" name="Write off in stock ledger" @@ext|stock-ledger-adjust@@/>
+    <sequenceFlow id="f6" sourceRef="dsd_writeOff" targetRef="dsd_responsibility"/>
+    <userTask id="dsd_responsibility" name="Fix responsibility (GFR 217(iv))"><potentialOwner><resourceAssignmentExpression><formalExpression>group(hod)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f7" sourceRef="dsd_responsibility" targetRef="dsd_end"/>
+    <userTask id="dsd_recover" name="Recover cost from custodian"><potentialOwner><resourceAssignmentExpression><formalExpression>group(accounts)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f8" sourceRef="dsd_recover" targetRef="dsd_end"/>
+    <endEvent id="dsd_end"/>
+  </process>
+</definitions>

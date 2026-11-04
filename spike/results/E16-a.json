@@ -1,0 +1,1377 @@
+{
+  "experiment": "E16-a",
+  "title": "Government patterns GP-01..GP-20 (E16, part a)",
+  "engines": {
+    "flowable": {
+      "engineId": "flowable-8.0.0.0",
+      "generatedAt": "2026-11-04T12:58:53.648924800Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "jvm": "-Xmx2g, user.timezone=Asia/Kolkata",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11, fresh database per engine instance)",
+      "historyLevel": "AUDIT (Flowable default; the adapter does not set it)",
+      "engineConfigurationAsUsed": [
+        "adapter as installed: async executor off (timers via executeDueJobs), DMN and CMMN configurators, history level not set by the adapter (engine default)",
+        "the engine clock is per engine configuration (shared by the DMN/CMMN engines)"
+      ],
+      "summary": {
+        "FAIL": 2,
+        "PASS": 15,
+        "PASS-WITH-WORKAROUND": 3,
+        "UNSUPPORTED": 0
+      },
+      "scaleN": 5000,
+      "threads": "GP-08: 4 worker threads for start and for completion on both engines; GP-09: 1 thread (completions of one multi-instance body conflict by design on both engines)",
+      "scenarios": [
+        {
+          "id": "GP-01",
+          "title": "Maker -> checker -> approver by seat, with amount bands (DMN FIRST)",
+          "result": "PASS",
+          "featuresUsed": [
+            "userTask candidate group by seat: potentialOwner group(${seat})",
+            "DMN 1.3 decision table, hit policy FIRST, called from BPMN",
+            "process variables"
+          ],
+          "variants": [
+            "DMN call: serviceTask flowable:type=dmn + field decisionTableReferenceKey (outputs become process variables)"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 3457,
+          "notes": [
+            "Neither engine enforces segregation of duties (maker != checker != approver): the same user claimed both tasks. SoD by person and by seat is a product-layer check (R19 / A-3, IX.5 item 5)."
+          ],
+          "details": {
+            "approverSeatByAmount": {
+              "50000": "SEAT-SO",
+              "500000": "SEAT-DDO",
+              "5000000": "SEAT-HOD",
+              "20000000": "SEAT-SECY"
+            },
+            "sameUserCouldClaimMakerAndChecker": true
+          }
+        },
+        {
+          "id": "GP-02",
+          "title": "Multi-level hierarchy with return to any earlier level (e-Office noting)",
+          "result": "PASS",
+          "featuresUsed": [
+            "exclusive gateway router (one gateway, conditions on ${next})",
+            "loops",
+            "process variables",
+            "candidate group by level seat"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "HistoryService.createHistoricActivityInstanceQuery()",
+            "RuntimeService.createChangeActivityStateBuilder().moveActivityIdTo().changeState()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 1265,
+          "notes": [
+            "Return to any level is modelled (router gateway); the native instance-modification API was also checked as an alternative for out-of-model returns."
+          ],
+          "details": {
+            "path": [
+              "L1->L2",
+              "L2->L3",
+              "L3->L4",
+              "L4->L1",
+              "L1->L2",
+              "L2->L3",
+              "L3->L2",
+              "L2->L3",
+              "L3->L4",
+              "L4->END"
+            ]
+          }
+        },
+        {
+          "id": "GP-03",
+          "title": "Committee: all members must sign",
+          "result": "PASS",
+          "featuresUsed": [
+            "parallel multi-instance userTask, loopCardinality",
+            "humanPerformer expression with loopCounter",
+            "completion = all instances"
+          ],
+          "variants": [],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 653,
+          "details": {
+            "assignees": [
+              "m.chair",
+              "m.finance",
+              "m.technical",
+              "m.user",
+              "m.external"
+            ]
+          }
+        },
+        {
+          "id": "GP-04",
+          "title": "Committee quorum (n of m)",
+          "result": "PASS",
+          "featuresUsed": [
+            "parallel multi-instance userTask",
+            "completionCondition ${nrOfCompletedInstances >= quorum}"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "HistoryService.createHistoricActivityInstanceQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 635,
+          "details": {
+            "historicSignInstances": 5
+          }
+        },
+        {
+          "id": "GP-05",
+          "title": "Chained sanctions AA -> TS -> ES (call activities)",
+          "result": "PASS",
+          "featuresUsed": [
+            "callActivity (reusable sanction sub-process)",
+            "variables in/out of the called process",
+            "candidate group by seat inside the called process"
+          ],
+          "variants": [
+            "flowable:in sourceExpression / flowable:out source on callActivity (BPMN 2.0.2 has no executable call-activity variable mapping)"
+          ],
+          "nativeApi": [
+            "RuntimeService.createProcessInstanceQuery() / HistoryService.createHistoricProcessInstanceQuery() (superProcessInstanceId)"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 687
+        },
+        {
+          "id": "GP-06",
+          "title": "SLA with working-day calendar, holidays, reminders, escalation",
+          "result": "PASS",
+          "featuresUsed": [
+            "boundary timer non-interrupting (timeCycle R2/PT24H reminders)",
+            "boundary timer non-interrupting timeDate ${slaDue} (due date computed by the product calendar)",
+            "boundary timer non-interrupting timeDuration P3D on a working-day business calendar",
+            "escalation user task"
+          ],
+          "variants": [
+            "flowable:businessCalendarName=\"govWorkingDays\" on the P3D timer (named calendar per timer)"
+          ],
+          "nativeApi": [
+            "ProcessEngineConfigurationImpl.getBusinessCalendarManager() (MapBusinessCalendarManager.addBusinessCalendar(name, ...), impl API) + flowable:businessCalendarName",
+            "ManagementService.createTimerJobQuery()",
+            "HistoryService.createHistoricActivityInstanceQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 893,
+          "notes": [
+            "Portable form: the product layer computes the due date with its holiday calendar and the model uses timeDate ${slaDue} (no variant). Engine-calendar form: Flowable selects a named calendar per timer; Operaton can only replace the engine-wide calendar of a timer type."
+          ],
+          "details": {
+            "timerDueDatesUtc": [
+              "2026-11-06T04:30:00Z",
+              "2026-11-11T04:30:00Z",
+              "2026-11-11T04:30:00Z"
+            ]
+          }
+        },
+        {
+          "id": "GP-07",
+          "title": "Deadline extension of running instances (tender corrigendum)",
+          "result": "PASS",
+          "featuresUsed": [
+            "intermediate timer catch timeDate ${bidDeadline}",
+            "timer job due-date change on running instances"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "ManagementService.createTimerJobQuery()",
+            "ManagementService.rescheduleTimeDateJob()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 440,
+          "notes": [
+            "rescheduleTimeDateJob deletes the timer job and creates a new one (new job id)",
+            "Model-based alternative without native API: event-based gateway with a 'corrigendum' message that loops back to the timer with the new date (used in D-TENDER, E17-a)."
+          ],
+          "details": {
+            "dueDatesAfterCorrigendumUtc": [
+              "2026-11-27T09:30:00Z",
+              "2026-11-27T09:30:00Z",
+              "2026-11-27T09:30:00Z"
+            ],
+            "jobIdKeptAfterReschedule": false
+          }
+        },
+        {
+          "id": "GP-08",
+          "title": "Bulk intake: >= 5,000 instances, bulk approve / reject / withdraw",
+          "result": "PASS-WITH-WORKAROUND",
+          "featuresUsed": [
+            "mass start",
+            "task queries by seat and by process variable",
+            "bulk instance deletion (withdrawn)",
+            "bulk task completion (approve / reject)"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "TaskQuery.processVariableValueEquals()",
+            "RuntimeService.bulkDeleteProcessInstances()",
+            "TaskService.createTaskQuery()",
+            "RuntimeService.createProcessInstanceQuery() / HistoryService.createHistoricProcessInstanceQuery()"
+          ],
+          "workarounds": [
+            {
+              "what": "bulk approve/reject: neither engine has a bulk task-completion API; the product layer pages task ids and completes them with 4 threads",
+              "lines": 25
+            }
+          ],
+          "workaroundLines": 25,
+          "timingMs": 162678,
+          "timings": {
+            "start_5000_instances": 46456,
+            "countTasksBySeat": 25,
+            "firstPage50BySeat": 39,
+            "countTasksByProcessVariable": 46,
+            "bulkDelete_500": 22382,
+            "bulkDecision_4500_tasks": 92770
+          },
+          "details": {
+            "instances": 5000,
+            "threads": 4,
+            "startThroughputPerSec": 108,
+            "decisionThroughputPerSec": 49,
+            "dbRowsAfterStart": {
+              "totalRowsDelta": 85000,
+              "runtimeRowsDelta": 45000,
+              "historyRowsDelta": 40000,
+              "perTable": {
+                "ACT_HI_ACTINST": 15000,
+                "ACT_HI_IDENTITYLINK": 5000,
+                "ACT_HI_PROCINST": 5000,
+                "ACT_HI_TASKINST": 5000,
+                "ACT_HI_VARINST": 10000,
+                "ACT_RU_ACTINST": 15000,
+                "ACT_RU_EXECUTION": 10000,
+                "ACT_RU_IDENTITYLINK": 5000,
+                "ACT_RU_TASK": 5000,
+                "ACT_RU_VARIABLE": 10000
+              }
+            },
+            "dbRowsAtEnd": {
+              "totalRowsDelta": 62500,
+              "runtimeRowsDelta": 0,
+              "historyRowsDelta": 62500,
+              "perTable": {
+                "ACT_HI_ACTINST": 33000,
+                "ACT_HI_IDENTITYLINK": 5000,
+                "ACT_HI_PROCINST": 5000,
+                "ACT_HI_TASKINST": 5000,
+                "ACT_HI_VARINST": 14500
+              }
+            },
+            "heapUsedAfterGcMbBefore": 34,
+            "heapUsedAfterGcMbAfter": 36,
+            "peakHeapMb": 232
+          }
+        },
+        {
+          "id": "GP-09",
+          "title": "Large multi-instance (>= 5,000 items in one instance)",
+          "result": "FAIL",
+          "featuresUsed": [
+            "parallel multi-instance userTask, loopCardinality ${n}",
+            "history volume of one large instance"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "TaskService.createTaskQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 301115,
+          "timings": {
+            "start_with_5000_items": 32249,
+            "complete_1290_items_1_thread": 180170,
+            "cancelInstanceWithOpenItems": 82349
+          },
+          "failures": [
+            "all 5000 items completed within the cap of 180000 ms (completed 1290 in 180170 ms; per-completion cost grows with the number of open items)"
+          ],
+          "notes": [
+            "Not finished within the cap: completing one item of a parallel multi-instance body costs time proportional to the open items (total ~ n^2). Workaround for beneficiary lists: one instance per item (GP-08 shape, linear) or chunked sub-processes; not measured here."
+          ],
+          "details": {
+            "msPer1000Completions": [
+              142270
+            ],
+            "projectedTotalCompletionMsLinear": 698333,
+            "items": 5000,
+            "completed": 1290,
+            "dbRowsAfterCreate": {
+              "totalRowsDelta": 45015,
+              "runtimeRowsDelta": 25008,
+              "historyRowsDelta": 20007,
+              "perTable": {
+                "ACT_HI_ACTINST": 5002,
+                "ACT_HI_IDENTITYLINK": 5000,
+                "ACT_HI_PROCINST": 1,
+                "ACT_HI_TASKINST": 5000,
+                "ACT_HI_VARINST": 5004,
+                "ACT_RU_ACTINST": 5002,
+                "ACT_RU_EXECUTION": 5002,
+                "ACT_RU_IDENTITYLINK": 5000,
+                "ACT_RU_TASK": 5000,
+                "ACT_RU_VARIABLE": 5004
+              }
+            },
+            "dbRowsAtEnd": {
+              "totalRowsDelta": 43725,
+              "runtimeRowsDelta": 23718,
+              "historyRowsDelta": 20007,
+              "perTable": {
+                "ACT_HI_ACTINST": 5002,
+                "ACT_HI_IDENTITYLINK": 5000,
+                "ACT_HI_PROCINST": 1,
+                "ACT_HI_TASKINST": 5000,
+                "ACT_HI_VARINST": 5004,
+                "ACT_RU_ACTINST": 5002,
+                "ACT_RU_EXECUTION": 5002,
+                "ACT_RU_IDENTITYLINK": 3710,
+                "ACT_RU_JOB": 1290,
+                "ACT_RU_TASK": 3710,
+                "ACT_RU_VARIABLE": 5004
+              }
+            },
+            "heapUsedAfterGcMbBefore": 35,
+            "heapUsedAfterGcMbWithInstanceOpen": 36,
+            "peakHeapMb": 312
+          }
+        },
+        {
+          "id": "GP-10",
+          "title": "Multi-year process with monthly cycles (36 monthly bills)",
+          "result": "PASS",
+          "featuresUsed": [
+            "boundary timer non-interrupting timeCycle R36/P1M",
+            "long-lived instance",
+            "monthly user tasks"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "ManagementService.createTimerJobQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 5699,
+          "notes": [
+            "Runtime rows of the running instance grow with every cycle ({ACT_RU_ACTINST=175}): a multi-year instance carries its activity trail in runtime tables until it ends",
+            "BPMN has no continue-as-new; the instance stays one instance for 3 years and history grows per cycle.",
+            "P1M repeats from the previous due date, so a cycle started on the 31st drifts to the 28th after February; a fixed billing day needs a cron-like cycle or a date computed by the product"
+          ],
+          "details": {
+            "cycleDueDatesIst": [
+              "2026-02-28T10:00",
+              "2026-03-28T10:00",
+              "2026-04-28T10:00",
+              "2026-05-28T10:00",
+              "2026-06-28T10:00",
+              "2026-07-28T10:00",
+              "2026-08-28T10:00",
+              "2026-09-28T10:00",
+              "2026-10-28T10:00",
+              "2026-11-28T10:00",
+              "2026-12-28T10:00",
+              "2027-01-28T10:00",
+              "2027-02-28T10:00",
+              "2027-03-28T10:00",
+              "2027-04-28T10:00",
+              "2027-05-28T10:00",
+              "2027-06-28T10:00",
+              "2027-07-28T10:00",
+              "2027-08-28T10:00",
+              "2027-09-28T10:00",
+              "2027-10-28T10:00",
+              "2027-11-28T10:00",
+              "2027-12-28T10:00",
+              "2028-01-28T10:00",
+              "2028-02-28T10:00",
+              "2028-03-28T10:00",
+              "2028-04-28T10:00",
+              "2028-05-28T10:00",
+              "2028-06-28T10:00",
+              "2028-07-28T10:00",
+              "2028-08-28T10:00",
+              "2028-09-28T10:00",
+              "2028-10-28T10:00",
+              "2028-11-28T10:00",
+              "2028-12-28T10:00",
+              "2029-01-28T10:00",
+              "none"
+            ],
+            "runtimeRowsAfterMonth1": 15,
+            "runtimeRowsAfterMonth36": 189,
+            "historyRowsGrowthMonth1To36": 245,
+            "runtimeRowGrowthPerTableMonth1To36": {
+              "ACT_RU_ACTINST": 175
+            },
+            "monthEndBehaviour": "start 31 Jan; 1st cycle 2026-02-28T10:00, 2nd cycle 2026-03-28T10:00"
+          }
+        },
+        {
+          "id": "GP-11",
+          "title": "Budget availability + encumbrance (idempotent), released on cancel by compensation",
+          "result": "PASS-WITH-WORKAROUND",
+          "featuresUsed": [
+            "external task (pull worker) with lease",
+            "operationId from activityInstanceId (VI.3.2)",
+            "compensation boundary + isForCompensation handler (external task)",
+            "intermediate throw compensate",
+            "interrupting message boundary (cancel)"
+          ],
+          "variants": [
+            "external task: flowable:type=external-worker flowable:topic"
+          ],
+          "nativeApi": [],
+          "workarounds": [
+            {
+              "what": "no working compensation with a wait-state handler: cancel boundary -> explicit release external task -> cancelled (no compensation event)",
+              "lines": 4
+            }
+          ],
+          "workaroundLines": 4,
+          "productLayer": [
+            {
+              "what": "encumbrance ledger and its idempotency check (operationId) live in the product layer",
+              "lines": 12
+            }
+          ],
+          "timingMs": 1253,
+          "notes": [
+            "Compensation with a wait-state handler (external task) failed on this engine; the cancel is rolled back. Fallback: the cancel path is modelled as an explicit release step."
+          ],
+          "details": {
+            "compensationError": "org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update or delete on table \"act_ru_execution\" violates foreign key constraint \"act_fk_exe_parent\" on table \"act_ru_execution\"\n  Detail: Key (id_)=(19) is still referenced from table \"act_ru_execution\".\r\n### The error may exist in org/flowable/db/mapping/entity/Execution.xml\r\n### The error may involve org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl.deleteExecution-Inline\r\n### The error occurred while s... <- org.postgresql.util.PSQLException: ERROR: update or delete on table \"act_ru_execution\" violates foreign key constraint \"act_fk_exe_parent\" on table \"act_ru_execution\"\n  Detail: Key (id_)=(19) is still referenced from table \"act_ru_execution\"."
+          }
+        },
+        {
+          "id": "GP-12",
+          "title": "Payment with unknown outcome + reconciliation (IFMS JIT simulator)",
+          "result": "PASS",
+          "featuresUsed": [
+            "external task",
+            "BPMN error boundary UNKNOWN_OUTCOME on an external task",
+            "retry by failure",
+            "reconciliation loop (gateway back to payment)"
+          ],
+          "variants": [
+            "external task topic attributes (flowable)"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "productLayer": [
+            {
+              "what": "operationId derived from (tenant, instance, 'pay') instead of activityInstanceId: the activity instance id changes on the model-level retry loop on both engines (EngineAdapter.ExternalWork doc)",
+              "lines": 2
+            }
+          ],
+          "timingMs": 2608,
+          "details": {
+            "ifmsRequests": 8
+          }
+        },
+        {
+          "id": "GP-13",
+          "title": "EMD refund via compensation (multi-instance collected, all refunded on cancellation)",
+          "result": "FAIL",
+          "featuresUsed": [
+            "compensation boundary on a parallel multi-instance activity",
+            "user-task compensation handler",
+            "intermediate throw compensate"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "HistoryService.createHistoricActivityInstanceQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 3169,
+          "failures": [
+            "throwing compensation with user-task refund handlers works"
+          ],
+          "notes": [
+            "Workaround available (not counted as a pass for a compensation pattern): an explicit refund step on the cancel path instead of compensation (see GP-11 fallback)."
+          ],
+          "details": {
+            "compensationError": "org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update or delete on table \"act_ru_execution\" violates foreign key constraint \"act_fk_exe_parent\" on table \"act_ru_execution\"\n  Detail: Key (id_)=(41) is still referenced from table \"act_ru_execution\".\r\n### The error may exist in org/flowable/db/mapping/entity/Execution.xml\r\n### The error may involve org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl.deleteExecution-Inline\r\n### The error occurred while s... <- org.postgresql.util.PSQLException: ERROR: update or delete on table \"act_ru_execution\" violates foreign key constraint \"act_fk_exe_parent\" on table \"act_ru_execution\"\n  Detail: Key (id_)=(41) is still referenced from table \"act_ru_execution\".",
+            "compensationHandlerMatrix": {
+              "userTask / normal-flow / single": "ERROR org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update o [foreign-key violation on ACT_RU_EXECUTION]",
+              "userTask / normal-flow / multi-instance": "ERROR org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update o [foreign-key violation on ACT_RU_EXECUTION]",
+              "userTask / message-boundary / single": "ERROR org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update o [foreign-key violation on ACT_RU_EXECUTION]",
+              "userTask / message-boundary / multi-instance": "ERROR org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update o [foreign-key violation on ACT_RU_EXECUTION]",
+              "manualTask / normal-flow / single": "OK handlers=1 ended=true",
+              "manualTask / normal-flow / multi-instance": "OK handlers=2 ended=true",
+              "manualTask / message-boundary / single": "OK handlers=1 ended=true",
+              "manualTask / message-boundary / multi-instance": "OK handlers=2 ended=true",
+              "externalTask / normal-flow / single": "ERROR org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update o [foreign-key violation on ACT_RU_EXECUTION]",
+              "externalTask / normal-flow / multi-instance": "ERROR org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update o [foreign-key violation on ACT_RU_EXECUTION]",
+              "externalTask / message-boundary / single": "ERROR org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update o [foreign-key violation on ACT_RU_EXECUTION]",
+              "externalTask / message-boundary / multi-instance": "ERROR org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update o [foreign-key violation on ACT_RU_EXECUTION]"
+            }
+          }
+        },
+        {
+          "id": "GP-14",
+          "title": "Withdrawal / cancellation at any stage (interrupting event sub-processes)",
+          "result": "PASS",
+          "featuresUsed": [
+            "interrupting event sub-process with message start (withdraw, per instance)",
+            "interrupting event sub-process with signal start (tender cancelled, broadcast)"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "RuntimeService.signalEventReceived() (EngineAdapter has no signal call)"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 624
+        },
+        {
+          "id": "GP-15",
+          "title": "External portal callbacks, including early arrival and duplicates",
+          "result": "PASS-WITH-WORKAROUND",
+          "featuresUsed": [
+            "intermediate message catch, correlation by business key",
+            "parallel gateway opening the subscription early"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "RuntimeService.createExecutionQuery().messageEventSubscriptionName()"
+          ],
+          "workarounds": [
+            {
+              "what": "product inbox: buffer callbacks by business key + callback id, deliver when the engine has the message subscription (neither engine buffers early messages)",
+              "lines": 20
+            },
+            {
+              "what": "model alternative: parallel gateway that opens the message catch at instance start",
+              "lines": 6
+            }
+          ],
+          "workaroundLines": 26,
+          "timingMs": 571,
+          "details": {
+            "earlyCallbackOnNaiveModel": "rejected: IllegalStateException: Message 'feePaid' (businessKey=APP-1) matched 0 waiting executions; exactly one is required",
+            "lateDuplicateWithoutInbox": "rejected: IllegalStateException"
+          }
+        },
+        {
+          "id": "GP-16",
+          "title": "Document checklist + clarification loop with deemed closure",
+          "result": "PASS",
+          "featuresUsed": [
+            "event-based gateway (message vs timer P30D)",
+            "loop back to scrutiny",
+            "message correlation"
+          ],
+          "variants": [],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 936
+        },
+        {
+          "id": "GP-17",
+          "title": "Field inspection scheduling (due date), rescheduling and reassignment",
+          "result": "PASS",
+          "featuresUsed": [
+            "user task due date expression",
+            "humanPerformer assignee expression",
+            "task reassignment",
+            "assignment history"
+          ],
+          "variants": [
+            "flowable:dueDate=\"${inspectionDate}\" (BPMN 2.0.2 has no task due date)"
+          ],
+          "nativeApi": [
+            "TaskService.setDueDate()",
+            "TaskService.setAssignee() (EngineAdapter.claimTask fails on an assigned task)",
+            "HistoryService.getHistoricIdentityLinksForTask()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 211,
+          "details": {
+            "assignmentHistory": [
+              "assignee:insp.a",
+              "assignee:insp.b"
+            ],
+            "historyNamesBothInspectors": true
+          }
+        },
+        {
+          "id": "GP-18",
+          "title": "Transfer / additional charge / leave delegation mid-flow (seat-based)",
+          "result": "PASS",
+          "featuresUsed": [
+            "tasks assigned to a seat (candidate group)",
+            "query by several seats (additional charge)",
+            "unclaim / reassign on transfer",
+            "delegation with owner (acted-for)"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "TaskService.setAssignee()",
+            "TaskService.delegateTask() / resolveTask()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "productLayer": [
+            {
+              "what": "seat register and transfer handling (release the predecessor's claimed tasks) in the product layer (IX.5); the engine only knows candidate groups and assignees",
+              "lines": 15
+            }
+          ],
+          "timingMs": 348,
+          "notes": [
+            "Assigned tasks: the Operaton adapter includes assigned tasks in candidate-group queries (includeAssignedTasks), the Flowable adapter does not; seen by the successor before release: 2"
+          ],
+          "details": {
+            "seatTasksVisibleToSuccessorBeforeRelease": 2
+          }
+        },
+        {
+          "id": "GP-19",
+          "title": "Rule change mid-flight: running instances keep the old rule (DMN version binding)",
+          "result": "PASS",
+          "featuresUsed": [
+            "DMN deployed with the process",
+            "decision binding to the same deployment",
+            "default binding = latest"
+          ],
+          "variants": [
+            "flowable field sameDeployment=true on the DMN service task"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 582,
+          "notes": [
+            "Without the binding attribute the old instance still evaluated the OLD rule (fee 1000.0): this engine's default lookup prefers the decision of the process's own (parent) deployment."
+          ],
+          "details": {
+            "feeOldInstanceBoundToDeployment": 1000.0,
+            "feeNewInstance": 1500.0,
+            "feeOldInstanceWithLatestBinding": 1000.0
+          }
+        },
+        {
+          "id": "GP-20",
+          "title": "Migrate running instances to a new process version (revised procedure)",
+          "result": "PASS",
+          "featuresUsed": [
+            "process instance migration API",
+            "activity mapping (equal ids + one renamed activity)"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "RepositoryService.createProcessDefinitionQuery()",
+            "ProcessMigrationService.createProcessInstanceMigrationBuilder().migrateToProcessDefinition().addActivityMigrationMapping().migrate()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 691,
+          "timings": {
+            "migrate_2_instances": 111
+          }
+        }
+      ]
+    },
+    "operaton": {
+      "engineId": "operaton-2.2.0",
+      "generatedAt": "2026-11-04T13:07:22.046198600Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "jvm": "-Xmx2g, user.timezone=Asia/Kolkata",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11, fresh database per engine instance)",
+      "historyLevel": "full (adapter: HISTORY_FULL)",
+      "engineConfigurationAsUsed": [
+        "adapter as installed: HISTORY_FULL, job executor off (timers via executeDueJobs), enforceHistoryTimeToLive=false (ledger W-3), DMN and CMMN on, authorization off",
+        "ClockUtil is JVM-wide (ledger W-7)",
+        "javaSerializationFormatEnabled=false (engine default): no List/Map variables are used by the models"
+      ],
+      "summary": {
+        "FAIL": 1,
+        "PASS": 16,
+        "PASS-WITH-WORKAROUND": 3,
+        "UNSUPPORTED": 0
+      },
+      "scaleN": 5000,
+      "threads": "GP-08: 4 worker threads for start and for completion on both engines; GP-09: 1 thread (completions of one multi-instance body conflict by design on both engines)",
+      "scenarios": [
+        {
+          "id": "GP-01",
+          "title": "Maker -> checker -> approver by seat, with amount bands (DMN FIRST)",
+          "result": "PASS",
+          "featuresUsed": [
+            "userTask candidate group by seat: potentialOwner group(${seat})",
+            "DMN 1.3 decision table, hit policy FIRST, called from BPMN",
+            "process variables"
+          ],
+          "variants": [
+            "DMN call: businessRuleTask operaton:decisionRef + operaton:resultVariable + operaton:mapDecisionResult=singleEntry"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 4212,
+          "notes": [
+            "Neither engine enforces segregation of duties (maker != checker != approver): the same user claimed both tasks. SoD by person and by seat is a product-layer check (R19 / A-3, IX.5 item 5)."
+          ],
+          "details": {
+            "approverSeatByAmount": {
+              "50000": "SEAT-SO",
+              "500000": "SEAT-DDO",
+              "5000000": "SEAT-HOD",
+              "20000000": "SEAT-SECY"
+            },
+            "sameUserCouldClaimMakerAndChecker": true
+          }
+        },
+        {
+          "id": "GP-02",
+          "title": "Multi-level hierarchy with return to any earlier level (e-Office noting)",
+          "result": "PASS",
+          "featuresUsed": [
+            "exclusive gateway router (one gateway, conditions on ${next})",
+            "loops",
+            "process variables",
+            "candidate group by level seat"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "HistoryService.createHistoricActivityInstanceQuery()",
+            "RuntimeService.createProcessInstanceModification().cancelAllForActivity().startBeforeActivity()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 1448,
+          "notes": [
+            "Return to any level is modelled (router gateway); the native instance-modification API was also checked as an alternative for out-of-model returns."
+          ],
+          "details": {
+            "path": [
+              "L1->L2",
+              "L2->L3",
+              "L3->L4",
+              "L4->L1",
+              "L1->L2",
+              "L2->L3",
+              "L3->L2",
+              "L2->L3",
+              "L3->L4",
+              "L4->END"
+            ]
+          }
+        },
+        {
+          "id": "GP-03",
+          "title": "Committee: all members must sign",
+          "result": "PASS",
+          "featuresUsed": [
+            "parallel multi-instance userTask, loopCardinality",
+            "humanPerformer expression with loopCounter",
+            "completion = all instances"
+          ],
+          "variants": [],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 692,
+          "details": {
+            "assignees": [
+              "m.chair",
+              "m.finance",
+              "m.technical",
+              "m.user",
+              "m.external"
+            ]
+          }
+        },
+        {
+          "id": "GP-04",
+          "title": "Committee quorum (n of m)",
+          "result": "PASS",
+          "featuresUsed": [
+            "parallel multi-instance userTask",
+            "completionCondition ${nrOfCompletedInstances >= quorum}"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "HistoryService.createHistoricActivityInstanceQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 506,
+          "details": {
+            "historicSignInstances": 5
+          }
+        },
+        {
+          "id": "GP-05",
+          "title": "Chained sanctions AA -> TS -> ES (call activities)",
+          "result": "PASS",
+          "featuresUsed": [
+            "callActivity (reusable sanction sub-process)",
+            "variables in/out of the called process",
+            "candidate group by seat inside the called process"
+          ],
+          "variants": [
+            "operaton:in sourceExpression / operaton:out source on callActivity (BPMN 2.0.2 has no executable call-activity variable mapping)"
+          ],
+          "nativeApi": [
+            "RuntimeService.createProcessInstanceQuery() / HistoryService.createHistoricProcessInstanceQuery() (superProcessInstanceId)"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 890
+        },
+        {
+          "id": "GP-06",
+          "title": "SLA with working-day calendar, holidays, reminders, escalation",
+          "result": "PASS-WITH-WORKAROUND",
+          "featuresUsed": [
+            "boundary timer non-interrupting (timeCycle R2/PT24H reminders)",
+            "boundary timer non-interrupting timeDate ${slaDue} (due date computed by the product calendar)",
+            "boundary timer non-interrupting timeDuration P3D on a working-day business calendar",
+            "escalation user task"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "ProcessEngineConfigurationImpl.getBusinessCalendarManager() (MapBusinessCalendarManager.addBusinessCalendar(\"duration\", ...), impl API)",
+            "ManagementService.createJobQuery().timers()",
+            "HistoryService.createHistoricActivityInstanceQuery()"
+          ],
+          "workarounds": [
+            {
+              "what": "Operaton has no per-timer business calendar: the engine-wide 'duration' calendar is replaced by a working-day calendar (impl API), which changes EVERY duration timer of the engine",
+              "lines": 30
+            }
+          ],
+          "workaroundLines": 30,
+          "timingMs": 615,
+          "notes": [
+            "Portable form: the product layer computes the due date with its holiday calendar and the model uses timeDate ${slaDue} (no variant). Engine-calendar form: Flowable selects a named calendar per timer; Operaton can only replace the engine-wide calendar of a timer type."
+          ],
+          "details": {
+            "timerDueDatesUtc": [
+              "2026-11-06T04:30:00Z",
+              "2026-11-11T04:30:00Z",
+              "2026-11-11T04:30:00Z"
+            ]
+          }
+        },
+        {
+          "id": "GP-07",
+          "title": "Deadline extension of running instances (tender corrigendum)",
+          "result": "PASS",
+          "featuresUsed": [
+            "intermediate timer catch timeDate ${bidDeadline}",
+            "timer job due-date change on running instances"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "ManagementService.createJobQuery().timers()",
+            "ManagementService.setJobDuedate()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 381,
+          "notes": [
+            "setJobDuedate keeps the job id; recalculateJobDuedate(jobId, false) re-evaluates the expression too",
+            "Model-based alternative without native API: event-based gateway with a 'corrigendum' message that loops back to the timer with the new date (used in D-TENDER, E17-a)."
+          ],
+          "details": {
+            "dueDatesAfterCorrigendumUtc": [
+              "2026-11-27T09:30:00Z",
+              "2026-11-27T09:30:00Z",
+              "2026-11-27T09:30:00Z"
+            ],
+            "jobIdKeptAfterReschedule": true
+          }
+        },
+        {
+          "id": "GP-08",
+          "title": "Bulk intake: >= 5,000 instances, bulk approve / reject / withdraw",
+          "result": "PASS-WITH-WORKAROUND",
+          "featuresUsed": [
+            "mass start",
+            "task queries by seat and by process variable",
+            "bulk instance deletion (withdrawn)",
+            "bulk task completion (approve / reject)"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "TaskQuery.processVariableValueEquals()",
+            "RuntimeService.deleteProcessInstances(List, reason, false, true)",
+            "TaskService.createTaskQuery()",
+            "RuntimeService.createProcessInstanceQuery() / HistoryService.createHistoricProcessInstanceQuery()"
+          ],
+          "workarounds": [
+            {
+              "what": "bulk approve/reject: neither engine has a bulk task-completion API; the product layer pages task ids and completes them with 4 threads",
+              "lines": 25
+            }
+          ],
+          "workaroundLines": 25,
+          "timingMs": 112499,
+          "timings": {
+            "start_5000_instances": 49360,
+            "countTasksBySeat": 23,
+            "firstPage50BySeat": 317,
+            "countTasksByProcessVariable": 15,
+            "bulkDelete_500": 9611,
+            "bulkDecision_4500_tasks": 51811
+          },
+          "details": {
+            "instances": 5000,
+            "threads": 4,
+            "startThroughputPerSec": 101,
+            "decisionThroughputPerSec": 87,
+            "dbRowsAfterStart": {
+              "totalRowsDelta": 70000,
+              "runtimeRowsDelta": 25000,
+              "historyRowsDelta": 45000,
+              "perTable": {
+                "ACT_HI_ACTINST": 10000,
+                "ACT_HI_DETAIL": 10000,
+                "ACT_HI_IDENTITYLINK": 5000,
+                "ACT_HI_PROCINST": 5000,
+                "ACT_HI_TASKINST": 5000,
+                "ACT_HI_VARINST": 10000,
+                "ACT_RU_EXECUTION": 5000,
+                "ACT_RU_IDENTITYLINK": 5000,
+                "ACT_RU_TASK": 5000,
+                "ACT_RU_VARIABLE": 10000
+              }
+            },
+            "dbRowsAtEnd": {
+              "totalRowsDelta": 63000,
+              "runtimeRowsDelta": 0,
+              "historyRowsDelta": 63000,
+              "perTable": {
+                "ACT_HI_ACTINST": 19000,
+                "ACT_HI_DETAIL": 14500,
+                "ACT_HI_IDENTITYLINK": 5000,
+                "ACT_HI_PROCINST": 5000,
+                "ACT_HI_TASKINST": 5000,
+                "ACT_HI_VARINST": 14500
+              }
+            },
+            "heapUsedAfterGcMbBefore": 64,
+            "heapUsedAfterGcMbAfter": 65,
+            "peakHeapMb": 200
+          }
+        },
+        {
+          "id": "GP-09",
+          "title": "Large multi-instance (>= 5,000 items in one instance)",
+          "result": "FAIL",
+          "featuresUsed": [
+            "parallel multi-instance userTask, loopCardinality ${n}",
+            "history volume of one large instance"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "TaskService.createTaskQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 275249,
+          "timings": {
+            "start_with_5000_items": 43530,
+            "complete_1732_items_1_thread": 180065,
+            "cancelInstanceWithOpenItems": 43767
+          },
+          "failures": [
+            "all 5000 items completed within the cap of 180000 ms (completed 1732 in 180065 ms; per-completion cost grows with the number of open items)"
+          ],
+          "notes": [
+            "Not finished within the cap: completing one item of a parallel multi-instance body costs time proportional to the open items (total ~ n^2). Workaround for beneficiary lists: one instance per item (GP-08 shape, linear) or chunked sub-processes; not measured here."
+          ],
+          "details": {
+            "msPer1000Completions": [
+              106807
+            ],
+            "projectedTotalCompletionMsLinear": 519818,
+            "items": 5000,
+            "completed": 1732,
+            "dbRowsAfterCreate": {
+              "totalRowsDelta": 45017,
+              "runtimeRowsDelta": 20006,
+              "historyRowsDelta": 25011,
+              "perTable": {
+                "ACT_HI_ACTINST": 5002,
+                "ACT_HI_DETAIL": 5004,
+                "ACT_HI_IDENTITYLINK": 5000,
+                "ACT_HI_PROCINST": 1,
+                "ACT_HI_TASKINST": 5000,
+                "ACT_HI_VARINST": 5004,
+                "ACT_RU_EXECUTION": 5002,
+                "ACT_RU_IDENTITYLINK": 5000,
+                "ACT_RU_TASK": 5000,
+                "ACT_RU_VARIABLE": 5004
+              }
+            },
+            "dbRowsAtEnd": {
+              "totalRowsDelta": 45017,
+              "runtimeRowsDelta": 16542,
+              "historyRowsDelta": 28475,
+              "perTable": {
+                "ACT_HI_ACTINST": 5002,
+                "ACT_HI_DETAIL": 8468,
+                "ACT_HI_IDENTITYLINK": 5000,
+                "ACT_HI_PROCINST": 1,
+                "ACT_HI_TASKINST": 5000,
+                "ACT_HI_VARINST": 5004,
+                "ACT_RU_EXECUTION": 5002,
+                "ACT_RU_IDENTITYLINK": 3268,
+                "ACT_RU_TASK": 3268,
+                "ACT_RU_VARIABLE": 5004
+              }
+            },
+            "heapUsedAfterGcMbBefore": 64,
+            "heapUsedAfterGcMbWithInstanceOpen": 64,
+            "peakHeapMb": 247
+          }
+        },
+        {
+          "id": "GP-10",
+          "title": "Multi-year process with monthly cycles (36 monthly bills)",
+          "result": "PASS",
+          "featuresUsed": [
+            "boundary timer non-interrupting timeCycle R36/P1M",
+            "long-lived instance",
+            "monthly user tasks"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "ManagementService.createJobQuery().timers()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 3358,
+          "notes": [
+            "BPMN has no continue-as-new; the instance stays one instance for 3 years and history grows per cycle.",
+            "P1M repeats from the previous due date, so a cycle started on the 31st drifts to the 28th after February; a fixed billing day needs a cron-like cycle or a date computed by the product"
+          ],
+          "details": {
+            "cycleDueDatesIst": [
+              "2026-02-28T10:00",
+              "2026-03-28T10:00",
+              "2026-04-28T10:00",
+              "2026-05-28T10:00",
+              "2026-06-28T10:00",
+              "2026-07-28T10:00",
+              "2026-08-28T10:00",
+              "2026-09-28T10:00",
+              "2026-10-28T10:00",
+              "2026-11-28T10:00",
+              "2026-12-28T10:00",
+              "2027-01-28T10:00",
+              "2027-02-28T10:00",
+              "2027-03-28T10:00",
+              "2027-04-28T10:00",
+              "2027-05-28T10:00",
+              "2027-06-28T10:00",
+              "2027-07-28T10:00",
+              "2027-08-28T10:00",
+              "2027-09-28T10:00",
+              "2027-10-28T10:00",
+              "2027-11-28T10:00",
+              "2027-12-28T10:00",
+              "2028-01-28T10:00",
+              "2028-02-28T10:00",
+              "2028-03-28T10:00",
+              "2028-04-28T10:00",
+              "2028-05-28T10:00",
+              "2028-06-28T10:00",
+              "2028-07-28T10:00",
+              "2028-08-28T10:00",
+              "2028-09-28T10:00",
+              "2028-10-28T10:00",
+              "2028-11-28T10:00",
+              "2028-12-28T10:00",
+              "2029-01-28T10:00",
+              "none"
+            ],
+            "runtimeRowsAfterMonth1": 6,
+            "runtimeRowsAfterMonth36": 5,
+            "historyRowsGrowthMonth1To36": 244,
+            "runtimeRowGrowthPerTableMonth1To36": {},
+            "monthEndBehaviour": "start 31 Jan; 1st cycle 2026-02-28T10:00, 2nd cycle 2026-03-28T10:00"
+          }
+        },
+        {
+          "id": "GP-11",
+          "title": "Budget availability + encumbrance (idempotent), released on cancel by compensation",
+          "result": "PASS",
+          "featuresUsed": [
+            "external task (pull worker) with lease",
+            "operationId from activityInstanceId (VI.3.2)",
+            "compensation boundary + isForCompensation handler (external task)",
+            "intermediate throw compensate",
+            "interrupting message boundary (cancel)"
+          ],
+          "variants": [
+            "external task: operaton:type=external operaton:topic"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "productLayer": [
+            {
+              "what": "encumbrance ledger and its idempotency check (operationId) live in the product layer",
+              "lines": 12
+            }
+          ],
+          "timingMs": 566
+        },
+        {
+          "id": "GP-12",
+          "title": "Payment with unknown outcome + reconciliation (IFMS JIT simulator)",
+          "result": "PASS",
+          "featuresUsed": [
+            "external task",
+            "BPMN error boundary UNKNOWN_OUTCOME on an external task",
+            "retry by failure",
+            "reconciliation loop (gateway back to payment)"
+          ],
+          "variants": [
+            "external task topic attributes (operaton)"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "productLayer": [
+            {
+              "what": "operationId derived from (tenant, instance, 'pay') instead of activityInstanceId: the activity instance id changes on the model-level retry loop on both engines (EngineAdapter.ExternalWork doc)",
+              "lines": 2
+            }
+          ],
+          "timingMs": 1345,
+          "details": {
+            "ifmsRequests": 8
+          }
+        },
+        {
+          "id": "GP-13",
+          "title": "EMD refund via compensation (multi-instance collected, all refunded on cancellation)",
+          "result": "PASS",
+          "featuresUsed": [
+            "compensation boundary on a parallel multi-instance activity",
+            "user-task compensation handler",
+            "intermediate throw compensate"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "HistoryService.createHistoricActivityInstanceQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 3295,
+          "details": {
+            "refundTasksAfterCompensation": 3,
+            "compensationHandlerMatrix": {
+              "userTask / normal-flow / single": "OK handlers=1 ended=true",
+              "userTask / normal-flow / multi-instance": "OK handlers=2 ended=true",
+              "userTask / message-boundary / single": "OK handlers=1 ended=true",
+              "userTask / message-boundary / multi-instance": "OK handlers=2 ended=true",
+              "manualTask / normal-flow / single": "OK handlers=1 ended=true",
+              "manualTask / normal-flow / multi-instance": "OK handlers=2 ended=true",
+              "manualTask / message-boundary / single": "OK handlers=1 ended=true",
+              "manualTask / message-boundary / multi-instance": "OK handlers=2 ended=true",
+              "externalTask / normal-flow / single": "OK handlers=1 ended=true",
+              "externalTask / normal-flow / multi-instance": "OK handlers=2 ended=true",
+              "externalTask / message-boundary / single": "OK handlers=1 ended=true",
+              "externalTask / message-boundary / multi-instance": "OK handlers=2 ended=true"
+            }
+          }
+        },
+        {
+          "id": "GP-14",
+          "title": "Withdrawal / cancellation at any stage (interrupting event sub-processes)",
+          "result": "PASS",
+          "featuresUsed": [
+            "interrupting event sub-process with message start (withdraw, per instance)",
+            "interrupting event sub-process with signal start (tender cancelled, broadcast)"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "RuntimeService.signalEventReceived() (EngineAdapter has no signal call)"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 607
+        },
+        {
+          "id": "GP-15",
+          "title": "External portal callbacks, including early arrival and duplicates",
+          "result": "PASS-WITH-WORKAROUND",
+          "featuresUsed": [
+            "intermediate message catch, correlation by business key",
+            "parallel gateway opening the subscription early"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "RuntimeService.createExecutionQuery().messageEventSubscriptionName()"
+          ],
+          "workarounds": [
+            {
+              "what": "product inbox: buffer callbacks by business key + callback id, deliver when the engine has the message subscription (neither engine buffers early messages)",
+              "lines": 20
+            },
+            {
+              "what": "model alternative: parallel gateway that opens the message catch at instance start",
+              "lines": 6
+            }
+          ],
+          "workaroundLines": 26,
+          "timingMs": 591,
+          "details": {
+            "earlyCallbackOnNaiveModel": "rejected: MismatchingMessageCorrelationException: Cannot correlate message 'feePaid': No process definition or execution matches the parameters",
+            "lateDuplicateWithoutInbox": "rejected: MismatchingMessageCorrelationException"
+          }
+        },
+        {
+          "id": "GP-16",
+          "title": "Document checklist + clarification loop with deemed closure",
+          "result": "PASS",
+          "featuresUsed": [
+            "event-based gateway (message vs timer P30D)",
+            "loop back to scrutiny",
+            "message correlation"
+          ],
+          "variants": [],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 631
+        },
+        {
+          "id": "GP-17",
+          "title": "Field inspection scheduling (due date), rescheduling and reassignment",
+          "result": "PASS",
+          "featuresUsed": [
+            "user task due date expression",
+            "humanPerformer assignee expression",
+            "task reassignment",
+            "assignment history"
+          ],
+          "variants": [
+            "operaton:dueDate=\"${inspectionDate}\" (BPMN 2.0.2 has no task due date)"
+          ],
+          "nativeApi": [
+            "Task.setDueDate() + TaskService.saveTask()",
+            "TaskService.setAssignee() (EngineAdapter.claimTask fails on an assigned task)",
+            "HistoryService.createHistoricIdentityLinkLogQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 232,
+          "details": {
+            "assignmentHistory": [
+              "assignee:add:insp.a",
+              "assignee:delete:insp.a",
+              "assignee:add:insp.b"
+            ],
+            "historyNamesBothInspectors": true
+          }
+        },
+        {
+          "id": "GP-18",
+          "title": "Transfer / additional charge / leave delegation mid-flow (seat-based)",
+          "result": "PASS",
+          "featuresUsed": [
+            "tasks assigned to a seat (candidate group)",
+            "query by several seats (additional charge)",
+            "unclaim / reassign on transfer",
+            "delegation with owner (acted-for)"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "TaskService.setAssignee()",
+            "TaskService.delegateTask() / resolveTask()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "productLayer": [
+            {
+              "what": "seat register and transfer handling (release the predecessor's claimed tasks) in the product layer (IX.5); the engine only knows candidate groups and assignees",
+              "lines": 15
+            }
+          ],
+          "timingMs": 397,
+          "notes": [
+            "Assigned tasks: the Operaton adapter includes assigned tasks in candidate-group queries (includeAssignedTasks), the Flowable adapter does not; seen by the successor before release: 3"
+          ],
+          "details": {
+            "seatTasksVisibleToSuccessorBeforeRelease": 3
+          }
+        },
+        {
+          "id": "GP-19",
+          "title": "Rule change mid-flight: running instances keep the old rule (DMN version binding)",
+          "result": "PASS",
+          "featuresUsed": [
+            "DMN deployed with the process",
+            "decision binding to the same deployment",
+            "default binding = latest"
+          ],
+          "variants": [
+            "operaton:decisionRefBinding=\"deployment\""
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 921,
+          "notes": [
+            "Without the binding attribute (default 'latest') the old instance evaluated the NEW rule (fee 1500.0): the binding must be set explicitly."
+          ],
+          "details": {
+            "feeOldInstanceBoundToDeployment": 1000.0,
+            "feeNewInstance": 1500.0,
+            "feeOldInstanceWithLatestBinding": 1500.0
+          }
+        },
+        {
+          "id": "GP-20",
+          "title": "Migrate running instances to a new process version (revised procedure)",
+          "result": "PASS",
+          "featuresUsed": [
+            "process instance migration API",
+            "activity mapping (equal ids + one renamed activity)"
+          ],
+          "variants": [],
+          "nativeApi": [
+            "RepositoryService.createProcessDefinitionQuery()",
+            "RuntimeService.createMigrationPlan().mapEqualActivities().build() + newMigration(plan).execute()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 904,
+          "timings": {
+            "migrate_2_instances": 132
+          }
+        }
+      ]
+    }
+  }
+}

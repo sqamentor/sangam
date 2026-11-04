@@ -1,0 +1,188 @@
+{
+  "experiment" : "E5",
+  "title" : "Outbox / inbox with engine state (VI.2)",
+  "database" : "PostgreSQL 17 (Testcontainers postgres:17-alpine), one database per engine",
+  "module" : "spike/experiments-integration",
+  "engines" : {
+    "flowable-8.0.0" : {
+      "generatedAt" : "2026-11-04T14:33:09.468176100+05:30",
+      "scenariosCounted" : 5,
+      "scenariosPassed" : 4,
+      "passRatePercent" : 80.0,
+      "scenarios" : [ {
+        "id" : "E5-1",
+        "name" : "Event appended in the same transaction as a task completion; the relay publishes it to every destination",
+        "tests" : [ "T06" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "rootSeq" : 1,
+          "relayCycle" : {
+            "fencedOut" : 0,
+            "claimed" : 2,
+            "published" : 2
+          }
+        }
+      }, {
+        "id" : "E5-2",
+        "name" : "Relay crash between publish and mark: re-published after the claim lease, the consumer dedups on event_id, every destination ends DONE",
+        "tests" : [ "T07" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "sweptBackToPending" : 2,
+          "deliveriesPerDestination" : 2,
+          "appliedPerDestination" : 1,
+          "drainCycles" : 1
+        }
+      }, {
+        "id" : "E5-3",
+        "name" : "Rollback of the engine command also removes the outbox row (exception after the callback, and an engine failure inside the command)",
+        "tests" : [ "T06" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "outboxRowsAfterCallbackException" : 0,
+          "outboxRowsAfterEngineFailure" : 0,
+          "engineFailure" : "FlowableException: Unknown property used in expression: ${checkerDecision == 'forward'} with Execution[ id '77' ] - definition 'wf1-bill:1:4' - activity 'wf1_checkerDecisionGw' - parent '69' - tenantId 'tn-e5'",
+          "taskStillOpen" : true
+        }
+      }, {
+        "id" : "E5-4",
+        "name" : "A late commit with a lower outbox id is still delivered (state scan, no id watermark)",
+        "tests" : [ "T06" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "lateCommitOutboxId" : 5,
+          "earlyCommitOutboxId" : 6,
+          "deliveredOnFirstPass" : 2,
+          "lateEventDelivered" : true
+        }
+      }, {
+        "id" : "E5-5",
+        "name" : "Early inbound message (WF-3 clarification) is buffered, then correlated when the instance reaches the catch event; a redelivery is dropped",
+        "tests" : [ "T09" ],
+        "counted" : true,
+        "outcome" : "FAIL",
+        "pass" : false,
+        "error" : "FlowableException: Exception during execution of command org.sangam.spike.flowable.FlowableEngineAdapter$$Lambda/0x000001fac6b2f6b8@1c61011b",
+        "rootCause" : "java.lang.IllegalStateException: Message 'applicantResponse' (businessKey=lic-e5-5) matched 0 waiting executions; exactly one is required",
+        "trace" : "org.flowable.common.engine.api.FlowableException: Exception during execution of command org.sangam.spike.flowable.FlowableEngineAdapter$$Lambda/0x000001fac6b2f6b8@1c61011b\r\n\tat org.flowable.common.engine.impl.interceptor.CommandContextInterceptor.execute(CommandContextInterceptor.java:138)\r\n\tat org.flowable.common.engine.impl.interceptor.LogInterceptor.execute(LogInterceptor.java:30)\r\n\tat org.flowable.common.engine.impl.cfg.CommandExecutorImpl.execute(CommandExecutorImpl.java:56)\r\n\tat org.flowable.common.engine.impl.cfg.CommandExecutorImpl.execute(CommandExecutorImpl.java:51)\r\n\tat org.flowable.engine.impl.ManagementServiceImpl.executeCommand(ManagementServiceImpl.java:418)\r\n\tat org.sangam.spike.flowable.FlowableEngineAdapter.correlateMessage(FlowableEngineAdapter.java:203)\r\n\tat org.sangam.spike.it.e5.AbstractE5OutboxInboxTest.lambda$clarificationHandler$7(AbstractE5OutboxInboxTest.java:274)\r\n\tat org.sangam.spike.layer.Inbox.lambda$processOnce$4(Inbox.java:122)\r\n\tat org.sangam.spike.flowable.FlowableEngineAdapter.lambda$inEngineTransaction$10(FlowableEngineAdapter.java:576)\r\n\tat org.flowable.engine.impl.interceptor.CommandInvoker$1.run(CommandInvoker.java:75)\r\n\tat org.flowable.engine.impl.interceptor.CommandInvoker.executeOperation(CommandInvoker.java:198)\r\n\tat org.flowable.engine.impl.interceptor.CommandInvoker.executeOperations(CommandInvoker.java:128)\r\n\tat org.flowable.engine.impl.interceptor.CommandInvoker.execute(CommandInvoker.java:80)\r\n\tat org.flowable.engine.impl.interceptor.BpmnOverrideContextInterceptor.execute(BpmnOverrideContextInterceptor.java:26)\r\n\tat org.flowable.common.engine.impl.interceptor.TransactionContextInterceptor.execute(TransactionContextInterceptor.java:53)\r\n\tat org.flowable.common.engine.impl.interceptor.CommandContextInterceptor.execute(CommandContextInterceptor.java:105)\r\n\tat org.flowable.common.engine.impl.interceptor.LogInterceptor.execute(LogInterceptor.java:30)\r\n\tat org.flowable.common.engine.impl.cfg.CommandExecutorImpl.execute(CommandExecutorImpl.java:56)\r\n\tat org.flowable.common.engine.impl.cfg.CommandExecutorImpl.execute(CommandExecutorImpl.java:51)\r\n\tat org.flowable.engine.impl.ManagementServiceImpl.executeCommand(ManagementServiceImpl.java:418)\r\n\tat org.sangam.spike.flowable.FlowableEngineAdapter.inEngineTransaction(FlowableEngineAdapter.java:563)\r\n\tat org.sangam.spike.layer.Inbox.processOnce(Inbox.java:121)\r\n\tat org.sangam.spike.it.e5.AbstractE5OutboxInboxTest.earlyMessageBufferedThenCorrelated(AbstractE5OutboxInboxT",
+        "measurements" : { }
+      }, {
+        "id" : "E5-5w",
+        "name" : "Same as E5-5 with the adapter's business-key correlation bypassed (null business key, single waiting instance): isolates the inbox mechanism from the Flowable adapter defect",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "earlyState" : "BUFFERED",
+          "afterCatchEvent" : "PROCESSED",
+          "correlations" : 1
+        }
+      } ],
+      "notes" : {
+        "destinations" : "history (ordered), webhook (unordered)",
+        "relayLeaseTtl" : "500 ms (DB clock)",
+        "wallClockSeconds" : 10.277
+      }
+    },
+    "operaton-2.2.0" : {
+      "generatedAt" : "2026-11-04T14:33:23.134332800+05:30",
+      "scenariosCounted" : 5,
+      "scenariosPassed" : 5,
+      "passRatePercent" : 100.0,
+      "scenarios" : [ {
+        "id" : "E5-1",
+        "name" : "Event appended in the same transaction as a task completion; the relay publishes it to every destination",
+        "tests" : [ "T06" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "rootSeq" : 1,
+          "relayCycle" : {
+            "fencedOut" : 0,
+            "claimed" : 2,
+            "published" : 2
+          }
+        }
+      }, {
+        "id" : "E5-2",
+        "name" : "Relay crash between publish and mark: re-published after the claim lease, the consumer dedups on event_id, every destination ends DONE",
+        "tests" : [ "T07" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "sweptBackToPending" : 2,
+          "deliveriesPerDestination" : 2,
+          "appliedPerDestination" : 1,
+          "drainCycles" : 1
+        }
+      }, {
+        "id" : "E5-3",
+        "name" : "Rollback of the engine command also removes the outbox row (exception after the callback, and an engine failure inside the command)",
+        "tests" : [ "T06" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "outboxRowsAfterCallbackException" : 0,
+          "outboxRowsAfterEngineFailure" : 0,
+          "engineFailure" : "ProcessEngineException: Unknown property used in expression: ${checkerDecision == 'forward'}. Cause: Cannot resolve identifier 'checkerDecision'",
+          "taskStillOpen" : true
+        }
+      }, {
+        "id" : "E5-4",
+        "name" : "A late commit with a lower outbox id is still delivered (state scan, no id watermark)",
+        "tests" : [ "T06" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "lateCommitOutboxId" : 5,
+          "earlyCommitOutboxId" : 6,
+          "deliveredOnFirstPass" : 2,
+          "lateEventDelivered" : true
+        }
+      }, {
+        "id" : "E5-5",
+        "name" : "Early inbound message (WF-3 clarification) is buffered, then correlated when the instance reaches the catch event; a redelivery is dropped",
+        "tests" : [ "T09" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "earlyState" : "BUFFERED",
+          "afterCatchEvent" : "PROCESSED",
+          "correlations" : 1,
+          "redelivery" : "DUPLICATE"
+        }
+      }, {
+        "id" : "E5-5w",
+        "name" : "Same as E5-5 with the adapter's business-key correlation bypassed (null business key, single waiting instance): isolates the inbox mechanism from the Flowable adapter defect",
+        "tests" : [ ],
+        "counted" : false,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "earlyState" : "BUFFERED",
+          "afterCatchEvent" : "PROCESSED",
+          "correlations" : 1
+        }
+      } ],
+      "notes" : {
+        "destinations" : "history (ordered), webhook (unordered)",
+        "relayLeaseTtl" : "500 ms (DB clock)",
+        "wallClockSeconds" : 13.614
+      }
+    }
+  }
+}

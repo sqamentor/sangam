@@ -1,0 +1,295 @@
+{
+  "experiment" : "E17-b",
+  "title" : "Government domain end-to-end models on both engines",
+  "runs" : {
+    "operaton" : {
+      "engineId" : "operaton-2.2.0",
+      "database" : "PostgreSQL 17 (Testcontainers postgres:17-alpine)",
+      "jdbcUrl" : "jdbc:postgresql://localhost:1116/e17b_operaton_2",
+      "jdk" : "Microsoft 21.0.10+7-LTS",
+      "os" : "Windows 11 10.0",
+      "threads" : 4,
+      "generatedAt" : "2026-11-04T12:29:26.740606Z"
+    },
+    "flowable" : {
+      "engineId" : "flowable-8.0.0.0",
+      "database" : "PostgreSQL 17 (Testcontainers postgres:17-alpine)",
+      "jdbcUrl" : "jdbc:postgresql://localhost:51454/e17b_flowable_2",
+      "jdk" : "Microsoft 21.0.10+7-LTS",
+      "os" : "Windows 11 10.0",
+      "threads" : 4,
+      "generatedAt" : "2026-11-04T12:38:29.108245900Z"
+    }
+  },
+  "items" : {
+    "D-DBT-SCHEME" : {
+      "name" : "Scheme: application to DBT payment with unknown outcome",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "user tasks (verification, sanction)", "external task: PFMS payment file (simulator)", "operationId = UUIDv3(tenant|instance|activityInstanceId)", "UNKNOWN outcome -> reconciliation worker", "FAILED -> correction loop with a NEW operationId", "exclusive gateway loop" ],
+        "variants" : [ "dbt-scheme.bpmn: external task topic 'dbt-payment' (V-02 style: operaton:type=external / flowable:type=external-worker)", "dbt-scheme.bpmn: external task topic 'dbt-reconcile' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 760,
+        "timingsMs" : { },
+        "scale" : {
+          "payments" : 3,
+          "failedPayments" : 1,
+          "paymentFiles" : 5
+        },
+        "notes" : [ "Reconciliation relies on the simulator's class (a) behaviour (idempotent by operationId: a re-sent operationId is reported DUPLICATE_OPERATION_ID, not paid again)." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "user tasks (verification, sanction)", "external task: PFMS payment file (simulator)", "operationId = UUIDv3(tenant|instance|activityInstanceId)", "UNKNOWN outcome -> reconciliation worker", "FAILED -> correction loop with a NEW operationId", "exclusive gateway loop" ],
+        "variants" : [ "dbt-scheme.bpmn: external task topic 'dbt-payment' (V-02 style: operaton:type=external / flowable:type=external-worker)", "dbt-scheme.bpmn: external task topic 'dbt-reconcile' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1586,
+        "timingsMs" : { },
+        "scale" : {
+          "payments" : 3,
+          "failedPayments" : 1,
+          "paymentFiles" : 5
+        },
+        "notes" : [ "Reconciliation relies on the simulator's class (a) behaviour (idempotent by operationId: a re-sent operationId is reported DUPLICATE_OPERATION_ID, not paid again)." ]
+      }
+    },
+    "D-GRIEVANCE" : {
+      "name" : "Grievance case: ad-hoc actions, escalation, reopen",
+      "operaton" : {
+        "result" : "PASS-WITH-WORKAROUND",
+        "features" : [ "CMMN case plan, autoComplete + requiredRule", "manual activation (ad-hoc), repetition", "blocking processTask -> BPMN timer escalation", "exitCriterion on the process task", "milestone", "reopen as a linked new case with history lookup" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Operaton RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()", "Operaton CaseService.createCaseExecutionQuery().activityId().enabled()", "Operaton CaseService.manuallyStartCaseExecution", "Operaton HistoricProcessInstanceQuery.superCaseInstanceId" ],
+        "workarounds" : [ {
+          "what" : "on case closure the product finds the case's called processes (native superCaseInstanceId query) and cancels those still running",
+          "lines" : 6
+        } ],
+        "workaroundLines" : 6,
+        "totalMs" : 1564,
+        "timingsMs" : { },
+        "subChecks" : {
+          "exit criterion on a blocking processTask ends the called BPMN instance" : "NO: case closed, called SLA process still running (would escalate a disposed grievance)",
+          "closed case variables readable from history" : "YES"
+        },
+        "notes" : [ "Escalation uses a BLOCKING CMMN processTask running a BPMN timer process (identical model on both engines) because Operaton 2.2.0 ignores CMMN timerEventListener (E16-b GP-21 sub-check)." ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "CMMN case plan, autoComplete + requiredRule", "manual activation (ad-hoc), repetition", "blocking processTask -> BPMN timer escalation", "exitCriterion on the process task", "milestone", "reopen as a linked new case with history lookup" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Flowable RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()", "Flowable CmmnRuntimeService.createPlanItemInstanceQuery().planItemInstanceStateEnabled()", "Flowable CmmnRuntimeService.startPlanItemInstance", "Flowable CmmnHistoryService.createHistoricPlanItemInstanceQuery() + HistoricProcessInstanceQuery.processInstanceCallbackIds" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1413,
+        "timingsMs" : { },
+        "subChecks" : {
+          "exit criterion on a blocking processTask ends the called BPMN instance" : "YES",
+          "closed case variables readable from history" : "YES"
+        },
+        "notes" : [ "Escalation uses a BLOCKING CMMN processTask running a BPMN timer process (identical model on both engines) because Operaton 2.2.0 ignores CMMN timerEventListener (E16-b GP-21 sub-check)." ]
+      }
+    },
+    "D-LEAVE" : {
+      "name" : "Leave: balance check, auto-approve below threshold, else route",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "gateway on balance", "DMN FIRST routing", "candidate group from DMN output", "bulk officer inbox" ],
+        "variants" : [ "leave.bpmn: DMN call 'leaveRouting' outputs route (V-01 style: businessRuleTask operaton:decisionRef + output mapping / serviceTask flowable:type=dmn)" ],
+        "nativeApi" : [ "Operaton HistoricProcessInstance.getEndActivityId", "Operaton RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 34274,
+        "timingsMs" : {
+          "applyMs" : 16311,
+          "officerDecisionsMs" : 17779
+        },
+        "scale" : {
+          "applications" : 500,
+          "outcomes" : "{lv_endAuto=133, HOD=171, CONTROLLING_OFFICER=134, lv_endNoBalance=62}",
+          "approvedByOfficers" : 271,
+          "rejectedByOfficers" : 34
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "gateway on balance", "DMN FIRST routing", "candidate group from DMN output", "bulk officer inbox" ],
+        "variants" : [ "leave.bpmn: DMN call 'leaveRouting' outputs route (V-01 style: businessRuleTask operaton:decisionRef + output mapping / serviceTask flowable:type=dmn)" ],
+        "nativeApi" : [ "Flowable HistoricProcessInstance.getEndActivityId", "Flowable RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 39956,
+        "timingsMs" : {
+          "applyMs" : 12877,
+          "officerDecisionsMs" : 26954
+        },
+        "scale" : {
+          "applications" : 500,
+          "outcomes" : "{lv_endAuto=133, HOD=171, CONTROLLING_OFFICER=134, lv_endNoBalance=62}",
+          "approvedByOfficers" : 271,
+          "rejectedByOfficers" : 34
+        },
+        "notes" : [ ]
+      }
+    },
+    "D-RECRUIT" : {
+      "name" : "Recruitment: notification to appointment",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "timer catch on a date variable (application window)", "event-based gateway (fee callback vs 7-day lapse)", "bulk message correlation", "bulk task completion", "DMN COLLECT per candidate", "signal throw + signal start (one promotion instance per vacancy)", "external task (promotion)", "message catch for waitlist promotion" ],
+        "variants" : [ "recruit.bpmn: DMN COLLECT call 'reservationPools' (operaton:mapDecisionResult=collectEntries -> List / flowable:type=dmn -> JSON array variable named after the decision)", "recruit.bpmn: external task topic 'recruit-promote' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Operaton HistoricProcessInstance.getEndActivityId", "Operaton RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 184156,
+        "timingsMs" : {
+          "1_applicationsMs" : 27097,
+          "2_feeCallbacksMs" : 35427,
+          "3_feeLapseTimersMs" : 2712,
+          "4a_scrutinyInboxQueryMs" : 14330,
+          "4b_bulkScrutinyMs" : 27468,
+          "5_examScoresWithDmnMs" : 30206,
+          "6a_readPoolsMs" : 13388,
+          "6b_meritListMs" : 7,
+          "7_resultDeclaredMs" : 27271,
+          "8_dvOffersPromotionAppointmentMs" : 5312
+        },
+        "scale" : {
+          "applications" : 2000,
+          "feePaid" : 1900,
+          "eligible" : 1833,
+          "posts" : 40,
+          "waitlist" : 10,
+          "promotions" : 3,
+          "conflictRetries" : 0,
+          "threads" : 4
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "timer catch on a date variable (application window)", "event-based gateway (fee callback vs 7-day lapse)", "bulk message correlation", "bulk task completion", "DMN COLLECT per candidate", "signal throw + signal start (one promotion instance per vacancy)", "external task (promotion)", "message catch for waitlist promotion" ],
+        "variants" : [ "recruit.bpmn: DMN COLLECT call 'reservationPools' (operaton:mapDecisionResult=collectEntries -> List / flowable:type=dmn -> JSON array variable named after the decision)", "recruit.bpmn: external task topic 'recruit-promote' (V-02 style: operaton:type=external / flowable:type=external-worker)" ],
+        "nativeApi" : [ "Flowable HistoricProcessInstance.getEndActivityId", "Flowable RuntimeService.createProcessInstanceQuery().processDefinitionKey().count()" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 176423,
+        "timingsMs" : {
+          "1_applicationsMs" : 18904,
+          "2_feeCallbacksMs" : 37986,
+          "3_feeLapseTimersMs" : 7398,
+          "4a_scrutinyInboxQueryMs" : 463,
+          "4b_bulkScrutinyMs" : 30780,
+          "5_examScoresWithDmnMs" : 26454,
+          "6a_readPoolsMs" : 9074,
+          "6b_meritListMs" : 10,
+          "7_resultDeclaredMs" : 37046,
+          "8_dvOffersPromotionAppointmentMs" : 7642
+        },
+        "scale" : {
+          "applications" : 2000,
+          "feePaid" : 1900,
+          "eligible" : 1833,
+          "posts" : 40,
+          "waitlist" : 10,
+          "promotions" : 3,
+          "conflictRetries" : 0,
+          "threads" : 4
+        },
+        "notes" : [ ]
+      }
+    },
+    "D-REFERRAL" : {
+      "name" : "Inter-department referral (call activities to two other tenants)",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "parallel call activities to definitions of two OTHER tenants", "in/out mapping with renaming", "parallel join", "loop back on non-concurrence", "tenant-scoped inboxes" ],
+        "variants" : [ "referral.bpmn: call activity to 'concurrence' in tenant dept-fin (operaton:calledElementTenantId / flowable:calledElementType=id + definition id variable finConcurrenceDefId)", "referral.bpmn: call activity in/out mapping in=fileNo>fileNo,subject>subject,amount>amount;out=concurred>finConcurred,remarks>finRemarks (operaton:in/out / flowable:in/out)", "referral.bpmn: call activity to 'concurrence' in tenant dept-law (operaton:calledElementTenantId / flowable:calledElementType=id + definition id variable lawConcurrenceDefId)", "referral.bpmn: call activity in/out mapping in=fileNo>fileNo,subject>subject;out=concurred>lawConcurred,remarks>lawRemarks (operaton:in/out / flowable:in/out)" ],
+        "nativeApi" : [ "Operaton HistoricProcessInstanceQuery.superProcessInstanceId", "Operaton HistoricProcessInstance.getTenantId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 455,
+        "timingsMs" : {
+          "referralRoundTripsMs" : 377
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS-WITH-WORKAROUND",
+        "features" : [ "parallel call activities to definitions of two OTHER tenants", "in/out mapping with renaming", "parallel join", "loop back on non-concurrence", "tenant-scoped inboxes" ],
+        "variants" : [ "referral.bpmn: call activity to 'concurrence' in tenant dept-fin (operaton:calledElementTenantId / flowable:calledElementType=id + definition id variable finConcurrenceDefId)", "referral.bpmn: call activity in/out mapping in=fileNo>fileNo,subject>subject,amount>amount;out=concurred>finConcurred,remarks>finRemarks (operaton:in/out / flowable:in/out)", "referral.bpmn: call activity to 'concurrence' in tenant dept-law (operaton:calledElementTenantId / flowable:calledElementType=id + definition id variable lawConcurrenceDefId)", "referral.bpmn: call activity in/out mapping in=fileNo>fileNo,subject>subject;out=concurred>lawConcurred,remarks>lawRemarks (operaton:in/out / flowable:in/out)" ],
+        "nativeApi" : [ "Flowable RepositoryService.createProcessDefinitionQuery()", "Flowable ProcessEngineConfigurationImpl.setStartProcessInstanceInterceptor + ExecutionEntity.setTenantId (impl)", "Flowable HistoricProcessInstanceQuery.superProcessInstanceId", "Flowable HistoricProcessInstance.getTenantId" ],
+        "workarounds" : [ {
+          "what" : "callee by definition id (calledElementType=id) looked up per department and passed at start",
+          "lines" : 4
+        }, {
+          "what" : "called instances re-tenanted to the callee definition's tenant (StartProcessInstanceInterceptor, see E16-b GP-32)",
+          "lines" : 22
+        } ],
+        "workaroundLines" : 26,
+        "totalMs" : 966,
+        "timingsMs" : {
+          "referralRoundTripsMs" : 792
+        },
+        "notes" : [ ]
+      }
+    },
+    "D-RTI" : {
+      "name" : "RTI request: 30-day / 48-hour clock, transfer, first appeal",
+      "operaton" : {
+        "result" : "PASS",
+        "features" : [ "non-interrupting timer boundary (s.7(1) 30 days / 48 h from a ternary)", "deemed refusal branch", "transfer u/s 6(3) = new instance in the other authority's tenant", "event-based gateway appeal window", "first appeal as linked instance with history lookup", "FAA 30-day timer" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Operaton HistoryService.createHistoricActivityInstanceQuery()", "Operaton ManagementService.createJobQuery().timers()", "Operaton HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey()", "Operaton HistoricProcessInstance.getTenantId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1458,
+        "timingsMs" : { },
+        "scale" : {
+          "requests" : 5,
+          "appeals" : 2
+        },
+        "notes" : [ ]
+      },
+      "flowable" : {
+        "result" : "PASS",
+        "features" : [ "non-interrupting timer boundary (s.7(1) 30 days / 48 h from a ternary)", "deemed refusal branch", "transfer u/s 6(3) = new instance in the other authority's tenant", "event-based gateway appeal window", "first appeal as linked instance with history lookup", "FAA 30-day timer" ],
+        "variants" : [ ],
+        "nativeApi" : [ "Flowable HistoryService.createHistoricActivityInstanceQuery()", "Flowable ManagementService.createTimerJobQuery()", "Flowable HistoryService.createHistoricProcessInstanceQuery().processInstanceBusinessKey()", "Flowable HistoricProcessInstance.getTenantId" ],
+        "workarounds" : [ ],
+        "workaroundLines" : 0,
+        "totalMs" : 1525,
+        "timingsMs" : { },
+        "scale" : {
+          "requests" : 5,
+          "appeals" : 2
+        },
+        "notes" : [ ]
+      }
+    }
+  },
+  "summary" : {
+    "operaton" : {
+      "PASS" : 5,
+      "PASS-WITH-WORKAROUND" : 1,
+      "FAIL" : 0,
+      "UNSUPPORTED" : 0,
+      "nativeApiUses" : 14,
+      "variantElements" : 9,
+      "workaroundLines" : 6
+    },
+    "flowable" : {
+      "PASS" : 5,
+      "PASS-WITH-WORKAROUND" : 1,
+      "FAIL" : 0,
+      "UNSUPPORTED" : 0,
+      "nativeApiUses" : 16,
+      "variantElements" : 9,
+      "workaroundLines" : 26
+    }
+  }
+}

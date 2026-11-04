@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam.spike</groupId>
+    <artifactId>spike-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>simulators</artifactId>
+  <name>Government system simulators and test harness</name>
+
+  <!--
+    Licence rules (SANGAM.md X.3a, LIC-2): the Oracle JDBC driver is NEVER bundled.
+    ojdbc11 and mssql-jdbc are declared with scope "provided": they are fetched by Maven at
+    build time, are on the compile and test classpaths of this module, and are NOT transitive,
+    so no consumer (and no packaged artifact) inherits them. See README.md.
+  -->
+  <properties>
+    <version.ojdbc>23.8.0.25.04</version.ojdbc>
+    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <!--
+      Module-local override of the parent's Testcontainers 1.21.3: that version uses docker-java's
+      old default API version, which Docker Engine 29 rejects (empty /info, HTTP 400, "Could not
+      find a valid Docker environment"). 1.21.4 works with Docker 29. Proposed for the parent pom.
+    -->
+    <version.testcontainers.sim>1.21.4</version.testcontainers.sim>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers</artifactId>
+        <version>${version.testcontainers.sim}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>jdbc</artifactId>
+        <version>${version.testcontainers.sim}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>database-commons</artifactId>
+        <version>${version.testcontainers.sim}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>${version.testcontainers.sim}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>oracle-free</artifactId>
+        <version>${version.testcontainers.sim}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>mssqlserver</artifactId>
+        <version>${version.testcontainers.sim}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam.spike</groupId>
+      <artifactId>product-api</artifactId>
+    </dependency>
+
+    <!-- Apache-2.0 -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <!-- Apache-2.0 -->
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+    </dependency>
+
+    <!-- Testcontainers (MIT), versions from the testcontainers-bom imported by the parent -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>oracle-free</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>mssqlserver</artifactId>
+    </dependency>
+
+    <!-- PostgreSQL JDBC (BSD-2-Clause, permissive): the default database, may ship -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+    </dependency>
+
+    <!-- Oracle JDBC (Oracle Free Use Terms): provided = fetched at build time, never bundled (LIC-2) -->
+    <dependency>
+      <groupId>com.oracle.database.jdbc</groupId>
+      <artifactId>ojdbc11</artifactId>
+      <version>${version.ojdbc}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- SQL Server JDBC (MIT): provided as well, per SANGAM.md XI.5 "fetched at build time, not shipped" -->
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>${version.mssql-jdbc}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- MIT. Pinned so slf4j-simple 2.x binds (Testcontainers alone pulls slf4j-api 1.7.x). -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${version.slf4j}</version>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!--
+            On this Windows host every NIO Selector (JDK HttpServer, HttpClient, Testcontainers) fails
+            with "Unable to establish loopback connection" when the JDK creates its AF_UNIX pipe in
+            the user temp dir (8.3 short name of the user profile). Pointing the AF_UNIX temp dir at target/
+            avoids it. See README.md "Windows note".
+          -->
+          <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}"</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

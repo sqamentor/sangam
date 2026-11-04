@@ -1,0 +1,1034 @@
+{
+  "experiment": "E9 functional-scale benchmark (SANGAM.md XI.4; T31)",
+  "label": "FUNCTIONAL SCALE on an 8-CPU dev machine, with the DB co-located in Docker. NOT the reference scale of R22.",
+  "design": {
+    "notInPath": "product layer (authorization filter, outbox, idempotency, audit chain) is NOT in the measured path: these are adapter (engine) numbers only",
+    "steadySeconds": 60,
+    "historyLevels": "each workflow runs at every listed level on both engines; the level is set on the built engine by a test hook and verified by counting ACT_HI_DETAIL rows (FULL only)",
+    "warmupSeconds": 20,
+    "threads": {
+      "completers": 4,
+      "starters": 4,
+      "actorsR5": 8,
+      "fetcher": 1,
+      "fetchMaxItems": 10,
+      "dbPool": 24,
+      "maxOpenInstances": 200
+    },
+    "metric": "completed instances/s = instances whose final command committed in the steady window",
+    "database": "PostgreSQL 17 (Testcontainers postgres:17), one fresh database per (engine, workflow, level)"
+  },
+  "environment": {
+    "label": "FUNCTIONAL SCALE on an 8-logical-CPU / 32 GB Windows 11 dev machine, database co-located in Docker on the same host. NOT the reference scale of R22.",
+    "javaVersion": "21.0.10",
+    "os": "Windows 11 10.0",
+    "jvmAvailableProcessors": 8,
+    "jvmMaxHeapMb": 3072,
+    "dockerInfo": "29.7.2 cpus=6 mem=14659231744",
+    "otherContainersAtStart": [
+      "postgres:17-alpine (Up 12 minutes)",
+      "testcontainers/ryuk:0.12.0 (Up 12 minutes)",
+      "mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04 (Up About an hour)",
+      "testcontainers/ryuk:0.14.0 (Up About an hour)",
+      "18cfe3ef5e68 (Up 4 days (healthy))"
+    ]
+  },
+  "runs": {
+    "r1": {
+      "full": {
+        "flowable": {
+          "engine": "flowable-8.0.0.0",
+          "historyLevelConfiguredByAdapter": "audit",
+          "historyLevelUsed": "full",
+          "asyncExecutor": {
+            "started": true,
+            "class": "org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor",
+            "corePoolSize": "DefaultAsyncTaskExecutor",
+            "note": "Flowable runs the continuation after an external-worker completion as an async job; the adapter builds the engine with the async executor off, so E9 starts it (test hook, engine defaults)"
+          },
+          "summary": {
+            "completedInstancesPerSecond": 22.66,
+            "startedInstancesPerSecond": 22.56,
+            "commandsPerSecond": 47.46,
+            "commandLatency_p50_ms": 72.46,
+            "commandLatency_p95_ms": 238.18,
+            "commandLatency_p99_ms": 511.93,
+            "errorRate": 0.0,
+            "jvmCpuPercentOfMachine": 7.5,
+            "dbContainerCpuPercentOneCore": 145.8
+          },
+          "steadyWindowSeconds": 60.01,
+          "warmupSeconds": 20,
+          "completedInWindow": 1360,
+          "startedInWindow": 1354,
+          "commandsInWindow": 2848,
+          "unrecoveredCommandsInWindow": 0,
+          "commandLatency": {
+            "completeExternal": {
+              "count": 1359,
+              "p50_ms": 64.08,
+              "p95_ms": 147.33,
+              "p99_ms": 199.25,
+              "max_ms": 876.14,
+              "mean_ms": 72.79
+            },
+            "fetchAndLock": {
+              "count": 135,
+              "p50_ms": 428.77,
+              "p95_ms": 582.16,
+              "p99_ms": 668.99,
+              "max_ms": 877.07,
+              "mean_ms": 441.83
+            },
+            "startProcess": {
+              "count": 1354,
+              "p50_ms": 74.49,
+              "p95_ms": 151.21,
+              "p99_ms": 202.16,
+              "max_ms": 720.99,
+              "mean_ms": 82.32
+            },
+            "ALL_COMMANDS": {
+              "count": 2848,
+              "p50_ms": 72.46,
+              "p95_ms": 238.18,
+              "p99_ms": 511.93,
+              "max_ms": 877.07,
+              "mean_ms": 94.81
+            }
+          },
+          "endToEndInstanceLatency_startToEnd_fromHistory": {
+            "count": 1360,
+            "p50_ms": 1573.0,
+            "p95_ms": 7476.0,
+            "p99_ms": 25887.0,
+            "max_ms": 38787.0,
+            "mean_ms": 3233.11
+          },
+          "externalCompletionsInWindow": 1360,
+          "retry": {
+            "operations": 3976,
+            "successes": 3976,
+            "unrecoveredFailures": 0,
+            "attempts": 3976,
+            "retries": 0,
+            "operationsThatNeededRetry": 0,
+            "exceptionsByKind": {
+              "OLE": 0,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 3976
+            },
+            "exceptionClasses": {},
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {}
+          },
+          "cpu": {
+            "logicalCpus": 8,
+            "jvmProcessCpuPercentOfMachine": 7.5,
+            "machineCpuPercentAvg": 97.9,
+            "dbContainerCpuPercentAvg_dockerStats": 145.8,
+            "dbContainerCpuSamples": 8,
+            "dbContainerCpuNote": "docker stats CPU% is relative to ONE core (100% = 1 core) of the Docker VM",
+            "dbContainerMemLastSample": "168.8MiB / 13.65GiB"
+          },
+          "emptyFetches": 27,
+          "actorProtocolErrors": 0,
+          "openInstancesAtEnd": 0,
+          "verification": {
+            "instancesStartedTotal": 1880,
+            "externalCompletionsTotalByDriver": 1880,
+            "historicInstances": 1880,
+            "historicInstancesEnded": 1880,
+            "allStartedInstancesEndedAfterDrain": true,
+            "completionsMatchHistory": true,
+            "actHiDetailRows": 3760,
+            "historyLevelEffective": "full"
+          },
+          "status": "RAN"
+        },
+        "operaton": {
+          "engine": "operaton-2.2.0",
+          "historyLevelConfiguredByAdapter": "full",
+          "historyLevelUsed": "full",
+          "asyncExecutor": {
+            "started": false,
+            "note": "not needed: Operaton continues the process synchronously in the external-task completion command"
+          },
+          "summary": {
+            "completedInstancesPerSecond": 33.9,
+            "startedInstancesPerSecond": 33.93,
+            "commandsPerSecond": 71.08,
+            "commandLatency_p50_ms": 96.33,
+            "commandLatency_p95_ms": 232.25,
+            "commandLatency_p99_ms": 359.13,
+            "errorRate": 0.0,
+            "jvmCpuPercentOfMachine": 6.9,
+            "dbContainerCpuPercentOneCore": 141.7
+          },
+          "steadyWindowSeconds": 60.0,
+          "warmupSeconds": 20,
+          "completedInWindow": 2034,
+          "startedInWindow": 2036,
+          "commandsInWindow": 4265,
+          "unrecoveredCommandsInWindow": 0,
+          "commandLatency": {
+            "completeExternal": {
+              "count": 2030,
+              "p50_ms": 110.22,
+              "p95_ms": 214.02,
+              "p99_ms": 303.0,
+              "max_ms": 429.43,
+              "mean_ms": 117.96
+            },
+            "fetchAndLock": {
+              "count": 203,
+              "p50_ms": 259.64,
+              "p95_ms": 453.25,
+              "p99_ms": 552.98,
+              "max_ms": 591.2,
+              "mean_ms": 271.61
+            },
+            "startProcess": {
+              "count": 2032,
+              "p50_ms": 78.29,
+              "p95_ms": 162.81,
+              "p99_ms": 227.56,
+              "max_ms": 439.54,
+              "mean_ms": 85.5
+            },
+            "ALL_COMMANDS": {
+              "count": 4265,
+              "p50_ms": 96.33,
+              "p95_ms": 232.25,
+              "p99_ms": 359.13,
+              "max_ms": 591.2,
+              "mean_ms": 109.81
+            }
+          },
+          "endToEndInstanceLatency_startToEnd_fromHistory": {
+            "count": 2034,
+            "p50_ms": 1112.0,
+            "p95_ms": 7929.0,
+            "p99_ms": 10750.0,
+            "max_ms": 20923.0,
+            "mean_ms": 2342.82
+          },
+          "externalCompletionsInWindow": 2034,
+          "retry": {
+            "operations": 5997,
+            "successes": 5997,
+            "unrecoveredFailures": 0,
+            "attempts": 5997,
+            "retries": 0,
+            "operationsThatNeededRetry": 0,
+            "exceptionsByKind": {
+              "OLE": 0,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 5997
+            },
+            "exceptionClasses": {},
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {}
+          },
+          "cpu": {
+            "logicalCpus": 8,
+            "jvmProcessCpuPercentOfMachine": 6.9,
+            "machineCpuPercentAvg": 99.9,
+            "dbContainerCpuPercentAvg_dockerStats": 141.7,
+            "dbContainerCpuSamples": 12,
+            "dbContainerCpuNote": "docker stats CPU% is relative to ONE core (100% = 1 core) of the Docker VM",
+            "dbContainerMemLastSample": "125.5MiB / 13.65GiB"
+          },
+          "emptyFetches": 36,
+          "actorProtocolErrors": 0,
+          "openInstancesAtEnd": 0,
+          "verification": {
+            "instancesStartedTotal": 2838,
+            "externalCompletionsTotalByDriver": 2838,
+            "historicInstances": 2838,
+            "historicInstancesEnded": 2838,
+            "allStartedInstancesEndedAfterDrain": true,
+            "completionsMatchHistory": true,
+            "actHiDetailRows": 5676,
+            "historyLevelEffective": "full"
+          },
+          "status": "RAN"
+        }
+      },
+      "audit": {
+        "flowable": {
+          "engine": "flowable-8.0.0.0",
+          "historyLevelConfiguredByAdapter": "audit",
+          "historyLevelUsed": "audit",
+          "asyncExecutor": {
+            "started": true,
+            "class": "org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor",
+            "corePoolSize": "DefaultAsyncTaskExecutor",
+            "note": "Flowable runs the continuation after an external-worker completion as an async job; the adapter builds the engine with the async executor off, so E9 starts it (test hook, engine defaults)"
+          },
+          "summary": {
+            "completedInstancesPerSecond": 23.85,
+            "startedInstancesPerSecond": 23.86,
+            "commandsPerSecond": 50.04,
+            "commandLatency_p50_ms": 59.9,
+            "commandLatency_p95_ms": 215.66,
+            "commandLatency_p99_ms": 483.18,
+            "errorRate": 0.0,
+            "jvmCpuPercentOfMachine": 5.6,
+            "dbContainerCpuPercentOneCore": 155.0
+          },
+          "steadyWindowSeconds": 60.01,
+          "warmupSeconds": 20,
+          "completedInWindow": 1431,
+          "startedInWindow": 1432,
+          "commandsInWindow": 3003,
+          "unrecoveredCommandsInWindow": 0,
+          "commandLatency": {
+            "completeExternal": {
+              "count": 1433,
+              "p50_ms": 54.34,
+              "p95_ms": 134.01,
+              "p99_ms": 193.18,
+              "max_ms": 313.41,
+              "mean_ms": 62.43
+            },
+            "fetchAndLock": {
+              "count": 142,
+              "p50_ms": 415.09,
+              "p95_ms": 571.0,
+              "p99_ms": 642.02,
+              "max_ms": 673.54,
+              "mean_ms": 417.86
+            },
+            "startProcess": {
+              "count": 1428,
+              "p50_ms": 60.61,
+              "p95_ms": 131.15,
+              "p99_ms": 187.66,
+              "max_ms": 243.07,
+              "mean_ms": 67.14
+            },
+            "ALL_COMMANDS": {
+              "count": 3003,
+              "p50_ms": 59.9,
+              "p95_ms": 215.66,
+              "p99_ms": 483.18,
+              "max_ms": 673.54,
+              "mean_ms": 81.48
+            }
+          },
+          "endToEndInstanceLatency_startToEnd_fromHistory": {
+            "count": 1431,
+            "p50_ms": 1174.0,
+            "p95_ms": 7660.0,
+            "p99_ms": 31548.0,
+            "max_ms": 37174.0,
+            "mean_ms": 3420.83
+          },
+          "externalCompletionsInWindow": 1437,
+          "retry": {
+            "operations": 4152,
+            "successes": 4152,
+            "unrecoveredFailures": 0,
+            "attempts": 4152,
+            "retries": 0,
+            "operationsThatNeededRetry": 0,
+            "exceptionsByKind": {
+              "OLE": 0,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 4152
+            },
+            "exceptionClasses": {},
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {}
+          },
+          "cpu": {
+            "logicalCpus": 8,
+            "jvmProcessCpuPercentOfMachine": 5.6,
+            "machineCpuPercentAvg": 100.0,
+            "dbContainerCpuPercentAvg_dockerStats": 155.0,
+            "dbContainerCpuSamples": 11,
+            "dbContainerCpuNote": "docker stats CPU% is relative to ONE core (100% = 1 core) of the Docker VM",
+            "dbContainerMemLastSample": "232.1MiB / 13.65GiB"
+          },
+          "emptyFetches": 12,
+          "actorProtocolErrors": 0,
+          "openInstancesAtEnd": 7,
+          "verification": {
+            "instancesStartedTotal": 1971,
+            "externalCompletionsTotalByDriver": 1971,
+            "historicInstances": 1971,
+            "historicInstancesEnded": 1971,
+            "allStartedInstancesEndedAfterDrain": true,
+            "completionsMatchHistory": true,
+            "actHiDetailRows": 0,
+            "historyLevelEffective": "audit-or-lower"
+          },
+          "status": "RAN"
+        },
+        "operaton": {
+          "engine": "operaton-2.2.0",
+          "historyLevelConfiguredByAdapter": "full",
+          "historyLevelUsed": "audit",
+          "asyncExecutor": {
+            "started": false,
+            "note": "not needed: Operaton continues the process synchronously in the external-task completion command"
+          },
+          "summary": {
+            "completedInstancesPerSecond": 36.44,
+            "startedInstancesPerSecond": 36.49,
+            "commandsPerSecond": 76.46,
+            "commandLatency_p50_ms": 82.92,
+            "commandLatency_p95_ms": 233.58,
+            "commandLatency_p99_ms": 342.48,
+            "errorRate": 0.0,
+            "jvmCpuPercentOfMachine": 4.2,
+            "dbContainerCpuPercentOneCore": 95.9
+          },
+          "steadyWindowSeconds": 60.01,
+          "warmupSeconds": 20,
+          "completedInWindow": 2187,
+          "startedInWindow": 2190,
+          "commandsInWindow": 4588,
+          "unrecoveredCommandsInWindow": 0,
+          "commandLatency": {
+            "completeExternal": {
+              "count": 2183,
+              "p50_ms": 93.61,
+              "p95_ms": 228.17,
+              "p99_ms": 305.17,
+              "max_ms": 856.34,
+              "mean_ms": 109.52
+            },
+            "fetchAndLock": {
+              "count": 219,
+              "p50_ms": 228.48,
+              "p95_ms": 492.51,
+              "p99_ms": 667.75,
+              "max_ms": 760.38,
+              "mean_ms": 254.34
+            },
+            "startProcess": {
+              "count": 2186,
+              "p50_ms": 65.69,
+              "p95_ms": 170.7,
+              "p99_ms": 236.67,
+              "max_ms": 844.46,
+              "mean_ms": 78.13
+            },
+            "ALL_COMMANDS": {
+              "count": 4588,
+              "p50_ms": 82.92,
+              "p95_ms": 233.58,
+              "p99_ms": 342.48,
+              "max_ms": 856.34,
+              "mean_ms": 101.47
+            }
+          },
+          "endToEndInstanceLatency_startToEnd_fromHistory": {
+            "count": 2187,
+            "p50_ms": 1115.0,
+            "p95_ms": 36025.0,
+            "p99_ms": 37746.0,
+            "max_ms": 38691.0,
+            "mean_ms": 5045.6
+          },
+          "externalCompletionsInWindow": 2187,
+          "retry": {
+            "operations": 6690,
+            "successes": 6690,
+            "unrecoveredFailures": 0,
+            "attempts": 6690,
+            "retries": 0,
+            "operationsThatNeededRetry": 0,
+            "exceptionsByKind": {
+              "OLE": 0,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 6690
+            },
+            "exceptionClasses": {},
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {}
+          },
+          "cpu": {
+            "logicalCpus": 8,
+            "jvmProcessCpuPercentOfMachine": 4.2,
+            "machineCpuPercentAvg": 99.7,
+            "dbContainerCpuPercentAvg_dockerStats": 95.9,
+            "dbContainerCpuSamples": 12,
+            "dbContainerCpuNote": "docker stats CPU% is relative to ONE core (100% = 1 core) of the Docker VM",
+            "dbContainerMemLastSample": "206.1MiB / 13.65GiB"
+          },
+          "emptyFetches": 27,
+          "actorProtocolErrors": 0,
+          "openInstancesAtEnd": 0,
+          "verification": {
+            "instancesStartedTotal": 3172,
+            "externalCompletionsTotalByDriver": 3172,
+            "historicInstances": 3172,
+            "historicInstancesEnded": 3172,
+            "allStartedInstancesEndedAfterDrain": true,
+            "completionsMatchHistory": true,
+            "actHiDetailRows": 0,
+            "historyLevelEffective": "audit-or-lower"
+          },
+          "status": "RAN"
+        }
+      }
+    },
+    "r5": {
+      "full": {
+        "flowable": {
+          "engine": "flowable-8.0.0.0",
+          "historyLevelConfiguredByAdapter": "audit",
+          "historyLevelUsed": "full",
+          "asyncExecutor": {
+            "started": true,
+            "class": "org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor",
+            "corePoolSize": "DefaultAsyncTaskExecutor",
+            "note": "Flowable runs the continuation after an external-worker completion as an async job; the adapter builds the engine with the async executor off, so E9 starts it (test hook, engine defaults)"
+          },
+          "summary": {
+            "completedInstancesPerSecond": 11.57,
+            "startedInstancesPerSecond": 11.48,
+            "commandsPerSecond": 70.61,
+            "commandLatency_p50_ms": 145.6,
+            "commandLatency_p95_ms": 426.66,
+            "commandLatency_p99_ms": 741.04,
+            "errorRate": 0.0,
+            "jvmCpuPercentOfMachine": 7.8,
+            "dbContainerCpuPercentOneCore": 229.2
+          },
+          "steadyWindowSeconds": 60.0,
+          "warmupSeconds": 20,
+          "completedInWindow": 694,
+          "startedInWindow": 689,
+          "commandsInWindow": 4237,
+          "unrecoveredCommandsInWindow": 0,
+          "commandLatency": {
+            "completeExternal": {
+              "count": 688,
+              "p50_ms": 122.47,
+              "p95_ms": 239.16,
+              "p99_ms": 319.47,
+              "max_ms": 745.44,
+              "mean_ms": 131.54
+            },
+            "completeTask": {
+              "count": 1344,
+              "p50_ms": 275.56,
+              "p95_ms": 504.96,
+              "p99_ms": 833.25,
+              "max_ms": 1177.48,
+              "mean_ms": 295.69
+            },
+            "fetchAndLock": {
+              "count": 165,
+              "p50_ms": 307.38,
+              "p95_ms": 842.56,
+              "p99_ms": 956.41,
+              "max_ms": 1217.59,
+              "mean_ms": 360.18
+            },
+            "queryTasks": {
+              "count": 1351,
+              "p50_ms": 52.31,
+              "p95_ms": 120.73,
+              "p99_ms": 176.9,
+              "max_ms": 381.95,
+              "mean_ms": 59.45
+            },
+            "startProcess": {
+              "count": 689,
+              "p50_ms": 168.78,
+              "p95_ms": 335.53,
+              "p99_ms": 497.09,
+              "max_ms": 812.05,
+              "mean_ms": 186.39
+            },
+            "ALL_COMMANDS": {
+              "count": 4237,
+              "p50_ms": 145.6,
+              "p95_ms": 426.66,
+              "p99_ms": 741.04,
+              "max_ms": 1217.59,
+              "mean_ms": 178.44
+            }
+          },
+          "endToEndInstanceLatency_startToEnd_fromHistory": {
+            "count": 694,
+            "p50_ms": 16995.0,
+            "p95_ms": 17821.0,
+            "p99_ms": 18127.0,
+            "max_ms": 18660.0,
+            "mean_ms": 16064.81
+          },
+          "externalCompletionsInWindow": 691,
+          "retry": {
+            "operations": 6538,
+            "successes": 6538,
+            "unrecoveredFailures": 0,
+            "attempts": 6538,
+            "retries": 0,
+            "operationsThatNeededRetry": 0,
+            "exceptionsByKind": {
+              "OLE": 0,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 6538
+            },
+            "exceptionClasses": {},
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {}
+          },
+          "cpu": {
+            "logicalCpus": 8,
+            "jvmProcessCpuPercentOfMachine": 7.8,
+            "machineCpuPercentAvg": 100.0,
+            "dbContainerCpuPercentAvg_dockerStats": 229.2,
+            "dbContainerCpuSamples": 8,
+            "dbContainerCpuNote": "docker stats CPU% is relative to ONE core (100% = 1 core) of the Docker VM",
+            "dbContainerMemLastSample": "301.2MiB / 13.65GiB"
+          },
+          "emptyFetches": 89,
+          "actorProtocolErrors": 0,
+          "openInstancesAtEnd": 5,
+          "verification": {
+            "instancesStartedTotal": 1035,
+            "externalCompletionsTotalByDriver": 1035,
+            "historicInstances": 1035,
+            "historicInstancesEnded": 1035,
+            "allStartedInstancesEndedAfterDrain": true,
+            "completionsMatchHistory": true,
+            "actHiDetailRows": 19665,
+            "historyLevelEffective": "full"
+          },
+          "status": "RAN"
+        },
+        "operaton": {
+          "engine": "operaton-2.2.0",
+          "historyLevelConfiguredByAdapter": "full",
+          "historyLevelUsed": "full",
+          "asyncExecutor": {
+            "started": false,
+            "note": "not needed: Operaton continues the process synchronously in the external-task completion command"
+          },
+          "summary": {
+            "completedInstancesPerSecond": 11.37,
+            "startedInstancesPerSecond": 11.67,
+            "commandsPerSecond": 78.52,
+            "commandLatency_p50_ms": 155.7,
+            "commandLatency_p95_ms": 385.55,
+            "commandLatency_p99_ms": 555.64,
+            "errorRate": 0.0,
+            "jvmCpuPercentOfMachine": 6.8,
+            "dbContainerCpuPercentOneCore": 201.4
+          },
+          "steadyWindowSeconds": 60.0,
+          "warmupSeconds": 20,
+          "completedInWindow": 682,
+          "startedInWindow": 700,
+          "commandsInWindow": 4711,
+          "unrecoveredCommandsInWindow": 0,
+          "commandLatency": {
+            "completeExternal": {
+              "count": 679,
+              "p50_ms": 200.9,
+              "p95_ms": 411.49,
+              "p99_ms": 591.23,
+              "max_ms": 803.17,
+              "mean_ms": 223.43
+            },
+            "completeTask": {
+              "count": 1355,
+              "p50_ms": 240.67,
+              "p95_ms": 473.06,
+              "p99_ms": 631.63,
+              "max_ms": 1188.26,
+              "mean_ms": 261.96
+            },
+            "fetchAndLock": {
+              "count": 622,
+              "p50_ms": 75.26,
+              "p95_ms": 229.99,
+              "p99_ms": 332.74,
+              "max_ms": 845.8,
+              "mean_ms": 94.46
+            },
+            "queryTasks": {
+              "count": 1359,
+              "p50_ms": 82.95,
+              "p95_ms": 176.74,
+              "p99_ms": 260.33,
+              "max_ms": 428.27,
+              "mean_ms": 90.51
+            },
+            "startProcess": {
+              "count": 696,
+              "p50_ms": 191.88,
+              "p95_ms": 356.4,
+              "p99_ms": 573.02,
+              "max_ms": 827.19,
+              "mean_ms": 206.8
+            },
+            "ALL_COMMANDS": {
+              "count": 4711,
+              "p50_ms": 155.7,
+              "p95_ms": 385.55,
+              "p99_ms": 555.64,
+              "max_ms": 1188.26,
+              "mean_ms": 176.68
+            }
+          },
+          "endToEndInstanceLatency_startToEnd_fromHistory": {
+            "count": 682,
+            "p50_ms": 16088.0,
+            "p95_ms": 18910.0,
+            "p99_ms": 19247.0,
+            "max_ms": 19427.0,
+            "mean_ms": 15932.23
+          },
+          "externalCompletionsInWindow": 682,
+          "retry": {
+            "operations": 7087,
+            "successes": 7087,
+            "unrecoveredFailures": 0,
+            "attempts": 7087,
+            "retries": 0,
+            "operationsThatNeededRetry": 0,
+            "exceptionsByKind": {
+              "OLE": 0,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 7087
+            },
+            "exceptionClasses": {},
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {}
+          },
+          "cpu": {
+            "logicalCpus": 8,
+            "jvmProcessCpuPercentOfMachine": 6.8,
+            "machineCpuPercentAvg": 100.0,
+            "dbContainerCpuPercentAvg_dockerStats": 201.4,
+            "dbContainerCpuSamples": 11,
+            "dbContainerCpuNote": "docker stats CPU% is relative to ONE core (100% = 1 core) of the Docker VM",
+            "dbContainerMemLastSample": "220.8MiB / 13.65GiB"
+          },
+          "emptyFetches": 401,
+          "actorProtocolErrors": 0,
+          "openInstancesAtEnd": 2,
+          "verification": {
+            "instancesStartedTotal": 1013,
+            "externalCompletionsTotalByDriver": 1013,
+            "historicInstances": 1013,
+            "historicInstancesEnded": 1013,
+            "allStartedInstancesEndedAfterDrain": true,
+            "completionsMatchHistory": true,
+            "actHiDetailRows": 19247,
+            "historyLevelEffective": "full"
+          },
+          "status": "RAN"
+        }
+      },
+      "audit": {
+        "flowable": {
+          "engine": "flowable-8.0.0.0",
+          "historyLevelConfiguredByAdapter": "audit",
+          "historyLevelUsed": "audit",
+          "asyncExecutor": {
+            "started": true,
+            "class": "org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor",
+            "corePoolSize": "DefaultAsyncTaskExecutor",
+            "note": "Flowable runs the continuation after an external-worker completion as an async job; the adapter builds the engine with the async executor off, so E9 starts it (test hook, engine defaults)"
+          },
+          "summary": {
+            "completedInstancesPerSecond": 11.0,
+            "startedInstancesPerSecond": 10.98,
+            "commandsPerSecond": 66.58,
+            "commandLatency_p50_ms": 142.78,
+            "commandLatency_p95_ms": 440.66,
+            "commandLatency_p99_ms": 769.08,
+            "errorRate": 0.0,
+            "jvmCpuPercentOfMachine": 7.0,
+            "dbContainerCpuPercentOneCore": 178.8
+          },
+          "steadyWindowSeconds": 60.02,
+          "warmupSeconds": 20,
+          "completedInWindow": 660,
+          "startedInWindow": 659,
+          "commandsInWindow": 3996,
+          "unrecoveredCommandsInWindow": 0,
+          "commandLatency": {
+            "completeExternal": {
+              "count": 656,
+              "p50_ms": 113.88,
+              "p95_ms": 243.84,
+              "p99_ms": 389.82,
+              "max_ms": 733.37,
+              "mean_ms": 129.54
+            },
+            "completeTask": {
+              "count": 1292,
+              "p50_ms": 289.06,
+              "p95_ms": 520.77,
+              "p99_ms": 694.73,
+              "max_ms": 1058.52,
+              "mean_ms": 304.55
+            },
+            "fetchAndLock": {
+              "count": 96,
+              "p50_ms": 649.19,
+              "p95_ms": 1007.47,
+              "p99_ms": 1195.94,
+              "max_ms": 1195.94,
+              "mean_ms": 605.47
+            },
+            "queryTasks": {
+              "count": 1297,
+              "p50_ms": 56.33,
+              "p95_ms": 139.01,
+              "p99_ms": 196.44,
+              "max_ms": 368.26,
+              "mean_ms": 65.06
+            },
+            "startProcess": {
+              "count": 655,
+              "p50_ms": 156.84,
+              "p95_ms": 283.37,
+              "p99_ms": 418.96,
+              "max_ms": 769.08,
+              "mean_ms": 166.39
+            },
+            "ALL_COMMANDS": {
+              "count": 3996,
+              "p50_ms": 142.78,
+              "p95_ms": 440.66,
+              "p99_ms": 769.08,
+              "max_ms": 1195.94,
+              "mean_ms": 182.67
+            }
+          },
+          "endToEndInstanceLatency_startToEnd_fromHistory": {
+            "count": 660,
+            "p50_ms": 17913.0,
+            "p95_ms": 19158.0,
+            "p99_ms": 19558.0,
+            "max_ms": 19826.0,
+            "mean_ms": 17585.2
+          },
+          "externalCompletionsInWindow": 657,
+          "retry": {
+            "operations": 6389,
+            "successes": 6389,
+            "unrecoveredFailures": 0,
+            "attempts": 6389,
+            "retries": 0,
+            "operationsThatNeededRetry": 0,
+            "exceptionsByKind": {
+              "OLE": 0,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 6389
+            },
+            "exceptionClasses": {},
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {}
+          },
+          "cpu": {
+            "logicalCpus": 8,
+            "jvmProcessCpuPercentOfMachine": 7.0,
+            "machineCpuPercentAvg": 100.0,
+            "dbContainerCpuPercentAvg_dockerStats": 178.8,
+            "dbContainerCpuSamples": 12,
+            "dbContainerCpuNote": "docker stats CPU% is relative to ONE core (100% = 1 core) of the Docker VM",
+            "dbContainerMemLastSample": "341.9MiB / 13.65GiB"
+          },
+          "emptyFetches": 38,
+          "actorProtocolErrors": 0,
+          "openInstancesAtEnd": 0,
+          "verification": {
+            "instancesStartedTotal": 1034,
+            "externalCompletionsTotalByDriver": 1034,
+            "historicInstances": 1034,
+            "historicInstancesEnded": 1034,
+            "allStartedInstancesEndedAfterDrain": true,
+            "completionsMatchHistory": true,
+            "actHiDetailRows": 0,
+            "historyLevelEffective": "audit-or-lower"
+          },
+          "status": "RAN"
+        },
+        "operaton": {
+          "engine": "operaton-2.2.0",
+          "historyLevelConfiguredByAdapter": "full",
+          "historyLevelUsed": "audit",
+          "asyncExecutor": {
+            "started": false,
+            "note": "not needed: Operaton continues the process synchronously in the external-task completion command"
+          },
+          "summary": {
+            "completedInstancesPerSecond": 11.5,
+            "startedInstancesPerSecond": 11.45,
+            "commandsPerSecond": 77.13,
+            "commandLatency_p50_ms": 154.75,
+            "commandLatency_p95_ms": 381.12,
+            "commandLatency_p99_ms": 499.59,
+            "errorRate": 0.0,
+            "jvmCpuPercentOfMachine": 4.8,
+            "dbContainerCpuPercentOneCore": 143.7
+          },
+          "steadyWindowSeconds": 60.0,
+          "warmupSeconds": 20,
+          "completedInWindow": 690,
+          "startedInWindow": 687,
+          "commandsInWindow": 4628,
+          "unrecoveredCommandsInWindow": 0,
+          "commandLatency": {
+            "completeExternal": {
+              "count": 687,
+              "p50_ms": 199.98,
+              "p95_ms": 396.18,
+              "p99_ms": 536.81,
+              "max_ms": 679.43,
+              "mean_ms": 216.13
+            },
+            "completeTask": {
+              "count": 1374,
+              "p50_ms": 221.64,
+              "p95_ms": 450.59,
+              "p99_ms": 578.27,
+              "max_ms": 838.27,
+              "mean_ms": 243.57
+            },
+            "fetchAndLock": {
+              "count": 504,
+              "p50_ms": 99.25,
+              "p95_ms": 297.18,
+              "p99_ms": 392.04,
+              "max_ms": 517.39,
+              "mean_ms": 117.51
+            },
+            "queryTasks": {
+              "count": 1379,
+              "p50_ms": 91.42,
+              "p95_ms": 214.21,
+              "p99_ms": 288.97,
+              "max_ms": 419.68,
+              "mean_ms": 104.26
+            },
+            "startProcess": {
+              "count": 684,
+              "p50_ms": 170.12,
+              "p95_ms": 340.03,
+              "p99_ms": 404.15,
+              "max_ms": 621.76,
+              "mean_ms": 181.8
+            },
+            "ALL_COMMANDS": {
+              "count": 4628,
+              "p50_ms": 154.75,
+              "p95_ms": 381.12,
+              "p99_ms": 499.59,
+              "max_ms": 838.27,
+              "mean_ms": 175.13
+            }
+          },
+          "endToEndInstanceLatency_startToEnd_fromHistory": {
+            "count": 690,
+            "p50_ms": 15022.0,
+            "p95_ms": 21913.0,
+            "p99_ms": 22666.0,
+            "max_ms": 22823.0,
+            "mean_ms": 15742.0
+          },
+          "externalCompletionsInWindow": 690,
+          "retry": {
+            "operations": 7408,
+            "successes": 7408,
+            "unrecoveredFailures": 0,
+            "attempts": 7408,
+            "retries": 0,
+            "operationsThatNeededRetry": 0,
+            "exceptionsByKind": {
+              "OLE": 0,
+              "DEADLOCK": 0,
+              "SERIALIZATION": 0,
+              "LOCK_TIMEOUT": 0,
+              "OTHER": 0
+            },
+            "attemptsPerSuccessfulOperation": {
+              "1": 7408
+            },
+            "exceptionClasses": {},
+            "sqlStateErrorCodes": {},
+            "exceptionSamples": {}
+          },
+          "cpu": {
+            "logicalCpus": 8,
+            "jvmProcessCpuPercentOfMachine": 4.8,
+            "machineCpuPercentAvg": 99.8,
+            "dbContainerCpuPercentAvg_dockerStats": 143.7,
+            "dbContainerCpuSamples": 13,
+            "dbContainerCpuNote": "docker stats CPU% is relative to ONE core (100% = 1 core) of the Docker VM",
+            "dbContainerMemLastSample": "278MiB / 13.65GiB"
+          },
+          "emptyFetches": 238,
+          "actorProtocolErrors": 0,
+          "openInstancesAtEnd": 0,
+          "verification": {
+            "instancesStartedTotal": 1095,
+            "externalCompletionsTotalByDriver": 1095,
+            "historicInstances": 1095,
+            "historicInstancesEnded": 1095,
+            "allStartedInstancesEndedAfterDrain": true,
+            "completionsMatchHistory": true,
+            "actHiDetailRows": 0,
+            "historyLevelEffective": "audit-or-lower"
+          },
+          "status": "RAN"
+        }
+      }
+    }
+  },
+  "updatedAt": "2026-11-04T08:39:50.151526200Z",
+  "notes": [
+    "Host contention: two or more other agents ran PostgreSQL/SQL Server containers and builds on the same machine during every run; machine CPU averaged 88-100% (JVM view) during the E9 steady windows. All E6/E9 runs here finished BEFORE the shared heavy-build lock rule was announced (about 14:45 local), so they overlapped other lanes; 0 minutes were spent waiting for the lock.",
+    "Test-harness workarounds (not adapter or engine changes): (1) product-api LeaseTable SQL rewritten by a JDBC proxy on Oracle (BIGINT -> NUMBER(19)) and SQL Server (IF NOT EXISTS, FOR UPDATE); without it neither adapter can be constructed on those DBs. (2) Flowable message correlation in E6 goes through RuntimeService because EngineAdapter.correlateMessage (Flowable) finds no execution for a catch event inside a parallel branch. (3) E9 starts Flowable's async executor and sets the history level on the built engine.",
+    "Trial run with 4 concurrent fetchers (5 s warm-up, 15 s window, level full): Operaton adapter errors 17.4% of commands on R1 and 9.1% on R5 (duplicate key on spike_lease_pkey, StaleLeaseException, 'locked by worker-0', NotFoundException); 30 R1 and 28 R5 instances never ended. Flowable: 73/46 OLEs, all recovered by retry, 0 errors. The measured runs therefore use ONE fetcher feeding 4 completer threads on both engines.",
+    "R5-lite throughput is bounded by the closed-loop driver (8 synthetic actors, 200 open instances; end-to-end ~16 s = Little's law 200/11.5 per s), not by either engine alone; compare command latencies, not instances/s, for R5.",
+    "Runs: 13:56-14:10 local time."
+  ]
+}

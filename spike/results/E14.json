@@ -1,0 +1,125 @@
+{
+ "experiment": "E14",
+ "title": "Documentation and support",
+ "date": "2026-11-04",
+ "method": {
+  "docs": "HTTP status of doc pages (curl -L), sitemaps, and last commit date of the doc source path via GitHub API (operaton/documentation; flowable/flowable-engine docs/docusaurus).",
+  "forum": "Discourse /about.json stats and /latest.json?order=created (topics created per month and their posts). Flowable page 2 timed out; Nov 2025 may be partial.",
+  "score": "docs 6 topics x (1 present and changed in last 12m, 0.5 present but older or only in commercial docs, 0 absent) + support 0-2 (>=10 providers or vendor SLA = 2) + forum 0-1 (avg posts/month over last 6 months >=15 = 1, 5-15 = 0.5) + training 0-1 (official scheduled = 1, providers only = 0.5)"
+ },
+ "doc_last_changed": {
+  "operaton/documentation:docs/documentation/user-guide/process-engine/external-tasks.md": "2026-06-21",
+  "operaton/documentation:docs/documentation/update/camunda-to-operaton.md": "2026-06-21",
+  "operaton/documentation:docs/documentation/user-guide/spring-boot-integration": "2026-11-02",
+  "operaton/documentation:docs/documentation/user-guide/quarkus-integration": "2026-11-02",
+  "operaton/documentation:docs/documentation/reference/rest": "2026-11-04",
+  "operaton/documentation:docs/documentation/reference/dmn": "2026-10-26",
+  "operaton/documentation:docs/documentation/reference/cmmn11": "2026-10-26",
+  "operaton/documentation:docs/documentation/user-guide/ext-client": "2026-10-26",
+  "operaton/documentation:docs/documentation/update": "not found",
+  "operaton/documentation:docs/documentation/installation": "2026-11-04",
+  "operaton/documentation:(repo)": "2026-11-04",
+  "flowable/flowable-engine:docs/docusaurus": "2026-10-05",
+  "flowable/flowable-engine:docs/docusaurus/docs/bpmn": "2026-10-05",
+  "flowable/flowable-engine:docs/docusaurus/docs/cmmn": "2025-12-15",
+  "flowable/flowable-engine:docs/docusaurus/docs/dmn": "2025-07-11",
+  "flowable/flowable-engine:docs/docusaurus/docs/bpmn/ch05a-Spring-Boot.md": "2026-03-16",
+  "flowable/flowable-engine:docs/docusaurus/docs/bpmn/ch14-REST.md": "2024-01-02",
+  "flowable/flowable-engine:docs/docusaurus/docs/migration.md": "2023-09-20",
+  "flowable/flowable-engine:docs/public-api": "2026-02-27"
+ },
+ "forum": {
+  "forum.operaton.org": {
+   "topics_created_per_month": {
+    "2025-11": 18,
+    "2025-12": 5,
+    "2026-01": 2,
+    "2026-02": 5,
+    "2026-03": 4,
+    "2026-04": 2,
+    "2026-05": 5,
+    "2026-06": 8,
+    "2026-07": 2,
+    "2026-08": 3,
+    "2026-09": 5,
+    "2026-10": 5
+   },
+   "posts_in_topics_created_that_month": {
+    "2025-11": 78,
+    "2025-12": 16,
+    "2026-01": 5,
+    "2026-02": 37,
+    "2026-03": 26,
+    "2026-04": 5,
+    "2026-05": 7,
+    "2026-06": 19,
+    "2026-07": 9,
+    "2026-08": 12,
+    "2026-09": 19,
+    "2026-10": 14
+   }
+  },
+  "forum.flowable.org": {
+   "topics_created_per_month": {
+    "2025-11": 5,
+    "2025-12": 14,
+    "2026-01": 5,
+    "2026-02": 8,
+    "2026-03": 5,
+    "2026-04": 2,
+    "2026-05": 5,
+    "2026-06": 5,
+    "2026-07": 4,
+    "2026-08": 2,
+    "2026-09": 4,
+    "2026-10": 1
+   },
+   "posts_in_topics_created_that_month": {
+    "2025-11": 15,
+    "2025-12": 58,
+    "2026-01": 23,
+    "2026-02": 26,
+    "2026-03": 18,
+    "2026-04": 3,
+    "2026-05": 14,
+    "2026-06": 22,
+    "2026-07": 10,
+    "2026-08": 19,
+    "2026-09": 9,
+    "2026-10": 6
+   }
+  }
+ },
+ "operaton": {
+  "score_breakdown": {
+   "embedding": 1,
+   "rest": 1,
+   "external_tasks": 1,
+   "dmn": 1,
+   "cmmn": 1,
+   "migration_upgrade": 0.5,
+   "support": 2,
+   "forum": 0.5,
+   "training": 0.5
+  },
+  "score": 8.5
+ },
+ "flowable": {
+  "score_breakdown": {
+   "embedding": 1,
+   "rest": 1,
+   "external_worker": 0.5,
+   "dmn": 0.5,
+   "cmmn": 1,
+   "migration_upgrade": 0.5,
+   "support": 2,
+   "forum": 0.5,
+   "training": 1
+  },
+  "score": 8.0
+ },
+ "knock_out": {
+  "operaton": "PASS",
+  "flowable": "PASS"
+ }
+}

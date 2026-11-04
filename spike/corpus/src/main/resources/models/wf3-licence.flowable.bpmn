@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WF-3 licence / permit service (SANGAM.md XI.3, pack P4, AC-06). FLOWABLE 8.0.0 VARIANT.
+  Differs from wf3-licence.operaton.bpmn ONLY in the elements listed in corpus/VARIANTS.md:
+    V-03 wf3_esign            (external task topic "esign")
+    V-04 wf3_digilockerPush   (external task topic "digilocker-push")
+  Everything else (message catch, non-interrupting boundary timer, gateways, user tasks)
+  is standard BPMN 2.0.2 and is byte-for-byte the same as the Operaton variant.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             id="wf3-licence-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <message id="wf3_msg_applicantResponse" name="applicantResponse"/>
+
+  <process id="wf3-licence" name="WF-3 Licence / permit" isExecutable="true">
+
+    <startEvent id="wf3_start" name="Application received"/>
+    <sequenceFlow id="wf3_f01" sourceRef="wf3_start" targetRef="wf3_scrutinyMergeGw"/>
+
+    <exclusiveGateway id="wf3_scrutinyMergeGw" name="Merge (new / clarified)"/>
+    <sequenceFlow id="wf3_f02" sourceRef="wf3_scrutinyMergeGw" targetRef="wf3_scrutiny"/>
+
+    <userTask id="wf3_scrutiny" name="Scrutiny">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(licence-scrutiny)</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf3_f03" sourceRef="wf3_scrutiny" targetRef="wf3_scrutinyDecisionGw"/>
+
+    <!-- SLA: non-interrupting 72 h timer on scrutiny. A new timer starts each time scrutiny is re-entered. -->
+    <boundaryEvent id="wf3_scrutinySlaTimer" name="SLA 72 h" attachedToRef="wf3_scrutiny" cancelActivity="false">
+      <timerEventDefinition id="wf3_scrutinySlaTimerDef">
+        <timeDuration xsi:type="tFormalExpression">PT72H</timeDuration>
+      </timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="wf3_f04" sourceRef="wf3_scrutinySlaTimer" targetRef="wf3_slaEscalation"/>
+    <userTask id="wf3_slaEscalation" name="SLA escalation">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(licence-escalation)</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf3_f05" sourceRef="wf3_slaEscalation" targetRef="wf3_escalationEnd"/>
+    <endEvent id="wf3_escalationEnd" name="Escalation handled"/>
+
+    <exclusiveGateway id="wf3_scrutinyDecisionGw" name="Scrutiny decision?" default="wf3_f08"/>
+    <sequenceFlow id="wf3_f06" name="clarify" sourceRef="wf3_scrutinyDecisionGw" targetRef="wf3_awaitApplicantResponse">
+      <conditionExpression xsi:type="tFormalExpression">${scrutinyDecision == 'clarify'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf3_f07" name="accept" sourceRef="wf3_scrutinyDecisionGw" targetRef="wf3_inspection">
+      <conditionExpression xsi:type="tFormalExpression">${scrutinyDecision == 'accept'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf3_f08" name="reject (default)" sourceRef="wf3_scrutinyDecisionGw" targetRef="wf3_rejectedEnd"/>
+
+    <intermediateCatchEvent id="wf3_awaitApplicantResponse" name="Applicant response">
+      <messageEventDefinition id="wf3_awaitApplicantResponseDef" messageRef="wf3_msg_applicantResponse"/>
+    </intermediateCatchEvent>
+    <sequenceFlow id="wf3_f09" sourceRef="wf3_awaitApplicantResponse" targetRef="wf3_scrutinyMergeGw"/>
+
+    <userTask id="wf3_inspection" name="Inspection">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(licence-inspector)</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf3_f10" sourceRef="wf3_inspection" targetRef="wf3_approval"/>
+
+    <userTask id="wf3_approval" name="Approval">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(licence-approver)</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf3_f11" sourceRef="wf3_approval" targetRef="wf3_approvalDecisionGw"/>
+
+    <exclusiveGateway id="wf3_approvalDecisionGw" name="Approved?" default="wf3_f13"/>
+    <sequenceFlow id="wf3_f12" name="approve" sourceRef="wf3_approvalDecisionGw" targetRef="wf3_esign">
+      <conditionExpression xsi:type="tFormalExpression">${approvalDecision == 'approve'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf3_f13" name="reject (default)" sourceRef="wf3_approvalDecisionGw" targetRef="wf3_rejectedEnd"/>
+
+    <!-- V-03 (Flowable): external worker task. -->
+    <serviceTask id="wf3_esign" name="eSign certificate" flowable:type="external-worker" flowable:topic="esign"/>
+    <sequenceFlow id="wf3_f14" sourceRef="wf3_esign" targetRef="wf3_digilockerPush"/>
+    <!-- V-04 (Flowable): external worker task. -->
+    <serviceTask id="wf3_digilockerPush" name="Push to DigiLocker" flowable:type="external-worker" flowable:topic="digilocker-push"/>
+    <sequenceFlow id="wf3_f15" sourceRef="wf3_digilockerPush" targetRef="wf3_issuedEnd"/>
+
+    <endEvent id="wf3_issuedEnd" name="Licence issued"/>
+    <endEvent id="wf3_rejectedEnd" name="Rejected"/>
+  </process>
+</definitions>

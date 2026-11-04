@@ -1,0 +1,432 @@
+{
+  "experiment": "E17-a",
+  "title": "Domain end-to-end models (E17, part a)",
+  "engines": {
+    "flowable": {
+      "engineId": "flowable-8.0.0.0",
+      "generatedAt": "2026-11-04T12:59:11.442273800Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "jvm": "-Xmx2g, user.timezone=Asia/Kolkata",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11, fresh database per engine instance)",
+      "historyLevel": "AUDIT (Flowable default; the adapter does not set it)",
+      "engineConfigurationAsUsed": [
+        "adapter as installed: async executor off (timers via executeDueJobs), DMN and CMMN configurators, history level not set by the adapter (engine default)",
+        "the engine clock is per engine configuration (shared by the DMN/CMMN engines)"
+      ],
+      "summary": {
+        "FAIL": 1,
+        "PASS": 4,
+        "PASS-WITH-WORKAROUND": 0,
+        "UNSUPPORTED": 0
+      },
+      "scenarios": [
+        {
+          "id": "D-BUDGET-REAPPROPRIATION",
+          "title": "Re-appropriation from a savings head: availability, competent authority (DMN), concurrence, sanction, idempotent IFMS posting",
+          "result": "PASS",
+          "featuresUsed": [
+            "external task budget availability check",
+            "revise loop",
+            "DMN FIRST competent authority",
+            "user tasks by seat",
+            "external task posting with operationId and lease re-delivery"
+          ],
+          "variants": [
+            "external task: flowable:type=external-worker flowable:topic",
+            "DMN call: serviceTask flowable:type=dmn + decisionTableReferenceKey"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "productLayer": [
+            {
+              "what": "budget ledger and posting idempotency (operationId set) in the product layer",
+              "lines": 10
+            }
+          ],
+          "timingMs": 949,
+          "details": {
+            "headsAfter": {
+              "savings": {
+                "2059-01-101-SAVINGS": 2500000
+              },
+              "excess": {
+                "2059-01-102": 500000,
+                "2059-01-103": 15000000
+              }
+            }
+          }
+        },
+        {
+          "id": "D-CHALLAN-RECON",
+          "title": "Challan / receipt reconciliation by file exchange (PFMS SFTP simulator) with polling external work, exceptions to a user task",
+          "result": "PASS",
+          "featuresUsed": [
+            "external task writing the outbound file",
+            "external task polling the inbound status file (fail with retry back-off until the file arrives)",
+            "external task matching",
+            "exception gateway + user task",
+            "non-interrupting boundary timer PT2H on the polling task (overdue file)"
+          ],
+          "variants": [
+            "external task: flowable:type=external-worker flowable:topic"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "productLayer": [
+            {
+              "what": "file transfer, polling and matching are product workers; the engine only sequences them (no native file / SFTP connector is used on either engine)",
+              "lines": 40
+            }
+          ],
+          "timingMs": 879,
+          "details": {
+            "match": {
+              "matched": 4,
+              "exceptions": [
+                "CH-2026-4:ACCOUNT_INVALID"
+              ]
+            },
+            "pollAttempts": 2
+          }
+        },
+        {
+          "id": "D-PENSION-MONTHLY",
+          "title": "Monthly pension bill generation by timer start cycle, approval, IFMS payment per pensioner",
+          "result": "PASS",
+          "featuresUsed": [
+            "timer start event timeCycle R3/<start>/P1M",
+            "external tasks (generate, pay)",
+            "approval user task",
+            "operationId per pensioner and month"
+          ],
+          "variants": [
+            "external task: flowable:type=external-worker flowable:topic"
+          ],
+          "nativeApi": [
+            "RuntimeService.createProcessInstanceQuery() / HistoryService.createHistoricProcessInstanceQuery()",
+            "TaskService.createTaskQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 1631,
+          "notes": [
+            "Changing the monthly cycle of a timer start event needs a redeployment (the timer belongs to the definition); the month is taken from the run date by the product worker (timer starts carry no variables)"
+          ],
+          "details": {
+            "monthsPaid": [
+              "2026-12",
+              "2027-01",
+              "2027-02"
+            ],
+            "runsOf_R3_start_P1M": 3
+          }
+        },
+        {
+          "id": "D-TENDER",
+          "title": "Tender: NIT -> corrigendum extends running deadline -> bids (incl. early) -> technical committee all-sign -> time-locked financial opening -> L1 negotiation loop -> LoA -> EMD refund to losers by compensation",
+          "result": "FAIL",
+          "featuresUsed": [
+            "event-based gateway loop (bid message / corrigendum message / deadline timer)",
+            "timer timeDate ${bidDeadline} re-armed with the corrigendum date",
+            "parallel multi-instance external task (EMD hold per bidder) with compensation boundary",
+            "parallel multi-instance user task, humanPerformer per member (all sign)",
+            "intermediate timer timeDate ${finOpenAt} (time lock)",
+            "negotiation loop",
+            "intermediate throw compensate"
+          ],
+          "variants": [
+            "external task: flowable:type=external-worker flowable:topic",
+            "flowable:exclusive=\"false\" on the parallel multi-instance EMD external task"
+          ],
+          "nativeApi": [
+            "RuntimeService.createExecutionQuery().messageEventSubscriptionName()"
+          ],
+          "workarounds": [
+            {
+              "what": "product inbox for bids that arrive before the NIT is published (engines do not buffer messages)",
+              "lines": 10
+            }
+          ],
+          "workaroundLines": 10,
+          "productLayer": [
+            {
+              "what": "bid register in the product layer: each bid message carries the running bidder list and count",
+              "lines": 6
+            }
+          ],
+          "timingMs": 1869,
+          "failures": [
+            "EMD refund by compensation: throwing compensation after the LoA failed (org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update or delete on table \"a); every step before the LoA passed"
+          ],
+          "notes": [
+            "Without flowable:exclusive=\"false\" a parallel multi-instance external-worker task cannot be fetched: acquiring its exclusive jobs of one process instance returned 0 of 3 (native ManagementService.createExternalWorkerJobAcquireBuilder() returns 0 as well) and leaves them locked"
+          ],
+          "details": {
+            "parallelMultiInstanceExternalTask_defaultAttributes_fetched": "0 of 3",
+            "activeAfterDeadline": [
+              "emd",
+              "emd",
+              "emd"
+            ],
+            "externalWorkAfterDeadline": [
+              "emd-hold|null|null|3|scope=null|elem=emd",
+              "emd-hold|null|null|3|scope=null|elem=emd",
+              "emd-hold|null|null|3|scope=null|elem=emd"
+            ],
+            "compensationError": "org.apache.ibatis.exceptions.PersistenceException: \r\n### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: update or delete on table \"act_ru_execution\" violates foreign key constraint \"act_fk_exe_parent\" on table \"act_ru_execution\"\n  Detail: Key (id_)=(189) is still referenced from table \"act_ru_execution\".\r\n### The error may exist in org/flowable/db/mapping/entity/Execution.xml\r\n### The error may involve org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl.deleteExecution-Inline\r\n### The error occurred while ... <- org.postgresql.util.PSQLException: ERROR: update or delete on table \"act_ru_execution\" violates foreign key constraint \"act_fk_exe_parent\" on table \"act_ru_execution\"\n  Detail: Key (id_)=(189) is still referenced from table \"act_ru_execution\"."
+          }
+        },
+        {
+          "id": "D-WORKS",
+          "title": "Works: estimate -> AA -> TS -> tender stub -> work order -> measurement -> 3 monthly RA bills (cycle timer) -> final bill -> completion",
+          "result": "PASS",
+          "featuresUsed": [
+            "user tasks by seat",
+            "external task (tender stub, IFMS payments)",
+            "embedded sub-process with non-interrupting boundary timer cycle R3/P1M",
+            "parallel tokens (RA bills outside the execution sub-process)",
+            "operationId per activity instance"
+          ],
+          "variants": [
+            "external task: flowable:type=external-worker flowable:topic"
+          ],
+          "nativeApi": [
+            "ManagementService.createTimerJobQuery()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 1838,
+          "details": {
+            "raBillDueDatesUtc": [
+              "2026-12-05T04:30:00Z",
+              "2027-01-05T04:30:00Z",
+              "2027-02-05T04:30:00Z"
+            ]
+          }
+        }
+      ]
+    },
+    "operaton": {
+      "engineId": "operaton-2.2.0",
+      "generatedAt": "2026-11-04T13:07:41.844211300Z",
+      "jdk": "Microsoft 21.0.10+7-LTS",
+      "jvm": "-Xmx2g, user.timezone=Asia/Kolkata",
+      "database": "PostgreSQL (Testcontainers postgres:17-alpine, server 17.11, fresh database per engine instance)",
+      "historyLevel": "full (adapter: HISTORY_FULL)",
+      "engineConfigurationAsUsed": [
+        "adapter as installed: HISTORY_FULL, job executor off (timers via executeDueJobs), enforceHistoryTimeToLive=false (ledger W-3), DMN and CMMN on, authorization off",
+        "ClockUtil is JVM-wide (ledger W-7)",
+        "javaSerializationFormatEnabled=false (engine default): no List/Map variables are used by the models"
+      ],
+      "summary": {
+        "FAIL": 0,
+        "PASS": 3,
+        "PASS-WITH-WORKAROUND": 2,
+        "UNSUPPORTED": 0
+      },
+      "scenarios": [
+        {
+          "id": "D-BUDGET-REAPPROPRIATION",
+          "title": "Re-appropriation from a savings head: availability, competent authority (DMN), concurrence, sanction, idempotent IFMS posting",
+          "result": "PASS",
+          "featuresUsed": [
+            "external task budget availability check",
+            "revise loop",
+            "DMN FIRST competent authority",
+            "user tasks by seat",
+            "external task posting with operationId and lease re-delivery"
+          ],
+          "variants": [
+            "external task: operaton:type=external operaton:topic",
+            "DMN call: businessRuleTask operaton:decisionRef + resultVariable + mapDecisionResult=singleEntry"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "productLayer": [
+            {
+              "what": "budget ledger and posting idempotency (operationId set) in the product layer",
+              "lines": 10
+            }
+          ],
+          "timingMs": 1051,
+          "details": {
+            "headsAfter": {
+              "savings": {
+                "2059-01-101-SAVINGS": 2500000
+              },
+              "excess": {
+                "2059-01-102": 500000,
+                "2059-01-103": 15000000
+              }
+            }
+          }
+        },
+        {
+          "id": "D-CHALLAN-RECON",
+          "title": "Challan / receipt reconciliation by file exchange (PFMS SFTP simulator) with polling external work, exceptions to a user task",
+          "result": "PASS",
+          "featuresUsed": [
+            "external task writing the outbound file",
+            "external task polling the inbound status file (fail with retry back-off until the file arrives)",
+            "external task matching",
+            "exception gateway + user task",
+            "non-interrupting boundary timer PT2H on the polling task (overdue file)"
+          ],
+          "variants": [
+            "external task: operaton:type=external operaton:topic"
+          ],
+          "nativeApi": [],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "productLayer": [
+            {
+              "what": "file transfer, polling and matching are product workers; the engine only sequences them (no native file / SFTP connector is used on either engine)",
+              "lines": 40
+            }
+          ],
+          "timingMs": 609,
+          "details": {
+            "match": {
+              "matched": 4,
+              "exceptions": [
+                "CH-2026-4:ACCOUNT_INVALID"
+              ]
+            },
+            "pollAttempts": 2
+          }
+        },
+        {
+          "id": "D-PENSION-MONTHLY",
+          "title": "Monthly pension bill generation by timer start cycle, approval, IFMS payment per pensioner",
+          "result": "PASS-WITH-WORKAROUND",
+          "featuresUsed": [
+            "timer start event timeCycle R3/<start>/P1M",
+            "external tasks (generate, pay)",
+            "approval user task",
+            "operationId per pensioner and month"
+          ],
+          "variants": [
+            "external task: operaton:type=external operaton:topic"
+          ],
+          "nativeApi": [
+            "RuntimeService.createProcessInstanceQuery() / HistoryService.createHistoricProcessInstanceQuery()",
+            "TaskService.createTaskQuery()"
+          ],
+          "workarounds": [
+            {
+              "what": "R3/<start>/P1M fires 4 times on this engine (the start date plus 3 repetitions; the other engine fires 3 times): three monthly runs need R2/<start>/P1M here, an engine-specific value",
+              "lines": 1
+            }
+          ],
+          "workaroundLines": 1,
+          "timingMs": 1540,
+          "notes": [
+            "Changing the monthly cycle of a timer start event needs a redeployment (the timer belongs to the definition); the month is taken from the run date by the product worker (timer starts carry no variables)"
+          ],
+          "details": {
+            "monthsPaid": [
+              "2026-12",
+              "2027-01",
+              "2027-02",
+              "2027-03"
+            ],
+            "runsOf_R3_start_P1M": 4
+          }
+        },
+        {
+          "id": "D-TENDER",
+          "title": "Tender: NIT -> corrigendum extends running deadline -> bids (incl. early) -> technical committee all-sign -> time-locked financial opening -> L1 negotiation loop -> LoA -> EMD refund to losers by compensation",
+          "result": "PASS-WITH-WORKAROUND",
+          "featuresUsed": [
+            "event-based gateway loop (bid message / corrigendum message / deadline timer)",
+            "timer timeDate ${bidDeadline} re-armed with the corrigendum date",
+            "parallel multi-instance external task (EMD hold per bidder) with compensation boundary",
+            "parallel multi-instance user task, humanPerformer per member (all sign)",
+            "intermediate timer timeDate ${finOpenAt} (time lock)",
+            "negotiation loop",
+            "intermediate throw compensate"
+          ],
+          "variants": [
+            "external task: operaton:type=external operaton:topic"
+          ],
+          "nativeApi": [
+            "RuntimeService.createExecutionQuery().messageEventSubscriptionName()"
+          ],
+          "workarounds": [
+            {
+              "what": "product inbox for bids that arrive before the NIT is published (engines do not buffer messages)",
+              "lines": 10
+            },
+            {
+              "what": "compensation handler does not see the compensated multi-instance item (loopCounter not visible to the external worker): the product EMD ledger assigns each handler run to one held EMD",
+              "lines": 8
+            }
+          ],
+          "workaroundLines": 18,
+          "productLayer": [
+            {
+              "what": "bid register in the product layer: each bid message carries the running bidder list and count",
+              "lines": 6
+            }
+          ],
+          "timingMs": 1552,
+          "details": {
+            "parallelMultiInstanceExternalTask_defaultAttributes_fetched": "3 of 3",
+            "activeAfterDeadline": [
+              "emd",
+              "emd",
+              "emd"
+            ],
+            "externalWorkAfterDeadline": [
+              "emd-hold|null|null|null|elem=emd",
+              "emd-hold|null|null|null|elem=emd",
+              "emd-hold|null|null|null|elem=emd"
+            ],
+            "compensationHandlers": 3,
+            "compensationHandlerSees": [
+              "loopCounter=null",
+              "loopCounter=null",
+              "loopCounter=null"
+            ],
+            "emdOutcome": {
+              "B1": "REFUNDED",
+              "B2": "REFUNDED",
+              "B3": "RETAINED_AS_SECURITY"
+            }
+          }
+        },
+        {
+          "id": "D-WORKS",
+          "title": "Works: estimate -> AA -> TS -> tender stub -> work order -> measurement -> 3 monthly RA bills (cycle timer) -> final bill -> completion",
+          "result": "PASS",
+          "featuresUsed": [
+            "user tasks by seat",
+            "external task (tender stub, IFMS payments)",
+            "embedded sub-process with non-interrupting boundary timer cycle R3/P1M",
+            "parallel tokens (RA bills outside the execution sub-process)",
+            "operationId per activity instance"
+          ],
+          "variants": [
+            "external task: operaton:type=external operaton:topic"
+          ],
+          "nativeApi": [
+            "ManagementService.createJobQuery().timers()"
+          ],
+          "workarounds": [],
+          "workaroundLines": 0,
+          "timingMs": 1779,
+          "details": {
+            "raBillDueDatesUtc": [
+              "2026-12-05T04:30:00Z",
+              "2027-01-05T04:30:00Z",
+              "2027-02-05T04:30:00Z"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

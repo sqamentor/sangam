@@ -1,0 +1,230 @@
+{
+  "experiment" : "E4",
+  "title" : "Idempotency atomic with engine state (X.2.2)",
+  "database" : "PostgreSQL 17 (Testcontainers postgres:17-alpine), one database per engine",
+  "module" : "spike/experiments-integration",
+  "engines" : {
+    "flowable-8.0.0" : {
+      "generatedAt" : "2026-11-04T14:32:49.979469800+05:30",
+      "scenariosCounted" : 6,
+      "scenariosPassed" : 6,
+      "passRatePercent" : 100.0,
+      "scenarios" : [ {
+        "id" : "E4-1",
+        "name" : "Duplicate start with the same key and payload returns the same instance (replay)",
+        "tests" : [ "T01" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "first" : "201 4",
+          "second" : "201 replayed=true 4",
+          "instances" : 1
+        }
+      }, {
+        "id" : "E4-2",
+        "name" : "Conflicting reuse of a key: different payload or different principal gives 422, no new instance, no stored body disclosed",
+        "tests" : [ "T56" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "differentPayload" : "422 IDEMPOTENCY_KEY_REUSED",
+          "differentPrincipal" : "422 IDEMPOTENCY_KEY_PRINCIPAL_MISMATCH",
+          "instances" : 1
+        }
+      }, {
+        "id" : "E4-3",
+        "name" : "Concurrent duplicates (2, 4, 8 threads, same key and payload): exactly one instance, every caller gets that instance",
+        "tests" : [ "T01", "T55" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "levels" : {
+            "2 threads" : {
+              "distinctInstanceIds" : 1,
+              "instances" : 1,
+              "answers" : {
+                "409-IDEMPOTENCY_IN_PROGRESS" : 1,
+                "201" : 1,
+                "201-replay" : 1
+              }
+            },
+            "4 threads" : {
+              "distinctInstanceIds" : 1,
+              "instances" : 1,
+              "answers" : {
+                "409-IDEMPOTENCY_IN_PROGRESS" : 3,
+                "201" : 1,
+                "201-replay" : 3
+              }
+            },
+            "8 threads" : {
+              "distinctInstanceIds" : 1,
+              "instances" : 1,
+              "answers" : {
+                "409-IDEMPOTENCY_IN_PROGRESS" : 7,
+                "201" : 1,
+                "201-replay" : 7
+              }
+            }
+          }
+        }
+      }, {
+        "id" : "E4-4",
+        "name" : "Exception after the engine start inside the transaction: no instance and no COMPLETED record; after abandon no record; the retry executes once (P-1)",
+        "tests" : [ "T57", "T60" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "rolledBackInstanceId" : "84",
+          "instancesAfterCrash" : 0,
+          "recordAfterCrash" : "IN_PROGRESS",
+          "recordAfterAbandon" : "absent",
+          "instancesAfterRetry" : 1
+        }
+      }, {
+        "id" : "E4-5",
+        "name" : "Crash before commit with no cleanup: the claim expires, a retry takes over and executes once; the zombie's late commit loses its claim and its engine start rolls back",
+        "tests" : [ "T57" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "whileClaimLive" : "409 IDEMPOTENCY_IN_PROGRESS",
+          "afterExpiry" : "201 (takeover, claim_epoch 2)",
+          "zombieCommit" : "ClaimLostException, rolled back",
+          "instances" : 1
+        }
+      }, {
+        "id" : "E4-6",
+        "name" : "Crash after commit, before the response: the retry replays the original response",
+        "tests" : [ "T57" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "retry" : "201 replayed, same instance"
+        }
+      } ],
+      "notes" : {
+        "command" : "POST /process-definitions/wf2-file/start, Idempotency-Key header, tenant tn-e4",
+        "claimTtl" : "30 s (default store), 700 ms (takeover scenarios); IDEMPOTENCY times use the DB clock",
+        "wallClockSeconds" : 8.91
+      }
+    },
+    "operaton-2.2.0" : {
+      "generatedAt" : "2026-11-04T14:32:59.091488600+05:30",
+      "scenariosCounted" : 6,
+      "scenariosPassed" : 6,
+      "passRatePercent" : 100.0,
+      "scenarios" : [ {
+        "id" : "E4-1",
+        "name" : "Duplicate start with the same key and payload returns the same instance (replay)",
+        "tests" : [ "T01" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "first" : "201 4",
+          "second" : "201 replayed=true 4",
+          "instances" : 1
+        }
+      }, {
+        "id" : "E4-2",
+        "name" : "Conflicting reuse of a key: different payload or different principal gives 422, no new instance, no stored body disclosed",
+        "tests" : [ "T56" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "differentPayload" : "422 IDEMPOTENCY_KEY_REUSED",
+          "differentPrincipal" : "422 IDEMPOTENCY_KEY_PRINCIPAL_MISMATCH",
+          "instances" : 1
+        }
+      }, {
+        "id" : "E4-3",
+        "name" : "Concurrent duplicates (2, 4, 8 threads, same key and payload): exactly one instance, every caller gets that instance",
+        "tests" : [ "T01", "T55" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "levels" : {
+            "2 threads" : {
+              "distinctInstanceIds" : 1,
+              "instances" : 1,
+              "answers" : {
+                "409-IDEMPOTENCY_IN_PROGRESS" : 1,
+                "201" : 1,
+                "201-replay" : 1
+              }
+            },
+            "4 threads" : {
+              "distinctInstanceIds" : 1,
+              "instances" : 1,
+              "answers" : {
+                "409-IDEMPOTENCY_IN_PROGRESS" : 3,
+                "201" : 1,
+                "201-replay" : 3
+              }
+            },
+            "8 threads" : {
+              "distinctInstanceIds" : 1,
+              "instances" : 1,
+              "answers" : {
+                "409-IDEMPOTENCY_IN_PROGRESS" : 9,
+                "201" : 1,
+                "201-replay" : 7
+              }
+            }
+          }
+        }
+      }, {
+        "id" : "E4-4",
+        "name" : "Exception after the engine start inside the transaction: no instance and no COMPLETED record; after abandon no record; the retry executes once (P-1)",
+        "tests" : [ "T57", "T60" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "rolledBackInstanceId" : "109",
+          "instancesAfterCrash" : 0,
+          "recordAfterCrash" : "IN_PROGRESS",
+          "recordAfterAbandon" : "absent",
+          "instancesAfterRetry" : 1
+        }
+      }, {
+        "id" : "E4-5",
+        "name" : "Crash before commit with no cleanup: the claim expires, a retry takes over and executes once; the zombie's late commit loses its claim and its engine start rolls back",
+        "tests" : [ "T57" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "whileClaimLive" : "409 IDEMPOTENCY_IN_PROGRESS",
+          "afterExpiry" : "201 (takeover, claim_epoch 2)",
+          "zombieCommit" : "ClaimLostException, rolled back",
+          "instances" : 1
+        }
+      }, {
+        "id" : "E4-6",
+        "name" : "Crash after commit, before the response: the retry replays the original response",
+        "tests" : [ "T57" ],
+        "counted" : true,
+        "outcome" : "PASS",
+        "pass" : true,
+        "measurements" : {
+          "retry" : "201 replayed, same instance"
+        }
+      } ],
+      "notes" : {
+        "command" : "POST /process-definitions/wf2-file/start, Idempotency-Key header, tenant tn-e4",
+        "claimTtl" : "30 s (default store), 700 ms (takeover scenarios); IDEMPOTENCY times use the DB clock",
+        "wallClockSeconds" : 9.049
+      }
+    }
+  }
+}

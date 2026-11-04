@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_dla">
+  <!-- D-LAND-ACQUISITION (RFCTLARR 2013): SIA (s4) -> appraisal -> s11 within 12 months else the SIA lapses (s14) ->
+       s15 objections per landholder (60 days) -> hearing -> s19 within 12 months of s11 else lapse -> award (s23)
+       within 12 months of s19 else lapse (s25) -> R&R award (s31). Statutory dates are computed by the product when
+       the previous step completes; the windows are interrupting boundary timers. -->
+  <message id="m_obj" name="s15Objection"/>
+  <process id="d-land-acquisition" name="D-LAND-ACQUISITION RFCTLARR acquisition" isExecutable="true">
+    <startEvent id="dla_start"/>
+    <sequenceFlow id="f1" sourceRef="dla_start" targetRef="dla_sia"/>
+    <userTask id="dla_sia" name="Social impact assessment (s4)"><potentialOwner><resourceAssignmentExpression><formalExpression>group(sia-unit)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="dla_sia" targetRef="dla_appraisal"/>
+    <userTask id="dla_appraisal" name="Expert group appraisal (s7)"><potentialOwner><resourceAssignmentExpression><formalExpression>group(expert-group)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="dla_appraisal" targetRef="dla_s11"/>
+    <userTask id="dla_s11" name="Preliminary notification (s11)"><potentialOwner><resourceAssignmentExpression><formalExpression>group(collector)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="dla_siaLapse" attachedToRef="dla_s11" cancelActivity="true">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${siaLapse}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f4" sourceRef="dla_siaLapse" targetRef="dla_end_siaLapsed"/>
+    <endEvent id="dla_end_siaLapsed" name="SIA lapsed (s14)"/>
+    <sequenceFlow id="f5" sourceRef="dla_s11" targetRef="dla_objections"/>
+    <subProcess id="dla_objections" name="Objection window per landholder (s15)">
+      <multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">${landholderCount}</loopCardinality></multiInstanceLoopCharacteristics>
+      <startEvent id="dla_oStart"/>
+      <sequenceFlow id="o1" sourceRef="dla_oStart" targetRef="dla_await"/>
+      <eventBasedGateway id="dla_await"/>
+      <sequenceFlow id="o2" sourceRef="dla_await" targetRef="dla_objected"/>
+      <sequenceFlow id="o3" sourceRef="dla_await" targetRef="dla_windowClosed"/>
+      <intermediateCatchEvent id="dla_objected"><messageEventDefinition messageRef="m_obj"/></intermediateCatchEvent>
+      <intermediateCatchEvent id="dla_windowClosed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${objectionEnd}</timeDate></timerEventDefinition></intermediateCatchEvent>
+      <sequenceFlow id="o4" sourceRef="dla_objected" targetRef="dla_oEndObj"/>
+      <sequenceFlow id="o5" sourceRef="dla_windowClosed" targetRef="dla_oEndSilent"/>
+      <endEvent id="dla_oEndObj"/>
+      <endEvent id="dla_oEndSilent"/>
+    </subProcess>
+    <sequenceFlow id="f6" sourceRef="dla_objections" targetRef="dla_s15Hearing"/>
+    <userTask id="dla_s15Hearing" name="Collector hears objections, reports (s15(2))"><potentialOwner><resourceAssignmentExpression><formalExpression>group(collector)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f7" sourceRef="dla_s15Hearing" targetRef="dla_s19"/>
+    <userTask id="dla_s19" name="Declaration (s19)"><potentialOwner><resourceAssignmentExpression><formalExpression>group(government)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="dla_s19Lapse" attachedToRef="dla_s19" cancelActivity="true">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${s19Lapse}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f8" sourceRef="dla_s19Lapse" targetRef="dla_end_s19Lapsed"/>
+    <endEvent id="dla_end_s19Lapsed" name="Preliminary notification lapsed (s19(7))"/>
+    <sequenceFlow id="f9" sourceRef="dla_s19" targetRef="dla_s23"/>
+    <userTask id="dla_s23" name="Collector's award (s23)"><potentialOwner><resourceAssignmentExpression><formalExpression>group(collector)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="dla_awardLapse" attachedToRef="dla_s23" cancelActivity="true">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${awardLapse}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f10" sourceRef="dla_awardLapse" targetRef="dla_end_awardLapsed"/>
+    <endEvent id="dla_end_awardLapsed" name="Proceedings lapsed (s25)"/>
+    <sequenceFlow id="f11" sourceRef="dla_s23" targetRef="dla_s31"/>
+    <userTask id="dla_s31" name="R&amp;R award (s31)"><potentialOwner><resourceAssignmentExpression><formalExpression>group(collector)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f12" sourceRef="dla_s31" targetRef="dla_end"/>
+    <endEvent id="dla_end"/>
+  </process>
+</definitions>

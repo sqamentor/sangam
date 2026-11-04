@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp48y">
+  <!-- GP-48 end-of-cycle rule: every 1 January (IST) the ledger is carried forward with a cap. -->
+  <process id="gp48-yearend" name="GP-48 Year-end carry forward" isExecutable="true">
+    <startEvent id="gp48y_start"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">R/2027-12-31T18:30:00Z/P1Y</timeCycle></timerEventDefinition></startEvent>
+    <sequenceFlow id="f1" sourceRef="gp48y_start" targetRef="gp48y_carry"/>
+    <serviceTask id="gp48y_carry" name="Carry forward with cap" @@ext|leave-carry-forward@@/>
+    <sequenceFlow id="f2" sourceRef="gp48y_carry" targetRef="gp48y_end"/>
+    <endEvent id="gp48y_end"/>
+  </process>
+</definitions>
