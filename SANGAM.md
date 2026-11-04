@@ -47,11 +47,11 @@
 | Government compliance | GOV-1…GOV-12 final: 8 VERIFIED, 4 VERIFIED with a parked sub-item, 0 blocking (IX.7e) → R50–R62 |
 | Commercial | Implementation services, AMC/support, managed hosting on empanelled cloud, workflow packs + training, plus anything government policy requires (ADR-D-11) |
 
-### Decision register (13 decisions)
+### Decision register (19 decisions)
 
 | ADR | Decision | Status |
 |---|---|---|
-| D-1 | Base engine: **Operaton 2.2.x** (score 85.2 vs Flowable 72.1; XI.10). Flowable strengths carried over as product-layer features or ports | **DECIDED** 2026-11-05 by the approved VI.7 procedure (owner may override) |
+| D-1 | Base engine: **Operaton 2.2.x** (score 85.2 vs Flowable 72.1; XI.10). Flowable strengths carried over as product-layer features or ports | **FINAL**: confirmed by the owner (X.0d), after the VI.7 decision of 2026-11-05 |
 | D-2 | Stages A–E (VIII.9) | DECIDED |
 | D-3 | Government / regulated integrator (VI.7) | DECIDED |
 | D-4 | SDK tiers (IX.6) | DECIDED |
@@ -64,6 +64,12 @@
 | D-11 | Revenue model (X.0) | DECIDED |
 | D-12 | HA/DR targets (X.0) | DECIDED |
 | D-13 | Self-reliant development, no government dependency (X.0b) | DECIDED |
+| D-14 | Universal open-source product; all premium features free (X.0c) | DECIDED |
+| D-15 | Tier-1 databases PostgreSQL, Oracle, SQL Server, MySQL (X.0c) | DECIDED |
+| D-16 | Operaton as a dependency + Sangam plugins; engine patches only where needed, offered upstream (X.0d) | DECIDED |
+| D-17 | Licence Apache 2.0 (X.0d) | DECIDED |
+| D-18 | Public GitHub repository `sqamentor/sangam` (X.0d) | DECIDED |
+| D-19 | Stage C: all workstreams run in parallel (X.0d) | DECIDED |
 
 ### Where the current specification lives (read only these)
 
@@ -4231,6 +4237,19 @@ No login, CAPTCHA or other protection was bypassed. When a search engine showed 
 | **ADR-D-14 Product scope** | Sangam is a **universal, fully open-source workflow platform**. Indian government processes (IX.4, GOV-PATTERNS) are packs on top of it, not its limit. **Every capability sold in premium or commercial editions of Camunda 7/8, Flowable and Operaton** has a free Sangam equivalent: modeller, cockpit/operations, tasklist/work UI, admin/identity, analytics/optimisation/process mining, connectors, AI agents, multi-tenant administration. The premium-feature catalogue and the new requirements R63+ come from `spike/results/PREMIUM-AND-UNIVERSAL-SCOPE.md` (in progress). |
 | **ADR-D-15 Databases** | **Tier 1 = PostgreSQL, Oracle, SQL Server, MySQL** (MySQL promoted from Tier 2; supersedes R17 and CF-11 for MySQL). MariaDB and DB2 stay Tier 2. Licence rule unchanged (LIC-4): MySQL Connector/J is not bundled; the MariaDB driver is the shipped driver for MySQL where compatible, else Connector/J is customer-supplied. MySQL is added to all spike DB runs (queue Q1–Q3). |
 | Consequences | (1) The base-engine evaluation adds MySQL and a "premium-feature buildability" view: how much of the premium catalogue each base already offers free, e.g. Operaton webapps-neo vs Flowable with no OSS UI. (2) The universal patterns UP-01… extend the test catalogue beyond government. (3) The effort re-estimate (M09) must include the premium-equivalent UI and tooling. |
+| Status | Decision: DECIDED (owner, 2026-11-05). Delivery: SPECIFIED. |
+
+## X.0d ADR-D-1 FINAL and ADR-D-16…D-19: base engine, integration model, licence, repository, Stage C (DECIDED 2026-11-05)
+
+| Field | Content |
+|---|---|
+| Owner's decision (paraphrased from Hindi) | Testing stops: the Stage B evidence is enough. **Operaton is final as the base engine.** All of Flowable's strengths are to be brought into Operaton/Sangam; the gap list is `spike/results/FLOWABLE-INTO-OPERATON.md`. Answers to the doubts raised: dependency + plugins; Apache 2.0; public GitHub now; run all Stage C work in parallel; publish after removing local paths. |
+| **ADR-D-1 FINAL** | Base engine = **Operaton 2.2.x** (XI.10: 85.2 vs 72.1). The "owner may override" clause is closed. Flowable is no longer a candidate. Its adapter and results stay in `spike/` only as evidence. |
+| **ADR-D-16 Integration model** | Sangam consumes Operaton as **Maven dependencies** and adds behaviour through **plugins and SPIs**: process-engine plugins, parse listeners, command interceptors, history handlers, the DMN SPI and the product layer. A change to the engine source is allowed only when no extension point exists. Each such change is recorded in the patch ledger (P-n), kept minimal, and **offered upstream** to Operaton. The first example is P-1 (MySQL datetime precision). Sangam does not maintain a hard fork. |
+| **ADR-D-17 Licence** | **Apache License 2.0** for all Sangam code, matching Operaton and Flowable. Ported code keeps its original headers and is marked modified (NOTICE). The rules LIC-1…11 stay in force: no GraalJS; no bundled Oracle, Db2 or MySQL drivers; Liquibase pinned at 4.33.0. |
+| **ADR-D-18 Repository** | Public at **https://github.com/sqamentor/sangam** from now. Third-party checkouts (`reference/`), build output and machine-specific run logs are excluded (`.gitignore`). Local paths were removed before publishing. |
+| **ADR-D-19 Stage C** | Every Stage C workstream starts **in parallel** on the D-16 model: core/product layer, REST/OpenAPI, SDKs, UI, Flowable-strength ports, government packs and the four-database CI. Heavy runs still go through the shared machine lock. |
+| Pending amendments carried into Stage C | (1) operationId derived from the business key (T35). (2) Adopt R63–R84 (PREMIUM-AND-UNIVERSAL-SCOPE). (3) MySQL conditions: P-1 precision patch and READ COMMITTED isolation. (4) GP-09 rule: one instance per item; no large multi-instance. (5) Jackson ≥ 2.22.3. (6) A-10…A-16 (XI.10.3). |
 | Status | Decision: DECIDED (owner, 2026-11-05). Delivery: SPECIFIED. |
 
 ## X.1 Normative requirements R1–R62
