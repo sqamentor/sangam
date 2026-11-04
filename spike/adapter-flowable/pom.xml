@@ -16,7 +16,7 @@
     <version.h2>2.3.232</version.h2>
     <!-- Test-only JDBC drivers (same versions as simulators / adapter-operaton) -->
     <version.ojdbc>23.8.0.25.04</version.ojdbc>
-    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <version.mssql-jdbc>12.10.2.jre11</version.mssql-jdbc>
     <version.mysql-connector-j>8.4.0</version.mysql-connector-j>
   </properties>
 
