@@ -37,9 +37,9 @@
     <spike.engines>operaton,flowable</spike.engines>
     <!-- LIC-2: test scope only, same versions as simulators / experiments-load -->
     <version.ojdbc>23.8.0.25.04</version.ojdbc>
-    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <version.mssql-jdbc>12.10.2.jre11</version.mssql-jdbc>
     <version.mysql-connector-j>8.4.0</version.mysql-connector-j>
-    <version.mariadb-java-client>3.5.3</version.mariadb-java-client>
+    <version.mariadb-java-client>3.5.11</version.mariadb-java-client>
     <!-- -Dspike.mysql.driver=mysql|mariadb (MySQL runs only) -->
     <spike.mysql.driver>mysql</spike.mysql.driver>    <exp.resultsDir>${project.basedir}/../results</exp.resultsDir>
   </properties>

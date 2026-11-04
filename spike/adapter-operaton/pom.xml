@@ -16,9 +16,9 @@
     <version.h2>2.3.232</version.h2>
     <!-- Test-only JDBC drivers (same versions as simulators / experiments-load) -->
     <version.ojdbc>23.8.0.25.04</version.ojdbc>
-    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <version.mssql-jdbc>12.10.2.jre11</version.mssql-jdbc>
     <version.mysql-connector-j>8.4.0</version.mysql-connector-j>
-    <version.mariadb-java-client>3.5.3</version.mariadb-java-client>
+    <version.mariadb-java-client>3.5.11</version.mariadb-java-client>
     <!-- Operaton 2.2.0's FEEL engine (org.camunda.feel:feel-engine 1.22.1) brings jackson-module-scala 2.22.1,
          which refuses jackson-databind outside 2.22.x. This module aligns all of Jackson (bom, incl.
          jackson-module-scala_2.13) to 2.22.3, the first 2.22.x with the E12 OSV fixes (ledger entry W-1). -->

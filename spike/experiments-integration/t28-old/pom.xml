@@ -26,7 +26,7 @@
     <t28.operaton.version>2.1.6</t28.operaton.version>
     <t28.flowable.version>7.2.0</t28.flowable.version>
     <version.junit>5.11.4</version.junit>
-    <version.postgresql>42.7.7</version.postgresql>
+    <version.postgresql>42.7.12</version.postgresql>
     <version.slf4j>2.0.17</version.slf4j>
   </properties>
 
