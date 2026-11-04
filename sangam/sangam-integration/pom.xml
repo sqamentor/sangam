@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-integration</artifactId>
+  <name>Outbox, inbox, idempotency, reconciliation, connectors</name>
+
+  <properties>
+    <!-- Versions owned by this module (not in the parent dependencyManagement). Licences: see README. -->
+    <version.kafka>3.9.1</version.kafka>
+    <version.jms>3.1.0</version.jms>
+    <version.sshd>2.15.0</version.sshd>
+    <version.angus-mail>2.0.4</version.angus-mail>
+    <version.servlet>6.0.0</version.servlet>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-core</artifactId>
+    </dependency>
+    <!-- WS-PORTS event registry (EventDispatcher, ChannelPublisher, HistoryProjector). No cycle: sangam-flowable-ports
+         depends only on sangam-core. Optional, so consumers of this module are not forced to take it. -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-flowable-ports</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <!-- WS-PACKS ports (ConnectorGateway). No cycle: sangam-packs depends only on sangam-core. -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-packs</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <!-- Apache-2.0, via sangam-core -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <!-- Operaton bridge (JavaDelegate, ExternalTaskService). Apache-2.0. Provided by sangam-engine at runtime. -->
+    <dependency>
+      <groupId>org.operaton.bpm</groupId>
+      <artifactId>operaton-engine</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- SMTP connector: Eclipse Angus Mail (Jakarta Mail impl). EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 (OSI). -->
+    <dependency>
+      <groupId>org.eclipse.angus</groupId>
+      <artifactId>angus-mail</artifactId>
+      <version>${version.angus-mail}</version>
+    </dependency>
+
+    <!-- SFTP transport: Apache MINA SSHD. Apache-2.0. -->
+    <dependency>
+      <groupId>org.apache.sshd</groupId>
+      <artifactId>sshd-sftp</artifactId>
+      <version>${version.sshd}</version>
+    </dependency>
+
+    <!-- Optional publishers / inbound consumers. -->
+    <!-- Apache-2.0 -->
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>${version.kafka}</version>
+      <optional>true</optional>
+    </dependency>
+    <!-- EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 -->
+    <dependency>
+      <groupId>jakarta.jms</groupId>
+      <artifactId>jakarta.jms-api</artifactId>
+      <version>${version.jms}</version>
+      <optional>true</optional>
+    </dependency>
+    <!-- Idempotency servlet filter. EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0. Provided by the servlet container. -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>${version.servlet}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

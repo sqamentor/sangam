@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: output, notification, retention and closure. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_closure" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-core-closure" name="Core: output, notification, retention and closure" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>CLOSED (IX.3): output document from the approved data only, notification on registered templates (R60), retention classification at closure (R61, CSMOP A / C) and the final state.</documentation>
+    <startEvent id="cl_start" name="Close case"></startEvent>
+    <serviceTask id="cl_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>outputTemplate=generic-order;retentionCategory=C;closureTemplate=case-closed;issueOutput=true;requireApprovalForOutput=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cl_outGw" name="Issue output?" default="core_closure_f4"></exclusiveGateway>
+    <serviceTask id="cl_issue" name="Issue output document" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:expression>${outputTemplate}</operaton:expression></operaton:field><operaton:field name="requireApproval"><operaton:expression>${requireApprovalForOutput}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cl_join" name=""></exclusiveGateway>
+    <serviceTask id="cl_notify" name="Notify" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:expression>${closureTemplate}</operaton:expression></operaton:field><operaton:field name="channel"><operaton:string>sms,email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cl_retention" name="Classify for retention" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RETENTION</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cl_closed" name="State: CLOSED" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>CLOSED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cl_end" name="Closed"></endEvent>
+    <sequenceFlow id="core_closure_f1" sourceRef="cl_start" targetRef="cl_defaults"/>
+    <sequenceFlow id="core_closure_f2" sourceRef="cl_defaults" targetRef="cl_outGw"/>
+    <sequenceFlow id="core_closure_f3" name="yes" sourceRef="cl_outGw" targetRef="cl_issue"><conditionExpression xsi:type="tFormalExpression">${issueOutput}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_closure_f4" name="no" sourceRef="cl_outGw" targetRef="cl_join"/>
+    <sequenceFlow id="core_closure_f5" sourceRef="cl_issue" targetRef="cl_join"/>
+    <sequenceFlow id="core_closure_f6" sourceRef="cl_join" targetRef="cl_notify"/>
+    <sequenceFlow id="core_closure_f7" sourceRef="cl_notify" targetRef="cl_retention"/>
+    <sequenceFlow id="core_closure_f8" sourceRef="cl_retention" targetRef="cl_closed"/>
+    <sequenceFlow id="core_closure_f9" sourceRef="cl_closed" targetRef="cl_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_closure_diagram">
+    <bpmndi:BPMNPlane id="core_closure_plane" bpmnElement="sangam-core-closure">
+      <bpmndi:BPMNShape id="cl_start_di" bpmnElement="cl_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_defaults_di" bpmnElement="cl_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_outGw_di" bpmnElement="cl_outGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_issue_di" bpmnElement="cl_issue"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_join_di" bpmnElement="cl_join"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_notify_di" bpmnElement="cl_notify"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_retention_di" bpmnElement="cl_retention"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_closed_di" bpmnElement="cl_closed"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_end_di" bpmnElement="cl_end"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_closure_f1_di" bpmnElement="core_closure_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_closure_f2_di" bpmnElement="core_closure_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_closure_f3_di" bpmnElement="core_closure_f3"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_closure_f4_di" bpmnElement="core_closure_f4"><di:waypoint x="425" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_closure_f5_di" bpmnElement="core_closure_f5"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_closure_f6_di" bpmnElement="core_closure_f6"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_closure_f7_di" bpmnElement="core_closure_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_closure_f8_di" bpmnElement="core_closure_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_closure_f9_di" bpmnElement="core_closure_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

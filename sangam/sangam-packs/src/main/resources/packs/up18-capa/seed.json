@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "QA",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "QA-LEAD",
+      "role": "QA",
+      "office": "QA",
+      "reportsTo": "QA-HEAD",
+      "name": {
+        "en": "Quality engineer",
+        "hi": "गुणवत्ता अभियंता"
+      }
+    },
+    {
+      "id": "QA-HEAD",
+      "role": "QAHEAD",
+      "office": "QA",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of quality",
+        "hi": "गुणवत्ता प्रमुख"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "QA-LEAD",
+      "person": "u18.qa-lead",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "QA-HEAD",
+      "person": "u18.qa-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "QA",
+      "name": {
+        "en": "Quality engineer",
+        "hi": "गुणवत्ता अभियंता"
+      }
+    },
+    {
+      "code": "QAHEAD",
+      "name": {
+        "en": "Head of quality",
+        "hi": "गुणवत्ता प्रमुख"
+      }
+    }
+  ]
+}

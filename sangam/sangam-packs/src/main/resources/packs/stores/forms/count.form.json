@@ -1,0 +1,45 @@
+{
+  "key": "stores/count",
+  "version": "1.0.0",
+  "pack": "gov.stores",
+  "title": {
+    "en": "Physical verification count",
+    "hi": "भौतिक सत्यापन गणना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "physicalCounts",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Physical count by item (JSON)",
+        "hi": "वस्तुवार भौतिक गणना"
+      }
+    },
+    {
+      "id": "bookBalances",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Book balance by item (JSON)",
+        "hi": "वस्तुवार बही शेष"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

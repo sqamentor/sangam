@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-02 Order saga. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up02_saga" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <error id="err_SAGA_STEP_FAILED" name="SAGA_STEP_FAILED" errorCode="SAGA_STEP_FAILED"/>
+  <process id="sangam-up02-saga" name="UP-02 Order saga" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up02-saga</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>orderId,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u2_start" name="Order" operaton:initiator="initiator" operaton:formKey="sangam:up02-saga/order"></startEvent>
+    <serviceTask id="u2_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>executionConnector=saga.charge;executionStep=charge;verifyApproval=false;reconcileRequired=false;stepTimeout=PT10M</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u2_reserve" name="Reserve stock" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>inventory.reserve</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>reserve</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>reserve</operaton:string></operaton:field><operaton:field name="step"><operaton:string>reserve</operaton:string></operaton:field><operaton:field name="errorOnFailure"><operaton:string>SAGA_STEP_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="u2_charge" name="Charge (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="u2_chargeGw" name="Charged?" default="up02_saga_f6"></exclusiveGateway>
+    <serviceTask id="u2_book" name="Book shipment" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>shipping.create</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>book</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ship</operaton:string></operaton:field><operaton:field name="step"><operaton:string>ship</operaton:string></operaton:field><operaton:field name="errorOnFailure"><operaton:string>SAGA_STEP_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u2_end" name="Completed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <intermediateThrowEvent id="u2_compensate" name="Compensate completed steps"><compensateEventDefinition/></intermediateThrowEvent>
+    <endEvent id="u2_endCompensated" name="Compensated"></endEvent>
+    <serviceTask id="u2_reserve_undo" name="Undo: release" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true" isForCompensation="true"><extensionElements><operaton:field name="connector"><operaton:string>inventory.release</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>release</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u2_reserveUndo</operaton:string></operaton:field><operaton:field name="step"><operaton:string>release-compensation</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u2_charge_undo" name="Undo: refund" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true" isForCompensation="true"><extensionElements><operaton:field name="connector"><operaton:string>payment.refund</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>refund</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u2_chargeUndo</operaton:string></operaton:field><operaton:field name="step"><operaton:string>refund-compensation</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u2_book_undo" name="Undo: cancel" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true" isForCompensation="true"><extensionElements><operaton:field name="connector"><operaton:string>shipping.cancel</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>cancel</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u2_bookUndo</operaton:string></operaton:field><operaton:field name="step"><operaton:string>cancel-compensation</operaton:string></operaton:field></extensionElements></serviceTask>
+    <boundaryEvent id="u2_reserve_comp" name="Compensate" attachedToRef="u2_reserve" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
+    <boundaryEvent id="u2_charge_comp" name="Compensate" attachedToRef="u2_charge" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
+    <boundaryEvent id="u2_book_comp" name="Compensate" attachedToRef="u2_book" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
+    <boundaryEvent id="u2_reserve_fail" name="Step failed" attachedToRef="u2_reserve" cancelActivity="true"><errorEventDefinition errorRef="err_SAGA_STEP_FAILED"/></boundaryEvent>
+    <boundaryEvent id="u2_book_fail" name="Step failed" attachedToRef="u2_book" cancelActivity="true"><errorEventDefinition errorRef="err_SAGA_STEP_FAILED"/></boundaryEvent>
+    <boundaryEvent id="u2_chargeTimeout" name="Step timeout" attachedToRef="u2_charge" cancelActivity="true"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${stepTimeout}</timeDuration></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="up02_saga_f1" sourceRef="u2_start" targetRef="u2_defaults"/>
+    <sequenceFlow id="up02_saga_f2" sourceRef="u2_defaults" targetRef="u2_reserve"/>
+    <sequenceFlow id="up02_saga_f3" sourceRef="u2_reserve" targetRef="u2_charge"/>
+    <sequenceFlow id="up02_saga_f4" sourceRef="u2_charge" targetRef="u2_chargeGw"/>
+    <sequenceFlow id="up02_saga_f5" name="yes" sourceRef="u2_chargeGw" targetRef="u2_book"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up02_saga_f6" name="failed" sourceRef="u2_chargeGw" targetRef="u2_compensate"/>
+    <sequenceFlow id="up02_saga_f7" sourceRef="u2_book" targetRef="u2_end"/>
+    <sequenceFlow id="up02_saga_f8" sourceRef="u2_compensate" targetRef="u2_endCompensated"/>
+    <sequenceFlow id="up02_saga_f12" sourceRef="u2_reserve_fail" targetRef="u2_compensate"/>
+    <sequenceFlow id="up02_saga_f13" sourceRef="u2_book_fail" targetRef="u2_compensate"/>
+    <sequenceFlow id="up02_saga_f14" sourceRef="u2_chargeTimeout" targetRef="u2_compensate"/>
+    <association id="up02_saga_a9" associationDirection="One" sourceRef="u2_reserve_comp" targetRef="u2_reserve_undo"/>
+    <association id="up02_saga_a10" associationDirection="One" sourceRef="u2_charge_comp" targetRef="u2_charge_undo"/>
+    <association id="up02_saga_a11" associationDirection="One" sourceRef="u2_book_comp" targetRef="u2_book_undo"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up02_saga_diagram">
+    <bpmndi:BPMNPlane id="up02_saga_plane" bpmnElement="sangam-up02-saga">
+      <bpmndi:BPMNShape id="u2_start_di" bpmnElement="u2_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_defaults_di" bpmnElement="u2_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_reserve_di" bpmnElement="u2_reserve"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_charge_di" bpmnElement="u2_charge"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_chargeGw_di" bpmnElement="u2_chargeGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_book_di" bpmnElement="u2_book"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_end_di" bpmnElement="u2_end"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_compensate_di" bpmnElement="u2_compensate"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_endCompensated_di" bpmnElement="u2_endCompensated"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_reserve_undo_di" bpmnElement="u2_reserve_undo"><dc:Bounds x="390" y="150" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_charge_undo_di" bpmnElement="u2_charge_undo"><dc:Bounds x="555" y="150" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_book_undo_di" bpmnElement="u2_book_undo"><dc:Bounds x="885" y="150" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_reserve_comp_di" bpmnElement="u2_reserve_comp"><dc:Bounds x="358" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_charge_comp_di" bpmnElement="u2_charge_comp"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_book_comp_di" bpmnElement="u2_book_comp"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_reserve_fail_di" bpmnElement="u2_reserve_fail"><dc:Bounds x="388" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_book_fail_di" bpmnElement="u2_book_fail"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u2_chargeTimeout_di" bpmnElement="u2_chargeTimeout"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up02_saga_f1_di" bpmnElement="up02_saga_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f2_di" bpmnElement="up02_saga_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f3_di" bpmnElement="up02_saga_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f4_di" bpmnElement="up02_saga_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f5_di" bpmnElement="up02_saga_f5"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f6_di" bpmnElement="up02_saga_f6"><di:waypoint x="755" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f7_di" bpmnElement="up02_saga_f7"><di:waypoint x="945" y="70"/><di:waypoint x="993" y="70"/><di:waypoint x="993" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f8_di" bpmnElement="up02_saga_f8"><di:waypoint x="1078" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f12_di" bpmnElement="up02_saga_f12"><di:waypoint x="406" y="128"/><di:waypoint x="406" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f13_di" bpmnElement="up02_saga_f13"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_f14_di" bpmnElement="up02_saga_f14"><di:waypoint x="571" y="128"/><di:waypoint x="571" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_a9_di" bpmnElement="up02_saga_a9"><di:waypoint x="376" y="128"/><di:waypoint x="440" y="150"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_a10_di" bpmnElement="up02_saga_a10"><di:waypoint x="541" y="128"/><di:waypoint x="605" y="150"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up02_saga_a11_di" bpmnElement="up02_saga_a11"><di:waypoint x="871" y="128"/><di:waypoint x="935" y="150"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

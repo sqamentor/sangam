@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "DIV-SI",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "EE-SI",
+      "role": "EE",
+      "office": "DIV-SI",
+      "reportsTo": null,
+      "name": {
+        "en": "Executive Engineer (custodian)",
+        "hi": "अधिशासी अभियंता (अभिरक्षक)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "EE-SI",
+      "person": "si.ee-si",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "EE",
+      "name": {
+        "en": "Executive Engineer (custodian)",
+        "hi": "अधिशासी अभियंता (अभिरक्षक)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ins_ri_cession" name="Retention and cession (SYNTHETIC; obligatory cession % per IRDAI notification - verify)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-ins-ri-cession" name="Retention and cession (SYNTHETIC; obligatory cession % per IRDAI notification - verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ins-ri-cession_t" hitPolicy="FIRST">
+      <input id="sec-ins-ri-cession_i0" label="Sum insured"><inputExpression id="sec-ins-ri-cession_ie0" typeRef="double"><text>sumInsured</text></inputExpression></input>
+      <input id="sec-ins-ri-cession_i1" label="Line"><inputExpression id="sec-ins-ri-cession_ie1" typeRef="string"><text>lineOfBusiness</text></inputExpression></input>
+      <output id="sec-ins-ri-cession_o0" label="Obligatory cession %" name="obligatoryPct" typeRef="integer"/>
+      <output id="sec-ins-ri-cession_o1" label="Facultative" name="facultativeRequired" typeRef="boolean"/>
+      <rule id="sec-ins-ri-cession_r0"><description>above treaty capacity</description>
+        <inputEntry id="sec-ins-ri-cession_r0_i0"><text>&gt; 500000000</text></inputEntry>
+        <inputEntry id="sec-ins-ri-cession_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-ins-ri-cession_r0_o0"><text>4</text></outputEntry>
+        <outputEntry id="sec-ins-ri-cession_r0_o1"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-ins-ri-cession_r1">
+        <inputEntry id="sec-ins-ri-cession_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-ins-ri-cession_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-ins-ri-cession_r1_o0"><text>4</text></outputEntry>
+        <outputEntry id="sec-ins-ri-cession_r1_o1"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

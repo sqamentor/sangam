@@ -1,0 +1,90 @@
+{
+  "key": "leave/application",
+  "version": "1.0.0",
+  "pack": "gov.leave",
+  "title": {
+    "en": "Leave application",
+    "hi": "अवकाश आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "employeeId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Employee",
+        "hi": "कर्मचारी"
+      }
+    },
+    {
+      "id": "leaveType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Leave type",
+        "hi": "अवकाश का प्रकार"
+      }
+    },
+    {
+      "id": "leaveFrom",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "From",
+        "hi": "से"
+      }
+    },
+    {
+      "id": "leaveTo",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "To",
+        "hi": "तक"
+      }
+    },
+    {
+      "id": "leaveDays",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Number of days",
+        "hi": "दिनों की संख्या"
+      }
+    },
+    {
+      "id": "stationLeave",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Station leave required",
+        "hi": "मुख्यालय छोड़ने की अनुमति आवश्यक"
+      }
+    },
+    {
+      "id": "chargeSeat",
+      "type": "seat",
+      "required": false,
+      "label": {
+        "en": "Charge to be held by (seat)",
+        "hi": "प्रभार किसके पास (पद)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

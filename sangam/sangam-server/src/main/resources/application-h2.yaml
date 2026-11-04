@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: Apache-2.0
+# Development only: in-memory H2 in PostgreSQL mode (required by sangam-engine, sangam-security and the core product
+# layer: ON CONFLICT DO NOTHING, BLOB alias), static dev token, dev bootstrap, simulators.
+spring:
+  datasource:
+    url: ${SANGAM_DB_URL:jdbc:h2:mem:sangam;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL}
+    username: ${SANGAM_DB_USER:sa}
+    password: ${SANGAM_DB_PASSWORD:}
+    driver-class-name: org.h2.Driver
+
+operaton:
+  bpm:
+    database:
+      schema-update: true
+
+sangam:
+  security:
+    dev-token:
+      enabled: true
+      token: ${SANGAM_DEV_TOKEN:sangam-dev-token-change-me}
+      tenant: ${SANGAM_TENANT_DEFAULT:dev}
+      principal: dev-admin
+      groups:
+        - sangam-admin
+        - sangam-user
+        - sangam-operator
+        - sangam-worker
+    # sangam-security: create the dev person on first use (README note 11)
+    jit-provisioning-tenants:
+      - ${SANGAM_TENANT_DEFAULT:dev}
+    # Dev bootstrap: tenant + admin grants on the empty database (SecurityBootstrap; never in production)
+    bootstrap:
+      enabled: true
+      admin-groups: sangam-admin
+  integration:
+    simulators:
+      enabled: true
+  debug:
+    enabled: true
+  db:
+    require-rcsi: false
+  persistence:
+    dev-schema: true

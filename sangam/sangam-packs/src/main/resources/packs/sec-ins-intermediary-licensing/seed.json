@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "AGENCY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "AGENCY-ADMIN",
+      "role": "AGENCY",
+      "office": "AGENCY",
+      "reportsTo": "PRINCIPAL-OFFICER",
+      "name": {
+        "en": "Agency administration",
+        "hi": "एजेंसी प्रशासन"
+      }
+    },
+    {
+      "id": "PRINCIPAL-OFFICER",
+      "role": "PO",
+      "office": "AGENCY",
+      "reportsTo": null,
+      "name": {
+        "en": "Designated person (agency)",
+        "hi": "नामित व्यक्ति (एजेंसी)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "AGENCY-ADMIN",
+      "person": "iag.agency-admin",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PRINCIPAL-OFFICER",
+      "person": "iag.principal-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "AGENCY",
+      "name": {
+        "en": "Agency administration",
+        "hi": "एजेंसी प्रशासन"
+      }
+    },
+    {
+      "code": "PO",
+      "name": {
+        "en": "Designated person (agency)",
+        "hi": "नामित व्यक्ति (एजेंसी)"
+      }
+    }
+  ]
+}

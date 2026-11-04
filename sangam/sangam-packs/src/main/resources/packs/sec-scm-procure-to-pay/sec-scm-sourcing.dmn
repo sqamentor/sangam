@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_scm_sourcing" name="Sourcing mode by value (SYNTHETIC)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-scm-sourcing" name="Sourcing mode by value (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-scm-sourcing_t" hitPolicy="FIRST">
+      <input id="sec-scm-sourcing_i0" label="Value"><inputExpression id="sec-scm-sourcing_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <output id="sec-scm-sourcing_o0" label="Mode" name="sourcingMode" typeRef="string"/>
+      <rule id="sec-scm-sourcing_r0">
+        <inputEntry id="sec-scm-sourcing_r0_i0"><text>&lt;= 100000</text></inputEntry>
+        <outputEntry id="sec-scm-sourcing_r0_o0"><text>"DIRECT"</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-sourcing_r1"><description>three quotations</description>
+        <inputEntry id="sec-scm-sourcing_r1_i0"><text>&lt;= 2500000</text></inputEntry>
+        <outputEntry id="sec-scm-sourcing_r1_o0"><text>"RFQ"</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-sourcing_r2">
+        <inputEntry id="sec-scm-sourcing_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-scm-sourcing_r2_o0"><text>"RFP"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

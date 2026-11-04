@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Works project. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_works_project" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_amendmentApproved" name="sangam.amendmentApproved"/>
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_requestAmendment" name="sangam.requestAmendment"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-works-project" name="Works project" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Order of sanctions from the pack configuration works-config (per tenant by override deployment, per office by rule row): TS_FIRST (default: estimate, technical sanction, administrative approval) or AA_FIRST.</documentation>
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.works</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>workName,estimateAmount,budgetHead</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="wk_start" name="Estimate submitted" operaton:initiator="initiator" operaton:formKey="sangam:works/estimate"></startEvent>
+    <serviceTask id="wk_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=WORKS_TS;amount=@estimateAmount;scrutinySeat=DA-WK;cumulativeAmount=0;mbCycle=P30D;dlpPeriod=P365D;aaTolerancePct=10;raBillNo=0;ldRecoverable=0;finalBill=false;thresholdCrossed=false;aeSeat=AE-WK;eeSeat=EE-WK;releaseConnector=ifms.release;appealAllowed=false;contractorAccount=;contractorIfsc=;completionDueAt=null;delayReviewDays=30;officeId=DIV-WK</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="wk_estimate" name="Estimate scrutiny (core)" calledElement="sangam-core-scrutiny"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="wk_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="wk_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <businessRuleTask id="wk_config" name="Order of sanctions (pack configuration, DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>works-config</operaton:string></operaton:field><operaton:field name="binding"><operaton:string>latest</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="wk_scrGw" name="scrutinyOutcome?" default="works_project_f5"></exclusiveGateway>
+    <serviceTask id="wk_tsCfg" name="Technical sanction" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>caseType=WORKS_TS;routingDecisionKey=works-ts-authority</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wk_aaFirstCfg" name="Administrative approval (first)" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>caseType=WORKS_AA;routingDecisionKey=works-aa-authority;encumbranceLedger=</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="wk_orderGw" name="Order of sanctions?" default="works_project_f8"></exclusiveGateway>
+    <serviceTask id="wk_encumber" name="Encumber against AA" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ifms.encumber</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>encumber</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>budgetHead,estimateAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>encumber</operaton:string></operaton:field><operaton:field name="step"><operaton:string>encumber</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="wk_ts" name="Technical sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="wk_aaCfg" name="Administrative approval" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>tsAmount=@estimateAmount;caseType=WORKS_AA;routingDecisionKey=works-aa-authority;encumbranceLedger=</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="wk_tsGw" name="sanctionOutcome?" default="works_project_f13"></exclusiveGateway>
+    <callActivity id="wk_aa" name="Administrative approval and expenditure sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="wk_aaRef" name="AA reference" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>aaRef=@approvedPayloadHash</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="wk_aaGw" name="sanctionOutcome?" default="works_project_f18"></exclusiveGateway>
+    <callActivity id="wk_aaFirst" name="Administrative approval and expenditure sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="wk_aaFirstRef" name="AA reference" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>aaRef=@approvedPayloadHash</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="wk_aaFirstGw" name="sanctionOutcome?" default="works_project_f24"></exclusiveGateway>
+    <serviceTask id="wk_tsSecondCfg" name="Technical sanction (after AA)" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>caseType=WORKS_TS;routingDecisionKey=works-ts-authority</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="wk_tsSecond" name="Technical sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="wk_tsSecondAmount" name="TS amount" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>tsAmount=@estimateAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="wk_tsSecondGw" name="sanctionOutcome?" default="works_project_f30"></exclusiveGateway>
+    <serviceTask id="wk_aaAmount" name="AA amount" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>aaAmount=@estimateAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="wk_nit" name="Prepare NIT" operaton:candidateGroups="${eeSeat}" operaton:formKey="sangam:works/nit"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <callActivity id="wk_tender" name="Tender (gov.tender)" calledElement="sangam-tender"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}/TENDER"/><operaton:in source="workName" target="itemDescription"/><operaton:in source="estimateAmount" target="estimateAmount"/><operaton:in source="initiatorSeat" target="actingSeat"/><operaton:in source="initiatorPerson" target="initiator"/><operaton:in source="officeId" target="officeId"/><operaton:in source="tenderId" target="tenderId"/><operaton:in source="nitText" target="nitText"/><operaton:in source="bidDueAt" target="bidDueAt"/><operaton:in source="openingAt" target="openingAt"/><operaton:out source="tenderOutcome" target="tenderOutcome"/><operaton:out source="contractorId" target="contractorId"/><operaton:out source="contractValue" target="contractValue"/></extensionElements></callActivity>
+    <callActivity id="wk_workOrder" name="Work order (gov.work-order)" calledElement="sangam-work-order"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}/WO"/><operaton:in source="workName" target="workName"/><operaton:in source="contractorId" target="contractorId"/><operaton:in source="contractValue" target="contractValue"/><operaton:in source="completionDueAt" target="completionDueAt"/><operaton:in source="initiatorSeat" target="actingSeat"/><operaton:in source="initiatorPerson" target="initiator"/><operaton:out source="workOrderOutcome" target="workOrderOutcome"/></extensionElements></callActivity>
+    <userTask id="wk_tenderFailed" name="Tender failed: re-tender or drop" operaton:candidateGroups="${eeSeat}" operaton:formKey="sangam:works/tender-failed"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>tfDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <userTask id="wk_contractDates" name="Contract dates and payee details" operaton:candidateGroups="${eeSeat}" operaton:formKey="sangam:works/contract-dates"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="wk_tenderGw" name="tenderOutcome?" default="works_project_f38"></exclusiveGateway>
+    <exclusiveGateway id="wk_tfGw" name="" default="works_project_f44"></exclusiveGateway>
+    <serviceTask id="wk_drop_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="wk_drop_call" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="wk_drop_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <eventBasedGateway id="wk_cycle" name="Monthly cycle, completion date"></eventBasedGateway>
+    <exclusiveGateway id="wk_woGw" name="workOrderOutcome?" default="works_project_f46"></exclusiveGateway>
+    <intermediateCatchEvent id="wk_month" name="Measurement period"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${mbCycle}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="wk_completionDue" name="Stipulated completion date"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${completionDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="wk_delay" name="Completion overdue: assess delay (monthly)" operaton:candidateGroups="${eeSeat}" operaton:formKey="sangam:works/delay"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>delayDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="wk_requestLd" name="LD / EoT amendment case" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-contract-amendment</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>amendment</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>contractValue,contractorId,delayDays,initiatorSeat,initiatorPerson,actingSeat,initiator</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wk_rearm" name="Next delay review in 30 days" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>SHIFT</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>completionDueAt</operaton:string></operaton:field><operaton:field name="daysVar"><operaton:string>delayReviewDays</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="wk_mb" name="Record measurements in MB" operaton:candidateGroups="${aeSeat}" operaton:formKey="sangam:works/measurement"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="wk_checkMeasure_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>wk_checkMeasure</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="wk_checkMeasure" name="Check-measure" operaton:candidateGroups="${eeSeat}" operaton:formKey="sangam:works/check-measure" operaton:dueDate="${wk_checkMeasureDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>cmDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="wk_checkMeasure_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>wk_checkMeasure</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>eeSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="wk_checkMeasure_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="wk_checkMeasure_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>wk_checkMeasure</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>eeSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>cmDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="wk_checkMeasure_breachGw" name="Deemed?" default="works_project_f59"></exclusiveGateway>
+    <exclusiveGateway id="wk_checkMeasure_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="wk_cmGw" name="Accepted?" default="works_project_f66"></exclusiveGateway>
+    <serviceTask id="wk_cumulative" name="Cumulative against AA (GP-42)" operaton:class="org.sangam.packs.core.CumulativeThresholdDelegate"><extensionElements><operaton:field name="totalVar"><operaton:string>cumulativeAmount</operaton:string></operaton:field><operaton:field name="add"><operaton:expression>${measuredValue}</operaton:expression></operaton:field><operaton:field name="limit"><operaton:expression>${aaAmount}</operaton:expression></operaton:field><operaton:field name="tolerancePct"><operaton:expression>${aaTolerancePct}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="wk_thrGw" name="Over AA + tolerance?" default="works_project_f71"></exclusiveGateway>
+    <serviceTask id="wk_raaCfg" name="Revised AA" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>caseType=WORKS_RAA;routingDecisionKey=works-aa-authority;amount=@cumulativeAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="wk_raa" name="Revised administrative approval (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="wk_raaOk" name="New AA amount" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>aaAmount=@cumulativeAmount;thresholdCrossed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wk_billNo" name="Next RA bill number" operaton:expression="${execution.setVariable('raBillNo', raBillNo + 1)}"></serviceTask>
+    <serviceTask id="wk_net" name="Net of LD recoverable" operaton:expression="${execution.setVariable('raBillAmount', measuredValue - ldRecoverable)}"></serviceTask>
+    <callActivity id="wk_raBill" name="Running account bill (P1)" calledElement="sangam-p1-bill-payment"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}/RA-#{raBillNo}"/><operaton:in source="contractorId" target="payee"/><operaton:in source="contractorAccount" target="account"/><operaton:in source="contractorIfsc" target="ifsc"/><operaton:in source="raBillAmount" target="amount"/><operaton:in source="budgetHead" target="budgetHead"/><operaton:in source="aaRef" target="sanctionRef"/><operaton:in source="raBillNo" target="invoiceNo"/><operaton:in source="officeId" target="officeId"/><operaton:in source="initiatorSeat" target="actingSeat"/><operaton:in source="initiatorPerson" target="initiator"/><operaton:in sourceExpression="${'RA_BILL'}" target="caseType"/><operaton:out source="caseState" target="raBillState"/></extensionElements></callActivity>
+    <serviceTask id="wk_ldCleared" name="LD recovered" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>ldRecoverable=0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="wk_finalGw" name="Final bill?" default="works_project_f78"></exclusiveGateway>
+    <userTask id="wk_completion" name="Completion certificate" operaton:candidateGroups="${eeSeat}" operaton:formKey="sangam:works/completion"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <intermediateCatchEvent id="wk_dlp" name="Defect liability period"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${dlpPeriod}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="wk_dlpCheck" name="Defects during DLP?" operaton:candidateGroups="${eeSeat}" operaton:formKey="sangam:works/dlp"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>dlpDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="wk_dlpGw" name="" default="works_project_f83"></exclusiveGateway>
+    <serviceTask id="wk_releaseSecurity" name="Release performance security" operaton:class="org.sangam.packs.core.CorrelationDelegate"><extensionElements><operaton:field name="messageName"><operaton:string>sangam.contractCompleted</operaton:string></operaton:field><operaton:field name="optional"><operaton:string>true</operaton:string></operaton:field><operaton:field name="targetBusinessKey"><operaton:expression>${execution.processBusinessKey}/WO/performance-security-1</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wk_invokeSecurity" name="Invoke security for defects" operaton:class="org.sangam.packs.core.CorrelationDelegate"><extensionElements><operaton:field name="messageName"><operaton:string>sangam.contractDefault</operaton:string></operaton:field><operaton:field name="optional"><operaton:string>true</operaton:string></operaton:field><operaton:field name="targetBusinessKey"><operaton:expression>${execution.processBusinessKey}/WO/performance-security-1</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <callActivity id="wk_close" name="Completion and closure (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="wk_end" name="Work completed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="wk_checkMeasure_warn" name="SLA warning (75%)" attachedToRef="wk_checkMeasure" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${wk_checkMeasureWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="wk_checkMeasure_breach" name="SLA breached" attachedToRef="wk_checkMeasure" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${wk_checkMeasureDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="works_project_f1" sourceRef="wk_start" targetRef="wk_defaults"/>
+    <sequenceFlow id="works_project_f2" sourceRef="wk_defaults" targetRef="wk_estimate"/>
+    <sequenceFlow id="works_project_f3" sourceRef="wk_rj_reject" targetRef="wk_rj_endRejected"/>
+    <sequenceFlow id="works_project_f4" name="ACCEPTED" sourceRef="wk_scrGw" targetRef="wk_config"><conditionExpression xsi:type="tFormalExpression">${scrutinyOutcome == 'ACCEPTED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f5" name="otherwise" sourceRef="wk_scrGw" targetRef="wk_rj_reject"/>
+    <sequenceFlow id="works_project_f6" sourceRef="wk_estimate" targetRef="wk_scrGw"/>
+    <sequenceFlow id="works_project_f7" name="AA_FIRST" sourceRef="wk_orderGw" targetRef="wk_aaFirstCfg"><conditionExpression xsi:type="tFormalExpression">${worksSanctionOrder == 'AA_FIRST'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f8" name="otherwise" sourceRef="wk_orderGw" targetRef="wk_tsCfg"/>
+    <sequenceFlow id="works_project_f9" sourceRef="wk_config" targetRef="wk_orderGw"/>
+    <sequenceFlow id="works_project_f10" sourceRef="wk_tsCfg" targetRef="wk_ts"/>
+    <sequenceFlow id="works_project_f11" name="SANCTIONED" sourceRef="wk_tsGw" targetRef="wk_aaCfg"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f12" name="RETURNED" sourceRef="wk_tsGw" targetRef="wk_estimate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f13" name="otherwise" sourceRef="wk_tsGw" targetRef="wk_rj_reject"/>
+    <sequenceFlow id="works_project_f14" sourceRef="wk_ts" targetRef="wk_tsGw"/>
+    <sequenceFlow id="works_project_f15" sourceRef="wk_aaCfg" targetRef="wk_aa"/>
+    <sequenceFlow id="works_project_f16" name="SANCTIONED" sourceRef="wk_aaGw" targetRef="wk_aaRef"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f17" name="RETURNED" sourceRef="wk_aaGw" targetRef="wk_estimate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f18" name="otherwise" sourceRef="wk_aaGw" targetRef="wk_rj_reject"/>
+    <sequenceFlow id="works_project_f19" sourceRef="wk_aa" targetRef="wk_aaGw"/>
+    <sequenceFlow id="works_project_f20" sourceRef="wk_aaRef" targetRef="wk_encumber"/>
+    <sequenceFlow id="works_project_f21" sourceRef="wk_aaFirstCfg" targetRef="wk_aaFirst"/>
+    <sequenceFlow id="works_project_f22" name="SANCTIONED" sourceRef="wk_aaFirstGw" targetRef="wk_aaFirstRef"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f23" name="RETURNED" sourceRef="wk_aaFirstGw" targetRef="wk_estimate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f24" name="otherwise" sourceRef="wk_aaFirstGw" targetRef="wk_rj_reject"/>
+    <sequenceFlow id="works_project_f25" sourceRef="wk_aaFirst" targetRef="wk_aaFirstGw"/>
+    <sequenceFlow id="works_project_f26" sourceRef="wk_aaFirstRef" targetRef="wk_tsSecondCfg"/>
+    <sequenceFlow id="works_project_f27" sourceRef="wk_tsSecondCfg" targetRef="wk_tsSecond"/>
+    <sequenceFlow id="works_project_f28" name="SANCTIONED" sourceRef="wk_tsSecondGw" targetRef="wk_tsSecondAmount"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f29" name="RETURNED" sourceRef="wk_tsSecondGw" targetRef="wk_estimate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f30" name="otherwise" sourceRef="wk_tsSecondGw" targetRef="wk_rj_reject"/>
+    <sequenceFlow id="works_project_f31" sourceRef="wk_tsSecond" targetRef="wk_tsSecondGw"/>
+    <sequenceFlow id="works_project_f32" sourceRef="wk_tsSecondAmount" targetRef="wk_encumber"/>
+    <sequenceFlow id="works_project_f33" sourceRef="wk_encumber" targetRef="wk_aaAmount"/>
+    <sequenceFlow id="works_project_f34" sourceRef="wk_aaAmount" targetRef="wk_nit"/>
+    <sequenceFlow id="works_project_f35" sourceRef="wk_nit" targetRef="wk_tender"/>
+    <sequenceFlow id="works_project_f36" sourceRef="wk_contractDates" targetRef="wk_workOrder"/>
+    <sequenceFlow id="works_project_f37" name="AWARDED" sourceRef="wk_tenderGw" targetRef="wk_contractDates"><conditionExpression xsi:type="tFormalExpression">${tenderOutcome == 'AWARDED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f38" name="otherwise" sourceRef="wk_tenderGw" targetRef="wk_tenderFailed"/>
+    <sequenceFlow id="works_project_f39" sourceRef="wk_tender" targetRef="wk_tenderGw"/>
+    <sequenceFlow id="works_project_f40" sourceRef="wk_tenderFailed" targetRef="wk_tfGw"/>
+    <sequenceFlow id="works_project_f41" name="retender" sourceRef="wk_tfGw" targetRef="wk_nit"><conditionExpression xsi:type="tFormalExpression">${tfDecision == 'retender'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f42" sourceRef="wk_drop_kind" targetRef="wk_drop_call"/>
+    <sequenceFlow id="works_project_f43" sourceRef="wk_drop_call" targetRef="wk_drop_end"/>
+    <sequenceFlow id="works_project_f44" name="drop" sourceRef="wk_tfGw" targetRef="wk_drop_kind"/>
+    <sequenceFlow id="works_project_f45" name="ISSUED" sourceRef="wk_woGw" targetRef="wk_cycle"><conditionExpression xsi:type="tFormalExpression">${workOrderOutcome == 'ISSUED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f46" name="otherwise" sourceRef="wk_woGw" targetRef="wk_tenderFailed"/>
+    <sequenceFlow id="works_project_f47" sourceRef="wk_workOrder" targetRef="wk_woGw"/>
+    <sequenceFlow id="works_project_f48" sourceRef="wk_cycle" targetRef="wk_month"/>
+    <sequenceFlow id="works_project_f49" sourceRef="wk_cycle" targetRef="wk_completionDue"/>
+    <sequenceFlow id="works_project_f50" sourceRef="wk_completionDue" targetRef="wk_delay"/>
+    <sequenceFlow id="works_project_f51" sourceRef="wk_delay" targetRef="wk_requestLd"/>
+    <sequenceFlow id="works_project_f52" sourceRef="wk_requestLd" targetRef="wk_rearm"/>
+    <sequenceFlow id="works_project_f53" sourceRef="wk_rearm" targetRef="wk_cycle"/>
+    <sequenceFlow id="works_project_f54" sourceRef="wk_checkMeasure_warn" targetRef="wk_checkMeasure_warnNotify"/>
+    <sequenceFlow id="works_project_f55" sourceRef="wk_checkMeasure_warnNotify" targetRef="wk_checkMeasure_warnEnd"/>
+    <sequenceFlow id="works_project_f56" sourceRef="wk_checkMeasure_breach" targetRef="wk_checkMeasure_breachAct"/>
+    <sequenceFlow id="works_project_f57" sourceRef="wk_checkMeasure_breachAct" targetRef="wk_checkMeasure_breachGw"/>
+    <sequenceFlow id="works_project_f58" name="deemed" sourceRef="wk_checkMeasure_breachGw" targetRef="wk_checkMeasure_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f59" name="escalated" sourceRef="wk_checkMeasure_breachGw" targetRef="wk_checkMeasure_slaPlan"/>
+    <sequenceFlow id="works_project_f60" sourceRef="wk_checkMeasure_slaPlan" targetRef="wk_checkMeasure"/>
+    <sequenceFlow id="works_project_f61" sourceRef="wk_checkMeasure" targetRef="wk_checkMeasure_done"/>
+    <sequenceFlow id="works_project_f62" sourceRef="wk_month" targetRef="wk_mb"/>
+    <sequenceFlow id="works_project_f63" sourceRef="wk_mb" targetRef="wk_checkMeasure_slaPlan"/>
+    <sequenceFlow id="works_project_f64" sourceRef="wk_checkMeasure_done" targetRef="wk_cmGw"/>
+    <sequenceFlow id="works_project_f65" name="return to AE" sourceRef="wk_cmGw" targetRef="wk_mb"><conditionExpression xsi:type="tFormalExpression">${cmDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f66" name="accepted" sourceRef="wk_cmGw" targetRef="wk_cumulative"/>
+    <sequenceFlow id="works_project_f67" sourceRef="wk_cumulative" targetRef="wk_thrGw"/>
+    <sequenceFlow id="works_project_f68" name="GP-42" sourceRef="wk_thrGw" targetRef="wk_raaCfg"><conditionExpression xsi:type="tFormalExpression">${thresholdCrossed}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f69" sourceRef="wk_raaCfg" targetRef="wk_raa"/>
+    <sequenceFlow id="works_project_f70" sourceRef="wk_raa" targetRef="wk_raaOk"/>
+    <sequenceFlow id="works_project_f71" name="within" sourceRef="wk_thrGw" targetRef="wk_billNo"/>
+    <sequenceFlow id="works_project_f72" sourceRef="wk_raaOk" targetRef="wk_billNo"/>
+    <sequenceFlow id="works_project_f73" sourceRef="wk_billNo" targetRef="wk_net"/>
+    <sequenceFlow id="works_project_f74" sourceRef="wk_net" targetRef="wk_raBill"/>
+    <sequenceFlow id="works_project_f75" sourceRef="wk_raBill" targetRef="wk_ldCleared"/>
+    <sequenceFlow id="works_project_f76" sourceRef="wk_ldCleared" targetRef="wk_finalGw"/>
+    <sequenceFlow id="works_project_f77" name="next month" sourceRef="wk_finalGw" targetRef="wk_cycle"><conditionExpression xsi:type="tFormalExpression">${!finalBill}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f78" name="final" sourceRef="wk_finalGw" targetRef="wk_completion"/>
+    <sequenceFlow id="works_project_f79" sourceRef="wk_completion" targetRef="wk_dlp"/>
+    <sequenceFlow id="works_project_f80" sourceRef="wk_dlp" targetRef="wk_dlpCheck"/>
+    <sequenceFlow id="works_project_f81" sourceRef="wk_dlpCheck" targetRef="wk_dlpGw"/>
+    <sequenceFlow id="works_project_f82" name="no defects" sourceRef="wk_dlpGw" targetRef="wk_releaseSecurity"><conditionExpression xsi:type="tFormalExpression">${dlpDecision == 'satisfactory'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="works_project_f83" name="defects not rectified" sourceRef="wk_dlpGw" targetRef="wk_invokeSecurity"/>
+    <sequenceFlow id="works_project_f84" sourceRef="wk_releaseSecurity" targetRef="wk_close"/>
+    <sequenceFlow id="works_project_f85" sourceRef="wk_invokeSecurity" targetRef="wk_close"/>
+    <sequenceFlow id="works_project_f86" sourceRef="wk_close" targetRef="wk_end"/>
+    <subProcess id="wk_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="wk_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="wk_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="wk_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="wk_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="works_project_f87" sourceRef="wk_withdrawStart" targetRef="wk_withdrawKind"/>
+      <sequenceFlow id="works_project_f88" sourceRef="wk_withdrawKind" targetRef="wk_withdrawCall"/>
+      <sequenceFlow id="works_project_f89" sourceRef="wk_withdrawCall" targetRef="wk_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="wk_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="wk_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="wk_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="wk_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="wk_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="works_project_f90" sourceRef="wk_cancelStart" targetRef="wk_cancelKind"/>
+      <sequenceFlow id="works_project_f91" sourceRef="wk_cancelKind" targetRef="wk_cancelCall"/>
+      <sequenceFlow id="works_project_f92" sourceRef="wk_cancelCall" targetRef="wk_cancelEnd"/>
+    </subProcess>
+    <subProcess id="wk_amendmentReq" name="Request an amendment" triggeredByEvent="true">
+      <startEvent id="wk_amReqStart" name="Amendment requested" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_requestAmendment"/></startEvent>
+      <serviceTask id="wk_amLink" name="Amendment case (linked)" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-contract-amendment</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>amendment</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>contractValue,contractorId,amendmentType,amendmentAmount,extensionDays,delayDays,escalationIndex,justification,initiatorSeat,initiatorPerson,actingSeat,initiator</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="wk_amReqEnd" name="Requested"></endEvent>
+      <sequenceFlow id="works_project_f93" sourceRef="wk_amReqStart" targetRef="wk_amLink"/>
+      <sequenceFlow id="works_project_f94" sourceRef="wk_amLink" targetRef="wk_amReqEnd"/>
+    </subProcess>
+    <subProcess id="wk_amendmentApplied" name="Amendment approved: apply to the running contract" triggeredByEvent="true">
+      <startEvent id="wk_amApStart" name="Amendment approved" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_amendmentApproved"/></startEvent>
+      <exclusiveGateway id="wk_amTypeGw" name="Type?" default="works_project_f98"></exclusiveGateway>
+      <serviceTask id="wk_eot" name="Extend completion date (re-arms the timer)" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>SHIFT</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>completionDueAt</operaton:string></operaton:field><operaton:field name="daysVar"><operaton:string>extensionDays</operaton:string></operaton:field></extensionElements></serviceTask>
+      <serviceTask id="wk_ldApply" name="LD recoverable from next bill" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>ldRecoverable=@ldAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+      <serviceTask id="wk_variation" name="Add to cumulative (variation / escalation)" operaton:class="org.sangam.packs.core.CumulativeThresholdDelegate"><extensionElements><operaton:field name="totalVar"><operaton:string>cumulativeAmount</operaton:string></operaton:field><operaton:field name="add"><operaton:expression>${amendmentAmount + escalationAmount}</operaton:expression></operaton:field><operaton:field name="limit"><operaton:expression>${aaAmount}</operaton:expression></operaton:field><operaton:field name="tolerancePct"><operaton:expression>${aaTolerancePct}</operaton:expression></operaton:field></extensionElements></serviceTask>
+      <endEvent id="wk_amApEnd" name="Applied"></endEvent>
+      <sequenceFlow id="works_project_f95" sourceRef="wk_amApStart" targetRef="wk_amTypeGw"/>
+      <sequenceFlow id="works_project_f96" name="EoT" sourceRef="wk_amTypeGw" targetRef="wk_eot"><conditionExpression xsi:type="tFormalExpression">${amendmentType == 'EOT'}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="works_project_f97" name="LD" sourceRef="wk_amTypeGw" targetRef="wk_ldApply"><conditionExpression xsi:type="tFormalExpression">${amendmentType == 'LD'}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="works_project_f98" name="variation / extra item / escalation" sourceRef="wk_amTypeGw" targetRef="wk_variation"/>
+      <sequenceFlow id="works_project_f99" sourceRef="wk_eot" targetRef="wk_amApEnd"/>
+      <sequenceFlow id="works_project_f100" sourceRef="wk_ldApply" targetRef="wk_amApEnd"/>
+      <sequenceFlow id="works_project_f101" sourceRef="wk_variation" targetRef="wk_amApEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="works_project_diagram">
+    <bpmndi:BPMNPlane id="works_project_plane" bpmnElement="sangam-works-project">
+      <bpmndi:BPMNShape id="wk_start_di" bpmnElement="wk_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_defaults_di" bpmnElement="wk_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_estimate_di" bpmnElement="wk_estimate"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_rj_reject_di" bpmnElement="wk_rj_reject"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_rj_endRejected_di" bpmnElement="wk_rj_endRejected"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_config_di" bpmnElement="wk_config"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_scrGw_di" bpmnElement="wk_scrGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsCfg_di" bpmnElement="wk_tsCfg"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaFirstCfg_di" bpmnElement="wk_aaFirstCfg"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_orderGw_di" bpmnElement="wk_orderGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_encumber_di" bpmnElement="wk_encumber"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_ts_di" bpmnElement="wk_ts"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaCfg_di" bpmnElement="wk_aaCfg"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsGw_di" bpmnElement="wk_tsGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aa_di" bpmnElement="wk_aa"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaRef_di" bpmnElement="wk_aaRef"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaGw_di" bpmnElement="wk_aaGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaFirst_di" bpmnElement="wk_aaFirst"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaFirstRef_di" bpmnElement="wk_aaFirstRef"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaFirstGw_di" bpmnElement="wk_aaFirstGw"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecondCfg_di" bpmnElement="wk_tsSecondCfg"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecond_di" bpmnElement="wk_tsSecond"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecondAmount_di" bpmnElement="wk_tsSecondAmount"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tsSecondGw_di" bpmnElement="wk_tsSecondGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_aaAmount_di" bpmnElement="wk_aaAmount"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_nit_di" bpmnElement="wk_nit"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tender_di" bpmnElement="wk_tender"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_workOrder_di" bpmnElement="wk_workOrder"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tenderFailed_di" bpmnElement="wk_tenderFailed"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_contractDates_di" bpmnElement="wk_contractDates"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tenderGw_di" bpmnElement="wk_tenderGw"><dc:Bounds x="3015" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_tfGw_di" bpmnElement="wk_tfGw"><dc:Bounds x="3840" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_drop_kind_di" bpmnElement="wk_drop_kind"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_drop_call_di" bpmnElement="wk_drop_call"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_drop_end_di" bpmnElement="wk_drop_end"><dc:Bounds x="4342" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cycle_di" bpmnElement="wk_cycle"><dc:Bounds x="3675" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_woGw_di" bpmnElement="wk_woGw"><dc:Bounds x="3510" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_month_di" bpmnElement="wk_month"><dc:Bounds x="3847" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_completionDue_di" bpmnElement="wk_completionDue"><dc:Bounds x="3847" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_delay_di" bpmnElement="wk_delay"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_requestLd_di" bpmnElement="wk_requestLd"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_rearm_di" bpmnElement="wk_rearm"><dc:Bounds x="4310" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_mb_di" bpmnElement="wk_mb"><dc:Bounds x="3980" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_slaPlan_di" bpmnElement="wk_checkMeasure_slaPlan"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_di" bpmnElement="wk_checkMeasure"><dc:Bounds x="4310" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_warnNotify_di" bpmnElement="wk_checkMeasure_warnNotify"><dc:Bounds x="4475" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_warnEnd_di" bpmnElement="wk_checkMeasure_warnEnd"><dc:Bounds x="4672" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_breachAct_di" bpmnElement="wk_checkMeasure_breachAct"><dc:Bounds x="4475" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_breachGw_di" bpmnElement="wk_checkMeasure_breachGw"><dc:Bounds x="4665" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_done_di" bpmnElement="wk_checkMeasure_done"><dc:Bounds x="4830" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cmGw_di" bpmnElement="wk_cmGw"><dc:Bounds x="4995" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cumulative_di" bpmnElement="wk_cumulative"><dc:Bounds x="5135" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_thrGw_di" bpmnElement="wk_thrGw"><dc:Bounds x="5325" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_raaCfg_di" bpmnElement="wk_raaCfg"><dc:Bounds x="5465" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_raa_di" bpmnElement="wk_raa"><dc:Bounds x="5630" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_raaOk_di" bpmnElement="wk_raaOk"><dc:Bounds x="5795" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_billNo_di" bpmnElement="wk_billNo"><dc:Bounds x="5960" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_net_di" bpmnElement="wk_net"><dc:Bounds x="6125" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_raBill_di" bpmnElement="wk_raBill"><dc:Bounds x="6290" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_ldCleared_di" bpmnElement="wk_ldCleared"><dc:Bounds x="6455" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_finalGw_di" bpmnElement="wk_finalGw"><dc:Bounds x="6645" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_completion_di" bpmnElement="wk_completion"><dc:Bounds x="6785" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_dlp_di" bpmnElement="wk_dlp"><dc:Bounds x="6982" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_dlpCheck_di" bpmnElement="wk_dlpCheck"><dc:Bounds x="7115" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_dlpGw_di" bpmnElement="wk_dlpGw"><dc:Bounds x="7305" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_releaseSecurity_di" bpmnElement="wk_releaseSecurity"><dc:Bounds x="7445" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_invokeSecurity_di" bpmnElement="wk_invokeSecurity"><dc:Bounds x="7445" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_close_di" bpmnElement="wk_close"><dc:Bounds x="7610" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_end_di" bpmnElement="wk_end"><dc:Bounds x="7807" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_warn_di" bpmnElement="wk_checkMeasure_warn"><dc:Bounds x="4318" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_checkMeasure_breach_di" bpmnElement="wk_checkMeasure_breach"><dc:Bounds x="4348" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_withdraw_di" bpmnElement="wk_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_withdrawStart_di" bpmnElement="wk_withdrawStart"><dc:Bounds x="92" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_withdrawKind_di" bpmnElement="wk_withdrawKind"><dc:Bounds x="225" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_withdrawCall_di" bpmnElement="wk_withdrawCall"><dc:Bounds x="390" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_withdrawEnd_di" bpmnElement="wk_withdrawEnd"><dc:Bounds x="587" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cancel_di" bpmnElement="wk_cancel" isExpanded="true"><dc:Bounds x="30" y="850" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cancelStart_di" bpmnElement="wk_cancelStart"><dc:Bounds x="92" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cancelKind_di" bpmnElement="wk_cancelKind"><dc:Bounds x="225" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cancelCall_di" bpmnElement="wk_cancelCall"><dc:Bounds x="390" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_cancelEnd_di" bpmnElement="wk_cancelEnd"><dc:Bounds x="587" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_amendmentReq_di" bpmnElement="wk_amendmentReq" isExpanded="true"><dc:Bounds x="30" y="1040" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_amReqStart_di" bpmnElement="wk_amReqStart"><dc:Bounds x="92" y="1102" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_amLink_di" bpmnElement="wk_amLink"><dc:Bounds x="225" y="1080" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_amReqEnd_di" bpmnElement="wk_amReqEnd"><dc:Bounds x="422" y="1102" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_amendmentApplied_di" bpmnElement="wk_amendmentApplied" isExpanded="true"><dc:Bounds x="30" y="1230" width="623" height="400"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_amApStart_di" bpmnElement="wk_amApStart"><dc:Bounds x="92" y="1292" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_amTypeGw_di" bpmnElement="wk_amTypeGw"><dc:Bounds x="250" y="1285" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_eot_di" bpmnElement="wk_eot"><dc:Bounds x="390" y="1520" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_ldApply_di" bpmnElement="wk_ldApply"><dc:Bounds x="390" y="1395" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_variation_di" bpmnElement="wk_variation"><dc:Bounds x="390" y="1270" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wk_amApEnd_di" bpmnElement="wk_amApEnd"><dc:Bounds x="587" y="1292" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="works_project_f1_di" bpmnElement="works_project_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f2_di" bpmnElement="works_project_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f3_di" bpmnElement="works_project_f3"><di:waypoint x="2265" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f4_di" bpmnElement="works_project_f4"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f5_di" bpmnElement="works_project_f5"><di:waypoint x="590" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f6_di" bpmnElement="works_project_f6"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f7_di" bpmnElement="works_project_f7"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f8_di" bpmnElement="works_project_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f9_di" bpmnElement="works_project_f9"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f10_di" bpmnElement="works_project_f10"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f11_di" bpmnElement="works_project_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f12_di" bpmnElement="works_project_f12"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="149"/><di:waypoint x="400" y="149"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f13_di" bpmnElement="works_project_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f14_di" bpmnElement="works_project_f14"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f15_di" bpmnElement="works_project_f15"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f16_di" bpmnElement="works_project_f16"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f17_di" bpmnElement="works_project_f17"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="128"/><di:waypoint x="400" y="128"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f18_di" bpmnElement="works_project_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f19_di" bpmnElement="works_project_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f20_di" bpmnElement="works_project_f20"><di:waypoint x="2100" y="70"/><di:waypoint x="2215" y="70"/><di:waypoint x="2215" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f21_di" bpmnElement="works_project_f21"><di:waypoint x="1110" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f22_di" bpmnElement="works_project_f22"><di:waypoint x="1415" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f23_di" bpmnElement="works_project_f23"><di:waypoint x="1390" y="220"/><di:waypoint x="1390" y="252"/><di:waypoint x="400" y="252"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f24_di" bpmnElement="works_project_f24"><di:waypoint x="1415" y="195"/><di:waypoint x="1790" y="195"/><di:waypoint x="1790" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f25_di" bpmnElement="works_project_f25"><di:waypoint x="1275" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f26_di" bpmnElement="works_project_f26"><di:waypoint x="1605" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f27_di" bpmnElement="works_project_f27"><di:waypoint x="1770" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f28_di" bpmnElement="works_project_f28"><di:waypoint x="2075" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f29_di" bpmnElement="works_project_f29"><di:waypoint x="2050" y="220"/><di:waypoint x="2050" y="238"/><di:waypoint x="400" y="238"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f30_di" bpmnElement="works_project_f30"><di:waypoint x="2075" y="195"/><di:waypoint x="2120" y="195"/><di:waypoint x="2120" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f31_di" bpmnElement="works_project_f31"><di:waypoint x="1935" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f32_di" bpmnElement="works_project_f32"><di:waypoint x="2265" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f33_di" bpmnElement="works_project_f33"><di:waypoint x="2430" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f34_di" bpmnElement="works_project_f34"><di:waypoint x="2595" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f35_di" bpmnElement="works_project_f35"><di:waypoint x="2760" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f36_di" bpmnElement="works_project_f36"><di:waypoint x="3255" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f37_di" bpmnElement="works_project_f37"><di:waypoint x="3065" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f38_di" bpmnElement="works_project_f38"><di:waypoint x="3065" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f39_di" bpmnElement="works_project_f39"><di:waypoint x="2925" y="195"/><di:waypoint x="3015" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f40_di" bpmnElement="works_project_f40"><di:waypoint x="3750" y="195"/><di:waypoint x="3840" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f41_di" bpmnElement="works_project_f41"><di:waypoint x="3865" y="220"/><di:waypoint x="3865" y="253"/><di:waypoint x="2710" y="253"/><di:waypoint x="2710" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f42_di" bpmnElement="works_project_f42"><di:waypoint x="4080" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f43_di" bpmnElement="works_project_f43"><di:waypoint x="4245" y="195"/><di:waypoint x="4342" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f44_di" bpmnElement="works_project_f44"><di:waypoint x="3890" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f45_di" bpmnElement="works_project_f45"><di:waypoint x="3560" y="195"/><di:waypoint x="3617" y="195"/><di:waypoint x="3617" y="320"/><di:waypoint x="3675" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f46_di" bpmnElement="works_project_f46"><di:waypoint x="3560" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f47_di" bpmnElement="works_project_f47"><di:waypoint x="3420" y="195"/><di:waypoint x="3510" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f48_di" bpmnElement="works_project_f48"><di:waypoint x="3725" y="320"/><di:waypoint x="3786" y="320"/><di:waypoint x="3786" y="445"/><di:waypoint x="3847" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f49_di" bpmnElement="works_project_f49"><di:waypoint x="3725" y="320"/><di:waypoint x="3847" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f50_di" bpmnElement="works_project_f50"><di:waypoint x="3883" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f51_di" bpmnElement="works_project_f51"><di:waypoint x="4080" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f52_di" bpmnElement="works_project_f52"><di:waypoint x="4245" y="320"/><di:waypoint x="4310" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f53_di" bpmnElement="works_project_f53"><di:waypoint x="4360" y="360"/><di:waypoint x="4360" y="378"/><di:waypoint x="3700" y="378"/><di:waypoint x="3700" y="345"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f54_di" bpmnElement="works_project_f54"><di:waypoint x="4336" y="503"/><di:waypoint x="4336" y="570"/><di:waypoint x="4475" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f55_di" bpmnElement="works_project_f55"><di:waypoint x="4575" y="570"/><di:waypoint x="4672" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f56_di" bpmnElement="works_project_f56"><di:waypoint x="4366" y="503"/><di:waypoint x="4366" y="445"/><di:waypoint x="4475" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f57_di" bpmnElement="works_project_f57"><di:waypoint x="4575" y="445"/><di:waypoint x="4665" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f58_di" bpmnElement="works_project_f58"><di:waypoint x="4715" y="445"/><di:waypoint x="4830" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f59_di" bpmnElement="works_project_f59"><di:waypoint x="4690" y="470"/><di:waypoint x="4690" y="517"/><di:waypoint x="4195" y="517"/><di:waypoint x="4195" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f60_di" bpmnElement="works_project_f60"><di:waypoint x="4245" y="445"/><di:waypoint x="4310" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f61_di" bpmnElement="works_project_f61"><di:waypoint x="4410" y="445"/><di:waypoint x="4830" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f62_di" bpmnElement="works_project_f62"><di:waypoint x="3883" y="445"/><di:waypoint x="3980" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f63_di" bpmnElement="works_project_f63"><di:waypoint x="4080" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f64_di" bpmnElement="works_project_f64"><di:waypoint x="4880" y="445"/><di:waypoint x="4995" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f65_di" bpmnElement="works_project_f65"><di:waypoint x="5020" y="470"/><di:waypoint x="5020" y="503"/><di:waypoint x="4030" y="503"/><di:waypoint x="4030" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f66_di" bpmnElement="works_project_f66"><di:waypoint x="5045" y="445"/><di:waypoint x="5135" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f67_di" bpmnElement="works_project_f67"><di:waypoint x="5235" y="445"/><di:waypoint x="5325" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f68_di" bpmnElement="works_project_f68"><di:waypoint x="5375" y="445"/><di:waypoint x="5465" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f69_di" bpmnElement="works_project_f69"><di:waypoint x="5565" y="445"/><di:waypoint x="5630" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f70_di" bpmnElement="works_project_f70"><di:waypoint x="5730" y="445"/><di:waypoint x="5795" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f71_di" bpmnElement="works_project_f71"><di:waypoint x="5375" y="445"/><di:waypoint x="5960" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f72_di" bpmnElement="works_project_f72"><di:waypoint x="5895" y="445"/><di:waypoint x="5960" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f73_di" bpmnElement="works_project_f73"><di:waypoint x="6060" y="445"/><di:waypoint x="6125" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f74_di" bpmnElement="works_project_f74"><di:waypoint x="6225" y="445"/><di:waypoint x="6290" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f75_di" bpmnElement="works_project_f75"><di:waypoint x="6390" y="445"/><di:waypoint x="6455" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f76_di" bpmnElement="works_project_f76"><di:waypoint x="6555" y="445"/><di:waypoint x="6645" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f77_di" bpmnElement="works_project_f77"><di:waypoint x="6670" y="470"/><di:waypoint x="6670" y="488"/><di:waypoint x="3700" y="488"/><di:waypoint x="3700" y="345"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f78_di" bpmnElement="works_project_f78"><di:waypoint x="6695" y="445"/><di:waypoint x="6785" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f79_di" bpmnElement="works_project_f79"><di:waypoint x="6885" y="445"/><di:waypoint x="6982" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f80_di" bpmnElement="works_project_f80"><di:waypoint x="7018" y="445"/><di:waypoint x="7115" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f81_di" bpmnElement="works_project_f81"><di:waypoint x="7215" y="445"/><di:waypoint x="7305" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f82_di" bpmnElement="works_project_f82"><di:waypoint x="7355" y="445"/><di:waypoint x="7400" y="445"/><di:waypoint x="7400" y="570"/><di:waypoint x="7445" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f83_di" bpmnElement="works_project_f83"><di:waypoint x="7355" y="445"/><di:waypoint x="7445" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f84_di" bpmnElement="works_project_f84"><di:waypoint x="7545" y="570"/><di:waypoint x="7577" y="570"/><di:waypoint x="7577" y="445"/><di:waypoint x="7610" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f85_di" bpmnElement="works_project_f85"><di:waypoint x="7545" y="445"/><di:waypoint x="7610" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f86_di" bpmnElement="works_project_f86"><di:waypoint x="7710" y="445"/><di:waypoint x="7807" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f87_di" bpmnElement="works_project_f87"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f88_di" bpmnElement="works_project_f88"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f89_di" bpmnElement="works_project_f89"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f90_di" bpmnElement="works_project_f90"><di:waypoint x="128" y="930"/><di:waypoint x="225" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f91_di" bpmnElement="works_project_f91"><di:waypoint x="325" y="930"/><di:waypoint x="390" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f92_di" bpmnElement="works_project_f92"><di:waypoint x="490" y="930"/><di:waypoint x="587" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f93_di" bpmnElement="works_project_f93"><di:waypoint x="128" y="1120"/><di:waypoint x="225" y="1120"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f94_di" bpmnElement="works_project_f94"><di:waypoint x="325" y="1120"/><di:waypoint x="422" y="1120"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f95_di" bpmnElement="works_project_f95"><di:waypoint x="128" y="1310"/><di:waypoint x="250" y="1310"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f96_di" bpmnElement="works_project_f96"><di:waypoint x="300" y="1310"/><di:waypoint x="345" y="1310"/><di:waypoint x="345" y="1560"/><di:waypoint x="390" y="1560"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f97_di" bpmnElement="works_project_f97"><di:waypoint x="300" y="1310"/><di:waypoint x="345" y="1310"/><di:waypoint x="345" y="1435"/><di:waypoint x="390" y="1435"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f98_di" bpmnElement="works_project_f98"><di:waypoint x="300" y="1310"/><di:waypoint x="390" y="1310"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f99_di" bpmnElement="works_project_f99"><di:waypoint x="490" y="1560"/><di:waypoint x="538" y="1560"/><di:waypoint x="538" y="1310"/><di:waypoint x="587" y="1310"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f100_di" bpmnElement="works_project_f100"><di:waypoint x="490" y="1435"/><di:waypoint x="538" y="1435"/><di:waypoint x="538" y="1310"/><di:waypoint x="587" y="1310"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="works_project_f101_di" bpmnElement="works_project_f101"><di:waypoint x="490" y="1310"/><di:waypoint x="587" y="1310"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

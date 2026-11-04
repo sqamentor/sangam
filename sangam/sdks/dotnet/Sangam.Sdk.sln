@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A7A732C5-144C-4E63-A62B-BA4C4CBE3609}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sangam.Sdk", "src\Sangam.Sdk\Sangam.Sdk.csproj", "{F82011A7-1DBE-4C88-A369-27358F77E803}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{BD811BE5-790F-42AF-8237-2988D93BFE0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BillPaymentWorker", "examples\BillPaymentWorker\BillPaymentWorker.csproj", "{B71E6C01-876F-48CB-B83E-588CAF8C7FEF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F82011A7-1DBE-4C88-A369-27358F77E803}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F82011A7-1DBE-4C88-A369-27358F77E803}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F82011A7-1DBE-4C88-A369-27358F77E803}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F82011A7-1DBE-4C88-A369-27358F77E803}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B71E6C01-876F-48CB-B83E-588CAF8C7FEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B71E6C01-876F-48CB-B83E-588CAF8C7FEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B71E6C01-876F-48CB-B83E-588CAF8C7FEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B71E6C01-876F-48CB-B83E-588CAF8C7FEF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F82011A7-1DBE-4C88-A369-27358F77E803} = {A7A732C5-144C-4E63-A62B-BA4C4CBE3609}
+		{B71E6C01-876F-48CB-B83E-588CAF8C7FEF} = {BD811BE5-790F-42AF-8237-2988D93BFE0B}
+	EndGlobalSection
+EndGlobal

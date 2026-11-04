@@ -1,0 +1,63 @@
+{
+  "key": "sec-hr-posh-complaint/complaint",
+  "version": "1.0.0",
+  "pack": "sec.hr.posh-complaint",
+  "title": {
+    "en": "Complaint to the Internal Committee",
+    "hi": "आंतरिक समिति को शिकायत"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "complainantRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Complainant (confidential reference)",
+        "hi": "शिकायतकर्ता (गोपनीय संदर्भ)"
+      }
+    },
+    {
+      "id": "respondentId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Respondent",
+        "hi": "प्रतिवादी"
+      }
+    },
+    {
+      "id": "incidentDate",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Date of incident",
+        "hi": "घटना की तिथि"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    },
+    {
+      "id": "conciliationRequested",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Conciliation requested by the complainant",
+        "hi": "शिकायतकर्ता द्वारा सुलह का अनुरोध"
+      }
+    }
+  ]
+}

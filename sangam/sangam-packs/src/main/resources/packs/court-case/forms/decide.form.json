@@ -1,0 +1,56 @@
+{
+  "key": "court-case/decide",
+  "version": "1.0.0",
+  "pack": "gov.court-case",
+  "title": {
+    "en": "Comply or appeal",
+    "hi": "अनुपालन या अपील"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "appealRecommended",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Appeal recommended",
+        "hi": "अपील की अनुशंसा"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "judgmentDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "comply",
+        "label": {
+          "en": "Comply with judgment",
+          "hi": "निर्णय का अनुपालन करें"
+        }
+      },
+      {
+        "value": "appeal",
+        "label": {
+          "en": "File appeal",
+          "hi": "अपील दायर करें"
+        }
+      }
+    ]
+  }
+}

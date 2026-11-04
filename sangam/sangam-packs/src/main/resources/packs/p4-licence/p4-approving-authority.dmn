@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_p4_approving_authority" name="P4 approving authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="p4-approving-authority" name="P4 approving authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="p4-approving-authority_t" hitPolicy="FIRST">
+      <input id="p4-approving-authority_i0" label="Licence type"><inputExpression id="p4-approving-authority_ie0" typeRef="string"><text>licenceType</text></inputExpression></input>
+      <input id="p4-approving-authority_i1" label="Amount"><inputExpression id="p4-approving-authority_ie1" typeRef="double"><text>amount</text></inputExpression></input>
+      <output id="p4-approving-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="p4-approving-authority_r0"><description>Deputy Commissioner</description>
+        <inputEntry id="p4-approving-authority_r0_i0"><text>"FACTORY"</text></inputEntry>
+        <inputEntry id="p4-approving-authority_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="p4-approving-authority_r0_o0"><text>"DC"</text></outputEntry>
+      </rule>
+      <rule id="p4-approving-authority_r1"><description>Licensing officer</description>
+        <inputEntry id="p4-approving-authority_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="p4-approving-authority_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="p4-approving-authority_r1_o0"><text>"LO"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

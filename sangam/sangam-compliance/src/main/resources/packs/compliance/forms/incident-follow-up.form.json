@@ -1,0 +1,1 @@
+{"key":"compliance/incident-follow-up","title":{"en":"Incident follow-up"},"fields":[{"key":"followUpNeeded","type":"boolean","label":{"en":"Follow-up needed"}},{"key":"followUpDetails","type":"json","label":{"en":"Follow-up details"}}]}

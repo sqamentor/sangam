@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_contract_ld" name="Liquidated damages (synthetic GCC clause)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="contract-ld" name="Liquidated damages (synthetic GCC clause)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="contract-ld_t" hitPolicy="FIRST">
+      <input id="contract-ld_i0" label="Delay (days)"><inputExpression id="contract-ld_ie0" typeRef="integer"><text>delayDays</text></inputExpression></input>
+      <input id="contract-ld_i1" label="Contract value"><inputExpression id="contract-ld_ie1" typeRef="double"><text>contractValue</text></inputExpression></input>
+      <output id="contract-ld_o0" label="LD amount" name="ldAmount" typeRef="double"/>
+      <rule id="contract-ld_r0"><description>no delay</description>
+        <inputEntry id="contract-ld_r0_i0"><text>&lt;= 0</text></inputEntry>
+        <inputEntry id="contract-ld_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="contract-ld_r0_o0"><text>0</text></outputEntry>
+      </rule>
+      <rule id="contract-ld_r1"><description>0.05% per day, capped at 10%</description>
+        <inputEntry id="contract-ld_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="contract-ld_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="contract-ld_r1_o0"><text>min(delayDays * 0.0005, 0.1) * contractValue</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

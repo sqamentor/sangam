@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam national umbrella. Secrets come from existing Kubernetes Secrets only.
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+image:
+  registry: ghcr.io
+  tag: ""                # defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+controlPlane:
+  enabled: true
+  repository: sqamentor/sangam-control-plane
+  replicaCount: 2        # active-active API; the move engine's job executor uses the shared DB (SKIP LOCKED)
+  port: 8090
+  managementPort: 8091
+  database:
+    jdbcUrl: ""          # its own database, never a cell database
+    existingSecret: ""   # keys: username, password
+  # Secret with key `tokens`: "<token>:<ROLE>,..." (ADMIN, CELL, GATEWAY, ROLLUP) and key `cellAdminToken`
+  tokensSecret: ""
+  resources:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits: { memory: 2Gi }
+
+gateway:
+  enabled: true
+  repository: sqamentor/sangam-gateway
+  replicaCount: 4        # stateless; ~1M concurrent users need horizontal scaling, see SCALE section 4.1
+  port: 8000
+  managementPort: 8001
+  hostSuffix: ""         # e.g. .sangam.gov.in -> <tenant>.sangam.gov.in
+  tenantClaim: tenant
+  maxInFlightPerTenant: 400
+  # Secret with key `controlPlaneToken` (role GATEWAY)
+  tokenSecret: ""
+  autoscaling:
+    enabled: true
+    minReplicas: 4
+    maxReplicas: 40
+    targetCPUUtilizationPercentage: 60
+  resources:
+    requests: { cpu: "1", memory: 1Gi }
+    limits: { memory: 2Gi }
+
+rollup:
+  enabled: true
+  repository: sqamentor/sangam-rollup
+  replicaCount: 2
+  port: 8095
+  managementPort: 8096
+  shards: 16
+  database:
+    jdbcUrl: ""
+    existingSecret: ""
+  # Secret with key `tokens`: "<token>:CELL,<token>:DASHBOARD"
+  tokensSecret: ""
+  resources:
+    requests: { cpu: "1", memory: 1Gi }
+    limits: { memory: 2Gi }
+
+# ---- cells: values passed to the `sangam` chart per cell. Add server.env SANGAM_CELL_ID / SANGAM_CELL_RESIDENCY and
+# SANGAM_CONTROL_PLANE_URL (consumed once IR-1..IR-3 are wired, sangam-cell README).
+cell-a:
+  enabled: true
+  database:
+    type: postgres
+    host: ""
+    existingSecret: ""
+  server:
+    replicaCount: 4
+    env:
+      - { name: SANGAM_CELL_ID, value: in-ra-01 }
+      - { name: SANGAM_CELL_RESIDENCY, value: IN-RA }
+      - { name: SANGAM_CONTROL_PLANE_URL, value: "http://sangam-national-control-plane:8090" }
+      - { name: SANGAM_ROLLUP_INGEST_URL, value: "http://sangam-national-rollup:8095/api/v1/ingest" }
+      - { name: SANGAM_OUTBOX_DESTINATIONS, value: "rollup:national" }
+cell-b:
+  enabled: true
+  database:
+    type: postgres
+    host: ""
+    existingSecret: ""
+  server:
+    replicaCount: 4
+    env:
+      - { name: SANGAM_CELL_ID, value: in-rb-01 }
+      - { name: SANGAM_CELL_RESIDENCY, value: IN-RB }
+      - { name: SANGAM_CONTROL_PLANE_URL, value: "http://sangam-national-control-plane:8090" }
+      - { name: SANGAM_ROLLUP_INGEST_URL, value: "http://sangam-national-rollup:8095/api/v1/ingest" }
+      - { name: SANGAM_OUTBOX_DESTINATIONS, value: "rollup:national" }

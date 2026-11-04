@@ -1,0 +1,152 @@
+{
+  "offices": [
+    {
+      "id": "PMS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "LINE-MANAGER",
+      "role": "MANAGER",
+      "office": "PMS",
+      "reportsTo": "REVIEWER",
+      "name": {
+        "en": "Line manager",
+        "hi": "प्रबंधक"
+      }
+    },
+    {
+      "id": "REVIEWER",
+      "role": "REVIEWER",
+      "office": "PMS",
+      "reportsTo": "HR-BP",
+      "name": {
+        "en": "Reviewer",
+        "hi": "समीक्षक"
+      }
+    },
+    {
+      "id": "HR-BP",
+      "role": "HRBP",
+      "office": "PMS",
+      "reportsTo": null,
+      "name": {
+        "en": "HR business partner",
+        "hi": "मानव संसाधन व्यवसाय साझेदार"
+      }
+    },
+    {
+      "id": "CALIB-1",
+      "role": "COMMITTEE",
+      "office": "PMS",
+      "reportsTo": null,
+      "name": {
+        "en": "Calibration member 1",
+        "hi": "अंशांकन सदस्य 1"
+      }
+    },
+    {
+      "id": "CALIB-2",
+      "role": "COMMITTEE",
+      "office": "PMS",
+      "reportsTo": null,
+      "name": {
+        "en": "Calibration member 2",
+        "hi": "अंशांकन सदस्य 2"
+      }
+    },
+    {
+      "id": "CALIB-3",
+      "role": "COMMITTEE",
+      "office": "PMS",
+      "reportsTo": null,
+      "name": {
+        "en": "Calibration member 3",
+        "hi": "अंशांकन सदस्य 3"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "LINE-MANAGER",
+      "person": "hap.line-manager",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "REVIEWER",
+      "person": "hap.reviewer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HR-BP",
+      "person": "hap.hr-bp",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CALIB-1",
+      "person": "hap.calib-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CALIB-2",
+      "person": "hap.calib-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CALIB-3",
+      "person": "hap.calib-3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "MANAGER",
+      "name": {
+        "en": "Line manager",
+        "hi": "प्रबंधक"
+      }
+    },
+    {
+      "code": "REVIEWER",
+      "name": {
+        "en": "Reviewer",
+        "hi": "समीक्षक"
+      }
+    },
+    {
+      "code": "HRBP",
+      "name": {
+        "en": "HR business partner",
+        "hi": "मानव संसाधन व्यवसाय साझेदार"
+      }
+    },
+    {
+      "code": "COMMITTEE",
+      "name": {
+        "en": "Calibration member 1",
+        "hi": "अंशांकन सदस्य 1"
+      }
+    },
+    {
+      "code": "COMMITTEE",
+      "name": {
+        "en": "Calibration member 2",
+        "hi": "अंशांकन सदस्य 2"
+      }
+    },
+    {
+      "code": "COMMITTEE",
+      "name": {
+        "en": "Calibration member 3",
+        "hi": "अंशांकन सदस्य 3"
+      }
+    }
+  ]
+}

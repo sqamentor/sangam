@@ -1,0 +1,27 @@
+{
+  "key": "sec-health-abdm-consent/btg",
+  "version": "1.0.0",
+  "pack": "sec.health.abdm-consent",
+  "title": {
+    "en": "Emergency access justification",
+    "hi": "आपातकालीन पहुँच का औचित्य"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "justification",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Justification",
+        "hi": "औचित्य"
+      }
+    }
+  ]
+}

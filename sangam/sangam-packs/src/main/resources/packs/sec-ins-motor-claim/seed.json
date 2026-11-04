@@ -1,0 +1,175 @@
+{
+  "offices": [
+    {
+      "id": "CLAIMS-MOTOR",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CLAIMS-HANDLER",
+      "role": "HANDLER",
+      "office": "CLAIMS-MOTOR",
+      "reportsTo": "CLAIMS-MGR",
+      "name": {
+        "en": "Claims handler",
+        "hi": "दावा संचालक"
+      }
+    },
+    {
+      "id": "SIU",
+      "role": "SIU",
+      "office": "CLAIMS-MOTOR",
+      "reportsTo": "CLAIMS-HEAD",
+      "name": {
+        "en": "Special investigation unit",
+        "hi": "विशेष जाँच इकाई"
+      }
+    },
+    {
+      "id": "TP-LEGAL",
+      "role": "LEGAL",
+      "office": "CLAIMS-MOTOR",
+      "reportsTo": "CLAIMS-HEAD",
+      "name": {
+        "en": "Third-party legal desk",
+        "hi": "तृतीय पक्ष विधि डेस्क"
+      }
+    },
+    {
+      "id": "CLAIMS-MGR",
+      "role": "CLAIMSMGR",
+      "office": "CLAIMS-MOTOR",
+      "reportsTo": "ZONAL-CLAIMS",
+      "name": {
+        "en": "Claims manager",
+        "hi": "दावा प्रबंधक"
+      }
+    },
+    {
+      "id": "ZONAL-CLAIMS",
+      "role": "ZONALCLAIMS",
+      "office": "CLAIMS-MOTOR",
+      "reportsTo": "CLAIMS-HEAD",
+      "name": {
+        "en": "Zonal claims head",
+        "hi": "क्षेत्रीय दावा प्रमुख"
+      }
+    },
+    {
+      "id": "CLAIMS-HEAD",
+      "role": "CLAIMSHEAD",
+      "office": "CLAIMS-MOTOR",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of claims",
+        "hi": "दावा प्रमुख"
+      }
+    },
+    {
+      "id": "GRIEVANCE-CELL",
+      "role": "GRIEVANCE",
+      "office": "CLAIMS-MOTOR",
+      "reportsTo": null,
+      "name": {
+        "en": "Grievance cell (review)",
+        "hi": "शिकायत प्रकोष्ठ (पुनर्विचार)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CLAIMS-HANDLER",
+      "person": "imc.claims-handler",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SIU",
+      "person": "imc.siu",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TP-LEGAL",
+      "person": "imc.tp-legal",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CLAIMS-MGR",
+      "person": "imc.claims-mgr",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "ZONAL-CLAIMS",
+      "person": "imc.zonal-claims",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CLAIMS-HEAD",
+      "person": "imc.claims-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "GRIEVANCE-CELL",
+      "person": "imc.grievance-cell",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "HANDLER",
+      "name": {
+        "en": "Claims handler",
+        "hi": "दावा संचालक"
+      }
+    },
+    {
+      "code": "SIU",
+      "name": {
+        "en": "Special investigation unit",
+        "hi": "विशेष जाँच इकाई"
+      }
+    },
+    {
+      "code": "LEGAL",
+      "name": {
+        "en": "Third-party legal desk",
+        "hi": "तृतीय पक्ष विधि डेस्क"
+      }
+    },
+    {
+      "code": "CLAIMSMGR",
+      "name": {
+        "en": "Claims manager",
+        "hi": "दावा प्रबंधक"
+      }
+    },
+    {
+      "code": "ZONALCLAIMS",
+      "name": {
+        "en": "Zonal claims head",
+        "hi": "क्षेत्रीय दावा प्रमुख"
+      }
+    },
+    {
+      "code": "CLAIMSHEAD",
+      "name": {
+        "en": "Head of claims",
+        "hi": "दावा प्रमुख"
+      }
+    },
+    {
+      "code": "GRIEVANCE",
+      "name": {
+        "en": "Grievance cell (review)",
+        "hi": "शिकायत प्रकोष्ठ (पुनर्विचार)"
+      }
+    }
+  ]
+}

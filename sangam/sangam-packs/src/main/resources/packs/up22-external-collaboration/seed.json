@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "PROC",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "VENDOR-DESK",
+      "role": "VENDOR",
+      "office": "PROC",
+      "reportsTo": null,
+      "name": {
+        "en": "Vendor management desk",
+        "hi": "विक्रेता प्रबंधन डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "VENDOR-DESK",
+      "person": "u22.vendor-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "VENDOR",
+      "name": {
+        "en": "Vendor management desk",
+        "hi": "विक्रेता प्रबंधन डेस्क"
+      }
+    }
+  ]
+}

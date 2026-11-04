@@ -1,0 +1,112 @@
+{
+  "id": "sec.scm.procure-to-pay",
+  "version": "1.0.0",
+  "name": {
+    "en": "Procure to pay",
+    "hi": "क्रय से भुगतान तक"
+  },
+  "domain": "Supply chain",
+  "description": "Purchase requisition with budget check, sourcing mode by value (direct, RFQ with comparative statement, RFP), approval by delegated power, purchase order, goods receipt with quality inspection and rejection to the supplier, invoice matched by UP-14 (three-way match), payment released within the term (45 days for MSME suppliers, MSMED Act s.15) and paid by operationId.",
+  "mainProcesses": [
+    "sangam-sec-scm-p2p"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-scm-procure-to-pay/sangam-sec-scm-p2p.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-scm-procure-to-pay/sec-scm-sourcing.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-scm-procure-to-pay/sec-scm-payment-terms.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-scm-procure-to-pay/sec-scm-pr-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-scm-procure-to-pay/sec-scm-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-scm-procure-to-pay/forms/requisition.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-scm-procure-to-pay/forms/rfq.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-scm-procure-to-pay/forms/qc.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-scm-procure-to-pay/forms/release.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-scm-procure-to-pay/seed.json"
+    }
+  ],
+  "seed": "packs/sec-scm-procure-to-pay/seed.json",
+  "connectors": [
+    {
+      "id": "erp.budgetCheck",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Budget"
+    },
+    {
+      "id": "erp.createPo",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Purchase order"
+    },
+    {
+      "id": "supplier.sendPo",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "PO to supplier"
+    },
+    {
+      "id": "supplier.debitNote",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Rejection / debit note"
+    },
+    {
+      "id": "bank.transfer",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Supplier payment"
+    }
+  ],
+  "covers": [
+    "SEC-SCM-001",
+    "SEC-SCM-002",
+    "SEC-SCM-003",
+    "UP-14",
+    "GP-01",
+    "GP-11",
+    "GP-12",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "universal.up14-three-way-match"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-up14-three-way-match"
+  ]
+}

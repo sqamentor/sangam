@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "HIU",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "TREATING-DOCTOR",
+      "role": "DOCTOR",
+      "office": "HIU",
+      "reportsTo": "PRIVACY-OFFICER",
+      "name": {
+        "en": "Treating doctor",
+        "hi": "उपचारकर्ता चिकित्सक"
+      }
+    },
+    {
+      "id": "PRIVACY-OFFICER",
+      "role": "PRIVACY",
+      "office": "HIU",
+      "reportsTo": null,
+      "name": {
+        "en": "Privacy officer",
+        "hi": "गोपनीयता अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "TREATING-DOCTOR",
+      "person": "hhx.treating-doctor",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PRIVACY-OFFICER",
+      "person": "hhx.privacy-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DOCTOR",
+      "name": {
+        "en": "Treating doctor",
+        "hi": "उपचारकर्ता चिकित्सक"
+      }
+    },
+    {
+      "code": "PRIVACY",
+      "name": {
+        "en": "Privacy officer",
+        "hi": "गोपनीयता अधिकारी"
+      }
+    }
+  ]
+}

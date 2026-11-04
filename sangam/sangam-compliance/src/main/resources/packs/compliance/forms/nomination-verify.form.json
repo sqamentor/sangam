@@ -1,0 +1,1 @@
+{"key":"compliance/nomination-verify","title":{"en":"Verify nominee"},"fields":[{"key":"nomineeRef","type":"text","required":true,"label":{"en":"Nominee reference"}},{"key":"nomineeName","type":"text","label":{"en":"Nominee name"}},{"key":"relationship","type":"text","label":{"en":"Relationship"}}]}

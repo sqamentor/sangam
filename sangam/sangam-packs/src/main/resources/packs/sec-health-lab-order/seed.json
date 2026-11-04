@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "LAB",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PHLEBOTOMY",
+      "role": "PHLEBO",
+      "office": "LAB",
+      "reportsTo": "LAB-TECH",
+      "name": {
+        "en": "Phlebotomist",
+        "hi": "फ्लेबोटोमिस्ट"
+      }
+    },
+    {
+      "id": "LAB-TECH",
+      "role": "TECH",
+      "office": "LAB",
+      "reportsTo": "PATHOLOGIST",
+      "name": {
+        "en": "Laboratory technologist",
+        "hi": "प्रयोगशाला तकनीशियन"
+      }
+    },
+    {
+      "id": "PATHOLOGIST",
+      "role": "PATH",
+      "office": "LAB",
+      "reportsTo": null,
+      "name": {
+        "en": "Pathologist",
+        "hi": "रोगविज्ञानी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PHLEBOTOMY",
+      "person": "hlb.phlebotomy",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "LAB-TECH",
+      "person": "hlb.lab-tech",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PATHOLOGIST",
+      "person": "hlb.pathologist",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PHLEBO",
+      "name": {
+        "en": "Phlebotomist",
+        "hi": "फ्लेबोटोमिस्ट"
+      }
+    },
+    {
+      "code": "TECH",
+      "name": {
+        "en": "Laboratory technologist",
+        "hi": "प्रयोगशाला तकनीशियन"
+      }
+    },
+    {
+      "code": "PATH",
+      "name": {
+        "en": "Pathologist",
+        "hi": "रोगविज्ञानी"
+      }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "key": "sec-fin-complaint/resolve",
+  "version": "1.0.0",
+  "pack": "sec.fin.complaint",
+  "title": {
+    "en": "Resolve complaint",
+    "hi": "शिकायत का समाधान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "actionTaken",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Action taken report",
+        "hi": "की गई कार्रवाई की रिपोर्ट"
+      }
+    },
+    {
+      "id": "replyText",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Reply",
+        "hi": "उत्तर"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "complaintDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resolve",
+        "label": {
+          "en": "Resolve / dispose",
+          "hi": "निपटारा करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

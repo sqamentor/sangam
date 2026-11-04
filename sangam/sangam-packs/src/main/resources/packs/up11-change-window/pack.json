@@ -1,0 +1,75 @@
+{
+  "id": "universal.up11-change-window",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-11 Change approval with window and rollback",
+    "hi": "यूपी-11 समय-खिड़की एवं वापसी सहित परिवर्तन अनुमोदन"
+  },
+  "domain": "Universal",
+  "description": "Risk by rule decides whether the CAB (committee) must approve; a freeze-calendar check; implementation only inside the approved window (time lock); verification; failure rolls back by compensation (R31, R23).",
+  "mainProcesses": [
+    "sangam-up11-change"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up11-change-window/sangam-up11-change.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up11-change-window/up11-risk.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up11-change-window/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up11-change-window/forms/reschedule.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up11-change-window/forms/implement.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up11-change-window/forms/verify.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up11-change-window/seed.json"
+    }
+  ],
+  "seed": "packs/up11-change-window/seed.json",
+  "connectors": [
+    {
+      "id": "change.freezeCheck",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Freeze calendar"
+    },
+    {
+      "id": "change.rollback",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Rollback"
+    }
+  ],
+  "covers": [
+    "UP-11",
+    "R23",
+    "R31",
+    "GP-03",
+    "GP-04",
+    "GP-24",
+    "GP-13"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-committee"
+  ]
+}

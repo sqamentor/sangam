@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_nbfc_dl_policy" name="Digital credit policy (SYNTHETIC)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-nbfc-dl-policy" name="Digital credit policy (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-nbfc-dl-policy_t" hitPolicy="FIRST">
+      <input id="sec-nbfc-dl-policy_i0" label="Bureau score"><inputExpression id="sec-nbfc-dl-policy_ie0" typeRef="integer"><text>bureauScore</text></inputExpression></input>
+      <input id="sec-nbfc-dl-policy_i1" label="Tenure (days)"><inputExpression id="sec-nbfc-dl-policy_ie1" typeRef="integer"><text>tenureDays</text></inputExpression></input>
+      <output id="sec-nbfc-dl-policy_o0" label="Decision" name="creditDecision" typeRef="string"/>
+      <output id="sec-nbfc-dl-policy_o1" label="Cooling-off" name="coolingOffSpec" typeRef="string"/>
+      <output id="sec-nbfc-dl-policy_o2" label="KFS validity" name="kfsValidity" typeRef="string"/>
+      <rule id="sec-nbfc-dl-policy_r0">
+        <inputEntry id="sec-nbfc-dl-policy_r0_i0"><text>&lt; 650</text></inputEntry>
+        <inputEntry id="sec-nbfc-dl-policy_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-nbfc-dl-policy_r0_o0"><text>"DECLINE"</text></outputEntry>
+        <outputEntry id="sec-nbfc-dl-policy_r0_o1"><text>"1D"</text></outputEntry>
+        <outputEntry id="sec-nbfc-dl-policy_r0_o2"><text>"1WD"</text></outputEntry>
+      </rule>
+      <rule id="sec-nbfc-dl-policy_r1"><description>tenor 7 days or more: at least 3 days</description>
+        <inputEntry id="sec-nbfc-dl-policy_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-nbfc-dl-policy_r1_i1"><text>&gt;= 7</text></inputEntry>
+        <outputEntry id="sec-nbfc-dl-policy_r1_o0"><text>"APPROVE"</text></outputEntry>
+        <outputEntry id="sec-nbfc-dl-policy_r1_o1"><text>"3D"</text></outputEntry>
+        <outputEntry id="sec-nbfc-dl-policy_r1_o2"><text>"3WD"</text></outputEntry>
+      </rule>
+      <rule id="sec-nbfc-dl-policy_r2"><description>tenor below 7 days: at least 1 day</description>
+        <inputEntry id="sec-nbfc-dl-policy_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-nbfc-dl-policy_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-nbfc-dl-policy_r2_o0"><text>"APPROVE"</text></outputEntry>
+        <outputEntry id="sec-nbfc-dl-policy_r2_o1"><text>"1D"</text></outputEntry>
+        <outputEntry id="sec-nbfc-dl-policy_r2_o2"><text>"1WD"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

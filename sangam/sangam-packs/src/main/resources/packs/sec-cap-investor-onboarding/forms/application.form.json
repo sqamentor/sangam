@@ -1,0 +1,81 @@
+{
+  "key": "sec-cap-investor-onboarding/application",
+  "version": "1.0.0",
+  "pack": "sec.cap.investor-onboarding",
+  "title": {
+    "en": "Investor account opening",
+    "hi": "निवेशक खाता खोलना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer name",
+        "hi": "ग्राहक का नाम"
+      }
+    },
+    {
+      "id": "pan",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "PAN",
+        "hi": "पैन"
+      }
+    },
+    {
+      "id": "mobile",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Mobile number",
+        "hi": "मोबाइल नंबर"
+      }
+    },
+    {
+      "id": "segments",
+      "type": "multiselect",
+      "required": true,
+      "label": {
+        "en": "Segments requested",
+        "hi": "अनुरोधित खंड"
+      }
+    },
+    {
+      "id": "nominationOpted",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Nomination made",
+        "hi": "नामांकन किया गया"
+      }
+    },
+    {
+      "id": "incomeRange",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Annual income range",
+        "hi": "वार्षिक आय सीमा"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

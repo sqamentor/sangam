@@ -1,0 +1,81 @@
+{
+  "key": "court-case/outcome",
+  "version": "1.0.0",
+  "pack": "gov.court-case",
+  "title": {
+    "en": "Record hearing outcome",
+    "hi": "सुनवाई का परिणाम दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "nextHearingDate",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Next date of hearing",
+        "hi": "सुनवाई की अगली तिथि"
+      }
+    },
+    {
+      "id": "stayOrderRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Stay order reference",
+        "hi": "स्थगन आदेश संदर्भ"
+      }
+    },
+    {
+      "id": "judgment",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Judgment / final order",
+        "hi": "निर्णय / अंतिम आदेश"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "hearingOutcome",
+    "required": true,
+    "options": [
+      {
+        "value": "adjourned",
+        "label": {
+          "en": "Adjourned (next date)",
+          "hi": "स्थगित (अगली तिथि)"
+        }
+      },
+      {
+        "value": "interimOrder",
+        "label": {
+          "en": "Interim order / stay",
+          "hi": "अंतरिम आदेश / स्थगन"
+        }
+      },
+      {
+        "value": "judgment",
+        "label": {
+          "en": "Final judgment",
+          "hi": "अंतिम निर्णय"
+        }
+      }
+    ]
+  }
+}

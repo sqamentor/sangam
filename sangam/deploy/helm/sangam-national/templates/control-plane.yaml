@@ -1,0 +1,55 @@
+{{/* SPDX-License-Identifier: Apache-2.0 */}}
+{{- if .Values.controlPlane.enabled }}
+{{- $c := .Values.controlPlane }}
+{{- $name := printf "%s-control-plane" .Release.Name }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels: {{ include "national.labels" (dict "root" . "name" "control-plane") | nindent 4 }}
+spec:
+  replicas: {{ $c.replicaCount }}
+  selector:
+    matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/name: control-plane }
+  template:
+    metadata:
+      labels: {{ include "national.labels" (dict "root" . "name" "control-plane") | nindent 8 }}
+    spec:
+      {{- include "national.pod" (dict "root" .) | nindent 6 }}
+      containers:
+        - name: control-plane
+          {{- include "national.container" (dict "root" . "cfg" $c) | nindent 10 }}
+          env:
+            - { name: SANGAM_CP_PORT, value: {{ $c.port | quote }} }
+            - { name: SANGAM_CP_MANAGEMENT_PORT, value: {{ $c.managementPort | quote }} }
+            - { name: SANGAM_CP_DB_URL, value: {{ required "controlPlane.database.jdbcUrl is required" $c.database.jdbcUrl | quote }} }
+            - name: SANGAM_CP_DB_USER
+              valueFrom: { secretKeyRef: { name: {{ required "controlPlane.database.existingSecret" $c.database.existingSecret }}, key: username } }
+            - name: SANGAM_CP_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $c.database.existingSecret }}, key: password } }
+            - name: SANGAM_CP_TOKENS
+              valueFrom: { secretKeyRef: { name: {{ required "controlPlane.tokensSecret" $c.tokensSecret }}, key: tokens } }
+            - name: SANGAM_CP_CELL_ADMIN_TOKEN
+              valueFrom: { secretKeyRef: { name: {{ $c.tokensSecret }}, key: cellAdminToken } }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels: {{ include "national.labels" (dict "root" . "name" "control-plane") | nindent 4 }}
+spec:
+  selector: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/name: control-plane }
+  ports:
+    - { name: http, port: {{ $c.port }}, targetPort: http }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/name: control-plane }
+{{- end }}

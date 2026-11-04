@@ -1,0 +1,36 @@
+{
+  "key": "sec-health-lab-order/amend",
+  "version": "1.0.0",
+  "pack": "sec.health.lab-order",
+  "title": {
+    "en": "Issue amended report with reason",
+    "hi": "कारण सहित संशोधित रिपोर्ट"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "results",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Results",
+        "hi": "परिणाम"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

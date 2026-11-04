@@ -1,0 +1,73 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- $fullname := include "sangam.fullname" . -}}
+{{- with .Values.server.autoscaling }}
+{{- if .enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $fullname }}-server
+  labels:
+    {{- include "sangam.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: server
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $fullname }}-server
+  minReplicas: {{ .minReplicas }}
+  maxReplicas: {{ .maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .targetCPUUtilizationPercentage }}
+    {{- if .targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .targetMemoryUtilizationPercentage }}
+    {{- end }}
+  behavior:
+    # Scale down slowly: each pod holds job-executor leases; let them drain.
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+{{- end }}
+{{- end }}
+{{- if and .Values.ui.enabled .Values.ui.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $fullname }}-ui
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $fullname }}-ui
+  minReplicas: {{ .Values.ui.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.ui.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.ui.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}

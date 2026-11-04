@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Engine SCHEMA patches (recorded in sangam-engine/PATCHES.md). They change Operaton-owned ACT_* tables and must run
+  AFTER the engine created or upgraded its schema, on every start (runAlways): an Operaton upgrade script may add
+  or re-create columns. Both are idempotent and do nothing when there is nothing to change.
+
+  P-1 (D-03, FC-30): MySQL ACT_* datetime/timestamp columns with precision 0 -> precision 3.
+  P-2 (D-04):        MySQL ACT_* tables in utf8mb3 -> utf8mb4 / utf8mb4_bin (index byte limit checked per table).
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.33.xsd">
+
+  <changeSet id="P-1-mysql-datetime-precision" author="sangam" dbms="mysql" runAlways="true">
+    <preConditions onFail="MARK_RAN">
+      <tableExists tableName="ACT_GE_PROPERTY"/>
+    </preConditions>
+    <customChange class="org.sangam.persistence.mysql.MysqlDatetimePrecisionChange"/>
+  </changeSet>
+
+  <changeSet id="P-2-mysql-utf8mb4" author="sangam" dbms="mysql" runAlways="true">
+    <preConditions onFail="MARK_RAN">
+      <tableExists tableName="ACT_GE_PROPERTY"/>
+    </preConditions>
+    <customChange class="org.sangam.persistence.mysql.MysqlUtf8mb4Change"/>
+  </changeSet>
+
+</databaseChangeLog>

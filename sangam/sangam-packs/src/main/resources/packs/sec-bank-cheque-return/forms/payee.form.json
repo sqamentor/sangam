@@ -1,0 +1,54 @@
+{
+  "key": "sec-bank-cheque-return/payee",
+  "version": "1.0.0",
+  "pack": "sec.bank.cheque-return",
+  "title": {
+    "en": "Payee: legal notice or re-present (30 days)",
+    "hi": "आदाता: विधिक नोटिस या पुनः प्रस्तुति (30 दिन)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "payeeDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "issueNotice",
+        "label": {
+          "en": "Issue legal notice",
+          "hi": "विधिक नोटिस जारी करें"
+        }
+      },
+      {
+        "value": "represent",
+        "label": {
+          "en": "Re-present",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "drop",
+        "label": {
+          "en": "Drop the proposal",
+          "hi": "प्रस्ताव छोड़ें"
+        }
+      }
+    ]
+  }
+}

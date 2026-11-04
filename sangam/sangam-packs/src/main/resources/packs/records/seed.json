@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "RECORDS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "RECORD-OFFICER",
+      "role": "RECORDOFFICER",
+      "office": "RECORDS",
+      "reportsTo": null,
+      "name": {
+        "en": "Departmental record officer",
+        "hi": "विभागीय अभिलेख अधिकारी"
+      }
+    },
+    {
+      "id": "NAI-APPRAISER",
+      "role": "APPRAISER",
+      "office": "RECORDS",
+      "reportsTo": null,
+      "name": {
+        "en": "Appraisal (National Archives)",
+        "hi": "मूल्यांकन (राष्ट्रीय अभिलेखागार)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "RECORD-OFFICER",
+      "person": "rec.record-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "NAI-APPRAISER",
+      "person": "rec.nai-appraiser",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "RECORDOFFICER",
+      "name": {
+        "en": "Departmental record officer",
+        "hi": "विभागीय अभिलेख अधिकारी"
+      }
+    },
+    {
+      "code": "APPRAISER",
+      "name": {
+        "en": "Appraisal (National Archives)",
+        "hi": "मूल्यांकन (राष्ट्रीय अभिलेखागार)"
+      }
+    }
+  ]
+}

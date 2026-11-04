@@ -1,0 +1,56 @@
+{
+  "key": "recruitment/dv",
+  "version": "1.0.0",
+  "pack": "gov.recruitment",
+  "title": {
+    "en": "Document verification",
+    "hi": "दस्तावेज़ सत्यापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "dvVerdict",
+    "required": true,
+    "options": [
+      {
+        "value": "verified",
+        "label": {
+          "en": "Verified",
+          "hi": "सत्यापित"
+        }
+      },
+      {
+        "value": "failed",
+        "label": {
+          "en": "Not verified",
+          "hi": "असत्यापित"
+        }
+      }
+    ]
+  }
+}

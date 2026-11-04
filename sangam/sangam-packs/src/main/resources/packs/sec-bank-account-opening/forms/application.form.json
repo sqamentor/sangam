@@ -1,0 +1,99 @@
+{
+  "key": "sec-bank-account-opening/application",
+  "version": "1.0.0",
+  "pack": "sec.bank.account-opening",
+  "title": {
+    "en": "Account opening application",
+    "hi": "खाता खोलने का आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer name",
+        "hi": "ग्राहक का नाम"
+      }
+    },
+    {
+      "id": "pan",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "PAN",
+        "hi": "पैन"
+      }
+    },
+    {
+      "id": "mobile",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Mobile number",
+        "hi": "मोबाइल नंबर"
+      }
+    },
+    {
+      "id": "accountType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Account type",
+        "hi": "खाते का प्रकार"
+      }
+    },
+    {
+      "id": "kycMode",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "KYC mode (Aadhaar OTP, V-CIP, offline XML, DigiLocker, in person)",
+        "hi": "केवाईसी विधि (आधार ओटीपी, वी-सीआईपी, ऑफ़लाइन एक्सएमएल, डिजिलॉकर, व्यक्तिगत)"
+      }
+    },
+    {
+      "id": "occupation",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Occupation",
+        "hi": "व्यवसाय"
+      }
+    },
+    {
+      "id": "consentGiven",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Consent recorded",
+        "hi": "सहमति दर्ज"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

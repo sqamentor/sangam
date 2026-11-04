@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Challan reconciliation run. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_challan_reconciliation" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_challanReconcileNow" name="sangam.challanReconcileNow"/>
+  <process id="sangam-challan-reconciliation" name="Challan reconciliation run" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.challan-reconciliation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>scrollDate</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="cr_timer" name="Daily 06:00"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 6 * * ?</timeCycle></timerEventDefinition></startEvent>
+    <startEvent id="cr_manual" name="Run now (message)"><messageEventDefinition messageRef="msg_sangam_challanReconcileNow"/></startEvent>
+    <exclusiveGateway id="cr_join" name=""></exclusiveGateway>
+    <serviceTask id="cr_expected" name="Challans expected" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>treasury.challansExpected</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>expectedJson</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>4</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cr_match" name="Match with scroll" operaton:class="org.sangam.packs.gov.ReconciliationMatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="mode"><operaton:string>SCROLL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cr_discGw" name="Discrepancies?" default="challan_reconciliation_f14"></exclusiveGateway>
+    <serviceTask id="cr_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cr_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-challan-discrepancy</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>scrollDate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cr_fanGw" name="All started?" default="challan_reconciliation_f9"></exclusiveGateway>
+    <intermediateCatchEvent id="cr_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT5M</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="cr_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cr_doneGw" name="Round complete?" default="challan_reconciliation_f15"></exclusiveGateway>
+    <serviceTask id="cr_report" name="Reconciliation statement" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>challan-reconciliation-statement</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cr_end" name="Reconciled"></endEvent>
+    <sequenceFlow id="challan_reconciliation_f1" sourceRef="cr_timer" targetRef="cr_join"/>
+    <sequenceFlow id="challan_reconciliation_f2" sourceRef="cr_manual" targetRef="cr_join"/>
+    <sequenceFlow id="challan_reconciliation_f3" sourceRef="cr_join" targetRef="cr_expected"/>
+    <sequenceFlow id="challan_reconciliation_f4" sourceRef="cr_expected" targetRef="cr_match"/>
+    <sequenceFlow id="challan_reconciliation_f5" sourceRef="cr_match" targetRef="cr_discGw"/>
+    <sequenceFlow id="challan_reconciliation_f6" sourceRef="cr_open" targetRef="cr_fanOut"/>
+    <sequenceFlow id="challan_reconciliation_f7" sourceRef="cr_fanOut" targetRef="cr_fanGw"/>
+    <sequenceFlow id="challan_reconciliation_f8" name="next chunk" sourceRef="cr_fanGw" targetRef="cr_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="challan_reconciliation_f9" name="all started" sourceRef="cr_fanGw" targetRef="cr_poll"/>
+    <sequenceFlow id="challan_reconciliation_f10" sourceRef="cr_poll" targetRef="cr_aggregate"/>
+    <sequenceFlow id="challan_reconciliation_f11" sourceRef="cr_aggregate" targetRef="cr_doneGw"/>
+    <sequenceFlow id="challan_reconciliation_f12" name="not yet" sourceRef="cr_doneGw" targetRef="cr_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="challan_reconciliation_f13" name="yes" sourceRef="cr_discGw" targetRef="cr_open"><conditionExpression xsi:type="tFormalExpression">${discrepancyCount &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="challan_reconciliation_f14" name="all matched" sourceRef="cr_discGw" targetRef="cr_report"/>
+    <sequenceFlow id="challan_reconciliation_f15" name="resolved" sourceRef="cr_doneGw" targetRef="cr_report"/>
+    <sequenceFlow id="challan_reconciliation_f16" sourceRef="cr_report" targetRef="cr_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="challan_reconciliation_diagram">
+    <bpmndi:BPMNPlane id="challan_reconciliation_plane" bpmnElement="sangam-challan-reconciliation">
+      <bpmndi:BPMNShape id="cr_timer_di" bpmnElement="cr_timer"><dc:Bounds x="52" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_manual_di" bpmnElement="cr_manual"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_join_di" bpmnElement="cr_join"><dc:Bounds x="210" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_expected_di" bpmnElement="cr_expected"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_match_di" bpmnElement="cr_match"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_discGw_di" bpmnElement="cr_discGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_open_di" bpmnElement="cr_open"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_fanOut_di" bpmnElement="cr_fanOut"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_fanGw_di" bpmnElement="cr_fanGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_poll_di" bpmnElement="cr_poll"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_aggregate_di" bpmnElement="cr_aggregate"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_doneGw_di" bpmnElement="cr_doneGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_report_di" bpmnElement="cr_report"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cr_end_di" bpmnElement="cr_end"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f1_di" bpmnElement="challan_reconciliation_f1"><di:waypoint x="88" y="195"/><di:waypoint x="149" y="195"/><di:waypoint x="149" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f2_di" bpmnElement="challan_reconciliation_f2"><di:waypoint x="88" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f3_di" bpmnElement="challan_reconciliation_f3"><di:waypoint x="260" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f4_di" bpmnElement="challan_reconciliation_f4"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f5_di" bpmnElement="challan_reconciliation_f5"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f6_di" bpmnElement="challan_reconciliation_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f7_di" bpmnElement="challan_reconciliation_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f8_di" bpmnElement="challan_reconciliation_f8"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="149"/><di:waypoint x="1060" y="149"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f9_di" bpmnElement="challan_reconciliation_f9"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f10_di" bpmnElement="challan_reconciliation_f10"><di:waypoint x="1408" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f11_di" bpmnElement="challan_reconciliation_f11"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f12_di" bpmnElement="challan_reconciliation_f12"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="134"/><di:waypoint x="1390" y="134"/><di:waypoint x="1390" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f13_di" bpmnElement="challan_reconciliation_f13"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f14_di" bpmnElement="challan_reconciliation_f14"><di:waypoint x="755" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f15_di" bpmnElement="challan_reconciliation_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_reconciliation_f16_di" bpmnElement="challan_reconciliation_f16"><di:waypoint x="1935" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

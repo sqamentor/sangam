@@ -1,0 +1,49 @@
+{
+  "key": "ifms-monthly-accounts/compile",
+  "version": "1.0.0",
+  "pack": "gov.ifms.monthly-accounts",
+  "title": {
+    "en": "Compile and check the monthly account",
+    "hi": "मासिक लेखा संकलन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "accountsMonth",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Accounts month",
+        "hi": "लेखा माह"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "compileDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "compiled",
+        "label": {
+          "en": "Compiled",
+          "hi": "संकलित"
+        }
+      }
+    ]
+  }
+}

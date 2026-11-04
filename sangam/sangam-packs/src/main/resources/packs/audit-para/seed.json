@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "DEPT-AU",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "DDO-AUDIT",
+      "role": "DDO",
+      "office": "DEPT-AU",
+      "reportsTo": "HOD-AU",
+      "name": {
+        "en": "Para owner (DDO)",
+        "hi": "पैरा स्वामी (आहरण एवं संवितरण अधिकारी)"
+      }
+    },
+    {
+      "id": "AUDIT-CELL",
+      "role": "AUDITCELL",
+      "office": "DEPT-AU",
+      "reportsTo": "HOD-AU",
+      "name": {
+        "en": "Internal audit cell",
+        "hi": "आंतरिक लेखापरीक्षा प्रकोष्ठ"
+      }
+    },
+    {
+      "id": "HOD-AU",
+      "role": "HOD",
+      "office": "DEPT-AU",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of department",
+        "hi": "विभागाध्यक्ष"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DDO-AUDIT",
+      "person": "au.ddo-audit",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AUDIT-CELL",
+      "person": "au.audit-cell",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HOD-AU",
+      "person": "au.hod-au",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DDO",
+      "name": {
+        "en": "Para owner (DDO)",
+        "hi": "पैरा स्वामी (आहरण एवं संवितरण अधिकारी)"
+      }
+    },
+    {
+      "code": "AUDITCELL",
+      "name": {
+        "en": "Internal audit cell",
+        "hi": "आंतरिक लेखापरीक्षा प्रकोष्ठ"
+      }
+    },
+    {
+      "code": "HOD",
+      "name": {
+        "en": "Head of department",
+        "hi": "विभागाध्यक्ष"
+      }
+    }
+  ]
+}

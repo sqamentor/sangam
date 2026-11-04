@@ -1,0 +1,47 @@
+{
+  "key": "works/tender-failed",
+  "version": "1.0.0",
+  "pack": "gov.works",
+  "title": {
+    "en": "Tender failed: re-tender or drop",
+    "hi": "निविदा विफल: पुनः निविदा या छोड़ें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "tfDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "retender",
+        "label": {
+          "en": "Retender",
+          "hi": "पुनः निविदा"
+        }
+      },
+      {
+        "value": "drop",
+        "label": {
+          "en": "Drop the proposal",
+          "hi": "प्रस्ताव छोड़ें"
+        }
+      }
+    ]
+  }
+}

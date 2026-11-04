@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-breach/individuals",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.breach",
+  "title": {
+    "en": "Notify affected individuals (content per 164.404(c))",
+    "es": "Notificar a las personas afectadas"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "substituteNotice",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Contact information out of date for 10 or more",
+        "es": "Información de contacto desactualizada para 10 o más"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "es": "Documentos"
+      }
+    }
+  ]
+}

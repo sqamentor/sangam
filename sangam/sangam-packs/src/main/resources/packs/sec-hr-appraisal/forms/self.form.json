@@ -1,0 +1,27 @@
+{
+  "key": "sec-hr-appraisal/self",
+  "version": "1.0.0",
+  "pack": "sec.hr.appraisal",
+  "title": {
+    "en": "Self-appraisal",
+    "hi": "स्व-मूल्यांकन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "achievements",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Achievements against goals",
+        "hi": "लक्ष्यों के सापेक्ष उपलब्धियाँ"
+      }
+    }
+  ]
+}

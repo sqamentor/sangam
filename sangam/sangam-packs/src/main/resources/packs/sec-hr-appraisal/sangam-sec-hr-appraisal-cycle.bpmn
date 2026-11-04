@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Appraisal cycle. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_hr_appraisal_cycle" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-hr-appraisal-cycle" name="Appraisal cycle" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.hr.appraisal</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ac_timer" name="Cycle"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 6 1 4 ?</timeCycle></timerEventDefinition></startEvent>
+    <serviceTask id="ac_load" name="Load items" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>hris.employees</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ac_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>committeeSeats=CALIB-1,CALIB-2,CALIB-3;quorumRule=MAJORITY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ac_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ac_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-sec-hr-appraisal</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ac_fanGw" name="All started?" default="sec_hr_appraisal_cycle_f6"></exclusiveGateway>
+    <intermediateCatchEvent id="ac_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT1H</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="ac_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ac_doneGw" name="Round complete?" default="sec_hr_appraisal_cycle_f11"></exclusiveGateway>
+    <callActivity id="ac_calibrate" name="Calibration committee (core committee)" calledElement="sangam-core-committee"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ac_end" name="Cycle closed"></endEvent>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f1" sourceRef="ac_timer" targetRef="ac_defaults"/>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f2" sourceRef="ac_defaults" targetRef="ac_load"/>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f3" sourceRef="ac_open" targetRef="ac_fanOut"/>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f4" sourceRef="ac_fanOut" targetRef="ac_fanGw"/>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f5" name="next chunk" sourceRef="ac_fanGw" targetRef="ac_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f6" name="all started" sourceRef="ac_fanGw" targetRef="ac_poll"/>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f7" sourceRef="ac_poll" targetRef="ac_aggregate"/>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f8" sourceRef="ac_aggregate" targetRef="ac_doneGw"/>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f9" name="not yet" sourceRef="ac_doneGw" targetRef="ac_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f10" sourceRef="ac_load" targetRef="ac_open"/>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f11" name="all rated" sourceRef="ac_doneGw" targetRef="ac_calibrate"/>
+    <sequenceFlow id="sec_hr_appraisal_cycle_f12" sourceRef="ac_calibrate" targetRef="ac_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_hr_appraisal_cycle_diagram">
+    <bpmndi:BPMNPlane id="sec_hr_appraisal_cycle_plane" bpmnElement="sangam-sec-hr-appraisal-cycle">
+      <bpmndi:BPMNShape id="ac_timer_di" bpmnElement="ac_timer"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_load_di" bpmnElement="ac_load"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_defaults_di" bpmnElement="ac_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_open_di" bpmnElement="ac_open"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_fanOut_di" bpmnElement="ac_fanOut"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_fanGw_di" bpmnElement="ac_fanGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_poll_di" bpmnElement="ac_poll"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_aggregate_di" bpmnElement="ac_aggregate"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_doneGw_di" bpmnElement="ac_doneGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_calibrate_di" bpmnElement="ac_calibrate"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ac_end_di" bpmnElement="ac_end"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f1_di" bpmnElement="sec_hr_appraisal_cycle_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f2_di" bpmnElement="sec_hr_appraisal_cycle_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f3_di" bpmnElement="sec_hr_appraisal_cycle_f3"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f4_di" bpmnElement="sec_hr_appraisal_cycle_f4"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f5_di" bpmnElement="sec_hr_appraisal_cycle_f5"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="128"/><di:waypoint x="730" y="128"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f6_di" bpmnElement="sec_hr_appraisal_cycle_f6"><di:waypoint x="920" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f7_di" bpmnElement="sec_hr_appraisal_cycle_f7"><di:waypoint x="1078" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f8_di" bpmnElement="sec_hr_appraisal_cycle_f8"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f9_di" bpmnElement="sec_hr_appraisal_cycle_f9"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="113"/><di:waypoint x="1060" y="113"/><di:waypoint x="1060" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f10_di" bpmnElement="sec_hr_appraisal_cycle_f10"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f11_di" bpmnElement="sec_hr_appraisal_cycle_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_cycle_f12_di" bpmnElement="sec_hr_appraisal_cycle_f12"><di:waypoint x="1605" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

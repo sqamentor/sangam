@@ -1,0 +1,64 @@
+{
+  "id": "sec.hr.posh-complaint",
+  "version": "1.0.0",
+  "name": {
+    "en": "Sexual harassment complaint (POSH Act 2013)",
+    "hi": "यौन उत्पीड़न शिकायत (पॉश अधिनियम 2013)"
+  },
+  "domain": "HR",
+  "description": "Complaint to the Internal Committee within three months (extendable), copy to the respondent within 7 working days, reply within 10 working days, conciliation on request (no monetary settlement), inquiry by the committee within 90 days, report within 10 days, employer action within 60 days, appeal within 90 days; confidentiality: no external notification.",
+  "mainProcesses": [
+    "sangam-sec-hr-posh"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-hr-posh-complaint/sangam-sec-hr-posh.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-posh-complaint/forms/complaint.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-posh-complaint/forms/admit.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-posh-complaint/forms/copy.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-posh-complaint/forms/conciliation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-posh-complaint/forms/report.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-posh-complaint/forms/action.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-hr-posh-complaint/seed.json"
+    }
+  ],
+  "seed": "packs/sec-hr-posh-complaint/seed.json",
+  "connectors": [],
+  "covers": [
+    "SEC-HR-003",
+    "SEC-HR-004",
+    "GP-03",
+    "GP-22",
+    "GP-35"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-committee"
+  ]
+}

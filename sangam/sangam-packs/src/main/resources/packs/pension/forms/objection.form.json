@@ -1,0 +1,65 @@
+{
+  "key": "pension/objection",
+  "version": "1.0.0",
+  "pack": "gov.pension",
+  "title": {
+    "en": "Reply to AG objection",
+    "hi": "महालेखाकार की आपत्ति का उत्तर"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "objection",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Objection raised",
+        "hi": "उठाई गई आपत्ति"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "objDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

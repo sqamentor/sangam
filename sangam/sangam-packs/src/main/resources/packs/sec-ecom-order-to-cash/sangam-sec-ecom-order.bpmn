@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Marketplace order. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ecom_order" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_order_cancel" name="sangam.order.cancel"/>
+  <message id="msg_sangam_order_delivered" name="sangam.order.delivered"/>
+  <message id="msg_sangam_order_rto" name="sangam.order.rto"/>
+  <error id="err_PAYMENT_FAILED" name="PAYMENT_FAILED" errorCode="PAYMENT_FAILED"/>
+  <process id="sangam-sec-ecom-order" name="Marketplace order" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ecom.order-to-cash</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>orderId,customerId,sellerId,amount,paymentMode</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="eo_start" name="Order placed" operaton:initiator="initiator" operaton:formKey="sangam:sec-ecom-order-to-cash/order"></startEvent>
+    <serviceTask id="eo_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>sellerId=SELLER-1;paymentMode=PREPAID;category=GENERAL;riskHold=false;sellerSla=2D;deliverySla=7D;returnWindow=P7D;sellerGroup=SELLER-DESK;executionConnector=pg.refund;executionStep=refund;verifyApproval=false;reconcileRequired=false;executionPayloadFields=orderId,amount;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="eo_fraud" name="Fraud screen" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>fraud.score</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>score</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,customerId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>risk</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="eo_holdGw" name="Risky?" default="sec_ecom_order_f7"></exclusiveGateway>
+    <userTask id="eo_review" name="Review risky order" operaton:candidateGroups="RISK-DESK" operaton:formKey="sangam:sec-ecom-order-to-cash/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>riskDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="eo_revGw" name="" default="sec_ecom_order_f8"></exclusiveGateway>
+    <endEvent id="eo_endRiskRejected" name="Cancelled by risk review"></endEvent>
+    <exclusiveGateway id="eo_payGw" name="Prepaid?" default="sec_ecom_order_f20"></exclusiveGateway>
+    <serviceTask id="eo_auth" name="Authorise payment" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>pg.authorise</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>authorise</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>pay</operaton:string></operaton:field><operaton:field name="step"><operaton:string>authorise</operaton:string></operaton:field><operaton:field name="errorOnFailure"><operaton:string>PAYMENT_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="eo_endPayFailed" name="Payment failed"></endEvent>
+    <serviceTask id="eo_seller_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>eo_seller</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${sellerSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="eo_seller" name="Seller confirms and packs" operaton:candidateGroups="${sellerGroup}" operaton:formKey="sangam:sec-ecom-order-to-cash/seller" operaton:dueDate="${eo_sellerDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>sellerDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="eo_seller_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>eo_seller</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>sellerGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="eo_seller_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="eo_seller_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>eo_seller</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>DEEMED_REFUSAL</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>sellerGroup</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>sellerDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>accept</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="eo_seller_breachGw" name="Deemed?" default="sec_ecom_order_f16"></exclusiveGateway>
+    <exclusiveGateway id="eo_seller_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="eo_sellerGw" name="" default="sec_ecom_order_f26"></exclusiveGateway>
+    <callActivity id="eo_refund" name="Refund to the source (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="eo_refundGw" name="Refund needed?" default="sec_ecom_order_f24"></exclusiveGateway>
+    <endEvent id="eo_endCancelled" name="Cancelled"></endEvent>
+    <serviceTask id="eo_ship" name="Create shipment" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>logistics.ship</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>ship</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,pincode</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ship</operaton:string></operaton:field><operaton:field name="step"><operaton:string>ship</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="eo_delClock" name="Regulatory clock: delivery" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>delivery</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${deliverySla}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="eo_wait" name="Delivered, RTO or late"></eventBasedGateway>
+    <intermediateCatchEvent id="eo_delivered" name="Delivered"><messageEventDefinition messageRef="msg_sangam_order_delivered"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="eo_rto" name="Returned to origin (failed delivery)"><messageEventDefinition messageRef="msg_sangam_order_rto"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="eo_late" name="Delivery promise missed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${deliveryDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="eo_investigate" name="Investigate delayed shipment" operaton:candidateGroups="LOGISTICS-DESK" operaton:formKey="sangam:sec-ecom-order-to-cash/delay"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="eo_delClock2" name="Regulatory clock: delivery" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>delivery</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>3D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="eo_cod" name="COD remittance" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>logistics.codRemit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>remit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cod</operaton:string></operaton:field><operaton:field name="step"><operaton:string>cod</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="eo_codOptGw" name="COD?" default="sec_ecom_order_f37"></exclusiveGateway>
+    <exclusiveGateway id="eo_codOptMerge" name=""></exclusiveGateway>
+    <intermediateCatchEvent id="eo_returnWindow" name="Return window over"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${returnWindow}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <businessRuleTask id="eo_commission" name="Commission (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ecom-commission</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="eo_settleCfg" name="Settlement" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionConnector=nodal.settle;executionStep=seller-settlement;executionPayloadFields=sellerId,amount,commissionPct</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="eo_settle" name="Settle with the seller (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="eo_end" name="Settled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="eo_payFail" name="Payment failed" attachedToRef="eo_auth" cancelActivity="true"><errorEventDefinition errorRef="err_PAYMENT_FAILED"/></boundaryEvent>
+    <boundaryEvent id="eo_seller_warn" name="SLA warning (75%)" attachedToRef="eo_seller" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${eo_sellerWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="eo_seller_breach" name="SLA breached" attachedToRef="eo_seller" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${eo_sellerDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_ecom_order_f1" sourceRef="eo_start" targetRef="eo_defaults"/>
+    <sequenceFlow id="sec_ecom_order_f2" sourceRef="eo_defaults" targetRef="eo_fraud"/>
+    <sequenceFlow id="sec_ecom_order_f3" sourceRef="eo_fraud" targetRef="eo_holdGw"/>
+    <sequenceFlow id="sec_ecom_order_f4" name="hold" sourceRef="eo_holdGw" targetRef="eo_review"><conditionExpression xsi:type="tFormalExpression">${riskHold}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_order_f5" sourceRef="eo_review" targetRef="eo_revGw"/>
+    <sequenceFlow id="sec_ecom_order_f6" name="reject" sourceRef="eo_revGw" targetRef="eo_endRiskRejected"><conditionExpression xsi:type="tFormalExpression">${riskDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_order_f7" name="clear" sourceRef="eo_holdGw" targetRef="eo_payGw"/>
+    <sequenceFlow id="sec_ecom_order_f8" name="approve" sourceRef="eo_revGw" targetRef="eo_payGw"/>
+    <sequenceFlow id="sec_ecom_order_f9" name="prepaid" sourceRef="eo_payGw" targetRef="eo_auth"><conditionExpression xsi:type="tFormalExpression">${paymentMode == 'PREPAID'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_order_f10" sourceRef="eo_payFail" targetRef="eo_endPayFailed"/>
+    <sequenceFlow id="sec_ecom_order_f11" sourceRef="eo_seller_warn" targetRef="eo_seller_warnNotify"/>
+    <sequenceFlow id="sec_ecom_order_f12" sourceRef="eo_seller_warnNotify" targetRef="eo_seller_warnEnd"/>
+    <sequenceFlow id="sec_ecom_order_f13" sourceRef="eo_seller_breach" targetRef="eo_seller_breachAct"/>
+    <sequenceFlow id="sec_ecom_order_f14" sourceRef="eo_seller_breachAct" targetRef="eo_seller_breachGw"/>
+    <sequenceFlow id="sec_ecom_order_f15" name="deemed" sourceRef="eo_seller_breachGw" targetRef="eo_seller_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_order_f16" name="escalated" sourceRef="eo_seller_breachGw" targetRef="eo_seller_slaPlan"/>
+    <sequenceFlow id="sec_ecom_order_f17" sourceRef="eo_seller_slaPlan" targetRef="eo_seller"/>
+    <sequenceFlow id="sec_ecom_order_f18" sourceRef="eo_seller" targetRef="eo_seller_done"/>
+    <sequenceFlow id="sec_ecom_order_f19" sourceRef="eo_auth" targetRef="eo_seller_slaPlan"/>
+    <sequenceFlow id="sec_ecom_order_f20" name="COD" sourceRef="eo_payGw" targetRef="eo_seller_slaPlan"/>
+    <sequenceFlow id="sec_ecom_order_f21" sourceRef="eo_seller_done" targetRef="eo_sellerGw"/>
+    <sequenceFlow id="sec_ecom_order_f22" name="rejected / not confirmed" sourceRef="eo_sellerGw" targetRef="eo_refundGw"><conditionExpression xsi:type="tFormalExpression">${sellerDecision != 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_order_f23" name="prepaid" sourceRef="eo_refundGw" targetRef="eo_refund"><conditionExpression xsi:type="tFormalExpression">${paymentMode == 'PREPAID'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_order_f24" name="COD" sourceRef="eo_refundGw" targetRef="eo_endCancelled"/>
+    <sequenceFlow id="sec_ecom_order_f25" sourceRef="eo_refund" targetRef="eo_endCancelled"/>
+    <sequenceFlow id="sec_ecom_order_f26" name="accepted" sourceRef="eo_sellerGw" targetRef="eo_ship"/>
+    <sequenceFlow id="sec_ecom_order_f27" sourceRef="eo_ship" targetRef="eo_delClock"/>
+    <sequenceFlow id="sec_ecom_order_f28" sourceRef="eo_delClock" targetRef="eo_wait"/>
+    <sequenceFlow id="sec_ecom_order_f29" sourceRef="eo_wait" targetRef="eo_delivered"/>
+    <sequenceFlow id="sec_ecom_order_f30" sourceRef="eo_wait" targetRef="eo_rto"/>
+    <sequenceFlow id="sec_ecom_order_f31" sourceRef="eo_wait" targetRef="eo_late"/>
+    <sequenceFlow id="sec_ecom_order_f32" sourceRef="eo_late" targetRef="eo_investigate"/>
+    <sequenceFlow id="sec_ecom_order_f33" sourceRef="eo_investigate" targetRef="eo_delClock2"/>
+    <sequenceFlow id="sec_ecom_order_f34" sourceRef="eo_delClock2" targetRef="eo_wait"/>
+    <sequenceFlow id="sec_ecom_order_f35" sourceRef="eo_rto" targetRef="eo_refundGw"/>
+    <sequenceFlow id="sec_ecom_order_f36" name="yes" sourceRef="eo_codOptGw" targetRef="eo_cod"><conditionExpression xsi:type="tFormalExpression">${paymentMode == 'COD'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_order_f37" name="no" sourceRef="eo_codOptGw" targetRef="eo_codOptMerge"/>
+    <sequenceFlow id="sec_ecom_order_f38" sourceRef="eo_cod" targetRef="eo_codOptMerge"/>
+    <sequenceFlow id="sec_ecom_order_f39" sourceRef="eo_delivered" targetRef="eo_codOptGw"/>
+    <sequenceFlow id="sec_ecom_order_f40" sourceRef="eo_codOptMerge" targetRef="eo_returnWindow"/>
+    <sequenceFlow id="sec_ecom_order_f41" sourceRef="eo_returnWindow" targetRef="eo_commission"/>
+    <sequenceFlow id="sec_ecom_order_f42" sourceRef="eo_commission" targetRef="eo_settleCfg"/>
+    <sequenceFlow id="sec_ecom_order_f43" sourceRef="eo_settleCfg" targetRef="eo_settle"/>
+    <sequenceFlow id="sec_ecom_order_f44" sourceRef="eo_settle" targetRef="eo_end"/>
+    <subProcess id="eo_cancel" name="Cancelled by the consumer before shipment" triggeredByEvent="true">
+      <startEvent id="eo_cxStart" name="Cancellation request" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_order_cancel"/></startEvent>
+      <serviceTask id="eo_cxCfg" name="Refund settings" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionConnector=pg.refund;executionStep=cancel-refund</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="eo_cxRefund" name="Refund in full (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="eo_cxEnd" name="Cancelled by the consumer"></endEvent>
+      <sequenceFlow id="sec_ecom_order_f45" sourceRef="eo_cxStart" targetRef="eo_cxCfg"/>
+      <sequenceFlow id="sec_ecom_order_f46" sourceRef="eo_cxCfg" targetRef="eo_cxRefund"/>
+      <sequenceFlow id="sec_ecom_order_f47" sourceRef="eo_cxRefund" targetRef="eo_cxEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ecom_order_diagram">
+    <bpmndi:BPMNPlane id="sec_ecom_order_plane" bpmnElement="sangam-sec-ecom-order">
+      <bpmndi:BPMNShape id="eo_start_di" bpmnElement="eo_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_defaults_di" bpmnElement="eo_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_fraud_di" bpmnElement="eo_fraud"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_holdGw_di" bpmnElement="eo_holdGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_review_di" bpmnElement="eo_review"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_revGw_di" bpmnElement="eo_revGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_endRiskRejected_di" bpmnElement="eo_endRiskRejected"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_payGw_di" bpmnElement="eo_payGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_auth_di" bpmnElement="eo_auth"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_endPayFailed_di" bpmnElement="eo_endPayFailed"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_seller_slaPlan_di" bpmnElement="eo_seller_slaPlan"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_seller_di" bpmnElement="eo_seller"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_seller_warnNotify_di" bpmnElement="eo_seller_warnNotify"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_seller_warnEnd_di" bpmnElement="eo_seller_warnEnd"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_seller_breachAct_di" bpmnElement="eo_seller_breachAct"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_seller_breachGw_di" bpmnElement="eo_seller_breachGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_seller_done_di" bpmnElement="eo_seller_done"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_sellerGw_di" bpmnElement="eo_sellerGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_refund_di" bpmnElement="eo_refund"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_refundGw_di" bpmnElement="eo_refundGw"><dc:Bounds x="3015" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_endCancelled_di" bpmnElement="eo_endCancelled"><dc:Bounds x="3352" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_ship_di" bpmnElement="eo_ship"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_delClock_di" bpmnElement="eo_delClock"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_wait_di" bpmnElement="eo_wait"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_delivered_di" bpmnElement="eo_delivered"><dc:Bounds x="2857" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_rto_di" bpmnElement="eo_rto"><dc:Bounds x="2857" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_late_di" bpmnElement="eo_late"><dc:Bounds x="2857" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_investigate_di" bpmnElement="eo_investigate"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_delClock2_di" bpmnElement="eo_delClock2"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_cod_di" bpmnElement="eo_cod"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_codOptGw_di" bpmnElement="eo_codOptGw"><dc:Bounds x="3015" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_codOptMerge_di" bpmnElement="eo_codOptMerge"><dc:Bounds x="3345" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_returnWindow_di" bpmnElement="eo_returnWindow"><dc:Bounds x="3517" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_commission_di" bpmnElement="eo_commission"><dc:Bounds x="3650" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_settleCfg_di" bpmnElement="eo_settleCfg"><dc:Bounds x="3815" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_settle_di" bpmnElement="eo_settle"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_end_di" bpmnElement="eo_end"><dc:Bounds x="4177" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_payFail_di" bpmnElement="eo_payFail"><dc:Bounds x="1183" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_seller_warn_di" bpmnElement="eo_seller_warn"><dc:Bounds x="1513" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_seller_breach_di" bpmnElement="eo_seller_breach"><dc:Bounds x="1543" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_cancel_di" bpmnElement="eo_cancel" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_cxStart_di" bpmnElement="eo_cxStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_cxCfg_di" bpmnElement="eo_cxCfg"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_cxRefund_di" bpmnElement="eo_cxRefund"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="eo_cxEnd_di" bpmnElement="eo_cxEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f1_di" bpmnElement="sec_ecom_order_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f2_di" bpmnElement="sec_ecom_order_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f3_di" bpmnElement="sec_ecom_order_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f4_di" bpmnElement="sec_ecom_order_f4"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f5_di" bpmnElement="sec_ecom_order_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f6_di" bpmnElement="sec_ecom_order_f6"><di:waypoint x="920" y="70"/><di:waypoint x="981" y="70"/><di:waypoint x="981" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f7_di" bpmnElement="sec_ecom_order_f7"><di:waypoint x="590" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f8_di" bpmnElement="sec_ecom_order_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f9_di" bpmnElement="sec_ecom_order_f9"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f10_di" bpmnElement="sec_ecom_order_f10"><di:waypoint x="1201" y="128"/><di:waypoint x="1201" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f11_di" bpmnElement="sec_ecom_order_f11"><di:waypoint x="1531" y="128"/><di:waypoint x="1531" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f12_di" bpmnElement="sec_ecom_order_f12"><di:waypoint x="1770" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f13_di" bpmnElement="sec_ecom_order_f13"><di:waypoint x="1561" y="128"/><di:waypoint x="1561" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f14_di" bpmnElement="sec_ecom_order_f14"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f15_di" bpmnElement="sec_ecom_order_f15"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f16_di" bpmnElement="sec_ecom_order_f16"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="149"/><di:waypoint x="1390" y="149"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f17_di" bpmnElement="sec_ecom_order_f17"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f18_di" bpmnElement="sec_ecom_order_f18"><di:waypoint x="1605" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f19_di" bpmnElement="sec_ecom_order_f19"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f20_di" bpmnElement="sec_ecom_order_f20"><di:waypoint x="1085" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f21_di" bpmnElement="sec_ecom_order_f21"><di:waypoint x="2075" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f22_di" bpmnElement="sec_ecom_order_f22"><di:waypoint x="2240" y="70"/><di:waypoint x="2627" y="70"/><di:waypoint x="2627" y="195"/><di:waypoint x="3015" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f23_di" bpmnElement="sec_ecom_order_f23"><di:waypoint x="3065" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f24_di" bpmnElement="sec_ecom_order_f24"><di:waypoint x="3065" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f25_di" bpmnElement="sec_ecom_order_f25"><di:waypoint x="3255" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f26_di" bpmnElement="sec_ecom_order_f26"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f27_di" bpmnElement="sec_ecom_order_f27"><di:waypoint x="2430" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f28_di" bpmnElement="sec_ecom_order_f28"><di:waypoint x="2595" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f29_di" bpmnElement="sec_ecom_order_f29"><di:waypoint x="2735" y="70"/><di:waypoint x="2796" y="70"/><di:waypoint x="2796" y="320"/><di:waypoint x="2857" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f30_di" bpmnElement="sec_ecom_order_f30"><di:waypoint x="2735" y="70"/><di:waypoint x="2796" y="70"/><di:waypoint x="2796" y="195"/><di:waypoint x="2857" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f31_di" bpmnElement="sec_ecom_order_f31"><di:waypoint x="2735" y="70"/><di:waypoint x="2857" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f32_di" bpmnElement="sec_ecom_order_f32"><di:waypoint x="2893" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f33_di" bpmnElement="sec_ecom_order_f33"><di:waypoint x="3090" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f34_di" bpmnElement="sec_ecom_order_f34"><di:waypoint x="3205" y="110"/><di:waypoint x="3205" y="135"/><di:waypoint x="2710" y="135"/><di:waypoint x="2710" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f35_di" bpmnElement="sec_ecom_order_f35"><di:waypoint x="2893" y="195"/><di:waypoint x="3015" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f36_di" bpmnElement="sec_ecom_order_f36"><di:waypoint x="3065" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f37_di" bpmnElement="sec_ecom_order_f37"><di:waypoint x="3065" y="320"/><di:waypoint x="3345" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f38_di" bpmnElement="sec_ecom_order_f38"><di:waypoint x="3255" y="320"/><di:waypoint x="3345" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f39_di" bpmnElement="sec_ecom_order_f39"><di:waypoint x="2893" y="320"/><di:waypoint x="3015" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f40_di" bpmnElement="sec_ecom_order_f40"><di:waypoint x="3395" y="320"/><di:waypoint x="3517" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f41_di" bpmnElement="sec_ecom_order_f41"><di:waypoint x="3553" y="320"/><di:waypoint x="3650" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f42_di" bpmnElement="sec_ecom_order_f42"><di:waypoint x="3750" y="320"/><di:waypoint x="3815" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f43_di" bpmnElement="sec_ecom_order_f43"><di:waypoint x="3915" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f44_di" bpmnElement="sec_ecom_order_f44"><di:waypoint x="4080" y="320"/><di:waypoint x="4177" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f45_di" bpmnElement="sec_ecom_order_f45"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f46_di" bpmnElement="sec_ecom_order_f46"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_order_f47_di" bpmnElement="sec_ecom_order_f47"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

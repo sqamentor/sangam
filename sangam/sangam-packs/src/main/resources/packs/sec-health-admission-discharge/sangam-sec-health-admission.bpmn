@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Admission to discharge. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_health_admission" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-health-admission" name="Admission to discharge" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.health.admission-discharge</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>patientName,abhaNumber,payerType</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ad_start" name="Patient arrives" operaton:initiator="initiator" operaton:formKey="sangam:sec-health-admission-discharge/register"></startEvent>
+    <serviceTask id="ad_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;abhaNumber=null;admissionType=EMERGENCY;payerType=SELF;wardType=GENERAL;consentGiven=false;erSeat=ER-DOCTOR;admitSeat=ADMISSION-DESK;doctorSeat=TREATING-DOCTOR;billingSeat=BILLING;applicantRef=@patientName</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ad_abha" name="Verify ABHA" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>abdm.abhaVerify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>verify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>abhaNumber</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>abha</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ad_abhaOptGw" name="ABHA given?" default="sec_health_admission_f2"></exclusiveGateway>
+    <exclusiveGateway id="ad_abhaOptMerge" name=""></exclusiveGateway>
+    <exclusiveGateway id="ad_erGw" name="Emergency?" default="sec_health_admission_f8"></exclusiveGateway>
+    <userTask id="ad_triage" name="Triage and stabilise" operaton:candidateGroups="${erSeat}" operaton:formKey="sangam:sec-health-admission-discharge/triage" operaton:priority="90"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="ad_admit" name="Admit: bed, estimate of charges, consent" operaton:candidateGroups="${admitSeat}" operaton:formKey="sangam:sec-health-admission-discharge/admit"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ad_consentGw" name="Consent recorded?" default="sec_health_admission_f12"></exclusiveGateway>
+    <exclusiveGateway id="ad_payerGw" name="Payer?" default="sec_health_admission_f15"></exclusiveGateway>
+    <serviceTask id="ad_preauth" name="Pre-authorisation request to the insurer / TPA (NHCX)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>tpa.preauthRequest</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>preauth</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName,estimatedCost</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>preauth</operaton:string></operaton:field><operaton:field name="step"><operaton:string>preauth</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ad_bis" name="PM-JAY beneficiary identification and pre-authorisation" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>pmjay.bis</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>identify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName,abhaNumber</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>pmjay</operaton:string></operaton:field><operaton:field name="step"><operaton:string>pmjay</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ad_care" name="Inpatient care: orders and notes" operaton:candidateGroups="${doctorSeat}" operaton:formKey="sangam:sec-health-admission-discharge/care"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>careOutcome</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ad_outGw" name="Outcome?" default="sec_health_admission_f33"></exclusiveGateway>
+    <parallelGateway id="ad_fork" name="Discharge in parallel"></parallelGateway>
+    <parallelGateway id="ad_join" name=""></parallelGateway>
+    <userTask id="ad_doctorSeat" name="Discharge summary" operaton:candidateGroups="${doctorSeat}" operaton:formKey="sangam:sec-health-admission-discharge/doctor"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="ad_billingSeat" name="Final bill (itemised)" operaton:candidateGroups="${billingSeat}" operaton:formKey="sangam:sec-health-admission-discharge/billing"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ad_link" name="Link discharge summary to ABHA (care context)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>abdm.linkCareContext</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>link</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>abhaNumber,dischargeSummary</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>hip</operaton:string></operaton:field><operaton:field name="step"><operaton:string>link</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ad_linkOptGw" name="ABHA linked?" default="sec_health_admission_f25"></exclusiveGateway>
+    <exclusiveGateway id="ad_linkOptMerge" name=""></exclusiveGateway>
+    <endEvent id="ad_end" name="Discharged"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="ad_lama" name="Record LAMA / DAMA with risks explained" operaton:candidateGroups="${doctorSeat}" operaton:formKey="sangam:sec-health-admission-discharge/lama"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="ad_endLama" name="Left against medical advice"></endEvent>
+    <userTask id="ad_transfer" name="Transfer with referral note" operaton:candidateGroups="${doctorSeat}" operaton:formKey="sangam:sec-health-admission-discharge/transfer"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="ad_endTransfer" name="Transferred"></endEvent>
+    <userTask id="ad_death" name="Death summary and MCCD" operaton:candidateGroups="${doctorSeat}" operaton:formKey="sangam:sec-health-admission-discharge/death"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ad_crs" name="Report the death for civil registration (21 days)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>crs.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>death</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>crs</operaton:string></operaton:field><operaton:field name="step"><operaton:string>crs</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ad_endDeath" name="Death reported"></endEvent>
+    <sequenceFlow id="sec_health_admission_f1" name="yes" sourceRef="ad_abhaOptGw" targetRef="ad_abha"><conditionExpression xsi:type="tFormalExpression">${abhaNumber != null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_admission_f2" name="no" sourceRef="ad_abhaOptGw" targetRef="ad_abhaOptMerge"/>
+    <sequenceFlow id="sec_health_admission_f3" sourceRef="ad_abha" targetRef="ad_abhaOptMerge"/>
+    <sequenceFlow id="sec_health_admission_f4" sourceRef="ad_start" targetRef="ad_defaults"/>
+    <sequenceFlow id="sec_health_admission_f5" sourceRef="ad_defaults" targetRef="ad_abhaOptGw"/>
+    <sequenceFlow id="sec_health_admission_f6" sourceRef="ad_abhaOptMerge" targetRef="ad_erGw"/>
+    <sequenceFlow id="sec_health_admission_f7" name="emergency" sourceRef="ad_erGw" targetRef="ad_triage"><conditionExpression xsi:type="tFormalExpression">${admissionType == 'EMERGENCY'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_admission_f8" name="planned" sourceRef="ad_erGw" targetRef="ad_admit"/>
+    <sequenceFlow id="sec_health_admission_f9" sourceRef="ad_triage" targetRef="ad_admit"/>
+    <sequenceFlow id="sec_health_admission_f10" sourceRef="ad_admit" targetRef="ad_consentGw"/>
+    <sequenceFlow id="sec_health_admission_f11" name="no: obtain consent" sourceRef="ad_consentGw" targetRef="ad_admit"><conditionExpression xsi:type="tFormalExpression">${!consentGiven}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_admission_f12" name="yes" sourceRef="ad_consentGw" targetRef="ad_payerGw"/>
+    <sequenceFlow id="sec_health_admission_f13" name="insurance" sourceRef="ad_payerGw" targetRef="ad_preauth"><conditionExpression xsi:type="tFormalExpression">${payerType == 'INSURANCE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_admission_f14" name="PM-JAY" sourceRef="ad_payerGw" targetRef="ad_bis"><conditionExpression xsi:type="tFormalExpression">${payerType == 'PMJAY'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_admission_f15" name="self / corporate" sourceRef="ad_payerGw" targetRef="ad_care"/>
+    <sequenceFlow id="sec_health_admission_f16" sourceRef="ad_preauth" targetRef="ad_care"/>
+    <sequenceFlow id="sec_health_admission_f17" sourceRef="ad_bis" targetRef="ad_care"/>
+    <sequenceFlow id="sec_health_admission_f18" sourceRef="ad_care" targetRef="ad_outGw"/>
+    <sequenceFlow id="sec_health_admission_f19" name="discharge" sourceRef="ad_outGw" targetRef="ad_fork"><conditionExpression xsi:type="tFormalExpression">${careOutcome == 'discharge'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_admission_f20" sourceRef="ad_fork" targetRef="ad_doctorSeat"/>
+    <sequenceFlow id="sec_health_admission_f21" sourceRef="ad_doctorSeat" targetRef="ad_join"/>
+    <sequenceFlow id="sec_health_admission_f22" sourceRef="ad_fork" targetRef="ad_billingSeat"/>
+    <sequenceFlow id="sec_health_admission_f23" sourceRef="ad_billingSeat" targetRef="ad_join"/>
+    <sequenceFlow id="sec_health_admission_f24" name="yes" sourceRef="ad_linkOptGw" targetRef="ad_link"><conditionExpression xsi:type="tFormalExpression">${abhaNumber != null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_admission_f25" name="no" sourceRef="ad_linkOptGw" targetRef="ad_linkOptMerge"/>
+    <sequenceFlow id="sec_health_admission_f26" sourceRef="ad_link" targetRef="ad_linkOptMerge"/>
+    <sequenceFlow id="sec_health_admission_f27" sourceRef="ad_join" targetRef="ad_linkOptGw"/>
+    <sequenceFlow id="sec_health_admission_f28" sourceRef="ad_linkOptMerge" targetRef="ad_end"/>
+    <sequenceFlow id="sec_health_admission_f29" name="LAMA" sourceRef="ad_outGw" targetRef="ad_lama"><conditionExpression xsi:type="tFormalExpression">${careOutcome == 'lama'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_admission_f30" sourceRef="ad_lama" targetRef="ad_endLama"/>
+    <sequenceFlow id="sec_health_admission_f31" name="transfer" sourceRef="ad_outGw" targetRef="ad_transfer"><conditionExpression xsi:type="tFormalExpression">${careOutcome == 'transfer'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_admission_f32" sourceRef="ad_transfer" targetRef="ad_endTransfer"/>
+    <sequenceFlow id="sec_health_admission_f33" name="death" sourceRef="ad_outGw" targetRef="ad_death"/>
+    <sequenceFlow id="sec_health_admission_f34" sourceRef="ad_death" targetRef="ad_crs"/>
+    <sequenceFlow id="sec_health_admission_f35" sourceRef="ad_crs" targetRef="ad_endDeath"/>
+    <subProcess id="ad_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ad_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ad_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ad_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ad_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_health_admission_f36" sourceRef="ad_withdrawStart" targetRef="ad_withdrawKind"/>
+      <sequenceFlow id="sec_health_admission_f37" sourceRef="ad_withdrawKind" targetRef="ad_withdrawCall"/>
+      <sequenceFlow id="sec_health_admission_f38" sourceRef="ad_withdrawCall" targetRef="ad_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ad_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ad_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ad_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ad_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ad_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_health_admission_f39" sourceRef="ad_cancelStart" targetRef="ad_cancelKind"/>
+      <sequenceFlow id="sec_health_admission_f40" sourceRef="ad_cancelKind" targetRef="ad_cancelCall"/>
+      <sequenceFlow id="sec_health_admission_f41" sourceRef="ad_cancelCall" targetRef="ad_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_health_admission_diagram">
+    <bpmndi:BPMNPlane id="sec_health_admission_plane" bpmnElement="sangam-sec-health-admission">
+      <bpmndi:BPMNShape id="ad_start_di" bpmnElement="ad_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_defaults_di" bpmnElement="ad_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_abha_di" bpmnElement="ad_abha"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_abhaOptGw_di" bpmnElement="ad_abhaOptGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_abhaOptMerge_di" bpmnElement="ad_abhaOptMerge"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_erGw_di" bpmnElement="ad_erGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_triage_di" bpmnElement="ad_triage"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_admit_di" bpmnElement="ad_admit"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_consentGw_di" bpmnElement="ad_consentGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_payerGw_di" bpmnElement="ad_payerGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_preauth_di" bpmnElement="ad_preauth"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_bis_di" bpmnElement="ad_bis"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_care_di" bpmnElement="ad_care"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_outGw_di" bpmnElement="ad_outGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_fork_di" bpmnElement="ad_fork"><dc:Bounds x="2190" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_join_di" bpmnElement="ad_join"><dc:Bounds x="2520" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_doctorSeat_di" bpmnElement="ad_doctorSeat"><dc:Bounds x="2330" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_billingSeat_di" bpmnElement="ad_billingSeat"><dc:Bounds x="2330" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_link_di" bpmnElement="ad_link"><dc:Bounds x="2825" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_linkOptGw_di" bpmnElement="ad_linkOptGw"><dc:Bounds x="2685" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_linkOptMerge_di" bpmnElement="ad_linkOptMerge"><dc:Bounds x="3015" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_end_di" bpmnElement="ad_end"><dc:Bounds x="3187" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_lama_di" bpmnElement="ad_lama"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_endLama_di" bpmnElement="ad_endLama"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_transfer_di" bpmnElement="ad_transfer"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_endTransfer_di" bpmnElement="ad_endTransfer"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_death_di" bpmnElement="ad_death"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_crs_di" bpmnElement="ad_crs"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_endDeath_di" bpmnElement="ad_endDeath"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_withdraw_di" bpmnElement="ad_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_withdrawStart_di" bpmnElement="ad_withdrawStart"><dc:Bounds x="92" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_withdrawKind_di" bpmnElement="ad_withdrawKind"><dc:Bounds x="225" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_withdrawCall_di" bpmnElement="ad_withdrawCall"><dc:Bounds x="390" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_withdrawEnd_di" bpmnElement="ad_withdrawEnd"><dc:Bounds x="587" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_cancel_di" bpmnElement="ad_cancel" isExpanded="true"><dc:Bounds x="30" y="850" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_cancelStart_di" bpmnElement="ad_cancelStart"><dc:Bounds x="92" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_cancelKind_di" bpmnElement="ad_cancelKind"><dc:Bounds x="225" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_cancelCall_di" bpmnElement="ad_cancelCall"><dc:Bounds x="390" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ad_cancelEnd_di" bpmnElement="ad_cancelEnd"><dc:Bounds x="587" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_health_admission_f1_di" bpmnElement="sec_health_admission_f1"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f2_di" bpmnElement="sec_health_admission_f2"><di:waypoint x="425" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f3_di" bpmnElement="sec_health_admission_f3"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f4_di" bpmnElement="sec_health_admission_f4"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f5_di" bpmnElement="sec_health_admission_f5"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f6_di" bpmnElement="sec_health_admission_f6"><di:waypoint x="755" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f7_di" bpmnElement="sec_health_admission_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f8_di" bpmnElement="sec_health_admission_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f9_di" bpmnElement="sec_health_admission_f9"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f10_di" bpmnElement="sec_health_admission_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f11_di" bpmnElement="sec_health_admission_f11"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="142"/><di:waypoint x="1225" y="142"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f12_di" bpmnElement="sec_health_admission_f12"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f13_di" bpmnElement="sec_health_admission_f13"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f14_di" bpmnElement="sec_health_admission_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f15_di" bpmnElement="sec_health_admission_f15"><di:waypoint x="1580" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f16_di" bpmnElement="sec_health_admission_f16"><di:waypoint x="1770" y="195"/><di:waypoint x="1802" y="195"/><di:waypoint x="1802" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f17_di" bpmnElement="sec_health_admission_f17"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f18_di" bpmnElement="sec_health_admission_f18"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f19_di" bpmnElement="sec_health_admission_f19"><di:waypoint x="2075" y="70"/><di:waypoint x="2132" y="70"/><di:waypoint x="2132" y="445"/><di:waypoint x="2190" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f20_di" bpmnElement="sec_health_admission_f20"><di:waypoint x="2240" y="445"/><di:waypoint x="2285" y="445"/><di:waypoint x="2285" y="570"/><di:waypoint x="2330" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f21_di" bpmnElement="sec_health_admission_f21"><di:waypoint x="2430" y="570"/><di:waypoint x="2475" y="570"/><di:waypoint x="2475" y="445"/><di:waypoint x="2520" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f22_di" bpmnElement="sec_health_admission_f22"><di:waypoint x="2240" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f23_di" bpmnElement="sec_health_admission_f23"><di:waypoint x="2430" y="445"/><di:waypoint x="2520" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f24_di" bpmnElement="sec_health_admission_f24"><di:waypoint x="2735" y="445"/><di:waypoint x="2825" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f25_di" bpmnElement="sec_health_admission_f25"><di:waypoint x="2735" y="445"/><di:waypoint x="3015" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f26_di" bpmnElement="sec_health_admission_f26"><di:waypoint x="2925" y="445"/><di:waypoint x="3015" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f27_di" bpmnElement="sec_health_admission_f27"><di:waypoint x="2570" y="445"/><di:waypoint x="2685" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f28_di" bpmnElement="sec_health_admission_f28"><di:waypoint x="3065" y="445"/><di:waypoint x="3187" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f29_di" bpmnElement="sec_health_admission_f29"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f30_di" bpmnElement="sec_health_admission_f30"><di:waypoint x="2265" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f31_di" bpmnElement="sec_health_admission_f31"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f32_di" bpmnElement="sec_health_admission_f32"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f33_di" bpmnElement="sec_health_admission_f33"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f34_di" bpmnElement="sec_health_admission_f34"><di:waypoint x="2265" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f35_di" bpmnElement="sec_health_admission_f35"><di:waypoint x="2430" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f36_di" bpmnElement="sec_health_admission_f36"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f37_di" bpmnElement="sec_health_admission_f37"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f38_di" bpmnElement="sec_health_admission_f38"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f39_di" bpmnElement="sec_health_admission_f39"><di:waypoint x="128" y="930"/><di:waypoint x="225" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f40_di" bpmnElement="sec_health_admission_f40"><di:waypoint x="325" y="930"/><di:waypoint x="390" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_admission_f41_di" bpmnElement="sec_health_admission_f41"><di:waypoint x="490" y="930"/><di:waypoint x="587" y="930"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

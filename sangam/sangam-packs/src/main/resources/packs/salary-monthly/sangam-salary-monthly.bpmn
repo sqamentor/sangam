@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Monthly salary run. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_salary_monthly" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_salaryRunNow" name="sangam.salaryRunNow"/>
+  <process id="sangam-salary-monthly" name="Monthly salary run" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.salary-monthly</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="sm_timer" name="Monthly on the 20th"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 2 20 * ?</timeCycle></timerEventDefinition></startEvent>
+    <startEvent id="sm_manual" name="Run now (message)"><messageEventDefinition messageRef="msg_sangam_salaryRunNow"/></startEvent>
+    <exclusiveGateway id="sm_join" name=""></exclusiveGateway>
+    <serviceTask id="sm_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>caseType=SALARY</operaton:string></operaton:field><operaton:field name="defaults"><operaton:string>period=current;actingSeat=CLERK-DDO;initiator=system;officeId=DPW-X</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sm_load" name="Salary bills from HRMS" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>hrms.salaryBills</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sm_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sm_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-p1-bill-payment</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>caseType,period,officeId,actingSeat,initiator</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sm_fanGw" name="All started?" default="salary_monthly_f8"></exclusiveGateway>
+    <intermediateCatchEvent id="sm_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT30M</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="sm_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sm_doneGw" name="Round complete?" default="salary_monthly_f13"></exclusiveGateway>
+    <serviceTask id="sm_report" name="Salary run report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>salary-run-report</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sm_end" name="Run closed"></endEvent>
+    <sequenceFlow id="salary_monthly_f1" sourceRef="sm_timer" targetRef="sm_join"/>
+    <sequenceFlow id="salary_monthly_f2" sourceRef="sm_manual" targetRef="sm_join"/>
+    <sequenceFlow id="salary_monthly_f3" sourceRef="sm_join" targetRef="sm_defaults"/>
+    <sequenceFlow id="salary_monthly_f4" sourceRef="sm_defaults" targetRef="sm_load"/>
+    <sequenceFlow id="salary_monthly_f5" sourceRef="sm_open" targetRef="sm_fanOut"/>
+    <sequenceFlow id="salary_monthly_f6" sourceRef="sm_fanOut" targetRef="sm_fanGw"/>
+    <sequenceFlow id="salary_monthly_f7" name="next chunk" sourceRef="sm_fanGw" targetRef="sm_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="salary_monthly_f8" name="all started" sourceRef="sm_fanGw" targetRef="sm_poll"/>
+    <sequenceFlow id="salary_monthly_f9" sourceRef="sm_poll" targetRef="sm_aggregate"/>
+    <sequenceFlow id="salary_monthly_f10" sourceRef="sm_aggregate" targetRef="sm_doneGw"/>
+    <sequenceFlow id="salary_monthly_f11" name="not yet" sourceRef="sm_doneGw" targetRef="sm_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="salary_monthly_f12" sourceRef="sm_load" targetRef="sm_open"/>
+    <sequenceFlow id="salary_monthly_f13" name="complete" sourceRef="sm_doneGw" targetRef="sm_report"/>
+    <sequenceFlow id="salary_monthly_f14" sourceRef="sm_report" targetRef="sm_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="salary_monthly_diagram">
+    <bpmndi:BPMNPlane id="salary_monthly_plane" bpmnElement="sangam-salary-monthly">
+      <bpmndi:BPMNShape id="sm_timer_di" bpmnElement="sm_timer"><dc:Bounds x="52" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_manual_di" bpmnElement="sm_manual"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_join_di" bpmnElement="sm_join"><dc:Bounds x="210" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_defaults_di" bpmnElement="sm_defaults"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_load_di" bpmnElement="sm_load"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_open_di" bpmnElement="sm_open"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_fanOut_di" bpmnElement="sm_fanOut"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_fanGw_di" bpmnElement="sm_fanGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_poll_di" bpmnElement="sm_poll"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_aggregate_di" bpmnElement="sm_aggregate"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_doneGw_di" bpmnElement="sm_doneGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_report_di" bpmnElement="sm_report"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sm_end_di" bpmnElement="sm_end"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="salary_monthly_f1_di" bpmnElement="salary_monthly_f1"><di:waypoint x="88" y="195"/><di:waypoint x="149" y="195"/><di:waypoint x="149" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f2_di" bpmnElement="salary_monthly_f2"><di:waypoint x="88" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f3_di" bpmnElement="salary_monthly_f3"><di:waypoint x="260" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f4_di" bpmnElement="salary_monthly_f4"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f5_di" bpmnElement="salary_monthly_f5"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f6_di" bpmnElement="salary_monthly_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f7_di" bpmnElement="salary_monthly_f7"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="142"/><di:waypoint x="895" y="142"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f8_di" bpmnElement="salary_monthly_f8"><di:waypoint x="1085" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f9_di" bpmnElement="salary_monthly_f9"><di:waypoint x="1243" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f10_di" bpmnElement="salary_monthly_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f11_di" bpmnElement="salary_monthly_f11"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="127"/><di:waypoint x="1225" y="127"/><di:waypoint x="1225" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f12_di" bpmnElement="salary_monthly_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f13_di" bpmnElement="salary_monthly_f13"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="salary_monthly_f14_di" bpmnElement="salary_monthly_f14"><di:waypoint x="1770" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

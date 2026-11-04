@@ -1,0 +1,65 @@
+{
+  "key": "ifms-bill/payee-review",
+  "version": "1.0.0",
+  "pack": "gov.ifms.bill",
+  "title": {
+    "en": "Confirm payee: account held by several parties",
+    "hi": "आदाता की पुष्टि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "payee",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "payeeAccount",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Payee bank account",
+        "hi": "आदाता का बैंक खाता"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "payeeDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

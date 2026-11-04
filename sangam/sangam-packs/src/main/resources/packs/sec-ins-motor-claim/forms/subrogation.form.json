@@ -1,0 +1,27 @@
+{
+  "key": "sec-ins-motor-claim/subrogation",
+  "version": "1.0.0",
+  "pack": "sec.ins.motor-claim",
+  "title": {
+    "en": "Collect RC transfer, keys and subrogation letter",
+    "hi": "आरसी अंतरण, चाबियाँ एवं प्रत्यासन पत्र"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

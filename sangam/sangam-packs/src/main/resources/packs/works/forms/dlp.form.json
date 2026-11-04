@@ -1,0 +1,56 @@
+{
+  "key": "works/dlp",
+  "version": "1.0.0",
+  "pack": "gov.works",
+  "title": {
+    "en": "Defects during DLP?",
+    "hi": "दोष दायित्व अवधि में दोष?"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "defectsFound",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Defects found during defect liability period",
+        "hi": "दोष दायित्व अवधि में पाए गए दोष"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "dlpDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "satisfactory",
+        "label": {
+          "en": "Satisfactory",
+          "hi": "संतोषजनक"
+        }
+      },
+      {
+        "value": "unsatisfactory",
+        "label": {
+          "en": "Unsatisfactory",
+          "hi": "असंतोषजनक"
+        }
+      }
+    ]
+  }
+}

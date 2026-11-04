@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "MARKETPLACE",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SELLER-DESK",
+      "role": "SELLER",
+      "office": "MARKETPLACE",
+      "reportsTo": null,
+      "name": {
+        "en": "Seller panel (external)",
+        "hi": "विक्रेता पैनल (बाह्य)"
+      }
+    },
+    {
+      "id": "RISK-DESK",
+      "role": "RISK",
+      "office": "MARKETPLACE",
+      "reportsTo": null,
+      "name": {
+        "en": "Risk desk",
+        "hi": "जोखिम डेस्क"
+      }
+    },
+    {
+      "id": "LOGISTICS-DESK",
+      "role": "LOGISTICS",
+      "office": "MARKETPLACE",
+      "reportsTo": null,
+      "name": {
+        "en": "Logistics desk",
+        "hi": "लॉजिस्टिक्स डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SELLER-DESK",
+      "person": "eeo.seller-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "RISK-DESK",
+      "person": "eeo.risk-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "LOGISTICS-DESK",
+      "person": "eeo.logistics-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "SELLER",
+      "name": {
+        "en": "Seller panel (external)",
+        "hi": "विक्रेता पैनल (बाह्य)"
+      }
+    },
+    {
+      "code": "RISK",
+      "name": {
+        "en": "Risk desk",
+        "hi": "जोखिम डेस्क"
+      }
+    },
+    {
+      "code": "LOGISTICS",
+      "name": {
+        "en": "Logistics desk",
+        "hi": "लॉजिस्टिक्स डेस्क"
+      }
+    }
+  ]
+}

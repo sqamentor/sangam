@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-11 Change. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up11_change" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-up11-change" name="UP-11 Change" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up11-change-window</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>subject,description,rollbackPlan</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u11_start" name="Change requested" operaton:initiator="initiator" operaton:formKey="sangam:up11-change-window/request"></startEvent>
+    <serviceTask id="u11_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>priority=P3;committeeSeats=CAB-1,CAB-2,CAB-3;quorumRule=MAJORITY;freezeFrozen=false;implementerSeat=IMPLEMENTER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="u11_risk" name="Risk and CAB need (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>up11-risk</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="u11_cabGw" name="CAB?" default="up11_change_f5"></exclusiveGateway>
+    <callActivity id="u11_cab" name="Change advisory board (core committee)" calledElement="sangam-core-committee"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="u11_freeze" name="Freeze calendar check" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>change.freezeCheck</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>changeWindowStart</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>freeze</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u11_cabRes" name="Approved?" default="up11_change_f8"></exclusiveGateway>
+    <endEvent id="u11_endRejected" name="Rejected by CAB"></endEvent>
+    <exclusiveGateway id="u11_freezeGw" name="Frozen?" default="up11_change_f12"></exclusiveGateway>
+    <userTask id="u11_reschedule" name="Window falls in a freeze: reschedule" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:up11-change-window/reschedule"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <intermediateCatchEvent id="u11_window" name="Change window opens"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${changeWindowStart}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="u11_implement" name="Implement change" operaton:candidateGroups="${implementerSeat}" operaton:formKey="sangam:up11-change-window/implement"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="u11_verify" name="Verify change" operaton:candidateGroups="${implementerSeat}" operaton:formKey="sangam:up11-change-window/verify"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>verificationResult</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="u11_rollback" name="Roll back change" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true" isForCompensation="true"><extensionElements><operaton:field name="connector"><operaton:string>change.rollback</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>rollback</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>subject,rollbackPlan</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rollback</operaton:string></operaton:field><operaton:field name="step"><operaton:string>rollback</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u11_verGw" name="" default="up11_change_f19"></exclusiveGateway>
+    <intermediateThrowEvent id="u11_compensate" name="Roll back by compensation"><compensateEventDefinition/></intermediateThrowEvent>
+    <endEvent id="u11_endRolledBack" name="Rolled back"></endEvent>
+    <endEvent id="u11_end" name="Implemented"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="u11_implComp" name="Roll back" attachedToRef="u11_implement" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
+    <sequenceFlow id="up11_change_f1" sourceRef="u11_start" targetRef="u11_defaults"/>
+    <sequenceFlow id="up11_change_f2" sourceRef="u11_defaults" targetRef="u11_risk"/>
+    <sequenceFlow id="up11_change_f3" sourceRef="u11_risk" targetRef="u11_cabGw"/>
+    <sequenceFlow id="up11_change_f4" name="yes" sourceRef="u11_cabGw" targetRef="u11_cab"><conditionExpression xsi:type="tFormalExpression">${cabRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up11_change_f5" name="standard change" sourceRef="u11_cabGw" targetRef="u11_freeze"/>
+    <sequenceFlow id="up11_change_f6" sourceRef="u11_cab" targetRef="u11_cabRes"/>
+    <sequenceFlow id="up11_change_f7" name="approved" sourceRef="u11_cabRes" targetRef="u11_freeze"><conditionExpression xsi:type="tFormalExpression">${committeeApproved}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up11_change_f8" name="rejected" sourceRef="u11_cabRes" targetRef="u11_endRejected"/>
+    <sequenceFlow id="up11_change_f9" sourceRef="u11_freeze" targetRef="u11_freezeGw"/>
+    <sequenceFlow id="up11_change_f10" name="frozen" sourceRef="u11_freezeGw" targetRef="u11_reschedule"><conditionExpression xsi:type="tFormalExpression">${freezeFrozen}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up11_change_f11" sourceRef="u11_reschedule" targetRef="u11_freeze"/>
+    <sequenceFlow id="up11_change_f12" name="clear" sourceRef="u11_freezeGw" targetRef="u11_window"/>
+    <sequenceFlow id="up11_change_f13" sourceRef="u11_window" targetRef="u11_implement"/>
+    <sequenceFlow id="up11_change_f14" sourceRef="u11_implement" targetRef="u11_verify"/>
+    <sequenceFlow id="up11_change_f16" sourceRef="u11_verify" targetRef="u11_verGw"/>
+    <sequenceFlow id="up11_change_f17" name="failed" sourceRef="u11_verGw" targetRef="u11_compensate"><conditionExpression xsi:type="tFormalExpression">${verificationResult == 'rollback'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up11_change_f18" sourceRef="u11_compensate" targetRef="u11_endRolledBack"/>
+    <sequenceFlow id="up11_change_f19" name="success" sourceRef="u11_verGw" targetRef="u11_end"/>
+    <association id="up11_change_a15" associationDirection="One" sourceRef="u11_implComp" targetRef="u11_rollback"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up11_change_diagram">
+    <bpmndi:BPMNPlane id="up11_change_plane" bpmnElement="sangam-up11-change">
+      <bpmndi:BPMNShape id="u11_start_di" bpmnElement="u11_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_defaults_di" bpmnElement="u11_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_risk_di" bpmnElement="u11_risk"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_cabGw_di" bpmnElement="u11_cabGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_cab_di" bpmnElement="u11_cab"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_freeze_di" bpmnElement="u11_freeze"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_cabRes_di" bpmnElement="u11_cabRes"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_endRejected_di" bpmnElement="u11_endRejected"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_freezeGw_di" bpmnElement="u11_freezeGw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_reschedule_di" bpmnElement="u11_reschedule"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_window_di" bpmnElement="u11_window"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_implement_di" bpmnElement="u11_implement"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_verify_di" bpmnElement="u11_verify"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_rollback_di" bpmnElement="u11_rollback"><dc:Bounds x="1545" y="275" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_verGw_di" bpmnElement="u11_verGw"><dc:Bounds x="1860" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_compensate_di" bpmnElement="u11_compensate"><dc:Bounds x="2032" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_endRolledBack_di" bpmnElement="u11_endRolledBack"><dc:Bounds x="2197" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_end_di" bpmnElement="u11_end"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u11_implComp_di" bpmnElement="u11_implComp"><dc:Bounds x="1513" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up11_change_f1_di" bpmnElement="up11_change_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f2_di" bpmnElement="up11_change_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f3_di" bpmnElement="up11_change_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f4_di" bpmnElement="up11_change_f4"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f5_di" bpmnElement="up11_change_f5"><di:waypoint x="590" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f6_di" bpmnElement="up11_change_f6"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f7_di" bpmnElement="up11_change_f7"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f8_di" bpmnElement="up11_change_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f9_di" bpmnElement="up11_change_f9"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f10_di" bpmnElement="up11_change_f10"><di:waypoint x="1250" y="195"/><di:waypoint x="1295" y="195"/><di:waypoint x="1295" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f11_di" bpmnElement="up11_change_f11"><di:waypoint x="1390" y="360"/><di:waypoint x="1390" y="392"/><di:waypoint x="1060" y="392"/><di:waypoint x="1060" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f12_di" bpmnElement="up11_change_f12"><di:waypoint x="1250" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f13_di" bpmnElement="up11_change_f13"><di:waypoint x="1408" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f14_di" bpmnElement="up11_change_f14"><di:waypoint x="1605" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f16_di" bpmnElement="up11_change_f16"><di:waypoint x="1770" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f17_di" bpmnElement="up11_change_f17"><di:waypoint x="1910" y="195"/><di:waypoint x="1971" y="195"/><di:waypoint x="1971" y="320"/><di:waypoint x="2032" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f18_di" bpmnElement="up11_change_f18"><di:waypoint x="2068" y="320"/><di:waypoint x="2197" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_f19_di" bpmnElement="up11_change_f19"><di:waypoint x="1910" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up11_change_a15_di" bpmnElement="up11_change_a15"><di:waypoint x="1531" y="253"/><di:waypoint x="1595" y="275"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

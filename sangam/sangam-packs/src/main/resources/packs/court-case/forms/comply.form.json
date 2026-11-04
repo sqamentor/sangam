@@ -1,0 +1,36 @@
+{
+  "key": "court-case/comply",
+  "version": "1.0.0",
+  "pack": "gov.court-case",
+  "title": {
+    "en": "Implement the order",
+    "hi": "आदेश का अनुपालन करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "offices": [
+    {
+      "id": "HQ",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "scrutiny-pool",
+      "role": "SCRUTINY",
+      "office": "HQ",
+      "reportsTo": "appellate-authority",
+      "name": {
+        "en": "Scrutiny pool",
+        "hi": "संवीक्षा समूह"
+      }
+    },
+    {
+      "id": "appellate-authority",
+      "role": "APPELLATE",
+      "office": "HQ",
+      "name": {
+        "en": "Appellate authority",
+        "hi": "अपीलीय प्राधिकारी"
+      }
+    },
+    {
+      "id": "reconciliation-desk",
+      "role": "RECON",
+      "office": "HQ",
+      "name": {
+        "en": "Reconciliation desk",
+        "hi": "मिलान डेस्क"
+      }
+    },
+    {
+      "id": "referral-desk",
+      "role": "REFERRAL",
+      "office": "HQ",
+      "name": {
+        "en": "Referral desk",
+        "hi": "संदर्भ डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "appellate-authority",
+      "person": "aa.demo",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "reconciliation-desk",
+      "person": "recon.demo",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "SO",
+      "name": {
+        "en": "Section Officer",
+        "hi": "अनुभाग अधिकारी"
+      }
+    },
+    {
+      "code": "US",
+      "name": {
+        "en": "Under Secretary",
+        "hi": "अवर सचिव"
+      }
+    },
+    {
+      "code": "DS",
+      "name": {
+        "en": "Deputy Secretary",
+        "hi": "उप सचिव"
+      }
+    },
+    {
+      "code": "JS",
+      "name": {
+        "en": "Joint Secretary",
+        "hi": "संयुक्त सचिव"
+      }
+    },
+    {
+      "code": "SECRETARY",
+      "name": {
+        "en": "Secretary",
+        "hi": "सचिव"
+      }
+    },
+    {
+      "code": "APPELLATE",
+      "name": {
+        "en": "Appellate authority",
+        "hi": "अपीलीय प्राधिकारी"
+      }
+    }
+  ]
+}

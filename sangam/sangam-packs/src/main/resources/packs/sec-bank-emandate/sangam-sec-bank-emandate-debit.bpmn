@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Recurring debit (one cycle). Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_emandate_debit" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_mandate_afaDone" name="sangam.mandate.afaDone"/>
+  <message id="msg_sangam_mandate_optOut" name="sangam.mandate.optOut"/>
+  <process id="sangam-sec-bank-emandate-debit" name="Recurring debit (one cycle)" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.emandate</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ed_start" name="Debit due"></startEvent>
+    <serviceTask id="ed_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>merchantCategory=GENERAL;afaDone=false;executionConnector=npci.debit;executionStep=debit;verifyApproval=false;reconcileRequired=false;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ed_afa" name="AFA needed? (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-afa-limit</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="ed_pre" name="Due date: preDebit" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>preDebit</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>debitDate</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>P1D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ed_notify" name="Pre-debit notice (at least 24 hours before)" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>pre-debit-notice</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ed_dueCalc" name="Due date: debit" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>debit</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>debitDate</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>PT0S</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="ed_preWait" name="Notice time"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${preDebitDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <eventBasedGateway id="ed_wait" name="Opt-out or debit time"></eventBasedGateway>
+    <intermediateCatchEvent id="ed_optOut" name="Customer opts out of this debit"><messageEventDefinition messageRef="msg_sangam_mandate_optOut"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ed_debitTime" name="Debit time"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${debitDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="ed_endSkipped" name="Skipped by the customer"></endEvent>
+    <exclusiveGateway id="ed_afaGw" name="AFA required?" default="sec_bank_emandate_debit_f16"></exclusiveGateway>
+    <eventBasedGateway id="ed_afaWait" name="AFA or timeout"></eventBasedGateway>
+    <intermediateCatchEvent id="ed_afaMsg" name="AFA completed"><messageEventDefinition messageRef="msg_sangam_mandate_afaDone"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ed_afaTimeout" name="AFA not completed"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT24H</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="ed_endNoAfa" name="Not debited: AFA not completed"></endEvent>
+    <callActivity id="ed_debit" name="Debit (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ed_end" name="Debited"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ed_bounce" name="Debit returned: tell the customer" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>debit-bounce</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ed_exGw" name="executionOutcome?" default="sec_bank_emandate_debit_f19"></exclusiveGateway>
+    <endEvent id="ed_endBounced" name="Bounced"></endEvent>
+    <sequenceFlow id="sec_bank_emandate_debit_f1" sourceRef="ed_start" targetRef="ed_defaults"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f2" sourceRef="ed_defaults" targetRef="ed_afa"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f3" sourceRef="ed_afa" targetRef="ed_pre"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f4" sourceRef="ed_pre" targetRef="ed_preWait"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f5" sourceRef="ed_preWait" targetRef="ed_notify"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f6" sourceRef="ed_notify" targetRef="ed_dueCalc"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f7" sourceRef="ed_dueCalc" targetRef="ed_wait"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f8" sourceRef="ed_wait" targetRef="ed_optOut"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f9" sourceRef="ed_wait" targetRef="ed_debitTime"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f10" sourceRef="ed_optOut" targetRef="ed_endSkipped"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f11" sourceRef="ed_debitTime" targetRef="ed_afaGw"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f12" name="yes" sourceRef="ed_afaGw" targetRef="ed_afaWait"><conditionExpression xsi:type="tFormalExpression">${afaRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_emandate_debit_f13" sourceRef="ed_afaWait" targetRef="ed_afaMsg"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f14" sourceRef="ed_afaWait" targetRef="ed_afaTimeout"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f15" sourceRef="ed_afaTimeout" targetRef="ed_endNoAfa"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f16" name="within the no-AFA limit" sourceRef="ed_afaGw" targetRef="ed_debit"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f17" sourceRef="ed_afaMsg" targetRef="ed_debit"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f18" name="DONE" sourceRef="ed_exGw" targetRef="ed_end"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_emandate_debit_f19" name="otherwise" sourceRef="ed_exGw" targetRef="ed_bounce"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f20" sourceRef="ed_debit" targetRef="ed_exGw"/>
+    <sequenceFlow id="sec_bank_emandate_debit_f21" sourceRef="ed_bounce" targetRef="ed_endBounced"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_emandate_debit_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_emandate_debit_plane" bpmnElement="sangam-sec-bank-emandate-debit">
+      <bpmndi:BPMNShape id="ed_start_di" bpmnElement="ed_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_defaults_di" bpmnElement="ed_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_afa_di" bpmnElement="ed_afa"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_pre_di" bpmnElement="ed_pre"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_notify_di" bpmnElement="ed_notify"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_dueCalc_di" bpmnElement="ed_dueCalc"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_preWait_di" bpmnElement="ed_preWait"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_wait_di" bpmnElement="ed_wait"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_optOut_di" bpmnElement="ed_optOut"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_debitTime_di" bpmnElement="ed_debitTime"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_endSkipped_di" bpmnElement="ed_endSkipped"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_afaGw_di" bpmnElement="ed_afaGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_afaWait_di" bpmnElement="ed_afaWait"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_afaMsg_di" bpmnElement="ed_afaMsg"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_afaTimeout_di" bpmnElement="ed_afaTimeout"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_endNoAfa_di" bpmnElement="ed_endNoAfa"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_debit_di" bpmnElement="ed_debit"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_end_di" bpmnElement="ed_end"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_bounce_di" bpmnElement="ed_bounce"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_exGw_di" bpmnElement="ed_exGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_endBounced_di" bpmnElement="ed_endBounced"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f1_di" bpmnElement="sec_bank_emandate_debit_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f2_di" bpmnElement="sec_bank_emandate_debit_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f3_di" bpmnElement="sec_bank_emandate_debit_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f4_di" bpmnElement="sec_bank_emandate_debit_f4"><di:waypoint x="615" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f5_di" bpmnElement="sec_bank_emandate_debit_f5"><di:waypoint x="748" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f6_di" bpmnElement="sec_bank_emandate_debit_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f7_di" bpmnElement="sec_bank_emandate_debit_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f8_di" bpmnElement="sec_bank_emandate_debit_f8"><di:waypoint x="1250" y="70"/><di:waypoint x="1311" y="70"/><di:waypoint x="1311" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f9_di" bpmnElement="sec_bank_emandate_debit_f9"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f10_di" bpmnElement="sec_bank_emandate_debit_f10"><di:waypoint x="1408" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f11_di" bpmnElement="sec_bank_emandate_debit_f11"><di:waypoint x="1408" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f12_di" bpmnElement="sec_bank_emandate_debit_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f13_di" bpmnElement="sec_bank_emandate_debit_f13"><di:waypoint x="1745" y="70"/><di:waypoint x="1806" y="70"/><di:waypoint x="1806" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f14_di" bpmnElement="sec_bank_emandate_debit_f14"><di:waypoint x="1745" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f15_di" bpmnElement="sec_bank_emandate_debit_f15"><di:waypoint x="1903" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f16_di" bpmnElement="sec_bank_emandate_debit_f16"><di:waypoint x="1580" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f17_di" bpmnElement="sec_bank_emandate_debit_f17"><di:waypoint x="1903" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f18_di" bpmnElement="sec_bank_emandate_debit_f18"><di:waypoint x="2240" y="195"/><di:waypoint x="2301" y="195"/><di:waypoint x="2301" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f19_di" bpmnElement="sec_bank_emandate_debit_f19"><di:waypoint x="2240" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f20_di" bpmnElement="sec_bank_emandate_debit_f20"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_debit_f21_di" bpmnElement="sec_bank_emandate_debit_f21"><di:waypoint x="2430" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

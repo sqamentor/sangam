@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_cap_segments" name="Segment activation" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-cap-segments" name="Segment activation" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-cap-segments_t" hitPolicy="FIRST">
+      <input id="sec-cap-segments_i0" label="Income range"><inputExpression id="sec-cap-segments_ie0" typeRef="string"><text>incomeRange</text></inputExpression></input>
+      <output id="sec-cap-segments_o0" label="Segments" name="segmentsAllowed" typeRef="string"/>
+      <rule id="sec-cap-segments_r0"><description>derivatives need proof of financial standing</description>
+        <inputEntry id="sec-cap-segments_r0_i0"><text>"BELOW_10L"</text></inputEntry>
+        <outputEntry id="sec-cap-segments_r0_o0"><text>"EQUITY,MF"</text></outputEntry>
+      </rule>
+      <rule id="sec-cap-segments_r1">
+        <inputEntry id="sec-cap-segments_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-cap-segments_r1_o0"><text>"EQUITY,MF,FNO,COMMODITY"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

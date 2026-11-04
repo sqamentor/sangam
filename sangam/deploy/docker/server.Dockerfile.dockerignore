@@ -1,0 +1,15 @@
+# BuildKit per-Dockerfile ignore file (context = sangam/)
+**/target/**
+!sangam-server/target/sangam-server-*.jar
+**/node_modules/**
+sangam-ui/**
+sdks/dotnet/**/bin/**
+sdks/dotnet/**/obj/**
+sdks/python/**/.venv/**
+sdks/typescript/**/node_modules/**
+sdks/php/vendor/**
+deploy/airgap/out/**
+deploy/compose/data/**
+**/.idea/**
+**/.vscode/**
+**/*.log

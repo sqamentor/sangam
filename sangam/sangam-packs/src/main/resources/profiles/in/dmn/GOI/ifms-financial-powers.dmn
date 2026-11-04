@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_financial_powers" name="Delegation of financial powers (GOI)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Contract: sangam-security DmnPowerEvaluator (maxAmount / allowed / ruleRef). GOI -->
+  <decision id="ifms-financial-powers" name="Delegation of financial powers (GOI)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-financial-powers_t" hitPolicy="FIRST">
+      <input id="ifms-financial-powers_i0" label="Seat role"><inputExpression id="ifms-financial-powers_ie0" typeRef="string"><text>seatRole</text></inputExpression></input>
+      <input id="ifms-financial-powers_i1" label="Case type"><inputExpression id="ifms-financial-powers_ie1" typeRef="string"><text>caseType</text></inputExpression></input>
+      <output id="ifms-financial-powers_o0" label="Allowed" name="allowed" typeRef="boolean"/>
+      <output id="ifms-financial-powers_o1" label="Power limit (INR)" name="maxAmount" typeRef="double"/>
+      <output id="ifms-financial-powers_o2" label="Rule" name="ruleRef" typeRef="string"/>
+      <rule id="ifms-financial-powers_r0"><description>RPR 2022: DDO draws within a sanction; no sanction power of its own</description>
+        <inputEntry id="ifms-financial-powers_r0_i0"><text>"DDO"</text></inputEntry>
+        <inputEntry id="ifms-financial-powers_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="ifms-financial-powers_r0_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r0_o1"><text>0</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r0_o2"><text>"RPR 2022: DDO draws within a sanction; no sanction power of its own"</text></outputEntry>
+      </rule>
+      <rule id="ifms-financial-powers_r1"><description>DFPR 2024 r.12(4) and department re-delegation order [U value]</description>
+        <inputEntry id="ifms-financial-powers_r1_i0"><text>"HOO"</text></inputEntry>
+        <inputEntry id="ifms-financial-powers_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="ifms-financial-powers_r1_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r1_o1"><text>500000</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r1_o2"><text>"DFPR 2024 r.12(4) and department re-delegation order [U value]"</text></outputEntry>
+      </rule>
+      <rule id="ifms-financial-powers_r2"><description>DFPR 2024 r.12(2) re-delegation to HoD [U value]</description>
+        <inputEntry id="ifms-financial-powers_r2_i0"><text>"HOD"</text></inputEntry>
+        <inputEntry id="ifms-financial-powers_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="ifms-financial-powers_r2_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r2_o1"><text>5000000</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r2_o2"><text>"DFPR 2024 r.12(2) re-delegation to HoD [U value]"</text></outputEntry>
+      </rule>
+      <rule id="ifms-financial-powers_r3"><description>DFPR 2024 r.11 (open / limited tender up to 100 cr)</description>
+        <inputEntry id="ifms-financial-powers_r3_i0"><text>"SECRETARY"</text></inputEntry>
+        <inputEntry id="ifms-financial-powers_r3_i1"><text>-</text></inputEntry>
+        <outputEntry id="ifms-financial-powers_r3_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r3_o1"><text>1000000000</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r3_o2"><text>"DFPR 2024 r.11 (open / limited tender up to 100 cr)"</text></outputEntry>
+      </rule>
+      <rule id="ifms-financial-powers_r4"><description>DFPR 2024 r.11: above the Secretary; no upper limit in this table</description>
+        <inputEntry id="ifms-financial-powers_r4_i0"><text>"MINISTER"</text></inputEntry>
+        <inputEntry id="ifms-financial-powers_r4_i1"><text>-</text></inputEntry>
+        <outputEntry id="ifms-financial-powers_r4_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r4_o1"><text>1000000000000000</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r4_o2"><text>"DFPR 2024 r.11: above the Secretary; no upper limit in this table"</text></outputEntry>
+      </rule>
+      <rule id="ifms-financial-powers_r5"><description>advice / concurrence only</description>
+        <inputEntry id="ifms-financial-powers_r5_i0"><text>"FA"</text></inputEntry>
+        <inputEntry id="ifms-financial-powers_r5_i1"><text>-</text></inputEntry>
+        <outputEntry id="ifms-financial-powers_r5_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r5_o1"><text>0</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r5_o2"><text>"advice / concurrence only"</text></outputEntry>
+      </rule>
+      <rule id="ifms-financial-powers_r6"><description>default deny</description>
+        <inputEntry id="ifms-financial-powers_r6_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-financial-powers_r6_i1"><text>-</text></inputEntry>
+        <outputEntry id="ifms-financial-powers_r6_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r6_o1"><text>0</text></outputEntry>
+        <outputEntry id="ifms-financial-powers_r6_o2"><text>"no delegated power"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

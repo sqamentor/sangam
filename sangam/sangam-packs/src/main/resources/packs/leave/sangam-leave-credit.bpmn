@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Annual leave credit for one employee. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_leave_credit" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-leave-credit" name="Annual leave credit for one employee" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.leave</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="lc_start" name="Employee"></startEvent>
+    <serviceTask id="lc_account" name="Account" operaton:expression="${execution.setVariable('elAccount', key.concat(':EL'))}"></serviceTask>
+    <serviceTask id="lc_balance" name="EL balance" operaton:class="org.sangam.packs.core.LedgerDelegate"><extensionElements><operaton:field name="op"><operaton:string>BALANCE</operaton:string></operaton:field><operaton:field name="ledger"><operaton:string>leave</operaton:string></operaton:field><operaton:field name="account"><operaton:expression>${elAccount}</operaton:expression></operaton:field><operaton:field name="resultVar"><operaton:string>leaveBalance</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="lc_rule" name="Credit and carry-forward cap (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>leave-yearend</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="lc_credit" name="Post net credit" operaton:class="org.sangam.packs.core.LedgerDelegate"><extensionElements><operaton:field name="op"><operaton:string>CREDIT</operaton:string></operaton:field><operaton:field name="ledger"><operaton:string>leave</operaton:string></operaton:field><operaton:field name="account"><operaton:expression>${elAccount}</operaton:expression></operaton:field><operaton:field name="amount"><operaton:expression>${netCredit}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lc_end" name="Credited"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="leave_credit_f1" sourceRef="lc_start" targetRef="lc_account"/>
+    <sequenceFlow id="leave_credit_f2" sourceRef="lc_account" targetRef="lc_balance"/>
+    <sequenceFlow id="leave_credit_f3" sourceRef="lc_balance" targetRef="lc_rule"/>
+    <sequenceFlow id="leave_credit_f4" sourceRef="lc_rule" targetRef="lc_credit"/>
+    <sequenceFlow id="leave_credit_f5" sourceRef="lc_credit" targetRef="lc_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="leave_credit_diagram">
+    <bpmndi:BPMNPlane id="leave_credit_plane" bpmnElement="sangam-leave-credit">
+      <bpmndi:BPMNShape id="lc_start_di" bpmnElement="lc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_account_di" bpmnElement="lc_account"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_balance_di" bpmnElement="lc_balance"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_rule_di" bpmnElement="lc_rule"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_credit_di" bpmnElement="lc_credit"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_end_di" bpmnElement="lc_end"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="leave_credit_f1_di" bpmnElement="leave_credit_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_credit_f2_di" bpmnElement="leave_credit_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_credit_f3_di" bpmnElement="leave_credit_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_credit_f4_di" bpmnElement="leave_credit_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_credit_f5_di" bpmnElement="leave_credit_f5"><di:waypoint x="780" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,56 @@
+{
+  "key": "ifms-sna-sparsh/pao",
+  "version": "1.0.0",
+  "pack": "gov.ifms.sna-sparsh",
+  "title": {
+    "en": "PAO pre-check and pass",
+    "hi": "पीएओ पूर्व-जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "dscSerial",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "DSC serial",
+        "hi": "डीएससी क्रमांक"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "paoDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "passBill",
+        "label": {
+          "en": "Pass",
+          "hi": "पारित करें"
+        }
+      },
+      {
+        "value": "returnBill",
+        "label": {
+          "en": "Return to DDO",
+          "hi": "डीडीओ को वापस करें"
+        }
+      }
+    ]
+  }
+}

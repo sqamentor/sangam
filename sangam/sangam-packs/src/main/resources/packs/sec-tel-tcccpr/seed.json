@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "TELCO-UCC",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "UCC-DESK",
+      "role": "UCC",
+      "office": "TELCO-UCC",
+      "reportsTo": null,
+      "name": {
+        "en": "UCC complaint desk",
+        "hi": "यूसीसी शिकायत डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "UCC-DESK",
+      "person": "ttc.ucc-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "UCC",
+      "name": {
+        "en": "UCC complaint desk",
+        "hi": "यूसीसी शिकायत डेस्क"
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_contract_price_escalation" name="Price escalation (synthetic clause 10CC-style)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="contract-price-escalation" name="Price escalation (synthetic clause 10CC-style)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="contract-price-escalation_t" hitPolicy="FIRST">
+      <input id="contract-price-escalation_i0" label="Index change (%)"><inputExpression id="contract-price-escalation_ie0" typeRef="double"><text>escalationIndex</text></inputExpression></input>
+      <input id="contract-price-escalation_i1" label="Base amount"><inputExpression id="contract-price-escalation_ie1" typeRef="double"><text>amendmentAmount</text></inputExpression></input>
+      <output id="contract-price-escalation_o0" label="Escalation" name="escalationAmount" typeRef="double"/>
+      <rule id="contract-price-escalation_r0"><description>absorbed by the contractor up to 5%</description>
+        <inputEntry id="contract-price-escalation_r0_i0"><text>&lt;= 5</text></inputEntry>
+        <inputEntry id="contract-price-escalation_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="contract-price-escalation_r0_o0"><text>0</text></outputEntry>
+      </rule>
+      <rule id="contract-price-escalation_r1"><description>beyond 5%, on 85% of value</description>
+        <inputEntry id="contract-price-escalation_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="contract-price-escalation_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="contract-price-escalation_r1_o0"><text>(escalationIndex - 5) / 100 * contractValue * 0.85</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

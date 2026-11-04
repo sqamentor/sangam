@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- P4 case variant: statutory clock. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_p4_case_sla" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-p4-case-sla" name="P4 case variant: statutory clock" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Runs as the blocking process task of the CMMN case; exits when the case is approved.</documentation>
+    <startEvent id="pcs_start" name="Clock started"></startEvent>
+    <serviceTask id="pcs_deadline" name="Deadline" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>case</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>30D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="pcs_due" name="Timeline lapsed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${caseDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="pcs_escalate" name="Licence overdue: direct action" operaton:candidateGroups="DC-MC" operaton:formKey="sangam:p4-licence/case-overdue"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="pcs_end" name="Escalation handled"></endEvent>
+    <sequenceFlow id="p4_case_sla_f1" sourceRef="pcs_start" targetRef="pcs_deadline"/>
+    <sequenceFlow id="p4_case_sla_f2" sourceRef="pcs_deadline" targetRef="pcs_due"/>
+    <sequenceFlow id="p4_case_sla_f3" sourceRef="pcs_due" targetRef="pcs_escalate"/>
+    <sequenceFlow id="p4_case_sla_f4" sourceRef="pcs_escalate" targetRef="pcs_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="p4_case_sla_diagram">
+    <bpmndi:BPMNPlane id="p4_case_sla_plane" bpmnElement="sangam-p4-case-sla">
+      <bpmndi:BPMNShape id="pcs_start_di" bpmnElement="pcs_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pcs_deadline_di" bpmnElement="pcs_deadline"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pcs_due_di" bpmnElement="pcs_due"><dc:Bounds x="382" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pcs_escalate_di" bpmnElement="pcs_escalate"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pcs_end_di" bpmnElement="pcs_end"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="p4_case_sla_f1_di" bpmnElement="p4_case_sla_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_case_sla_f2_di" bpmnElement="p4_case_sla_f2"><di:waypoint x="285" y="70"/><di:waypoint x="382" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_case_sla_f3_di" bpmnElement="p4_case_sla_f3"><di:waypoint x="418" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_case_sla_f4_di" bpmnElement="p4_case_sla_f4"><di:waypoint x="615" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

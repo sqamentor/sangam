@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "ISSUER",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "COMPANY-SECRETARY",
+      "role": "CS",
+      "office": "ISSUER",
+      "reportsTo": null,
+      "name": {
+        "en": "Company secretary",
+        "hi": "कंपनी सचिव"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "COMPANY-SECRETARY",
+      "person": "cca.company-secretary",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CS",
+      "name": {
+        "en": "Company secretary",
+        "hi": "कंपनी सचिव"
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "key": "sec-ins-intermediary-licensing/training",
+  "version": "1.0.0",
+  "pack": "sec.ins.intermediary-licensing",
+  "title": {
+    "en": "Pre-licensing training completed",
+    "hi": "पूर्व-अनुज्ञप्ति प्रशिक्षण पूर्ण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "trainingHours",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Training hours completed",
+        "hi": "पूर्ण प्रशिक्षण घंटे"
+      }
+    }
+  ]
+}

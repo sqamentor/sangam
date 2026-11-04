@@ -1,0 +1,81 @@
+{
+  "key": "recruitment/application",
+  "version": "1.0.0",
+  "pack": "gov.recruitment",
+  "title": {
+    "en": "Application for the post",
+    "hi": "पद हेतु आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "dob",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Date of birth",
+        "hi": "जन्म तिथि"
+      }
+    },
+    {
+      "id": "socialCategory",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Social category",
+        "hi": "सामाजिक श्रेणी"
+      }
+    },
+    {
+      "id": "qualification",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Educational qualification",
+        "hi": "शैक्षिक योग्यता"
+      }
+    },
+    {
+      "id": "pwd",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Person with benchmark disability",
+        "hi": "बेंचमार्क दिव्यांगता वाला व्यक्ति"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

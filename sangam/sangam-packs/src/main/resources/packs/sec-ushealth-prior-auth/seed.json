@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "PROVIDER",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "ORDERING-CLINICIAN",
+      "role": "CLINICIAN",
+      "office": "PROVIDER",
+      "reportsTo": "UM-LEAD",
+      "name": {
+        "en": "Ordering clinician",
+        "es": "Médico solicitante"
+      }
+    },
+    {
+      "id": "AUTH-SPECIALIST",
+      "role": "AUTHSPEC",
+      "office": "PROVIDER",
+      "reportsTo": "UM-LEAD",
+      "name": {
+        "en": "Prior authorization specialist",
+        "es": "Especialista en autorizaciones"
+      }
+    },
+    {
+      "id": "UM-LEAD",
+      "role": "UMLEAD",
+      "office": "PROVIDER",
+      "reportsTo": null,
+      "name": {
+        "en": "Utilization management lead",
+        "es": "Líder de gestión de utilización"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "ORDERING-CLINICIAN",
+      "person": "upa.ordering-clinician",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AUTH-SPECIALIST",
+      "person": "upa.auth-specialist",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "UM-LEAD",
+      "person": "upa.um-lead",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CLINICIAN",
+      "name": {
+        "en": "Ordering clinician",
+        "es": "Médico solicitante"
+      }
+    },
+    {
+      "code": "AUTHSPEC",
+      "name": {
+        "en": "Prior authorization specialist",
+        "es": "Especialista en autorizaciones"
+      }
+    },
+    {
+      "code": "UMLEAD",
+      "name": {
+        "en": "Utilization management lead",
+        "es": "Líder de gestión de utilización"
+      }
+    }
+  ]
+}

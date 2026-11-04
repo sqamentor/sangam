@@ -1,0 +1,65 @@
+{
+  "id": "gov.ifms.challan-reconciliation",
+  "version": "1.0.0",
+  "name": {
+    "en": "Receipts / challan reconciliation",
+    "hi": "प्राप्ति / चालान मिलान"
+  },
+  "domain": "IFMS",
+  "description": "Daily (timer start) or on demand: the bank / treasury scroll is matched with the challans expected; each discrepancy becomes its own case (GP-09) resolved by the reconciliation desk.",
+  "mainProcesses": [
+    "sangam-challan-reconciliation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/challan-reconciliation/sangam-challan-reconciliation.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/challan-reconciliation/sangam-challan-discrepancy.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/challan-reconciliation/forms/resolve.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/challan-reconciliation/seed.json"
+    }
+  ],
+  "seed": "packs/challan-reconciliation/seed.json",
+  "connectors": [
+    {
+      "id": "treasury.challansExpected",
+      "capabilityClass": "a",
+      "govTag": "G-PG",
+      "purpose": "Challans booked (GRAS / e-Challan)"
+    },
+    {
+      "id": "treasury.scroll",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Bank scroll for the date"
+    },
+    {
+      "id": "treasury.adjust",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Adjustment entry"
+    }
+  ],
+  "covers": [
+    "GP-31",
+    "GP-30",
+    "GP-09",
+    "D-CHALLAN-RECON",
+    "GP-55"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

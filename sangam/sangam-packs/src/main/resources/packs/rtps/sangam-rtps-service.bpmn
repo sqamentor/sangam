@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Notified public service. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_rtps_service" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-rtps-service" name="Notified public service" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.rtps</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>serviceCode,applicantName</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="rs_start" name="Application" operaton:initiator="initiator" operaton:formKey="sangam:rtps/application"></startEvent>
+    <serviceTask id="rs_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>escalated=false;appealAllowed=true;appealSla=30D;secondAppellateSeat=SECOND-APPELLATE;outputTemplate=service-certificate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="rs_timeline" name="Notified timeline (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>rtps-timeline</operaton:string></operaton:field><operaton:field name="binding"><operaton:string>latest</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="rs_doSeat" name="Designated officer" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLE</operaton:string></operaton:field><operaton:field name="roleVar"><operaton:string>designatedRole</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>doSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rs_appSeat" name="First appellate authority" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLE</operaton:string></operaton:field><operaton:field name="roleVar"><operaton:string>appellateRole</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>appellateSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rs_clock" name="Notified time" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>case</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${caseSla}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rs_decide_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rs_decide</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${caseSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="rs_decide" name="Designated officer: decide" operaton:candidateGroups="${doSeat}" operaton:formKey="sangam:rtps/decide" operaton:dueDate="${rs_decideDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>doDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="rs_decide_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rs_decide</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>doSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rs_decide_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="rs_decide_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rs_decide</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>doSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>doDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>1</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rs_decide_breachGw" name="Deemed?" default="rtps_service_f6"></exclusiveGateway>
+    <exclusiveGateway id="rs_decide_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="rs_gw" name="Decision?" default="rtps_service_f28"></exclusiveGateway>
+    <serviceTask id="rs_cert" name="Service certificate" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>service-certificate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rs_delayGw" name="Delayed?" default="rtps_service_f19"></exclusiveGateway>
+    <userTask id="rs_penalty" name="Impose penalty on designated officer" operaton:candidateGroups="${secondAppellateSeat}" operaton:formKey="sangam:rtps/penalty"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>penaltyDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <callActivity id="rs_close" name="Close (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="rs_recover" name="Recover penalty from salary" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hr.penaltyRecovery</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>recover</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>doSeat,officerPenalty</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>penalty</operaton:string></operaton:field><operaton:field name="step"><operaton:string>penalty</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rs_penGw" name="" default="rtps_service_f22"></exclusiveGateway>
+    <endEvent id="rs_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="rs_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="rs_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="rs_rj_appealGw" name="Appeal allowed?" default="rtps_service_f27"></exclusiveGateway>
+    <boundaryEvent id="rs_decide_warn" name="SLA warning (75%)" attachedToRef="rs_decide" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rs_decideWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="rs_decide_breach" name="SLA breached" attachedToRef="rs_decide" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rs_decideDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="rtps_service_f1" sourceRef="rs_decide_warn" targetRef="rs_decide_warnNotify"/>
+    <sequenceFlow id="rtps_service_f2" sourceRef="rs_decide_warnNotify" targetRef="rs_decide_warnEnd"/>
+    <sequenceFlow id="rtps_service_f3" sourceRef="rs_decide_breach" targetRef="rs_decide_breachAct"/>
+    <sequenceFlow id="rtps_service_f4" sourceRef="rs_decide_breachAct" targetRef="rs_decide_breachGw"/>
+    <sequenceFlow id="rtps_service_f5" name="deemed" sourceRef="rs_decide_breachGw" targetRef="rs_decide_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rtps_service_f6" name="escalated" sourceRef="rs_decide_breachGw" targetRef="rs_decide_slaPlan"/>
+    <sequenceFlow id="rtps_service_f7" sourceRef="rs_decide_slaPlan" targetRef="rs_decide"/>
+    <sequenceFlow id="rtps_service_f8" sourceRef="rs_decide" targetRef="rs_decide_done"/>
+    <sequenceFlow id="rtps_service_f9" sourceRef="rs_start" targetRef="rs_defaults"/>
+    <sequenceFlow id="rtps_service_f10" sourceRef="rs_defaults" targetRef="rs_timeline"/>
+    <sequenceFlow id="rtps_service_f11" sourceRef="rs_timeline" targetRef="rs_doSeat"/>
+    <sequenceFlow id="rtps_service_f12" sourceRef="rs_doSeat" targetRef="rs_appSeat"/>
+    <sequenceFlow id="rtps_service_f13" sourceRef="rs_appSeat" targetRef="rs_clock"/>
+    <sequenceFlow id="rtps_service_f14" sourceRef="rs_clock" targetRef="rs_decide_slaPlan"/>
+    <sequenceFlow id="rtps_service_f15" sourceRef="rs_decide_done" targetRef="rs_gw"/>
+    <sequenceFlow id="rtps_service_f16" name="approve" sourceRef="rs_gw" targetRef="rs_cert"><conditionExpression xsi:type="tFormalExpression">${doDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rtps_service_f17" sourceRef="rs_cert" targetRef="rs_delayGw"/>
+    <sequenceFlow id="rtps_service_f18" name="delay (escalated)" sourceRef="rs_delayGw" targetRef="rs_penalty"><conditionExpression xsi:type="tFormalExpression">${escalated}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rtps_service_f19" name="in time" sourceRef="rs_delayGw" targetRef="rs_close"/>
+    <sequenceFlow id="rtps_service_f20" sourceRef="rs_penalty" targetRef="rs_penGw"/>
+    <sequenceFlow id="rtps_service_f21" name="impose" sourceRef="rs_penGw" targetRef="rs_recover"><conditionExpression xsi:type="tFormalExpression">${penaltyDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rtps_service_f22" name="no penalty" sourceRef="rs_penGw" targetRef="rs_close"/>
+    <sequenceFlow id="rtps_service_f23" sourceRef="rs_recover" targetRef="rs_close"/>
+    <sequenceFlow id="rtps_service_f24" sourceRef="rs_close" targetRef="rs_end"/>
+    <sequenceFlow id="rtps_service_f25" sourceRef="rs_rj_reject" targetRef="rs_rj_appealGw"/>
+    <sequenceFlow id="rtps_service_f26" name="appeal allowed: re-verify" sourceRef="rs_rj_appealGw" targetRef="rs_decide_slaPlan"><conditionExpression xsi:type="tFormalExpression">${rejectionOutcome == 'APPEAL_ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rtps_service_f27" name="final" sourceRef="rs_rj_appealGw" targetRef="rs_rj_endRejected"/>
+    <sequenceFlow id="rtps_service_f28" name="reject" sourceRef="rs_gw" targetRef="rs_rj_reject"/>
+    <subProcess id="rs_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="rs_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="rs_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="rs_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="rs_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="rtps_service_f29" sourceRef="rs_withdrawStart" targetRef="rs_withdrawKind"/>
+      <sequenceFlow id="rtps_service_f30" sourceRef="rs_withdrawKind" targetRef="rs_withdrawCall"/>
+      <sequenceFlow id="rtps_service_f31" sourceRef="rs_withdrawCall" targetRef="rs_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="rs_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="rs_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="rs_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="rs_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="rs_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="rtps_service_f32" sourceRef="rs_cancelStart" targetRef="rs_cancelKind"/>
+      <sequenceFlow id="rtps_service_f33" sourceRef="rs_cancelKind" targetRef="rs_cancelCall"/>
+      <sequenceFlow id="rtps_service_f34" sourceRef="rs_cancelCall" targetRef="rs_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="rtps_service_diagram">
+    <bpmndi:BPMNPlane id="rtps_service_plane" bpmnElement="sangam-rtps-service">
+      <bpmndi:BPMNShape id="rs_start_di" bpmnElement="rs_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_defaults_di" bpmnElement="rs_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_timeline_di" bpmnElement="rs_timeline"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_doSeat_di" bpmnElement="rs_doSeat"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_appSeat_di" bpmnElement="rs_appSeat"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_clock_di" bpmnElement="rs_clock"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_decide_slaPlan_di" bpmnElement="rs_decide_slaPlan"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_decide_di" bpmnElement="rs_decide"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_decide_warnNotify_di" bpmnElement="rs_decide_warnNotify"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_decide_warnEnd_di" bpmnElement="rs_decide_warnEnd"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_decide_breachAct_di" bpmnElement="rs_decide_breachAct"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_decide_breachGw_di" bpmnElement="rs_decide_breachGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_decide_done_di" bpmnElement="rs_decide_done"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_gw_di" bpmnElement="rs_gw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_cert_di" bpmnElement="rs_cert"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_delayGw_di" bpmnElement="rs_delayGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_penalty_di" bpmnElement="rs_penalty"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_close_di" bpmnElement="rs_close"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_recover_di" bpmnElement="rs_recover"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_penGw_di" bpmnElement="rs_penGw"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_end_di" bpmnElement="rs_end"><dc:Bounds x="3022" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_rj_reject_di" bpmnElement="rs_rj_reject"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_rj_endRejected_di" bpmnElement="rs_rj_endRejected"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_rj_appealGw_di" bpmnElement="rs_rj_appealGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_decide_warn_di" bpmnElement="rs_decide_warn"><dc:Bounds x="1183" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_decide_breach_di" bpmnElement="rs_decide_breach"><dc:Bounds x="1213" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_withdraw_di" bpmnElement="rs_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_withdrawStart_di" bpmnElement="rs_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_withdrawKind_di" bpmnElement="rs_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_withdrawCall_di" bpmnElement="rs_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_withdrawEnd_di" bpmnElement="rs_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_cancel_di" bpmnElement="rs_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_cancelStart_di" bpmnElement="rs_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_cancelKind_di" bpmnElement="rs_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_cancelCall_di" bpmnElement="rs_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rs_cancelEnd_di" bpmnElement="rs_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="rtps_service_f1_di" bpmnElement="rtps_service_f1"><di:waypoint x="1201" y="128"/><di:waypoint x="1201" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f2_di" bpmnElement="rtps_service_f2"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f3_di" bpmnElement="rtps_service_f3"><di:waypoint x="1231" y="128"/><di:waypoint x="1231" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f4_di" bpmnElement="rtps_service_f4"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f5_di" bpmnElement="rtps_service_f5"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f6_di" bpmnElement="rtps_service_f6"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="135"/><di:waypoint x="1060" y="135"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f7_di" bpmnElement="rtps_service_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f8_di" bpmnElement="rtps_service_f8"><di:waypoint x="1275" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f9_di" bpmnElement="rtps_service_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f10_di" bpmnElement="rtps_service_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f11_di" bpmnElement="rtps_service_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f12_di" bpmnElement="rtps_service_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f13_di" bpmnElement="rtps_service_f13"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f14_di" bpmnElement="rtps_service_f14"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f15_di" bpmnElement="rtps_service_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f16_di" bpmnElement="rtps_service_f16"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f17_di" bpmnElement="rtps_service_f17"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f18_di" bpmnElement="rtps_service_f18"><di:waypoint x="2240" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f19_di" bpmnElement="rtps_service_f19"><di:waypoint x="2240" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f20_di" bpmnElement="rtps_service_f20"><di:waypoint x="2430" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f21_di" bpmnElement="rtps_service_f21"><di:waypoint x="2570" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f22_di" bpmnElement="rtps_service_f22"><di:waypoint x="2570" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f23_di" bpmnElement="rtps_service_f23"><di:waypoint x="2760" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f24_di" bpmnElement="rtps_service_f24"><di:waypoint x="2925" y="195"/><di:waypoint x="3022" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f25_di" bpmnElement="rtps_service_f25"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f26_di" bpmnElement="rtps_service_f26"><di:waypoint x="2215" y="95"/><di:waypoint x="2215" y="135"/><di:waypoint x="1060" y="135"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f27_di" bpmnElement="rtps_service_f27"><di:waypoint x="2240" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f28_di" bpmnElement="rtps_service_f28"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f29_di" bpmnElement="rtps_service_f29"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f30_di" bpmnElement="rtps_service_f30"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f31_di" bpmnElement="rtps_service_f31"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f32_di" bpmnElement="rtps_service_f32"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f33_di" bpmnElement="rtps_service_f33"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rtps_service_f34_di" bpmnElement="rtps_service_f34"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,45 @@
+{
+  "key": "sec-edu-examination/notify",
+  "version": "1.0.0",
+  "pack": "sec.edu.examination",
+  "title": {
+    "en": "Examination notification",
+    "hi": "परीक्षा अधिसूचना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "examName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Examination",
+        "hi": "परीक्षा"
+      }
+    },
+    {
+      "id": "programme",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Programme",
+        "hi": "कार्यक्रम"
+      }
+    },
+    {
+      "id": "registrationWindow",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Registration window",
+        "hi": "पंजीकरण अवधि"
+      }
+    }
+  ]
+}

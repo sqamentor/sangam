@@ -1,0 +1,121 @@
+{
+  "id": "gov.ifms.reappropriation",
+  "version": "1.0.0",
+  "name": {
+    "en": "Re-appropriation (rule set)",
+    "hi": "पुनर्विनियोजन (नियम समूह)"
+  },
+  "domain": "IFMS",
+  "description": "Re-appropriation between lines of one grant and section: restrictions as hard rules with citations (no charged <-> voted, no capital <-> revenue, no NS/NIS, not from a head augmented by a supplementary or a CF-advance activity, works only with AA/TS), the Q1 ban, object-group monetary limits, Finance Ministry / Budget Division cases, C&AG for secret service, Parliament reporting; FA consultation mandatory; posted as a ledger TRANSFER with the same constraints enforced by the ledger. DFPR 2024 defaults; States override the DMN.",
+  "mainProcesses": [
+    "sangam-ifms-reappropriation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-reappropriation/sangam-ifms-reappropriation.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-reappropriation/ifms-reapp-rules.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-reappropriation/ifms-reapp-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-reappropriation/forms/proposal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-reappropriation/forms/fa.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-reappropriation/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-reappropriation/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "ledger.available",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Savings in the source line (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "ledger.transfer",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Post the re-appropriation (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "referral.send",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Finance Ministry / Budget Division referral"
+    }
+  ],
+  "covers": [
+    "IFC-061",
+    "IFC-062",
+    "IFC-063",
+    "IFC-064",
+    "IFC-065",
+    "IFC-066",
+    "IFC-067",
+    "IFC-068",
+    "IFC-007",
+    "IFC-035",
+    "IFC-036",
+    "IFC-222",
+    "IFC-239",
+    "IFC-240",
+    "IFS-030",
+    "GA-16",
+    "GA-17",
+    "GP-01",
+    "GP-32",
+    "GP-37",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-referral",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

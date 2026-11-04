@@ -1,0 +1,71 @@
+{
+  "id": "sec.ins.reinsurance",
+  "version": "1.0.0",
+  "name": {
+    "en": "Reinsurance cession and recovery",
+    "hi": "पुनर्बीमा अभ्यर्पण एवं वसूली"
+  },
+  "domain": "Insurance",
+  "description": "Per risk: obligatory cession, treaty cession above the retention by rule, facultative placement offered first to Indian reinsurers in the order of preference (IRDAI Reinsurance Regulations), cession recorded; a claim on a ceded risk raises the recovery from the reinsurer, followed up until paid.",
+  "mainProcesses": [
+    "sangam-sec-ins-reinsurance"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ins-reinsurance/sangam-sec-ins-reinsurance.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ins-reinsurance/sec-ins-ri-cession.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-reinsurance/forms/risk.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-reinsurance/forms/fac.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-reinsurance/forms/follow.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ins-reinsurance/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ins-reinsurance/seed.json",
+  "connectors": [
+    {
+      "id": "re.cede",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Cession register"
+    },
+    {
+      "id": "re.placeFac",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Facultative placement"
+    },
+    {
+      "id": "re.recovery",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Recovery claim"
+    }
+  ],
+  "covers": [
+    "SEC-INS-012",
+    "GP-12",
+    "GP-15"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

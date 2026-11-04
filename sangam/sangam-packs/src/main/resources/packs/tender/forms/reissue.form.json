@@ -1,0 +1,45 @@
+{
+  "key": "tender/reissue",
+  "version": "1.0.0",
+  "pack": "gov.tender",
+  "title": {
+    "en": "Re-issue NIT with new dates",
+    "hi": "नई तिथियों सहित पुनः निविदा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "bidDueAt",
+      "type": "datetime",
+      "required": true,
+      "label": {
+        "en": "Bid submission closes at",
+        "hi": "बोली जमा करने की अंतिम तिथि"
+      }
+    },
+    {
+      "id": "openingAt",
+      "type": "datetime",
+      "required": true,
+      "label": {
+        "en": "Bid opening at",
+        "hi": "बोली खोलने का समय"
+      }
+    },
+    {
+      "id": "nitText",
+      "type": "richtext",
+      "required": false,
+      "label": {
+        "en": "Notice inviting tender",
+        "hi": "निविदा आमंत्रण सूचना"
+      }
+    }
+  ]
+}

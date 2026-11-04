@@ -1,0 +1,36 @@
+{
+  "key": "leave/joining",
+  "version": "1.0.0",
+  "pack": "gov.leave",
+  "title": {
+    "en": "Submit joining report",
+    "hi": "कार्यग्रहण रिपोर्ट प्रस्तुत करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "joiningReport",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Joining report submitted",
+        "hi": "कार्यग्रहण रिपोर्ट प्रस्तुत"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

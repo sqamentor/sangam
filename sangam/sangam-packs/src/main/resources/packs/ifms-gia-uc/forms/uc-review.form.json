@@ -1,0 +1,56 @@
+{
+  "key": "ifms-gia-uc/uc-review",
+  "version": "1.0.0",
+  "pack": "gov.ifms.gia-uc",
+  "title": {
+    "en": "Review UC",
+    "hi": "उपयोगिता प्रमाण पत्र की जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "ucForm",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "UC form (12-A / 12-B / 12-C)",
+        "hi": "उपयोगिता प्रमाण पत्र प्रपत्र"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "ucDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accepted",
+        "label": {
+          "en": "Accepted",
+          "hi": "स्वीकृत"
+        }
+      },
+      {
+        "value": "furtherAction",
+        "label": {
+          "en": "Further action required",
+          "hi": "आगे कार्रवाई आवश्यक"
+        }
+      }
+    ]
+  }
+}

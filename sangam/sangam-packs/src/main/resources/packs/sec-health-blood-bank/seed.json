@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "BLOOD-CENTRE",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "BB-TECH",
+      "role": "TECH",
+      "office": "BLOOD-CENTRE",
+      "reportsTo": "BB-MO",
+      "name": {
+        "en": "Blood centre technician",
+        "hi": "रक्त केंद्र तकनीशियन"
+      }
+    },
+    {
+      "id": "BB-MO",
+      "role": "MO",
+      "office": "BLOOD-CENTRE",
+      "reportsTo": null,
+      "name": {
+        "en": "Blood centre medical officer",
+        "hi": "रक्त केंद्र चिकित्सा अधिकारी"
+      }
+    },
+    {
+      "id": "WARD-NURSE",
+      "role": "NURSE",
+      "office": "BLOOD-CENTRE",
+      "reportsTo": "BB-MO",
+      "name": {
+        "en": "Ward nurse",
+        "hi": "वार्ड परिचारिका"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "BB-TECH",
+      "person": "hbb.bb-tech",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BB-MO",
+      "person": "hbb.bb-mo",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "WARD-NURSE",
+      "person": "hbb.ward-nurse",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "TECH",
+      "name": {
+        "en": "Blood centre technician",
+        "hi": "रक्त केंद्र तकनीशियन"
+      }
+    },
+    {
+      "code": "MO",
+      "name": {
+        "en": "Blood centre medical officer",
+        "hi": "रक्त केंद्र चिकित्सा अधिकारी"
+      }
+    },
+    {
+      "code": "NURSE",
+      "name": {
+        "en": "Ward nurse",
+        "hi": "वार्ड परिचारिका"
+      }
+    }
+  ]
+}

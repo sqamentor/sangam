@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-03 Event correlation window. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up03_event_correlation" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_event_first" name="sangam.event.first"/>
+  <message id="msg_sangam_event_next" name="sangam.event.next"/>
+  <process id="sangam-up03-event-correlation" name="UP-03 Event correlation window" isExecutable="true" operaton:historyTimeToLive="90" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up03-event-correlation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>eventType</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u3_start" name="First event"><messageEventDefinition messageRef="msg_sangam_event_first"/></startEvent>
+    <serviceTask id="u3_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>windowSize=PT15M;threshold=3;lateEventPolicy=DROP</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u3_window" name="Open window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>window</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${windowSize}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u3_add" name="Add event (dedupe, bounded)" operaton:class="org.sangam.packs.universal.EventWindowDelegate"><extensionElements><operaton:field name="op"><operaton:string>ADD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="u3_wait" name="Next event or window end"></eventBasedGateway>
+    <intermediateCatchEvent id="u3_next" name="Next event (same key)"><messageEventDefinition messageRef="msg_sangam_event_next"/></intermediateCatchEvent>
+    <serviceTask id="u3_add2" name="Add event" operaton:class="org.sangam.packs.universal.EventWindowDelegate"><extensionElements><operaton:field name="op"><operaton:string>ADD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u3_eval" name="Evaluate threshold" operaton:class="org.sangam.packs.universal.EventWindowDelegate"><extensionElements><operaton:field name="op"><operaton:string>EVALUATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u3_gw" name="Threshold?" default="up03_event_correlation_f10"></exclusiveGateway>
+    <userTask id="u3_review" name="Review correlated signal" operaton:candidateGroups="ANALYST" operaton:formKey="sangam:up03-event-correlation/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>signalDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="u3_endReviewed" name="Reviewed"></endEvent>
+    <intermediateCatchEvent id="u3_close" name="Window ends"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${windowDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="u3_eval2" name="Final evaluation" operaton:class="org.sangam.packs.universal.EventWindowDelegate"><extensionElements><operaton:field name="op"><operaton:string>EVALUATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u3_gw2" name="Threshold?" default="up03_event_correlation_f16"></exclusiveGateway>
+    <endEvent id="u3_endQuiet" name="Window closed below threshold"></endEvent>
+    <sequenceFlow id="up03_event_correlation_f1" sourceRef="u3_start" targetRef="u3_defaults"/>
+    <sequenceFlow id="up03_event_correlation_f2" sourceRef="u3_defaults" targetRef="u3_window"/>
+    <sequenceFlow id="up03_event_correlation_f3" sourceRef="u3_window" targetRef="u3_add"/>
+    <sequenceFlow id="up03_event_correlation_f4" sourceRef="u3_add" targetRef="u3_wait"/>
+    <sequenceFlow id="up03_event_correlation_f5" sourceRef="u3_wait" targetRef="u3_next"/>
+    <sequenceFlow id="up03_event_correlation_f6" sourceRef="u3_next" targetRef="u3_add2"/>
+    <sequenceFlow id="up03_event_correlation_f7" sourceRef="u3_add2" targetRef="u3_eval"/>
+    <sequenceFlow id="up03_event_correlation_f8" sourceRef="u3_eval" targetRef="u3_gw"/>
+    <sequenceFlow id="up03_event_correlation_f9" name="not yet" sourceRef="u3_gw" targetRef="u3_wait"><conditionExpression xsi:type="tFormalExpression">${!thresholdReached}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up03_event_correlation_f10" name="reached" sourceRef="u3_gw" targetRef="u3_review"/>
+    <sequenceFlow id="up03_event_correlation_f11" sourceRef="u3_review" targetRef="u3_endReviewed"/>
+    <sequenceFlow id="up03_event_correlation_f12" sourceRef="u3_wait" targetRef="u3_close"/>
+    <sequenceFlow id="up03_event_correlation_f13" sourceRef="u3_close" targetRef="u3_eval2"/>
+    <sequenceFlow id="up03_event_correlation_f14" sourceRef="u3_eval2" targetRef="u3_gw2"/>
+    <sequenceFlow id="up03_event_correlation_f15" name="reached" sourceRef="u3_gw2" targetRef="u3_review"><conditionExpression xsi:type="tFormalExpression">${thresholdReached}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up03_event_correlation_f16" name="no" sourceRef="u3_gw2" targetRef="u3_endQuiet"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up03_event_correlation_diagram">
+    <bpmndi:BPMNPlane id="up03_event_correlation_plane" bpmnElement="sangam-up03-event-correlation">
+      <bpmndi:BPMNShape id="u3_start_di" bpmnElement="u3_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_defaults_di" bpmnElement="u3_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_window_di" bpmnElement="u3_window"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_add_di" bpmnElement="u3_add"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_wait_di" bpmnElement="u3_wait"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_next_di" bpmnElement="u3_next"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_add2_di" bpmnElement="u3_add2"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_eval_di" bpmnElement="u3_eval"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_gw_di" bpmnElement="u3_gw"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_review_di" bpmnElement="u3_review"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_endReviewed_di" bpmnElement="u3_endReviewed"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_close_di" bpmnElement="u3_close"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_eval2_di" bpmnElement="u3_eval2"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_gw2_di" bpmnElement="u3_gw2"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u3_endQuiet_di" bpmnElement="u3_endQuiet"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f1_di" bpmnElement="up03_event_correlation_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f2_di" bpmnElement="up03_event_correlation_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f3_di" bpmnElement="up03_event_correlation_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f4_di" bpmnElement="up03_event_correlation_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f5_di" bpmnElement="up03_event_correlation_f5"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f6_di" bpmnElement="up03_event_correlation_f6"><di:waypoint x="913" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f7_di" bpmnElement="up03_event_correlation_f7"><di:waypoint x="1110" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f8_di" bpmnElement="up03_event_correlation_f8"><di:waypoint x="1275" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f9_di" bpmnElement="up03_event_correlation_f9"><di:waypoint x="1390" y="220"/><di:waypoint x="1390" y="238"/><di:waypoint x="730" y="238"/><di:waypoint x="730" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f10_di" bpmnElement="up03_event_correlation_f10"><di:waypoint x="1415" y="195"/><di:waypoint x="1460" y="195"/><di:waypoint x="1460" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f11_di" bpmnElement="up03_event_correlation_f11"><di:waypoint x="1605" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f12_di" bpmnElement="up03_event_correlation_f12"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f13_di" bpmnElement="up03_event_correlation_f13"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f14_di" bpmnElement="up03_event_correlation_f14"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f15_di" bpmnElement="up03_event_correlation_f15"><di:waypoint x="1250" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up03_event_correlation_f16_di" bpmnElement="up03_event_correlation_f16"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

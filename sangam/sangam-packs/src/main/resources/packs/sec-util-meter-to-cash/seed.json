@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "BILLING",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "BILLING-CLERK",
+      "role": "BILLING",
+      "office": "BILLING",
+      "reportsTo": null,
+      "name": {
+        "en": "Billing clerk",
+        "hi": "बिलिंग लिपिक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "BILLING-CLERK",
+      "person": "ubl.billing-clerk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "BILLING",
+      "name": {
+        "en": "Billing clerk",
+        "hi": "बिलिंग लिपिक"
+      }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "key": "sec-bank-payment-dual-auth/screening",
+  "version": "1.0.0",
+  "pack": "sec.bank.payment-dual-auth",
+  "title": {
+    "en": "Review screening hit",
+    "hi": "स्क्रीनिंग मिलान की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "screenMatchDetails",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Screening match details",
+        "hi": "स्क्रीनिंग मिलान का विवरण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "screenDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "falsePositive",
+        "label": {
+          "en": "False positive",
+          "hi": "मिथ्या मिलान"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

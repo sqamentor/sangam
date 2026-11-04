@@ -1,0 +1,27 @@
+{
+  "key": "sec-edu-examination/evaluate",
+  "version": "1.0.0",
+  "pack": "sec.edu.examination",
+  "title": {
+    "en": "Evaluation and marks entry",
+    "hi": "मूल्यांकन एवं अंक प्रविष्टि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "results",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Results",
+        "hi": "परिणाम"
+      }
+    }
+  ]
+}

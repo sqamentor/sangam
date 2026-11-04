@@ -1,0 +1,63 @@
+{
+  "key": "sec-ushealth-access-request/assemble",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.access-request",
+  "title": {
+    "en": "Assemble the records and decide",
+    "es": "Reunir los registros y decidir"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "recordsRequested",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Records requested (designated record set)",
+        "es": "Registros solicitados (conjunto designado de registros)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "accessDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "fulfil",
+        "label": {
+          "en": "Provide access",
+          "es": "Proporcionar acceso"
+        }
+      },
+      {
+        "value": "extend",
+        "label": {
+          "en": "Extend",
+          "es": "Prorrogar 30 días"
+        }
+      },
+      {
+        "value": "deny",
+        "label": {
+          "en": "Deny (with basis)",
+          "es": "Denegar (con fundamento)"
+        }
+      }
+    ]
+  }
+}

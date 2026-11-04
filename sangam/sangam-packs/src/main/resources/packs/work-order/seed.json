@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "DIV-WO",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "AE-WO",
+      "role": "AE",
+      "office": "DIV-WO",
+      "reportsTo": "EE-WO",
+      "name": {
+        "en": "Assistant Engineer",
+        "hi": "सहायक अभियंता"
+      }
+    },
+    {
+      "id": "EE-WO",
+      "role": "EE",
+      "office": "DIV-WO",
+      "reportsTo": null,
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "AE-WO",
+      "person": "wo.ae-wo",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EE-WO",
+      "person": "wo.ee-wo",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "AE",
+      "name": {
+        "en": "Assistant Engineer",
+        "hi": "सहायक अभियंता"
+      }
+    },
+    {
+      "code": "EE",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    }
+  ]
+}

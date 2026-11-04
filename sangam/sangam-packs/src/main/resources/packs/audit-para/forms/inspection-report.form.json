@@ -1,0 +1,45 @@
+{
+  "key": "audit-para/inspection-report",
+  "version": "1.0.0",
+  "pack": "gov.audit-para",
+  "title": {
+    "en": "Audit inspection report",
+    "hi": "लेखापरीक्षा निरीक्षण प्रतिवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "subject",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Subject",
+        "hi": "विषय"
+      }
+    },
+    {
+      "id": "auditParas",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Audit paras (JSON list with key, paraText)",
+        "hi": "लेखापरीक्षा पैरा (सूची)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

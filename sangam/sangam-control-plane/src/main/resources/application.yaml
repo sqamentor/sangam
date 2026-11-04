@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam control plane. Its own database (never a cell database). Defaults are for local development (H2 file).
+server:
+  port: ${SANGAM_CP_PORT:8090}
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+
+spring:
+  application:
+    name: sangam-control-plane
+  datasource:
+    url: ${SANGAM_CP_DB_URL:jdbc:h2:file:./data/control-plane;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SANGAM_CP_DB_USER:sa}
+    password: ${SANGAM_CP_DB_PASSWORD:}
+    hikari:
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+      maximum-pool-size: ${SANGAM_CP_DB_POOL_SIZE:20}
+      pool-name: sangam-cp
+
+operaton:
+  bpm:
+    # one engine per JVM (D-10); this engine only runs control-plane processes (tenant moves)
+    process-engine-name: sangam-control-plane
+    database:
+      schema-update: true
+    history-level: audit
+    authorization:
+      enabled: false
+    job-execution:
+      enabled: true
+    webapp:
+      enabled: false
+    generic-properties:
+      properties:
+        jobExecutorAcquireByDueDate: true
+
+sangam:
+  controlplane:
+    # <token>:<ROLE>[,<ROLE>]  (ADMIN, CELL, GATEWAY, ROLLUP). Comma-free tokens; supply from the secret store.
+    tokens: ${SANGAM_CP_TOKENS:}
+    cell-admin-token: ${SANGAM_CP_CELL_ADMIN_TOKEN:}
+    heartbeat-timeout: 30s
+    target-utilisation: 0.7
+    max-outbox-fill-pct: 50
+    max-db-pool-usage-pct: 80
+    route-ttl: 5s
+    move-retention: 7d
+    cell-request-timeout: 30s
+
+management:
+  server:
+    port: ${SANGAM_CP_MANAGEMENT_PORT:8091}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+        add-additional-paths: true

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_sna_authority" name="Competent authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="ifms-sna-authority" name="Competent authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-sna-authority_t" hitPolicy="FIRST">
+      <input id="ifms-sna-authority_i0" label="Amount (INR)"><inputExpression id="ifms-sna-authority_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <output id="ifms-sna-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="ifms-sna-authority_r0"><description>Pr.AO payment authorisation (CGA SOP 11-08-2025)</description>
+        <inputEntry id="ifms-sna-authority_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="ifms-sna-authority_r0_o0"><text>"PR_AO"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

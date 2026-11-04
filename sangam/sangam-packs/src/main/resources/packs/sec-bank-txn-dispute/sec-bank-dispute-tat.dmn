@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_dispute_tat" name="Failed-transaction TAT and customer liability (RBI 2019 / 2017)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-bank-dispute-tat" name="Failed-transaction TAT and customer liability (RBI 2019 / 2017)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-bank-dispute-tat_t" hitPolicy="FIRST">
+      <input id="sec-bank-dispute-tat_i0" label="Type"><inputExpression id="sec-bank-dispute-tat_ie0" typeRef="string"><text>disputeType</text></inputExpression></input>
+      <input id="sec-bank-dispute-tat_i1" label="Channel"><inputExpression id="sec-bank-dispute-tat_ie1" typeRef="string"><text>channel</text></inputExpression></input>
+      <input id="sec-bank-dispute-tat_i2" label="Reported within (days)"><inputExpression id="sec-bank-dispute-tat_ie2" typeRef="integer"><text>reportedWithinDays</text></inputExpression></input>
+      <output id="sec-bank-dispute-tat_o0" label="TAT" name="tatSpec" typeRef="string"/>
+      <output id="sec-bank-dispute-tat_o1" label="Compensation per day (INR)" name="compensationPerDay" typeRef="integer"/>
+      <output id="sec-bank-dispute-tat_o2" label="Customer liability" name="customerLiability" typeRef="string"/>
+      <rule id="sec-bank-dispute-tat_r0"><description>ATM: T+5, Rs 100 per day after</description>
+        <inputEntry id="sec-bank-dispute-tat_r0_i0"><text>"FAILED_TXN"</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r0_i1"><text>"ATM"</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r0_i2"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r0_o0"><text>"5D"</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r0_o1"><text>100</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r0_o2"><text>"NIL"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-dispute-tat_r1"><description>IMPS / UPI: T+1</description>
+        <inputEntry id="sec-bank-dispute-tat_r1_i0"><text>"FAILED_TXN"</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r1_i1"><text>-</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r1_i2"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r1_o0"><text>"1D"</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r1_o1"><text>100</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r1_o2"><text>"NIL"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-dispute-tat_r2"><description>reported within 3 working days</description>
+        <inputEntry id="sec-bank-dispute-tat_r2_i0"><text>"UNAUTHORISED"</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r2_i1"><text>-</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r2_i2"><text>&lt;= 3</text></inputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r2_o0"><text>"10WD"</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r2_o1"><text>0</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r2_o2"><text>"ZERO"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-dispute-tat_r3"><description>4-7 working days: capped liability</description>
+        <inputEntry id="sec-bank-dispute-tat_r3_i0"><text>"UNAUTHORISED"</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r3_i1"><text>-</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r3_i2"><text>&lt;= 7</text></inputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r3_o0"><text>"10WD"</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r3_o1"><text>0</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r3_o2"><text>"LIMITED"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-dispute-tat_r4"><description>beyond 7 days: board policy</description>
+        <inputEntry id="sec-bank-dispute-tat_r4_i0"><text>"UNAUTHORISED"</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r4_i1"><text>-</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r4_i2"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r4_o0"><text>"10WD"</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r4_o1"><text>0</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r4_o2"><text>"BOARD_POLICY"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-dispute-tat_r5"><description>chargeback: network rules</description>
+        <inputEntry id="sec-bank-dispute-tat_r5_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r5_i1"><text>-</text></inputEntry>
+        <inputEntry id="sec-bank-dispute-tat_r5_i2"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r5_o0"><text>"45D"</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r5_o1"><text>0</text></outputEntry>
+        <outputEntry id="sec-bank-dispute-tat_r5_o2"><text>"NETWORK_RULES"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

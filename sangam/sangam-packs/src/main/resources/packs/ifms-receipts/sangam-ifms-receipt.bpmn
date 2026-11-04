@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Receipt (challan). Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_receipt" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_ifms_challanPaid" name="sangam.ifms.challanPaid"/>
+  <process id="sangam-ifms-receipt" name="Receipt (challan)" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.receipts</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>challanNo,receiptHead,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="rc_start" name="Challan generated" operaton:initiator="initiator" operaton:formKey="sangam:ifms-receipts/challan"></startEvent>
+    <serviceTask id="rc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>amount=0;receiptDeskSeat=AAO-1;scrollMatch=MATCHED;scrollAmount=0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rc_number" name="Challan number (series)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>config.series</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>series.next</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>receiptHead</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>chl</operaton:string></operaton:field><operaton:field name="step"><operaton:string>number</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="rc_paid" name="Payment confirmed by the portal (CIN / UTR)"><messageEventDefinition messageRef="msg_sangam_ifms_challanPaid"/></intermediateCatchEvent>
+    <serviceTask id="rc_scroll" name="Match with the e-scroll" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>treasury.scroll</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>match</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>challanNo,amount,utr</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>scroll</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rc_matchGw" name="Matched?" default="ifms_receipt_f15"></exclusiveGateway>
+    <serviceTask id="rc_book" name="Receipt voucher" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>receipt-voucher</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rc_resolve_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rc_resolve</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>3WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="rc_resolve" name="Resolve receipt discrepancy" operaton:candidateGroups="${receiptDeskSeat}" operaton:formKey="sangam:ifms-receipts/resolve" operaton:dueDate="${rc_resolveDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>receiptDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="rc_resolve_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rc_resolve</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>receiptDeskSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rc_resolve_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="rc_resolve_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rc_resolve</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>receiptDeskSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>receiptDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rc_resolve_breachGw" name="Deemed?" default="ifms_receipt_f12"></exclusiveGateway>
+    <exclusiveGateway id="rc_resolve_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="rc_resGw" name="" default="ifms_receipt_f19"></exclusiveGateway>
+    <serviceTask id="rc_refund" name="Refund" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>receipt.refund</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>refund</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>challanNo,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>refund</operaton:string></operaton:field><operaton:field name="step"><operaton:string>refund</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rc_unacc" name="Unaccounted: SOP case"></endEvent>
+    <endEvent id="rc_refunded" name="Refunded"></endEvent>
+    <endEvent id="rc_end" name="Accounted"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="rc_resolve_warn" name="SLA warning (75%)" attachedToRef="rc_resolve" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rc_resolveWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="rc_resolve_breach" name="SLA breached" attachedToRef="rc_resolve" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rc_resolveDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_receipt_f1" sourceRef="rc_start" targetRef="rc_defaults"/>
+    <sequenceFlow id="ifms_receipt_f2" sourceRef="rc_defaults" targetRef="rc_number"/>
+    <sequenceFlow id="ifms_receipt_f3" sourceRef="rc_number" targetRef="rc_paid"/>
+    <sequenceFlow id="ifms_receipt_f4" sourceRef="rc_paid" targetRef="rc_scroll"/>
+    <sequenceFlow id="ifms_receipt_f5" sourceRef="rc_scroll" targetRef="rc_matchGw"/>
+    <sequenceFlow id="ifms_receipt_f6" name="matched" sourceRef="rc_matchGw" targetRef="rc_book"><conditionExpression xsi:type="tFormalExpression">${scrollMatch == 'MATCHED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_receipt_f7" sourceRef="rc_resolve_warn" targetRef="rc_resolve_warnNotify"/>
+    <sequenceFlow id="ifms_receipt_f8" sourceRef="rc_resolve_warnNotify" targetRef="rc_resolve_warnEnd"/>
+    <sequenceFlow id="ifms_receipt_f9" sourceRef="rc_resolve_breach" targetRef="rc_resolve_breachAct"/>
+    <sequenceFlow id="ifms_receipt_f10" sourceRef="rc_resolve_breachAct" targetRef="rc_resolve_breachGw"/>
+    <sequenceFlow id="ifms_receipt_f11" name="deemed" sourceRef="rc_resolve_breachGw" targetRef="rc_resolve_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_receipt_f12" name="escalated" sourceRef="rc_resolve_breachGw" targetRef="rc_resolve_slaPlan"/>
+    <sequenceFlow id="ifms_receipt_f13" sourceRef="rc_resolve_slaPlan" targetRef="rc_resolve"/>
+    <sequenceFlow id="ifms_receipt_f14" sourceRef="rc_resolve" targetRef="rc_resolve_done"/>
+    <sequenceFlow id="ifms_receipt_f15" name="short / unmatched" sourceRef="rc_matchGw" targetRef="rc_resolve_slaPlan"/>
+    <sequenceFlow id="ifms_receipt_f16" sourceRef="rc_resolve_done" targetRef="rc_resGw"/>
+    <sequenceFlow id="ifms_receipt_f17" name="book" sourceRef="rc_resGw" targetRef="rc_book"><conditionExpression xsi:type="tFormalExpression">${receiptDecision == 'book'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_receipt_f18" name="refund" sourceRef="rc_resGw" targetRef="rc_refund"><conditionExpression xsi:type="tFormalExpression">${receiptDecision == 'refund'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_receipt_f19" name="unaccounted" sourceRef="rc_resGw" targetRef="rc_unacc"/>
+    <sequenceFlow id="ifms_receipt_f20" sourceRef="rc_refund" targetRef="rc_refunded"/>
+    <sequenceFlow id="ifms_receipt_f21" sourceRef="rc_book" targetRef="rc_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_receipt_diagram">
+    <bpmndi:BPMNPlane id="ifms_receipt_plane" bpmnElement="sangam-ifms-receipt">
+      <bpmndi:BPMNShape id="rc_start_di" bpmnElement="rc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_defaults_di" bpmnElement="rc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_number_di" bpmnElement="rc_number"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_paid_di" bpmnElement="rc_paid"><dc:Bounds x="547" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_scroll_di" bpmnElement="rc_scroll"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_matchGw_di" bpmnElement="rc_matchGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_book_di" bpmnElement="rc_book"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resolve_slaPlan_di" bpmnElement="rc_resolve_slaPlan"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resolve_di" bpmnElement="rc_resolve"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resolve_warnNotify_di" bpmnElement="rc_resolve_warnNotify"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resolve_warnEnd_di" bpmnElement="rc_resolve_warnEnd"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resolve_breachAct_di" bpmnElement="rc_resolve_breachAct"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resolve_breachGw_di" bpmnElement="rc_resolve_breachGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resolve_done_di" bpmnElement="rc_resolve_done"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resGw_di" bpmnElement="rc_resGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_refund_di" bpmnElement="rc_refund"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_unacc_di" bpmnElement="rc_unacc"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_refunded_di" bpmnElement="rc_refunded"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_end_di" bpmnElement="rc_end"><dc:Bounds x="2197" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resolve_warn_di" bpmnElement="rc_resolve_warn"><dc:Bounds x="1183" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_resolve_breach_di" bpmnElement="rc_resolve_breach"><dc:Bounds x="1213" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_receipt_f1_di" bpmnElement="ifms_receipt_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f2_di" bpmnElement="ifms_receipt_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f3_di" bpmnElement="ifms_receipt_f3"><di:waypoint x="450" y="70"/><di:waypoint x="547" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f4_di" bpmnElement="ifms_receipt_f4"><di:waypoint x="583" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f5_di" bpmnElement="ifms_receipt_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f6_di" bpmnElement="ifms_receipt_f6"><di:waypoint x="920" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f7_di" bpmnElement="ifms_receipt_f7"><di:waypoint x="1201" y="128"/><di:waypoint x="1201" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f8_di" bpmnElement="ifms_receipt_f8"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f9_di" bpmnElement="ifms_receipt_f9"><di:waypoint x="1231" y="128"/><di:waypoint x="1231" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f10_di" bpmnElement="ifms_receipt_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f11_di" bpmnElement="ifms_receipt_f11"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f12_di" bpmnElement="ifms_receipt_f12"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="149"/><di:waypoint x="1060" y="149"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f13_di" bpmnElement="ifms_receipt_f13"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f14_di" bpmnElement="ifms_receipt_f14"><di:waypoint x="1275" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f15_di" bpmnElement="ifms_receipt_f15"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f16_di" bpmnElement="ifms_receipt_f16"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f17_di" bpmnElement="ifms_receipt_f17"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f18_di" bpmnElement="ifms_receipt_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f19_di" bpmnElement="ifms_receipt_f19"><di:waypoint x="1910" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f20_di" bpmnElement="ifms_receipt_f20"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_receipt_f21_di" bpmnElement="ifms_receipt_f21"><di:waypoint x="2100" y="320"/><di:waypoint x="2197" y="320"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

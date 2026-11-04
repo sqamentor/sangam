@@ -1,0 +1,106 @@
+{
+  "offices": [
+    {
+      "id": "BILLING-OFFICE",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CODER",
+      "role": "CODER",
+      "office": "BILLING-OFFICE",
+      "reportsTo": "REV-CYCLE-MGR",
+      "name": {
+        "en": "Medical coder",
+        "es": "Codificador médico"
+      }
+    },
+    {
+      "id": "BILLER",
+      "role": "BILLER",
+      "office": "BILLING-OFFICE",
+      "reportsTo": "REV-CYCLE-MGR",
+      "name": {
+        "en": "Biller",
+        "es": "Facturador"
+      }
+    },
+    {
+      "id": "DENIAL-ANALYST",
+      "role": "DENIALS",
+      "office": "BILLING-OFFICE",
+      "reportsTo": "REV-CYCLE-MGR",
+      "name": {
+        "en": "Denial analyst",
+        "es": "Analista de denegaciones"
+      }
+    },
+    {
+      "id": "REV-CYCLE-MGR",
+      "role": "RCM",
+      "office": "BILLING-OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Revenue cycle manager",
+        "es": "Gerente del ciclo de ingresos"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CODER",
+      "person": "ucl.coder",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BILLER",
+      "person": "ucl.biller",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DENIAL-ANALYST",
+      "person": "ucl.denial-analyst",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "REV-CYCLE-MGR",
+      "person": "ucl.rev-cycle-mgr",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CODER",
+      "name": {
+        "en": "Medical coder",
+        "es": "Codificador médico"
+      }
+    },
+    {
+      "code": "BILLER",
+      "name": {
+        "en": "Biller",
+        "es": "Facturador"
+      }
+    },
+    {
+      "code": "DENIALS",
+      "name": {
+        "en": "Denial analyst",
+        "es": "Analista de denegaciones"
+      }
+    },
+    {
+      "code": "RCM",
+      "name": {
+        "en": "Revenue cycle manager",
+        "es": "Gerente del ciclo de ingresos"
+      }
+    }
+  ]
+}

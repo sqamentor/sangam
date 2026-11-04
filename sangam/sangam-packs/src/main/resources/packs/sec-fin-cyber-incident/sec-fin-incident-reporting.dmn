@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_fin_incident_reporting" name="Incident reporting obligations" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-fin-incident-reporting" name="Incident reporting obligations" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-fin-incident-reporting_t" hitPolicy="FIRST">
+      <input id="sec-fin-incident-reporting_i0" label="Regulator"><inputExpression id="sec-fin-incident-reporting_ie0" typeRef="string"><text>regulatedBy</text></inputExpression></input>
+      <input id="sec-fin-incident-reporting_i1" label="Priority"><inputExpression id="sec-fin-incident-reporting_ie1" typeRef="string"><text>priority</text></inputExpression></input>
+      <output id="sec-fin-incident-reporting_o0" label="CERT-In" name="certInRequired" typeRef="boolean"/>
+      <output id="sec-fin-incident-reporting_o1" label="Regulator report" name="regulatorReport" typeRef="boolean"/>
+      <output id="sec-fin-incident-reporting_o2" label="Regulator clock" name="regulatorSpec" typeRef="string"/>
+      <output id="sec-fin-incident-reporting_o3" label="RCA due" name="rcaSpec" typeRef="string"/>
+      <output id="sec-fin-incident-reporting_o4" label="CERT-In clock" name="certInSpec" typeRef="string"/>
+      <output id="sec-fin-incident-reporting_o5" label="DPDP Board detailed report" name="dpbSpec" typeRef="string"/>
+      <rule id="sec-fin-incident-reporting_r0"><description>CERT-In applies to every body corporate</description>
+        <inputEntry id="sec-fin-incident-reporting_r0_i0"><text>"NONE"</text></inputEntry>
+        <inputEntry id="sec-fin-incident-reporting_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r0_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r0_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r0_o2"><text>"6H"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r0_o3"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r0_o4"><text>"6H"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r0_o5"><text>"72H"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-incident-reporting_r1"><description>low severity: internal only</description>
+        <inputEntry id="sec-fin-incident-reporting_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-fin-incident-reporting_r1_i1"><text>"P4"</text></inputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r1_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r1_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r1_o2"><text>"6H"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r1_o3"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r1_o4"><text>"6H"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r1_o5"><text>"72H"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-incident-reporting_r2"><description>CSCRF: SEBI and CERT-In within 6 hours</description>
+        <inputEntry id="sec-fin-incident-reporting_r2_i0"><text>"SEBI"</text></inputEntry>
+        <inputEntry id="sec-fin-incident-reporting_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r2_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r2_o1"><text>true</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r2_o2"><text>"6H"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r2_o3"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r2_o4"><text>"6H"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r2_o5"><text>"72H"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-incident-reporting_r3"><description>RBI / IRDAI: 6 hours; RCA (SYNTHETIC 21 days); DPDP Rules r.7: 72 hours</description>
+        <inputEntry id="sec-fin-incident-reporting_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-fin-incident-reporting_r3_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r3_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r3_o1"><text>true</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r3_o2"><text>"6H"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r3_o3"><text>"21D"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r3_o4"><text>"6H"</text></outputEntry>
+        <outputEntry id="sec-fin-incident-reporting_r3_o5"><text>"72H"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

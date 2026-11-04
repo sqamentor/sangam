@@ -1,0 +1,47 @@
+{
+  "key": "sec-ushealth-baa/cure",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.baa",
+  "title": {
+    "en": "Material breach: cure or terminate",
+    "es": "Incumplimiento material: subsanar o terminar"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "cureNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Material breach: cure steps or termination",
+        "es": "Incumplimiento material: medidas de subsanación o terminación"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "cureDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "cured",
+        "label": {
+          "en": "Breach cured",
+          "es": "Incumplimiento subsanado"
+        }
+      },
+      {
+        "value": "terminate",
+        "label": {
+          "en": "Terminate",
+          "es": "Terminar"
+        }
+      }
+    ]
+  }
+}

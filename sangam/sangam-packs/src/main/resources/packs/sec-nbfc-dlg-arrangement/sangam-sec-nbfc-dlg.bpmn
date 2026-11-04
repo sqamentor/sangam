@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- DLG arrangement. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_nbfc_dlg" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_dlg_invoke" name="sangam.dlg.invoke"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-nbfc-dlg" name="DLG arrangement" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.nbfc.dlg-arrangement</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>dlgProvider,portfolioAmount,dlgAmount,dlgForm</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="dg_start" name="DLG proposal" operaton:initiator="initiator" operaton:formKey="sangam:sec-nbfc-dlg-arrangement/proposal"></startEvent>
+    <serviceTask id="dg_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>dlgProvider=LSP-1;portfolioAmount=100000000;dlgAmount=4000000;dlgForm=FIXED_DEPOSIT;daysOverdue=90;amount=@dlgAmount;caseType=DLG;routingDecisionKey=sec-nbfc-dlg-authority;powersDecisionKey=sec-nbfc-dlg-powers;appealAllowed=false;dlgTenure=P365D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dg_pct" name="Cover as % of the portfolio" operaton:expression="${execution.setVariable('dlgPct', dlgAmount * 100 / portfolioAmount)}"></serviceTask>
+    <businessRuleTask id="dg_cap" name="Cap and form (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-nbfc-dlg-cap</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="dg_capGw" name="Within the cap?" default="sec_nbfc_dlg_f8"></exclusiveGateway>
+    <serviceTask id="dg_rjCap_code" name="Reason: DLG_ABOVE_CAP_OR_FORM" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=DLG_ABOVE_CAP_OR_FORM</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="dg_rjCap_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="dg_rjCap_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="dg_sanction" name="Approve under the board policy (core sanction)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="dg_register" name="Record DLG and disclose" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>dlg.register</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>register</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>dlgProvider,portfolioAmount,dlgAmount,dlgForm</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>dlgReg</operaton:string></operaton:field><operaton:field name="step"><operaton:string>register</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="dg_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="dg_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="dg_sanGw" name="sanctionOutcome?" default="sec_nbfc_dlg_f11"></exclusiveGateway>
+    <eventBasedGateway id="dg_wait" name="Invocation or tenure ends"></eventBasedGateway>
+    <intermediateCatchEvent id="dg_invoke" name="Loan in default: invocation requested"><messageEventDefinition messageRef="msg_sangam_dlg_invoke"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="dg_tenure" name="Tenure over"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${dlgTenure}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <businessRuleTask id="dg_invRule" name="Invocation window (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-nbfc-dlg-invocation</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="dg_invGw" name="Within 120 days overdue?" default="sec_nbfc_dlg_f19"></exclusiveGateway>
+    <serviceTask id="dg_doInvoke" name="Invoke DLG" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>dlg.invoke</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>invoke</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>dlgProvider,daysOverdue</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>inv</operaton:string></operaton:field><operaton:field name="step"><operaton:string>invoke</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dg_end" name="Arrangement ended"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_nbfc_dlg_f1" sourceRef="dg_start" targetRef="dg_defaults"/>
+    <sequenceFlow id="sec_nbfc_dlg_f2" sourceRef="dg_defaults" targetRef="dg_pct"/>
+    <sequenceFlow id="sec_nbfc_dlg_f3" sourceRef="dg_pct" targetRef="dg_cap"/>
+    <sequenceFlow id="sec_nbfc_dlg_f4" sourceRef="dg_cap" targetRef="dg_capGw"/>
+    <sequenceFlow id="sec_nbfc_dlg_f5" sourceRef="dg_rjCap_reject" targetRef="dg_rjCap_endRejected"/>
+    <sequenceFlow id="sec_nbfc_dlg_f6" sourceRef="dg_rjCap_code" targetRef="dg_rjCap_reject"/>
+    <sequenceFlow id="sec_nbfc_dlg_f7" name="no" sourceRef="dg_capGw" targetRef="dg_rjCap_code"><conditionExpression xsi:type="tFormalExpression">${!dlgAllowed}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_dlg_f8" name="yes" sourceRef="dg_capGw" targetRef="dg_sanction"/>
+    <sequenceFlow id="sec_nbfc_dlg_f9" sourceRef="dg_rj_reject" targetRef="dg_rj_endRejected"/>
+    <sequenceFlow id="sec_nbfc_dlg_f10" name="SANCTIONED" sourceRef="dg_sanGw" targetRef="dg_register"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_dlg_f11" name="otherwise" sourceRef="dg_sanGw" targetRef="dg_rj_reject"/>
+    <sequenceFlow id="sec_nbfc_dlg_f12" sourceRef="dg_sanction" targetRef="dg_sanGw"/>
+    <sequenceFlow id="sec_nbfc_dlg_f13" sourceRef="dg_register" targetRef="dg_wait"/>
+    <sequenceFlow id="sec_nbfc_dlg_f14" sourceRef="dg_wait" targetRef="dg_invoke"/>
+    <sequenceFlow id="sec_nbfc_dlg_f15" sourceRef="dg_wait" targetRef="dg_tenure"/>
+    <sequenceFlow id="sec_nbfc_dlg_f16" sourceRef="dg_invoke" targetRef="dg_invRule"/>
+    <sequenceFlow id="sec_nbfc_dlg_f17" sourceRef="dg_invRule" targetRef="dg_invGw"/>
+    <sequenceFlow id="sec_nbfc_dlg_f18" name="yes" sourceRef="dg_invGw" targetRef="dg_doInvoke"><conditionExpression xsi:type="tFormalExpression">${invocationAllowed}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_dlg_f19" name="outside the window: not invoked" sourceRef="dg_invGw" targetRef="dg_wait"/>
+    <sequenceFlow id="sec_nbfc_dlg_f20" sourceRef="dg_doInvoke" targetRef="dg_wait"/>
+    <sequenceFlow id="sec_nbfc_dlg_f21" sourceRef="dg_tenure" targetRef="dg_end"/>
+    <subProcess id="dg_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="dg_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="dg_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dg_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dg_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_nbfc_dlg_f22" sourceRef="dg_withdrawStart" targetRef="dg_withdrawKind"/>
+      <sequenceFlow id="sec_nbfc_dlg_f23" sourceRef="dg_withdrawKind" targetRef="dg_withdrawCall"/>
+      <sequenceFlow id="sec_nbfc_dlg_f24" sourceRef="dg_withdrawCall" targetRef="dg_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="dg_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="dg_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="dg_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dg_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dg_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_nbfc_dlg_f25" sourceRef="dg_cancelStart" targetRef="dg_cancelKind"/>
+      <sequenceFlow id="sec_nbfc_dlg_f26" sourceRef="dg_cancelKind" targetRef="dg_cancelCall"/>
+      <sequenceFlow id="sec_nbfc_dlg_f27" sourceRef="dg_cancelCall" targetRef="dg_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_nbfc_dlg_diagram">
+    <bpmndi:BPMNPlane id="sec_nbfc_dlg_plane" bpmnElement="sangam-sec-nbfc-dlg">
+      <bpmndi:BPMNShape id="dg_start_di" bpmnElement="dg_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_defaults_di" bpmnElement="dg_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_pct_di" bpmnElement="dg_pct"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_cap_di" bpmnElement="dg_cap"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_capGw_di" bpmnElement="dg_capGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_rjCap_code_di" bpmnElement="dg_rjCap_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_rjCap_reject_di" bpmnElement="dg_rjCap_reject"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_rjCap_endRejected_di" bpmnElement="dg_rjCap_endRejected"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_sanction_di" bpmnElement="dg_sanction"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_register_di" bpmnElement="dg_register"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_rj_reject_di" bpmnElement="dg_rj_reject"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_rj_endRejected_di" bpmnElement="dg_rj_endRejected"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_sanGw_di" bpmnElement="dg_sanGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_wait_di" bpmnElement="dg_wait"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_invoke_di" bpmnElement="dg_invoke"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_tenure_di" bpmnElement="dg_tenure"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_invRule_di" bpmnElement="dg_invRule"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_invGw_di" bpmnElement="dg_invGw"><dc:Bounds x="1860" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_doInvoke_di" bpmnElement="dg_doInvoke"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_end_di" bpmnElement="dg_end"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_withdraw_di" bpmnElement="dg_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_withdrawStart_di" bpmnElement="dg_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_withdrawKind_di" bpmnElement="dg_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_withdrawCall_di" bpmnElement="dg_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_withdrawEnd_di" bpmnElement="dg_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_cancel_di" bpmnElement="dg_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_cancelStart_di" bpmnElement="dg_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_cancelKind_di" bpmnElement="dg_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_cancelCall_di" bpmnElement="dg_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dg_cancelEnd_di" bpmnElement="dg_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f1_di" bpmnElement="sec_nbfc_dlg_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f2_di" bpmnElement="sec_nbfc_dlg_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f3_di" bpmnElement="sec_nbfc_dlg_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f4_di" bpmnElement="sec_nbfc_dlg_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f5_di" bpmnElement="sec_nbfc_dlg_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1158" y="195"/><di:waypoint x="1158" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f6_di" bpmnElement="sec_nbfc_dlg_f6"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f7_di" bpmnElement="sec_nbfc_dlg_f7"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f8_di" bpmnElement="sec_nbfc_dlg_f8"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f9_di" bpmnElement="sec_nbfc_dlg_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f10_di" bpmnElement="sec_nbfc_dlg_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f11_di" bpmnElement="sec_nbfc_dlg_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f12_di" bpmnElement="sec_nbfc_dlg_f12"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f13_di" bpmnElement="sec_nbfc_dlg_f13"><di:waypoint x="1275" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f14_di" bpmnElement="sec_nbfc_dlg_f14"><di:waypoint x="1415" y="195"/><di:waypoint x="1476" y="195"/><di:waypoint x="1476" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f15_di" bpmnElement="sec_nbfc_dlg_f15"><di:waypoint x="1415" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f16_di" bpmnElement="sec_nbfc_dlg_f16"><di:waypoint x="1573" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f17_di" bpmnElement="sec_nbfc_dlg_f17"><di:waypoint x="1770" y="320"/><di:waypoint x="1860" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f18_di" bpmnElement="sec_nbfc_dlg_f18"><di:waypoint x="1910" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f19_di" bpmnElement="sec_nbfc_dlg_f19"><di:waypoint x="1885" y="345"/><di:waypoint x="1885" y="377"/><di:waypoint x="1390" y="377"/><di:waypoint x="1390" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f20_di" bpmnElement="sec_nbfc_dlg_f20"><di:waypoint x="2050" y="360"/><di:waypoint x="2050" y="399"/><di:waypoint x="1390" y="399"/><di:waypoint x="1390" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f21_di" bpmnElement="sec_nbfc_dlg_f21"><di:waypoint x="1573" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f22_di" bpmnElement="sec_nbfc_dlg_f22"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f23_di" bpmnElement="sec_nbfc_dlg_f23"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f24_di" bpmnElement="sec_nbfc_dlg_f24"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f25_di" bpmnElement="sec_nbfc_dlg_f25"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f26_di" bpmnElement="sec_nbfc_dlg_f26"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_dlg_f27_di" bpmnElement="sec_nbfc_dlg_f27"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,47 @@
+{
+  "key": "sec-ushealth-prior-auth/p2p",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.prior-auth",
+  "title": {
+    "en": "Peer-to-peer review with the payer medical director",
+    "es": "Revisión entre pares con el director médico del pagador"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "peerToPeerNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Peer-to-peer discussion notes",
+        "es": "Notas de la conversación entre pares"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "p2pOutcome",
+    "required": true,
+    "options": [
+      {
+        "value": "overturned",
+        "label": {
+          "en": "Overturned (approved)",
+          "es": "Revocada (aprobada)"
+        }
+      },
+      {
+        "value": "upheld",
+        "label": {
+          "en": "Upheld",
+          "es": "Confirmada"
+        }
+      }
+    ]
+  }
+}

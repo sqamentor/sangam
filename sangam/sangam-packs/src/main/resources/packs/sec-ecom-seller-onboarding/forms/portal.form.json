@@ -1,0 +1,36 @@
+{
+  "key": "sec-ecom-seller-onboarding/portal",
+  "version": "1.0.0",
+  "pack": "sec.ecom.seller-onboarding",
+  "title": {
+    "en": "Upload requested documents",
+    "hi": "मांगे गए दस्तावेज़ अपलोड करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

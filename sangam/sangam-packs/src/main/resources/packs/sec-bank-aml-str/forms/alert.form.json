@@ -1,0 +1,54 @@
+{
+  "key": "sec-bank-aml-str/alert",
+  "version": "1.0.0",
+  "pack": "sec.bank.aml-str",
+  "title": {
+    "en": "AML alert",
+    "hi": "धन-शोधन चेतावनी"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "alertType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Alert scenario",
+        "hi": "चेतावनी परिदृश्य"
+      }
+    },
+    {
+      "id": "alertScore",
+      "type": "integer",
+      "required": false,
+      "label": {
+        "en": "Alert score",
+        "hi": "चेतावनी अंक"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    }
+  ]
+}

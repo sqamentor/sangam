@@ -1,0 +1,106 @@
+{
+  "offices": [
+    {
+      "id": "OFFICE-P",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PENSION-CLERK",
+      "role": "PENSION-CLERK",
+      "office": "OFFICE-P",
+      "reportsTo": "HOO-P",
+      "name": {
+        "en": "Pension clerk",
+        "hi": "पेंशन लिपिक"
+      }
+    },
+    {
+      "id": "HOO-P",
+      "role": "HOO",
+      "office": "OFFICE-P",
+      "reportsTo": "HOD-P",
+      "name": {
+        "en": "Head of Office",
+        "hi": "कार्यालय प्रमुख"
+      }
+    },
+    {
+      "id": "HOD-P",
+      "role": "HOD",
+      "office": "OFFICE-P",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of Department",
+        "hi": "विभागाध्यक्ष"
+      }
+    },
+    {
+      "id": "PAO-P",
+      "role": "PAO",
+      "office": "OFFICE-P",
+      "reportsTo": null,
+      "name": {
+        "en": "Pay and accounts officer",
+        "hi": "वेतन एवं लेखा अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PENSION-CLERK",
+      "person": "pn.pension-clerk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HOO-P",
+      "person": "pn.hoo-p",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HOD-P",
+      "person": "pn.hod-p",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PAO-P",
+      "person": "pn.pao-p",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PENSION-CLERK",
+      "name": {
+        "en": "Pension clerk",
+        "hi": "पेंशन लिपिक"
+      }
+    },
+    {
+      "code": "HOO",
+      "name": {
+        "en": "Head of Office",
+        "hi": "कार्यालय प्रमुख"
+      }
+    },
+    {
+      "code": "HOD",
+      "name": {
+        "en": "Head of Department",
+        "hi": "विभागाध्यक्ष"
+      }
+    },
+    {
+      "code": "PAO",
+      "name": {
+        "en": "Pay and accounts officer",
+        "hi": "वेतन एवं लेखा अधिकारी"
+      }
+    }
+  ]
+}

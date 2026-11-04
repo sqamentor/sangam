@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "TELCO",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "MNP-DESK",
+      "role": "MNP",
+      "office": "TELCO",
+      "reportsTo": null,
+      "name": {
+        "en": "MNP operations desk",
+        "hi": "एमएनपी संचालन डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "MNP-DESK",
+      "person": "tmn.mnp-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "MNP",
+      "name": {
+        "en": "MNP operations desk",
+        "hi": "एमएनपी संचालन डेस्क"
+      }
+    }
+  ]
+}

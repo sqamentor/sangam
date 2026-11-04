@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "OPS-U3",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "ANALYST",
+      "role": "ANALYST",
+      "office": "OPS-U3",
+      "reportsTo": null,
+      "name": {
+        "en": "Fraud / signal analyst",
+        "hi": "धोखाधड़ी / संकेत विश्लेषक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "ANALYST",
+      "person": "u3.analyst",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "ANALYST",
+      "name": {
+        "en": "Fraud / signal analyst",
+        "hi": "धोखाधड़ी / संकेत विश्लेषक"
+      }
+    }
+  ]
+}

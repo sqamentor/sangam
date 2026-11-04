@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "ISSUE",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "RTA",
+      "role": "RTA",
+      "office": "ISSUE",
+      "reportsTo": "LEAD-MANAGER",
+      "name": {
+        "en": "Registrar to the issue",
+        "hi": "निर्गम रजिस्ट्रार"
+      }
+    },
+    {
+      "id": "LEAD-MANAGER",
+      "role": "BRLM",
+      "office": "ISSUE",
+      "reportsTo": null,
+      "name": {
+        "en": "Book running lead manager",
+        "hi": "प्रमुख प्रबंधक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "RTA",
+      "person": "cip.rta",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "LEAD-MANAGER",
+      "person": "cip.lead-manager",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "RTA",
+      "name": {
+        "en": "Registrar to the issue",
+        "hi": "निर्गम रजिस्ट्रार"
+      }
+    },
+    {
+      "code": "BRLM",
+      "name": {
+        "en": "Book running lead manager",
+        "hi": "प्रमुख प्रबंधक"
+      }
+    }
+  ]
+}

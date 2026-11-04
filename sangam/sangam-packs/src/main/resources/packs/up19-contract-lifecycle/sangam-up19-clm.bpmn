@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-19 Contract lifecycle. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up19_clm" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-up19-clm" name="UP-19 Contract lifecycle" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up19-contract-lifecycle</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>counterpartyName,description,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u19_start" name="Contract requested" operaton:initiator="initiator" operaton:formKey="sangam:up19-contract-lifecycle/request"></startEvent>
+    <serviceTask id="u19_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>amount=0;caseType=CONTRACT;routingDecisionKey=up19-signatory;signatureRequired=true;renewalLead=P60D;contractExpiryAt=null;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u19_draft" name="Draft contract" operaton:candidateGroups="LEGAL-COUNSEL" operaton:formKey="sangam:up19-contract-lifecycle/draft"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="u19_redline" name="Counterparty redline" operaton:candidateGroups="COUNTERPARTY" operaton:formKey="sangam:up19-contract-lifecycle/redline"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>redlineDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u19_rg" name="" default="up19_clm_f6"></exclusiveGateway>
+    <parallelGateway id="u19_fork" name="Parallel review"></parallelGateway>
+    <parallelGateway id="u19_join" name=""></parallelGateway>
+    <userTask id="u19_legalreview" name="Legal review" operaton:candidateGroups="LEGAL-REVIEW" operaton:formKey="sangam:up19-contract-lifecycle/legal-review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="u19_financereview" name="Finance review" operaton:candidateGroups="FINANCE-REVIEW" operaton:formKey="sangam:up19-contract-lifecycle/finance-review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <callActivity id="u19_sign" name="Signing authority with signature (core sanction)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <userTask id="u19_dates" name="Record term and expiry" operaton:candidateGroups="LEGAL-COUNSEL" operaton:formKey="sangam:up19-contract-lifecycle/term"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u19_sanGw" name="sanctionOutcome?" default="up19_clm_f13"></exclusiveGateway>
+    <serviceTask id="u19_expiry" name="Expiry" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>contractExpiryAt=@dueDate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u19_renewalDue" name="Renewal notice before expiry" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>renewal</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>contractExpiryAt</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${renewalLead}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="u19_renewalWait" name="Renewal notice"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${renewalDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="u19_renewal" name="Renewal decision" operaton:candidateGroups="LEGAL-COUNSEL" operaton:formKey="sangam:up19-contract-lifecycle/renewal"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>renewalDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u19_renGw" name="" default="up19_clm_f22"></exclusiveGateway>
+    <serviceTask id="u19_renew" name="Renewal as a linked contract" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-up19-clm</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>renewal</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>counterpartyName,description,amount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u19_endRenewed" name="Renewed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="u19_end" name="Expired"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="up19_clm_f1" sourceRef="u19_start" targetRef="u19_defaults"/>
+    <sequenceFlow id="up19_clm_f2" sourceRef="u19_defaults" targetRef="u19_draft"/>
+    <sequenceFlow id="up19_clm_f3" sourceRef="u19_draft" targetRef="u19_redline"/>
+    <sequenceFlow id="up19_clm_f4" sourceRef="u19_redline" targetRef="u19_rg"/>
+    <sequenceFlow id="up19_clm_f5" name="another round" sourceRef="u19_rg" targetRef="u19_draft"><conditionExpression xsi:type="tFormalExpression">${redlineDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up19_clm_f6" name="agreed text" sourceRef="u19_rg" targetRef="u19_fork"/>
+    <sequenceFlow id="up19_clm_f7" sourceRef="u19_fork" targetRef="u19_legalreview"/>
+    <sequenceFlow id="up19_clm_f8" sourceRef="u19_legalreview" targetRef="u19_join"/>
+    <sequenceFlow id="up19_clm_f9" sourceRef="u19_fork" targetRef="u19_financereview"/>
+    <sequenceFlow id="up19_clm_f10" sourceRef="u19_financereview" targetRef="u19_join"/>
+    <sequenceFlow id="up19_clm_f11" sourceRef="u19_join" targetRef="u19_sign"/>
+    <sequenceFlow id="up19_clm_f12" name="SANCTIONED" sourceRef="u19_sanGw" targetRef="u19_dates"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up19_clm_f13" name="otherwise" sourceRef="u19_sanGw" targetRef="u19_draft"/>
+    <sequenceFlow id="up19_clm_f14" sourceRef="u19_sign" targetRef="u19_sanGw"/>
+    <sequenceFlow id="up19_clm_f15" sourceRef="u19_dates" targetRef="u19_expiry"/>
+    <sequenceFlow id="up19_clm_f16" sourceRef="u19_expiry" targetRef="u19_renewalDue"/>
+    <sequenceFlow id="up19_clm_f17" sourceRef="u19_renewalDue" targetRef="u19_renewalWait"/>
+    <sequenceFlow id="up19_clm_f18" sourceRef="u19_renewalWait" targetRef="u19_renewal"/>
+    <sequenceFlow id="up19_clm_f19" sourceRef="u19_renewal" targetRef="u19_renGw"/>
+    <sequenceFlow id="up19_clm_f20" name="renew" sourceRef="u19_renGw" targetRef="u19_renew"><conditionExpression xsi:type="tFormalExpression">${renewalDecision == 'renew'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up19_clm_f21" sourceRef="u19_renew" targetRef="u19_endRenewed"/>
+    <sequenceFlow id="up19_clm_f22" name="terminate" sourceRef="u19_renGw" targetRef="u19_end"/>
+    <subProcess id="u19_obligations" name="Obligation reminders" triggeredByEvent="true">
+      <startEvent id="u19_obStart" name="Monthly" isInterrupting="false"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">R/P30D</timeCycle></timerEventDefinition></startEvent>
+      <serviceTask id="u19_obNotify" name="Remind obligations" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>contract-obligations</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>counterpartyName</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="u19_obEnd" name="Reminded"></endEvent>
+      <sequenceFlow id="up19_clm_f23" sourceRef="u19_obStart" targetRef="u19_obNotify"/>
+      <sequenceFlow id="up19_clm_f24" sourceRef="u19_obNotify" targetRef="u19_obEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="up19_clm_diagram">
+    <bpmndi:BPMNPlane id="up19_clm_plane" bpmnElement="sangam-up19-clm">
+      <bpmndi:BPMNShape id="u19_start_di" bpmnElement="u19_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_defaults_di" bpmnElement="u19_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_draft_di" bpmnElement="u19_draft"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_redline_di" bpmnElement="u19_redline"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_rg_di" bpmnElement="u19_rg"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_fork_di" bpmnElement="u19_fork"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_join_di" bpmnElement="u19_join"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_legalreview_di" bpmnElement="u19_legalreview"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_financereview_di" bpmnElement="u19_financereview"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_sign_di" bpmnElement="u19_sign"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_dates_di" bpmnElement="u19_dates"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_sanGw_di" bpmnElement="u19_sanGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_expiry_di" bpmnElement="u19_expiry"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_renewalDue_di" bpmnElement="u19_renewalDue"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_renewalWait_di" bpmnElement="u19_renewalWait"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_renewal_di" bpmnElement="u19_renewal"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_renGw_di" bpmnElement="u19_renGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_renew_di" bpmnElement="u19_renew"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_endRenewed_di" bpmnElement="u19_endRenewed"><dc:Bounds x="2857" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_end_di" bpmnElement="u19_end"><dc:Bounds x="2692" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_obligations_di" bpmnElement="u19_obligations" isExpanded="true"><dc:Bounds x="30" y="285" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_obStart_di" bpmnElement="u19_obStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_obNotify_di" bpmnElement="u19_obNotify"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u19_obEnd_di" bpmnElement="u19_obEnd"><dc:Bounds x="422" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up19_clm_f1_di" bpmnElement="up19_clm_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f2_di" bpmnElement="up19_clm_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f3_di" bpmnElement="up19_clm_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f4_di" bpmnElement="up19_clm_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f5_di" bpmnElement="up19_clm_f5"><di:waypoint x="730" y="95"/><di:waypoint x="730" y="128"/><di:waypoint x="400" y="128"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f6_di" bpmnElement="up19_clm_f6"><di:waypoint x="755" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f7_di" bpmnElement="up19_clm_f7"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f8_di" bpmnElement="up19_clm_f8"><di:waypoint x="1110" y="195"/><di:waypoint x="1155" y="195"/><di:waypoint x="1155" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f9_di" bpmnElement="up19_clm_f9"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f10_di" bpmnElement="up19_clm_f10"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f11_di" bpmnElement="up19_clm_f11"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f12_di" bpmnElement="up19_clm_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f13_di" bpmnElement="up19_clm_f13"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="128"/><di:waypoint x="400" y="128"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f14_di" bpmnElement="up19_clm_f14"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f15_di" bpmnElement="up19_clm_f15"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f16_di" bpmnElement="up19_clm_f16"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f17_di" bpmnElement="up19_clm_f17"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f18_di" bpmnElement="up19_clm_f18"><di:waypoint x="2233" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f19_di" bpmnElement="up19_clm_f19"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f20_di" bpmnElement="up19_clm_f20"><di:waypoint x="2570" y="70"/><di:waypoint x="2615" y="70"/><di:waypoint x="2615" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f21_di" bpmnElement="up19_clm_f21"><di:waypoint x="2760" y="195"/><di:waypoint x="2857" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f22_di" bpmnElement="up19_clm_f22"><di:waypoint x="2570" y="70"/><di:waypoint x="2692" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f23_di" bpmnElement="up19_clm_f23"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up19_clm_f24_di" bpmnElement="up19_clm_f24"><di:waypoint x="325" y="365"/><di:waypoint x="422" y="365"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,36 @@
+{
+  "key": "sec-bank-loan-origination/valuer",
+  "version": "1.0.0",
+  "pack": "sec.bank.loan-origination",
+  "title": {
+    "en": "Valuation of collateral",
+    "hi": "प्रतिभूति का मूल्यांकन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "collateralValue",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Collateral value (INR)",
+        "hi": "प्रतिभूति का मूल्य (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

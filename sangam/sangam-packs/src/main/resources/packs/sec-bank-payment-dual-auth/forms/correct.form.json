@@ -1,0 +1,74 @@
+{
+  "key": "sec-bank-payment-dual-auth/correct",
+  "version": "1.0.0",
+  "pack": "sec.bank.payment-dual-auth",
+  "title": {
+    "en": "Correct beneficiary details",
+    "hi": "लाभार्थी विवरण सुधारें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "payee",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "account",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Bank account number",
+        "hi": "बैंक खाता संख्या"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "py_correctDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,259 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: CT
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Chhattisgarh
+    hi: छत्तीसगढ़
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources CT1-CT2, accessed 2026-11-04)
+  adopt:
+  - profile: MP
+    sections:
+    - rulebooks
+placeholders:
+- path: classification.schemes
+  reason: partially verified code structure (delta P)
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 5
+  sources: CT1-CT2
+locale:
+  languages:
+  - tag: hi
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: hne
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+    note: '[U] 2007 amendment'
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - accounts
+    - audit
+    note: accounts and audit outputs are usually English (IFMS-STATES 9.1)
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - e-Kosh
+  - e-Bill
+  - e-Challan
+  - e-Payroll
+  - SNA-Sparsh & State DBT
+  - IFMIS Next Gen
+  snaSparsh:
+    hosting: MODULE
+    combinedWithStateDbt: true
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Treasury & Accounts
+  unitTypes:
+    DISTRICT_TREASURY: 34
+  ddoCount: null
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: CG_FRBM_2005
+    title: FRBM Act 2005
+  - id: CG_CF_ACT_2001
+    title: Contingency Fund Act 2001
+  - id: CG_PENSION_FUND_2025
+    title: Pension Fund Act 2025
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+budgetControl:
+  ceilings:
+  - id: BCO
+    relaxationWorkflow: true
+vendorPaymentOtp: true
+bcoAgReconciliation: MONTHLY
+budgetProposalTemplates:
+- NEW_ITEM
+- SUPPLEMENTARY
+- REAPPROPRIATION
+- CONTINGENCY_ADVANCE
+- GUARANTEE
+classification:
+  schemes:
+  - id: HOA_CT
+    separator: '-'
+    segments:
+    - id: demand
+      width: 2
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: scheme
+      width: 4
+    - id: tag
+      width: 4
+    - id: object
+      width: 2
+    - id: detailedObject
+      width: 3
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: '2012 [03] {090} (4330) 0112 #01 001'
+    evidence: P
+    source: CG budget book 2026-27
+  defaultScheme: HOA_CT
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+procurement:
+  family: RULES
+  rule: CG Bhandar Kray Niyam 2002 (to 10-12-2025)
+  worksCode: '[U]'
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/CT/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: CT
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/CT/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: CT
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from CG Bhandar Kray Niyam 2002 (to 10-12-2025) (was: RPR 2022: DDO draws within
+        a sanction; no sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from CG Bhandar Kray Niyam 2002 (to 10-12-2025) (was: DFPR 2024 r.12(4) and department
+        re-delegation order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from CG Bhandar Kray Niyam 2002 (to 10-12-2025) (was: DFPR 2024 r.12(2) re-delegation
+        to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from CG Bhandar Kray Niyam 2002 (to 10-12-2025) (was: DFPR 2024 r.11 (open /
+        limited tender up to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from CG Bhandar Kray Niyam 2002 (to 10-12-2025) (was: DFPR 2024 r.11: above the
+        Secretary; no upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from CG Bhandar Kray Niyam 2002 (to 10-12-2025) (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

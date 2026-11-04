@@ -1,0 +1,289 @@
+# SPDX-License-Identifier: Apache-2.0
+# Release (tag vX.Y.Z): full Tier-1 DB matrix (mandatory, CF-11 / VIII.9 condition 2) + licence gate + security
+# scan, then versioned jars, images (GHCR, multi-arch), CycloneDX SBOMs (Maven, npm, images), Helm chart,
+# SHA256SUMS, the air-gapped bundle and a GitHub release. The licence inventory is regenerated from the tag (LIC-11).
+name: release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without the leading v (dry run: images are not pushed)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  MAVEN_ARGS: -B -ntp
+  TZ: UTC
+
+jobs:
+  meta:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      push: ${{ steps.v.outputs.push }}
+    steps:
+      - id: v
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then v="${GITHUB_REF_NAME#v}"; push=true; else v="${{ inputs.version }}"; push=false; fi
+          echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$' || { echo "bad version $v"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"; echo "push=$push" >> "$GITHUB_OUTPUT"
+
+  db-matrix:
+    needs: meta
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/db-matrix.yml
+    with:
+      dbs: postgres,oracle,sqlserver,mysql
+
+  security:
+    needs: meta
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    uses: ./.github/workflows/security.yml
+    secrets: inherit
+
+  build:
+    needs: meta
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: sangam
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - name: Set version
+        run: mvn $MAVEN_ARGS -q versions:set -DnewVersion=${{ needs.meta.outputs.version }} -DprocessAllModules=true -DgenerateBackupPoms=false
+      - name: Build + unit tests
+        run: mvn $MAVEN_ARGS -Dsangam.db=h2 -DskipITs verify
+      - name: Stage artefacts
+        run: |
+          set -euo pipefail
+          V=${{ needs.meta.outputs.version }}
+          mkdir -p ../dist/lib-ext ../dist/sbom
+          cp sangam-server/target/sangam-server-$V.jar ../dist/sangam-server-$V.jar
+          mariadb=$(mvn -q -DforceStdout help:evaluate -Dexpression=version.mariadb -N)
+          mvn $MAVEN_ARGS -q dependency:copy -Dartifact=org.mariadb.jdbc:mariadb-java-client:$mariadb -DoutputDirectory=../dist/lib-ext
+          mvn $MAVEN_ARGS -q dependency:copy -Dartifact=org.mariadb.jdbc:mariadb-java-client:$mariadb:jar:sources -DoutputDirectory=../dist/lib-ext
+          cp deploy/docker/server/SOURCE-OFFER.txt ../dist/lib-ext/
+          ls sdks/java/target/*.jar >/dev/null 2>&1 && cp sdks/java/target/*.jar ../dist/ || true
+          ls sangam-integration/target/*-simulators.jar >/dev/null 2>&1 && cp sangam-integration/target/*-simulators.jar ../dist/sangam-simulators-$V.jar || true
+      - name: Maven SBOM (CycloneDX 1.6, shipped scopes)
+        run: |
+          mvn $MAVEN_ARGS -DskipTests org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom \
+            -DoutputFormat=json -DoutputName=sangam-maven.cdx -DschemaVersion=1.6 \
+            -DincludeTestScope=false -DincludeProvidedScope=false -DincludeSystemScope=false
+          cp target/sangam-maven.cdx.json ../dist/sbom/sangam-maven-${{ needs.meta.outputs.version }}.cdx.json
+      - uses: actions/setup-node@v4
+        if: hashFiles('sangam/sangam-ui/package-lock.json') != ''
+        with: { node-version: "22", cache: npm, cache-dependency-path: sangam/sangam-ui/package-lock.json }
+      - name: UI build + SBOM
+        if: hashFiles('sangam/sangam-ui/package-lock.json') != ''
+        working-directory: sangam/sangam-ui
+        run: |
+          npm ci --no-audit --no-fund
+          npm version --no-git-tag-version --allow-same-version ${{ needs.meta.outputs.version }}
+          npm run build
+          npx --yes @cyclonedx/cyclonedx-npm@2.1.0 --omit dev --spec-version 1.6 --output-format JSON \
+            --output-file ../../dist/sbom/sangam-ui-${{ needs.meta.outputs.version }}.cdx.json
+          tar -C dist -czf ../../dist/sangam-ui-dist-${{ needs.meta.outputs.version }}.tgz .
+      - name: Licence gate (strict on release)
+        run: |
+          args=(--policy deploy/licence/licence-policy.json --strict --report ../dist/sbom/licence-report.md
+                --jar ../dist/sangam-server-${{ needs.meta.outputs.version }}.jar)
+          for s in ../dist/sbom/*.cdx.json; do args+=(--sbom "$s"); done
+          python3 -I deploy/licence/check_licences.py "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: |
+            dist/
+            sangam/sangam-ui/dist/
+          retention-days: 7
+
+  images:
+    needs: [meta, build, db-matrix, security]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    defaults:
+      run:
+        working-directory: sangam
+        shell: bash
+    outputs:
+      server-digest: ${{ steps.server.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: release-dist, path: . }
+      - name: Stage build inputs
+        id: stage
+        run: |
+          V=${{ needs.meta.outputs.version }}
+          mkdir -p sangam-server/target deploy/docker/lib-ext
+          cp ../dist/sangam-server-$V.jar sangam-server/target/sangam-server.jar
+          cp ../dist/lib-ext/*.jar deploy/docker/lib-ext/
+          [ -f sangam-ui/dist/index.html ] && echo "ui=true" >> "$GITHUB_OUTPUT" || echo "ui=false" >> "$GITHUB_OUTPUT"
+          if [ -f ../dist/sangam-simulators-$V.jar ]; then
+            mkdir -p sangam-integration/target && cp ../dist/sangam-simulators-$V.jar sangam-integration/target/sangam-integration-simulators.jar
+            echo "sim=true" >> "$GITHUB_OUTPUT"
+          else echo "sim=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: needs.meta.outputs.push == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: sangam-server
+        id: server
+        uses: docker/build-push-action@v6
+        with:
+          context: sangam
+          file: sangam/deploy/docker/server.Dockerfile
+          target: runtime
+          build-args: |
+            JAR_SOURCE=prebuilt
+            PREBUILT_JAR=sangam-server/target/sangam-server.jar
+          platforms: linux/amd64,linux/arm64
+          push: ${{ needs.meta.outputs.push == 'true' }}
+          provenance: mode=max
+          sbom: true
+          tags: |
+            ${{ env.REGISTRY }}/sangam-server:${{ needs.meta.outputs.version }}
+          labels: org.opencontainers.image.version=${{ needs.meta.outputs.version }}
+      - name: sangam-server (distroless)
+        uses: docker/build-push-action@v6
+        with:
+          context: sangam
+          file: sangam/deploy/docker/server.Dockerfile
+          target: runtime-distroless
+          build-args: |
+            JAR_SOURCE=prebuilt
+            PREBUILT_JAR=sangam-server/target/sangam-server.jar
+          platforms: linux/amd64,linux/arm64
+          push: ${{ needs.meta.outputs.push == 'true' }}
+          provenance: mode=max
+          sbom: true
+          tags: ${{ env.REGISTRY }}/sangam-server:${{ needs.meta.outputs.version }}-distroless
+      - name: sangam-ui
+        if: steps.stage.outputs.ui == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: sangam
+          file: sangam/deploy/docker/ui.Dockerfile
+          build-args: DIST_SOURCE=prebuilt
+          platforms: linux/amd64,linux/arm64
+          push: ${{ needs.meta.outputs.push == 'true' }}
+          provenance: mode=max
+          sbom: true
+          tags: ${{ env.REGISTRY }}/sangam-ui:${{ needs.meta.outputs.version }}
+      - name: sangam-simulators
+        if: steps.stage.outputs.sim == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: sangam
+          file: sangam/deploy/docker/simulators.Dockerfile
+          build-args: JAR_SOURCE=prebuilt
+          platforms: linux/amd64
+          push: ${{ needs.meta.outputs.push == 'true' }}
+          tags: ${{ env.REGISTRY }}/sangam-simulators:${{ needs.meta.outputs.version }}
+      - name: Image SBOMs (CycloneDX)
+        if: needs.meta.outputs.push == 'true'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/v1.29.0/install.sh | sh -s -- -b /usr/local/bin v1.29.0
+          mkdir -p ../image-sbom
+          V=${{ needs.meta.outputs.version }}
+          for img in sangam-server:$V sangam-server:$V-distroless $( [ "${{ steps.stage.outputs.ui }}" = true ] && echo sangam-ui:$V ); do
+            syft "registry:${REGISTRY}/$img" -o cyclonedx-json="../image-sbom/$(echo "$img" | tr ':' '_').cdx.json"
+          done
+      - uses: actions/attest-build-provenance@v2
+        if: needs.meta.outputs.push == 'true'
+        with:
+          subject-name: ${{ env.REGISTRY }}/sangam-server
+          subject-digest: ${{ steps.server.outputs.digest }}
+          push-to-registry: true
+      - uses: actions/upload-artifact@v4
+        if: needs.meta.outputs.push == 'true'
+        with: { name: image-sbom, path: image-sbom/ }
+
+  publish:
+    needs: [meta, build, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: release-dist, path: . }
+      - uses: actions/download-artifact@v4
+        if: needs.meta.outputs.push == 'true'
+        with: { name: image-sbom, path: dist/sbom }
+      - uses: azure/setup-helm@v4
+        with: { version: v3.18.4 }
+      - name: Helm chart
+        run: |
+          V=${{ needs.meta.outputs.version }}
+          sed -i "s/^appVersion: .*/appVersion: \"$V\"/" sangam/deploy/helm/sangam/Chart.yaml
+          sed -i "s#repository: sqamentor/#repository: ${GITHUB_REPOSITORY_OWNER}/#" sangam/deploy/helm/sangam/values.yaml
+          helm lint sangam/deploy/helm/sangam -f sangam/deploy/helm/sangam/examples/values-postgres.yaml
+          helm package sangam/deploy/helm/sangam --version "$V" --app-version "$V" -d dist
+      - name: Air-gapped bundle
+        if: needs.meta.outputs.push == 'true'
+        run: |
+          V=${{ needs.meta.outputs.version }}
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          bash sangam/deploy/airgap/save-images.sh --version "$V" --registry "$REGISTRY" --out airgap --sbom-dir dist/sbom --allow-missing
+          # GitHub release assets are limited to 2 GiB each
+          split -b 1900m -d "airgap/sangam-airgap-$V.tar" "dist/sangam-airgap-$V.tar.part-"
+          cp "airgap/sangam-airgap-$V.tar.sha256" dist/
+      - name: Checksums
+        working-directory: dist
+        run: |
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          cat SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        if: needs.meta.outputs.push == 'true'
+        with:
+          name: Sangam ${{ needs.meta.outputs.version }}
+          tag_name: v${{ needs.meta.outputs.version }}
+          prerelease: ${{ contains(needs.meta.outputs.version, '-') }}
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+          body: |
+            Images: `${{ env.REGISTRY }}/sangam-server:${{ needs.meta.outputs.version }}` (also `-distroless`), `sangam-ui`, `sangam-simulators`.
+            Server image digest: `${{ needs.images.outputs.server-digest }}`.
+            Verified on the full Tier-1 matrix (PostgreSQL, Oracle, SQL Server, MySQL 8.4).
+            Air-gapped bundle: concatenate the `.tar.part-*` files (`cat sangam-airgap-*.tar.part-* > sangam-airgap.tar`), then `sha256sum -c`.
+            SBOMs (CycloneDX 1.6) and the licence report are in `sbom/`; the MariaDB Connector/J source offer is in `lib-ext/SOURCE-OFFER.txt`.
+          files: |
+            dist/*.jar
+            dist/*.tgz
+            dist/lib-ext/*
+            dist/sbom/*
+            dist/sangam-airgap-*
+            dist/SHA256SUMS

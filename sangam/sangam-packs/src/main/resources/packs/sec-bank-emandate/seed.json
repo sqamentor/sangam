@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "MANDATES",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "MANDATE-MAKER",
+      "role": "MAKER",
+      "office": "MANDATES",
+      "reportsTo": "MANDATE-CHECKER",
+      "name": {
+        "en": "Mandate maker",
+        "hi": "अधिदेश निर्माता"
+      }
+    },
+    {
+      "id": "MANDATE-CHECKER",
+      "role": "CHECKER",
+      "office": "MANDATES",
+      "reportsTo": null,
+      "name": {
+        "en": "Mandate checker",
+        "hi": "अधिदेश जाँचकर्ता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "MANDATE-MAKER",
+      "person": "bem.mandate-maker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "MANDATE-CHECKER",
+      "person": "bem.mandate-checker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "MAKER",
+      "name": {
+        "en": "Mandate maker",
+        "hi": "अधिदेश निर्माता"
+      }
+    },
+    {
+      "code": "CHECKER",
+      "name": {
+        "en": "Mandate checker",
+        "hi": "अधिदेश जाँचकर्ता"
+      }
+    }
+  ]
+}

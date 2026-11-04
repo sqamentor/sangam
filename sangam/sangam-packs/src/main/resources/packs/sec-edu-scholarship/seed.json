@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "NSP",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "INSTITUTE-NODAL",
+      "role": "INO",
+      "office": "NSP",
+      "reportsTo": "DISTRICT-NODAL",
+      "name": {
+        "en": "Institute nodal officer",
+        "hi": "संस्थान नोडल अधिकारी"
+      }
+    },
+    {
+      "id": "DISTRICT-NODAL",
+      "role": "DNO",
+      "office": "NSP",
+      "reportsTo": null,
+      "name": {
+        "en": "District nodal officer",
+        "hi": "जिला नोडल अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "INSTITUTE-NODAL",
+      "person": "esc.institute-nodal",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DISTRICT-NODAL",
+      "person": "esc.district-nodal",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "INO",
+      "name": {
+        "en": "Institute nodal officer",
+        "hi": "संस्थान नोडल अधिकारी"
+      }
+    },
+    {
+      "code": "DNO",
+      "name": {
+        "en": "District nodal officer",
+        "hi": "जिला नोडल अधिकारी"
+      }
+    }
+  ]
+}

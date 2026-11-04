@@ -1,0 +1,42 @@
+{
+  "id": "universal.up03-event-correlation",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-03 Windowed event correlation",
+    "hi": "यूपी-03 समय-खिड़की घटना सहसंबंध"
+  },
+  "domain": "Universal",
+  "description": "Many events per key within a time window: de-duplicated, late events dropped or accepted, bounded state, threshold evaluation, out-of-order sorted; the window closes on a timer (R83, R38).",
+  "mainProcesses": [
+    "sangam-up03-event-correlation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up03-event-correlation/sangam-up03-event-correlation.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up03-event-correlation/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up03-event-correlation/seed.json"
+    }
+  ],
+  "seed": "packs/up03-event-correlation/seed.json",
+  "connectors": [],
+  "covers": [
+    "UP-03",
+    "R38",
+    "R83",
+    "R40",
+    "GP-15"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

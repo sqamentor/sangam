@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Surrender of savings. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_surrender" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-ifms-surrender" name="Surrender of savings" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.surrender-lapse</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>headOfAccount,surrenderAmount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="su_start" name="Savings foreseen" operaton:initiator="initiator" operaton:formKey="sangam:ifms-surrender-lapse/surrender"></startEvent>
+    <serviceTask id="su_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>surrenderAmount=0;amount=0;faSeat=FA-1;ledgerId=BUDGET;caseType=SURRENDER;routingDecisionKey=ifms-surrender-authority;scrutinySeat=PRAO-1;executionConnector=ledger.withdraw;executionStep=withdraw;reconcileRequired=false;outputTemplate=surrender-order;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="su_amount" name="Amount" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>amount=@surrenderAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="su_fa_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>su_fa</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>3WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="su_fa" name="FA concurrence" operaton:candidateGroups="${faSeat}" operaton:formKey="sangam:ifms-surrender-lapse/fa" operaton:dueDate="${su_faDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>faDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="su_fa_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>su_fa</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="su_fa_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="su_fa_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>su_fa</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>faDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="su_fa_breachGw" name="Deemed?" default="ifms_surrender_f6"></exclusiveGateway>
+    <exclusiveGateway id="su_fa_done" name=""></exclusiveGateway>
+    <callActivity id="su_sanction" name="CAA approval (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="su_post" name="Ledger WITHDRAW (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="su_close" name="Communicate to the accounts officer (core closure)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="su_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="su_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="su_faGw" name="" default="ifms_surrender_f15"></exclusiveGateway>
+    <endEvent id="su_retained" name="Retained"></endEvent>
+    <exclusiveGateway id="su_sanGw" name="sanctionOutcome?" default="ifms_surrender_f17"></exclusiveGateway>
+    <exclusiveGateway id="su_exGw" name="executionOutcome?" default="ifms_surrender_f20"></exclusiveGateway>
+    <endEvent id="su_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="su_fa_warn" name="SLA warning (75%)" attachedToRef="su_fa" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${su_faWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="su_fa_breach" name="SLA breached" attachedToRef="su_fa" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${su_faDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_surrender_f1" sourceRef="su_fa_warn" targetRef="su_fa_warnNotify"/>
+    <sequenceFlow id="ifms_surrender_f2" sourceRef="su_fa_warnNotify" targetRef="su_fa_warnEnd"/>
+    <sequenceFlow id="ifms_surrender_f3" sourceRef="su_fa_breach" targetRef="su_fa_breachAct"/>
+    <sequenceFlow id="ifms_surrender_f4" sourceRef="su_fa_breachAct" targetRef="su_fa_breachGw"/>
+    <sequenceFlow id="ifms_surrender_f5" name="deemed" sourceRef="su_fa_breachGw" targetRef="su_fa_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_surrender_f6" name="escalated" sourceRef="su_fa_breachGw" targetRef="su_fa_slaPlan"/>
+    <sequenceFlow id="ifms_surrender_f7" sourceRef="su_fa_slaPlan" targetRef="su_fa"/>
+    <sequenceFlow id="ifms_surrender_f8" sourceRef="su_fa" targetRef="su_fa_done"/>
+    <sequenceFlow id="ifms_surrender_f9" sourceRef="su_rj_reject" targetRef="su_rj_endRejected"/>
+    <sequenceFlow id="ifms_surrender_f10" sourceRef="su_start" targetRef="su_defaults"/>
+    <sequenceFlow id="ifms_surrender_f11" sourceRef="su_defaults" targetRef="su_amount"/>
+    <sequenceFlow id="ifms_surrender_f12" sourceRef="su_amount" targetRef="su_fa_slaPlan"/>
+    <sequenceFlow id="ifms_surrender_f13" sourceRef="su_fa_done" targetRef="su_faGw"/>
+    <sequenceFlow id="ifms_surrender_f14" name="surrender" sourceRef="su_faGw" targetRef="su_sanction"><conditionExpression xsi:type="tFormalExpression">${faDecision == 'surrenderNow'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_surrender_f15" name="retain" sourceRef="su_faGw" targetRef="su_retained"/>
+    <sequenceFlow id="ifms_surrender_f16" name="SANCTIONED" sourceRef="su_sanGw" targetRef="su_post"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_surrender_f17" name="otherwise" sourceRef="su_sanGw" targetRef="su_rj_reject"/>
+    <sequenceFlow id="ifms_surrender_f18" sourceRef="su_sanction" targetRef="su_sanGw"/>
+    <sequenceFlow id="ifms_surrender_f19" name="DONE" sourceRef="su_exGw" targetRef="su_close"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_surrender_f20" name="otherwise" sourceRef="su_exGw" targetRef="su_rj_reject"/>
+    <sequenceFlow id="ifms_surrender_f21" sourceRef="su_post" targetRef="su_exGw"/>
+    <sequenceFlow id="ifms_surrender_f22" sourceRef="su_close" targetRef="su_end"/>
+    <subProcess id="su_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="su_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="su_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="su_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="su_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_surrender_f23" sourceRef="su_withdrawStart" targetRef="su_withdrawKind"/>
+      <sequenceFlow id="ifms_surrender_f24" sourceRef="su_withdrawKind" targetRef="su_withdrawCall"/>
+      <sequenceFlow id="ifms_surrender_f25" sourceRef="su_withdrawCall" targetRef="su_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="su_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="su_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="su_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="su_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="su_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_surrender_f26" sourceRef="su_cancelStart" targetRef="su_cancelKind"/>
+      <sequenceFlow id="ifms_surrender_f27" sourceRef="su_cancelKind" targetRef="su_cancelCall"/>
+      <sequenceFlow id="ifms_surrender_f28" sourceRef="su_cancelCall" targetRef="su_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_surrender_diagram">
+    <bpmndi:BPMNPlane id="ifms_surrender_plane" bpmnElement="sangam-ifms-surrender">
+      <bpmndi:BPMNShape id="su_start_di" bpmnElement="su_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_defaults_di" bpmnElement="su_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_amount_di" bpmnElement="su_amount"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_fa_slaPlan_di" bpmnElement="su_fa_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_fa_di" bpmnElement="su_fa"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_fa_warnNotify_di" bpmnElement="su_fa_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_fa_warnEnd_di" bpmnElement="su_fa_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_fa_breachAct_di" bpmnElement="su_fa_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_fa_breachGw_di" bpmnElement="su_fa_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_fa_done_di" bpmnElement="su_fa_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_sanction_di" bpmnElement="su_sanction"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_post_di" bpmnElement="su_post"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_close_di" bpmnElement="su_close"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_rj_reject_di" bpmnElement="su_rj_reject"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_rj_endRejected_di" bpmnElement="su_rj_endRejected"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_faGw_di" bpmnElement="su_faGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_retained_di" bpmnElement="su_retained"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_sanGw_di" bpmnElement="su_sanGw"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_exGw_di" bpmnElement="su_exGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_end_di" bpmnElement="su_end"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_fa_warn_di" bpmnElement="su_fa_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_fa_breach_di" bpmnElement="su_fa_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_withdraw_di" bpmnElement="su_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_withdrawStart_di" bpmnElement="su_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_withdrawKind_di" bpmnElement="su_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_withdrawCall_di" bpmnElement="su_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_withdrawEnd_di" bpmnElement="su_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_cancel_di" bpmnElement="su_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_cancelStart_di" bpmnElement="su_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_cancelKind_di" bpmnElement="su_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_cancelCall_di" bpmnElement="su_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="su_cancelEnd_di" bpmnElement="su_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_surrender_f1_di" bpmnElement="ifms_surrender_f1"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f2_di" bpmnElement="ifms_surrender_f2"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f3_di" bpmnElement="ifms_surrender_f3"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f4_di" bpmnElement="ifms_surrender_f4"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f5_di" bpmnElement="ifms_surrender_f5"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f6_di" bpmnElement="ifms_surrender_f6"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="135"/><di:waypoint x="565" y="135"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f7_di" bpmnElement="ifms_surrender_f7"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f8_di" bpmnElement="ifms_surrender_f8"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f9_di" bpmnElement="ifms_surrender_f9"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f10_di" bpmnElement="ifms_surrender_f10"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f11_di" bpmnElement="ifms_surrender_f11"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f12_di" bpmnElement="ifms_surrender_f12"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f13_di" bpmnElement="ifms_surrender_f13"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f14_di" bpmnElement="ifms_surrender_f14"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f15_di" bpmnElement="ifms_surrender_f15"><di:waypoint x="1415" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f16_di" bpmnElement="ifms_surrender_f16"><di:waypoint x="1745" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f17_di" bpmnElement="ifms_surrender_f17"><di:waypoint x="1745" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f18_di" bpmnElement="ifms_surrender_f18"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f19_di" bpmnElement="ifms_surrender_f19"><di:waypoint x="2075" y="195"/><di:waypoint x="2120" y="195"/><di:waypoint x="2120" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f20_di" bpmnElement="ifms_surrender_f20"><di:waypoint x="2075" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f21_di" bpmnElement="ifms_surrender_f21"><di:waypoint x="1935" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f22_di" bpmnElement="ifms_surrender_f22"><di:waypoint x="2265" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f23_di" bpmnElement="ifms_surrender_f23"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f24_di" bpmnElement="ifms_surrender_f24"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f25_di" bpmnElement="ifms_surrender_f25"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f26_di" bpmnElement="ifms_surrender_f26"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f27_di" bpmnElement="ifms_surrender_f27"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_surrender_f28_di" bpmnElement="ifms_surrender_f28"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

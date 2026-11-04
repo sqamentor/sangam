@@ -1,0 +1,129 @@
+{
+  "offices": [
+    {
+      "id": "HOSPITAL",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "ER-DOCTOR",
+      "role": "ERDOCTOR",
+      "office": "HOSPITAL",
+      "reportsTo": "MED-SUPT",
+      "name": {
+        "en": "Emergency physician",
+        "hi": "आपातकालीन चिकित्सक"
+      }
+    },
+    {
+      "id": "ADMISSION-DESK",
+      "role": "ADMISSION",
+      "office": "HOSPITAL",
+      "reportsTo": "MED-SUPT",
+      "name": {
+        "en": "Admission desk",
+        "hi": "भर्ती डेस्क"
+      }
+    },
+    {
+      "id": "TREATING-DOCTOR",
+      "role": "DOCTOR",
+      "office": "HOSPITAL",
+      "reportsTo": "MED-SUPT",
+      "name": {
+        "en": "Treating doctor",
+        "hi": "उपचारकर्ता चिकित्सक"
+      }
+    },
+    {
+      "id": "BILLING",
+      "role": "BILLING",
+      "office": "HOSPITAL",
+      "reportsTo": "MED-SUPT",
+      "name": {
+        "en": "Billing",
+        "hi": "बिलिंग"
+      }
+    },
+    {
+      "id": "MED-SUPT",
+      "role": "MS",
+      "office": "HOSPITAL",
+      "reportsTo": null,
+      "name": {
+        "en": "Medical superintendent",
+        "hi": "चिकित्सा अधीक्षक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "ER-DOCTOR",
+      "person": "had.er-doctor",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "ADMISSION-DESK",
+      "person": "had.admission-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TREATING-DOCTOR",
+      "person": "had.treating-doctor",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BILLING",
+      "person": "had.billing",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "MED-SUPT",
+      "person": "had.med-supt",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "ERDOCTOR",
+      "name": {
+        "en": "Emergency physician",
+        "hi": "आपातकालीन चिकित्सक"
+      }
+    },
+    {
+      "code": "ADMISSION",
+      "name": {
+        "en": "Admission desk",
+        "hi": "भर्ती डेस्क"
+      }
+    },
+    {
+      "code": "DOCTOR",
+      "name": {
+        "en": "Treating doctor",
+        "hi": "उपचारकर्ता चिकित्सक"
+      }
+    },
+    {
+      "code": "BILLING",
+      "name": {
+        "en": "Billing",
+        "hi": "बिलिंग"
+      }
+    },
+    {
+      "code": "MS",
+      "name": {
+        "en": "Medical superintendent",
+        "hi": "चिकित्सा अधीक्षक"
+      }
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Challan discrepancy case. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_challan_discrepancy" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-challan-discrepancy" name="Challan discrepancy case" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.challan-reconciliation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,kind</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="cd_start" name="Discrepancy"></startEvent>
+    <serviceTask id="cd_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>reconDeskSeat=TREASURY-RECON</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cd_resolve_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cd_resolve</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>3WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="cd_resolve" name="Resolve challan discrepancy" operaton:candidateGroups="${reconDeskSeat}" operaton:formKey="sangam:challan-reconciliation/resolve" operaton:dueDate="${cd_resolveDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>discDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cd_resolve_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cd_resolve</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reconDeskSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cd_resolve_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="cd_resolve_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cd_resolve</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reconDeskSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>discDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cd_resolve_breachGw" name="Deemed?" default="challan_discrepancy_f6"></exclusiveGateway>
+    <exclusiveGateway id="cd_resolve_done" name=""></exclusiveGateway>
+    <serviceTask id="cd_adjust" name="Adjustment entry" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>treasury.adjust</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>adjust</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key,discDecision,discrepancyCause</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>adjust</operaton:string></operaton:field><operaton:field name="step"><operaton:string>adjust</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cd_end" name="Resolved"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="cd_resolve_warn" name="SLA warning (75%)" attachedToRef="cd_resolve" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${cd_resolveWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="cd_resolve_breach" name="SLA breached" attachedToRef="cd_resolve" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${cd_resolveDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="challan_discrepancy_f1" sourceRef="cd_resolve_warn" targetRef="cd_resolve_warnNotify"/>
+    <sequenceFlow id="challan_discrepancy_f2" sourceRef="cd_resolve_warnNotify" targetRef="cd_resolve_warnEnd"/>
+    <sequenceFlow id="challan_discrepancy_f3" sourceRef="cd_resolve_breach" targetRef="cd_resolve_breachAct"/>
+    <sequenceFlow id="challan_discrepancy_f4" sourceRef="cd_resolve_breachAct" targetRef="cd_resolve_breachGw"/>
+    <sequenceFlow id="challan_discrepancy_f5" name="deemed" sourceRef="cd_resolve_breachGw" targetRef="cd_resolve_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="challan_discrepancy_f6" name="escalated" sourceRef="cd_resolve_breachGw" targetRef="cd_resolve_slaPlan"/>
+    <sequenceFlow id="challan_discrepancy_f7" sourceRef="cd_resolve_slaPlan" targetRef="cd_resolve"/>
+    <sequenceFlow id="challan_discrepancy_f8" sourceRef="cd_resolve" targetRef="cd_resolve_done"/>
+    <sequenceFlow id="challan_discrepancy_f9" sourceRef="cd_start" targetRef="cd_defaults"/>
+    <sequenceFlow id="challan_discrepancy_f10" sourceRef="cd_defaults" targetRef="cd_resolve_slaPlan"/>
+    <sequenceFlow id="challan_discrepancy_f11" sourceRef="cd_resolve_done" targetRef="cd_adjust"/>
+    <sequenceFlow id="challan_discrepancy_f12" sourceRef="cd_adjust" targetRef="cd_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="challan_discrepancy_diagram">
+    <bpmndi:BPMNPlane id="challan_discrepancy_plane" bpmnElement="sangam-challan-discrepancy">
+      <bpmndi:BPMNShape id="cd_start_di" bpmnElement="cd_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_defaults_di" bpmnElement="cd_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_resolve_slaPlan_di" bpmnElement="cd_resolve_slaPlan"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_resolve_di" bpmnElement="cd_resolve"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_resolve_warnNotify_di" bpmnElement="cd_resolve_warnNotify"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_resolve_warnEnd_di" bpmnElement="cd_resolve_warnEnd"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_resolve_breachAct_di" bpmnElement="cd_resolve_breachAct"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_resolve_breachGw_di" bpmnElement="cd_resolve_breachGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_resolve_done_di" bpmnElement="cd_resolve_done"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_adjust_di" bpmnElement="cd_adjust"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_end_di" bpmnElement="cd_end"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_resolve_warn_di" bpmnElement="cd_resolve_warn"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_resolve_breach_di" bpmnElement="cd_resolve_breach"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f1_di" bpmnElement="challan_discrepancy_f1"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f2_di" bpmnElement="challan_discrepancy_f2"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f3_di" bpmnElement="challan_discrepancy_f3"><di:waypoint x="571" y="128"/><di:waypoint x="571" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f4_di" bpmnElement="challan_discrepancy_f4"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f5_di" bpmnElement="challan_discrepancy_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f6_di" bpmnElement="challan_discrepancy_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f7_di" bpmnElement="challan_discrepancy_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f8_di" bpmnElement="challan_discrepancy_f8"><di:waypoint x="615" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f9_di" bpmnElement="challan_discrepancy_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f10_di" bpmnElement="challan_discrepancy_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f11_di" bpmnElement="challan_discrepancy_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="challan_discrepancy_f12_di" bpmnElement="challan_discrepancy_f12"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

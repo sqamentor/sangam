@@ -1,0 +1,74 @@
+{
+  "key": "p2-file-movement/revise",
+  "version": "1.0.0",
+  "pack": "gov.p2.file-movement",
+  "title": {
+    "en": "Revise note and draft",
+    "hi": "नोट और प्रारूप संशोधित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "noting",
+      "type": "richtext",
+      "required": false,
+      "label": {
+        "en": "Note",
+        "hi": "टिप्पणी (नोटिंग)"
+      }
+    },
+    {
+      "id": "draftLetter",
+      "type": "richtext",
+      "required": false,
+      "label": {
+        "en": "Draft for approval (DFA)",
+        "hi": "अनुमोदन हेतु प्रारूप"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "p2_reviseDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

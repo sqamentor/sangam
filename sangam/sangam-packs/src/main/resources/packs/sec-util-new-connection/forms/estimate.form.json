@@ -1,0 +1,36 @@
+{
+  "key": "sec-util-new-connection/estimate",
+  "version": "1.0.0",
+  "pack": "sec.util.new-connection",
+  "title": {
+    "en": "Estimate and demand note",
+    "hi": "प्राक्कलन एवं माँग पत्र"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "estimateAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Estimated cost (INR)",
+        "hi": "अनुमानित लागत (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

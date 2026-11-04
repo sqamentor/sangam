@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- sangam-billing: generic billing / demand / tariff / collection on top of sangam-ledger (RECEIVABLE ledgers) and
+     sangam-config (tariffs, rate tables, number series). Utilities, municipal taxes, fees, rents, licences, premiums. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-billing</artifactId>
+  <name>Sangam billing (tariffs, invoices, collection, receipts, refunds, penalties)</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-config</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-ledger</artifactId>
+    </dependency>
+    <!-- The payee golden record reuses the party registry (GA-12); optional so billing users need not pull it. -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-registry</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

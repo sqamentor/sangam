@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "PA",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PIO-1",
+      "role": "PIO",
+      "office": "PA",
+      "reportsTo": "FAA-1",
+      "name": {
+        "en": "Public information officer",
+        "hi": "लोक सूचना अधिकारी"
+      }
+    },
+    {
+      "id": "FAA-1",
+      "role": "FAA",
+      "office": "PA",
+      "reportsTo": null,
+      "name": {
+        "en": "First appellate authority",
+        "hi": "प्रथम अपीलीय प्राधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PIO-1",
+      "person": "rti.pio-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "FAA-1",
+      "person": "rti.faa-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PIO",
+      "name": {
+        "en": "Public information officer",
+        "hi": "लोक सूचना अधिकारी"
+      }
+    },
+    {
+      "code": "FAA",
+      "name": {
+        "en": "First appellate authority",
+        "hi": "प्रथम अपीलीय प्राधिकारी"
+      }
+    }
+  ]
+}

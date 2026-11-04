@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-22 Supplier onboarding. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up22_supplier_onboarding" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-up22-supplier-onboarding" name="UP-22 Supplier onboarding" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up22-external-collaboration</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>supplierName,applicantRef</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u22_start" name="Supplier nominated" operaton:initiator="initiator" operaton:formKey="sangam:up22-external-collaboration/nominate"></startEvent>
+    <serviceTask id="u22_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>reviewerSeat=VENDOR-DESK;supplierSla=P15D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u22_group" name="External principal group" operaton:expression="${execution.setVariable('externalGroup', 'external:'.concat(applicantRef))}"></serviceTask>
+    <serviceTask id="u22_invite" name="Send scoped one-time link" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>portal.inviteExternal</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>invite</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>supplierName,applicantRef,externalGroup</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>invite</operaton:string></operaton:field><operaton:field name="step"><operaton:string>invite</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u22_submit_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u22_submit</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${supplierSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u22_submit" name="Supplier submits documents" operaton:candidateGroups="${externalGroup}" operaton:formKey="sangam:up22-external-collaboration/supplier" operaton:dueDate="${u22_submitDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="u22_submit_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u22_submit</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>externalGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u22_submit_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="u22_submit_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u22_submit</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>externalGroup</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u22_submit_breachGw" name="Deemed?" default="up22_supplier_onboarding_f6"></exclusiveGateway>
+    <exclusiveGateway id="u22_submit_done" name=""></exclusiveGateway>
+    <userTask id="u22_review" name="Review supplier documents" operaton:candidateGroups="${reviewerSeat}" operaton:formKey="sangam:up22-external-collaboration/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>vendorDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u22_gw" name="" default="up22_supplier_onboarding_f18"></exclusiveGateway>
+    <serviceTask id="u22_create" name="Create vendor" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>vendor.create</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>create</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>supplierName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>vendor</operaton:string></operaton:field><operaton:field name="step"><operaton:string>vendor</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u22_end" name="Onboarded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="u22_endRejected" name="Rejected"></endEvent>
+    <boundaryEvent id="u22_submit_warn" name="SLA warning (75%)" attachedToRef="u22_submit" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${u22_submitWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="u22_submit_breach" name="SLA breached" attachedToRef="u22_submit" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${u22_submitDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="up22_supplier_onboarding_f1" sourceRef="u22_submit_warn" targetRef="u22_submit_warnNotify"/>
+    <sequenceFlow id="up22_supplier_onboarding_f2" sourceRef="u22_submit_warnNotify" targetRef="u22_submit_warnEnd"/>
+    <sequenceFlow id="up22_supplier_onboarding_f3" sourceRef="u22_submit_breach" targetRef="u22_submit_breachAct"/>
+    <sequenceFlow id="up22_supplier_onboarding_f4" sourceRef="u22_submit_breachAct" targetRef="u22_submit_breachGw"/>
+    <sequenceFlow id="up22_supplier_onboarding_f5" name="deemed" sourceRef="u22_submit_breachGw" targetRef="u22_submit_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up22_supplier_onboarding_f6" name="escalated" sourceRef="u22_submit_breachGw" targetRef="u22_submit_slaPlan"/>
+    <sequenceFlow id="up22_supplier_onboarding_f7" sourceRef="u22_submit_slaPlan" targetRef="u22_submit"/>
+    <sequenceFlow id="up22_supplier_onboarding_f8" sourceRef="u22_submit" targetRef="u22_submit_done"/>
+    <sequenceFlow id="up22_supplier_onboarding_f9" sourceRef="u22_start" targetRef="u22_defaults"/>
+    <sequenceFlow id="up22_supplier_onboarding_f10" sourceRef="u22_defaults" targetRef="u22_group"/>
+    <sequenceFlow id="up22_supplier_onboarding_f11" sourceRef="u22_group" targetRef="u22_invite"/>
+    <sequenceFlow id="up22_supplier_onboarding_f12" sourceRef="u22_invite" targetRef="u22_submit_slaPlan"/>
+    <sequenceFlow id="up22_supplier_onboarding_f13" sourceRef="u22_submit_done" targetRef="u22_review"/>
+    <sequenceFlow id="up22_supplier_onboarding_f14" sourceRef="u22_review" targetRef="u22_gw"/>
+    <sequenceFlow id="up22_supplier_onboarding_f15" name="clarify" sourceRef="u22_gw" targetRef="u22_submit_slaPlan"><conditionExpression xsi:type="tFormalExpression">${vendorDecision == 'clarify'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up22_supplier_onboarding_f16" name="accept" sourceRef="u22_gw" targetRef="u22_create"><conditionExpression xsi:type="tFormalExpression">${vendorDecision == 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up22_supplier_onboarding_f17" sourceRef="u22_create" targetRef="u22_end"/>
+    <sequenceFlow id="up22_supplier_onboarding_f18" name="reject" sourceRef="u22_gw" targetRef="u22_endRejected"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up22_supplier_onboarding_diagram">
+    <bpmndi:BPMNPlane id="up22_supplier_onboarding_plane" bpmnElement="sangam-up22-supplier-onboarding">
+      <bpmndi:BPMNShape id="u22_start_di" bpmnElement="u22_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_defaults_di" bpmnElement="u22_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_group_di" bpmnElement="u22_group"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_invite_di" bpmnElement="u22_invite"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_submit_slaPlan_di" bpmnElement="u22_submit_slaPlan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_submit_di" bpmnElement="u22_submit"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_submit_warnNotify_di" bpmnElement="u22_submit_warnNotify"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_submit_warnEnd_di" bpmnElement="u22_submit_warnEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_submit_breachAct_di" bpmnElement="u22_submit_breachAct"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_submit_breachGw_di" bpmnElement="u22_submit_breachGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_submit_done_di" bpmnElement="u22_submit_done"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_review_di" bpmnElement="u22_review"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_gw_di" bpmnElement="u22_gw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_create_di" bpmnElement="u22_create"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_end_di" bpmnElement="u22_end"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_endRejected_di" bpmnElement="u22_endRejected"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_submit_warn_di" bpmnElement="u22_submit_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u22_submit_breach_di" bpmnElement="u22_submit_breach"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f1_di" bpmnElement="up22_supplier_onboarding_f1"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f2_di" bpmnElement="up22_supplier_onboarding_f2"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f3_di" bpmnElement="up22_supplier_onboarding_f3"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f4_di" bpmnElement="up22_supplier_onboarding_f4"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f5_di" bpmnElement="up22_supplier_onboarding_f5"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f6_di" bpmnElement="up22_supplier_onboarding_f6"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="135"/><di:waypoint x="730" y="135"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f7_di" bpmnElement="up22_supplier_onboarding_f7"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f8_di" bpmnElement="up22_supplier_onboarding_f8"><di:waypoint x="945" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f9_di" bpmnElement="up22_supplier_onboarding_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f10_di" bpmnElement="up22_supplier_onboarding_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f11_di" bpmnElement="up22_supplier_onboarding_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f12_di" bpmnElement="up22_supplier_onboarding_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f13_di" bpmnElement="up22_supplier_onboarding_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f14_di" bpmnElement="up22_supplier_onboarding_f14"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f15_di" bpmnElement="up22_supplier_onboarding_f15"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="142"/><di:waypoint x="730" y="142"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f16_di" bpmnElement="up22_supplier_onboarding_f16"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f17_di" bpmnElement="up22_supplier_onboarding_f17"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up22_supplier_onboarding_f18_di" bpmnElement="up22_supplier_onboarding_f18"><di:waypoint x="1745" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

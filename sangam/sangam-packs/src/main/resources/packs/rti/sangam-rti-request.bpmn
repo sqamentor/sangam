@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- RTI request. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_rti_request" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_appealFiled" name="sangam.appealFiled"/>
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_feePaid" name="sangam.feePaid"/>
+  <message id="msg_sangam_thirdPartySubmission" name="sangam.thirdPartySubmission"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-rti-request" name="RTI request" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.rti</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>information,applicantName</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="rt_start" name="Request received" operaton:initiator="initiator" operaton:formKey="sangam:rti/request"></startEvent>
+    <serviceTask id="rt_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>lifeLiberty=false;bplApplicant=false;viaApio=false;pioSeat=PIO-1;appellateSeat=FAA-1;appealSla=30D;appealWindow=P30D;appealAllowed=true;fee=10;thirdPartyWindow=P10D;thirdPartyTimeline=P40D;additionalFeeWindow=P30D;retentionCategory=C;retentionYears=3;rejectionTemplate=rti-rejection;outputTemplate=rti-reply;issueOutput=false;thirdPartyName=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="rt_limit" name="Time limit (DMN: 30 days / 48 hours / APIO)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>rti-time-limit</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="rt_clock" name="Statutory clock from receipt" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>case</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${caseSla}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rt_feeGw" name="Fee payable?" default="rti_request_f14"></exclusiveGateway>
+    <serviceTask id="rt_payCfg" name="Fee step" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionConnector=paygov.fee;executionStep=fee;verifyApproval=false;reconcileRequired=false;executionPayloadFields=fee,applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="rt_pay" name="RTI fee (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="rt_pio_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rt_pio</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${caseSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="rt_pio" name="PIO: decide request" operaton:candidateGroups="${pioSeat}" operaton:formKey="sangam:rti/pio-decision" operaton:dueDate="${rt_pioDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>pioDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="rt_pio_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rt_pio</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>pioSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rt_pio_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="rt_pio_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rt_pio</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>DEEMED_REFUSAL</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>pioSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>pioDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>supply</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rt_pio_breachGw" name="Deemed?" default="rti_request_f10"></exclusiveGateway>
+    <exclusiveGateway id="rt_pio_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="rt_decGw" name="PIO decision?"></exclusiveGateway>
+    <serviceTask id="rt_reply" name="Issue reply" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>rti-reply</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rt_notifyReply" name="Send reply" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rti-reply-sent</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rt_appealWindow" name="First appeal window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>appeal</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${appealWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="rt_appealWait" name="First appeal?"></eventBasedGateway>
+    <intermediateCatchEvent id="rt_appealFiled" name="First appeal filed"><messageEventDefinition messageRef="msg_sangam_appealFiled"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="rt_appealLapse" name="Appeal window lapsed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${appealDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <callActivity id="rt_firstAppeal" name="First appeal before the FAA (core)" calledElement="sangam-core-appeal"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="rt_appealGw" name="Appeal allowed?" default="rti_request_f27"></exclusiveGateway>
+    <callActivity id="rt_close" name="Close and classify (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="rt_secondAppeal" name="Tell applicant about the second appeal (Information Commission)" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rti-second-appeal-route</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rt_rejectReason" name="Exemption as reason" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=@exemptionSection</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="rt_reject" name="Rejection with appeal route (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="rt_rejGw" name="Appeal allowed?" default="rti_request_f34"></exclusiveGateway>
+    <endEvent id="rt_endRejected" name="Rejected"></endEvent>
+    <serviceTask id="rt_transfer" name="Transfer to the public authority (s.6(3))" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>referral.send</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>transferRti</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>information,transferToAuthority,applicantRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>transfer</operaton:string></operaton:field><operaton:field name="step"><operaton:string>transfer</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rt_tellTransfer" name="Tell applicant of the transfer" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rti-transferred</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rt_endTransferred" name="Transferred"></endEvent>
+    <serviceTask id="rt_pause" name="Pause clock (s.7(3))" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PAUSE</operaton:string></operaton:field><operaton:field name="reason"><operaton:string>additional fee awaited</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rt_askFee" name="Ask for additional fee" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rti-additional-fee</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rt_feeWindow" name="Fee window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>additionalFee</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${additionalFeeWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="rt_feeWait" name="Fee paid?"></eventBasedGateway>
+    <intermediateCatchEvent id="rt_feePaid" name="Additional fee paid"><messageEventDefinition messageRef="msg_sangam_feePaid"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="rt_feeLapse" name="Not paid"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${additionalFeeDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="rt_resume" name="Resume clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUME</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rt_thirdParty" name="Notice to third party (s.11)" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rti-third-party-notice</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>thirdPartyName</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rt_tpWindow" name="Objection window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>thirdParty</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${thirdPartyWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rt_tpClock" name="Decision within 40 days of receipt" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>case</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${thirdPartyTimeline}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="rt_tpWait" name="Submission or lapse"></eventBasedGateway>
+    <intermediateCatchEvent id="rt_tpSubmission" name="Third-party submission"><messageEventDefinition messageRef="msg_sangam_thirdPartySubmission"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="rt_tpLapse" name="Window closes"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${thirdPartyDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="rt_end" name="Disposed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="rt_pio_warn" name="SLA warning (75%)" attachedToRef="rt_pio" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rt_pioWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="rt_pio_breach" name="SLA breached" attachedToRef="rt_pio" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rt_pioDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="rti_request_f1" sourceRef="rt_start" targetRef="rt_defaults"/>
+    <sequenceFlow id="rti_request_f2" sourceRef="rt_defaults" targetRef="rt_limit"/>
+    <sequenceFlow id="rti_request_f3" sourceRef="rt_limit" targetRef="rt_clock"/>
+    <sequenceFlow id="rti_request_f4" sourceRef="rt_clock" targetRef="rt_feeGw"/>
+    <sequenceFlow id="rti_request_f5" sourceRef="rt_pio_warn" targetRef="rt_pio_warnNotify"/>
+    <sequenceFlow id="rti_request_f6" sourceRef="rt_pio_warnNotify" targetRef="rt_pio_warnEnd"/>
+    <sequenceFlow id="rti_request_f7" sourceRef="rt_pio_breach" targetRef="rt_pio_breachAct"/>
+    <sequenceFlow id="rti_request_f8" sourceRef="rt_pio_breachAct" targetRef="rt_pio_breachGw"/>
+    <sequenceFlow id="rti_request_f9" name="deemed" sourceRef="rt_pio_breachGw" targetRef="rt_pio_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rti_request_f10" name="escalated" sourceRef="rt_pio_breachGw" targetRef="rt_pio_slaPlan"/>
+    <sequenceFlow id="rti_request_f11" sourceRef="rt_pio_slaPlan" targetRef="rt_pio"/>
+    <sequenceFlow id="rti_request_f12" sourceRef="rt_pio" targetRef="rt_pio_done"/>
+    <sequenceFlow id="rti_request_f13" name="yes" sourceRef="rt_feeGw" targetRef="rt_payCfg"><conditionExpression xsi:type="tFormalExpression">${!bplApplicant}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rti_request_f14" name="BPL exempt" sourceRef="rt_feeGw" targetRef="rt_pio_slaPlan"/>
+    <sequenceFlow id="rti_request_f15" sourceRef="rt_payCfg" targetRef="rt_pay"/>
+    <sequenceFlow id="rti_request_f16" sourceRef="rt_pay" targetRef="rt_pio_slaPlan"/>
+    <sequenceFlow id="rti_request_f17" sourceRef="rt_pio_done" targetRef="rt_decGw"/>
+    <sequenceFlow id="rti_request_f18" name="supply" sourceRef="rt_decGw" targetRef="rt_reply"><conditionExpression xsi:type="tFormalExpression">${pioDecision == 'supply'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rti_request_f19" sourceRef="rt_reply" targetRef="rt_notifyReply"/>
+    <sequenceFlow id="rti_request_f20" sourceRef="rt_notifyReply" targetRef="rt_appealWindow"/>
+    <sequenceFlow id="rti_request_f21" sourceRef="rt_appealWindow" targetRef="rt_appealWait"/>
+    <sequenceFlow id="rti_request_f22" sourceRef="rt_appealWait" targetRef="rt_appealFiled"/>
+    <sequenceFlow id="rti_request_f23" sourceRef="rt_appealWait" targetRef="rt_appealLapse"/>
+    <sequenceFlow id="rti_request_f24" sourceRef="rt_appealFiled" targetRef="rt_firstAppeal"/>
+    <sequenceFlow id="rti_request_f25" sourceRef="rt_firstAppeal" targetRef="rt_appealGw"/>
+    <sequenceFlow id="rti_request_f26" name="FAA directs the PIO" sourceRef="rt_appealGw" targetRef="rt_pio_slaPlan"><conditionExpression xsi:type="tFormalExpression">${appealOutcome == 'ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rti_request_f27" name="dismissed" sourceRef="rt_appealGw" targetRef="rt_secondAppeal"/>
+    <sequenceFlow id="rti_request_f28" sourceRef="rt_secondAppeal" targetRef="rt_close"/>
+    <sequenceFlow id="rti_request_f29" sourceRef="rt_appealLapse" targetRef="rt_close"/>
+    <sequenceFlow id="rti_request_f30" name="reject / deemed refusal" sourceRef="rt_decGw" targetRef="rt_rejectReason"><conditionExpression xsi:type="tFormalExpression">${pioDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rti_request_f31" sourceRef="rt_rejectReason" targetRef="rt_reject"/>
+    <sequenceFlow id="rti_request_f32" sourceRef="rt_reject" targetRef="rt_rejGw"/>
+    <sequenceFlow id="rti_request_f33" name="FAA directs supply" sourceRef="rt_rejGw" targetRef="rt_pio_slaPlan"><conditionExpression xsi:type="tFormalExpression">${rejectionOutcome == 'APPEAL_ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rti_request_f34" name="final" sourceRef="rt_rejGw" targetRef="rt_endRejected"/>
+    <sequenceFlow id="rti_request_f35" name="transfer" sourceRef="rt_decGw" targetRef="rt_transfer"><conditionExpression xsi:type="tFormalExpression">${pioDecision == 'transfer'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rti_request_f36" sourceRef="rt_transfer" targetRef="rt_tellTransfer"/>
+    <sequenceFlow id="rti_request_f37" sourceRef="rt_tellTransfer" targetRef="rt_endTransferred"/>
+    <sequenceFlow id="rti_request_f38" name="additional fee" sourceRef="rt_decGw" targetRef="rt_pause"><conditionExpression xsi:type="tFormalExpression">${pioDecision == 'additionalFee'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rti_request_f39" sourceRef="rt_pause" targetRef="rt_askFee"/>
+    <sequenceFlow id="rti_request_f40" sourceRef="rt_askFee" targetRef="rt_feeWindow"/>
+    <sequenceFlow id="rti_request_f41" sourceRef="rt_feeWindow" targetRef="rt_feeWait"/>
+    <sequenceFlow id="rti_request_f42" sourceRef="rt_feeWait" targetRef="rt_feePaid"/>
+    <sequenceFlow id="rti_request_f43" sourceRef="rt_feeWait" targetRef="rt_feeLapse"/>
+    <sequenceFlow id="rti_request_f44" sourceRef="rt_feePaid" targetRef="rt_resume"/>
+    <sequenceFlow id="rti_request_f45" sourceRef="rt_resume" targetRef="rt_pio_slaPlan"/>
+    <sequenceFlow id="rti_request_f46" sourceRef="rt_feeLapse" targetRef="rt_close"/>
+    <sequenceFlow id="rti_request_f47" name="third party" sourceRef="rt_decGw" targetRef="rt_thirdParty"><conditionExpression xsi:type="tFormalExpression">${pioDecision == 'thirdParty'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="rti_request_f48" sourceRef="rt_thirdParty" targetRef="rt_tpWindow"/>
+    <sequenceFlow id="rti_request_f49" sourceRef="rt_tpWindow" targetRef="rt_tpClock"/>
+    <sequenceFlow id="rti_request_f50" sourceRef="rt_tpClock" targetRef="rt_tpWait"/>
+    <sequenceFlow id="rti_request_f51" sourceRef="rt_tpWait" targetRef="rt_tpSubmission"/>
+    <sequenceFlow id="rti_request_f52" sourceRef="rt_tpWait" targetRef="rt_tpLapse"/>
+    <sequenceFlow id="rti_request_f53" sourceRef="rt_tpSubmission" targetRef="rt_pio_slaPlan"/>
+    <sequenceFlow id="rti_request_f54" sourceRef="rt_tpLapse" targetRef="rt_pio_slaPlan"/>
+    <sequenceFlow id="rti_request_f55" sourceRef="rt_close" targetRef="rt_end"/>
+    <subProcess id="rt_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="rt_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="rt_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="rt_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="rt_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="rti_request_f56" sourceRef="rt_withdrawStart" targetRef="rt_withdrawKind"/>
+      <sequenceFlow id="rti_request_f57" sourceRef="rt_withdrawKind" targetRef="rt_withdrawCall"/>
+      <sequenceFlow id="rti_request_f58" sourceRef="rt_withdrawCall" targetRef="rt_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="rt_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="rt_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="rt_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="rt_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="rt_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="rti_request_f59" sourceRef="rt_cancelStart" targetRef="rt_cancelKind"/>
+      <sequenceFlow id="rti_request_f60" sourceRef="rt_cancelKind" targetRef="rt_cancelCall"/>
+      <sequenceFlow id="rti_request_f61" sourceRef="rt_cancelCall" targetRef="rt_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="rti_request_diagram">
+    <bpmndi:BPMNPlane id="rti_request_plane" bpmnElement="sangam-rti-request">
+      <bpmndi:BPMNShape id="rt_start_di" bpmnElement="rt_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_defaults_di" bpmnElement="rt_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_limit_di" bpmnElement="rt_limit"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_clock_di" bpmnElement="rt_clock"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_feeGw_di" bpmnElement="rt_feeGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_payCfg_di" bpmnElement="rt_payCfg"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pay_di" bpmnElement="rt_pay"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pio_slaPlan_di" bpmnElement="rt_pio_slaPlan"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pio_di" bpmnElement="rt_pio"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pio_warnNotify_di" bpmnElement="rt_pio_warnNotify"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pio_warnEnd_di" bpmnElement="rt_pio_warnEnd"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pio_breachAct_di" bpmnElement="rt_pio_breachAct"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pio_breachGw_di" bpmnElement="rt_pio_breachGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pio_done_di" bpmnElement="rt_pio_done"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_decGw_di" bpmnElement="rt_decGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_reply_di" bpmnElement="rt_reply"><dc:Bounds x="2165" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_notifyReply_di" bpmnElement="rt_notifyReply"><dc:Bounds x="2330" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_appealWindow_di" bpmnElement="rt_appealWindow"><dc:Bounds x="2495" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_appealWait_di" bpmnElement="rt_appealWait"><dc:Bounds x="2685" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_appealFiled_di" bpmnElement="rt_appealFiled"><dc:Bounds x="2857" y="677" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_appealLapse_di" bpmnElement="rt_appealLapse"><dc:Bounds x="2857" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_firstAppeal_di" bpmnElement="rt_firstAppeal"><dc:Bounds x="2990" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_appealGw_di" bpmnElement="rt_appealGw"><dc:Bounds x="3180" y="670" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_close_di" bpmnElement="rt_close"><dc:Bounds x="3485" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_secondAppeal_di" bpmnElement="rt_secondAppeal"><dc:Bounds x="3320" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_rejectReason_di" bpmnElement="rt_rejectReason"><dc:Bounds x="2165" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_reject_di" bpmnElement="rt_reject"><dc:Bounds x="2330" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_rejGw_di" bpmnElement="rt_rejGw"><dc:Bounds x="2520" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_endRejected_di" bpmnElement="rt_endRejected"><dc:Bounds x="2692" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_transfer_di" bpmnElement="rt_transfer"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_tellTransfer_di" bpmnElement="rt_tellTransfer"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_endTransferred_di" bpmnElement="rt_endTransferred"><dc:Bounds x="2527" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pause_di" bpmnElement="rt_pause"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_askFee_di" bpmnElement="rt_askFee"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_feeWindow_di" bpmnElement="rt_feeWindow"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_feeWait_di" bpmnElement="rt_feeWait"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_feePaid_di" bpmnElement="rt_feePaid"><dc:Bounds x="2857" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_feeLapse_di" bpmnElement="rt_feeLapse"><dc:Bounds x="2857" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_resume_di" bpmnElement="rt_resume"><dc:Bounds x="2990" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_thirdParty_di" bpmnElement="rt_thirdParty"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_tpWindow_di" bpmnElement="rt_tpWindow"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_tpClock_di" bpmnElement="rt_tpClock"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_tpWait_di" bpmnElement="rt_tpWait"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_tpSubmission_di" bpmnElement="rt_tpSubmission"><dc:Bounds x="2857" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_tpLapse_di" bpmnElement="rt_tpLapse"><dc:Bounds x="2857" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_end_di" bpmnElement="rt_end"><dc:Bounds x="3682" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pio_warn_di" bpmnElement="rt_pio_warn"><dc:Bounds x="1348" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_pio_breach_di" bpmnElement="rt_pio_breach"><dc:Bounds x="1378" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_withdraw_di" bpmnElement="rt_withdraw" isExpanded="true"><dc:Bounds x="30" y="785" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_withdrawStart_di" bpmnElement="rt_withdrawStart"><dc:Bounds x="92" y="847" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_withdrawKind_di" bpmnElement="rt_withdrawKind"><dc:Bounds x="225" y="825" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_withdrawCall_di" bpmnElement="rt_withdrawCall"><dc:Bounds x="390" y="825" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_withdrawEnd_di" bpmnElement="rt_withdrawEnd"><dc:Bounds x="587" y="847" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_cancel_di" bpmnElement="rt_cancel" isExpanded="true"><dc:Bounds x="30" y="975" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_cancelStart_di" bpmnElement="rt_cancelStart"><dc:Bounds x="92" y="1037" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_cancelKind_di" bpmnElement="rt_cancelKind"><dc:Bounds x="225" y="1015" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_cancelCall_di" bpmnElement="rt_cancelCall"><dc:Bounds x="390" y="1015" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rt_cancelEnd_di" bpmnElement="rt_cancelEnd"><dc:Bounds x="587" y="1037" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="rti_request_f1_di" bpmnElement="rti_request_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f2_di" bpmnElement="rti_request_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f3_di" bpmnElement="rti_request_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f4_di" bpmnElement="rti_request_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f5_di" bpmnElement="rti_request_f5"><di:waypoint x="1366" y="128"/><di:waypoint x="1366" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f6_di" bpmnElement="rti_request_f6"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f7_di" bpmnElement="rti_request_f7"><di:waypoint x="1396" y="128"/><di:waypoint x="1396" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f8_di" bpmnElement="rti_request_f8"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f9_di" bpmnElement="rti_request_f9"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f10_di" bpmnElement="rti_request_f10"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="135"/><di:waypoint x="1225" y="135"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f11_di" bpmnElement="rti_request_f11"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f12_di" bpmnElement="rti_request_f12"><di:waypoint x="1440" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f13_di" bpmnElement="rti_request_f13"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f14_di" bpmnElement="rti_request_f14"><di:waypoint x="755" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f15_di" bpmnElement="rti_request_f15"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f16_di" bpmnElement="rti_request_f16"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f17_di" bpmnElement="rti_request_f17"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f18_di" bpmnElement="rti_request_f18"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="570"/><di:waypoint x="2165" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f19_di" bpmnElement="rti_request_f19"><di:waypoint x="2265" y="570"/><di:waypoint x="2330" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f20_di" bpmnElement="rti_request_f20"><di:waypoint x="2430" y="570"/><di:waypoint x="2495" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f21_di" bpmnElement="rti_request_f21"><di:waypoint x="2595" y="570"/><di:waypoint x="2685" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f22_di" bpmnElement="rti_request_f22"><di:waypoint x="2735" y="570"/><di:waypoint x="2796" y="570"/><di:waypoint x="2796" y="695"/><di:waypoint x="2857" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f23_di" bpmnElement="rti_request_f23"><di:waypoint x="2735" y="570"/><di:waypoint x="2857" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f24_di" bpmnElement="rti_request_f24"><di:waypoint x="2893" y="695"/><di:waypoint x="2990" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f25_di" bpmnElement="rti_request_f25"><di:waypoint x="3090" y="695"/><di:waypoint x="3180" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f26_di" bpmnElement="rti_request_f26"><di:waypoint x="3205" y="720"/><di:waypoint x="3205" y="745"/><di:waypoint x="1225" y="745"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f27_di" bpmnElement="rti_request_f27"><di:waypoint x="3230" y="695"/><di:waypoint x="3320" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f28_di" bpmnElement="rti_request_f28"><di:waypoint x="3420" y="695"/><di:waypoint x="3452" y="695"/><di:waypoint x="3452" y="320"/><di:waypoint x="3485" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f29_di" bpmnElement="rti_request_f29"><di:waypoint x="2893" y="570"/><di:waypoint x="3189" y="570"/><di:waypoint x="3189" y="320"/><di:waypoint x="3485" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f30_di" bpmnElement="rti_request_f30"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="445"/><di:waypoint x="2165" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f31_di" bpmnElement="rti_request_f31"><di:waypoint x="2265" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f32_di" bpmnElement="rti_request_f32"><di:waypoint x="2430" y="445"/><di:waypoint x="2520" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f33_di" bpmnElement="rti_request_f33"><di:waypoint x="2545" y="470"/><di:waypoint x="2545" y="488"/><di:waypoint x="1225" y="488"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f34_di" bpmnElement="rti_request_f34"><di:waypoint x="2570" y="445"/><di:waypoint x="2692" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f35_di" bpmnElement="rti_request_f35"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f36_di" bpmnElement="rti_request_f36"><di:waypoint x="2265" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f37_di" bpmnElement="rti_request_f37"><di:waypoint x="2430" y="320"/><di:waypoint x="2527" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f38_di" bpmnElement="rti_request_f38"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f39_di" bpmnElement="rti_request_f39"><di:waypoint x="2265" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f40_di" bpmnElement="rti_request_f40"><di:waypoint x="2430" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f41_di" bpmnElement="rti_request_f41"><di:waypoint x="2595" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f42_di" bpmnElement="rti_request_f42"><di:waypoint x="2735" y="195"/><di:waypoint x="2796" y="195"/><di:waypoint x="2796" y="445"/><di:waypoint x="2857" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f43_di" bpmnElement="rti_request_f43"><di:waypoint x="2735" y="195"/><di:waypoint x="2796" y="195"/><di:waypoint x="2796" y="320"/><di:waypoint x="2857" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f44_di" bpmnElement="rti_request_f44"><di:waypoint x="2893" y="445"/><di:waypoint x="2990" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f45_di" bpmnElement="rti_request_f45"><di:waypoint x="3040" y="485"/><di:waypoint x="3040" y="503"/><di:waypoint x="1225" y="503"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f46_di" bpmnElement="rti_request_f46"><di:waypoint x="2893" y="320"/><di:waypoint x="3485" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f47_di" bpmnElement="rti_request_f47"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f48_di" bpmnElement="rti_request_f48"><di:waypoint x="2265" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f49_di" bpmnElement="rti_request_f49"><di:waypoint x="2430" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f50_di" bpmnElement="rti_request_f50"><di:waypoint x="2595" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f51_di" bpmnElement="rti_request_f51"><di:waypoint x="2735" y="70"/><di:waypoint x="2796" y="70"/><di:waypoint x="2796" y="195"/><di:waypoint x="2857" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f52_di" bpmnElement="rti_request_f52"><di:waypoint x="2735" y="70"/><di:waypoint x="2857" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f53_di" bpmnElement="rti_request_f53"><di:waypoint x="2875" y="213"/><di:waypoint x="2875" y="231"/><di:waypoint x="1225" y="231"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f54_di" bpmnElement="rti_request_f54"><di:waypoint x="2875" y="88"/><di:waypoint x="2875" y="135"/><di:waypoint x="1225" y="135"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f55_di" bpmnElement="rti_request_f55"><di:waypoint x="3585" y="320"/><di:waypoint x="3682" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f56_di" bpmnElement="rti_request_f56"><di:waypoint x="128" y="865"/><di:waypoint x="225" y="865"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f57_di" bpmnElement="rti_request_f57"><di:waypoint x="325" y="865"/><di:waypoint x="390" y="865"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f58_di" bpmnElement="rti_request_f58"><di:waypoint x="490" y="865"/><di:waypoint x="587" y="865"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f59_di" bpmnElement="rti_request_f59"><di:waypoint x="128" y="1055"/><di:waypoint x="225" y="1055"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f60_di" bpmnElement="rti_request_f60"><di:waypoint x="325" y="1055"/><di:waypoint x="390" y="1055"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="rti_request_f61_di" bpmnElement="rti_request_f61"><di:waypoint x="490" y="1055"/><di:waypoint x="587" y="1055"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

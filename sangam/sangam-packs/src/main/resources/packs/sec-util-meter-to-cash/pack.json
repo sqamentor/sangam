@@ -1,0 +1,80 @@
+{
+  "id": "sec.util.meter-to-cash",
+  "version": "1.0.0",
+  "name": {
+    "en": "Meter to cash (billing cycle)",
+    "hi": "मीटर से नकद (बिलिंग चक्र)"
+  },
+  "domain": "Utilities",
+  "description": "Monthly cycle, one case per consumer (GP-09): meter read (AMI / manual / prepaid), validation exceptions (zero, abnormal, meter defective: provisional bill), bill by tariff rule, delivery, due date, payment by operationId, late payment surcharge, bill dispute with revision; non-payment hands over to disconnection.",
+  "mainProcesses": [
+    "sangam-sec-util-billing-cycle"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-util-meter-to-cash/sangam-sec-util-billing-cycle.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-util-meter-to-cash/sangam-sec-util-bill.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-util-meter-to-cash/sec-util-tariff.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-meter-to-cash/forms/exception.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-meter-to-cash/forms/dispute.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-util-meter-to-cash/seed.json"
+    }
+  ],
+  "seed": "packs/sec-util-meter-to-cash/seed.json",
+  "connectors": [
+    {
+      "id": "mdm.consumersDue",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Consumers in the cycle"
+    },
+    {
+      "id": "mdm.read",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Meter read"
+    },
+    {
+      "id": "billing.generate",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Bill"
+    },
+    {
+      "id": "billing.revise",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Bill revision"
+    }
+  ],
+  "covers": [
+    "SEC-UTIL-004",
+    "GP-08",
+    "GP-09",
+    "GP-30",
+    "GP-12"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "sec.util.disconnection"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

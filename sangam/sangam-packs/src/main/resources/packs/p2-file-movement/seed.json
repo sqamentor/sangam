@@ -1,0 +1,195 @@
+{
+  "offices": [
+    {
+      "id": "MIN",
+      "parent": ""
+    },
+    {
+      "id": "DIV-B",
+      "parent": "MIN"
+    },
+    {
+      "id": "SEC-B2",
+      "parent": "DIV-B"
+    },
+    {
+      "id": "SEC-C2",
+      "parent": "DIV-B"
+    }
+  ],
+  "seats": [
+    {
+      "id": "DA-B2",
+      "role": "DA",
+      "office": "SEC-B2",
+      "reportsTo": "SO-B2",
+      "name": {
+        "en": "Dealing assistant, Section B-2",
+        "hi": "व्यवहार सहायक, अनुभाग बी-2"
+      }
+    },
+    {
+      "id": "SO-B2",
+      "role": "SO",
+      "office": "SEC-B2",
+      "reportsTo": "US-B",
+      "name": {
+        "en": "Section officer B-2",
+        "hi": "अनुभाग अधिकारी बी-2"
+      }
+    },
+    {
+      "id": "SO-C2",
+      "role": "SO",
+      "office": "SEC-C2",
+      "reportsTo": "US-B",
+      "name": {
+        "en": "Section officer C-2",
+        "hi": "अनुभाग अधिकारी सी-2"
+      }
+    },
+    {
+      "id": "US-B",
+      "role": "US",
+      "office": "DIV-B",
+      "reportsTo": "DS-B",
+      "name": {
+        "en": "Under Secretary",
+        "hi": "अवर सचिव"
+      }
+    },
+    {
+      "id": "DS-B",
+      "role": "DS",
+      "office": "DIV-B",
+      "reportsTo": "JS-1",
+      "name": {
+        "en": "Deputy Secretary",
+        "hi": "उप सचिव"
+      }
+    },
+    {
+      "id": "JS-1",
+      "role": "JS",
+      "office": "MIN",
+      "reportsTo": "SECY",
+      "name": {
+        "en": "Joint Secretary",
+        "hi": "संयुक्त सचिव"
+      }
+    },
+    {
+      "id": "SECY",
+      "role": "SECRETARY",
+      "office": "MIN",
+      "name": {
+        "en": "Secretary",
+        "hi": "सचिव"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DA-B2",
+      "person": "p2.da",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SO-B2",
+      "person": "p2.so",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SO-C2",
+      "person": "p2.soc",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "US-B",
+      "person": "p2.us",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DS-B",
+      "person": "p2.ds",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DS-B",
+      "person": "p2.js",
+      "basis": "ADDITIONAL_CHARGE",
+      "ref": "OM-AC-2026-41",
+      "from": "2026-11-10",
+      "to": "2026-11-24"
+    },
+    {
+      "seat": "DS-B",
+      "person": "p2.us",
+      "basis": "ADDITIONAL_CHARGE",
+      "ref": "OM-AC-2026-42",
+      "from": "2026-12-01",
+      "to": "2026-12-15"
+    },
+    {
+      "seat": "JS-1",
+      "person": "p2.js",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SECY",
+      "person": "p2.secy",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DA",
+      "name": {
+        "en": "Dealing assistant",
+        "hi": "व्यवहार सहायक"
+      }
+    },
+    {
+      "code": "SO",
+      "name": {
+        "en": "Section officer",
+        "hi": "अनुभाग अधिकारी"
+      }
+    },
+    {
+      "code": "US",
+      "name": {
+        "en": "Under Secretary",
+        "hi": "अवर सचिव"
+      }
+    },
+    {
+      "code": "DS",
+      "name": {
+        "en": "Deputy Secretary",
+        "hi": "उप सचिव"
+      }
+    },
+    {
+      "code": "JS",
+      "name": {
+        "en": "Joint Secretary",
+        "hi": "संयुक्त सचिव"
+      }
+    },
+    {
+      "code": "SECRETARY",
+      "name": {
+        "en": "Secretary",
+        "hi": "सचिव"
+      }
+    }
+  ]
+}

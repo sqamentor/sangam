@@ -1,0 +1,63 @@
+{
+  "key": "sec-ushealth-prior-auth/denied",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.prior-auth",
+  "title": {
+    "en": "Denied with a specific reason: peer-to-peer, appeal or accept",
+    "es": "Denegada con un motivo específico: revisión entre pares, apelación o aceptación"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "denialReason",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Specific denial reason",
+        "es": "Motivo específico de la denegación"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "denialDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "peerToPeer",
+        "label": {
+          "en": "Peer-to-peer review",
+          "es": "Revisión entre pares"
+        }
+      },
+      {
+        "value": "appeal",
+        "label": {
+          "en": "File appeal",
+          "es": "Apelar"
+        }
+      },
+      {
+        "value": "acceptDenial",
+        "label": {
+          "en": "Accept the denial",
+          "es": "Aceptar la denegación"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "AML-CELL",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "AML-L1",
+      "role": "L1",
+      "office": "AML-CELL",
+      "reportsTo": "AML-L2",
+      "name": {
+        "en": "AML analyst L1",
+        "hi": "धन-शोधन विश्लेषक एल1"
+      }
+    },
+    {
+      "id": "AML-L2",
+      "role": "L2",
+      "office": "AML-CELL",
+      "reportsTo": "PRINCIPAL-OFFICER",
+      "name": {
+        "en": "AML investigator L2",
+        "hi": "धन-शोधन अन्वेषक एल2"
+      }
+    },
+    {
+      "id": "PRINCIPAL-OFFICER",
+      "role": "PO",
+      "office": "AML-CELL",
+      "reportsTo": null,
+      "name": {
+        "en": "Principal Officer (PMLA)",
+        "hi": "प्रधान अधिकारी (पीएमएलए)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "AML-L1",
+      "person": "bam.aml-l1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AML-L2",
+      "person": "bam.aml-l2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PRINCIPAL-OFFICER",
+      "person": "bam.principal-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "L1",
+      "name": {
+        "en": "AML analyst L1",
+        "hi": "धन-शोधन विश्लेषक एल1"
+      }
+    },
+    {
+      "code": "L2",
+      "name": {
+        "en": "AML investigator L2",
+        "hi": "धन-शोधन अन्वेषक एल2"
+      }
+    },
+    {
+      "code": "PO",
+      "name": {
+        "en": "Principal Officer (PMLA)",
+        "hi": "प्रधान अधिकारी (पीएमएलए)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-claim/fix",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "Fix the front-end rejection (999 / 277CA)",
+    "es": "Corregir el rechazo inicial (999 / 277CA)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "rejectionFix",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Correction of the front-end rejection",
+        "es": "Corrección del rechazo inicial"
+      }
+    }
+  ]
+}

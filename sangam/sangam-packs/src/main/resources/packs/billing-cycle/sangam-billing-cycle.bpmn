@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Billing cycle run. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_billing_cycle" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_billing_runCycle" name="sangam.billing.runCycle"/>
+  <process id="sangam-billing-cycle" name="Billing cycle run" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.billing-cycle</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>cycle</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="bc_timer" name="Monthly on the 1st"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 3 1 * ?</timeCycle></timerEventDefinition></startEvent>
+    <startEvent id="bc_manual" name="Run now (message)"><messageEventDefinition messageRef="msg_sangam_billing_runCycle"/></startEvent>
+    <exclusiveGateway id="bc_join" name=""></exclusiveGateway>
+    <serviceTask id="bc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>cycle=current;tariffId=DEFAULT;ledgerId=DEMAND</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bc_load" name="Accounts of the cycle" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>billing.accounts</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bc_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bc_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-billing-account</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>cycle,tariffId,ledgerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bc_fanGw" name="All started?" default="billing_cycle_f8"></exclusiveGateway>
+    <intermediateCatchEvent id="bc_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT5M</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="bc_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bc_doneGw" name="Round complete?" default="billing_cycle_f13"></exclusiveGateway>
+    <serviceTask id="bc_report" name="Cycle report (billed, collected, arrears)" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>billing-cycle-report</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="bc_end" name="Cycle closed"></endEvent>
+    <sequenceFlow id="billing_cycle_f1" sourceRef="bc_timer" targetRef="bc_join"/>
+    <sequenceFlow id="billing_cycle_f2" sourceRef="bc_manual" targetRef="bc_join"/>
+    <sequenceFlow id="billing_cycle_f3" sourceRef="bc_join" targetRef="bc_defaults"/>
+    <sequenceFlow id="billing_cycle_f4" sourceRef="bc_defaults" targetRef="bc_load"/>
+    <sequenceFlow id="billing_cycle_f5" sourceRef="bc_open" targetRef="bc_fanOut"/>
+    <sequenceFlow id="billing_cycle_f6" sourceRef="bc_fanOut" targetRef="bc_fanGw"/>
+    <sequenceFlow id="billing_cycle_f7" name="next chunk" sourceRef="bc_fanGw" targetRef="bc_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="billing_cycle_f8" name="all started" sourceRef="bc_fanGw" targetRef="bc_poll"/>
+    <sequenceFlow id="billing_cycle_f9" sourceRef="bc_poll" targetRef="bc_aggregate"/>
+    <sequenceFlow id="billing_cycle_f10" sourceRef="bc_aggregate" targetRef="bc_doneGw"/>
+    <sequenceFlow id="billing_cycle_f11" name="not yet" sourceRef="bc_doneGw" targetRef="bc_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="billing_cycle_f12" sourceRef="bc_load" targetRef="bc_open"/>
+    <sequenceFlow id="billing_cycle_f13" name="complete" sourceRef="bc_doneGw" targetRef="bc_report"/>
+    <sequenceFlow id="billing_cycle_f14" sourceRef="bc_report" targetRef="bc_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="billing_cycle_diagram">
+    <bpmndi:BPMNPlane id="billing_cycle_plane" bpmnElement="sangam-billing-cycle">
+      <bpmndi:BPMNShape id="bc_timer_di" bpmnElement="bc_timer"><dc:Bounds x="52" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_manual_di" bpmnElement="bc_manual"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_join_di" bpmnElement="bc_join"><dc:Bounds x="210" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_defaults_di" bpmnElement="bc_defaults"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_load_di" bpmnElement="bc_load"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_open_di" bpmnElement="bc_open"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_fanOut_di" bpmnElement="bc_fanOut"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_fanGw_di" bpmnElement="bc_fanGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_poll_di" bpmnElement="bc_poll"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_aggregate_di" bpmnElement="bc_aggregate"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_doneGw_di" bpmnElement="bc_doneGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_report_di" bpmnElement="bc_report"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bc_end_di" bpmnElement="bc_end"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="billing_cycle_f1_di" bpmnElement="billing_cycle_f1"><di:waypoint x="88" y="195"/><di:waypoint x="149" y="195"/><di:waypoint x="149" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f2_di" bpmnElement="billing_cycle_f2"><di:waypoint x="88" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f3_di" bpmnElement="billing_cycle_f3"><di:waypoint x="260" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f4_di" bpmnElement="billing_cycle_f4"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f5_di" bpmnElement="billing_cycle_f5"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f6_di" bpmnElement="billing_cycle_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f7_di" bpmnElement="billing_cycle_f7"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="142"/><di:waypoint x="895" y="142"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f8_di" bpmnElement="billing_cycle_f8"><di:waypoint x="1085" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f9_di" bpmnElement="billing_cycle_f9"><di:waypoint x="1243" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f10_di" bpmnElement="billing_cycle_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f11_di" bpmnElement="billing_cycle_f11"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="127"/><di:waypoint x="1225" y="127"/><di:waypoint x="1225" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f12_di" bpmnElement="billing_cycle_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f13_di" bpmnElement="billing_cycle_f13"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="billing_cycle_f14_di" bpmnElement="billing_cycle_f14"><di:waypoint x="1770" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

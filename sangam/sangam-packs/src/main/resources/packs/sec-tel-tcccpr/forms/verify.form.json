@@ -1,0 +1,47 @@
+{
+  "key": "sec-tel-tcccpr/verify",
+  "version": "1.0.0",
+  "pack": "sec.tel.tcccpr",
+  "title": {
+    "en": "Verify complaint",
+    "hi": "शिकायत का सत्यापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "uccDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "valid",
+        "label": {
+          "en": "Valid",
+          "hi": "वैध"
+        }
+      },
+      {
+        "value": "invalid",
+        "label": {
+          "en": "Invalid",
+          "hi": "अवैध"
+        }
+      }
+    ]
+  }
+}

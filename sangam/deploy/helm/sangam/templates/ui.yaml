@@ -1,0 +1,111 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if .Values.ui.enabled }}
+{{- $fullname := include "sangam.fullname" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-ui
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+spec:
+  {{- if not .Values.ui.autoscaling.enabled }}
+  replicas: {{ .Values.ui.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "ui") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sangam.selectorLabels" (dict "ctx" . "component" "ui") | nindent 8 }}
+      {{- with .Values.ui.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- include "sangam.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "sangam.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.ui.podSecurityContext | nindent 8 }}
+      containers:
+        - name: ui
+          image: {{ include "sangam.image" (dict "ctx" . "image" .Values.ui.image) | quote }}
+          imagePullPolicy: {{ .Values.ui.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.ui.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SANGAM_API_UPSTREAM
+              value: {{ printf "http://%s-server:%v" $fullname .Values.server.service.port | quote }}
+            - name: SANGAM_PUBLIC_API_BASE
+              value: /api/v1
+            - name: SANGAM_OIDC_ISSUER
+              value: {{ required "oidc.issuerUri is required" .Values.oidc.issuerUri | quote }}
+            - name: SANGAM_OIDC_CLIENT_ID
+              value: {{ .Values.oidc.uiClientId | quote }}
+            - name: SANGAM_DEFAULT_LOCALE
+              value: {{ .Values.ui.defaultLocale | quote }}
+            - name: SANGAM_LOCALES
+              value: {{ .Values.ui.locales | quote }}
+            - name: SANGAM_ENV_LABEL
+              value: {{ .Values.ui.environmentLabel | quote }}
+            - name: SANGAM_CSP_CONNECT_EXTRA
+              value: {{ .Values.ui.cspConnectExtra | quote }}
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.ui.resources | nindent 12 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+            - { name: nginx-cache, mountPath: /var/cache/nginx }
+            - { name: nginx-conf, mountPath: /etc/nginx/conf.d }
+      volumes:
+        - name: tmp
+          emptyDir: { sizeLimit: 64Mi }
+        - name: nginx-cache
+          emptyDir: { sizeLimit: 128Mi }
+        - name: nginx-conf
+          emptyDir: { sizeLimit: 1Mi }
+      {{- with .Values.ui.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ui.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ui.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-ui
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+spec:
+  type: {{ .Values.ui.service.type }}
+  selector:
+    {{- include "sangam.selectorLabels" (dict "ctx" . "component" "ui") | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.ui.service.port }}
+      targetPort: http
+      protocol: TCP
+{{- end }}

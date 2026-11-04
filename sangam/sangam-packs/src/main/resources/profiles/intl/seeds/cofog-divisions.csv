@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
+COFOG,division,,01,General public services,,,,UN COFOG 1999,V
+COFOG,division,,02,Defence,,,,UN COFOG 1999,V
+COFOG,division,,03,Public order and safety,,,,UN COFOG 1999,V
+COFOG,division,,04,Economic affairs,,,,UN COFOG 1999,V
+COFOG,division,,05,Environmental protection,,,,UN COFOG 1999,V
+COFOG,division,,06,Housing and community amenities,,,,UN COFOG 1999,V
+COFOG,division,,07,Health,,,,UN COFOG 1999,V
+COFOG,division,,08,"Recreation, culture and religion",,,,UN COFOG 1999,V
+COFOG,division,,09,Education,,,,UN COFOG 1999,V
+COFOG,division,,10,Social protection,,,,UN COFOG 1999,V

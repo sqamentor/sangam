@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Year-end lapse. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_year_end_lapse" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_ifms_closeYearNow" name="sangam.ifms.closeYearNow"/>
+  <process id="sangam-ifms-year-end-lapse" name="Year-end lapse" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.surrender-lapse</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>fiscalYear</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="yl_timer" name="31 March 23:59 IST"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 59 23 31 3 ?</timeCycle></timerEventDefinition></startEvent>
+    <startEvent id="yl_manual" name="Run now (message)"><messageEventDefinition messageRef="msg_sangam_ifms_closeYearNow"/></startEvent>
+    <exclusiveGateway id="yl_join" name=""></exclusiveGateway>
+    <serviceTask id="yl_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>ledgerId=BUDGET;fiscalYear=current</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="yl_close" name="Close the period in the ledger" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.closePeriod</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>closePeriod</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,fiscalYear</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>close</operaton:string></operaton:field><operaton:field name="step"><operaton:string>close</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="yl_report" name="Lapse statement" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>lapse-statement</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="yl_end" name="Closed"></endEvent>
+    <sequenceFlow id="ifms_year_end_lapse_f1" sourceRef="yl_timer" targetRef="yl_join"/>
+    <sequenceFlow id="ifms_year_end_lapse_f2" sourceRef="yl_manual" targetRef="yl_join"/>
+    <sequenceFlow id="ifms_year_end_lapse_f3" sourceRef="yl_join" targetRef="yl_defaults"/>
+    <sequenceFlow id="ifms_year_end_lapse_f4" sourceRef="yl_defaults" targetRef="yl_close"/>
+    <sequenceFlow id="ifms_year_end_lapse_f5" sourceRef="yl_close" targetRef="yl_report"/>
+    <sequenceFlow id="ifms_year_end_lapse_f6" sourceRef="yl_report" targetRef="yl_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_year_end_lapse_diagram">
+    <bpmndi:BPMNPlane id="ifms_year_end_lapse_plane" bpmnElement="sangam-ifms-year-end-lapse">
+      <bpmndi:BPMNShape id="yl_timer_di" bpmnElement="yl_timer"><dc:Bounds x="52" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yl_manual_di" bpmnElement="yl_manual"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yl_join_di" bpmnElement="yl_join"><dc:Bounds x="210" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yl_defaults_di" bpmnElement="yl_defaults"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yl_close_di" bpmnElement="yl_close"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yl_report_di" bpmnElement="yl_report"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yl_end_di" bpmnElement="yl_end"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_year_end_lapse_f1_di" bpmnElement="ifms_year_end_lapse_f1"><di:waypoint x="88" y="195"/><di:waypoint x="149" y="195"/><di:waypoint x="149" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_lapse_f2_di" bpmnElement="ifms_year_end_lapse_f2"><di:waypoint x="88" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_lapse_f3_di" bpmnElement="ifms_year_end_lapse_f3"><di:waypoint x="260" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_lapse_f4_di" bpmnElement="ifms_year_end_lapse_f4"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_lapse_f5_di" bpmnElement="ifms_year_end_lapse_f5"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_lapse_f6_di" bpmnElement="ifms_year_end_lapse_f6"><di:waypoint x="780" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

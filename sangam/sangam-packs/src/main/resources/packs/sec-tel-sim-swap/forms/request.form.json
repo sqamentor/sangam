@@ -1,0 +1,45 @@
+{
+  "key": "sec-tel-sim-swap/request",
+  "version": "1.0.0",
+  "pack": "sec.tel.sim-swap",
+  "title": {
+    "en": "SIM replacement",
+    "hi": "सिम प्रतिस्थापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "msisdn",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Mobile number to port",
+        "hi": "पोर्ट किया जाने वाला मोबाइल नंबर"
+      }
+    },
+    {
+      "id": "customerName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer name",
+        "hi": "ग्राहक का नाम"
+      }
+    },
+    {
+      "id": "swapReason",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Reason for replacement",
+        "hi": "प्रतिस्थापन का कारण"
+      }
+    }
+  ]
+}

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Employee exit. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_hr_exit" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-hr-exit" name="Employee exit" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.hr.employee-exit</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>employeeId,exitType</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="hx_start" name="Exit initiated" operaton:initiator="initiator" operaton:formKey="sangam:sec-hr-employee-exit/initiate"></startEvent>
+    <serviceTask id="hx_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>exitType=RESIGNATION;qualifyingService=3;managerSeat=LINE-MANAGER;hrSeat=HR-PAYROLL;executionConnector=bank.transfer;executionStep=fnf;verifyApproval=false;reconcileRequired=false;executionPayloadFields=employeeId,fnfAmount;fnfAmount=0;gratuityAmount=0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hx_typeGw" name="Resignation?" default="sec_hr_exit_f7"></exclusiveGateway>
+    <userTask id="hx_accept" name="Accept resignation" operaton:candidateGroups="${managerSeat}" operaton:formKey="sangam:sec-hr-employee-exit/accept"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>resignDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="hx_accGw" name="" default="sec_hr_exit_f6"></exclusiveGateway>
+    <endEvent id="hx_endWithdrawn" name="Resignation withdrawn"></endEvent>
+    <serviceTask id="hx_lwd" name="Due date: lwd" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lwd</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>lastWorkingDay</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>PT0S</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="hx_lwdTimer" name="Last working day"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lwdDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <businessRuleTask id="hx_tat" name="Settlement periods (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-hr-exit-tat</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <parallelGateway id="hx_fork" name="Clearances"></parallelGateway>
+    <parallelGateway id="hx_join" name=""></parallelGateway>
+    <serviceTask id="hx_revoke" name="Revoke all access" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>iam.revokeAll</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revoke</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>revoke</operaton:string></operaton:field><operaton:field name="step"><operaton:string>revoke</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="hx_itassets" name="Recover assets" operaton:candidateGroups="IT-ASSETS" operaton:formKey="sangam:sec-hr-employee-exit/it-assets"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="hx_financedues" name="Dues and advances" operaton:candidateGroups="FINANCE-DUES" operaton:formKey="sangam:sec-hr-employee-exit/finance-dues"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="hx_fnf_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hx_fnf</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${fnfSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="hx_fnf" name="Full and final settlement (2 working days)" operaton:candidateGroups="${hrSeat}" operaton:formKey="sangam:sec-hr-employee-exit/fnf" operaton:dueDate="${hx_fnfDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="hx_fnf_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hx_fnf</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>hrSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hx_fnf_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="hx_fnf_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hx_fnf</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>hrSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hx_fnf_breachGw" name="Deemed?" default="sec_hr_exit_f22"></exclusiveGateway>
+    <exclusiveGateway id="hx_fnf_done" name=""></exclusiveGateway>
+    <callActivity id="hx_pay" name="Pay settlement (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="hx_gratGw" name="Gratuity payable?" default="sec_hr_exit_f39"></exclusiveGateway>
+    <serviceTask id="hx_gratuity_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hx_gratuity</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${gratuitySpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="hx_gratuity" name="Gratuity (30 days)" operaton:candidateGroups="${hrSeat}" operaton:formKey="sangam:sec-hr-employee-exit/gratuity" operaton:dueDate="${hx_gratuityDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="hx_gratuity_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hx_gratuity</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>hrSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hx_gratuity_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="hx_gratuity_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hx_gratuity</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>hrSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hx_gratuity_breachGw" name="Deemed?" default="sec_hr_exit_f33"></exclusiveGateway>
+    <exclusiveGateway id="hx_gratuity_done" name=""></exclusiveGateway>
+    <serviceTask id="hx_gratCfg" name="Gratuity payment" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionStep=gratuity;executionPayloadFields=employeeId,gratuityAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="hx_gratPay" name="Pay gratuity (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="hx_letter" name="Relieving and experience letters; PF exit" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.letter</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>relieving</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId,employeeName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>letter</operaton:string></operaton:field><operaton:field name="step"><operaton:string>letters</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hx_end" name="Exited"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="hx_fnf_warn" name="SLA warning (75%)" attachedToRef="hx_fnf" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hx_fnfWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hx_fnf_breach" name="SLA breached" attachedToRef="hx_fnf" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hx_fnfDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hx_gratuity_warn" name="SLA warning (75%)" attachedToRef="hx_gratuity" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hx_gratuityWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hx_gratuity_breach" name="SLA breached" attachedToRef="hx_gratuity" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hx_gratuityDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_hr_exit_f1" sourceRef="hx_start" targetRef="hx_defaults"/>
+    <sequenceFlow id="sec_hr_exit_f2" sourceRef="hx_defaults" targetRef="hx_typeGw"/>
+    <sequenceFlow id="sec_hr_exit_f3" name="resignation" sourceRef="hx_typeGw" targetRef="hx_accept"><conditionExpression xsi:type="tFormalExpression">${exitType == 'RESIGNATION'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_exit_f4" sourceRef="hx_accept" targetRef="hx_accGw"/>
+    <sequenceFlow id="sec_hr_exit_f5" name="withdrawn" sourceRef="hx_accGw" targetRef="hx_endWithdrawn"><conditionExpression xsi:type="tFormalExpression">${resignDecision == 'withdraw'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_exit_f6" name="accepted" sourceRef="hx_accGw" targetRef="hx_lwd"/>
+    <sequenceFlow id="sec_hr_exit_f7" name="other exit" sourceRef="hx_typeGw" targetRef="hx_lwd"/>
+    <sequenceFlow id="sec_hr_exit_f8" sourceRef="hx_lwd" targetRef="hx_lwdTimer"/>
+    <sequenceFlow id="sec_hr_exit_f9" sourceRef="hx_lwdTimer" targetRef="hx_tat"/>
+    <sequenceFlow id="sec_hr_exit_f10" sourceRef="hx_tat" targetRef="hx_fork"/>
+    <sequenceFlow id="sec_hr_exit_f11" sourceRef="hx_fork" targetRef="hx_revoke"/>
+    <sequenceFlow id="sec_hr_exit_f12" sourceRef="hx_revoke" targetRef="hx_join"/>
+    <sequenceFlow id="sec_hr_exit_f13" sourceRef="hx_fork" targetRef="hx_itassets"/>
+    <sequenceFlow id="sec_hr_exit_f14" sourceRef="hx_itassets" targetRef="hx_join"/>
+    <sequenceFlow id="sec_hr_exit_f15" sourceRef="hx_fork" targetRef="hx_financedues"/>
+    <sequenceFlow id="sec_hr_exit_f16" sourceRef="hx_financedues" targetRef="hx_join"/>
+    <sequenceFlow id="sec_hr_exit_f17" sourceRef="hx_fnf_warn" targetRef="hx_fnf_warnNotify"/>
+    <sequenceFlow id="sec_hr_exit_f18" sourceRef="hx_fnf_warnNotify" targetRef="hx_fnf_warnEnd"/>
+    <sequenceFlow id="sec_hr_exit_f19" sourceRef="hx_fnf_breach" targetRef="hx_fnf_breachAct"/>
+    <sequenceFlow id="sec_hr_exit_f20" sourceRef="hx_fnf_breachAct" targetRef="hx_fnf_breachGw"/>
+    <sequenceFlow id="sec_hr_exit_f21" name="deemed" sourceRef="hx_fnf_breachGw" targetRef="hx_fnf_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_exit_f22" name="escalated" sourceRef="hx_fnf_breachGw" targetRef="hx_fnf_slaPlan"/>
+    <sequenceFlow id="sec_hr_exit_f23" sourceRef="hx_fnf_slaPlan" targetRef="hx_fnf"/>
+    <sequenceFlow id="sec_hr_exit_f24" sourceRef="hx_fnf" targetRef="hx_fnf_done"/>
+    <sequenceFlow id="sec_hr_exit_f25" sourceRef="hx_join" targetRef="hx_fnf_slaPlan"/>
+    <sequenceFlow id="sec_hr_exit_f26" sourceRef="hx_fnf_done" targetRef="hx_pay"/>
+    <sequenceFlow id="sec_hr_exit_f27" sourceRef="hx_pay" targetRef="hx_gratGw"/>
+    <sequenceFlow id="sec_hr_exit_f28" sourceRef="hx_gratuity_warn" targetRef="hx_gratuity_warnNotify"/>
+    <sequenceFlow id="sec_hr_exit_f29" sourceRef="hx_gratuity_warnNotify" targetRef="hx_gratuity_warnEnd"/>
+    <sequenceFlow id="sec_hr_exit_f30" sourceRef="hx_gratuity_breach" targetRef="hx_gratuity_breachAct"/>
+    <sequenceFlow id="sec_hr_exit_f31" sourceRef="hx_gratuity_breachAct" targetRef="hx_gratuity_breachGw"/>
+    <sequenceFlow id="sec_hr_exit_f32" name="deemed" sourceRef="hx_gratuity_breachGw" targetRef="hx_gratuity_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_exit_f33" name="escalated" sourceRef="hx_gratuity_breachGw" targetRef="hx_gratuity_slaPlan"/>
+    <sequenceFlow id="sec_hr_exit_f34" sourceRef="hx_gratuity_slaPlan" targetRef="hx_gratuity"/>
+    <sequenceFlow id="sec_hr_exit_f35" sourceRef="hx_gratuity" targetRef="hx_gratuity_done"/>
+    <sequenceFlow id="sec_hr_exit_f36" name="yes" sourceRef="hx_gratGw" targetRef="hx_gratuity_slaPlan"><conditionExpression xsi:type="tFormalExpression">${gratuityPayable}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_exit_f37" sourceRef="hx_gratuity_done" targetRef="hx_gratCfg"/>
+    <sequenceFlow id="sec_hr_exit_f38" sourceRef="hx_gratCfg" targetRef="hx_gratPay"/>
+    <sequenceFlow id="sec_hr_exit_f39" name="no" sourceRef="hx_gratGw" targetRef="hx_letter"/>
+    <sequenceFlow id="sec_hr_exit_f40" sourceRef="hx_gratPay" targetRef="hx_letter"/>
+    <sequenceFlow id="sec_hr_exit_f41" sourceRef="hx_letter" targetRef="hx_end"/>
+    <subProcess id="hx_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="hx_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="hx_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="hx_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="hx_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_hr_exit_f42" sourceRef="hx_withdrawStart" targetRef="hx_withdrawKind"/>
+      <sequenceFlow id="sec_hr_exit_f43" sourceRef="hx_withdrawKind" targetRef="hx_withdrawCall"/>
+      <sequenceFlow id="sec_hr_exit_f44" sourceRef="hx_withdrawCall" targetRef="hx_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="hx_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="hx_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="hx_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="hx_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="hx_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_hr_exit_f45" sourceRef="hx_cancelStart" targetRef="hx_cancelKind"/>
+      <sequenceFlow id="sec_hr_exit_f46" sourceRef="hx_cancelKind" targetRef="hx_cancelCall"/>
+      <sequenceFlow id="sec_hr_exit_f47" sourceRef="hx_cancelCall" targetRef="hx_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_hr_exit_diagram">
+    <bpmndi:BPMNPlane id="sec_hr_exit_plane" bpmnElement="sangam-sec-hr-exit">
+      <bpmndi:BPMNShape id="hx_start_di" bpmnElement="hx_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_defaults_di" bpmnElement="hx_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_typeGw_di" bpmnElement="hx_typeGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_accept_di" bpmnElement="hx_accept"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_accGw_di" bpmnElement="hx_accGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_endWithdrawn_di" bpmnElement="hx_endWithdrawn"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_lwd_di" bpmnElement="hx_lwd"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_lwdTimer_di" bpmnElement="hx_lwdTimer"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_tat_di" bpmnElement="hx_tat"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fork_di" bpmnElement="hx_fork"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_join_di" bpmnElement="hx_join"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_revoke_di" bpmnElement="hx_revoke"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_itassets_di" bpmnElement="hx_itassets"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_financedues_di" bpmnElement="hx_financedues"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fnf_slaPlan_di" bpmnElement="hx_fnf_slaPlan"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fnf_di" bpmnElement="hx_fnf"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fnf_warnNotify_di" bpmnElement="hx_fnf_warnNotify"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fnf_warnEnd_di" bpmnElement="hx_fnf_warnEnd"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fnf_breachAct_di" bpmnElement="hx_fnf_breachAct"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fnf_breachGw_di" bpmnElement="hx_fnf_breachGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fnf_done_di" bpmnElement="hx_fnf_done"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_pay_di" bpmnElement="hx_pay"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratGw_di" bpmnElement="hx_gratGw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_slaPlan_di" bpmnElement="hx_gratuity_slaPlan"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_di" bpmnElement="hx_gratuity"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_warnNotify_di" bpmnElement="hx_gratuity_warnNotify"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_warnEnd_di" bpmnElement="hx_gratuity_warnEnd"><dc:Bounds x="3517" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_breachAct_di" bpmnElement="hx_gratuity_breachAct"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_breachGw_di" bpmnElement="hx_gratuity_breachGw"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_done_di" bpmnElement="hx_gratuity_done"><dc:Bounds x="3675" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratCfg_di" bpmnElement="hx_gratCfg"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratPay_di" bpmnElement="hx_gratPay"><dc:Bounds x="3980" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_letter_di" bpmnElement="hx_letter"><dc:Bounds x="4145" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_end_di" bpmnElement="hx_end"><dc:Bounds x="4342" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fnf_warn_di" bpmnElement="hx_fnf_warn"><dc:Bounds x="2008" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_fnf_breach_di" bpmnElement="hx_fnf_breach"><dc:Bounds x="2038" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_warn_di" bpmnElement="hx_gratuity_warn"><dc:Bounds x="3163" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_gratuity_breach_di" bpmnElement="hx_gratuity_breach"><dc:Bounds x="3193" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_withdraw_di" bpmnElement="hx_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_withdrawStart_di" bpmnElement="hx_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_withdrawKind_di" bpmnElement="hx_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_withdrawCall_di" bpmnElement="hx_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_withdrawEnd_di" bpmnElement="hx_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_cancel_di" bpmnElement="hx_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_cancelStart_di" bpmnElement="hx_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_cancelKind_di" bpmnElement="hx_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_cancelCall_di" bpmnElement="hx_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_cancelEnd_di" bpmnElement="hx_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f1_di" bpmnElement="sec_hr_exit_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f2_di" bpmnElement="sec_hr_exit_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f3_di" bpmnElement="sec_hr_exit_f3"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f4_di" bpmnElement="sec_hr_exit_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f5_di" bpmnElement="sec_hr_exit_f5"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f6_di" bpmnElement="sec_hr_exit_f6"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f7_di" bpmnElement="sec_hr_exit_f7"><di:waypoint x="425" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f8_di" bpmnElement="sec_hr_exit_f8"><di:waypoint x="945" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f9_di" bpmnElement="sec_hr_exit_f9"><di:waypoint x="1078" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f10_di" bpmnElement="sec_hr_exit_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f11_di" bpmnElement="sec_hr_exit_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f12_di" bpmnElement="sec_hr_exit_f12"><di:waypoint x="1605" y="320"/><di:waypoint x="1650" y="320"/><di:waypoint x="1650" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f13_di" bpmnElement="sec_hr_exit_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f14_di" bpmnElement="sec_hr_exit_f14"><di:waypoint x="1605" y="195"/><di:waypoint x="1650" y="195"/><di:waypoint x="1650" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f15_di" bpmnElement="sec_hr_exit_f15"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f16_di" bpmnElement="sec_hr_exit_f16"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f17_di" bpmnElement="sec_hr_exit_f17"><di:waypoint x="2026" y="128"/><di:waypoint x="2026" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f18_di" bpmnElement="sec_hr_exit_f18"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f19_di" bpmnElement="sec_hr_exit_f19"><di:waypoint x="2056" y="128"/><di:waypoint x="2056" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f20_di" bpmnElement="sec_hr_exit_f20"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f21_di" bpmnElement="sec_hr_exit_f21"><di:waypoint x="2405" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f22_di" bpmnElement="sec_hr_exit_f22"><di:waypoint x="2380" y="95"/><di:waypoint x="2380" y="135"/><di:waypoint x="1885" y="135"/><di:waypoint x="1885" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f23_di" bpmnElement="sec_hr_exit_f23"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f24_di" bpmnElement="sec_hr_exit_f24"><di:waypoint x="2100" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f25_di" bpmnElement="sec_hr_exit_f25"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f26_di" bpmnElement="sec_hr_exit_f26"><di:waypoint x="2570" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f27_di" bpmnElement="sec_hr_exit_f27"><di:waypoint x="2760" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f28_di" bpmnElement="sec_hr_exit_f28"><di:waypoint x="3181" y="128"/><di:waypoint x="3181" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f29_di" bpmnElement="sec_hr_exit_f29"><di:waypoint x="3420" y="195"/><di:waypoint x="3517" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f30_di" bpmnElement="sec_hr_exit_f30"><di:waypoint x="3211" y="128"/><di:waypoint x="3211" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f31_di" bpmnElement="sec_hr_exit_f31"><di:waypoint x="3420" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f32_di" bpmnElement="sec_hr_exit_f32"><di:waypoint x="3560" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f33_di" bpmnElement="sec_hr_exit_f33"><di:waypoint x="3535" y="95"/><di:waypoint x="3535" y="128"/><di:waypoint x="3040" y="128"/><di:waypoint x="3040" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f34_di" bpmnElement="sec_hr_exit_f34"><di:waypoint x="3090" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f35_di" bpmnElement="sec_hr_exit_f35"><di:waypoint x="3255" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f36_di" bpmnElement="sec_hr_exit_f36"><di:waypoint x="2900" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f37_di" bpmnElement="sec_hr_exit_f37"><di:waypoint x="3725" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f38_di" bpmnElement="sec_hr_exit_f38"><di:waypoint x="3915" y="70"/><di:waypoint x="3980" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f39_di" bpmnElement="sec_hr_exit_f39"><di:waypoint x="2900" y="70"/><di:waypoint x="4145" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f40_di" bpmnElement="sec_hr_exit_f40"><di:waypoint x="4080" y="70"/><di:waypoint x="4145" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f41_di" bpmnElement="sec_hr_exit_f41"><di:waypoint x="4245" y="70"/><di:waypoint x="4342" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f42_di" bpmnElement="sec_hr_exit_f42"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f43_di" bpmnElement="sec_hr_exit_f43"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f44_di" bpmnElement="sec_hr_exit_f44"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f45_di" bpmnElement="sec_hr_exit_f45"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f46_di" bpmnElement="sec_hr_exit_f46"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_exit_f47_di" bpmnElement="sec_hr_exit_f47"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

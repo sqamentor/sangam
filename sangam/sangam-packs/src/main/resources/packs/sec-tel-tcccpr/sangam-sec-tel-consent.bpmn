@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Consent acquisition and revocation. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_tel_consent" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_dlt_consentConfirmed" name="sangam.dlt.consentConfirmed"/>
+  <message id="msg_sangam_dlt_consentRevoked" name="sangam.dlt.consentRevoked"/>
+  <process id="sangam-sec-tel-consent" name="Consent acquisition and revocation" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.tel.tcccpr</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>msisdn,principalEntity</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="cn_start" name="Consent sought" operaton:initiator="initiator" operaton:formKey="sangam:sec-tel-tcccpr/consent"></startEvent>
+    <serviceTask id="cn_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>msisdn=@customerId;principalEntity=PE-1;consentPurpose=PROMOTIONAL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="cn_wait" name="Customer confirms or ignores"></eventBasedGateway>
+    <intermediateCatchEvent id="cn_confirm" name="Customer confirms (OTP / short code)"><messageEventDefinition messageRef="msg_sangam_dlt_consentConfirmed"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="cn_expire" name="Not confirmed"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P1D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="cn_endNone" name="No consent recorded"></endEvent>
+    <serviceTask id="cn_record" name="Record consent on DLT" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>dlt.consent</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>record</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>msisdn,principalEntity,consentPurpose</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rec</operaton:string></operaton:field><operaton:field name="step"><operaton:string>record</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="cn_revoke" name="Customer revokes"><messageEventDefinition messageRef="msg_sangam_dlt_consentRevoked"/></intermediateCatchEvent>
+    <serviceTask id="cn_doRevoke" name="Revoke on DLT" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>dlt.consent</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revoke</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>msisdn,principalEntity</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rev</operaton:string></operaton:field><operaton:field name="step"><operaton:string>revoke</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cn_end" name="Revoked"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_tel_consent_f1" sourceRef="cn_start" targetRef="cn_defaults"/>
+    <sequenceFlow id="sec_tel_consent_f2" sourceRef="cn_defaults" targetRef="cn_wait"/>
+    <sequenceFlow id="sec_tel_consent_f3" sourceRef="cn_wait" targetRef="cn_confirm"/>
+    <sequenceFlow id="sec_tel_consent_f4" sourceRef="cn_wait" targetRef="cn_expire"/>
+    <sequenceFlow id="sec_tel_consent_f5" sourceRef="cn_expire" targetRef="cn_endNone"/>
+    <sequenceFlow id="sec_tel_consent_f6" sourceRef="cn_confirm" targetRef="cn_record"/>
+    <sequenceFlow id="sec_tel_consent_f7" sourceRef="cn_record" targetRef="cn_revoke"/>
+    <sequenceFlow id="sec_tel_consent_f8" sourceRef="cn_revoke" targetRef="cn_doRevoke"/>
+    <sequenceFlow id="sec_tel_consent_f9" sourceRef="cn_doRevoke" targetRef="cn_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_tel_consent_diagram">
+    <bpmndi:BPMNPlane id="sec_tel_consent_plane" bpmnElement="sangam-sec-tel-consent">
+      <bpmndi:BPMNShape id="cn_start_di" bpmnElement="cn_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cn_defaults_di" bpmnElement="cn_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cn_wait_di" bpmnElement="cn_wait"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cn_confirm_di" bpmnElement="cn_confirm"><dc:Bounds x="547" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cn_expire_di" bpmnElement="cn_expire"><dc:Bounds x="547" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cn_endNone_di" bpmnElement="cn_endNone"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cn_record_di" bpmnElement="cn_record"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cn_revoke_di" bpmnElement="cn_revoke"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cn_doRevoke_di" bpmnElement="cn_doRevoke"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cn_end_di" bpmnElement="cn_end"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_tel_consent_f1_di" bpmnElement="sec_tel_consent_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_consent_f2_di" bpmnElement="sec_tel_consent_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_consent_f3_di" bpmnElement="sec_tel_consent_f3"><di:waypoint x="425" y="70"/><di:waypoint x="486" y="70"/><di:waypoint x="486" y="195"/><di:waypoint x="547" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_consent_f4_di" bpmnElement="sec_tel_consent_f4"><di:waypoint x="425" y="70"/><di:waypoint x="547" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_consent_f5_di" bpmnElement="sec_tel_consent_f5"><di:waypoint x="583" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_consent_f6_di" bpmnElement="sec_tel_consent_f6"><di:waypoint x="583" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_consent_f7_di" bpmnElement="sec_tel_consent_f7"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_consent_f8_di" bpmnElement="sec_tel_consent_f8"><di:waypoint x="913" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_consent_f9_di" bpmnElement="sec_tel_consent_f9"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

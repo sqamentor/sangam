@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "SVC",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SERVICE-DESK",
+      "role": "SERVICE",
+      "office": "SVC",
+      "reportsTo": null,
+      "name": {
+        "en": "Service desk",
+        "hi": "सेवा डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SERVICE-DESK",
+      "person": "u8.service-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "SERVICE",
+      "name": {
+        "en": "Service desk",
+        "hi": "सेवा डेस्क"
+      }
+    }
+  ]
+}

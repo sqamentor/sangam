@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "BILLING",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "BILL-OFFICER",
+      "role": "BILLING_OFFICER",
+      "office": "BILLING",
+      "reportsTo": "BILL-CHECKER",
+      "name": {
+        "en": "Billing officer",
+        "hi": "बिलिंग अधिकारी"
+      }
+    },
+    {
+      "id": "BILL-CHECKER",
+      "role": "BILLING_CHECKER",
+      "office": "BILLING",
+      "reportsTo": null,
+      "name": {
+        "en": "Billing checker",
+        "hi": "बिलिंग जाँचकर्ता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "BILL-OFFICER",
+      "person": "bl.officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BILL-CHECKER",
+      "person": "bl.checker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "BILLING_OFFICER",
+      "name": {
+        "en": "Billing officer",
+        "hi": "बिलिंग अधिकारी"
+      }
+    },
+    {
+      "code": "BILLING_CHECKER",
+      "name": {
+        "en": "Billing checker",
+        "hi": "बिलिंग जाँचकर्ता"
+      }
+    }
+  ]
+}

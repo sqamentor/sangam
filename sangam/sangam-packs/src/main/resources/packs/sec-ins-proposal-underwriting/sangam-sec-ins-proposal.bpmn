@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Proposal to policy. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ins_proposal" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_ins_freeLookCancel" name="sangam.ins.freeLookCancel"/>
+  <message id="msg_sangam_ins_medicalReport" name="sangam.ins.medicalReport"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ins-proposal" name="Proposal to policy" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ins.proposal-underwriting</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerName,productCode,sumAssured,age</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ip_start" name="Proposal received" operaton:initiator="initiator" operaton:formKey="sangam:sec-ins-proposal-underwriting/proposal"></startEvent>
+    <serviceTask id="ip_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>customerName=@customerId;productCode=TERM;sumAssured=1000000;age=35;smoker=false;medicalDisclosures=NONE;uwSeat=UNDERWRITER;executionConnector=pg.collect;executionStep=premium;verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerName,premiumAmount;premiumAmount=0;applicantRef=@customerId;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ip_kyc" name="KYC (CKYC)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ckycr.search</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>search</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ckyc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ip_rule" name="Underwriting route (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ins-uw</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="ip_routeGw" name="Straight-through?" default="sec_ins_proposal_f21"></exclusiveGateway>
+    <exclusiveGateway id="ip_medGw" name="Medicals needed?" default="sec_ins_proposal_f19"></exclusiveGateway>
+    <serviceTask id="ip_medicals" name="Schedule medicals (insurer's cost)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>tpa.medicals</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>schedule</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerName,age,sumAssured</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>med</operaton:string></operaton:field><operaton:field name="step"><operaton:string>medicals</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="ip_medWait" name="Report or timeout"></eventBasedGateway>
+    <intermediateCatchEvent id="ip_medReport" name="Medical report"><messageEventDefinition messageRef="msg_sangam_ins_medicalReport"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ip_medTimeout" name="No medicals in 30 days"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P30D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="ip_endClosed" name="Closed: medicals not done (proposer informed)"></endEvent>
+    <serviceTask id="ip_uw_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ip_uw</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${decisionSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ip_uw" name="Underwriting decision" operaton:candidateGroups="${uwSeat}" operaton:formKey="sangam:sec-ins-proposal-underwriting/decide" operaton:dueDate="${ip_uwDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>uwDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ip_uw_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ip_uw</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>uwSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ip_uw_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ip_uw_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ip_uw</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>uwSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>uwDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ip_uw_breachGw" name="Deemed?" default="sec_ins_proposal_f16"></exclusiveGateway>
+    <exclusiveGateway id="ip_uw_done" name=""></exclusiveGateway>
+    <serviceTask id="ip_stp" name="Standard terms" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>uwDecision=accept</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ip_uwGw" name="" default="sec_ins_proposal_f40"></exclusiveGateway>
+    <serviceTask id="ip_group" name="Proposer group" operaton:expression="${execution.setVariable('proposerGroup', 'external:'.concat(customerName))}"></serviceTask>
+    <serviceTask id="ip_consent_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ip_consent</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>15D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ip_consent" name="Proposer accepts revised terms" operaton:candidateGroups="${proposerGroup}" operaton:formKey="sangam:sec-ins-proposal-underwriting/consent" operaton:dueDate="${ip_consentDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>counterDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ip_consent_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ip_consent</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>proposerGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ip_consent_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ip_consent_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ip_consent</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>DEEMED_REFUSAL</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>proposerGroup</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>counterDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>accept</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>declined</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ip_consent_breachGw" name="Deemed?" default="sec_ins_proposal_f30"></exclusiveGateway>
+    <exclusiveGateway id="ip_consent_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="ip_consGw" name="" default="sec_ins_proposal_f37"></exclusiveGateway>
+    <callActivity id="ip_premium" name="Collect premium once (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ip_endDeclined" name="Counter-offer declined"></endEvent>
+    <endEvent id="ip_endPostponed" name="Postponed (reasons communicated)"></endEvent>
+    <callActivity id="ip_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ip_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ip_issue" name="Issue policy and credit the e-insurance account" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>policy.issue</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>issue</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerName,productCode,sumAssured</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>policy</operaton:string></operaton:field><operaton:field name="step"><operaton:string>issue</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ip_payFailed" name="Premium not received" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>premium-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ip_payGw" name="executionOutcome?" default="sec_ins_proposal_f42"></exclusiveGateway>
+    <endEvent id="ip_endUnpaid" name="Not issued: premium not received"></endEvent>
+    <serviceTask id="ip_freeLook" name="Regulatory clock: freeLook" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>freeLook</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${freeLookSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="ip_flWait" name="Free-look cancellation or period ends"></eventBasedGateway>
+    <intermediateCatchEvent id="ip_flCancel" name="Free-look cancellation"><messageEventDefinition messageRef="msg_sangam_ins_freeLookCancel"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ip_flEnd" name="Free-look over"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${freeLookDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="ip_refund" name="Refund premium less risk premium, medicals and stamp duty" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>pg.refund</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>refund</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerName,premiumAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>flRefund</operaton:string></operaton:field><operaton:field name="step"><operaton:string>free-look-refund</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ip_endFreeLook" name="Cancelled in free-look"></endEvent>
+    <endEvent id="ip_end" name="Policy in force"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ip_uw_warn" name="SLA warning (75%)" attachedToRef="ip_uw" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ip_uwWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ip_uw_breach" name="SLA breached" attachedToRef="ip_uw" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ip_uwDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ip_consent_warn" name="SLA warning (75%)" attachedToRef="ip_consent" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ip_consentWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ip_consent_breach" name="SLA breached" attachedToRef="ip_consent" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ip_consentDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_ins_proposal_f1" sourceRef="ip_start" targetRef="ip_defaults"/>
+    <sequenceFlow id="sec_ins_proposal_f2" sourceRef="ip_defaults" targetRef="ip_kyc"/>
+    <sequenceFlow id="sec_ins_proposal_f3" sourceRef="ip_kyc" targetRef="ip_rule"/>
+    <sequenceFlow id="sec_ins_proposal_f4" sourceRef="ip_rule" targetRef="ip_routeGw"/>
+    <sequenceFlow id="sec_ins_proposal_f5" name="manual" sourceRef="ip_routeGw" targetRef="ip_medGw"><conditionExpression xsi:type="tFormalExpression">${uwRoute == 'MANUAL'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f6" name="yes" sourceRef="ip_medGw" targetRef="ip_medicals"><conditionExpression xsi:type="tFormalExpression">${medicalRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f7" sourceRef="ip_medicals" targetRef="ip_medWait"/>
+    <sequenceFlow id="sec_ins_proposal_f8" sourceRef="ip_medWait" targetRef="ip_medReport"/>
+    <sequenceFlow id="sec_ins_proposal_f9" sourceRef="ip_medWait" targetRef="ip_medTimeout"/>
+    <sequenceFlow id="sec_ins_proposal_f10" sourceRef="ip_medTimeout" targetRef="ip_endClosed"/>
+    <sequenceFlow id="sec_ins_proposal_f11" sourceRef="ip_uw_warn" targetRef="ip_uw_warnNotify"/>
+    <sequenceFlow id="sec_ins_proposal_f12" sourceRef="ip_uw_warnNotify" targetRef="ip_uw_warnEnd"/>
+    <sequenceFlow id="sec_ins_proposal_f13" sourceRef="ip_uw_breach" targetRef="ip_uw_breachAct"/>
+    <sequenceFlow id="sec_ins_proposal_f14" sourceRef="ip_uw_breachAct" targetRef="ip_uw_breachGw"/>
+    <sequenceFlow id="sec_ins_proposal_f15" name="deemed" sourceRef="ip_uw_breachGw" targetRef="ip_uw_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f16" name="escalated" sourceRef="ip_uw_breachGw" targetRef="ip_uw_slaPlan"/>
+    <sequenceFlow id="sec_ins_proposal_f17" sourceRef="ip_uw_slaPlan" targetRef="ip_uw"/>
+    <sequenceFlow id="sec_ins_proposal_f18" sourceRef="ip_uw" targetRef="ip_uw_done"/>
+    <sequenceFlow id="sec_ins_proposal_f19" name="no" sourceRef="ip_medGw" targetRef="ip_uw_slaPlan"/>
+    <sequenceFlow id="sec_ins_proposal_f20" sourceRef="ip_medReport" targetRef="ip_uw_slaPlan"/>
+    <sequenceFlow id="sec_ins_proposal_f21" name="straight-through" sourceRef="ip_routeGw" targetRef="ip_stp"/>
+    <sequenceFlow id="sec_ins_proposal_f22" sourceRef="ip_uw_done" targetRef="ip_uwGw"/>
+    <sequenceFlow id="sec_ins_proposal_f23" sourceRef="ip_stp" targetRef="ip_uwGw"/>
+    <sequenceFlow id="sec_ins_proposal_f24" name="counter-offer" sourceRef="ip_uwGw" targetRef="ip_group"><conditionExpression xsi:type="tFormalExpression">${uwDecision == 'acceptLoaded'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f25" sourceRef="ip_consent_warn" targetRef="ip_consent_warnNotify"/>
+    <sequenceFlow id="sec_ins_proposal_f26" sourceRef="ip_consent_warnNotify" targetRef="ip_consent_warnEnd"/>
+    <sequenceFlow id="sec_ins_proposal_f27" sourceRef="ip_consent_breach" targetRef="ip_consent_breachAct"/>
+    <sequenceFlow id="sec_ins_proposal_f28" sourceRef="ip_consent_breachAct" targetRef="ip_consent_breachGw"/>
+    <sequenceFlow id="sec_ins_proposal_f29" name="deemed" sourceRef="ip_consent_breachGw" targetRef="ip_consent_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f30" name="escalated" sourceRef="ip_consent_breachGw" targetRef="ip_consent_slaPlan"/>
+    <sequenceFlow id="sec_ins_proposal_f31" sourceRef="ip_consent_slaPlan" targetRef="ip_consent"/>
+    <sequenceFlow id="sec_ins_proposal_f32" sourceRef="ip_consent" targetRef="ip_consent_done"/>
+    <sequenceFlow id="sec_ins_proposal_f33" sourceRef="ip_group" targetRef="ip_consent_slaPlan"/>
+    <sequenceFlow id="sec_ins_proposal_f34" sourceRef="ip_consent_done" targetRef="ip_consGw"/>
+    <sequenceFlow id="sec_ins_proposal_f35" name="accept" sourceRef="ip_uwGw" targetRef="ip_premium"><conditionExpression xsi:type="tFormalExpression">${uwDecision == 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f36" name="accepted" sourceRef="ip_consGw" targetRef="ip_premium"><conditionExpression xsi:type="tFormalExpression">${counterDecision == 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f37" name="declined" sourceRef="ip_consGw" targetRef="ip_endDeclined"/>
+    <sequenceFlow id="sec_ins_proposal_f38" name="postpone" sourceRef="ip_uwGw" targetRef="ip_endPostponed"><conditionExpression xsi:type="tFormalExpression">${uwDecision == 'postpone'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f39" sourceRef="ip_rj_reject" targetRef="ip_rj_endRejected"/>
+    <sequenceFlow id="sec_ins_proposal_f40" name="decline" sourceRef="ip_uwGw" targetRef="ip_rj_reject"/>
+    <sequenceFlow id="sec_ins_proposal_f41" name="DONE" sourceRef="ip_payGw" targetRef="ip_issue"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_proposal_f42" name="otherwise" sourceRef="ip_payGw" targetRef="ip_payFailed"/>
+    <sequenceFlow id="sec_ins_proposal_f43" sourceRef="ip_premium" targetRef="ip_payGw"/>
+    <sequenceFlow id="sec_ins_proposal_f44" sourceRef="ip_payFailed" targetRef="ip_endUnpaid"/>
+    <sequenceFlow id="sec_ins_proposal_f45" sourceRef="ip_issue" targetRef="ip_freeLook"/>
+    <sequenceFlow id="sec_ins_proposal_f46" sourceRef="ip_freeLook" targetRef="ip_flWait"/>
+    <sequenceFlow id="sec_ins_proposal_f47" sourceRef="ip_flWait" targetRef="ip_flCancel"/>
+    <sequenceFlow id="sec_ins_proposal_f48" sourceRef="ip_flWait" targetRef="ip_flEnd"/>
+    <sequenceFlow id="sec_ins_proposal_f49" sourceRef="ip_flCancel" targetRef="ip_refund"/>
+    <sequenceFlow id="sec_ins_proposal_f50" sourceRef="ip_refund" targetRef="ip_endFreeLook"/>
+    <sequenceFlow id="sec_ins_proposal_f51" sourceRef="ip_flEnd" targetRef="ip_end"/>
+    <subProcess id="ip_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ip_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ip_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ip_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ip_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_proposal_f52" sourceRef="ip_withdrawStart" targetRef="ip_withdrawKind"/>
+      <sequenceFlow id="sec_ins_proposal_f53" sourceRef="ip_withdrawKind" targetRef="ip_withdrawCall"/>
+      <sequenceFlow id="sec_ins_proposal_f54" sourceRef="ip_withdrawCall" targetRef="ip_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ip_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ip_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ip_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ip_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ip_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_proposal_f55" sourceRef="ip_cancelStart" targetRef="ip_cancelKind"/>
+      <sequenceFlow id="sec_ins_proposal_f56" sourceRef="ip_cancelKind" targetRef="ip_cancelCall"/>
+      <sequenceFlow id="sec_ins_proposal_f57" sourceRef="ip_cancelCall" targetRef="ip_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ins_proposal_diagram">
+    <bpmndi:BPMNPlane id="sec_ins_proposal_plane" bpmnElement="sangam-sec-ins-proposal">
+      <bpmndi:BPMNShape id="ip_start_di" bpmnElement="ip_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_defaults_di" bpmnElement="ip_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_kyc_di" bpmnElement="ip_kyc"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_rule_di" bpmnElement="ip_rule"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_routeGw_di" bpmnElement="ip_routeGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_medGw_di" bpmnElement="ip_medGw"><dc:Bounds x="870" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_medicals_di" bpmnElement="ip_medicals"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_medWait_di" bpmnElement="ip_medWait"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_medReport_di" bpmnElement="ip_medReport"><dc:Bounds x="1372" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_medTimeout_di" bpmnElement="ip_medTimeout"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_endClosed_di" bpmnElement="ip_endClosed"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uw_slaPlan_di" bpmnElement="ip_uw_slaPlan"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uw_di" bpmnElement="ip_uw"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uw_warnNotify_di" bpmnElement="ip_uw_warnNotify"><dc:Bounds x="1835" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uw_warnEnd_di" bpmnElement="ip_uw_warnEnd"><dc:Bounds x="2032" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uw_breachAct_di" bpmnElement="ip_uw_breachAct"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uw_breachGw_di" bpmnElement="ip_uw_breachGw"><dc:Bounds x="2025" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uw_done_di" bpmnElement="ip_uw_done"><dc:Bounds x="2190" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_stp_di" bpmnElement="ip_stp"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uwGw_di" bpmnElement="ip_uwGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_group_di" bpmnElement="ip_group"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consent_slaPlan_di" bpmnElement="ip_consent_slaPlan"><dc:Bounds x="2660" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consent_di" bpmnElement="ip_consent"><dc:Bounds x="2825" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consent_warnNotify_di" bpmnElement="ip_consent_warnNotify"><dc:Bounds x="2990" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consent_warnEnd_di" bpmnElement="ip_consent_warnEnd"><dc:Bounds x="3187" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consent_breachAct_di" bpmnElement="ip_consent_breachAct"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consent_breachGw_di" bpmnElement="ip_consent_breachGw"><dc:Bounds x="3180" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consent_done_di" bpmnElement="ip_consent_done"><dc:Bounds x="3345" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consGw_di" bpmnElement="ip_consGw"><dc:Bounds x="3510" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_premium_di" bpmnElement="ip_premium"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_endDeclined_di" bpmnElement="ip_endDeclined"><dc:Bounds x="3682" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_endPostponed_di" bpmnElement="ip_endPostponed"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_rj_reject_di" bpmnElement="ip_rj_reject"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_rj_endRejected_di" bpmnElement="ip_rj_endRejected"><dc:Bounds x="2692" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_issue_di" bpmnElement="ip_issue"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_payFailed_di" bpmnElement="ip_payFailed"><dc:Bounds x="3980" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_payGw_di" bpmnElement="ip_payGw"><dc:Bounds x="3840" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_endUnpaid_di" bpmnElement="ip_endUnpaid"><dc:Bounds x="4177" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_freeLook_di" bpmnElement="ip_freeLook"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_flWait_di" bpmnElement="ip_flWait"><dc:Bounds x="4335" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_flCancel_di" bpmnElement="ip_flCancel"><dc:Bounds x="4507" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_flEnd_di" bpmnElement="ip_flEnd"><dc:Bounds x="4507" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_refund_di" bpmnElement="ip_refund"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_endFreeLook_di" bpmnElement="ip_endFreeLook"><dc:Bounds x="4837" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_end_di" bpmnElement="ip_end"><dc:Bounds x="4672" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uw_warn_di" bpmnElement="ip_uw_warn"><dc:Bounds x="1678" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_uw_breach_di" bpmnElement="ip_uw_breach"><dc:Bounds x="1708" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consent_warn_di" bpmnElement="ip_consent_warn"><dc:Bounds x="2833" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_consent_breach_di" bpmnElement="ip_consent_breach"><dc:Bounds x="2863" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_withdraw_di" bpmnElement="ip_withdraw" isExpanded="true"><dc:Bounds x="30" y="535" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_withdrawStart_di" bpmnElement="ip_withdrawStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_withdrawKind_di" bpmnElement="ip_withdrawKind"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_withdrawCall_di" bpmnElement="ip_withdrawCall"><dc:Bounds x="390" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_withdrawEnd_di" bpmnElement="ip_withdrawEnd"><dc:Bounds x="587" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_cancel_di" bpmnElement="ip_cancel" isExpanded="true"><dc:Bounds x="30" y="725" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_cancelStart_di" bpmnElement="ip_cancelStart"><dc:Bounds x="92" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_cancelKind_di" bpmnElement="ip_cancelKind"><dc:Bounds x="225" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_cancelCall_di" bpmnElement="ip_cancelCall"><dc:Bounds x="390" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_cancelEnd_di" bpmnElement="ip_cancelEnd"><dc:Bounds x="587" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f1_di" bpmnElement="sec_ins_proposal_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f2_di" bpmnElement="sec_ins_proposal_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f3_di" bpmnElement="sec_ins_proposal_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f4_di" bpmnElement="sec_ins_proposal_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f5_di" bpmnElement="sec_ins_proposal_f5"><di:waypoint x="755" y="70"/><di:waypoint x="812" y="70"/><di:waypoint x="812" y="195"/><di:waypoint x="870" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f6_di" bpmnElement="sec_ins_proposal_f6"><di:waypoint x="920" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f7_di" bpmnElement="sec_ins_proposal_f7"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f8_di" bpmnElement="sec_ins_proposal_f8"><di:waypoint x="1250" y="195"/><di:waypoint x="1311" y="195"/><di:waypoint x="1311" y="320"/><di:waypoint x="1372" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f9_di" bpmnElement="sec_ins_proposal_f9"><di:waypoint x="1250" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f10_di" bpmnElement="sec_ins_proposal_f10"><di:waypoint x="1408" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f11_di" bpmnElement="sec_ins_proposal_f11"><di:waypoint x="1696" y="378"/><di:waypoint x="1696" y="445"/><di:waypoint x="1835" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f12_di" bpmnElement="sec_ins_proposal_f12"><di:waypoint x="1935" y="445"/><di:waypoint x="2032" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f13_di" bpmnElement="sec_ins_proposal_f13"><di:waypoint x="1726" y="378"/><di:waypoint x="1726" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f14_di" bpmnElement="sec_ins_proposal_f14"><di:waypoint x="1935" y="320"/><di:waypoint x="2025" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f15_di" bpmnElement="sec_ins_proposal_f15"><di:waypoint x="2075" y="320"/><di:waypoint x="2190" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f16_di" bpmnElement="sec_ins_proposal_f16"><di:waypoint x="2050" y="345"/><di:waypoint x="2050" y="399"/><di:waypoint x="1555" y="399"/><di:waypoint x="1555" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f17_di" bpmnElement="sec_ins_proposal_f17"><di:waypoint x="1605" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f18_di" bpmnElement="sec_ins_proposal_f18"><di:waypoint x="1770" y="320"/><di:waypoint x="2190" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f19_di" bpmnElement="sec_ins_proposal_f19"><di:waypoint x="920" y="195"/><di:waypoint x="1212" y="195"/><di:waypoint x="1212" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f20_di" bpmnElement="sec_ins_proposal_f20"><di:waypoint x="1408" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f21_di" bpmnElement="sec_ins_proposal_f21"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f22_di" bpmnElement="sec_ins_proposal_f22"><di:waypoint x="2240" y="320"/><di:waypoint x="2297" y="320"/><di:waypoint x="2297" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f23_di" bpmnElement="sec_ins_proposal_f23"><di:waypoint x="945" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f24_di" bpmnElement="sec_ins_proposal_f24"><di:waypoint x="2405" y="70"/><di:waypoint x="2450" y="70"/><di:waypoint x="2450" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f25_di" bpmnElement="sec_ins_proposal_f25"><di:waypoint x="2851" y="378"/><di:waypoint x="2851" y="445"/><di:waypoint x="2990" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f26_di" bpmnElement="sec_ins_proposal_f26"><di:waypoint x="3090" y="445"/><di:waypoint x="3187" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f27_di" bpmnElement="sec_ins_proposal_f27"><di:waypoint x="2881" y="378"/><di:waypoint x="2881" y="320"/><di:waypoint x="2990" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f28_di" bpmnElement="sec_ins_proposal_f28"><di:waypoint x="3090" y="320"/><di:waypoint x="3180" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f29_di" bpmnElement="sec_ins_proposal_f29"><di:waypoint x="3230" y="320"/><di:waypoint x="3345" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f30_di" bpmnElement="sec_ins_proposal_f30"><di:waypoint x="3205" y="345"/><di:waypoint x="3205" y="385"/><di:waypoint x="2710" y="385"/><di:waypoint x="2710" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f31_di" bpmnElement="sec_ins_proposal_f31"><di:waypoint x="2760" y="320"/><di:waypoint x="2825" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f32_di" bpmnElement="sec_ins_proposal_f32"><di:waypoint x="2925" y="320"/><di:waypoint x="3345" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f33_di" bpmnElement="sec_ins_proposal_f33"><di:waypoint x="2595" y="320"/><di:waypoint x="2660" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f34_di" bpmnElement="sec_ins_proposal_f34"><di:waypoint x="3395" y="320"/><di:waypoint x="3510" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f35_di" bpmnElement="sec_ins_proposal_f35"><di:waypoint x="2405" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f36_di" bpmnElement="sec_ins_proposal_f36"><di:waypoint x="3560" y="320"/><di:waypoint x="3605" y="320"/><di:waypoint x="3605" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f37_di" bpmnElement="sec_ins_proposal_f37"><di:waypoint x="3560" y="320"/><di:waypoint x="3682" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f38_di" bpmnElement="sec_ins_proposal_f38"><di:waypoint x="2405" y="70"/><di:waypoint x="2466" y="70"/><di:waypoint x="2466" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f39_di" bpmnElement="sec_ins_proposal_f39"><di:waypoint x="2595" y="70"/><di:waypoint x="2692" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f40_di" bpmnElement="sec_ins_proposal_f40"><di:waypoint x="2405" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f41_di" bpmnElement="sec_ins_proposal_f41"><di:waypoint x="3890" y="70"/><di:waypoint x="3935" y="70"/><di:waypoint x="3935" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f42_di" bpmnElement="sec_ins_proposal_f42"><di:waypoint x="3890" y="70"/><di:waypoint x="3980" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f43_di" bpmnElement="sec_ins_proposal_f43"><di:waypoint x="3750" y="70"/><di:waypoint x="3840" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f44_di" bpmnElement="sec_ins_proposal_f44"><di:waypoint x="4080" y="70"/><di:waypoint x="4177" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f45_di" bpmnElement="sec_ins_proposal_f45"><di:waypoint x="4080" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f46_di" bpmnElement="sec_ins_proposal_f46"><di:waypoint x="4245" y="195"/><di:waypoint x="4335" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f47_di" bpmnElement="sec_ins_proposal_f47"><di:waypoint x="4385" y="195"/><di:waypoint x="4446" y="195"/><di:waypoint x="4446" y="320"/><di:waypoint x="4507" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f48_di" bpmnElement="sec_ins_proposal_f48"><di:waypoint x="4385" y="195"/><di:waypoint x="4507" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f49_di" bpmnElement="sec_ins_proposal_f49"><di:waypoint x="4543" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f50_di" bpmnElement="sec_ins_proposal_f50"><di:waypoint x="4740" y="320"/><di:waypoint x="4837" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f51_di" bpmnElement="sec_ins_proposal_f51"><di:waypoint x="4543" y="195"/><di:waypoint x="4672" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f52_di" bpmnElement="sec_ins_proposal_f52"><di:waypoint x="128" y="615"/><di:waypoint x="225" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f53_di" bpmnElement="sec_ins_proposal_f53"><di:waypoint x="325" y="615"/><di:waypoint x="390" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f54_di" bpmnElement="sec_ins_proposal_f54"><di:waypoint x="490" y="615"/><di:waypoint x="587" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f55_di" bpmnElement="sec_ins_proposal_f55"><di:waypoint x="128" y="805"/><di:waypoint x="225" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f56_di" bpmnElement="sec_ins_proposal_f56"><di:waypoint x="325" y="805"/><di:waypoint x="390" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_proposal_f57_di" bpmnElement="sec_ins_proposal_f57"><di:waypoint x="490" y="805"/><di:waypoint x="587" y="805"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

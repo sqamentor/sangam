@@ -1,0 +1,36 @@
+{
+  "key": "sec-bank-aml-str/prepare",
+  "version": "1.0.0",
+  "pack": "sec.bank.aml-str",
+  "title": {
+    "en": "Prepare STR in FINnet format (7 days)",
+    "hi": "फिननेट प्रारूप में एसटीआर (7 दिन)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "strGrounds",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Grounds of suspicion",
+        "hi": "संदेह के आधार"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

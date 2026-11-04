@@ -1,0 +1,152 @@
+{
+  "offices": [
+    {
+      "id": "EXAMS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CONTROLLER",
+      "role": "COE",
+      "office": "EXAMS",
+      "reportsTo": null,
+      "name": {
+        "en": "Controller of examinations",
+        "hi": "परीक्षा नियंत्रक"
+      }
+    },
+    {
+      "id": "EVALUATOR",
+      "role": "EVALUATOR",
+      "office": "EXAMS",
+      "reportsTo": "CONTROLLER",
+      "name": {
+        "en": "Evaluator",
+        "hi": "मूल्यांकक"
+      }
+    },
+    {
+      "id": "EVALUATOR-2",
+      "role": "EVALUATOR",
+      "office": "EXAMS",
+      "reportsTo": "CONTROLLER",
+      "name": {
+        "en": "Second evaluator",
+        "hi": "द्वितीय मूल्यांकक"
+      }
+    },
+    {
+      "id": "RESULT-COMM-1",
+      "role": "COMMITTEE",
+      "office": "EXAMS",
+      "reportsTo": null,
+      "name": {
+        "en": "Result committee member 1",
+        "hi": "परिणाम समिति सदस्य 1"
+      }
+    },
+    {
+      "id": "RESULT-COMM-2",
+      "role": "COMMITTEE",
+      "office": "EXAMS",
+      "reportsTo": null,
+      "name": {
+        "en": "Result committee member 2",
+        "hi": "परिणाम समिति सदस्य 2"
+      }
+    },
+    {
+      "id": "RESULT-COMM-3",
+      "role": "COMMITTEE",
+      "office": "EXAMS",
+      "reportsTo": null,
+      "name": {
+        "en": "Result committee member 3",
+        "hi": "परिणाम समिति सदस्य 3"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CONTROLLER",
+      "person": "eex.controller",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EVALUATOR",
+      "person": "eex.evaluator",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EVALUATOR-2",
+      "person": "eex.evaluator-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "RESULT-COMM-1",
+      "person": "eex.result-comm-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "RESULT-COMM-2",
+      "person": "eex.result-comm-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "RESULT-COMM-3",
+      "person": "eex.result-comm-3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "COE",
+      "name": {
+        "en": "Controller of examinations",
+        "hi": "परीक्षा नियंत्रक"
+      }
+    },
+    {
+      "code": "EVALUATOR",
+      "name": {
+        "en": "Evaluator",
+        "hi": "मूल्यांकक"
+      }
+    },
+    {
+      "code": "EVALUATOR",
+      "name": {
+        "en": "Second evaluator",
+        "hi": "द्वितीय मूल्यांकक"
+      }
+    },
+    {
+      "code": "COMMITTEE",
+      "name": {
+        "en": "Result committee member 1",
+        "hi": "परिणाम समिति सदस्य 1"
+      }
+    },
+    {
+      "code": "COMMITTEE",
+      "name": {
+        "en": "Result committee member 2",
+        "hi": "परिणाम समिति सदस्य 2"
+      }
+    },
+    {
+      "code": "COMMITTEE",
+      "name": {
+        "en": "Result committee member 3",
+        "hi": "परिणाम समिति सदस्य 3"
+      }
+    }
+  ]
+}

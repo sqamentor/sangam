@@ -1,0 +1,1 @@
+{"key":"compliance/breach-report","title":{"en":"Detailed breach report"},"fields":[{"key":"detailedReport","type":"json","required":true,"label":{"en":"Detailed report items (pack detailedItems)"}}]}

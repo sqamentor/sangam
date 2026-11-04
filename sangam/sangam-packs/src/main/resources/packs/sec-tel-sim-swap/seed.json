@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "TELCO-POS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "POS-AGENT",
+      "role": "POS",
+      "office": "TELCO-POS",
+      "reportsTo": null,
+      "name": {
+        "en": "Point of sale",
+        "hi": "बिक्री केंद्र"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "POS-AGENT",
+      "person": "tss.pos-agent",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "POS",
+      "name": {
+        "en": "Point of sale",
+        "hi": "बिक्री केंद्र"
+      }
+    }
+  ]
+}

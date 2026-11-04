@@ -1,0 +1,406 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Sangam development / pilot stack. Pick exactly ONE database profile:
+#
+#   docker compose --profile postgres up -d                       # PostgreSQL 17 (default choice)
+#   docker compose --profile oracle up -d                         # Oracle Free 23 (needs ./drivers/ojdbc11.jar, LIC-2)
+#   docker compose --profile sqlserver up -d                      # SQL Server 2022, READ_COMMITTED_SNAPSHOT ON
+#   docker compose --profile mysql up -d                          # MySQL 8.4, READ COMMITTED, utf8mb4 (MariaDB driver)
+#
+# Add-ons:   --profile simulators      government-system simulators (IFMS, PFMS, eSign, DLT, DigiLocker, PayGov, SMTP)
+#            --profile observability   Jaeger + Prometheus + Grafana (set OTEL_COLLECTOR_CONFIG=collector-observability.yaml)
+#
+# Always started: Keycloak (realm "sangam" with P1-P4 test seats), OTel collector, UI.
+# Images and DB settings match the Stage B Testcontainers set (spike/RUN-QUEUE.md, simulators Databases.java).
+# Copy .env.example to .env and change the passwords before anything other than local development.
+# Run from this directory (deploy/compose); build contexts point at sangam/.
+
+name: sangam
+
+x-server-common: &server-common
+  image: ${SANGAM_REGISTRY:-sangam}/sangam-server:${SANGAM_VERSION:-dev}
+  build:
+    context: ../..
+    dockerfile: deploy/docker/server.Dockerfile
+  restart: unless-stopped
+  depends_on: &server-depends
+    keycloak:
+      condition: service_started
+    otel-collector:
+      condition: service_started
+  ports:
+    - "${SANGAM_HTTP_PORT:-8080}:8080"
+    - "127.0.0.1:${SANGAM_MGMT_PORT:-8081}:8081"
+  volumes:
+    - ./drivers:/opt/sangam/drivers:ro
+    - ./config/server:/opt/sangam/config:ro
+    - pfms-files:/data/pfms
+  networks:
+    sangam:
+      aliases: [sangam-server]
+  environment: &server-env
+    TZ: UTC
+    SANGAM_LIQUIBASE_MODE: ${SANGAM_LIQUIBASE_MODE:-startup}
+    SANGAM_TENANT_DEFAULT: ${SANGAM_TENANT_DEFAULT:-dept-finance}
+    # Keys are fetched over the internal network; the iss claim is the public issuer the browser sees.
+    SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${SANGAM_OIDC_ISSUER_INTERNAL:-http://keycloak:8180/realms/sangam}/protocol/openid-connect/certs
+    SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${SANGAM_OIDC_ISSUER_PUBLIC:-http://localhost:8180/realms/sangam}
+    SANGAM_SECURITY_OIDC_AUDIENCE: sangam-server
+    SANGAM_SECURITY_OIDC_TENANT_CLAIM: tenant
+    SANGAM_SECURITY_OIDC_ROLES_CLAIM: roles
+    SANGAM_SECURITY_OIDC_SEATS_CLAIM: seats
+    MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus,metrics
+    MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+    OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false}
+    OTEL_SERVICE_NAME: sangam-server
+    OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+    MANAGEMENT_OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
+    LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+    SANGAM_SIMULATORS_ENABLED: ${SANGAM_SIMULATORS_ENABLED:-false}
+    SANGAM_CONNECTORS_IFMS_BASE_URL: http://sim-ifms:9000
+    SANGAM_CONNECTORS_ESIGN_BASE_URL: http://sim-esign:9000
+    SANGAM_CONNECTORS_DLT_BASE_URL: http://sim-dlt:9000
+    SANGAM_CONNECTORS_DIGILOCKER_BASE_URL: http://sim-digilocker:9000
+    SANGAM_CONNECTORS_PAYGOV_BASE_URL: http://sim-paygov:9000
+    SANGAM_CONNECTORS_PFMS_DIRECTORY: /data/pfms
+    SPRING_MAIL_HOST: sim-smtp
+    SPRING_MAIL_PORT: "2525"
+  healthcheck:
+    test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8081 && printf \"GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q UP <&3'"]
+    interval: 15s
+    timeout: 5s
+    retries: 20
+    start_period: 90s
+
+x-sim-common: &sim-common
+  image: ${SANGAM_REGISTRY:-sangam}/sangam-simulators:${SANGAM_VERSION:-dev}
+  build:
+    context: ../..
+    dockerfile: deploy/docker/simulators.Dockerfile
+  restart: unless-stopped
+  profiles: [simulators]
+  networks: [sangam]
+
+services:
+
+  # ------------------------------------------------------------------------------------------------ databases
+  postgres:
+    image: postgres:17
+    profiles: [postgres]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sangam
+      POSTGRES_USER: sangam
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-sangam-dev-only}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8 --data-checksums"
+      TZ: UTC
+      PGTZ: UTC
+    command:
+      - postgres
+      - -c
+      - max_connections=300
+      - -c
+      - timezone=UTC
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=5
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./db/postgres/init:/docker-entrypoint-initdb.d:ro
+      - backup:/backup
+    ports: ["127.0.0.1:${PG_PORT:-5432}:5432"]
+    networks: [sangam]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sangam -d sangam"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    profiles: [oracle]
+    restart: unless-stopped
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_SYSTEM_PASSWORD:-SangamDev_0nly}
+      APP_USER: sangam
+      APP_USER_PASSWORD: ${ORACLE_PASSWORD:-SangamDev_0nly}
+      TZ: UTC
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./db/oracle/init:/container-entrypoint-initdb.d:ro
+    ports: ["127.0.0.1:${ORACLE_PORT:-1521}:1521"]
+    networks: [sangam]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    profiles: [sqlserver]
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-SangamDev_0nly!}
+      MSSQL_COLLATION: Latin1_General_100_CI_AS_SC_UTF8
+      TZ: UTC
+    volumes:
+      - mssql-data:/var/opt/mssql
+      - backup:/backup
+    ports: ["127.0.0.1:${MSSQL_PORT:-1433}:1433"]
+    networks: [sangam]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # One-shot: database "sangam", login "sangam", READ_COMMITTED_SNAPSHOT ON (VI.1.6), FULL recovery (log backups).
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    profiles: [sqlserver]
+    restart: "no"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-SangamDev_0nly!}
+      SANGAM_DB_PASSWORD: ${MSSQL_PASSWORD:-SangamDev_0nly!}
+    volumes:
+      - ./db/sqlserver/init.sql:/init/init.sql:ro
+    networks: [sangam]
+    entrypoint:
+      - /bin/bash
+      - -c
+      - /opt/mssql-tools18/bin/sqlcmd -C -S sqlserver -U sa -P "$${MSSQL_SA_PASSWORD}" -b -v SANGAM_DB_PASSWORD="$${SANGAM_DB_PASSWORD}" -i /init/init.sql
+
+  mysql:
+    image: mysql:8.4
+    profiles: [mysql]
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: sangam
+      MYSQL_USER: sangam
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sangam-dev-only}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-sangam-root-dev-only}
+      TZ: UTC
+    command:
+      - --transaction-isolation=READ-COMMITTED
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_bin
+      - --max-connections=300
+      - --default-time-zone=+00:00
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --binlog-expire-logs-seconds=604800
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/mysql/conf.d:/etc/mysql/conf.d:ro
+      - backup:/backup
+    ports: ["127.0.0.1:${MYSQL_PORT:-3306}:3306"]
+    networks: [sangam]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  # ------------------------------------------------------------------------------------------------ server (one per DB profile)
+  server-postgres:
+    <<: *server-common
+    profiles: [postgres]
+    depends_on:
+      <<: *server-depends
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *server-env
+      SPRING_PROFILES_ACTIVE: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sangam?ApplicationName=sangam-server
+      SPRING_DATASOURCE_USERNAME: sangam
+      SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD:-sangam-dev-only}
+
+  server-oracle:
+    <<: *server-common
+    profiles: [oracle]
+    depends_on:
+      <<: *server-depends
+      oracle:
+        condition: service_healthy
+    environment:
+      <<: *server-env
+      SPRING_PROFILES_ACTIVE: oracle
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
+      SPRING_DATASOURCE_USERNAME: sangam
+      SPRING_DATASOURCE_PASSWORD: ${ORACLE_PASSWORD:-SangamDev_0nly}
+
+  server-sqlserver:
+    <<: *server-common
+    profiles: [sqlserver]
+    depends_on:
+      <<: *server-depends
+      sqlserver-init:
+        condition: service_completed_successfully
+    environment:
+      <<: *server-env
+      SPRING_PROFILES_ACTIVE: sqlserver
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://sqlserver:1433;databaseName=sangam;encrypt=true;trustServerCertificate=true;sendTimeAsDatetime=false;applicationName=sangam-server
+      SPRING_DATASOURCE_USERNAME: sangam
+      SPRING_DATASOURCE_PASSWORD: ${MSSQL_PASSWORD:-SangamDev_0nly!}
+
+  server-mysql:
+    <<: *server-common
+    profiles: [mysql]
+    depends_on:
+      <<: *server-depends
+      mysql:
+        condition: service_healthy
+    environment:
+      <<: *server-env
+      SPRING_PROFILES_ACTIVE: mysql
+      # MariaDB Connector/J (shipped, LIC-4/LIC-5) against MySQL 8.4; READ COMMITTED per session as well (P-1).
+      SPRING_DATASOURCE_URL: "jdbc:mariadb://mysql:3306/sangam?permitMysqlScheme=true&allowPublicKeyRetrieval=true&useServerPrepStmts=true&sessionVariables=transaction_isolation='READ-COMMITTED',time_zone='+00:00'"
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.mariadb.jdbc.Driver
+      SPRING_DATASOURCE_USERNAME: sangam
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-sangam-dev-only}
+
+  # ------------------------------------------------------------------------------------------------ UI
+  ui:
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-ui:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/ui.Dockerfile
+    restart: unless-stopped
+    environment:
+      SANGAM_API_UPSTREAM: http://sangam-server:8080
+      SANGAM_PUBLIC_API_BASE: /api/v1
+      SANGAM_OIDC_ISSUER: ${SANGAM_OIDC_ISSUER_PUBLIC:-http://localhost:8180/realms/sangam}
+      SANGAM_OIDC_CLIENT_ID: sangam-ui
+      SANGAM_ENV_LABEL: ${SANGAM_ENV_LABEL:-dev}
+    ports: ["${SANGAM_UI_PORT:-3000}:8080"]
+    networks: [sangam]
+
+  # ------------------------------------------------------------------------------------------------ identity
+  # Development mode (embedded H2 store). Production: external Keycloak (or Parichay/SAML via brokering, R50).
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.3
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm", "--http-port=8180", "--hostname-strict=false", "--health-enabled=true"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin-dev-only}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://localhost:8180}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      TZ: UTC
+    volumes:
+      - ./keycloak/realm:/opt/keycloak/data/import:ro
+    ports: ["${KEYCLOAK_PORT:-8180}:8180"]
+    networks: [sangam]
+
+  # ------------------------------------------------------------------------------------------------ telemetry
+  # Always present so the server has a local OTLP endpoint; by default it exports nowhere (R56: no outbound
+  # telemetry by default). OTEL_COLLECTOR_CONFIG=collector-observability.yaml forwards to Jaeger/Prometheus.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.131.1
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/${OTEL_COLLECTOR_CONFIG:-collector-base.yaml}"]
+    volumes:
+      - ./otel:/etc/otelcol:ro
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    networks: [sangam]
+
+  jaeger:
+    image: jaegertracing/jaeger:2.9.0
+    profiles: [observability]
+    restart: unless-stopped
+    ports: ["127.0.0.1:16686:16686"]
+    networks: [sangam]
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: [observability]
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-lifecycle
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports: ["127.0.0.1:9090:9090"]
+    networks: [sangam]
+
+  grafana:
+    image: grafana/grafana-oss:12.1.1
+    profiles: [observability]
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin-dev-only}
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_PLUGINS_PLUGIN_ADMIN_ENABLED: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports: ["127.0.0.1:3001:3000"]
+    networks: [sangam]
+
+  # ------------------------------------------------------------------------------------------------ simulators
+  sim-ifms:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: ifms, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9101:9000"]
+  sim-pfms:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: pfms, SANGAM_SIM_PORT: "9000", SANGAM_SIM_DATA: /data }
+    volumes: [pfms-files:/data]
+    ports: ["127.0.0.1:9102:9000"]
+  sim-esign:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: esign, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9103:9000"]
+  sim-dlt:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: dlt, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9104:9000"]
+  sim-digilocker:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: digilocker, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9105:9000"]
+  sim-paygov:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: paygov, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9106:9000"]
+  sim-smtp:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: smtp, SANGAM_SIM_PORT: "9000", SANGAM_SIM_SMTP_PORT: "2525" }
+    ports: ["127.0.0.1:9107:9000"]
+
+networks:
+  sangam:
+    name: sangam
+
+volumes:
+  pg-data:
+  oracle-data:
+  mssql-data:
+  mysql-data:
+  backup:
+  pfms-files:
+  prometheus-data:
+  grafana-data:

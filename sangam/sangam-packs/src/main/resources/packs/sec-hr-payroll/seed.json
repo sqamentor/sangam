@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "PAYROLL",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PAYROLL-MAKER",
+      "role": "PAYROLL",
+      "office": "PAYROLL",
+      "reportsTo": "HR-HEAD",
+      "name": {
+        "en": "Payroll executive",
+        "hi": "वेतन कार्यकारी"
+      }
+    },
+    {
+      "id": "HR-HEAD",
+      "role": "HRHEAD",
+      "office": "PAYROLL",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of HR",
+        "hi": "मानव संसाधन प्रमुख"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PAYROLL-MAKER",
+      "person": "hpr.payroll-maker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HR-HEAD",
+      "person": "hpr.hr-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PAYROLL",
+      "name": {
+        "en": "Payroll executive",
+        "hi": "वेतन कार्यकारी"
+      }
+    },
+    {
+      "code": "HRHEAD",
+      "name": {
+        "en": "Head of HR",
+        "hi": "मानव संसाधन प्रमुख"
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_scheme_appraisal" name="Scheme appraisal ladder (DoE OM 05-08-2016)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Thresholds mirror the GOI profile appraisal.ladder; a State loads its own ladder as a tenant override. -->
+  <decision id="ifms-scheme-appraisal" name="Scheme appraisal ladder (DoE OM 05-08-2016)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-scheme-appraisal_t" hitPolicy="FIRST">
+      <input id="ifms-scheme-appraisal_i0" label="Total outlay (INR)"><inputExpression id="ifms-scheme-appraisal_ie0" typeRef="double"><text>totalOutlay</text></inputExpression></input>
+      <output id="ifms-scheme-appraisal_o0" label="Appraisal forum" name="appraisalForum" typeRef="string"/>
+      <output id="ifms-scheme-appraisal_o1" label="Approval authority" name="approvalAuthority" typeRef="string"/>
+      <output id="ifms-scheme-appraisal_o2" label="Rule" name="ruleRef" typeRef="string"/>
+      <rule id="ifms-scheme-appraisal_r0">
+        <inputEntry id="ifms-scheme-appraisal_r0_i0"><text>&lt;= 1000000000</text></inputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r0_o0"><text>"FA"</text></outputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r0_o1"><text>"SECRETARY"</text></outputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r0_o2"><text>"OM 05-08-2016: up to 100 cr"</text></outputEntry>
+      </rule>
+      <rule id="ifms-scheme-appraisal_r1">
+        <inputEntry id="ifms-scheme-appraisal_r1_i0"><text>&lt;= 5000000000</text></inputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r1_o0"><text>"SFC"</text></outputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r1_o1"><text>"MINISTER"</text></outputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r1_o2"><text>"OM 05-08-2016: 100-500 cr"</text></outputEntry>
+      </rule>
+      <rule id="ifms-scheme-appraisal_r2">
+        <inputEntry id="ifms-scheme-appraisal_r2_i0"><text>&lt;= 10000000000</text></inputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r2_o0"><text>"EFC"</text></outputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r2_o1"><text>"MINISTER_AND_FM"</text></outputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r2_o2"><text>"OM 05-08-2016: 500-1000 cr"</text></outputEntry>
+      </rule>
+      <rule id="ifms-scheme-appraisal_r3">
+        <inputEntry id="ifms-scheme-appraisal_r3_i0"><text>-</text></inputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r3_o0"><text>"EFC"</text></outputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r3_o1"><text>"CABINET"</text></outputEntry>
+        <outputEntry id="ifms-scheme-appraisal_r3_o2"><text>"OM 05-08-2016: above 1000 cr"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

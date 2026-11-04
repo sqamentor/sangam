@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Public grievance. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_grievance" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_grievanceFeedback" name="sangam.grievanceFeedback"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-grievance" name="Public grievance" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.grievance</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>grievanceText,category</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="gv_start" name="Grievance lodged" operaton:initiator="initiator" operaton:formKey="sangam:grievance/lodge"></startEvent>
+    <serviceTask id="gv_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>appellateSeat=APPELLATE-GRO;appealSla=30D;interimExtension=P30D;feedbackWindow=P15D;appealAllowed=true;rating=null;retentionCategory=C;retentionYears=3;issueOutput=false;subordinateOffice=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="gv_route" name="Route by category (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>grievance-routing</operaton:string></operaton:field><operaton:field name="binding"><operaton:string>latest</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="gv_seat" name="Grievance officer seat" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLE</operaton:string></operaton:field><operaton:field name="roleVar"><operaton:string>groRole</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>groSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gv_clock" name="Resolution clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>case</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${resolutionSla}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gv_ack" name="Acknowledge with registration number" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>grievance-registered</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gv_examine_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gv_examine</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${resolutionSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="gv_examine" name="Examine grievance" operaton:candidateGroups="${groSeat}" operaton:formKey="sangam:grievance/examine" operaton:dueDate="${gv_examineDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>groDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="gv_examine_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gv_examine</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>groSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="gv_examine_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="gv_examine_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gv_examine</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>groSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>groDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="gv_examine_breachGw" name="Deemed?" default="grievance_f6"></exclusiveGateway>
+    <exclusiveGateway id="gv_examine_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="gv_decGw" name="Decision?" default="grievance_f40"></exclusiveGateway>
+    <serviceTask id="gv_forwardOffice" name="Subordinate office" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>officeId=@subordinateOffice</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gv_forwardSeat" name="Grievance officer there" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLE</operaton:string></operaton:field><operaton:field name="roleVar"><operaton:string>groRole</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>groSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gv_interim" name="Interim reply to citizen" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>grievance-interim</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gv_extend" name="Extended clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>case</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${interimExtension}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gv_atr" name="Action taken report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>grievance-atr</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gv_disposed" name="Disposed: rate the reply" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>grievance-disposed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gv_feedbackWindow" name="Feedback window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>feedback</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${feedbackWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="gv_feedbackWait" name="Rating?"></eventBasedGateway>
+    <intermediateCatchEvent id="gv_feedback" name="Citizen rating"><messageEventDefinition messageRef="msg_sangam_grievanceFeedback"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="gv_feedbackLapse" name="No rating"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${feedbackDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <exclusiveGateway id="gv_ratingGw" name="Poor rating?" default="grievance_f34"></exclusiveGateway>
+    <callActivity id="gv_appeal" name="Appeal / reopen (core)" calledElement="sangam-core-appeal"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="gv_appealGw" name="Reopen?" default="grievance_f33"></exclusiveGateway>
+    <serviceTask id="gv_reopen" name="Reopen with the appellate direction" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>groSeat=@appellateSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="gv_close" name="Close (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gv_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="gv_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gv_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="gv_rj_appealGw" name="Appeal allowed?" default="grievance_f39"></exclusiveGateway>
+    <boundaryEvent id="gv_examine_warn" name="SLA warning (75%)" attachedToRef="gv_examine" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gv_examineWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="gv_examine_breach" name="SLA breached" attachedToRef="gv_examine" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gv_examineDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="grievance_f1" sourceRef="gv_examine_warn" targetRef="gv_examine_warnNotify"/>
+    <sequenceFlow id="grievance_f2" sourceRef="gv_examine_warnNotify" targetRef="gv_examine_warnEnd"/>
+    <sequenceFlow id="grievance_f3" sourceRef="gv_examine_breach" targetRef="gv_examine_breachAct"/>
+    <sequenceFlow id="grievance_f4" sourceRef="gv_examine_breachAct" targetRef="gv_examine_breachGw"/>
+    <sequenceFlow id="grievance_f5" name="deemed" sourceRef="gv_examine_breachGw" targetRef="gv_examine_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="grievance_f6" name="escalated" sourceRef="gv_examine_breachGw" targetRef="gv_examine_slaPlan"/>
+    <sequenceFlow id="grievance_f7" sourceRef="gv_examine_slaPlan" targetRef="gv_examine"/>
+    <sequenceFlow id="grievance_f8" sourceRef="gv_examine" targetRef="gv_examine_done"/>
+    <sequenceFlow id="grievance_f9" sourceRef="gv_start" targetRef="gv_defaults"/>
+    <sequenceFlow id="grievance_f10" sourceRef="gv_defaults" targetRef="gv_route"/>
+    <sequenceFlow id="grievance_f11" sourceRef="gv_route" targetRef="gv_seat"/>
+    <sequenceFlow id="grievance_f12" sourceRef="gv_seat" targetRef="gv_clock"/>
+    <sequenceFlow id="grievance_f13" sourceRef="gv_clock" targetRef="gv_ack"/>
+    <sequenceFlow id="grievance_f14" sourceRef="gv_ack" targetRef="gv_examine_slaPlan"/>
+    <sequenceFlow id="grievance_f15" sourceRef="gv_examine_done" targetRef="gv_decGw"/>
+    <sequenceFlow id="grievance_f16" name="forward" sourceRef="gv_decGw" targetRef="gv_forwardOffice"><conditionExpression xsi:type="tFormalExpression">${groDecision == 'forward'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="grievance_f17" sourceRef="gv_forwardOffice" targetRef="gv_forwardSeat"/>
+    <sequenceFlow id="grievance_f18" sourceRef="gv_forwardSeat" targetRef="gv_examine_slaPlan"/>
+    <sequenceFlow id="grievance_f19" name="interim reply" sourceRef="gv_decGw" targetRef="gv_interim"><conditionExpression xsi:type="tFormalExpression">${groDecision == 'interim'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="grievance_f20" sourceRef="gv_interim" targetRef="gv_extend"/>
+    <sequenceFlow id="grievance_f21" sourceRef="gv_extend" targetRef="gv_examine_slaPlan"/>
+    <sequenceFlow id="grievance_f22" name="resolve" sourceRef="gv_decGw" targetRef="gv_atr"><conditionExpression xsi:type="tFormalExpression">${groDecision == 'resolve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="grievance_f23" sourceRef="gv_atr" targetRef="gv_disposed"/>
+    <sequenceFlow id="grievance_f24" sourceRef="gv_disposed" targetRef="gv_feedbackWindow"/>
+    <sequenceFlow id="grievance_f25" sourceRef="gv_feedbackWindow" targetRef="gv_feedbackWait"/>
+    <sequenceFlow id="grievance_f26" sourceRef="gv_feedbackWait" targetRef="gv_feedback"/>
+    <sequenceFlow id="grievance_f27" sourceRef="gv_feedbackWait" targetRef="gv_feedbackLapse"/>
+    <sequenceFlow id="grievance_f28" sourceRef="gv_feedback" targetRef="gv_ratingGw"/>
+    <sequenceFlow id="grievance_f29" name="appeal" sourceRef="gv_ratingGw" targetRef="gv_appeal"><conditionExpression xsi:type="tFormalExpression">${rating == 'poor'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="grievance_f30" sourceRef="gv_appeal" targetRef="gv_appealGw"/>
+    <sequenceFlow id="grievance_f31" name="reopen" sourceRef="gv_appealGw" targetRef="gv_reopen"><conditionExpression xsi:type="tFormalExpression">${appealOutcome == 'ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="grievance_f32" sourceRef="gv_reopen" targetRef="gv_examine_slaPlan"/>
+    <sequenceFlow id="grievance_f33" name="upheld" sourceRef="gv_appealGw" targetRef="gv_close"/>
+    <sequenceFlow id="grievance_f34" name="satisfied" sourceRef="gv_ratingGw" targetRef="gv_close"/>
+    <sequenceFlow id="grievance_f35" sourceRef="gv_feedbackLapse" targetRef="gv_close"/>
+    <sequenceFlow id="grievance_f36" sourceRef="gv_close" targetRef="gv_end"/>
+    <sequenceFlow id="grievance_f37" sourceRef="gv_rj_reject" targetRef="gv_rj_appealGw"/>
+    <sequenceFlow id="grievance_f38" name="appeal allowed: re-verify" sourceRef="gv_rj_appealGw" targetRef="gv_examine_slaPlan"><conditionExpression xsi:type="tFormalExpression">${rejectionOutcome == 'APPEAL_ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="grievance_f39" name="final" sourceRef="gv_rj_appealGw" targetRef="gv_rj_endRejected"/>
+    <sequenceFlow id="grievance_f40" name="reject (not a grievance)" sourceRef="gv_decGw" targetRef="gv_rj_reject"/>
+    <subProcess id="gv_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="gv_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="gv_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gv_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gv_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="grievance_f41" sourceRef="gv_withdrawStart" targetRef="gv_withdrawKind"/>
+      <sequenceFlow id="grievance_f42" sourceRef="gv_withdrawKind" targetRef="gv_withdrawCall"/>
+      <sequenceFlow id="grievance_f43" sourceRef="gv_withdrawCall" targetRef="gv_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="gv_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="gv_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="gv_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gv_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gv_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="grievance_f44" sourceRef="gv_cancelStart" targetRef="gv_cancelKind"/>
+      <sequenceFlow id="grievance_f45" sourceRef="gv_cancelKind" targetRef="gv_cancelCall"/>
+      <sequenceFlow id="grievance_f46" sourceRef="gv_cancelCall" targetRef="gv_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="grievance_diagram">
+    <bpmndi:BPMNPlane id="grievance_plane" bpmnElement="sangam-grievance">
+      <bpmndi:BPMNShape id="gv_start_di" bpmnElement="gv_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_defaults_di" bpmnElement="gv_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_route_di" bpmnElement="gv_route"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_seat_di" bpmnElement="gv_seat"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_clock_di" bpmnElement="gv_clock"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_ack_di" bpmnElement="gv_ack"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_examine_slaPlan_di" bpmnElement="gv_examine_slaPlan"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_examine_di" bpmnElement="gv_examine"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_examine_warnNotify_di" bpmnElement="gv_examine_warnNotify"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_examine_warnEnd_di" bpmnElement="gv_examine_warnEnd"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_examine_breachAct_di" bpmnElement="gv_examine_breachAct"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_examine_breachGw_di" bpmnElement="gv_examine_breachGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_examine_done_di" bpmnElement="gv_examine_done"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_decGw_di" bpmnElement="gv_decGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_forwardOffice_di" bpmnElement="gv_forwardOffice"><dc:Bounds x="2000" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_forwardSeat_di" bpmnElement="gv_forwardSeat"><dc:Bounds x="2165" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_interim_di" bpmnElement="gv_interim"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_extend_di" bpmnElement="gv_extend"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_atr_di" bpmnElement="gv_atr"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_disposed_di" bpmnElement="gv_disposed"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_feedbackWindow_di" bpmnElement="gv_feedbackWindow"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_feedbackWait_di" bpmnElement="gv_feedbackWait"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_feedback_di" bpmnElement="gv_feedback"><dc:Bounds x="2692" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_feedbackLapse_di" bpmnElement="gv_feedbackLapse"><dc:Bounds x="2692" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_ratingGw_di" bpmnElement="gv_ratingGw"><dc:Bounds x="2850" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_appeal_di" bpmnElement="gv_appeal"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_appealGw_di" bpmnElement="gv_appealGw"><dc:Bounds x="3180" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_reopen_di" bpmnElement="gv_reopen"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_close_di" bpmnElement="gv_close"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_end_di" bpmnElement="gv_end"><dc:Bounds x="3517" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_rj_reject_di" bpmnElement="gv_rj_reject"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_rj_endRejected_di" bpmnElement="gv_rj_endRejected"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_rj_appealGw_di" bpmnElement="gv_rj_appealGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_examine_warn_di" bpmnElement="gv_examine_warn"><dc:Bounds x="1183" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_examine_breach_di" bpmnElement="gv_examine_breach"><dc:Bounds x="1213" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_withdraw_di" bpmnElement="gv_withdraw" isExpanded="true"><dc:Bounds x="30" y="535" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_withdrawStart_di" bpmnElement="gv_withdrawStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_withdrawKind_di" bpmnElement="gv_withdrawKind"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_withdrawCall_di" bpmnElement="gv_withdrawCall"><dc:Bounds x="390" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_withdrawEnd_di" bpmnElement="gv_withdrawEnd"><dc:Bounds x="587" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_cancel_di" bpmnElement="gv_cancel" isExpanded="true"><dc:Bounds x="30" y="725" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_cancelStart_di" bpmnElement="gv_cancelStart"><dc:Bounds x="92" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_cancelKind_di" bpmnElement="gv_cancelKind"><dc:Bounds x="225" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_cancelCall_di" bpmnElement="gv_cancelCall"><dc:Bounds x="390" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gv_cancelEnd_di" bpmnElement="gv_cancelEnd"><dc:Bounds x="587" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="grievance_f1_di" bpmnElement="grievance_f1"><di:waypoint x="1201" y="128"/><di:waypoint x="1201" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f2_di" bpmnElement="grievance_f2"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f3_di" bpmnElement="grievance_f3"><di:waypoint x="1231" y="128"/><di:waypoint x="1231" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f4_di" bpmnElement="grievance_f4"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f5_di" bpmnElement="grievance_f5"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f6_di" bpmnElement="grievance_f6"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="135"/><di:waypoint x="1060" y="135"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f7_di" bpmnElement="grievance_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f8_di" bpmnElement="grievance_f8"><di:waypoint x="1275" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f9_di" bpmnElement="grievance_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f10_di" bpmnElement="grievance_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f11_di" bpmnElement="grievance_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f12_di" bpmnElement="grievance_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f13_di" bpmnElement="grievance_f13"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f14_di" bpmnElement="grievance_f14"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f15_di" bpmnElement="grievance_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f16_di" bpmnElement="grievance_f16"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="445"/><di:waypoint x="2000" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f17_di" bpmnElement="grievance_f17"><di:waypoint x="2100" y="445"/><di:waypoint x="2165" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f18_di" bpmnElement="grievance_f18"><di:waypoint x="2215" y="485"/><di:waypoint x="2215" y="510"/><di:waypoint x="1060" y="510"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f19_di" bpmnElement="grievance_f19"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f20_di" bpmnElement="grievance_f20"><di:waypoint x="2100" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f21_di" bpmnElement="grievance_f21"><di:waypoint x="2215" y="360"/><di:waypoint x="2215" y="378"/><di:waypoint x="1060" y="378"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f22_di" bpmnElement="grievance_f22"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f23_di" bpmnElement="grievance_f23"><di:waypoint x="2100" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f24_di" bpmnElement="grievance_f24"><di:waypoint x="2265" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f25_di" bpmnElement="grievance_f25"><di:waypoint x="2430" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f26_di" bpmnElement="grievance_f26"><di:waypoint x="2570" y="195"/><di:waypoint x="2631" y="195"/><di:waypoint x="2631" y="320"/><di:waypoint x="2692" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f27_di" bpmnElement="grievance_f27"><di:waypoint x="2570" y="195"/><di:waypoint x="2692" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f28_di" bpmnElement="grievance_f28"><di:waypoint x="2728" y="320"/><di:waypoint x="2850" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f29_di" bpmnElement="grievance_f29"><di:waypoint x="2900" y="320"/><di:waypoint x="2990" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f30_di" bpmnElement="grievance_f30"><di:waypoint x="3090" y="320"/><di:waypoint x="3180" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f31_di" bpmnElement="grievance_f31"><di:waypoint x="3230" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f32_di" bpmnElement="grievance_f32"><di:waypoint x="3370" y="360"/><di:waypoint x="3370" y="399"/><di:waypoint x="1060" y="399"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f33_di" bpmnElement="grievance_f33"><di:waypoint x="3230" y="320"/><di:waypoint x="3275" y="320"/><di:waypoint x="3275" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f34_di" bpmnElement="grievance_f34"><di:waypoint x="2900" y="320"/><di:waypoint x="3110" y="320"/><di:waypoint x="3110" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f35_di" bpmnElement="grievance_f35"><di:waypoint x="2728" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f36_di" bpmnElement="grievance_f36"><di:waypoint x="3420" y="195"/><di:waypoint x="3517" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f37_di" bpmnElement="grievance_f37"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f38_di" bpmnElement="grievance_f38"><di:waypoint x="2215" y="95"/><di:waypoint x="2215" y="135"/><di:waypoint x="1060" y="135"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f39_di" bpmnElement="grievance_f39"><di:waypoint x="2240" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f40_di" bpmnElement="grievance_f40"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f41_di" bpmnElement="grievance_f41"><di:waypoint x="128" y="615"/><di:waypoint x="225" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f42_di" bpmnElement="grievance_f42"><di:waypoint x="325" y="615"/><di:waypoint x="390" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f43_di" bpmnElement="grievance_f43"><di:waypoint x="490" y="615"/><di:waypoint x="587" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f44_di" bpmnElement="grievance_f44"><di:waypoint x="128" y="805"/><di:waypoint x="225" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f45_di" bpmnElement="grievance_f45"><di:waypoint x="325" y="805"/><di:waypoint x="390" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_f46_di" bpmnElement="grievance_f46"><di:waypoint x="490" y="805"/><di:waypoint x="587" y="805"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

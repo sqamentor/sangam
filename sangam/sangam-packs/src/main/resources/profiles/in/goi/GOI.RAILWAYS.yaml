@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: GOI.RAILWAYS
+  layer: department
+  version: 2026.11.0
+  effectiveFrom: '2024-04-01'
+  name:
+    en: Ministry of Railways
+    hi: रेल मंत्रालय
+  source: IFMS-CENTRAL section O
+placeholders:
+- path: rulebooks.own
+  reason: '[U] IR codes and schedules of powers not read'
+- path: integrations
+  reason: '[U] IPAS interface on request'
+regime:
+  nonCivil: true
+  delegationBook: RAILWAY_BOARD_SOP
+  dfprApplies: false
+  ruleRef: DFPR 2024 r.21(2)(a)
+rulebooks:
+  own:
+  - id: IR_FINANCIAL_CODE
+  - id: IR_ACCOUNTS_CODE
+  - id: RB_SCHEDULE_OF_POWERS
+establishment:
+  pension:
+    disburser: RAILWAYS
+concurrence:
+  role: ASSOCIATE_FINANCE
+integrations:
+  payrollAccounting: IPAS
+  procurement:
+  - IREPS
+  - GEM

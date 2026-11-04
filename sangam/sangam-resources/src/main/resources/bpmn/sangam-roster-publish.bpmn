@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Default generic approval of a roster publication (N08, C02). Started by RosterService.submitForApproval through the
+     ApprovalPort with periodId, unitId, rosterName, firstDay, lastDay, assignmentCount, tenantId, approverSeatId (module
+     setting rosterApproverSeat.<unitId>, else rosterApproverSeat) and approvalTimeout (setting rosterApprovalTimeout,
+     default P7D). The approver is whoever holds the configured seat at task time (sangam-security seat assignment).
+     Approved: the roster is published, members are notified and duty seats are linked. Rejected or timed out: the roster
+     returns to GENERATED with the reason. A pack may deploy its own process under the same key. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+                  id="sangam-roster-publish-definitions"
+                  targetNamespace="http://sangam.org/resources">
+
+  <bpmn:process id="sangam-roster-publish" name="Roster publication" isExecutable="true"
+                operaton:historyTimeToLive="P365D">
+    <bpmn:extensionElements>
+      <operaton:properties>
+        <operaton:property name="sangam.recordInitiator" value="true"/>
+      </operaton:properties>
+    </bpmn:extensionElements>
+
+    <bpmn:startEvent id="start" name="Roster submitted">
+      <bpmn:outgoing>toReview</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:sequenceFlow id="toReview" sourceRef="start" targetRef="review"/>
+
+    <bpmn:userTask id="review" name="Approve roster ${rosterName}">
+      <bpmn:extensionElements>
+        <operaton:properties>
+          <operaton:property name="sangam.seatVariable" value="approverSeatId"/>
+          <operaton:property name="sangam.duty" value="APPROVER"/>
+          <operaton:property name="sangam.caseVariable" value="periodId"/>
+          <operaton:property name="sangam.unitVariable" value="unitId"/>
+        </operaton:properties>
+        <operaton:formData>
+          <operaton:formField id="approved" label="Approve and publish" type="boolean" defaultValue="false"/>
+          <operaton:formField id="reason" label="Reason" type="string"/>
+        </operaton:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toReview</bpmn:incoming>
+      <bpmn:outgoing>toDecision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:boundaryEvent id="timeout" name="No decision in time" attachedToRef="review" cancelActivity="true">
+      <bpmn:outgoing>toTimeoutDecision</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="timeoutTimer">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">${approvalTimeout}</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <bpmn:sequenceFlow id="toDecision" sourceRef="review" targetRef="decision"/>
+    <bpmn:sequenceFlow id="toTimeoutDecision" sourceRef="timeout" targetRef="timeoutDecision"/>
+
+    <bpmn:serviceTask id="decision" name="Publish or return"
+                      operaton:class="org.sangam.resources.bpmn.PublishRosterDelegate">
+      <bpmn:incoming>toDecision</bpmn:incoming>
+      <bpmn:outgoing>toEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="timeoutDecision" name="Return on timeout"
+                      operaton:class="org.sangam.resources.bpmn.PublishRosterDelegate">
+      <bpmn:extensionElements>
+        <operaton:inputOutput>
+          <operaton:inputParameter name="approved">${false}</operaton:inputParameter>
+          <operaton:inputParameter name="reason">approval timed out</operaton:inputParameter>
+        </operaton:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toTimeoutDecision</bpmn:incoming>
+      <bpmn:outgoing>toEndTimeout</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:sequenceFlow id="toEnd" sourceRef="decision" targetRef="end"/>
+    <bpmn:sequenceFlow id="toEndTimeout" sourceRef="timeoutDecision" targetRef="endTimeout"/>
+
+    <bpmn:endEvent id="end" name="Decided">
+      <bpmn:incoming>toEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="endTimeout" name="Returned on timeout">
+      <bpmn:incoming>toEndTimeout</bpmn:incoming>
+    </bpmn:endEvent>
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="diagram">
+    <bpmndi:BPMNPlane id="plane" bpmnElement="sangam-roster-publish">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="100" y="100" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="review_di" bpmnElement="review"><dc:Bounds x="190" y="78" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="timeout_di" bpmnElement="timeout"><dc:Bounds x="222" y="140" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="decision_di" bpmnElement="decision"><dc:Bounds x="350" y="78" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="timeoutDecision_di" bpmnElement="timeoutDecision"><dc:Bounds x="350" y="220" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="510" y="100" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endTimeout_di" bpmnElement="endTimeout"><dc:Bounds x="510" y="242" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="toReview_di" bpmnElement="toReview"><di:waypoint x="136" y="118"/><di:waypoint x="190" y="118"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toDecision_di" bpmnElement="toDecision"><di:waypoint x="290" y="118"/><di:waypoint x="350" y="118"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toTimeoutDecision_di" bpmnElement="toTimeoutDecision"><di:waypoint x="240" y="176"/><di:waypoint x="240" y="260"/><di:waypoint x="350" y="260"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEnd_di" bpmnElement="toEnd"><di:waypoint x="450" y="118"/><di:waypoint x="510" y="118"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEndTimeout_di" bpmnElement="toEndTimeout"><di:waypoint x="450" y="260"/><di:waypoint x="510" y="260"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

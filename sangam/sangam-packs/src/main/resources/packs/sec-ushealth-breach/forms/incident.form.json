@@ -1,0 +1,72 @@
+{
+  "key": "sec-ushealth-breach/incident",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.breach",
+  "title": {
+    "en": "Incident",
+    "es": "Incidente"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "incidentSummary",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Incident summary",
+        "es": "Qué ocurrió"
+      }
+    },
+    {
+      "id": "discoveryDate",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Date of discovery",
+        "es": "Fecha de descubrimiento"
+      }
+    },
+    {
+      "id": "affectedCount",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Individuals affected",
+        "es": "Personas afectadas"
+      }
+    },
+    {
+      "id": "maxStateCount",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Largest number of affected residents of one state",
+        "es": "Mayor número de residentes afectados de un estado"
+      }
+    },
+    {
+      "id": "phiTypes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Types of PHI involved",
+        "es": "Tipos de PHI involucrada"
+      }
+    },
+    {
+      "id": "reportedByBa",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Reported by a business associate",
+        "es": "Notificado por un socio comercial"
+      }
+    }
+  ]
+}

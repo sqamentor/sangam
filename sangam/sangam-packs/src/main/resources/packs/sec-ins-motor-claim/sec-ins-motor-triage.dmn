@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ins_motor_triage" name="Motor claim triage (SYNTHETIC)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-ins-motor-triage" name="Motor claim triage (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ins-motor-triage_t" hitPolicy="FIRST">
+      <input id="sec-ins-motor-triage_i0" label="Claim amount"><inputExpression id="sec-ins-motor-triage_ie0" typeRef="double"><text>claimAmount</text></inputExpression></input>
+      <input id="sec-ins-motor-triage_i1" label="Fraud score"><inputExpression id="sec-ins-motor-triage_ie1" typeRef="integer"><text>fraudScore</text></inputExpression></input>
+      <output id="sec-ins-motor-triage_o0" label="Licensed surveyor" name="surveyorRequired" typeRef="boolean"/>
+      <output id="sec-ins-motor-triage_o1" label="SIU" name="siuReferral" typeRef="boolean"/>
+      <output id="sec-ins-motor-triage_o2" label="Appoint surveyor within" name="surveyorAppointSpec" typeRef="string"/>
+      <output id="sec-ins-motor-triage_o3" label="Survey report within" name="surveyReportSpec" typeRef="string"/>
+      <output id="sec-ins-motor-triage_o4" label="Settle within (after the report)" name="sanctionSla" typeRef="string"/>
+      <rule id="sec-ins-motor-triage_r0"><description>high fraud score</description>
+        <inputEntry id="sec-ins-motor-triage_r0_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-ins-motor-triage_r0_i1"><text>&gt;= 70</text></inputEntry>
+        <outputEntry id="sec-ins-motor-triage_r0_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r0_o1"><text>true</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r0_o2"><text>"1D"</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r0_o3"><text>"15D"</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r0_o4"><text>"7D"</text></outputEntry>
+      </rule>
+      <rule id="sec-ins-motor-triage_r1"><description>licensed surveyor at or above the threshold (Insurance Act s.64UM)</description>
+        <inputEntry id="sec-ins-motor-triage_r1_i0"><text>&gt;= 50000</text></inputEntry>
+        <inputEntry id="sec-ins-motor-triage_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-ins-motor-triage_r1_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r1_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r1_o2"><text>"1D"</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r1_o3"><text>"15D"</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r1_o4"><text>"7D"</text></outputEntry>
+      </rule>
+      <rule id="sec-ins-motor-triage_r2"><description>desk assessment; survey report 15 days, settlement 7 days after it (PPHI 2024, verify)</description>
+        <inputEntry id="sec-ins-motor-triage_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-ins-motor-triage_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-ins-motor-triage_r2_o0"><text>false</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r2_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r2_o2"><text>"1D"</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r2_o3"><text>"15D"</text></outputEntry>
+        <outputEntry id="sec-ins-motor-triage_r2_o4"><text>"7D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

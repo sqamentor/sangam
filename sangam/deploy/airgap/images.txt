@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# Image list for the air-gapped bundle. Format: <group> <image reference>
+# ${SANGAM_VERSION} and ${SANGAM_REGISTRY} are substituted by save-images.sh / save-images.ps1.
+#
+# Groups:
+#   product        always saved (Apache-2.0, built by this project)
+#   runtime        always saved (redistributable OSS: Keycloak Apache-2.0, OTel collector Apache-2.0,
+#                  PostgreSQL server/client tools for pg backups: PostgreSQL licence)
+#   observability  saved with --with-observability (Jaeger Apache-2.0, Prometheus Apache-2.0, Grafana AGPL-3.0:
+#                  separate unmodified program, only used over HTTP; the customer may drop it)
+#   devdb          saved ONLY with --with-dev-databases. Oracle Free and SQL Server Developer are NOT
+#                  redistributable by Sangam (Oracle Free Use Terms, Microsoft EULA): the customer pulls and
+#                  saves them under their own acceptance. MySQL Community (server + backup tools) is GPL-2.0 and
+#                  is likewise left to the customer (LIC-4 keeps MySQL code out of what Sangam ships).
+product        ${SANGAM_REGISTRY}/sangam-server:${SANGAM_VERSION}
+product        ${SANGAM_REGISTRY}/sangam-ui:${SANGAM_VERSION}
+product        ${SANGAM_REGISTRY}/sangam-simulators:${SANGAM_VERSION}
+runtime        quay.io/keycloak/keycloak:26.3.3
+runtime        otel/opentelemetry-collector-contrib:0.131.1
+runtime        postgres:17
+observability  jaegertracing/jaeger:2.9.0
+observability  prom/prometheus:v3.5.0
+observability  grafana/grafana-oss:12.1.1
+devdb          gvenzl/oracle-free:23-slim-faststart
+devdb          mcr.microsoft.com/mssql/server:2022-latest
+devdb          mysql:8.4

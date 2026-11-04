@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: GOI.TELECOM
+  layer: department
+  version: 2026.11.0
+  effectiveFrom: '2024-04-01'
+  name:
+    en: Department of Telecommunications
+    hi: दूरसंचार विभाग
+  source: IFMS-CENTRAL section O
+placeholders:
+- path: regime.delegationBook
+  reason: '[U] DoT book of powers not read'
+regime:
+  nonCivil: true
+  dfprApplies: false
+  ruleRef: DFPR 2024 r.21(2)(d)
+  delegationBook: DOT_BOOK
+receipts:
+  portal: SARAS
+  heads:
+  - 1275-00-103-02-02-00
+establishment:
+  pension:
+    disburser: SAMPANN
+licenceFee:
+  basis: AUDITED_ACCOUNTS

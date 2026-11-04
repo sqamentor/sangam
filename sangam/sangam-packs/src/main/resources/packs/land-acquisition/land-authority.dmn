@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_land_authority" name="Land acquisition decisions" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="land-authority" name="Land acquisition decisions" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="land-authority_t" hitPolicy="FIRST">
+      <input id="land-authority_i0" label="Amount"><inputExpression id="land-authority_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <output id="land-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="land-authority_r0"><description>appropriate government</description>
+        <inputEntry id="land-authority_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="land-authority_r0_o0"><text>"SECRETARY"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

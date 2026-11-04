@@ -1,0 +1,72 @@
+{
+  "key": "court-case/notice",
+  "version": "1.0.0",
+  "pack": "gov.court-case",
+  "title": {
+    "en": "Court case notice",
+    "hi": "न्यायालय वाद सूचना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "caseNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Court case number",
+        "hi": "न्यायालय वाद संख्या"
+      }
+    },
+    {
+      "id": "court",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Court / tribunal",
+        "hi": "न्यायालय / अधिकरण"
+      }
+    },
+    {
+      "id": "subject",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Subject",
+        "hi": "विषय"
+      }
+    },
+    {
+      "id": "impugnedCaseKey",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Impugned case reference",
+        "hi": "आक्षेपित प्रकरण संदर्भ"
+      }
+    },
+    {
+      "id": "nextHearingDate",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Next date of hearing",
+        "hi": "सुनवाई की अगली तिथि"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

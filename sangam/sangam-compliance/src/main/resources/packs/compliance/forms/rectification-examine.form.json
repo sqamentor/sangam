@@ -1,0 +1,1 @@
+{"key":"compliance/rectification-examine","title":{"en":"Examine correction"},"fields":[{"key":"correctionAccepted","type":"boolean","label":{"en":"Accept correction","hi":"सुधार स्वीकार करें"}},{"key":"corrections","type":"json","label":{"en":"Corrections"}},{"key":"decisionReason","type":"textarea","label":{"en":"Reason"}}]}

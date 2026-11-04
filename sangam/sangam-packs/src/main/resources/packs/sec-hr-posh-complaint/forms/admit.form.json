@@ -1,0 +1,47 @@
+{
+  "key": "sec-hr-posh-complaint/admit",
+  "version": "1.0.0",
+  "pack": "sec.hr.posh-complaint",
+  "title": {
+    "en": "Admit complaint (limitation three months)",
+    "hi": "शिकायत ग्रहण (परिसीमा तीन माह)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "admitDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "admit",
+        "label": {
+          "en": "Admit",
+          "hi": "ग्रहण करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

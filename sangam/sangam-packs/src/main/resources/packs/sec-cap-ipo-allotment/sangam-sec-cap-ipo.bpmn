@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- IPO post-issue. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_cap_ipo" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-cap-ipo" name="IPO post-issue" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.cap.ipo-allotment</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>issueName,issueCloseDate</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ip_start" name="Issue closed (T)" operaton:initiator="initiator" operaton:formKey="sangam:sec-cap-ipo-allotment/close"></startEvent>
+    <serviceTask id="ip_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>issueName=@customerId;rtaSeat=RTA;mbSeat=LEAD-MANAGER;lateUnblock=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ip_recon" name="Reconcile bids, UPI mandates and ASBA blocks" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>rta.reconcile</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>reconcile</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>issueName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>recon</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ip_basis_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ip_basis</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>1WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ip_basis" name="Basis of allotment with the designated exchange (T+1)" operaton:candidateGroups="${mbSeat}" operaton:formKey="sangam:sec-cap-ipo-allotment/basis" operaton:dueDate="${ip_basisDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ip_basis_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ip_basis</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>mbSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ip_basis_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ip_basis_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ip_basis</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>mbSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ip_basis_breachGw" name="Deemed?" default="sec_cap_ipo_f8"></exclusiveGateway>
+    <exclusiveGateway id="ip_basis_done" name=""></exclusiveGateway>
+    <serviceTask id="ip_basisSend" name="Basis approved by the exchange" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>exchange.basis</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>issueName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>basis</operaton:string></operaton:field><operaton:field name="step"><operaton:string>basis</operaton:string></operaton:field></extensionElements></serviceTask>
+    <parallelGateway id="ip_fork" name="T+2 in parallel"></parallelGateway>
+    <parallelGateway id="ip_join" name=""></parallelGateway>
+    <serviceTask id="ip_credit" name="Credit shares to demat accounts" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>depository.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>issueName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>credit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ip_unblock" name="Unblock funds of non-allottees" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>sponsorbank.unblock</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>unblock</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>issueName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>unblock</operaton:string></operaton:field><operaton:field name="step"><operaton:string>unblock</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ip_ubGw" name="Unblock failed?" default="sec_cap_ipo_f20"></exclusiveGateway>
+    <userTask id="ip_comp" name="Investor compensation for late unblocking" operaton:candidateGroups="${mbSeat}" operaton:formKey="sangam:sec-cap-ipo-allotment/compensation"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ip_list" name="Listing and trading approval (T+3)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>exchange.listing</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>list</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>issueName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>listing</operaton:string></operaton:field><operaton:field name="step"><operaton:string>listing</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ip_end" name="Listed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ip_basis_warn" name="SLA warning (75%)" attachedToRef="ip_basis" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ip_basisWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ip_basis_breach" name="SLA breached" attachedToRef="ip_basis" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ip_basisDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_cap_ipo_f1" sourceRef="ip_start" targetRef="ip_defaults"/>
+    <sequenceFlow id="sec_cap_ipo_f2" sourceRef="ip_defaults" targetRef="ip_recon"/>
+    <sequenceFlow id="sec_cap_ipo_f3" sourceRef="ip_basis_warn" targetRef="ip_basis_warnNotify"/>
+    <sequenceFlow id="sec_cap_ipo_f4" sourceRef="ip_basis_warnNotify" targetRef="ip_basis_warnEnd"/>
+    <sequenceFlow id="sec_cap_ipo_f5" sourceRef="ip_basis_breach" targetRef="ip_basis_breachAct"/>
+    <sequenceFlow id="sec_cap_ipo_f6" sourceRef="ip_basis_breachAct" targetRef="ip_basis_breachGw"/>
+    <sequenceFlow id="sec_cap_ipo_f7" name="deemed" sourceRef="ip_basis_breachGw" targetRef="ip_basis_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_ipo_f8" name="escalated" sourceRef="ip_basis_breachGw" targetRef="ip_basis_slaPlan"/>
+    <sequenceFlow id="sec_cap_ipo_f9" sourceRef="ip_basis_slaPlan" targetRef="ip_basis"/>
+    <sequenceFlow id="sec_cap_ipo_f10" sourceRef="ip_basis" targetRef="ip_basis_done"/>
+    <sequenceFlow id="sec_cap_ipo_f11" sourceRef="ip_recon" targetRef="ip_basis_slaPlan"/>
+    <sequenceFlow id="sec_cap_ipo_f12" sourceRef="ip_basis_done" targetRef="ip_basisSend"/>
+    <sequenceFlow id="sec_cap_ipo_f13" sourceRef="ip_basisSend" targetRef="ip_fork"/>
+    <sequenceFlow id="sec_cap_ipo_f14" sourceRef="ip_fork" targetRef="ip_credit"/>
+    <sequenceFlow id="sec_cap_ipo_f15" sourceRef="ip_credit" targetRef="ip_join"/>
+    <sequenceFlow id="sec_cap_ipo_f16" sourceRef="ip_fork" targetRef="ip_unblock"/>
+    <sequenceFlow id="sec_cap_ipo_f17" sourceRef="ip_unblock" targetRef="ip_join"/>
+    <sequenceFlow id="sec_cap_ipo_f18" sourceRef="ip_join" targetRef="ip_ubGw"/>
+    <sequenceFlow id="sec_cap_ipo_f19" name="yes" sourceRef="ip_ubGw" targetRef="ip_comp"><conditionExpression xsi:type="tFormalExpression">${unblockStatus == 'FAILED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_ipo_f20" name="no" sourceRef="ip_ubGw" targetRef="ip_list"/>
+    <sequenceFlow id="sec_cap_ipo_f21" sourceRef="ip_comp" targetRef="ip_list"/>
+    <sequenceFlow id="sec_cap_ipo_f22" sourceRef="ip_list" targetRef="ip_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_cap_ipo_diagram">
+    <bpmndi:BPMNPlane id="sec_cap_ipo_plane" bpmnElement="sangam-sec-cap-ipo">
+      <bpmndi:BPMNShape id="ip_start_di" bpmnElement="ip_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_defaults_di" bpmnElement="ip_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_recon_di" bpmnElement="ip_recon"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basis_slaPlan_di" bpmnElement="ip_basis_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basis_di" bpmnElement="ip_basis"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basis_warnNotify_di" bpmnElement="ip_basis_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basis_warnEnd_di" bpmnElement="ip_basis_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basis_breachAct_di" bpmnElement="ip_basis_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basis_breachGw_di" bpmnElement="ip_basis_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basis_done_di" bpmnElement="ip_basis_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basisSend_di" bpmnElement="ip_basisSend"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_fork_di" bpmnElement="ip_fork"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_join_di" bpmnElement="ip_join"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_credit_di" bpmnElement="ip_credit"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_unblock_di" bpmnElement="ip_unblock"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_ubGw_di" bpmnElement="ip_ubGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_comp_di" bpmnElement="ip_comp"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_list_di" bpmnElement="ip_list"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_end_di" bpmnElement="ip_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basis_warn_di" bpmnElement="ip_basis_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_basis_breach_di" bpmnElement="ip_basis_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f1_di" bpmnElement="sec_cap_ipo_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f2_di" bpmnElement="sec_cap_ipo_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f3_di" bpmnElement="sec_cap_ipo_f3"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f4_di" bpmnElement="sec_cap_ipo_f4"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f5_di" bpmnElement="sec_cap_ipo_f5"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f6_di" bpmnElement="sec_cap_ipo_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f7_di" bpmnElement="sec_cap_ipo_f7"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f8_di" bpmnElement="sec_cap_ipo_f8"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f9_di" bpmnElement="sec_cap_ipo_f9"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f10_di" bpmnElement="sec_cap_ipo_f10"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f11_di" bpmnElement="sec_cap_ipo_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f12_di" bpmnElement="sec_cap_ipo_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f13_di" bpmnElement="sec_cap_ipo_f13"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f14_di" bpmnElement="sec_cap_ipo_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f15_di" bpmnElement="sec_cap_ipo_f15"><di:waypoint x="1770" y="195"/><di:waypoint x="1815" y="195"/><di:waypoint x="1815" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f16_di" bpmnElement="sec_cap_ipo_f16"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f17_di" bpmnElement="sec_cap_ipo_f17"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f18_di" bpmnElement="sec_cap_ipo_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f19_di" bpmnElement="sec_cap_ipo_f19"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f20_di" bpmnElement="sec_cap_ipo_f20"><di:waypoint x="2075" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f21_di" bpmnElement="sec_cap_ipo_f21"><di:waypoint x="2265" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_ipo_f22_di" bpmnElement="sec_cap_ipo_f22"><di:waypoint x="2430" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

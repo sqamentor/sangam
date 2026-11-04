@@ -1,0 +1,40 @@
+{
+  "id": "universal.up21-iot-storm-control",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-21 IoT / event-triggered process with storm control",
+    "hi": "यूपी-21 आईओटी / घटना-प्रेरित प्रक्रिया एवं तूफ़ान नियंत्रण"
+  },
+  "domain": "Universal",
+  "description": "An alarm starts one case per device; repeats correlate to it (de-duplicated, bounded), a debounce window waits, a threshold decides whether to dispatch, and a clear event closes it automatically (R83, R40).",
+  "mainProcesses": [
+    "sangam-up21-iot-alarm"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up21-iot-storm-control/sangam-up21-iot-alarm.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up21-iot-storm-control/forms/dispatch.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up21-iot-storm-control/seed.json"
+    }
+  ],
+  "seed": "packs/up21-iot-storm-control/seed.json",
+  "connectors": [],
+  "covers": [
+    "UP-21",
+    "R40",
+    "R83",
+    "GP-15",
+    "GP-17"
+  ],
+  "acceptance": [],
+  "dependsOn": [],
+  "tenantOverrides": [],
+  "calls": []
+}

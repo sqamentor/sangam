@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "AP",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "AP-CLERK",
+      "role": "AP",
+      "office": "AP",
+      "reportsTo": null,
+      "name": {
+        "en": "Accounts payable clerk",
+        "hi": "देय लेखा लिपिक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "AP-CLERK",
+      "person": "u14.ap-clerk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "AP",
+      "name": {
+        "en": "Accounts payable clerk",
+        "hi": "देय लेखा लिपिक"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+org.sangam.rest.config.SangamRestAutoConfiguration
+org.sangam.rest.modules.config.ConfigRestConfiguration
+org.sangam.rest.modules.ledger.LedgerRestConfiguration
+org.sangam.rest.modules.billing.BillingRestConfiguration
+org.sangam.rest.modules.registry.RegistryRestConfiguration
+org.sangam.rest.modules.resources.ResourcesRestConfiguration
+org.sangam.rest.modules.cases.CaseRestConfiguration
+org.sangam.rest.modules.programme.ProgrammeRestConfiguration
+org.sangam.rest.modules.geo.GeoRestConfiguration
+org.sangam.rest.modules.field.FieldRestConfiguration
+org.sangam.rest.modules.connectorshealth.ConnectorsHealthRestConfiguration

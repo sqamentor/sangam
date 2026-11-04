@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_legal_dpdp_tat" name="Data principal request period (DPDP Rules 2025 r.14; verify per right)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-legal-dpdp-tat" name="Data principal request period (DPDP Rules 2025 r.14; verify per right)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-legal-dpdp-tat_t" hitPolicy="FIRST">
+      <input id="sec-legal-dpdp-tat_i0" label="Request type"><inputExpression id="sec-legal-dpdp-tat_ie0" typeRef="string"><text>requestType</text></inputExpression></input>
+      <output id="sec-legal-dpdp-tat_o0" label="Respond within" name="respondSpec" typeRef="string"/>
+      <rule id="sec-legal-dpdp-tat_r0"><description>grievance redressal within 90 days</description>
+        <inputEntry id="sec-legal-dpdp-tat_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-legal-dpdp-tat_r0_o0"><text>"90D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

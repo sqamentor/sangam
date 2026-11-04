@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "COVERED-ENTITY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PRIVACY-OFFICE",
+      "role": "PRIVACY",
+      "office": "COVERED-ENTITY",
+      "reportsTo": null,
+      "name": {
+        "en": "Privacy officer",
+        "es": "Oficial de privacidad"
+      }
+    },
+    {
+      "id": "HIM-SPECIALIST",
+      "role": "HIM",
+      "office": "COVERED-ENTITY",
+      "reportsTo": "PRIVACY-OFFICE",
+      "name": {
+        "en": "Health information management",
+        "es": "Gestión de información de salud"
+      }
+    },
+    {
+      "id": "REVIEWING-PROFESSIONAL",
+      "role": "REVIEWER",
+      "office": "COVERED-ENTITY",
+      "reportsTo": "PRIVACY-OFFICE",
+      "name": {
+        "en": "Reviewing licensed professional",
+        "es": "Profesional autorizado revisor"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PRIVACY-OFFICE",
+      "person": "uar.privacy-office",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HIM-SPECIALIST",
+      "person": "uar.him-specialist",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "REVIEWING-PROFESSIONAL",
+      "person": "uar.reviewing-professional",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PRIVACY",
+      "name": {
+        "en": "Privacy officer",
+        "es": "Oficial de privacidad"
+      }
+    },
+    {
+      "code": "HIM",
+      "name": {
+        "en": "Health information management",
+        "es": "Gestión de información de salud"
+      }
+    },
+    {
+      "code": "REVIEWER",
+      "name": {
+        "en": "Reviewing licensed professional",
+        "es": "Profesional autorizado revisor"
+      }
+    }
+  ]
+}

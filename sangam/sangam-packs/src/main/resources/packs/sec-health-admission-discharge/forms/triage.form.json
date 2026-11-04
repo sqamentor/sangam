@@ -1,0 +1,36 @@
+{
+  "key": "sec-health-admission-discharge/triage",
+  "version": "1.0.0",
+  "pack": "sec.health.admission-discharge",
+  "title": {
+    "en": "Triage and stabilise",
+    "hi": "ट्राइएज एवं स्थिरीकरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "triageLevel",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Triage level",
+        "hi": "ट्राइएज स्तर"
+      }
+    },
+    {
+      "id": "clinicalNotes",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Clinical notes",
+        "hi": "नैदानिक टिप्पणियाँ"
+      }
+    }
+  ]
+}

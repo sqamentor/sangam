@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Surveillance alert. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_cap_surveillance" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_clarificationReceived" name="sangam.clarificationReceived"/>
+  <process id="sangam-sec-cap-surveillance" name="Surveillance alert" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.cap.surveillance-alert</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>clientCode,alertType</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="sv_start" name="Alert received" operaton:initiator="initiator" operaton:formKey="sangam:sec-cap-surveillance-alert/alert"></startEvent>
+    <serviceTask id="sv_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>clientCode=@customerId;alertType=VOLUME_SPIKE;analystSeat=SURV-ANALYST;coSeat=COMPLIANCE-OFFICER;applicantRef=@clientCode</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sv_clock" name="Regulatory clock: alert" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>alert</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${alertProcessSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="sv_tl" name="Processing timeline (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-cap-surveillance-tl</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="sv_review_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sv_review</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${alertProcessSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="sv_review" name="Review alert and client trading" operaton:candidateGroups="${analystSeat}" operaton:formKey="sangam:sec-cap-surveillance-alert/review" operaton:dueDate="${sv_reviewDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>svDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="sv_review_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sv_review</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>analystSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sv_review_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="sv_review_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sv_review</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>analystSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>svDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sv_review_breachGw" name="Deemed?" default="sec_cap_surveillance_f9"></exclusiveGateway>
+    <exclusiveGateway id="sv_review_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="sv_gw" name="" default="sec_cap_surveillance_f21"></exclusiveGateway>
+    <serviceTask id="sv_ask" name="Seek client clarification" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>surveillance-clarification</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="sv_wait" name="Reply or lapse"></eventBasedGateway>
+    <intermediateCatchEvent id="sv_reply" name="Client replies"><messageEventDefinition messageRef="msg_sangam_clarificationReceived"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="sv_lapse" name="No reply in 7 days"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P7D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="sv_co" name="Compliance officer decision" operaton:candidateGroups="${coSeat}" operaton:formKey="sangam:sec-cap-surveillance-alert/decide"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>coDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="sv_endClosed" name="Closed with reasons"></endEvent>
+    <exclusiveGateway id="sv_coGw" name="" default="sec_cap_surveillance_f27"></exclusiveGateway>
+    <serviceTask id="sv_report" name="Report adverse observation to the exchange" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>exchange.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>clientCode,alertType</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>exRep</operaton:string></operaton:field><operaton:field name="step"><operaton:string>exchange-report</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sv_str" name="File STR" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>fiu.finnet</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>str</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>clientCode,strGrounds</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>str</operaton:string></operaton:field><operaton:field name="step"><operaton:string>str</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sv_end" name="Reported"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="sv_endCo" name="Closed by compliance"></endEvent>
+    <boundaryEvent id="sv_review_warn" name="SLA warning (75%)" attachedToRef="sv_review" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sv_reviewWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="sv_review_breach" name="SLA breached" attachedToRef="sv_review" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sv_reviewDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_cap_surveillance_f1" sourceRef="sv_start" targetRef="sv_defaults"/>
+    <sequenceFlow id="sec_cap_surveillance_f2" sourceRef="sv_defaults" targetRef="sv_tl"/>
+    <sequenceFlow id="sec_cap_surveillance_f3" sourceRef="sv_tl" targetRef="sv_clock"/>
+    <sequenceFlow id="sec_cap_surveillance_f4" sourceRef="sv_review_warn" targetRef="sv_review_warnNotify"/>
+    <sequenceFlow id="sec_cap_surveillance_f5" sourceRef="sv_review_warnNotify" targetRef="sv_review_warnEnd"/>
+    <sequenceFlow id="sec_cap_surveillance_f6" sourceRef="sv_review_breach" targetRef="sv_review_breachAct"/>
+    <sequenceFlow id="sec_cap_surveillance_f7" sourceRef="sv_review_breachAct" targetRef="sv_review_breachGw"/>
+    <sequenceFlow id="sec_cap_surveillance_f8" name="deemed" sourceRef="sv_review_breachGw" targetRef="sv_review_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_surveillance_f9" name="escalated" sourceRef="sv_review_breachGw" targetRef="sv_review_slaPlan"/>
+    <sequenceFlow id="sec_cap_surveillance_f10" sourceRef="sv_review_slaPlan" targetRef="sv_review"/>
+    <sequenceFlow id="sec_cap_surveillance_f11" sourceRef="sv_review" targetRef="sv_review_done"/>
+    <sequenceFlow id="sec_cap_surveillance_f12" sourceRef="sv_clock" targetRef="sv_review_slaPlan"/>
+    <sequenceFlow id="sec_cap_surveillance_f13" sourceRef="sv_review_done" targetRef="sv_gw"/>
+    <sequenceFlow id="sec_cap_surveillance_f14" name="clarify" sourceRef="sv_gw" targetRef="sv_ask"><conditionExpression xsi:type="tFormalExpression">${svDecision == 'clarify'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_surveillance_f15" sourceRef="sv_ask" targetRef="sv_wait"/>
+    <sequenceFlow id="sec_cap_surveillance_f16" sourceRef="sv_wait" targetRef="sv_reply"/>
+    <sequenceFlow id="sec_cap_surveillance_f17" sourceRef="sv_wait" targetRef="sv_lapse"/>
+    <sequenceFlow id="sec_cap_surveillance_f18" sourceRef="sv_reply" targetRef="sv_review_slaPlan"/>
+    <sequenceFlow id="sec_cap_surveillance_f19" name="escalate" sourceRef="sv_gw" targetRef="sv_co"><conditionExpression xsi:type="tFormalExpression">${svDecision == 'escalate'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_surveillance_f20" sourceRef="sv_lapse" targetRef="sv_co"/>
+    <sequenceFlow id="sec_cap_surveillance_f21" name="close" sourceRef="sv_gw" targetRef="sv_endClosed"/>
+    <sequenceFlow id="sec_cap_surveillance_f22" sourceRef="sv_co" targetRef="sv_coGw"/>
+    <sequenceFlow id="sec_cap_surveillance_f23" name="report" sourceRef="sv_coGw" targetRef="sv_report"><conditionExpression xsi:type="tFormalExpression">${coDecision == 'report'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_surveillance_f24" name="STR" sourceRef="sv_coGw" targetRef="sv_str"><conditionExpression xsi:type="tFormalExpression">${coDecision == 'fileStr'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_surveillance_f25" sourceRef="sv_str" targetRef="sv_report"/>
+    <sequenceFlow id="sec_cap_surveillance_f26" sourceRef="sv_report" targetRef="sv_end"/>
+    <sequenceFlow id="sec_cap_surveillance_f27" name="close" sourceRef="sv_coGw" targetRef="sv_endCo"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_cap_surveillance_diagram">
+    <bpmndi:BPMNPlane id="sec_cap_surveillance_plane" bpmnElement="sangam-sec-cap-surveillance">
+      <bpmndi:BPMNShape id="sv_start_di" bpmnElement="sv_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_defaults_di" bpmnElement="sv_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_clock_di" bpmnElement="sv_clock"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_tl_di" bpmnElement="sv_tl"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_review_slaPlan_di" bpmnElement="sv_review_slaPlan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_review_di" bpmnElement="sv_review"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_review_warnNotify_di" bpmnElement="sv_review_warnNotify"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_review_warnEnd_di" bpmnElement="sv_review_warnEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_review_breachAct_di" bpmnElement="sv_review_breachAct"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_review_breachGw_di" bpmnElement="sv_review_breachGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_review_done_di" bpmnElement="sv_review_done"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_gw_di" bpmnElement="sv_gw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_ask_di" bpmnElement="sv_ask"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_wait_di" bpmnElement="sv_wait"><dc:Bounds x="1860" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_reply_di" bpmnElement="sv_reply"><dc:Bounds x="2032" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_lapse_di" bpmnElement="sv_lapse"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_co_di" bpmnElement="sv_co"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_endClosed_di" bpmnElement="sv_endClosed"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_coGw_di" bpmnElement="sv_coGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_report_di" bpmnElement="sv_report"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_str_di" bpmnElement="sv_str"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_end_di" bpmnElement="sv_end"><dc:Bounds x="2857" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_endCo_di" bpmnElement="sv_endCo"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_review_warn_di" bpmnElement="sv_review_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_review_breach_di" bpmnElement="sv_review_breach"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f1_di" bpmnElement="sec_cap_surveillance_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f2_di" bpmnElement="sec_cap_surveillance_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f3_di" bpmnElement="sec_cap_surveillance_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f4_di" bpmnElement="sec_cap_surveillance_f4"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f5_di" bpmnElement="sec_cap_surveillance_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f6_di" bpmnElement="sec_cap_surveillance_f6"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f7_di" bpmnElement="sec_cap_surveillance_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f8_di" bpmnElement="sec_cap_surveillance_f8"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f9_di" bpmnElement="sec_cap_surveillance_f9"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="128"/><di:waypoint x="730" y="128"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f10_di" bpmnElement="sec_cap_surveillance_f10"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f11_di" bpmnElement="sec_cap_surveillance_f11"><di:waypoint x="945" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f12_di" bpmnElement="sec_cap_surveillance_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f13_di" bpmnElement="sec_cap_surveillance_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f14_di" bpmnElement="sec_cap_surveillance_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f15_di" bpmnElement="sec_cap_surveillance_f15"><di:waypoint x="1770" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f16_di" bpmnElement="sec_cap_surveillance_f16"><di:waypoint x="1910" y="195"/><di:waypoint x="1971" y="195"/><di:waypoint x="1971" y="320"/><di:waypoint x="2032" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f17_di" bpmnElement="sec_cap_surveillance_f17"><di:waypoint x="1910" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f18_di" bpmnElement="sec_cap_surveillance_f18"><di:waypoint x="2050" y="338"/><di:waypoint x="2050" y="363"/><di:waypoint x="730" y="363"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f19_di" bpmnElement="sec_cap_surveillance_f19"><di:waypoint x="1580" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f20_di" bpmnElement="sec_cap_surveillance_f20"><di:waypoint x="2068" y="195"/><di:waypoint x="2116" y="195"/><di:waypoint x="2116" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f21_di" bpmnElement="sec_cap_surveillance_f21"><di:waypoint x="1580" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f22_di" bpmnElement="sec_cap_surveillance_f22"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f23_di" bpmnElement="sec_cap_surveillance_f23"><di:waypoint x="2405" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f24_di" bpmnElement="sec_cap_surveillance_f24"><di:waypoint x="2405" y="70"/><di:waypoint x="2450" y="70"/><di:waypoint x="2450" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f25_di" bpmnElement="sec_cap_surveillance_f25"><di:waypoint x="2595" y="195"/><di:waypoint x="2627" y="195"/><di:waypoint x="2627" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f26_di" bpmnElement="sec_cap_surveillance_f26"><di:waypoint x="2760" y="70"/><di:waypoint x="2857" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_surveillance_f27_di" bpmnElement="sec_cap_surveillance_f27"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

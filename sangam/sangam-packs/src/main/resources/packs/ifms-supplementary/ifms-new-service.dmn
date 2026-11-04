@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_new_service" name="New service / new instrument of service" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="ifms-new-service" name="New service / new instrument of service" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-new-service_t" hitPolicy="FIRST">
+      <input id="ifms-new-service_i0" label="New service"><inputExpression id="ifms-new-service_ie0" typeRef="boolean"><text>newServiceFlag</text></inputExpression></input>
+      <input id="ifms-new-service_i1" label="Amount"><inputExpression id="ifms-new-service_ie1" typeRef="double"><text>amount</text></inputExpression></input>
+      <output id="ifms-new-service_o0" label="Route" name="newServiceRoute" typeRef="string"/>
+      <output id="ifms-new-service_o1" label="Rule" name="ruleRef" typeRef="string"/>
+      <rule id="ifms-new-service_r0"><description>NS/NIS: limits are placeholders</description>
+        <inputEntry id="ifms-new-service_r0_i0"><text>true</text></inputEntry>
+        <inputEntry id="ifms-new-service_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="ifms-new-service_r0_o0"><text>"PRIOR_PARLIAMENT"</text></outputEntry>
+        <outputEntry id="ifms-new-service_r0_o1"><text>"DEA OM F.1(22)-B(AC)/2022 of 23-02-2024 [U limits]"</text></outputEntry>
+      </rule>
+      <rule id="ifms-new-service_r1">
+        <inputEntry id="ifms-new-service_r1_i0"><text>false</text></inputEntry>
+        <inputEntry id="ifms-new-service_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="ifms-new-service_r1_o0"><text>"BATCH"</text></outputEntry>
+        <outputEntry id="ifms-new-service_r1_o1"><text>"ordinary supplementary"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

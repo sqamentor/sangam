@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "COLLEGE",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "ADMISSION-OFFICE",
+      "role": "ADMISSION",
+      "office": "COLLEGE",
+      "reportsTo": null,
+      "name": {
+        "en": "Admission office",
+        "hi": "प्रवेश कार्यालय"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "ADMISSION-OFFICE",
+      "person": "ead.admission-office",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "ADMISSION",
+      "name": {
+        "en": "Admission office",
+        "hi": "प्रवेश कार्यालय"
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+Sangam {{ .Chart.AppVersion }} installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Database      : {{ include "sangam.db.type" . }} ({{ include "sangam.db.jdbcUrl" . }})
+Liquibase     : mode={{ .Values.liquibase.mode }}{{ if eq .Values.liquibase.mode "job" }} (hook job {{ include "sangam.fullname" . }}-migrate-{{ .Release.Revision }}){{ end }}
+OIDC issuer   : {{ .Values.oidc.issuerUri }}
+Telemetry     : {{ if .Values.otel.enabled }}OTLP -> {{ .Values.otel.endpoint }}{{ else }}off (R56: no outbound telemetry by default){{ end }}
+Backups       : {{ if .Values.backup.enabled }}enabled ({{ include "sangam.db.type" . }} examples, PVC {{ include "sangam.backup.claim" . }}){{ else }}disabled - configure database-native backups (deploy/README.md){{ end }}
+NetworkPolicy : {{ if .Values.networkPolicy.enabled }}enabled{{ else }}disabled{{ end }}
+
+Check the rollout:
+  kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "sangam.fullname" . }}-server
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "sangam.fullname" . }}-server-management {{ .Values.server.service.managementPort }}
+  curl -s localhost:{{ .Values.server.service.managementPort }}/actuator/health/readiness
+{{- if eq (include "sangam.db.type" .) "oracle" }}
+
+Oracle: the JDBC driver is customer-supplied (LIC-2) and is read from {{ if .Values.drivers.existingClaim }}PVC {{ .Values.drivers.existingClaim }}{{ else }}image {{ .Values.drivers.initImage }}{{ end }}.
+{{- end }}
+{{- if eq (include "sangam.db.type" .) "sqlserver" }}
+
+SQL Server: the server refuses to start unless READ_COMMITTED_SNAPSHOT is ON for the database (VI.1.6).
+{{- end }}
+{{- if eq (include "sangam.db.type" .) "mysql" }}
+
+MySQL 8.4: transaction_isolation=READ-COMMITTED, utf8mb4/utf8mb4_bin, binlog ROW + GTID are required (P-1).
+{{- end }}

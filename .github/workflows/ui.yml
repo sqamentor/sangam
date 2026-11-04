@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: Apache-2.0
+# sangam-ui (React + TypeScript + Vite): install, lint, type-check, unit tests, build, CycloneDX SBOM, image build.
+name: ui
+
+on:
+  push:
+    branches: [main]
+    paths: ["sangam/sangam-ui/**", "sangam/deploy/docker/ui*", "sangam/deploy/docker/ui/**", ".github/workflows/ui.yml"]
+  pull_request:
+    paths: ["sangam/sangam-ui/**", "sangam/deploy/docker/ui*", "sangam/deploy/docker/ui/**", ".github/workflows/ui.yml"]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui:
+    name: UI build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: sangam/sangam-ui
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect sangam-ui
+        id: detect
+        working-directory: .
+        run: |
+          if [ -f sangam/sangam-ui/package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT";
+          else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::sangam/sangam-ui not present yet - skipped"; fi
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.present == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: sangam/sangam-ui/package-lock.json
+      - name: Install
+        if: steps.detect.outputs.present == 'true'
+        run: npm ci --no-audit --no-fund
+      - name: Lint
+        if: steps.detect.outputs.present == 'true'
+        run: npm run --if-present lint
+      - name: Type-check
+        if: steps.detect.outputs.present == 'true'
+        run: npm run --if-present typecheck
+      - name: Unit tests
+        if: steps.detect.outputs.present == 'true'
+        run: npm run --if-present test -- --run
+        env:
+          CI: "true"
+      - name: Build
+        if: steps.detect.outputs.present == 'true'
+        run: npm run build && test -f dist/index.html
+      - name: bpmn.io watermark kept (LIC-8)
+        if: steps.detect.outputs.present == 'true'
+        run: |
+          # The bpmn.io logo/link must stay in the bundled modeller code; fail if a build step stripped it.
+          if grep -rqs "bpmn.io" node_modules/bpmn-js/package.json 2>/dev/null; then
+            grep -rqs "bpmn.io" dist/ || { echo "::error::bpmn.io watermark not found in dist (LIC-8)"; exit 1; }
+          fi
+      - name: CycloneDX SBOM (production dependencies)
+        if: steps.detect.outputs.present == 'true'
+        run: npx --yes @cyclonedx/cyclonedx-npm@2.1.0 --omit dev --spec-version 1.6 --output-format JSON --output-file ../../sangam-ui.cdx.json
+      - name: Licence policy
+        if: steps.detect.outputs.present == 'true'
+        working-directory: .
+        run: python3 -I sangam/deploy/licence/check_licences.py --policy sangam/deploy/licence/licence-policy.json --sbom sangam-ui.cdx.json --report ui-licence-report.md
+      - uses: actions/upload-artifact@v4
+        if: steps.detect.outputs.present == 'true'
+        with:
+          name: sangam-ui-dist
+          path: |
+            sangam/sangam-ui/dist/
+            sangam-ui.cdx.json
+            ui-licence-report.md
+          retention-days: 7
+      - uses: docker/setup-buildx-action@v3
+        if: steps.detect.outputs.present == 'true'
+      - name: Image build (no push)
+        if: steps.detect.outputs.present == 'true'
+        working-directory: sangam
+        run: docker buildx build -f deploy/docker/ui.Dockerfile --build-arg DIST_SOURCE=prebuilt --load -t sangam-ui:ci .

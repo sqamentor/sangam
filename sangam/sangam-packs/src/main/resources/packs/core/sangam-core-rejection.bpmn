@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: rejection with reasons and appeal window. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_rejection" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_appealFiled" name="sangam.appealFiled"/>
+  <process id="sangam-core-rejection" name="Core: rejection with reasons and appeal window" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>REJECTED (IX.3) with coded reasons, a bilingual rejection order with the appeal route and deadline (J-P3-E01), and the appeal window (GP-22). Output: rejectionOutcome FINAL / APPEAL_ALLOWED (the pack then re-verifies with a different officer).</documentation>
+    <startEvent id="rj_start" name="Reject"></startEvent>
+    <serviceTask id="rj_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>appealAllowed=true;appealWindow=P30D;appellateSeat=appellate-authority;rejectionTemplate=rejection-order</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rj_record" name="Record rejection with reasons" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>REJECT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rj_order" name="Issue rejection order" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:expression>${rejectionTemplate}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rj_notify" name="Tell applicant" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>case-rejected</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rj_appealGw" name="Appeal provided?" default="core_rejection_f6"></exclusiveGateway>
+    <serviceTask id="rj_retention" name="Classify for retention" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RETENTION</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rj_final" name="Final" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionOutcome=FINAL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rj_endFinal" name="Rejection final"></endEvent>
+    <serviceTask id="rj_window" name="Open appeal window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>appeal</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${appealWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="rj_wait" name="Appeal or lapse"></eventBasedGateway>
+    <intermediateCatchEvent id="rj_appealFiled" name="Appeal filed"><messageEventDefinition messageRef="msg_sangam_appealFiled"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="rj_lapse" name="Appeal window lapsed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${appealDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <callActivity id="rj_appeal" name="Appeal (core)" calledElement="sangam-core-appeal"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="rj_appealRes" name="Allowed?" default="core_rejection_f17"></exclusiveGateway>
+    <serviceTask id="rj_allowed" name="Appeal allowed" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionOutcome=APPEAL_ALLOWED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rj_endAllowed" name="Appeal allowed"></endEvent>
+    <sequenceFlow id="core_rejection_f1" sourceRef="rj_start" targetRef="rj_defaults"/>
+    <sequenceFlow id="core_rejection_f2" sourceRef="rj_defaults" targetRef="rj_record"/>
+    <sequenceFlow id="core_rejection_f3" sourceRef="rj_record" targetRef="rj_order"/>
+    <sequenceFlow id="core_rejection_f4" sourceRef="rj_order" targetRef="rj_notify"/>
+    <sequenceFlow id="core_rejection_f5" sourceRef="rj_notify" targetRef="rj_appealGw"/>
+    <sequenceFlow id="core_rejection_f6" name="no" sourceRef="rj_appealGw" targetRef="rj_retention"/>
+    <sequenceFlow id="core_rejection_f7" sourceRef="rj_retention" targetRef="rj_final"/>
+    <sequenceFlow id="core_rejection_f8" sourceRef="rj_final" targetRef="rj_endFinal"/>
+    <sequenceFlow id="core_rejection_f9" name="yes" sourceRef="rj_appealGw" targetRef="rj_window"><conditionExpression xsi:type="tFormalExpression">${appealAllowed}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_rejection_f10" sourceRef="rj_window" targetRef="rj_wait"/>
+    <sequenceFlow id="core_rejection_f11" sourceRef="rj_wait" targetRef="rj_appealFiled"/>
+    <sequenceFlow id="core_rejection_f12" sourceRef="rj_wait" targetRef="rj_lapse"/>
+    <sequenceFlow id="core_rejection_f13" sourceRef="rj_lapse" targetRef="rj_retention"/>
+    <sequenceFlow id="core_rejection_f14" sourceRef="rj_appealFiled" targetRef="rj_appeal"/>
+    <sequenceFlow id="core_rejection_f15" sourceRef="rj_appeal" targetRef="rj_appealRes"/>
+    <sequenceFlow id="core_rejection_f16" name="allowed" sourceRef="rj_appealRes" targetRef="rj_allowed"><conditionExpression xsi:type="tFormalExpression">${appealOutcome == 'ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_rejection_f17" name="dismissed" sourceRef="rj_appealRes" targetRef="rj_retention"/>
+    <sequenceFlow id="core_rejection_f18" sourceRef="rj_allowed" targetRef="rj_endAllowed"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_rejection_diagram">
+    <bpmndi:BPMNPlane id="core_rejection_plane" bpmnElement="sangam-core-rejection">
+      <bpmndi:BPMNShape id="rj_start_di" bpmnElement="rj_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_defaults_di" bpmnElement="rj_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_record_di" bpmnElement="rj_record"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_order_di" bpmnElement="rj_order"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_notify_di" bpmnElement="rj_notify"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_appealGw_di" bpmnElement="rj_appealGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_retention_di" bpmnElement="rj_retention"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_final_di" bpmnElement="rj_final"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_endFinal_di" bpmnElement="rj_endFinal"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_window_di" bpmnElement="rj_window"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_wait_di" bpmnElement="rj_wait"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_appealFiled_di" bpmnElement="rj_appealFiled"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_lapse_di" bpmnElement="rj_lapse"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_appeal_di" bpmnElement="rj_appeal"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_appealRes_di" bpmnElement="rj_appealRes"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_allowed_di" bpmnElement="rj_allowed"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rj_endAllowed_di" bpmnElement="rj_endAllowed"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_rejection_f1_di" bpmnElement="core_rejection_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f2_di" bpmnElement="core_rejection_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f3_di" bpmnElement="core_rejection_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f4_di" bpmnElement="core_rejection_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f5_di" bpmnElement="core_rejection_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f6_di" bpmnElement="core_rejection_f6"><di:waypoint x="920" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f7_di" bpmnElement="core_rejection_f7"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f8_di" bpmnElement="core_rejection_f8"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f9_di" bpmnElement="core_rejection_f9"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f10_di" bpmnElement="core_rejection_f10"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f11_di" bpmnElement="core_rejection_f11"><di:waypoint x="1250" y="70"/><di:waypoint x="1311" y="70"/><di:waypoint x="1311" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f12_di" bpmnElement="core_rejection_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f13_di" bpmnElement="core_rejection_f13"><di:waypoint x="1408" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f14_di" bpmnElement="core_rejection_f14"><di:waypoint x="1408" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f15_di" bpmnElement="core_rejection_f15"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f16_di" bpmnElement="core_rejection_f16"><di:waypoint x="1745" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f17_di" bpmnElement="core_rejection_f17"><di:waypoint x="1745" y="195"/><di:waypoint x="1790" y="195"/><di:waypoint x="1790" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_rejection_f18_di" bpmnElement="core_rejection_f18"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

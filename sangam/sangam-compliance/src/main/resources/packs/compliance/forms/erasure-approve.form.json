@@ -1,0 +1,1 @@
+{"key":"compliance/erasure-approve","title":{"en":"Approve erasure"},"fields":[{"key":"decision","type":"select","options":["APPROVE","REJECT"],"label":{"en":"Decision","hi":"निर्णय"}},{"key":"decisionReason","type":"textarea","label":{"en":"Reason"}}]}

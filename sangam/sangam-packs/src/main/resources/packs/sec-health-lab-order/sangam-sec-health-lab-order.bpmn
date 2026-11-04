@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Lab order. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_health_lab_order" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_lab_amend" name="sangam.lab.amend"/>
+  <process id="sangam-sec-health-lab-order" name="Lab order" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.health.lab-order</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>patientName,testCodes,priority</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="lb_start" name="Order placed" operaton:initiator="initiator" operaton:formKey="sangam:sec-health-lab-order/order"></startEvent>
+    <serviceTask id="lb_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;testCodes=CBC;criticalValue=false;phleboSeat=PHLEBOTOMY;techSeat=LAB-TECH;pathSeat=PATHOLOGIST</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="lb_tat" name="TAT by priority (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-health-lab-tat</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <userTask id="lb_collect" name="Collect sample and label" operaton:candidateGroups="${phleboSeat}" operaton:formKey="sangam:sec-health-lab-order/collect"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>collectDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="lb_colGw" name="" default="sec_health_lab_order_f6"></exclusiveGateway>
+    <serviceTask id="lb_accession" name="Accession in LIS" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>lis.accession</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>accession</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>sampleBarcode,testCodes</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>acc</operaton:string></operaton:field><operaton:field name="step"><operaton:string>accession</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="lb_check" name="Sample acceptance check" operaton:candidateGroups="${techSeat}" operaton:formKey="sangam:sec-health-lab-order/check"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>sampleDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="lb_sampleGw" name="" default="sec_health_lab_order_f18"></exclusiveGateway>
+    <serviceTask id="lb_run_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lb_run</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${tatSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="lb_run" name="Run test and technical validation" operaton:candidateGroups="${techSeat}" operaton:formKey="sangam:sec-health-lab-order/run" operaton:dueDate="${lb_runDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lb_run_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lb_run</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>techSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lb_run_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="lb_run_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lb_run</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>techSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lb_run_breachGw" name="Deemed?" default="sec_health_lab_order_f15"></exclusiveGateway>
+    <exclusiveGateway id="lb_run_done" name=""></exclusiveGateway>
+    <userTask id="lb_authorise" name="Pathologist authorisation" operaton:candidateGroups="${pathSeat}" operaton:formKey="sangam:sec-health-lab-order/authorise"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>authDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="lb_authGw" name="" default="sec_health_lab_order_f30"></exclusiveGateway>
+    <serviceTask id="lb_critical_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lb_critical</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${criticalSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="lb_critical" name="Call critical value to the clinician (read-back)" operaton:candidateGroups="${pathSeat}" operaton:formKey="sangam:sec-health-lab-order/critical" operaton:dueDate="${lb_criticalDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lb_critical_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lb_critical</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>pathSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lb_critical_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="lb_critical_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lb_critical</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>pathSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lb_critical_breachGw" name="Deemed?" default="sec_health_lab_order_f27"></exclusiveGateway>
+    <exclusiveGateway id="lb_critical_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="lb_critGw" name="Critical value?" default="sec_health_lab_order_f32"></exclusiveGateway>
+    <exclusiveGateway id="lb_critMerge" name=""></exclusiveGateway>
+    <serviceTask id="lb_release" name="Release report (FHIR DiagnosticReport)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>lis.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>release</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName,testCodes,results</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>report</operaton:string></operaton:field><operaton:field name="step"><operaton:string>release</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="lb_link" name="Link to ABHA" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>abdm.linkCareContext</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>link</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>hip</operaton:string></operaton:field><operaton:field name="step"><operaton:string>link</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lb_end" name="Reported"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="lb_run_warn" name="SLA warning (75%)" attachedToRef="lb_run" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lb_runWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="lb_run_breach" name="SLA breached" attachedToRef="lb_run" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lb_runDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="lb_critical_warn" name="SLA warning (75%)" attachedToRef="lb_critical" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lb_criticalWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="lb_critical_breach" name="SLA breached" attachedToRef="lb_critical" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lb_criticalDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_health_lab_order_f1" sourceRef="lb_start" targetRef="lb_defaults"/>
+    <sequenceFlow id="sec_health_lab_order_f2" sourceRef="lb_defaults" targetRef="lb_tat"/>
+    <sequenceFlow id="sec_health_lab_order_f3" sourceRef="lb_tat" targetRef="lb_collect"/>
+    <sequenceFlow id="sec_health_lab_order_f4" sourceRef="lb_collect" targetRef="lb_colGw"/>
+    <sequenceFlow id="sec_health_lab_order_f5" name="patient unavailable" sourceRef="lb_colGw" targetRef="lb_collect"><conditionExpression xsi:type="tFormalExpression">${collectDecision == 'reschedule'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_lab_order_f6" name="collected" sourceRef="lb_colGw" targetRef="lb_accession"/>
+    <sequenceFlow id="sec_health_lab_order_f7" sourceRef="lb_accession" targetRef="lb_check"/>
+    <sequenceFlow id="sec_health_lab_order_f8" sourceRef="lb_check" targetRef="lb_sampleGw"/>
+    <sequenceFlow id="sec_health_lab_order_f9" name="haemolysed / mislabelled: re-collect" sourceRef="lb_sampleGw" targetRef="lb_collect"><conditionExpression xsi:type="tFormalExpression">${sampleDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_lab_order_f10" sourceRef="lb_run_warn" targetRef="lb_run_warnNotify"/>
+    <sequenceFlow id="sec_health_lab_order_f11" sourceRef="lb_run_warnNotify" targetRef="lb_run_warnEnd"/>
+    <sequenceFlow id="sec_health_lab_order_f12" sourceRef="lb_run_breach" targetRef="lb_run_breachAct"/>
+    <sequenceFlow id="sec_health_lab_order_f13" sourceRef="lb_run_breachAct" targetRef="lb_run_breachGw"/>
+    <sequenceFlow id="sec_health_lab_order_f14" name="deemed" sourceRef="lb_run_breachGw" targetRef="lb_run_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_lab_order_f15" name="escalated" sourceRef="lb_run_breachGw" targetRef="lb_run_slaPlan"/>
+    <sequenceFlow id="sec_health_lab_order_f16" sourceRef="lb_run_slaPlan" targetRef="lb_run"/>
+    <sequenceFlow id="sec_health_lab_order_f17" sourceRef="lb_run" targetRef="lb_run_done"/>
+    <sequenceFlow id="sec_health_lab_order_f18" name="accept" sourceRef="lb_sampleGw" targetRef="lb_run_slaPlan"/>
+    <sequenceFlow id="sec_health_lab_order_f19" sourceRef="lb_run_done" targetRef="lb_authorise"/>
+    <sequenceFlow id="sec_health_lab_order_f20" sourceRef="lb_authorise" targetRef="lb_authGw"/>
+    <sequenceFlow id="sec_health_lab_order_f21" name="repeat" sourceRef="lb_authGw" targetRef="lb_run_slaPlan"><conditionExpression xsi:type="tFormalExpression">${authDecision == 'repeat'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_lab_order_f22" sourceRef="lb_critical_warn" targetRef="lb_critical_warnNotify"/>
+    <sequenceFlow id="sec_health_lab_order_f23" sourceRef="lb_critical_warnNotify" targetRef="lb_critical_warnEnd"/>
+    <sequenceFlow id="sec_health_lab_order_f24" sourceRef="lb_critical_breach" targetRef="lb_critical_breachAct"/>
+    <sequenceFlow id="sec_health_lab_order_f25" sourceRef="lb_critical_breachAct" targetRef="lb_critical_breachGw"/>
+    <sequenceFlow id="sec_health_lab_order_f26" name="deemed" sourceRef="lb_critical_breachGw" targetRef="lb_critical_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_lab_order_f27" name="escalated" sourceRef="lb_critical_breachGw" targetRef="lb_critical_slaPlan"/>
+    <sequenceFlow id="sec_health_lab_order_f28" sourceRef="lb_critical_slaPlan" targetRef="lb_critical"/>
+    <sequenceFlow id="sec_health_lab_order_f29" sourceRef="lb_critical" targetRef="lb_critical_done"/>
+    <sequenceFlow id="sec_health_lab_order_f30" name="release" sourceRef="lb_authGw" targetRef="lb_critGw"/>
+    <sequenceFlow id="sec_health_lab_order_f31" name="yes" sourceRef="lb_critGw" targetRef="lb_critical_slaPlan"><conditionExpression xsi:type="tFormalExpression">${criticalValue}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_lab_order_f32" name="no" sourceRef="lb_critGw" targetRef="lb_critMerge"/>
+    <sequenceFlow id="sec_health_lab_order_f33" sourceRef="lb_critical_done" targetRef="lb_critMerge"/>
+    <sequenceFlow id="sec_health_lab_order_f34" sourceRef="lb_critMerge" targetRef="lb_release"/>
+    <sequenceFlow id="sec_health_lab_order_f35" sourceRef="lb_release" targetRef="lb_link"/>
+    <sequenceFlow id="sec_health_lab_order_f36" sourceRef="lb_link" targetRef="lb_end"/>
+    <subProcess id="lb_amend" name="Amended report" triggeredByEvent="true">
+      <startEvent id="lb_amStart" name="Amendment requested" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_lab_amend"/></startEvent>
+      <userTask id="lb_amendTask" name="Issue amended report with reason" operaton:candidateGroups="${pathSeat}" operaton:formKey="sangam:sec-health-lab-order/amend"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+      <serviceTask id="lb_amNotify" name="Tell the clinician" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>lab-report-amended</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="lb_amEnd" name="Amended"></endEvent>
+      <sequenceFlow id="sec_health_lab_order_f37" sourceRef="lb_amStart" targetRef="lb_amendTask"/>
+      <sequenceFlow id="sec_health_lab_order_f38" sourceRef="lb_amendTask" targetRef="lb_amNotify"/>
+      <sequenceFlow id="sec_health_lab_order_f39" sourceRef="lb_amNotify" targetRef="lb_amEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_health_lab_order_diagram">
+    <bpmndi:BPMNPlane id="sec_health_lab_order_plane" bpmnElement="sangam-sec-health-lab-order">
+      <bpmndi:BPMNShape id="lb_start_di" bpmnElement="lb_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_defaults_di" bpmnElement="lb_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_tat_di" bpmnElement="lb_tat"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_collect_di" bpmnElement="lb_collect"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_colGw_di" bpmnElement="lb_colGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_accession_di" bpmnElement="lb_accession"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_check_di" bpmnElement="lb_check"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_sampleGw_di" bpmnElement="lb_sampleGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_run_slaPlan_di" bpmnElement="lb_run_slaPlan"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_run_di" bpmnElement="lb_run"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_run_warnNotify_di" bpmnElement="lb_run_warnNotify"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_run_warnEnd_di" bpmnElement="lb_run_warnEnd"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_run_breachAct_di" bpmnElement="lb_run_breachAct"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_run_breachGw_di" bpmnElement="lb_run_breachGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_run_done_di" bpmnElement="lb_run_done"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_authorise_di" bpmnElement="lb_authorise"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_authGw_di" bpmnElement="lb_authGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critical_slaPlan_di" bpmnElement="lb_critical_slaPlan"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critical_di" bpmnElement="lb_critical"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critical_warnNotify_di" bpmnElement="lb_critical_warnNotify"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critical_warnEnd_di" bpmnElement="lb_critical_warnEnd"><dc:Bounds x="3187" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critical_breachAct_di" bpmnElement="lb_critical_breachAct"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critical_breachGw_di" bpmnElement="lb_critical_breachGw"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critical_done_di" bpmnElement="lb_critical_done"><dc:Bounds x="3345" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critGw_di" bpmnElement="lb_critGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critMerge_di" bpmnElement="lb_critMerge"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_release_di" bpmnElement="lb_release"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_link_di" bpmnElement="lb_link"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_end_di" bpmnElement="lb_end"><dc:Bounds x="4012" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_run_warn_di" bpmnElement="lb_run_warn"><dc:Bounds x="1513" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_run_breach_di" bpmnElement="lb_run_breach"><dc:Bounds x="1543" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critical_warn_di" bpmnElement="lb_critical_warn"><dc:Bounds x="2833" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_critical_breach_di" bpmnElement="lb_critical_breach"><dc:Bounds x="2863" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_amend_di" bpmnElement="lb_amend" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_amStart_di" bpmnElement="lb_amStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_amendTask_di" bpmnElement="lb_amendTask"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_amNotify_di" bpmnElement="lb_amNotify"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lb_amEnd_di" bpmnElement="lb_amEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f1_di" bpmnElement="sec_health_lab_order_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f2_di" bpmnElement="sec_health_lab_order_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f3_di" bpmnElement="sec_health_lab_order_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f4_di" bpmnElement="sec_health_lab_order_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f5_di" bpmnElement="sec_health_lab_order_f5"><di:waypoint x="730" y="95"/><di:waypoint x="730" y="128"/><di:waypoint x="565" y="128"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f6_di" bpmnElement="sec_health_lab_order_f6"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f7_di" bpmnElement="sec_health_lab_order_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f8_di" bpmnElement="sec_health_lab_order_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f9_di" bpmnElement="sec_health_lab_order_f9"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="128"/><di:waypoint x="565" y="128"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f10_di" bpmnElement="sec_health_lab_order_f10"><di:waypoint x="1531" y="128"/><di:waypoint x="1531" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f11_di" bpmnElement="sec_health_lab_order_f11"><di:waypoint x="1770" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f12_di" bpmnElement="sec_health_lab_order_f12"><di:waypoint x="1561" y="128"/><di:waypoint x="1561" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f13_di" bpmnElement="sec_health_lab_order_f13"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f14_di" bpmnElement="sec_health_lab_order_f14"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f15_di" bpmnElement="sec_health_lab_order_f15"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="142"/><di:waypoint x="1390" y="142"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f16_di" bpmnElement="sec_health_lab_order_f16"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f17_di" bpmnElement="sec_health_lab_order_f17"><di:waypoint x="1605" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f18_di" bpmnElement="sec_health_lab_order_f18"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f19_di" bpmnElement="sec_health_lab_order_f19"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f20_di" bpmnElement="sec_health_lab_order_f20"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f21_di" bpmnElement="sec_health_lab_order_f21"><di:waypoint x="2380" y="95"/><di:waypoint x="2380" y="128"/><di:waypoint x="1390" y="128"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f22_di" bpmnElement="sec_health_lab_order_f22"><di:waypoint x="2851" y="128"/><di:waypoint x="2851" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f23_di" bpmnElement="sec_health_lab_order_f23"><di:waypoint x="3090" y="195"/><di:waypoint x="3187" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f24_di" bpmnElement="sec_health_lab_order_f24"><di:waypoint x="2881" y="128"/><di:waypoint x="2881" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f25_di" bpmnElement="sec_health_lab_order_f25"><di:waypoint x="3090" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f26_di" bpmnElement="sec_health_lab_order_f26"><di:waypoint x="3230" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f27_di" bpmnElement="sec_health_lab_order_f27"><di:waypoint x="3205" y="95"/><di:waypoint x="3205" y="142"/><di:waypoint x="2710" y="142"/><di:waypoint x="2710" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f28_di" bpmnElement="sec_health_lab_order_f28"><di:waypoint x="2760" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f29_di" bpmnElement="sec_health_lab_order_f29"><di:waypoint x="2925" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f30_di" bpmnElement="sec_health_lab_order_f30"><di:waypoint x="2405" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f31_di" bpmnElement="sec_health_lab_order_f31"><di:waypoint x="2570" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f32_di" bpmnElement="sec_health_lab_order_f32"><di:waypoint x="2570" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f33_di" bpmnElement="sec_health_lab_order_f33"><di:waypoint x="3395" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f34_di" bpmnElement="sec_health_lab_order_f34"><di:waypoint x="3560" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f35_di" bpmnElement="sec_health_lab_order_f35"><di:waypoint x="3750" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f36_di" bpmnElement="sec_health_lab_order_f36"><di:waypoint x="3915" y="70"/><di:waypoint x="4012" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f37_di" bpmnElement="sec_health_lab_order_f37"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f38_di" bpmnElement="sec_health_lab_order_f38"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_lab_order_f39_di" bpmnElement="sec_health_lab_order_f39"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "PHARMACY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PHARMACIST",
+      "role": "PHARMACIST",
+      "office": "PHARMACY",
+      "reportsTo": "CHIEF-PHARMACIST",
+      "name": {
+        "en": "Registered pharmacist",
+        "hi": "पंजीकृत फार्मासिस्ट"
+      }
+    },
+    {
+      "id": "PHARMACIST-2",
+      "role": "PHARMACIST",
+      "office": "PHARMACY",
+      "reportsTo": "CHIEF-PHARMACIST",
+      "name": {
+        "en": "Second pharmacist",
+        "hi": "द्वितीय फार्मासिस्ट"
+      }
+    },
+    {
+      "id": "CHIEF-PHARMACIST",
+      "role": "CHIEF",
+      "office": "PHARMACY",
+      "reportsTo": null,
+      "name": {
+        "en": "Chief pharmacist",
+        "hi": "मुख्य फार्मासिस्ट"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PHARMACIST",
+      "person": "hph.pharmacist",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PHARMACIST-2",
+      "person": "hph.pharmacist-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CHIEF-PHARMACIST",
+      "person": "hph.chief-pharmacist",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PHARMACIST",
+      "name": {
+        "en": "Registered pharmacist",
+        "hi": "पंजीकृत फार्मासिस्ट"
+      }
+    },
+    {
+      "code": "PHARMACIST",
+      "name": {
+        "en": "Second pharmacist",
+        "hi": "द्वितीय फार्मासिस्ट"
+      }
+    },
+    {
+      "code": "CHIEF",
+      "name": {
+        "en": "Chief pharmacist",
+        "hi": "मुख्य फार्मासिस्ट"
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "key": "sec-bank-loan-origination/accept",
+  "version": "1.0.0",
+  "pack": "sec.bank.loan-origination",
+  "title": {
+    "en": "Borrower accepts KFS and sanction terms",
+    "hi": "उधारकर्ता द्वारा केएफएस एवं शर्तों की स्वीकृति"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "kfsDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "declined",
+        "label": {
+          "en": "Declined",
+          "hi": "अस्वीकार किया"
+        }
+      }
+    ]
+  }
+}

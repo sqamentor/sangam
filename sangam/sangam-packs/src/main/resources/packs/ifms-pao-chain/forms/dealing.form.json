@@ -1,0 +1,65 @@
+{
+  "key": "ifms-pao-chain/dealing",
+  "version": "1.0.0",
+  "pack": "gov.ifms.pao-chain",
+  "title": {
+    "en": "Dealing hand check",
+    "hi": "व्यवहार सहायक की जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "tokenNo",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Token number",
+        "hi": "टोकन संख्या"
+      }
+    },
+    {
+      "id": "objectionCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Objection codes (with rule)",
+        "hi": "आपत्ति कोड (नियम सहित)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "dealingDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "forwardNext",
+        "label": {
+          "en": "Forward to next level",
+          "hi": "अगले स्तर को अग्रेषित करें"
+        }
+      },
+      {
+        "value": "object",
+        "label": {
+          "en": "Raise objection",
+          "hi": "आपत्ति उठाएँ"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "OFFICE-L",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CONTROLLING-1",
+      "role": "CONTROLLING",
+      "office": "OFFICE-L",
+      "reportsTo": "HOD-L",
+      "name": {
+        "en": "Controlling officer",
+        "hi": "नियंत्रक अधिकारी"
+      }
+    },
+    {
+      "id": "HOD-L",
+      "role": "HOD",
+      "office": "OFFICE-L",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of department",
+        "hi": "विभागाध्यक्ष"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CONTROLLING-1",
+      "person": "lv.controlling-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HOD-L",
+      "person": "lv.hod-l",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CONTROLLING",
+      "name": {
+        "en": "Controlling officer",
+        "hi": "नियंत्रक अधिकारी"
+      }
+    },
+    {
+      "code": "HOD",
+      "name": {
+        "en": "Head of department",
+        "hi": "विभागाध्यक्ष"
+      }
+    }
+  ]
+}

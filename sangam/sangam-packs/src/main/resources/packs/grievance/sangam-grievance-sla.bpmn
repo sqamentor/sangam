@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Grievance case variant: SLA watch. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_grievance_sla" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-grievance-sla" name="Grievance case variant: SLA watch" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Blocking process task of the CMMN case; exited when the grievance is disposed.</documentation>
+    <startEvent id="gs_start" name="Watch"></startEvent>
+    <intermediateCatchEvent id="gs_due" name="21 days"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P21D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="gs_review" name="Senior officer review of a delayed grievance" operaton:candidateGroups="NODAL-GRV" operaton:formKey="sangam:grievance/delayed-review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="gs_end" name="Reviewed"></endEvent>
+    <sequenceFlow id="grievance_sla_f1" sourceRef="gs_start" targetRef="gs_due"/>
+    <sequenceFlow id="grievance_sla_f2" sourceRef="gs_due" targetRef="gs_review"/>
+    <sequenceFlow id="grievance_sla_f3" sourceRef="gs_review" targetRef="gs_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="grievance_sla_diagram">
+    <bpmndi:BPMNPlane id="grievance_sla_plane" bpmnElement="sangam-grievance-sla">
+      <bpmndi:BPMNShape id="gs_start_di" bpmnElement="gs_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gs_due_di" bpmnElement="gs_due"><dc:Bounds x="217" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gs_review_di" bpmnElement="gs_review"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gs_end_di" bpmnElement="gs_end"><dc:Bounds x="547" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="grievance_sla_f1_di" bpmnElement="grievance_sla_f1"><di:waypoint x="88" y="70"/><di:waypoint x="217" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_sla_f2_di" bpmnElement="grievance_sla_f2"><di:waypoint x="253" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="grievance_sla_f3_di" bpmnElement="grievance_sla_f3"><di:waypoint x="450" y="70"/><di:waypoint x="547" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

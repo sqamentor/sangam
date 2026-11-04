@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+layers:
+- id: international
+  overridable: true
+- id: regime
+  overridable: true
+- id: jurisdiction
+  overridable: true
+  required:
+  - locale.currency
+  - locale.fiscal
+- id: category
+  overridable: true
+- id: government
+  overridable: true
+- id: department
+  overridable: true
+- id: office
+  overridable: true
+note: Profile layer model of this deployment (lowest precedence first). Donor sections ("adopt") sit at the layer of the donor
+  document. The regime-preset layer is approved by the integrator (INTERNATIONAL-PFM 4.1).

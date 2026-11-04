@@ -1,0 +1,150 @@
+# SPDX-License-Identifier: Apache-2.0
+# Build + unit tests (H2, no Testcontainers), image build check, and deploy-config lint (compose + Helm).
+# Owner: WS-DEPLOY (sangam/deploy). The Maven reactor lives in sangam/.
+name: build
+
+on:
+  push:
+    branches: [main]
+    paths: ["sangam/**", ".github/workflows/ci-build.yml"]
+  pull_request:
+    paths: ["sangam/**", ".github/workflows/ci-build.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MAVEN_ARGS: -B -ntp -Dstyle.color=always
+  TZ: UTC
+
+defaults:
+  run:
+    working-directory: sangam
+    shell: bash
+
+jobs:
+  build:
+    name: Maven build + unit tests (JDK 21)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: sangam/**/pom.xml
+      - name: Build and unit tests
+        # Unit tests only: Testcontainers / DB suites run in db-matrix.yml (CF-11). Enforcer rules in the poms
+        # (LIC-1 GraalJS ban, LIC-7 Liquibase < 5) run as part of validate.
+        run: mvn $MAVEN_ARGS -Dsangam.db=h2 -DskipITs -Dsangam.it.skip=true verify
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: |
+            sangam/**/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Stage server jar and MariaDB driver (LIC-5 separate jar)
+        run: |
+          set -euo pipefail
+          mkdir -p ../dist/lib-ext
+          jar=$(ls sangam-server/target/sangam-server-*.jar 2>/dev/null | grep -v -e '\.original$' -e '-plain\.jar$' -e '-sources\.jar$' | head -n1 || true)
+          if [ -z "$jar" ]; then echo "::warning::no sangam-server jar produced yet"; exit 0; fi
+          cp "$jar" ../dist/sangam-server.jar
+          mariadb=$(mvn -q -DforceStdout help:evaluate -Dexpression=version.mariadb -N)
+          mvn $MAVEN_ARGS -q dependency:copy -Dartifact=org.mariadb.jdbc:mariadb-java-client:$mariadb -DoutputDirectory=../dist/lib-ext
+      - uses: actions/upload-artifact@v4
+        with:
+          name: server-jar
+          path: dist/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  image:
+    name: Server image build (no push)
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: server-jar
+          path: dist
+        continue-on-error: true
+      - name: Stage prebuilt jar
+        id: stage
+        run: |
+          if [ -f ../dist/sangam-server.jar ]; then
+            mkdir -p sangam-server/target deploy/docker/lib-ext
+            cp ../dist/sangam-server.jar sangam-server/target/sangam-server.jar
+            cp ../dist/lib-ext/*.jar deploy/docker/lib-ext/ 2>/dev/null || true
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: docker/setup-buildx-action@v3
+        if: steps.stage.outputs.present == 'true'
+      - name: Build sangam-server (temurin + distroless targets)
+        if: steps.stage.outputs.present == 'true'
+        run: |
+          for target in runtime runtime-distroless; do
+            docker buildx build -f deploy/docker/server.Dockerfile --target "$target" \
+              --build-arg JAR_SOURCE=prebuilt --build-arg PREBUILT_JAR=sangam-server/target/sangam-server.jar \
+              --load -t "sangam-server:ci-$target" .
+          done
+          docker image ls sangam-server
+
+  deploy-lint:
+    name: Compose + Helm lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: sangam/deploy
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker compose config (every DB profile)
+        working-directory: sangam/deploy/compose
+        run: |
+          set -euo pipefail
+          for p in postgres oracle sqlserver mysql; do
+            docker compose --profile "$p" --profile simulators --profile observability config --quiet
+            echo "compose profile $p: OK"
+          done
+      - name: Keycloak realm is up to date with its generator
+        run: |
+          python3 -I compose/keycloak/generate_realm.py
+          git diff --exit-code -- compose/keycloak/realm compose/observability/grafana/dashboards
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.18.4
+      - name: helm lint + template (every example values file)
+        run: |
+          set -euo pipefail
+          helm lint helm/sangam --kube-version 1.30.0 -f helm/sangam/examples/values-postgres.yaml
+          for f in helm/sangam/examples/values-*.yaml; do
+            extra=""
+            case "$f" in *airgap*) extra="-f helm/sangam/examples/values-postgres.yaml" ;; esac
+            echo "== $f"
+            helm lint helm/sangam --kube-version 1.30.0 $extra -f "$f" --strict
+            helm template sangam helm/sangam --kube-version 1.30.0 $extra -f "$f" --namespace sangam > "/tmp/$(basename "$f" .yaml).rendered.yaml"
+          done
+          helm template sangam helm/sangam --kube-version 1.30.0 -f helm/sangam/examples/values-postgres.yaml --set liquibase.mode=startup --set networkPolicy.enabled=false > /dev/null
+      - name: Validate rendered manifests (kubeconform)
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/kc.tgz https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz
+          tar -C /tmp -xzf /tmp/kc.tgz kubeconform
+          /tmp/kubeconform -strict -summary -skip ServiceMonitor -kubernetes-version 1.30.0 /tmp/*.rendered.yaml
+      - name: ShellCheck deploy scripts
+        run: shellcheck -S warning airgap/*.sh

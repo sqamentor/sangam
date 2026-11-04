@@ -1,0 +1,54 @@
+{
+  "key": "sec-mfg-batch-release/batch",
+  "version": "1.0.0",
+  "pack": "sec.mfg.batch-release",
+  "title": {
+    "en": "Batch completion",
+    "hi": "बैच पूर्णता"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "batchNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Batch number",
+        "hi": "बैच संख्या"
+      }
+    },
+    {
+      "id": "productCode",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Product",
+        "hi": "उत्पाद"
+      }
+    },
+    {
+      "id": "quantity",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Quantity",
+        "hi": "मात्रा"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

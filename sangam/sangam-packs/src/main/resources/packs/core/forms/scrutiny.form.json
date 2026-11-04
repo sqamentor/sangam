@@ -1,0 +1,99 @@
+{
+  "key": "core/scrutiny",
+  "version": "1.0.0",
+  "pack": "sangam.core",
+  "title": {
+    "en": "Scrutiny",
+    "hi": "संवीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "clarificationQuery",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Clarification sought",
+        "hi": "मांगा गया स्पष्टीकरण"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    },
+    {
+      "id": "rejectionRemarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Rejection remarks",
+        "hi": "अस्वीकृति संबंधी टिप्पणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "presentedPayloadHash",
+      "type": "hidden",
+      "required": false,
+      "label": {
+        "en": "Shown payload hash",
+        "hi": "प्रदर्शित विवरण का हैश"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "scrutinyDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "clarify",
+        "label": {
+          "en": "Seek clarification",
+          "hi": "स्पष्टीकरण मांगें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Monthly pension disbursement. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_pension_monthly" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-pension-monthly" name="Monthly pension disbursement" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.pension</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pm_timer" name="Monthly on the 25th"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 1 25 * ?</timeCycle></timerEventDefinition></startEvent>
+    <serviceTask id="pm_load" name="Pension roll" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>pension.roll</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pm_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pm_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-pension-payment</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>period</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pm_fanGw" name="All started?" default="pension_monthly_f5"></exclusiveGateway>
+    <intermediateCatchEvent id="pm_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT5M</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="pm_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pm_doneGw" name="Round complete?" default="pension_monthly_f10"></exclusiveGateway>
+    <serviceTask id="pm_report" name="Disbursement report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>pension-disbursement-report</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pm_end" name="Month closed"></endEvent>
+    <sequenceFlow id="pension_monthly_f1" sourceRef="pm_timer" targetRef="pm_load"/>
+    <sequenceFlow id="pension_monthly_f2" sourceRef="pm_open" targetRef="pm_fanOut"/>
+    <sequenceFlow id="pension_monthly_f3" sourceRef="pm_fanOut" targetRef="pm_fanGw"/>
+    <sequenceFlow id="pension_monthly_f4" name="next chunk" sourceRef="pm_fanGw" targetRef="pm_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_monthly_f5" name="all started" sourceRef="pm_fanGw" targetRef="pm_poll"/>
+    <sequenceFlow id="pension_monthly_f6" sourceRef="pm_poll" targetRef="pm_aggregate"/>
+    <sequenceFlow id="pension_monthly_f7" sourceRef="pm_aggregate" targetRef="pm_doneGw"/>
+    <sequenceFlow id="pension_monthly_f8" name="not yet" sourceRef="pm_doneGw" targetRef="pm_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_monthly_f9" sourceRef="pm_load" targetRef="pm_open"/>
+    <sequenceFlow id="pension_monthly_f10" name="complete" sourceRef="pm_doneGw" targetRef="pm_report"/>
+    <sequenceFlow id="pension_monthly_f11" sourceRef="pm_report" targetRef="pm_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="pension_monthly_diagram">
+    <bpmndi:BPMNPlane id="pension_monthly_plane" bpmnElement="sangam-pension-monthly">
+      <bpmndi:BPMNShape id="pm_timer_di" bpmnElement="pm_timer"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_load_di" bpmnElement="pm_load"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_open_di" bpmnElement="pm_open"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_fanOut_di" bpmnElement="pm_fanOut"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_fanGw_di" bpmnElement="pm_fanGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_poll_di" bpmnElement="pm_poll"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_aggregate_di" bpmnElement="pm_aggregate"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_doneGw_di" bpmnElement="pm_doneGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_report_di" bpmnElement="pm_report"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pm_end_di" bpmnElement="pm_end"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="pension_monthly_f1_di" bpmnElement="pension_monthly_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f2_di" bpmnElement="pension_monthly_f2"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f3_di" bpmnElement="pension_monthly_f3"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f4_di" bpmnElement="pension_monthly_f4"><di:waypoint x="730" y="95"/><di:waypoint x="730" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f5_di" bpmnElement="pension_monthly_f5"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f6_di" bpmnElement="pension_monthly_f6"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f7_di" bpmnElement="pension_monthly_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f8_di" bpmnElement="pension_monthly_f8"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="134"/><di:waypoint x="895" y="134"/><di:waypoint x="895" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f9_di" bpmnElement="pension_monthly_f9"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f10_di" bpmnElement="pension_monthly_f10"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_monthly_f11_di" bpmnElement="pension_monthly_f11"><di:waypoint x="1440" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

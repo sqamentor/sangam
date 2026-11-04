@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: INTL
+  layer: international
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  name:
+    en: International public-finance reference
+  source: IMF GFSM 2014; UN COFOG 1999 (divisions); ISO 4217
+placeholders:
+- path: classification.schemes.COFOG
+  reason: COFOG groups/classes not loaded; divisions only (G3 [U])
+locked:
+- classification.schemes.COFOG
+classification:
+  schemes:
+  - id: COFOG
+    separator: .
+    segments:
+    - id: division
+      width: 2
+      master: true
+    - id: group
+      width: 1
+      optional: true
+    - id: class
+      width: 1
+      optional: true
+seeds:
+- scheme: COFOG
+  file: intl/seeds/cofog-divisions.csv

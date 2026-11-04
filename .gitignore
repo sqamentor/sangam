@@ -16,6 +16,18 @@ spike/results/run-queue/
 spike/results/*.console.log
 spike/results/run-queue.log
 
+# Python and Node build caches
+__pycache__/
+*.pyc
+node_modules/
+sangam/sangam-ui/dist/
+# .NET build output (contains absolute local paths)
+**/bin/
+**/obj/
+
+# Large official source documents (re-downloadable; hashes recorded in the extraction README)
+spike/results/sources/**/*.pdf
+
 # OS files
 Thumbs.db
 .DS_Store

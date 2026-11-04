@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-breach/close",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.breach",
+  "title": {
+    "en": "Retain the documentation (6 years) and close",
+    "es": "Conservar la documentación y cerrar"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "es": "Documentos"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

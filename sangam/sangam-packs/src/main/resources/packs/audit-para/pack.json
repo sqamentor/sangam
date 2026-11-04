@@ -1,0 +1,66 @@
+{
+  "id": "gov.audit-para",
+  "version": "1.0.0",
+  "name": {
+    "en": "Audit inspection and paras",
+    "hi": "लेखापरीक्षा निरीक्षण एवं पैरा"
+  },
+  "domain": "Audit paras",
+  "description": "An audit inspection report is received and each para is its own case (GP-09) answered by the owning office, approved by the head of department, sent to the AG, and settled, dropped or answered again on the AG verdict; CMMN case variant for ad-hoc audit work (GP-21).",
+  "mainProcesses": [
+    "sangam-audit-inspection"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/audit-para/sangam-audit-inspection.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/audit-para/sangam-audit-para.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/audit-para/audit-reply-authority.dmn"
+    },
+    {
+      "kind": "CMMN",
+      "path": "packs/audit-para/sangam-audit-para-case.cmmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/audit-para/forms/inspection-report.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/audit-para/forms/reply.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/audit-para/seed.json"
+    }
+  ],
+  "seed": "packs/audit-para/seed.json",
+  "connectors": [
+    {
+      "id": "ag.paraReply",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Reply to the Accountant General"
+    }
+  ],
+  "covers": [
+    "GP-21",
+    "GP-36",
+    "GP-09",
+    "GP-50"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-sanction"
+  ]
+}

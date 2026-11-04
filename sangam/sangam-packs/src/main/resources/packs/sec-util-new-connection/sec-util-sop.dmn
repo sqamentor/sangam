@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_util_sop" name="Connection timeline by area (Electricity (Rights of Consumers) Rules 2020)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-util-sop" name="Connection timeline by area (Electricity (Rights of Consumers) Rules 2020)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-util-sop_t" hitPolicy="FIRST">
+      <input id="sec-util-sop_i0" label="Area"><inputExpression id="sec-util-sop_ie0" typeRef="string"><text>areaType</text></inputExpression></input>
+      <output id="sec-util-sop_o0" label="Connect within" name="connSpec" typeRef="string"/>
+      <rule id="sec-util-sop_r0">
+        <inputEntry id="sec-util-sop_r0_i0"><text>"METRO"</text></inputEntry>
+        <outputEntry id="sec-util-sop_r0_o0"><text>"7D"</text></outputEntry>
+      </rule>
+      <rule id="sec-util-sop_r1">
+        <inputEntry id="sec-util-sop_r1_i0"><text>"MUNICIPAL"</text></inputEntry>
+        <outputEntry id="sec-util-sop_r1_o0"><text>"15D"</text></outputEntry>
+      </rule>
+      <rule id="sec-util-sop_r2"><description>rural / hilly</description>
+        <inputEntry id="sec-util-sop_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-util-sop_r2_o0"><text>"30D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

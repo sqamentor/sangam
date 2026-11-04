@@ -1,0 +1,152 @@
+{
+  "offices": [
+    {
+      "id": "ITSM",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "L1-SUPPORT",
+      "role": "L1",
+      "office": "ITSM",
+      "reportsTo": "L2-SUPPORT",
+      "name": {
+        "en": "Service desk L1",
+        "hi": "सेवा डेस्क एल1"
+      }
+    },
+    {
+      "id": "L2-SUPPORT",
+      "role": "L2",
+      "office": "ITSM",
+      "reportsTo": "INCIDENT-MGR",
+      "name": {
+        "en": "Resolver L2",
+        "hi": "समाधानकर्ता एल2"
+      }
+    },
+    {
+      "id": "NET-OPS",
+      "role": "OPS",
+      "office": "ITSM",
+      "reportsTo": "INCIDENT-MGR",
+      "name": {
+        "en": "Network operations",
+        "hi": "नेटवर्क संचालन"
+      }
+    },
+    {
+      "id": "APP-OPS",
+      "role": "OPS",
+      "office": "ITSM",
+      "reportsTo": "INCIDENT-MGR",
+      "name": {
+        "en": "Application operations",
+        "hi": "अनुप्रयोग संचालन"
+      }
+    },
+    {
+      "id": "DB-OPS",
+      "role": "OPS",
+      "office": "ITSM",
+      "reportsTo": "INCIDENT-MGR",
+      "name": {
+        "en": "Database operations",
+        "hi": "डेटाबेस संचालन"
+      }
+    },
+    {
+      "id": "INCIDENT-MGR",
+      "role": "MANAGER",
+      "office": "ITSM",
+      "reportsTo": null,
+      "name": {
+        "en": "Incident manager",
+        "hi": "घटना प्रबंधक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "L1-SUPPORT",
+      "person": "u10.l1-support",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "L2-SUPPORT",
+      "person": "u10.l2-support",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "NET-OPS",
+      "person": "u10.net-ops",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "APP-OPS",
+      "person": "u10.app-ops",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DB-OPS",
+      "person": "u10.db-ops",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "INCIDENT-MGR",
+      "person": "u10.incident-mgr",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "L1",
+      "name": {
+        "en": "Service desk L1",
+        "hi": "सेवा डेस्क एल1"
+      }
+    },
+    {
+      "code": "L2",
+      "name": {
+        "en": "Resolver L2",
+        "hi": "समाधानकर्ता एल2"
+      }
+    },
+    {
+      "code": "OPS",
+      "name": {
+        "en": "Network operations",
+        "hi": "नेटवर्क संचालन"
+      }
+    },
+    {
+      "code": "OPS",
+      "name": {
+        "en": "Application operations",
+        "hi": "अनुप्रयोग संचालन"
+      }
+    },
+    {
+      "code": "OPS",
+      "name": {
+        "en": "Database operations",
+        "hi": "डेटाबेस संचालन"
+      }
+    },
+    {
+      "code": "MANAGER",
+      "name": {
+        "en": "Incident manager",
+        "hi": "घटना प्रबंधक"
+      }
+    }
+  ]
+}

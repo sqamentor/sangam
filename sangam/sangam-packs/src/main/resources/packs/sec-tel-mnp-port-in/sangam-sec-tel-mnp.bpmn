@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Port-in. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_tel_mnp" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_mnp_donorAccepted" name="sangam.mnp.donorAccepted"/>
+  <message id="msg_sangam_mnp_donorRejected" name="sangam.mnp.donorRejected"/>
+  <message id="msg_sangam_mnp_portWindow" name="sangam.mnp.portWindow"/>
+  <process id="sangam-sec-tel-mnp" name="Port-in" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.tel.mnp-port-in</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>msisdn,upc,donorOperator,lsaType</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="mn_start" name="Port-in request" operaton:initiator="initiator" operaton:formKey="sangam:sec-tel-mnp-port-in/request"></startEvent>
+    <serviceTask id="mn_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>msisdn=@customerId;upc=X;donorOperator=OP-X;lsaType=INTRA;customerType=INDIVIDUAL;kycOk=true;opsSeat=MNP-DESK;applicantRef=@msisdn</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="mn_tl" name="Porting timeline (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-tel-mnp-timeline</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="mn_kyc" name="Subscriber KYC" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>dot.kyc</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>ekyc</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>msisdn,customerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>kyc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="mn_kycGw" name="KYC ok?" default="sec_tel_mnp_f8"></exclusiveGateway>
+    <serviceTask id="mn_rjKyc_code" name="Reason: KYC_FAILED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=KYC_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="mn_rjKyc_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="mn_rjKyc_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="mn_clock" name="Regulatory clock: port" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>port</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${portSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="mn_request" name="Port request to MNPSP" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>mnpsp.port</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>request</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>msisdn,upc,donorOperator</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>port</operaton:string></operaton:field><operaton:field name="step"><operaton:string>port-request</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="mn_wait" name="Donor response or timeline"></eventBasedGateway>
+    <intermediateCatchEvent id="mn_accepted" name="Donor accepted"><messageEventDefinition messageRef="msg_sangam_mnp_donorAccepted"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="mn_rejected" name="Donor rejected (coded reason)"><messageEventDefinition messageRef="msg_sangam_mnp_donorRejected"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="mn_late" name="Timeline at risk"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${portDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="mn_rejNotify" name="Tell the subscriber the reason" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>mnp-rejected</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="mn_endRejected" name="Port rejected"></endEvent>
+    <userTask id="mn_escalate" name="Escalate delayed port to the MNPSP" operaton:candidateGroups="${opsSeat}" operaton:formKey="sangam:sec-tel-mnp-port-in/escalate"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <intermediateCatchEvent id="mn_window" name="Porting window"><messageEventDefinition messageRef="msg_sangam_mnp_portWindow"/></intermediateCatchEvent>
+    <serviceTask id="mn_activate" name="Activate on the recipient network" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hlr.activate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>activate</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>msisdn</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>hlr</operaton:string></operaton:field><operaton:field name="step"><operaton:string>activate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="mn_end" name="Ported in"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_tel_mnp_f1" sourceRef="mn_start" targetRef="mn_defaults"/>
+    <sequenceFlow id="sec_tel_mnp_f2" sourceRef="mn_defaults" targetRef="mn_tl"/>
+    <sequenceFlow id="sec_tel_mnp_f3" sourceRef="mn_tl" targetRef="mn_kyc"/>
+    <sequenceFlow id="sec_tel_mnp_f4" sourceRef="mn_kyc" targetRef="mn_kycGw"/>
+    <sequenceFlow id="sec_tel_mnp_f5" sourceRef="mn_rjKyc_reject" targetRef="mn_rjKyc_endRejected"/>
+    <sequenceFlow id="sec_tel_mnp_f6" sourceRef="mn_rjKyc_code" targetRef="mn_rjKyc_reject"/>
+    <sequenceFlow id="sec_tel_mnp_f7" name="no" sourceRef="mn_kycGw" targetRef="mn_rjKyc_code"><conditionExpression xsi:type="tFormalExpression">${!kycOk}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_tel_mnp_f8" name="yes" sourceRef="mn_kycGw" targetRef="mn_clock"/>
+    <sequenceFlow id="sec_tel_mnp_f9" sourceRef="mn_clock" targetRef="mn_request"/>
+    <sequenceFlow id="sec_tel_mnp_f10" sourceRef="mn_request" targetRef="mn_wait"/>
+    <sequenceFlow id="sec_tel_mnp_f11" sourceRef="mn_wait" targetRef="mn_accepted"/>
+    <sequenceFlow id="sec_tel_mnp_f12" sourceRef="mn_wait" targetRef="mn_rejected"/>
+    <sequenceFlow id="sec_tel_mnp_f13" sourceRef="mn_wait" targetRef="mn_late"/>
+    <sequenceFlow id="sec_tel_mnp_f14" sourceRef="mn_rejected" targetRef="mn_rejNotify"/>
+    <sequenceFlow id="sec_tel_mnp_f15" sourceRef="mn_rejNotify" targetRef="mn_endRejected"/>
+    <sequenceFlow id="sec_tel_mnp_f16" sourceRef="mn_late" targetRef="mn_escalate"/>
+    <sequenceFlow id="sec_tel_mnp_f17" sourceRef="mn_escalate" targetRef="mn_wait"/>
+    <sequenceFlow id="sec_tel_mnp_f18" sourceRef="mn_accepted" targetRef="mn_window"/>
+    <sequenceFlow id="sec_tel_mnp_f19" sourceRef="mn_window" targetRef="mn_activate"/>
+    <sequenceFlow id="sec_tel_mnp_f20" sourceRef="mn_activate" targetRef="mn_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_tel_mnp_diagram">
+    <bpmndi:BPMNPlane id="sec_tel_mnp_plane" bpmnElement="sangam-sec-tel-mnp">
+      <bpmndi:BPMNShape id="mn_start_di" bpmnElement="mn_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_defaults_di" bpmnElement="mn_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_tl_di" bpmnElement="mn_tl"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_kyc_di" bpmnElement="mn_kyc"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_kycGw_di" bpmnElement="mn_kycGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_rjKyc_code_di" bpmnElement="mn_rjKyc_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_rjKyc_reject_di" bpmnElement="mn_rjKyc_reject"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_rjKyc_endRejected_di" bpmnElement="mn_rjKyc_endRejected"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_clock_di" bpmnElement="mn_clock"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_request_di" bpmnElement="mn_request"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_wait_di" bpmnElement="mn_wait"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_accepted_di" bpmnElement="mn_accepted"><dc:Bounds x="1372" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_rejected_di" bpmnElement="mn_rejected"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_late_di" bpmnElement="mn_late"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_rejNotify_di" bpmnElement="mn_rejNotify"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_endRejected_di" bpmnElement="mn_endRejected"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_escalate_di" bpmnElement="mn_escalate"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_window_di" bpmnElement="mn_window"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_activate_di" bpmnElement="mn_activate"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mn_end_di" bpmnElement="mn_end"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f1_di" bpmnElement="sec_tel_mnp_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f2_di" bpmnElement="sec_tel_mnp_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f3_di" bpmnElement="sec_tel_mnp_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f4_di" bpmnElement="sec_tel_mnp_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f5_di" bpmnElement="sec_tel_mnp_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f6_di" bpmnElement="sec_tel_mnp_f6"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f7_di" bpmnElement="sec_tel_mnp_f7"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f8_di" bpmnElement="sec_tel_mnp_f8"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f9_di" bpmnElement="sec_tel_mnp_f9"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f10_di" bpmnElement="sec_tel_mnp_f10"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f11_di" bpmnElement="sec_tel_mnp_f11"><di:waypoint x="1250" y="70"/><di:waypoint x="1311" y="70"/><di:waypoint x="1311" y="320"/><di:waypoint x="1372" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f12_di" bpmnElement="sec_tel_mnp_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1311" y="70"/><di:waypoint x="1311" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f13_di" bpmnElement="sec_tel_mnp_f13"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f14_di" bpmnElement="sec_tel_mnp_f14"><di:waypoint x="1408" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f15_di" bpmnElement="sec_tel_mnp_f15"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f16_di" bpmnElement="sec_tel_mnp_f16"><di:waypoint x="1408" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f17_di" bpmnElement="sec_tel_mnp_f17"><di:waypoint x="1555" y="110"/><di:waypoint x="1555" y="128"/><di:waypoint x="1225" y="128"/><di:waypoint x="1225" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f18_di" bpmnElement="sec_tel_mnp_f18"><di:waypoint x="1408" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f19_di" bpmnElement="sec_tel_mnp_f19"><di:waypoint x="1573" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_tel_mnp_f20_di" bpmnElement="sec_tel_mnp_f20"><di:waypoint x="1770" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

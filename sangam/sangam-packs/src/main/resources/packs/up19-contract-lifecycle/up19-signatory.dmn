@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_up19_signatory" name="Signing authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="up19-signatory" name="Signing authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="up19-signatory_t" hitPolicy="FIRST">
+      <input id="up19-signatory_i0" label="Amount"><inputExpression id="up19-signatory_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <output id="up19-signatory_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="up19-signatory_r0">
+        <inputEntry id="up19-signatory_r0_i0"><text>&lt;= 1000000</text></inputEntry>
+        <outputEntry id="up19-signatory_r0_o0"><text>"DS"</text></outputEntry>
+      </rule>
+      <rule id="up19-signatory_r1">
+        <inputEntry id="up19-signatory_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="up19-signatory_r1_o0"><text>"JS"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet: open in the Sangam modeller and auto-layout. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_dsr_grievance" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
+  <process id="sangam-dsr-grievance" name="Data-subject grievance redressal" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Grievance (IN: DPDP s.13, r.14(3) at most 90 days; SPDI r.5(9) one month for body corporates). Warning at three quarters of the period, escalation at the due date; the response names the authority complaint route.</documentation>
+    <startEvent id="start" name="Grievance lodged"/>
+    <serviceTask id="s_start" name="Mark in progress" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.start</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u_examine" name="Examine and resolve grievance" operaton:candidateGroups="GRIEVANCE-OFFICER" operaton:formKey="sangam:compliance/grievance-examine"></userTask>
+    <boundaryEvent id="t_warn" name="Three quarters of the period" attachedToRef="u_examine" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${warnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <userTask id="u_warn" name="Senior review of a delayed grievance" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/grievance-delayed"></userTask>
+    <endEvent id="end_warn" name="Reviewed"/>
+    <boundaryEvent id="t_due" name="Due date" attachedToRef="u_examine" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <serviceTask id="s_resolve" name="Send resolution" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.resolveGrievance</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end" name="Resolved"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="s_start"/>
+    <sequenceFlow id="f2" sourceRef="s_start" targetRef="u_examine"/>
+    <sequenceFlow id="f3" sourceRef="u_examine" targetRef="s_resolve"/>
+    <sequenceFlow id="f4" sourceRef="s_resolve" targetRef="end"/>
+    <sequenceFlow id="f_w1" sourceRef="t_warn" targetRef="u_warn"/>
+    <sequenceFlow id="f_w2" sourceRef="u_warn" targetRef="end_warn"/>
+    <serviceTask id="esc" name="Escalate overdue request" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.escalate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end_esc" name="Escalated"/>
+    <sequenceFlow id="f_esc1" sourceRef="t_due" targetRef="esc"/>
+    <sequenceFlow id="f_esc2" sourceRef="esc" targetRef="end_esc"/>
+  </process>
+</definitions>

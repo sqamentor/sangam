@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
+HOA,minor,,001,Direction and Administration,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,003,Training,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,004,Research,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,052,Machinery and Equipment,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,101,"Programme minor head (101, varies by major)",standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,191,"Assistance to Local Bodies, Corporations etc.",standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,192,Assistance to Municipalities,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,193,Assistance to Nagar Panchayats,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,196,Assistance to Zilla Parishads,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,197,Assistance to Block Panchayats,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,198,Assistance to Gram Panchayats,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,500,Receipts awaiting transfer,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,502,Expenditure awaiting transfer,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,503,[U] new standard minor head (CS 1068 of 28-07-2025),standard=true,,,LMMH Standard Minor Heads (CS 1068),U
+HOA,minor,,789,Special Component Plan for Scheduled Castes,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,791,Loss / gain by exchange,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,796,Tribal Area Sub-Plan,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,797,Transfer to / from Reserve Fund / Deposit Account,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,799,Suspense,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,800,Other Expenditure / Other Receipts,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,900,Deduct - Refunds,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,902,Deduct - Amount met from funds,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,minor,,911,Deduct - Recoveries of Overpayments,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
+HOA,subMajor,,00,No sub-major head,,,,LMMH,V
+HOA,subMajor,,80,General,,,,LMMH,V

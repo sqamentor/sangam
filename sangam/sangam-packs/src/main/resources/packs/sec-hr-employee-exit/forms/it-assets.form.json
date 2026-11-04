@@ -1,0 +1,27 @@
+{
+  "key": "sec-hr-employee-exit/it-assets",
+  "version": "1.0.0",
+  "pack": "sec.hr.employee-exit",
+  "title": {
+    "en": "Recover assets",
+    "hi": "परिसंपत्तियों की वापसी"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

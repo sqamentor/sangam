@@ -1,0 +1,354 @@
+# SPDX-License-Identifier: Apache-2.0
+scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
+HOA,major,,0005,Central Goods and Services Tax,,,,LMMH (sample seed),V
+HOA,major,,0006,State Goods and Services Tax,,,,LMMH (sample seed),V
+HOA,major,,0008,Integrated Goods and Services Tax,,,,LMMH (sample seed),V
+HOA,major,,0020,Corporation Tax,,,,LMMH (sample seed),V
+HOA,major,,0021,Taxes on Income other than Corporation Tax,,,,LMMH (sample seed),V
+HOA,major,,0029,Land Revenue,,,,LMMH (sample seed),V
+HOA,major,,0030,Stamps and Registration Fees,,,,LMMH (sample seed),V
+HOA,major,,0037,Customs,,,,LMMH (sample seed),V
+HOA,major,,0038,Union Excise Duties,,,,LMMH (sample seed),V
+HOA,major,,0039,State Excise,,,,LMMH (sample seed),V
+HOA,major,,0040,"Taxes on Sales, Trade etc.",,,,LMMH (sample seed),V
+HOA,major,,0041,Taxes on Vehicles,,,,LMMH (sample seed),V
+HOA,major,,0049,Interest Receipts,,,,LMMH (sample seed),V
+HOA,major,,0050,Dividends and Profits,,,,LMMH (sample seed),V
+HOA,major,,0070,Other Administrative Services,,,,LMMH (sample seed),V
+HOA,major,,0071,Contributions and Recoveries towards Pension and other Retirement Benefits,,,,LMMH (sample seed),V
+HOA,major,,0075,Miscellaneous General Services,,,,LMMH (sample seed),V
+HOA,major,,1275,Other Communication Services,,,,LMMH (sample seed),V
+HOA,major,,1601,Grants-in-aid from Central Government,,,,LMMH (sample seed),V
+HOA,major,,2011,Parliament / State / Union Territory Legislatures,,,,LMMH (sample seed),V
+HOA,major,,2012,"President, Vice-President / Governor / Administrator of UTs",,,,LMMH (sample seed),V
+HOA,major,,2013,Council of Ministers,,,,LMMH (sample seed),V
+HOA,major,,2014,Administration of Justice,,,,LMMH (sample seed),V
+HOA,major,,2015,Elections,,,,LMMH (sample seed),V
+HOA,major,,2020,Collection of Taxes on Income and Expenditure,,,,LMMH (sample seed),V
+HOA,major,,2029,Land Revenue,,,,LMMH (sample seed),V
+HOA,major,,2030,Stamps and Registration,,,,LMMH (sample seed),V
+HOA,major,,2039,State Excise,,,,LMMH (sample seed),V
+HOA,major,,2040,"Taxes on Sales, Trade etc.",,,,LMMH (sample seed),V
+HOA,major,,2047,Other Fiscal Services,,,,LMMH (sample seed),V
+HOA,major,,2048,Appropriation for Reduction or Avoidance of Debt,,,,LMMH (sample seed),V
+HOA,major,,2049,Interest Payments,,,,LMMH (sample seed),V
+HOA,major,,2051,Public Service Commission,,,,LMMH (sample seed),V
+HOA,major,,2052,Secretariat - General Services,,,,LMMH (sample seed),V
+HOA,major,,2053,District Administration,,,,LMMH (sample seed),V
+HOA,major,,2054,Treasury and Accounts Administration,,,,LMMH (sample seed),V
+HOA,major,,2055,Police,,,,LMMH (sample seed),V
+HOA,major,,2056,Jails,,,,LMMH (sample seed),V
+HOA,major,,2058,Stationery and Printing,,,,LMMH (sample seed),V
+HOA,major,,2059,Public Works,,,,LMMH (sample seed),V
+HOA,major,,2062,Vigilance,,,,LMMH (sample seed),V
+HOA,major,,2070,Other Administrative Services,,,,LMMH (sample seed),V
+HOA,major,,2071,Pensions and other Retirement Benefits,,,,LMMH (sample seed),V
+HOA,major,,2075,Miscellaneous General Services,,,,LMMH (sample seed),V
+HOA,major,,2076,Defence Services - Army,,,,LMMH (sample seed),V
+HOA,major,,2077,Defence Services - Navy,,,,LMMH (sample seed),V
+HOA,major,,2078,Defence Services - Air Force,,,,LMMH (sample seed),V
+HOA,major,,2079,Defence Ordnance Factories,,,,LMMH (sample seed),V
+HOA,major,,2080,Defence Services - Research and Development,,,,LMMH (sample seed),V
+HOA,major,,2202,General Education,,,,LMMH (sample seed),V
+HOA,major,,2203,Technical Education,,,,LMMH (sample seed),V
+HOA,major,,2204,Sports and Youth Services,,,,LMMH (sample seed),V
+HOA,major,,2205,Art and Culture,,,,LMMH (sample seed),V
+HOA,major,,2210,Medical and Public Health,,,,LMMH (sample seed),V
+HOA,major,,2211,Family Welfare,,,,LMMH (sample seed),V
+HOA,major,,2215,Water Supply and Sanitation,,,,LMMH (sample seed),V
+HOA,major,,2216,Housing,,,,LMMH (sample seed),V
+HOA,major,,2217,Urban Development,,,,LMMH (sample seed),V
+HOA,major,,2220,Information and Publicity,,,,LMMH (sample seed),V
+HOA,major,,2225,"Welfare of SC, ST, OBC and Minorities",,,,LMMH (sample seed),V
+HOA,major,,2230,"Labour, Employment and Skill Development",,,,LMMH (sample seed),V
+HOA,major,,2235,Social Security and Welfare,,,,LMMH (sample seed),V
+HOA,major,,2236,Nutrition,,,,LMMH (sample seed),V
+HOA,major,,2245,Relief on account of Natural Calamities,,,,LMMH (sample seed),V
+HOA,major,,2246,[U] opened by CS 1128-1132 (16-10-2026); title to confirm,,,,LMMH (sample seed),U
+HOA,major,,2250,Other Social Services,,,,LMMH (sample seed),V
+HOA,major,,2251,Secretariat - Social Services,,,,LMMH (sample seed),V
+HOA,major,,2401,Crop Husbandry,,,,LMMH (sample seed),V
+HOA,major,,2402,Soil and Water Conservation,,,,LMMH (sample seed),V
+HOA,major,,2403,Animal Husbandry,,,,LMMH (sample seed),V
+HOA,major,,2404,Dairy Development,,,,LMMH (sample seed),V
+HOA,major,,2405,Fisheries,,,,LMMH (sample seed),V
+HOA,major,,2406,Forestry and Wild Life,,,,LMMH (sample seed),V
+HOA,major,,2408,"Food, Storage and Warehousing",,,,LMMH (sample seed),V
+HOA,major,,2415,Agricultural Research and Education,,,,LMMH (sample seed),V
+HOA,major,,2425,Co-operation,,,,LMMH (sample seed),V
+HOA,major,,2435,Other Agricultural Programmes,,,,LMMH (sample seed),V
+HOA,major,,2501,Special Programmes for Rural Development,,,,LMMH (sample seed),V
+HOA,major,,2505,Rural Employment,,,,LMMH (sample seed),V
+HOA,major,,2506,Land Reforms,,,,LMMH (sample seed),V
+HOA,major,,2515,Other Rural Development Programmes,,,,LMMH (sample seed),V
+HOA,major,,2551,Hill Areas,,,,LMMH (sample seed),V
+HOA,major,,2552,North Eastern Areas,,,,LMMH (sample seed),V
+HOA,major,,2575,Other Special Areas Programmes,,,,LMMH (sample seed),V
+HOA,major,,2701,Major and Medium Irrigation,,,,LMMH (sample seed),V
+HOA,major,,2702,Minor Irrigation,,,,LMMH (sample seed),V
+HOA,major,,2705,Command Area Development,,,,LMMH (sample seed),V
+HOA,major,,2711,Flood Control and Drainage,,,,LMMH (sample seed),V
+HOA,major,,2801,Power,,,,LMMH (sample seed),V
+HOA,major,,2810,New and Renewable Energy,,,,LMMH (sample seed),V
+HOA,major,,2851,Village and Small Industries,,,,LMMH (sample seed),V
+HOA,major,,2852,Industries,,,,LMMH (sample seed),V
+HOA,major,,3051,Ports and Light Houses,,,,LMMH (sample seed),V
+HOA,major,,3053,Civil Aviation,,,,LMMH (sample seed),V
+HOA,major,,3054,Roads and Bridges,,,,LMMH (sample seed),V
+HOA,major,,3055,Road Transport,,,,LMMH (sample seed),V
+HOA,major,,3451,Secretariat - Economic Services,,,,LMMH (sample seed),V
+HOA,major,,3452,Tourism,,,,LMMH (sample seed),V
+HOA,major,,3454,"Census, Surveys and Statistics",,,,LMMH (sample seed),V
+HOA,major,,3475,Other General Economic Services,,,,LMMH (sample seed),V
+HOA,major,,3601,Transfers to State Governments,,,,LMMH (sample seed),V
+HOA,major,,3602,Transfers to Union Territories,,,,LMMH (sample seed),V
+HOA,major,,3604,Compensation and Assignments to Local Bodies and Panchayati Raj Institutions,,,,LMMH (sample seed),V
+HOA,major,,4000,Miscellaneous Capital Receipts,,,,LMMH (sample seed),V
+HOA,major,,4059,Capital Outlay on Public Works,,,,LMMH (sample seed),V
+HOA,major,,4202,"Capital Outlay on Education, Sports, Art and Culture",,,,LMMH (sample seed),V
+HOA,major,,4210,Capital Outlay on Medical and Public Health,,,,LMMH (sample seed),V
+HOA,major,,4215,Capital Outlay on Water Supply and Sanitation,,,,LMMH (sample seed),V
+HOA,major,,4216,Capital Outlay on Housing,,,,LMMH (sample seed),V
+HOA,major,,4217,Capital Outlay on Urban Development,,,,LMMH (sample seed),V
+HOA,major,,4225,"Capital Outlay on Welfare of SC, ST, OBC and Minorities",,,,LMMH (sample seed),V
+HOA,major,,4245,[U] opened by CS 1128-1132 (16-10-2026); title to confirm,,,,LMMH (sample seed),U
+HOA,major,,4401,Capital Outlay on Crop Husbandry,,,,LMMH (sample seed),V
+HOA,major,,4552,Capital Outlay on North Eastern Areas,,,,LMMH (sample seed),V
+HOA,major,,4701,Capital Outlay on Major and Medium Irrigation,,,,LMMH (sample seed),V
+HOA,major,,4801,Capital Outlay on Power Projects,,,,LMMH (sample seed),V
+HOA,major,,5054,Capital Outlay on Roads and Bridges,,,,LMMH (sample seed),V
+HOA,major,,6003,Internal Debt of the State Government,,,,LMMH (sample seed),V
+HOA,major,,6004,Loans and Advances from the Central Government,,,,LMMH (sample seed),V
+HOA,major,,6401,Loans for Crop Husbandry,,,,LMMH (sample seed),V
+HOA,major,,6552,Loans for North Eastern Areas,,,,LMMH (sample seed),V
+HOA,major,,7601,Loans and Advances to State Governments,,,,LMMH (sample seed),V
+HOA,major,,7610,Loans to Government Servants etc.,,,,LMMH (sample seed),V
+HOA,major,,8000,Contingency Fund,,,,LMMH (sample seed),V
+HOA,major,,8009,State Provident Funds,,,,LMMH (sample seed),V
+HOA,major,,8011,Insurance and Pension Funds,,,,LMMH (sample seed),V
+HOA,major,,8121,General and Other Reserve Funds,,,,LMMH (sample seed),V
+HOA,major,,8336,Civil Deposits,,,,LMMH (sample seed),V
+HOA,major,,8342,Other Deposits,,,,LMMH (sample seed),V
+HOA,major,,8443,Civil Deposits,,,,LMMH (sample seed),V
+HOA,major,,8448,Deposits of Local Funds,,,,LMMH (sample seed),V
+HOA,major,,8449,Other Deposits,,,,LMMH (sample seed),V
+HOA,major,,8454,[U] Treasury Single Account head (title to confirm against LMMH),,,,LMMH (sample seed),U
+HOA,major,,8658,Suspense Accounts,,,,LMMH (sample seed),V
+HOA,major,,8670,Cheques and Bills,,,,LMMH (sample seed),V
+HOA,major,,8675,Deposits with Reserve Bank,,,,LMMH (sample seed),V
+HOA,major,,8680,Miscellaneous Government Accounts,,,,LMMH (sample seed),V
+HOA,major,,8782,Cash Remittances and adjustments between officers rendering accounts to the same Accounts Officer,,,,LMMH (sample seed),V
+HOA,major,,8793,Inter-State Suspense Account,,,,LMMH (sample seed),V
+HOA,major,,8999,Cash Balance,,,,LMMH (sample seed),V
+HOA,major,,0007,Union Territory Goods and Services Tax,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0009,Goods and Services Tax Compensation Cess,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0022,Taxes on Agricultural Income,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0023,Hotel Receipts Tax,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0024,Interest Tax,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0028,Other Taxes on Income and Expenditure,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0031,Estate Duty,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0032,Taxes on Wealth,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0033,Gift Tax,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0035,Taxes on Immovable Property other than Agricultural Land,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0042,Taxes on Goods and Passengers,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0043,Taxes and Duties on Electricity,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0044,Service Tax,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0045,Other Taxes and Duties on Commodities and Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0047,Other Fiscal Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0051,Public Service Commission,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0055,Police,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0056,Jails,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0058,Stationery and Printing,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0059,Public Works,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0076,Defence Services - Army,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0077,Defence Services - Navy,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0078,Defence Services - Air Force,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0202,"Education, Sports, Art and Culture",,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0210,Medical and Public Health,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0211,Family Welfare,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0215,Water Supply and Sanitation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0216,Housing,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0217,Urban Development,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0220,Information and Publicity,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0230,"Labour, Employment and Skill Development",,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0235,Social Security and Welfare,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0250,Other Social Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0401,Crop Husbandry,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0402,Soil and Water Conservation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0403,Animal Husbandry,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0404,Dairy Development,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0405,Fisheries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0406,Forestry and Wild Life,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0407,Plantations,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0408,"Food, Storage and Warehousing",,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0425,Co-operation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0435,Other Agricultural Programmes,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0506,Land Reforms,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0515,Other Rural Development Programmes,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0551,Hill Areas,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0575,Other Special Areas Programmes,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0700,Major Irrigation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0701,Medium Irrigation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0702,Minor Irrigation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0711,Flood Control Projects,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0801,Power,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0802,Petroleum,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0803,Coal and Lignite,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0810,New and Renewable Energy,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0851,Village and Small Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0852,Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0853,Non-ferrous Mining and Metallurgical Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0875,Other Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,0885,Other Receipts relating to Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1051,Ports and Light Houses,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1052,Shipping,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1053,Civil Aviation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1054,Roads and Bridges,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1055,Road Transport,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1056,Inland Water Transport,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1425,Other Scientific Research,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1452,Tourism,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1456,Civil Supplies,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1475,Other General Economic Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1605,External Grant Assistance,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,1606,Aid Materials and Equipment,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2016,Audit,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2035,Collection of Other Taxes on Property and Capital Transactions,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2037,Customs,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2038,Union Excise Duties,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2041,Taxes on Vehicles,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2043,Collection Charges under Electricity Duty,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2045,Other Taxes and Duties on Commodities and Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2061,External Affairs,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2407,Plantations,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2416,Agricultural Financial Institutions,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2700,Major Irrigation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2802,Petroleum,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2803,Coal and Lignite,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2853,Non-ferrous Mining and Metallurgical Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2875,Other Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,2885,Other Outlays on Industries and Minerals,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3052,Shipping,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3056,Inland Water Transport,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3075,Other Transport Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3201,Postal Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3275,Other Communication Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3401,Atomic Energy Research,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3402,Space Research,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3403,Oceanographic Research,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3425,Other Scientific Research,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3435,Ecology and Environment,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3456,Civil Supplies,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3465,General Financial and Trading Institutions,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,3606,Aid Materials and Equipment,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4047,Capital Outlay on Other Fiscal Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4055,Capital Outlay on Police,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4058,Capital Outlay on Stationery and Printing,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4070,Capital Outlay on Other Administrative Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4075,Capital Outlay on Miscellaneous General Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4076,Capital Outlay on Defence Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4211,Capital Outlay on Family Welfare,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4220,Capital Outlay on Information and Publicity,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4235,Capital Outlay on Social Security and Welfare,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4236,Capital Outlay on Nutrition,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4250,Capital Outlay on Other Social Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4402,Capital Outlay on Soil and Water Conservation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4403,Capital Outlay on Animal Husbandry,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4404,Capital Outlay on Dairy Development,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4405,Capital Outlay on Fisheries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4406,Capital Outlay on Forestry and Wild Life,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4407,Capital Outlay on Plantations,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4408,"Capital Outlay on Food, Storage and Warehousing",,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4415,Capital Outlay on Agricultural Research and Education,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4416,Investments in Agricultural Financial Institutions,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4425,Capital Outlay on Co-operation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4435,Capital Outlay on Other Agricultural Programmes,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4515,Capital Outlay on Other Rural Development Programmes,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4551,Capital Outlay on Hill Areas,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4575,Capital Outlay on Other Special Areas Programmes,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4700,Capital Outlay on Major Irrigation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4702,Capital Outlay on Minor Irrigation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4705,Capital Outlay on Command Area Development,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4711,Capital Outlay on Flood Control Projects,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4802,Capital Outlay on Petroleum,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4803,Capital Outlay on Coal and Lignite,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4810,Capital Outlay on New and Renewable Energy,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4851,Capital Outlay on Village and Small Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4853,Capital Outlay on Non-ferrous Mining and Metallurgical Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4857,Capital Outlay on Chemical and Pharmaceutical Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4858,Capital Outlay on Engineering Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4859,Capital Outlay on Telecommunication and Electronic Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4860,Capital Outlay on Consumer Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4875,Capital Outlay on Other Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,4885,Other Capital Outlay on Industries and Minerals,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5051,Capital Outlay on Ports and Light Houses,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5052,Capital Outlay on Shipping,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5053,Capital Outlay on Civil Aviation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5055,Capital Outlay on Road Transport,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5056,Capital Outlay on Inland Water Transport,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5075,Capital Outlay on Other Transport Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5201,Capital Outlay on Postal Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5275,Capital Outlay on Other Communication Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5402,Capital Outlay on Space Research,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5425,Capital Outlay on Other Scientific and Environmental Research,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5452,Capital Outlay on Tourism,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5465,Investments in General Financial and Trading Institutions,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,5475,Capital Outlay on Other General Economic Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6001,Internal Debt of the Central Government,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6002,External Debt,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6202,"Loans for Education, Sports, Art and Culture",,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6210,Loans for Medical and Public Health,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6215,Loans for Water Supply and Sanitation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6216,Loans for Housing,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6217,Loans for Urban Development,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6225,"Loans for Welfare of SC, ST, OBC and Minorities",,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6235,Loans for Social Security and Welfare,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6402,Loans for Soil and Water Conservation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6403,Loans for Animal Husbandry,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6404,Loans for Dairy Development,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6405,Loans for Fisheries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6406,Loans for Forestry and Wild Life,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6407,Loans for Plantations,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6408,"Loans for Food, Storage and Warehousing",,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6425,Loans for Co-operation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6435,Loans for Other Agricultural Programmes,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6515,Loans for Other Rural Development Programmes,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6551,Loans for Hill Areas,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6575,Loans for Other Special Areas Programmes,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6701,Loans for Major and Medium Irrigation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6702,Loans for Minor Irrigation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6711,Loans for Flood Control Projects,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6801,Loans for Power Projects,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6851,Loans for Village and Small Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6853,Loans for Non-ferrous Mining and Metallurgical Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6857,Loans for Chemical and Pharmaceutical Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6858,Loans for Engineering Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6859,Loans for Telecommunication and Electronic Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6860,Loans for Consumer Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6875,Loans for Other Industries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,6885,Other Loans to Industries and Minerals,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,7051,Loans for Ports and Light Houses,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,7053,Loans for Civil Aviation,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,7055,Loans for Road Transport,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,7056,Loans for Inland Water Transport,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,7075,Loans for Other Transport Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,7465,Loans for General Financial and Trading Institutions,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,7475,Loans for Other General Economic Services,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,7602,Loans and Advances to Union Territories with Legislature,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,7615,Miscellaneous Loans,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8001,Investments of Small Savings Collections,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8014,Postal Life Insurance Fund,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8015,Investments of Postal Life Insurance Fund,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8016,Postal Life Insurance Reserve,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8115,Depreciation / Renewal Reserve Fund,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8222,Sinking Funds,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8223,Famine Relief Fund,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8225,Roads and Bridges Fund,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8226,Depreciation / Renewal Reserve Fund,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8229,Development and Welfare Funds,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8235,General and Other Reserve Funds,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8338,Deposits of Local Funds,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8550,Civil Advances,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8673,Cash Balance Investment Account,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8679,Accounts with Governments of Foreign Countries,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U
+HOA,major,,8786,Adjusting Account between Central and State Governments,,,,LMMH coding pattern (not yet checked against CGA LMMH CS-1132),U

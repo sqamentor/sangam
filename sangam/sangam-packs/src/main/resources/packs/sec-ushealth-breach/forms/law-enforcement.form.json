@@ -1,0 +1,45 @@
+{
+  "key": "sec-ushealth-breach/law-enforcement",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.breach",
+  "title": {
+    "en": "Law-enforcement delay statement",
+    "es": "Declaración de retraso de las fuerzas del orden"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "lawEnforcementDelay",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Law-enforcement delay requested",
+        "es": "Retraso solicitado por las fuerzas del orden"
+      }
+    },
+    {
+      "id": "leDelayDays",
+      "type": "integer",
+      "required": false,
+      "label": {
+        "en": "Delay in days stated by law enforcement",
+        "es": "Días de retraso indicados por las fuerzas del orden"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "es": "Documentos"
+      }
+    }
+  ]
+}

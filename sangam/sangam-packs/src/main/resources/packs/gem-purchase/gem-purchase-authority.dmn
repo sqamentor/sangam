@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_gem_purchase_authority" name="Purchase sanction powers" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="gem-purchase-authority" name="Purchase sanction powers" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="gem-purchase-authority_t" hitPolicy="FIRST">
+      <input id="gem-purchase-authority_i0" label="Amount"><inputExpression id="gem-purchase-authority_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <output id="gem-purchase-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="gem-purchase-authority_r0">
+        <inputEntry id="gem-purchase-authority_r0_i0"><text>&lt;= 100000</text></inputEntry>
+        <outputEntry id="gem-purchase-authority_r0_o0"><text>"SO"</text></outputEntry>
+      </rule>
+      <rule id="gem-purchase-authority_r1">
+        <inputEntry id="gem-purchase-authority_r1_i0"><text>&lt;= 1000000</text></inputEntry>
+        <outputEntry id="gem-purchase-authority_r1_o0"><text>"DS"</text></outputEntry>
+      </rule>
+      <rule id="gem-purchase-authority_r2">
+        <inputEntry id="gem-purchase-authority_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="gem-purchase-authority_r2_o0"><text>"JS"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

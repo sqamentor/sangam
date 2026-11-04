@@ -1,0 +1,109 @@
+{
+  "id": "gov.pension",
+  "version": "1.0.0",
+  "name": {
+    "en": "Pension: sanction, PPO and monthly disbursement",
+    "hi": "पेंशन: स्वीकृति, पीपीओ एवं मासिक भुगतान"
+  },
+  "domain": "IFMS",
+  "description": "Pension papers: computation by rule, service verification, Head of Office sanction, authorisation by the Accountant General / PAO with objections returned under the same case (GP-50), PPO issue and entry in the pension roll; monthly disbursement one instance per pensioner with life-certificate hold (GP-30, GP-09).",
+  "mainProcesses": [
+    "sangam-pension-sanction"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/pension/sangam-pension-sanction.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/pension/sangam-pension-monthly.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/pension/sangam-pension-payment.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/pension/pension-computation.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/pension/ccs-commutation-factor.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/pension/pension-sanction-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/papers.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/verify-service.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/objection.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/pension/forms/life-certificate.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/pension/seed.json"
+    }
+  ],
+  "seed": "packs/pension/seed.json",
+  "connectors": [
+    {
+      "id": "ag.pensionCase",
+      "capabilityClass": "b",
+      "govTag": "G-PFMS",
+      "purpose": "AG / PAO authorisation (e.g. Bhavishya / COMPACT)"
+    },
+    {
+      "id": "pension.rollAdd",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Enter pensioner in the roll"
+    },
+    {
+      "id": "pension.roll",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Monthly roll"
+    },
+    {
+      "id": "pfms.payment",
+      "capabilityClass": "c",
+      "govTag": "G-PFMS",
+      "purpose": "Monthly pension payment"
+    }
+  ],
+  "covers": [
+    "D-PENSION-MONTHLY",
+    "GP-30",
+    "GP-50",
+    "GP-09",
+    "GP-05",
+    "GP-34",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-core-scrutiny"
+  ]
+}

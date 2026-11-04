@@ -1,0 +1,27 @@
+{
+  "key": "sec-bank-collections/reply",
+  "version": "1.0.0",
+  "pack": "sec.bank.collections",
+  "title": {
+    "en": "Reply to representation with reasons (15 days)",
+    "hi": "अभ्यावेदन का सकारण उत्तर (15 दिन)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "replyText",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Reply",
+        "hi": "उत्तर"
+      }
+    }
+  ]
+}

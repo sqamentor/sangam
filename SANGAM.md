@@ -47,7 +47,7 @@
 | Government compliance | GOV-1…GOV-12 final: 8 VERIFIED, 4 VERIFIED with a parked sub-item, 0 blocking (IX.7e) → R50–R62 |
 | Commercial | Implementation services, AMC/support, managed hosting on empanelled cloud, workflow packs + training, plus anything government policy requires (ADR-D-11) |
 
-### Decision register (19 decisions)
+### Decision register (24 decisions)
 
 | ADR | Decision | Status |
 |---|---|---|
@@ -70,6 +70,11 @@
 | D-17 | Licence Apache 2.0 (X.0d) | DECIDED |
 | D-18 | Public GitHub repository `sqamentor/sangam` (X.0d) | DECIDED |
 | D-19 | Stage C: all workstreams run in parallel (X.0d) | DECIDED |
+| D-20 | Fully generic, plug-and-play platform; domain knowledge only as data (X.0e) | DECIDED |
+| D-21 | Cell-based deployment with a central control plane (X.0e) | DECIDED |
+| D-22 | Boundary: workflow + rules + generic ledgers/master data; integrate with IFMS/EHR/core banking (X.0e) | DECIDED |
+| D-23 | First jurisdiction packs: India, USA health, EU GDPR, international PFM (X.0e) | DECIDED |
+| D-24 | Load target: India national (~3,000 starts/s, ~30,000 ops/s, ~1M users) (X.0e) | DECIDED |
 
 ### Where the current specification lives (read only these)
 
@@ -100,7 +105,7 @@
 |---|---|---|
 | A: need and scope | **COMPLETE** (2026-11-05) | Envelope, reference-pilot scope, AC approved, GOV research final, journeys, licence inventory |
 | B: technical proof | **COMPLETE** (2026-11-05): G2 + G3 passed, ADR-D-1 = Operaton (XI.10) | D-1 spike on both engines: authorization (VI.4), lease (VI.3), idempotency (X.2.2), recovery; BPMN gap reproduction (CF-13); licence inventory regenerated at the chosen tag (LIC-11) |
-| C: full pilot | Pending | AC-01…AC-11 on PostgreSQL + Oracle + SQL Server with the Tier-1 SDKs |
+| C: full pilot | **Coding complete; testing pending** (2026-11-05, Part XII) | AC-01…AC-11 on PostgreSQL + Oracle + SQL Server with the Tier-1 SDKs |
 | D: production readiness | Pending | Security, load, upgrade, failover/restore (RPO/RTO), CERT-In-style audit evidence |
 | E: expansion | Pending | Driven by adoption |
 
@@ -4252,6 +4257,18 @@ No login, CAPTCHA or other protection was bypassed. When a search engine showed 
 | Pending amendments carried into Stage C | (1) operationId derived from the business key (T35). (2) Adopt R63–R84 (PREMIUM-AND-UNIVERSAL-SCOPE). (3) MySQL conditions: P-1 precision patch and READ COMMITTED isolation. (4) GP-09 rule: one instance per item; no large multi-instance. (5) Jackson ≥ 2.22.3. (6) A-10…A-16 (XI.10.3). |
 | Status | Decision: DECIDED (owner, 2026-11-05). Delivery: SPECIFIED. |
 
+## X.0e ADR-D-20…D-24: generic plug-and-play platform, cells, boundary, jurisdictions, load target (DECIDED 2026-11-05)
+
+| Field | Content |
+|---|---|
+| Owner's decision (paraphrased) | Sangam must be completely generic and plug-and-play. Any country, any Indian state, UT or central department, any IFMS, and any sector (banking, healthcare in India and the USA, e-commerce and others) must be able to adopt it by configuration alone. India comes first but is not the limit. It must be dynamic, easy to configure and manage, highly accurate, fast, and highly concurrent, for example ~36 states × ~36 districts × 10–15 hospitals ≈ 13,000–19,500 hospitals on one platform. |
+| **ADR-D-20 Generic platform** | No domain module may hard-code a country, government, sector or regulation. Such knowledge is **data**: jurisdiction, region, organisation and office profiles; master-data seeds; DMN; packs. All of it is versioned and effective-dated. The planned `sangam-ifms` module is replaced by generic capabilities: a configuration profile hierarchy, a master-data and classification registry, a limit/fund ledger, a document-type catalogue, and locale (currency, fiscal calendar, number format, time zone, language). Government finance becomes profiles and `gov.*` packs on top of them. **Scope of "generic" (owner, 2026-11-05):** these capabilities must serve every system a government department runs, for example finance (IFMS), hospital management (IHMS), circuit-house and guest-house management, and every other department's own system across central and state governments. They must equally serve private clients: private banks, private hospitals, e-commerce, data warehouses, and all service and manufacturing sectors. Government clients come first; nothing is built specific to one department. **Owner clarification (2026-11-05):** the design is not based on any country or sector; it stays generic. The current clients are the Government of India and the state governments, so the generic system must be fully capable for all of them, and their needs are delivered as configuration and packs only. Do not deviate from the generic approach. |
+| **ADR-D-21 Cell-based deployment** | The platform runs as many independent **cells**. Each cell has its own application nodes and database, and holds a set of tenants (for example one state). A central control plane holds the tenant registry, cell directory, placement and routing, and runs tenant moves between cells. A failure in one cell does not affect the others. Capacity grows by adding cells. Data stays in its cell; national and cross-cell views are built from published events (read models), never by cross-cell transactions. |
+| **ADR-D-22 Boundary** | Sangam provides workflow, rules, approvals, generic fund/limit ledgers, master data and documents. It integrates with existing IFMS, EHR/HIS and core-banking systems through connectors, and can run standalone for small organisations. Full clinical records and the full general ledger stay in their own systems. |
+| **ADR-D-23 Jurisdiction packs, first set** | India: DPDP, CERT-In, IT Act; GOI and all 36 states/UTs; ABDM. USA health: HIPAA, HL7 FHIR R4, X12 837/835, CMS-0057-F prior authorisation. EU GDPR. International public financial management: IMF GFS/COFOG, IPSAS, World Bank FMIS patterns. Other countries are added later as packs, without code changes. |
+| **ADR-D-24 Load target** | Designed and tested for India national scale: about 3,000 workflow starts/s at peak, about 30,000 task/query operations/s, around 1 million concurrent users across cells. Each cell must sustain at least 500 starts/s; further capacity comes from more cells. |
+| Status | Decision: DECIDED (owner, 2026-11-05). Delivery: SPECIFIED. |
+
 ## X.1 Normative requirements R1–R62
 
 > **Purpose (M01, VIII.7 #1):** one authoritative statement per requirement, so an implementer does not have to reconcile Parts I–IX.
@@ -6492,6 +6509,135 @@ Methods are in `spike/results/scorecard.md`. The patch and market-fit methods ar
 | Effort re-estimate (M09) | **Open**: to be done at Stage C planning, using the spike's measured adapter and product-layer sizes |
 
 **Stage B is COMPLETE.** Next: Stage C, the full pilot on Operaton 2.2.x.
+
+# Part XII — Stage C build status (2026-11-05)
+
+**Evidence:**
+- `sangam/`: 25 Maven modules, four more Tier-1 SDKs, the UI, `deploy/` and `perf/`. Each has a README coverage map, except `sangam-core`.
+- `spike/results/TRACEABILITY-REGISTER.md` and `TRACEABILITY-REGISTER.csv`.
+
+**Status:** the code compiles; only H2 fast tests exist. **No behaviour test has been run.** The owner's rule is code first, tests last. In this Part, "implemented" means a README coverage map claims it. It is not test evidence.
+
+## XII.1 Modules
+
+| Module | Purpose | Workstream |
+|---|---|---|
+| `sangam-core` | Engine-neutral ports and product layer: `EngineAdapter`, `LeaseTable`, `AuditChain`, outbox, inbox, idempotency store, dev schema. **It has no README** | integrator |
+| `sangam-persistence` | Product schema: Liquibase 4.33.0, one SQL changelog per dialect; optional history partitioning (IR-8) | WS-ENGINE |
+| `sangam-engine` | Operaton 2.2.0 as a dependency plus plugins: L2 root lock, fenced leases, expiry hook, DST-safe timers, deploy guards, history to the outbox | WS-ENGINE |
+| `sangam-security` | VI.4 deny-wins authorization, tenancy, OIDC, seats, delegation of powers, maker-checker / SoD, approval bound to the payload hash | WS-SECURITY |
+| `sangam-integration` | Outbox relay, inbox, API idempotency, operation ledger, reconciliation, cancel/delete/erase, connectors and simulators | WS-INTEGRATION |
+| `sangam-connectors-health` | FHIR R4 / SMART, Da Vinci PAS / DTR, CDS Hooks and X12 005010 connectors | US-HEALTH |
+| `sangam-flowable-ports` | Flowable strengths on Operaton: ad-hoc, event registry, CMMN extensions, forms, content, batches, migration, read model | WS-PORTS |
+| `sangam-rest` | The `/api/v1` contract (OpenAPI 3.1, 283 paths): controllers, ports and default adapters | WS-REST |
+| `sangam-packs` | Government approval core and 130 packs (government, IFMS, universal, sector), plus the government finance profiles as data | WS-PACKS |
+| `sangam-compliance` | Jurisdiction-neutral compliance framework; the IN pack (DPDP Act and Rules, CERT-In) as data | COMPLIANCE |
+| `sangam-config` | Layered profiles, master data, document-type catalogue, number series, locale | IFMS-IMPLEMENTATION |
+| `sangam-ledger` | Generic limit / fund / quantity / receivable ledger with an N-stage chain | IFMS-IMPLEMENTATION |
+| `sangam-registry` | Registered-object kernel: parties, instruments, assets, custody, numbering | GENERIC-REGISTRY |
+| `sangam-billing` | Tariffs, invoices, collection, receipts, refunds, penalties | IFMS-IMPLEMENTATION |
+| `sangam-case` | Generic case file (N04), committees, meetings and references with a deadline (N16) | GENERIC-CASE-PROGRAMME |
+| `sangam-programme` | Targets, indicators, milestones and periodic returns (N15) | GENERIC-CASE-PROGRAMME |
+| `sangam-resources` | Booking and allotment (N01), queue and token (N07), rostering (N08) | GENERIC-RESOURCES |
+| `sangam-geo` | Geometry, jurisdiction and geofence rules (N13) | GENERIC-FIELD-GEO |
+| `sangam-field` | Field inspection and offline capture (N05); dispatch and trips (N17) | GENERIC-FIELD-GEO |
+| `sangam-server` | Spring Boot 4.1.2 application that wires every module | WS-REST (integrator) |
+| `sangam-cell` | Cell identity, registration, roll-up and cross-cell publishers | SCALE |
+| `sangam-control-plane` | Cell registry, tenant placement and tenant moves | SCALE |
+| `sangam-gateway` | Reactive routing edge by tenant | SCALE |
+| `sangam-rollup` | National cross-cell read model (counts and identifiers only) | SCALE |
+| `sdks/java`, `sdks/dotnet`, `sdks/php`, `sdks/python`, `sdks/typescript` | Tier-1 SDKs: typed REST client and external-worker runtime (VI.3 lease protocol) | WS-SDK |
+| `sangam-ui` | React 18 SPA: tasklist, operations console, administration, modeller, analytics, audit, citizen portal | WS-UI |
+| `deploy/` | Images, Helm, compose, VM install, upgrade, backup and restore, DR, air-gapped bundle, CI | WS-DEPLOY |
+| `perf/` | k6 load model for T-SCALE-1…11 (testing phase only) | SCALE |
+
+## XII.2 Totals
+
+| Item | Count |
+|---|---|
+| Code units | 25 Maven modules, plus the .NET, PHP, Python and TypeScript SDKs, the UI, `deploy/` and `perf/` |
+| README coverage maps | 33 |
+| Packs (`pack.json`) | 130, with 386 BPMN, 464 DMN and 8 CMMN files |
+| Java sources | About 1,190 main files. 13 test classes, H2 fast tests only |
+| Engine source patches | 0 (two MySQL schema patches, P-1 and P-2) |
+| Ids traced | 1,757, in 27 families |
+| Status of the traced ids | implemented 985, data-only 299, partial 87, gap 24, owner-side 34, not replicated by decision 9, spec-closed 16, test-pending 121, **UNACCOUNTED 182** |
+
+## XII.3 Traceability register
+
+The register is [`spike/results/TRACEABILITY-REGISTER.md`](spike/results/TRACEABILITY-REGISTER.md), with the full table in `TRACEABILITY-REGISTER.csv`. For every id it records:
+- its status;
+- the module, file or pack that covers it;
+- the tests that will prove it.
+
+1,575 of the 1,757 ids (89.6 %) are accounted for. The 182 UNACCOUNTED ids are defined in a source document but appear in no README:
+- **international PFM:** all 79 PFM ids;
+- **Flowable weakness audit:** 38 FW ids, and the 31 FWT scenarios that prove only those ids. The ports README has no FW map;
+- **US health:** 27 US-HLT ids, mostly HIPAA Privacy / Security Rule controls, information blocking, the 2027 CMS APIs and EMTALA;
+- **requirements:** R2, R5 (JDK 25 has never been built), R7, R10, R46 and R52;
+- **capability:** N11.
+
+The register also records three orphan or colliding references (A-17, IFS-034/037 and D-0). It lists 43 de-duplicated open items: 6 blockers, 25 must-fix before go-live and 12 later stage.
+
+## XII.4 Top open items
+
+| # | Rank | Item | Ids |
+|---|---|---|---|
+| 1 | Blocker | No behaviour test has run. Multi-DB runs (PostgreSQL, Oracle, SQL Server, MySQL) have never been executed for the product modules | T01–T89, AC-01…AC-11 |
+| 2 | Blocker | Liquibase changelogs missing for the `PortsSchema` tables and `PACK_OPERATION`. Only the dev schema builds them | FC-02…04, R12 |
+| 3 | Blocker | Core `AuthorizationPolicy` writes `AUTH_EFFECTIVE` without `cond_key` (NOT NULL in the adopted schema) | R19, A-3 |
+| 4 | Blocker | sangam-core does not carry the operationId end to end (`ExternalWork`, `OperationLedger.recordIntent`). This is the double-payment guard | R36, A-2, A-14, T35 |
+| 5 | Blocker | Oracle relay and inbox claims inherit the core `ROWNUM` skip-locked caveat | R4, R38 |
+| 6 | Blocker | Poison inbound: malformed JSON on Kafka/JMS is redelivered forever, and core has no `POISON_INBOUND` reconciliation kind | R38, T09 |
+| 7 | Must-fix | UNACCOUNTED families (PFM, FW, US-HLT, R2/R5/R7/R10/R46/R52, N11) need a coverage line or an explicit decision | XII.3 |
+| 8 | Must-fix | Idempotency response body not encrypted and never cleaned up; no signed / Merkle audit checkpoints | R41, R42 |
+| 9 | Must-fix | Audit events lost on the JavaDelegate connector path and on compliance denials | R42 |
+| 10 | Must-fix | Compliance: no `COMPLIANCE` resource type for policy authorisation; nine compliance ports at "not configured" defaults | R19, CMP-* |
+| 11 | Must-fix | Languages: English and Hindi only, and the Hindi needs native review. Accessibility (WCAG / GIGW) not verified | GOV-1, GOV-2, R54, R55 |
+| 12 | Must-fix | Synthetic DMN and seed values, and real government wire formats on request (PK-05) | GP-01, R58 |
+
+## XII.5 Test plan entry point
+
+The testing phase starts by re-running the Stage B benchmark cases (XI.4) one at a time. They now run against the **product modules** instead of the spike adapters, PostgreSQL first.
+
+**Order:**
+1. Fix blockers 2–6 in XII.4.
+2. Run each case below and record its result before starting the next.
+3. Repeat the DB-dependent cases (E2–E7) on Oracle, SQL Server and MySQL.
+
+Every Testcontainers or benchmark build runs inside the shared heavy-build lock.
+
+| Step | Stage B case (XI.4) | What it now proves | Tests | What to watch (from XI.10) |
+|---|---|---|---|---|
+| 1 | E1 corpus coverage | WF-1…WF-3 on Sangam with 0 engine source patches | AC-01…AC-06 (subset) | CMMN exited human task projected correctly (D-25) |
+| 2 | E2 authorization equivalence | `list == {r : allow(r)}`, deny wins, count matches | T13–T17, T37, T38 | Count p95 at 10k × 300 groups (A-16; 386 ms in the spike) |
+| 3 | E3 lease, operationId, unknown outcome | Stale worker rejected; class (c) to reconciliation | T02–T04, T36, T35 | A-10 expiry hook: no double payment |
+| 4 | E4 idempotency with engine state | Duplicate start, conflicting reuse, crash window | T01, T55–T60 | The R41 open items above |
+| 5 | E5 outbox / inbox | Late low sequence delivered; poison policy; early message | T06–T09, T35 | Blocker 6 |
+| 6 | E6 concurrency (PG / Oracle / SQL Server / MySQL) | 0 deadlocks, 0 lost updates, **0 unrecovered** with L2 (A-11) | T10, T33, T34 | The spike had 511–758 unrecovered without L2 |
+| 7 | E7 cancel / delete with work in flight | Tombstone, late-result audit, reconciliation item | T11, T39 | — |
+| 8 | E8 timers / DST | `R/PT1H` across the fold fires once per interval | T22 | A-12: the runaway must be gone |
+| 9 | E9 benchmark (functional scale) | WF-R1 / WF-R5 throughput and p99 with audit and authorization on | T31 | XI.10.4 concurrent-fetch defect (17 % errors, stuck instances) must be gone |
+| 10 | E10 platform fit | JDK 25 build (R5, never done), minor upgrade, licence inventory at the tag | T28, T50, LIC-11 | — |
+| 11 | E11 BPMN gap set | The 8 gap elements, now with the ad-hoc port (FC-01) | T20 | — |
+| 12 | E16 / E17 government patterns and domain models | GP-01…GP-55 and the domain models on the packs | `PackDeploymentTest`, `AllPacksSmokeTest`, `PilotScenarioTest` | — |
+
+**Then end to end:**
+1. Module suites: H2 fast tests, then Testcontainers per module. Also the FWT-001…052 scenarios and the `sangam-server` PR scenarios.
+2. AC-01…AC-11 through the X.4 journeys on PostgreSQL, Oracle and SQL Server.
+3. Tier-1 SDK contract tests T01–T04 and T18 (R18).
+4. T78–T89 (government adapters against their simulators).
+5. The air-gapped install (AC-11, T50).
+6. Restore and failover (T08, T35, RPO / RTO).
+7. T-SCALE-1…11 with `perf/` (Stage D evidence).
+
+**Stage C exit:** unchanged from the stage table. AC-01…AC-11 pass on PostgreSQL, Oracle and SQL Server with the Tier-1 SDKs.
+
+## XII.6 Change to the baseline front section
+
+In the Stage status table, the Stage C row changed from "Pending" to "Coding complete; testing pending". No other line of this document changed. The original row, verbatim:
+
+`| C: full pilot | Pending | AC-01…AC-11 on PostgreSQL + Oracle + SQL Server with the Tier-1 SDKs |`
 
 # Appendix A — PDF Report, Full Extracted Text (raw)
 

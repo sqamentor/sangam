@@ -1,0 +1,106 @@
+{
+  "offices": [
+    {
+      "id": "IC",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "IC-PRESIDING",
+      "role": "PRESIDING",
+      "office": "IC",
+      "reportsTo": null,
+      "name": {
+        "en": "Presiding officer (IC)",
+        "hi": "पीठासीन अधिकारी (आंतरिक समिति)"
+      }
+    },
+    {
+      "id": "IC-MEMBER",
+      "role": "MEMBER",
+      "office": "IC",
+      "reportsTo": null,
+      "name": {
+        "en": "IC member",
+        "hi": "आंतरिक समिति सदस्य"
+      }
+    },
+    {
+      "id": "IC-EXTERNAL",
+      "role": "EXTERNAL",
+      "office": "IC",
+      "reportsTo": null,
+      "name": {
+        "en": "External member (NGO)",
+        "hi": "बाह्य सदस्य (एनजीओ)"
+      }
+    },
+    {
+      "id": "EMPLOYER",
+      "role": "EMPLOYER",
+      "office": "IC",
+      "reportsTo": null,
+      "name": {
+        "en": "Employer",
+        "hi": "नियोक्ता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "IC-PRESIDING",
+      "person": "hpo.ic-presiding",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "IC-MEMBER",
+      "person": "hpo.ic-member",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "IC-EXTERNAL",
+      "person": "hpo.ic-external",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EMPLOYER",
+      "person": "hpo.employer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PRESIDING",
+      "name": {
+        "en": "Presiding officer (IC)",
+        "hi": "पीठासीन अधिकारी (आंतरिक समिति)"
+      }
+    },
+    {
+      "code": "MEMBER",
+      "name": {
+        "en": "IC member",
+        "hi": "आंतरिक समिति सदस्य"
+      }
+    },
+    {
+      "code": "EXTERNAL",
+      "name": {
+        "en": "External member (NGO)",
+        "hi": "बाह्य सदस्य (एनजीओ)"
+      }
+    },
+    {
+      "code": "EMPLOYER",
+      "name": {
+        "en": "Employer",
+        "hi": "नियोक्ता"
+      }
+    }
+  ]
+}

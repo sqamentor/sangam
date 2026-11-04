@@ -1,0 +1,74 @@
+{
+  "key": "sec-bank-account-opening/correct",
+  "version": "1.0.0",
+  "pack": "sec.bank.account-opening",
+  "title": {
+    "en": "Correct application details",
+    "hi": "आवेदन विवरण सुधारें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer name",
+        "hi": "ग्राहक का नाम"
+      }
+    },
+    {
+      "id": "pan",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "PAN",
+        "hi": "पैन"
+      }
+    },
+    {
+      "id": "mobile",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Mobile number",
+        "hi": "मोबाइल नंबर"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "ao_correctDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

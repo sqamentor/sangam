@@ -1,0 +1,106 @@
+{
+  "offices": [
+    {
+      "id": "HOSPITAL",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CASE-MANAGER",
+      "role": "CM",
+      "office": "HOSPITAL",
+      "reportsTo": "DIR-CARE-MGMT",
+      "name": {
+        "en": "Case manager",
+        "es": "Gestor de casos"
+      }
+    },
+    {
+      "id": "CHARGE-NURSE",
+      "role": "RN",
+      "office": "HOSPITAL",
+      "reportsTo": "DIR-CARE-MGMT",
+      "name": {
+        "en": "Charge nurse",
+        "es": "Enfermera a cargo"
+      }
+    },
+    {
+      "id": "SOCIAL-WORKER",
+      "role": "SW",
+      "office": "HOSPITAL",
+      "reportsTo": "DIR-CARE-MGMT",
+      "name": {
+        "en": "Social worker",
+        "es": "Trabajador social"
+      }
+    },
+    {
+      "id": "DIR-CARE-MGMT",
+      "role": "DCM",
+      "office": "HOSPITAL",
+      "reportsTo": null,
+      "name": {
+        "en": "Director of care management",
+        "es": "Director de gestión de la atención"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CASE-MANAGER",
+      "person": "udc.case-manager",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CHARGE-NURSE",
+      "person": "udc.charge-nurse",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SOCIAL-WORKER",
+      "person": "udc.social-worker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DIR-CARE-MGMT",
+      "person": "udc.dir-care-mgmt",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CM",
+      "name": {
+        "en": "Case manager",
+        "es": "Gestor de casos"
+      }
+    },
+    {
+      "code": "RN",
+      "name": {
+        "en": "Charge nurse",
+        "es": "Enfermera a cargo"
+      }
+    },
+    {
+      "code": "SW",
+      "name": {
+        "en": "Social worker",
+        "es": "Trabajador social"
+      }
+    },
+    {
+      "code": "DCM",
+      "name": {
+        "en": "Director of care management",
+        "es": "Director de gestión de la atención"
+      }
+    }
+  ]
+}

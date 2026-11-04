@@ -1,0 +1,65 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- include "sangam.drivers.check" . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sangam.fullname" . }}-server-env
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+data:
+  TZ: UTC
+  SERVER_PORT: {{ .Values.server.service.port | quote }}
+  MANAGEMENT_SERVER_PORT: {{ .Values.server.service.managementPort | quote }}
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus,metrics
+  MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+  SERVER_SHUTDOWN: graceful
+  SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: {{ printf "%ds" (int (sub .Values.server.terminationGracePeriodSeconds 20)) | quote }}
+  SANGAM_LIQUIBASE_MODE: {{ include "sangam.liquibase.serverMode" . | quote }}
+  {{- with .Values.server.defaultTenant }}
+  SANGAM_TENANT_DEFAULT: {{ . | quote }}
+  {{- end }}
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: {{ .Values.database.pool.maximumPoolSize | quote }}
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: {{ .Values.database.pool.minimumIdle | quote }}
+  SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: {{ .Values.database.pool.connectionTimeoutMs | quote }}
+  SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: {{ .Values.database.pool.maxLifetimeMs | quote }}
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: {{ required "oidc.issuerUri is required" .Values.oidc.issuerUri | quote }}
+  {{- with .Values.oidc.jwkSetUri }}
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: {{ . | quote }}
+  {{- end }}
+  SANGAM_SECURITY_OIDC_AUDIENCE: {{ .Values.oidc.audience | quote }}
+  SANGAM_SECURITY_OIDC_TENANT_CLAIM: {{ .Values.oidc.tenantClaim | quote }}
+  SANGAM_SECURITY_OIDC_ROLES_CLAIM: {{ .Values.oidc.rolesClaim | quote }}
+  SANGAM_SECURITY_OIDC_SEATS_CLAIM: {{ .Values.oidc.seatsClaim | quote }}
+  LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+  OTEL_SDK_DISABLED: {{ (not .Values.otel.enabled) | quote }}
+  MANAGEMENT_TRACING_ENABLED: {{ .Values.otel.enabled | quote }}
+  {{- if .Values.otel.enabled }}
+  OTEL_SERVICE_NAME: sangam-server
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.otel.endpoint | quote }}
+  OTEL_EXPORTER_OTLP_PROTOCOL: {{ .Values.otel.protocol | quote }}
+  OTEL_TRACES_SAMPLER: parentbased_traceidratio
+  OTEL_TRACES_SAMPLER_ARG: {{ .Values.otel.samplerRatio | quote }}
+  MANAGEMENT_OTLP_TRACING_ENDPOINT: {{ printf "%s/v1/traces" (trimSuffix "/" .Values.otel.endpoint) | quote }}
+  MANAGEMENT_TRACING_SAMPLING_PROBABILITY: {{ .Values.otel.samplerRatio | quote }}
+  OTEL_RESOURCE_ATTRIBUTES: {{ printf "deployment.environment=%s,service.namespace=%s%s" .Values.ui.environmentLabel .Release.Namespace (ternary (printf ",%s" .Values.otel.resourceAttributes) "" (ne .Values.otel.resourceAttributes "")) | quote }}
+  {{- end }}
+  {{- with .Values.server.keys.existingSecret }}
+  SANGAM_KEYS_DIRECTORY: /opt/sangam/secrets
+  {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sangam.fullname" . }}-server-config
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+data:
+  application-helm.yaml: |
+    # Rendered from .Values.server.config (no secrets).
+    {{- if .Values.server.config }}
+    {{- toYaml .Values.server.config | nindent 4 }}
+    {{- else }}
+    {}
+    {{- end }}

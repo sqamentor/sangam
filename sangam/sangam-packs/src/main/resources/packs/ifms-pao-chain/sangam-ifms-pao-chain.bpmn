@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- PAO / treasury pre-check. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_pao_chain" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-ifms-pao-chain" name="PAO / treasury pre-check" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.pao-chain</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>billType,amount,tokenNo</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pc_start" name="Bill received"></startEvent>
+    <serviceTask id="pc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>chainId=PAO_3;tokenless=false;billDistributorSeat=BD-1;dealingSeat=DH-1;aaoSeat=AAO-1;paoSeat=PAO-1;secondSignatorySeat=SS-1;chainSignatures=1;amount=0;paoDecision=pass;tokenNo=;billType=GENERIC</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pc_token" name="Token number (series TOKEN)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>config.series</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>series.next</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>billType,ddoCode</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>token</operaton:string></operaton:field><operaton:field name="step"><operaton:string>token</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pc_sigs" name="Signatures required (chain template)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>config.documentType</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>chain.signatures</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>chainId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>chain</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pc_distribute_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_distribute</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>1WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pc_distribute" name="Assign bill in FIFO order" operaton:candidateGroups="${billDistributorSeat}" operaton:formKey="sangam:ifms-pao-chain/distribute" operaton:dueDate="${pc_distributeDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>distributeDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pc_distribute_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_distribute</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>billDistributorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pc_distribute_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="pc_distribute_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_distribute</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>billDistributorSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>distributeDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_distribute_breachGw" name="Deemed?" default="ifms_pao_chain_f9"></exclusiveGateway>
+    <exclusiveGateway id="pc_distribute_done" name=""></exclusiveGateway>
+    <serviceTask id="pc_dealing_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_dealing</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>2WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pc_dealing" name="Dealing hand check" operaton:candidateGroups="${dealingSeat}" operaton:formKey="sangam:ifms-pao-chain/dealing" operaton:dueDate="${pc_dealingDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>dealingDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pc_dealing_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_dealing</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>dealingSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pc_dealing_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="pc_dealing_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_dealing</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>dealingSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>dealingDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_dealing_breachGw" name="Deemed?" default="ifms_pao_chain_f17"></exclusiveGateway>
+    <exclusiveGateway id="pc_dealing_done" name=""></exclusiveGateway>
+    <serviceTask id="pc_aao_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_aao</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>1WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pc_aao" name="AAO check" operaton:candidateGroups="${aaoSeat}" operaton:formKey="sangam:ifms-pao-chain/aao" operaton:dueDate="${pc_aaoDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>aaoDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pc_aao_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_aao</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>aaoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pc_aao_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="pc_aao_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_aao</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>aaoSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>aaoDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_aao_breachGw" name="Deemed?" default="ifms_pao_chain_f25"></exclusiveGateway>
+    <exclusiveGateway id="pc_aao_done" name=""></exclusiveGateway>
+    <serviceTask id="pc_pao_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_pao</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>1WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pc_pao" name="PAO pass, object or return" operaton:candidateGroups="${paoSeat}" operaton:formKey="sangam:ifms-pao-chain/pao" operaton:dueDate="${pc_paoDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>paoDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pc_pao_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_pao</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pc_pao_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="pc_pao_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_pao</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paoSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>paoDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_pao_breachGw" name="Deemed?" default="ifms_pao_chain_f33"></exclusiveGateway>
+    <exclusiveGateway id="pc_pao_done" name=""></exclusiveGateway>
+    <serviceTask id="pc_memo" name="Objection memo (rule cited)" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>objection-memo</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pc_returned" name="Outcome: returned" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>paoOutcome=RETURNED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pc_objected" name="Outcome: objection" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>paoOutcome=OBJECTED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_paoGw" name="PAO decision?" default="ifms_pao_chain_f44"></exclusiveGateway>
+    <exclusiveGateway id="pc_sigGw" name="Second signatory needed?" default="ifms_pao_chain_f54"></exclusiveGateway>
+    <serviceTask id="pc_second_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_second</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>1WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pc_second" name="Second signature (DSC)" operaton:candidateGroups="${secondSignatorySeat}" operaton:formKey="sangam:ifms-pao-chain/second" operaton:dueDate="${pc_secondDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>secondDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pc_second_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_second</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>secondSignatorySeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pc_second_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="pc_second_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_second</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>secondSignatorySeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>secondDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_second_breachGw" name="Deemed?" default="ifms_pao_chain_f50"></exclusiveGateway>
+    <exclusiveGateway id="pc_second_done" name=""></exclusiveGateway>
+    <serviceTask id="pc_passed" name="Outcome: passed" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>paoOutcome=PASSED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_secGw" name="" default="ifms_pao_chain_f57"></exclusiveGateway>
+    <endEvent id="pc_end" name="Chain complete"></endEvent>
+    <endEvent id="pc_endObj" name="Objected"></endEvent>
+    <endEvent id="pc_endRet" name="Returned"></endEvent>
+    <boundaryEvent id="pc_distribute_warn" name="SLA warning (75%)" attachedToRef="pc_distribute" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_distributeWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_distribute_breach" name="SLA breached" attachedToRef="pc_distribute" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_distributeDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_dealing_warn" name="SLA warning (75%)" attachedToRef="pc_dealing" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_dealingWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_dealing_breach" name="SLA breached" attachedToRef="pc_dealing" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_dealingDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_aao_warn" name="SLA warning (75%)" attachedToRef="pc_aao" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_aaoWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_aao_breach" name="SLA breached" attachedToRef="pc_aao" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_aaoDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_pao_warn" name="SLA warning (75%)" attachedToRef="pc_pao" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_paoWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_pao_breach" name="SLA breached" attachedToRef="pc_pao" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_paoDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_second_warn" name="SLA warning (75%)" attachedToRef="pc_second" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_secondWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_second_breach" name="SLA breached" attachedToRef="pc_second" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_secondDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_pao_chain_f1" sourceRef="pc_start" targetRef="pc_defaults"/>
+    <sequenceFlow id="ifms_pao_chain_f2" sourceRef="pc_defaults" targetRef="pc_token"/>
+    <sequenceFlow id="ifms_pao_chain_f3" sourceRef="pc_token" targetRef="pc_sigs"/>
+    <sequenceFlow id="ifms_pao_chain_f4" sourceRef="pc_distribute_warn" targetRef="pc_distribute_warnNotify"/>
+    <sequenceFlow id="ifms_pao_chain_f5" sourceRef="pc_distribute_warnNotify" targetRef="pc_distribute_warnEnd"/>
+    <sequenceFlow id="ifms_pao_chain_f6" sourceRef="pc_distribute_breach" targetRef="pc_distribute_breachAct"/>
+    <sequenceFlow id="ifms_pao_chain_f7" sourceRef="pc_distribute_breachAct" targetRef="pc_distribute_breachGw"/>
+    <sequenceFlow id="ifms_pao_chain_f8" name="deemed" sourceRef="pc_distribute_breachGw" targetRef="pc_distribute_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_pao_chain_f9" name="escalated" sourceRef="pc_distribute_breachGw" targetRef="pc_distribute_slaPlan"/>
+    <sequenceFlow id="ifms_pao_chain_f10" sourceRef="pc_distribute_slaPlan" targetRef="pc_distribute"/>
+    <sequenceFlow id="ifms_pao_chain_f11" sourceRef="pc_distribute" targetRef="pc_distribute_done"/>
+    <sequenceFlow id="ifms_pao_chain_f12" sourceRef="pc_dealing_warn" targetRef="pc_dealing_warnNotify"/>
+    <sequenceFlow id="ifms_pao_chain_f13" sourceRef="pc_dealing_warnNotify" targetRef="pc_dealing_warnEnd"/>
+    <sequenceFlow id="ifms_pao_chain_f14" sourceRef="pc_dealing_breach" targetRef="pc_dealing_breachAct"/>
+    <sequenceFlow id="ifms_pao_chain_f15" sourceRef="pc_dealing_breachAct" targetRef="pc_dealing_breachGw"/>
+    <sequenceFlow id="ifms_pao_chain_f16" name="deemed" sourceRef="pc_dealing_breachGw" targetRef="pc_dealing_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_pao_chain_f17" name="escalated" sourceRef="pc_dealing_breachGw" targetRef="pc_dealing_slaPlan"/>
+    <sequenceFlow id="ifms_pao_chain_f18" sourceRef="pc_dealing_slaPlan" targetRef="pc_dealing"/>
+    <sequenceFlow id="ifms_pao_chain_f19" sourceRef="pc_dealing" targetRef="pc_dealing_done"/>
+    <sequenceFlow id="ifms_pao_chain_f20" sourceRef="pc_aao_warn" targetRef="pc_aao_warnNotify"/>
+    <sequenceFlow id="ifms_pao_chain_f21" sourceRef="pc_aao_warnNotify" targetRef="pc_aao_warnEnd"/>
+    <sequenceFlow id="ifms_pao_chain_f22" sourceRef="pc_aao_breach" targetRef="pc_aao_breachAct"/>
+    <sequenceFlow id="ifms_pao_chain_f23" sourceRef="pc_aao_breachAct" targetRef="pc_aao_breachGw"/>
+    <sequenceFlow id="ifms_pao_chain_f24" name="deemed" sourceRef="pc_aao_breachGw" targetRef="pc_aao_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_pao_chain_f25" name="escalated" sourceRef="pc_aao_breachGw" targetRef="pc_aao_slaPlan"/>
+    <sequenceFlow id="ifms_pao_chain_f26" sourceRef="pc_aao_slaPlan" targetRef="pc_aao"/>
+    <sequenceFlow id="ifms_pao_chain_f27" sourceRef="pc_aao" targetRef="pc_aao_done"/>
+    <sequenceFlow id="ifms_pao_chain_f28" sourceRef="pc_pao_warn" targetRef="pc_pao_warnNotify"/>
+    <sequenceFlow id="ifms_pao_chain_f29" sourceRef="pc_pao_warnNotify" targetRef="pc_pao_warnEnd"/>
+    <sequenceFlow id="ifms_pao_chain_f30" sourceRef="pc_pao_breach" targetRef="pc_pao_breachAct"/>
+    <sequenceFlow id="ifms_pao_chain_f31" sourceRef="pc_pao_breachAct" targetRef="pc_pao_breachGw"/>
+    <sequenceFlow id="ifms_pao_chain_f32" name="deemed" sourceRef="pc_pao_breachGw" targetRef="pc_pao_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_pao_chain_f33" name="escalated" sourceRef="pc_pao_breachGw" targetRef="pc_pao_slaPlan"/>
+    <sequenceFlow id="ifms_pao_chain_f34" sourceRef="pc_pao_slaPlan" targetRef="pc_pao"/>
+    <sequenceFlow id="ifms_pao_chain_f35" sourceRef="pc_pao" targetRef="pc_pao_done"/>
+    <sequenceFlow id="ifms_pao_chain_f36" sourceRef="pc_sigs" targetRef="pc_distribute_slaPlan"/>
+    <sequenceFlow id="ifms_pao_chain_f37" sourceRef="pc_distribute_done" targetRef="pc_dealing_slaPlan"/>
+    <sequenceFlow id="ifms_pao_chain_f38" sourceRef="pc_dealing_done" targetRef="pc_aao_slaPlan"/>
+    <sequenceFlow id="ifms_pao_chain_f39" sourceRef="pc_aao_done" targetRef="pc_pao_slaPlan"/>
+    <sequenceFlow id="ifms_pao_chain_f40" sourceRef="pc_pao_done" targetRef="pc_paoGw"/>
+    <sequenceFlow id="ifms_pao_chain_f41" name="object" sourceRef="pc_paoGw" targetRef="pc_memo"><conditionExpression xsi:type="tFormalExpression">${paoDecision == 'object'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_pao_chain_f42" name="return (PAO only)" sourceRef="pc_paoGw" targetRef="pc_returned"><conditionExpression xsi:type="tFormalExpression">${paoDecision == 'returnBill'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_pao_chain_f43" sourceRef="pc_memo" targetRef="pc_objected"/>
+    <sequenceFlow id="ifms_pao_chain_f44" name="pass" sourceRef="pc_paoGw" targetRef="pc_sigGw"/>
+    <sequenceFlow id="ifms_pao_chain_f45" sourceRef="pc_second_warn" targetRef="pc_second_warnNotify"/>
+    <sequenceFlow id="ifms_pao_chain_f46" sourceRef="pc_second_warnNotify" targetRef="pc_second_warnEnd"/>
+    <sequenceFlow id="ifms_pao_chain_f47" sourceRef="pc_second_breach" targetRef="pc_second_breachAct"/>
+    <sequenceFlow id="ifms_pao_chain_f48" sourceRef="pc_second_breachAct" targetRef="pc_second_breachGw"/>
+    <sequenceFlow id="ifms_pao_chain_f49" name="deemed" sourceRef="pc_second_breachGw" targetRef="pc_second_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_pao_chain_f50" name="escalated" sourceRef="pc_second_breachGw" targetRef="pc_second_slaPlan"/>
+    <sequenceFlow id="ifms_pao_chain_f51" sourceRef="pc_second_slaPlan" targetRef="pc_second"/>
+    <sequenceFlow id="ifms_pao_chain_f52" sourceRef="pc_second" targetRef="pc_second_done"/>
+    <sequenceFlow id="ifms_pao_chain_f53" name="two signatures" sourceRef="pc_sigGw" targetRef="pc_second_slaPlan"><conditionExpression xsi:type="tFormalExpression">${chainSignatures &gt;= 2}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_pao_chain_f54" name="one signature" sourceRef="pc_sigGw" targetRef="pc_passed"/>
+    <sequenceFlow id="ifms_pao_chain_f55" sourceRef="pc_second_done" targetRef="pc_secGw"/>
+    <sequenceFlow id="ifms_pao_chain_f56" name="signed" sourceRef="pc_secGw" targetRef="pc_passed"><conditionExpression xsi:type="tFormalExpression">${secondDecision == 'signed'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_pao_chain_f57" name="returned" sourceRef="pc_secGw" targetRef="pc_returned"/>
+    <sequenceFlow id="ifms_pao_chain_f58" sourceRef="pc_passed" targetRef="pc_end"/>
+    <sequenceFlow id="ifms_pao_chain_f59" sourceRef="pc_objected" targetRef="pc_endObj"/>
+    <sequenceFlow id="ifms_pao_chain_f60" sourceRef="pc_returned" targetRef="pc_endRet"/>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_pao_chain_diagram">
+    <bpmndi:BPMNPlane id="ifms_pao_chain_plane" bpmnElement="sangam-ifms-pao-chain">
+      <bpmndi:BPMNShape id="pc_start_di" bpmnElement="pc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_defaults_di" bpmnElement="pc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_token_di" bpmnElement="pc_token"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_sigs_di" bpmnElement="pc_sigs"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_distribute_slaPlan_di" bpmnElement="pc_distribute_slaPlan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_distribute_di" bpmnElement="pc_distribute"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_distribute_warnNotify_di" bpmnElement="pc_distribute_warnNotify"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_distribute_warnEnd_di" bpmnElement="pc_distribute_warnEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_distribute_breachAct_di" bpmnElement="pc_distribute_breachAct"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_distribute_breachGw_di" bpmnElement="pc_distribute_breachGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_distribute_done_di" bpmnElement="pc_distribute_done"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_dealing_slaPlan_di" bpmnElement="pc_dealing_slaPlan"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_dealing_di" bpmnElement="pc_dealing"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_dealing_warnNotify_di" bpmnElement="pc_dealing_warnNotify"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_dealing_warnEnd_di" bpmnElement="pc_dealing_warnEnd"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_dealing_breachAct_di" bpmnElement="pc_dealing_breachAct"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_dealing_breachGw_di" bpmnElement="pc_dealing_breachGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_dealing_done_di" bpmnElement="pc_dealing_done"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_aao_slaPlan_di" bpmnElement="pc_aao_slaPlan"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_aao_di" bpmnElement="pc_aao"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_aao_warnNotify_di" bpmnElement="pc_aao_warnNotify"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_aao_warnEnd_di" bpmnElement="pc_aao_warnEnd"><dc:Bounds x="2857" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_aao_breachAct_di" bpmnElement="pc_aao_breachAct"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_aao_breachGw_di" bpmnElement="pc_aao_breachGw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_aao_done_di" bpmnElement="pc_aao_done"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_pao_slaPlan_di" bpmnElement="pc_pao_slaPlan"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_pao_di" bpmnElement="pc_pao"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_pao_warnNotify_di" bpmnElement="pc_pao_warnNotify"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_pao_warnEnd_di" bpmnElement="pc_pao_warnEnd"><dc:Bounds x="3682" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_pao_breachAct_di" bpmnElement="pc_pao_breachAct"><dc:Bounds x="3485" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_pao_breachGw_di" bpmnElement="pc_pao_breachGw"><dc:Bounds x="3675" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_pao_done_di" bpmnElement="pc_pao_done"><dc:Bounds x="3840" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_memo_di" bpmnElement="pc_memo"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_returned_di" bpmnElement="pc_returned"><dc:Bounds x="5300" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_objected_di" bpmnElement="pc_objected"><dc:Bounds x="4310" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_paoGw_di" bpmnElement="pc_paoGw"><dc:Bounds x="4005" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_sigGw_di" bpmnElement="pc_sigGw"><dc:Bounds x="4170" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_second_slaPlan_di" bpmnElement="pc_second_slaPlan"><dc:Bounds x="4310" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_second_di" bpmnElement="pc_second"><dc:Bounds x="4475" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_second_warnNotify_di" bpmnElement="pc_second_warnNotify"><dc:Bounds x="4640" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_second_warnEnd_di" bpmnElement="pc_second_warnEnd"><dc:Bounds x="4837" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_second_breachAct_di" bpmnElement="pc_second_breachAct"><dc:Bounds x="4640" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_second_breachGw_di" bpmnElement="pc_second_breachGw"><dc:Bounds x="4830" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_second_done_di" bpmnElement="pc_second_done"><dc:Bounds x="4995" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_passed_di" bpmnElement="pc_passed"><dc:Bounds x="5300" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_secGw_di" bpmnElement="pc_secGw"><dc:Bounds x="5160" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_end_di" bpmnElement="pc_end"><dc:Bounds x="5497" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_endObj_di" bpmnElement="pc_endObj"><dc:Bounds x="4507" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_endRet_di" bpmnElement="pc_endRet"><dc:Bounds x="5497" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_distribute_warn_di" bpmnElement="pc_distribute_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_distribute_breach_di" bpmnElement="pc_distribute_breach"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_dealing_warn_di" bpmnElement="pc_dealing_warn"><dc:Bounds x="1678" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_dealing_breach_di" bpmnElement="pc_dealing_breach"><dc:Bounds x="1708" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_aao_warn_di" bpmnElement="pc_aao_warn"><dc:Bounds x="2503" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_aao_breach_di" bpmnElement="pc_aao_breach"><dc:Bounds x="2533" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_pao_warn_di" bpmnElement="pc_pao_warn"><dc:Bounds x="3328" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_pao_breach_di" bpmnElement="pc_pao_breach"><dc:Bounds x="3358" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_second_warn_di" bpmnElement="pc_second_warn"><dc:Bounds x="4483" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_second_breach_di" bpmnElement="pc_second_breach"><dc:Bounds x="4513" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f1_di" bpmnElement="ifms_pao_chain_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f2_di" bpmnElement="ifms_pao_chain_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f3_di" bpmnElement="ifms_pao_chain_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f4_di" bpmnElement="ifms_pao_chain_f4"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f5_di" bpmnElement="ifms_pao_chain_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f6_di" bpmnElement="ifms_pao_chain_f6"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f7_di" bpmnElement="ifms_pao_chain_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f8_di" bpmnElement="ifms_pao_chain_f8"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f9_di" bpmnElement="ifms_pao_chain_f9"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="128"/><di:waypoint x="730" y="128"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f10_di" bpmnElement="ifms_pao_chain_f10"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f11_di" bpmnElement="ifms_pao_chain_f11"><di:waypoint x="945" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f12_di" bpmnElement="ifms_pao_chain_f12"><di:waypoint x="1696" y="128"/><di:waypoint x="1696" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f13_di" bpmnElement="ifms_pao_chain_f13"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f14_di" bpmnElement="ifms_pao_chain_f14"><di:waypoint x="1726" y="128"/><di:waypoint x="1726" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f15_di" bpmnElement="ifms_pao_chain_f15"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f16_di" bpmnElement="ifms_pao_chain_f16"><di:waypoint x="2075" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f17_di" bpmnElement="ifms_pao_chain_f17"><di:waypoint x="2050" y="95"/><di:waypoint x="2050" y="128"/><di:waypoint x="1555" y="128"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f18_di" bpmnElement="ifms_pao_chain_f18"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f19_di" bpmnElement="ifms_pao_chain_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f20_di" bpmnElement="ifms_pao_chain_f20"><di:waypoint x="2521" y="128"/><di:waypoint x="2521" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f21_di" bpmnElement="ifms_pao_chain_f21"><di:waypoint x="2760" y="195"/><di:waypoint x="2857" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f22_di" bpmnElement="ifms_pao_chain_f22"><di:waypoint x="2551" y="128"/><di:waypoint x="2551" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f23_di" bpmnElement="ifms_pao_chain_f23"><di:waypoint x="2760" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f24_di" bpmnElement="ifms_pao_chain_f24"><di:waypoint x="2900" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f25_di" bpmnElement="ifms_pao_chain_f25"><di:waypoint x="2875" y="95"/><di:waypoint x="2875" y="128"/><di:waypoint x="2380" y="128"/><di:waypoint x="2380" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f26_di" bpmnElement="ifms_pao_chain_f26"><di:waypoint x="2430" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f27_di" bpmnElement="ifms_pao_chain_f27"><di:waypoint x="2595" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f28_di" bpmnElement="ifms_pao_chain_f28"><di:waypoint x="3346" y="128"/><di:waypoint x="3346" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f29_di" bpmnElement="ifms_pao_chain_f29"><di:waypoint x="3585" y="195"/><di:waypoint x="3682" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f30_di" bpmnElement="ifms_pao_chain_f30"><di:waypoint x="3376" y="128"/><di:waypoint x="3376" y="70"/><di:waypoint x="3485" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f31_di" bpmnElement="ifms_pao_chain_f31"><di:waypoint x="3585" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f32_di" bpmnElement="ifms_pao_chain_f32"><di:waypoint x="3725" y="70"/><di:waypoint x="3840" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f33_di" bpmnElement="ifms_pao_chain_f33"><di:waypoint x="3700" y="95"/><di:waypoint x="3700" y="128"/><di:waypoint x="3205" y="128"/><di:waypoint x="3205" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f34_di" bpmnElement="ifms_pao_chain_f34"><di:waypoint x="3255" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f35_di" bpmnElement="ifms_pao_chain_f35"><di:waypoint x="3420" y="70"/><di:waypoint x="3840" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f36_di" bpmnElement="ifms_pao_chain_f36"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f37_di" bpmnElement="ifms_pao_chain_f37"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f38_di" bpmnElement="ifms_pao_chain_f38"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f39_di" bpmnElement="ifms_pao_chain_f39"><di:waypoint x="3065" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f40_di" bpmnElement="ifms_pao_chain_f40"><di:waypoint x="3890" y="70"/><di:waypoint x="4005" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f41_di" bpmnElement="ifms_pao_chain_f41"><di:waypoint x="4055" y="70"/><di:waypoint x="4100" y="70"/><di:waypoint x="4100" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f42_di" bpmnElement="ifms_pao_chain_f42"><di:waypoint x="4055" y="70"/><di:waypoint x="4677" y="70"/><di:waypoint x="4677" y="195"/><di:waypoint x="5300" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f43_di" bpmnElement="ifms_pao_chain_f43"><di:waypoint x="4245" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f44_di" bpmnElement="ifms_pao_chain_f44"><di:waypoint x="4055" y="70"/><di:waypoint x="4170" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f45_di" bpmnElement="ifms_pao_chain_f45"><di:waypoint x="4501" y="128"/><di:waypoint x="4501" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f46_di" bpmnElement="ifms_pao_chain_f46"><di:waypoint x="4740" y="195"/><di:waypoint x="4837" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f47_di" bpmnElement="ifms_pao_chain_f47"><di:waypoint x="4531" y="128"/><di:waypoint x="4531" y="70"/><di:waypoint x="4640" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f48_di" bpmnElement="ifms_pao_chain_f48"><di:waypoint x="4740" y="70"/><di:waypoint x="4830" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f49_di" bpmnElement="ifms_pao_chain_f49"><di:waypoint x="4880" y="70"/><di:waypoint x="4995" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f50_di" bpmnElement="ifms_pao_chain_f50"><di:waypoint x="4855" y="95"/><di:waypoint x="4855" y="135"/><di:waypoint x="4360" y="135"/><di:waypoint x="4360" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f51_di" bpmnElement="ifms_pao_chain_f51"><di:waypoint x="4410" y="70"/><di:waypoint x="4475" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f52_di" bpmnElement="ifms_pao_chain_f52"><di:waypoint x="4575" y="70"/><di:waypoint x="4995" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f53_di" bpmnElement="ifms_pao_chain_f53"><di:waypoint x="4220" y="70"/><di:waypoint x="4310" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f54_di" bpmnElement="ifms_pao_chain_f54"><di:waypoint x="4220" y="70"/><di:waypoint x="5300" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f55_di" bpmnElement="ifms_pao_chain_f55"><di:waypoint x="5045" y="70"/><di:waypoint x="5160" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f56_di" bpmnElement="ifms_pao_chain_f56"><di:waypoint x="5210" y="70"/><di:waypoint x="5300" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f57_di" bpmnElement="ifms_pao_chain_f57"><di:waypoint x="5210" y="70"/><di:waypoint x="5255" y="70"/><di:waypoint x="5255" y="195"/><di:waypoint x="5300" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f58_di" bpmnElement="ifms_pao_chain_f58"><di:waypoint x="5400" y="70"/><di:waypoint x="5497" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f59_di" bpmnElement="ifms_pao_chain_f59"><di:waypoint x="4410" y="195"/><di:waypoint x="4507" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_pao_chain_f60_di" bpmnElement="ifms_pao_chain_f60"><di:waypoint x="5400" y="195"/><di:waypoint x="5497" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

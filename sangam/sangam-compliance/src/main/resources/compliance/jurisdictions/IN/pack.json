@@ -1,0 +1,272 @@
+{
+  "code": "IN",
+  "name": "India",
+  "homeCountry": "IN",
+  "timeZone": "Asia/Kolkata",
+  "terminology": {
+    "dataSubject": "Data Principal",
+    "controller": "Data Fiduciary",
+    "elevatedController": "Significant Data Fiduciary",
+    "processor": "Data Processor",
+    "supervisoryAuthority": "Data Protection Board of India",
+    "incidentAuthority": "CERT-In"
+  },
+  "instruments": [
+    {"id": "DPDP-ACT", "title": "Digital Personal Data Protection Act, 2023 (No. 22 of 2023)", "issuer": "Parliament of India", "reference": "Act 22 of 2023; commencement G.S.R. 843(E) 13-11-2025", "url": "https://www.meity.gov.in/data-protection-framework"},
+    {"id": "DPDP-RULES", "title": "Digital Personal Data Protection Rules, 2025", "issuer": "MeitY", "reference": "G.S.R. 846(E) 13-11-2025", "url": "https://www.meity.gov.in/data-protection-framework"},
+    {"id": "CERT-IN-2022", "title": "Directions under sub-section (6) of section 70B of the IT Act, 2000", "issuer": "CERT-In", "reference": "No. 20(3)/2022-CERT-In, 28-04-2022", "url": "https://www.cert-in.org.in/Directions70B.jsp"},
+    {"id": "IT-ACT", "title": "Information Technology Act, 2000", "issuer": "Parliament of India", "reference": "Act 21 of 2000", "url": "https://www.indiacode.nic.in/handle/123456789/1999"},
+    {"id": "SPDI-2011", "title": "IT (Reasonable Security Practices and Procedures and Sensitive Personal Data or Information) Rules, 2011", "issuer": "MeitY", "reference": "G.S.R. 313(E) 11-04-2011", "url": "https://www.meity.gov.in"},
+    {"id": "IT-RULES-2021", "title": "IT (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021", "issuer": "MeitY", "reference": "G.S.R. 139(E) 25-02-2021", "url": "https://www.meity.gov.in"},
+    {"id": "CERT-IN-GOV-2023", "title": "Guidelines on Information Security Practices for Government Entities", "issuer": "CERT-In", "reference": "2023", "url": "https://www.cert-in.org.in"},
+    {"id": "PRA-1993", "title": "Public Records Act, 1993", "issuer": "Parliament of India", "reference": "Act 69 of 1993", "url": "https://www.indiacode.nic.in"}
+  ],
+  "commencement": {
+    "phases": [
+      {"id": "P1", "from": "2025-11-13", "provisions": ["r.1", "r.2", "r.17", "r.18", "r.19", "r.20", "r.21", "s.2", "s.18", "s.19", "s.20", "s.21", "s.22", "s.23", "s.24", "s.25", "s.26", "s.44(1)", "s.44(3)", "CERT-In", "IT Act", "SPDI", "IT Rules"]},
+      {"id": "P2", "from": "2026-11-13", "provisions": ["r.4", "s.6(9)", "s.27(1)(d)", "First Sch"]},
+      {"id": "P3", "from": "2027-05-13", "provisions": ["r.3", "r.5", "r.6", "r.7", "r.8", "r.9", "r.10", "r.11", "r.12", "r.13", "r.14", "r.15", "r.16", "r.22", "r.23"]}
+    ],
+    "defaultPhase": "P3"
+  },
+  "languages": [
+    {"code": "en", "name": "English", "nativeName": "English", "script": "Latn"},
+    {"code": "as", "name": "Assamese", "nativeName": "অসমীয়া", "script": "Beng"},
+    {"code": "bn", "name": "Bengali", "nativeName": "বাংলা", "script": "Beng"},
+    {"code": "brx", "name": "Bodo", "nativeName": "बड़ो", "script": "Deva"},
+    {"code": "doi", "name": "Dogri", "nativeName": "डोगरी", "script": "Deva"},
+    {"code": "gu", "name": "Gujarati", "nativeName": "ગુજરાતી", "script": "Gujr"},
+    {"code": "hi", "name": "Hindi", "nativeName": "हिन्दी", "script": "Deva"},
+    {"code": "kn", "name": "Kannada", "nativeName": "ಕನ್ನಡ", "script": "Knda"},
+    {"code": "ks", "name": "Kashmiri", "nativeName": "کٲشُر", "script": "Arab", "rtl": true},
+    {"code": "kok", "name": "Konkani", "nativeName": "कोंकणी", "script": "Deva"},
+    {"code": "mai", "name": "Maithili", "nativeName": "मैथिली", "script": "Deva"},
+    {"code": "ml", "name": "Malayalam", "nativeName": "മലയാളം", "script": "Mlym"},
+    {"code": "mni", "name": "Manipuri", "nativeName": "মৈতৈলোন্", "script": "Beng"},
+    {"code": "mr", "name": "Marathi", "nativeName": "मराठी", "script": "Deva"},
+    {"code": "ne", "name": "Nepali", "nativeName": "नेपाली", "script": "Deva"},
+    {"code": "or", "name": "Odia", "nativeName": "ଓଡ଼ିଆ", "script": "Orya"},
+    {"code": "pa", "name": "Punjabi", "nativeName": "ਪੰਜਾਬੀ", "script": "Guru"},
+    {"code": "sa", "name": "Sanskrit", "nativeName": "संस्कृतम्", "script": "Deva"},
+    {"code": "sat", "name": "Santali", "nativeName": "ᱥᱟᱱᱛᱟᱲᱤ", "script": "Olck"},
+    {"code": "sd", "name": "Sindhi", "nativeName": "سنڌي", "script": "Arab", "rtl": true},
+    {"code": "ta", "name": "Tamil", "nativeName": "தமிழ்", "script": "Taml"},
+    {"code": "te", "name": "Telugu", "nativeName": "తెలుగు", "script": "Telu"},
+    {"code": "ur", "name": "Urdu", "nativeName": "اردو", "script": "Arab", "rtl": true}
+  ],
+  "defaultLanguage": "en",
+  "limits": {
+    "logRetentionMinDays": {"value": 365, "citation": "DPDP Rules r.6(1)(e), r.8(3)"},
+    "incidentLogRetentionDays": {"value": 180, "citation": "CERT-In Directions 28-04-2022 para (iv): rolling 180 days within Indian jurisdiction"},
+    "preErasureNoticeMinHours": {"value": 48, "citation": "DPDP Rules r.8(2)"},
+    "minimumRetentionDays": {"value": 365, "citation": "DPDP Rules r.8(3)"},
+    "lawfulRequestMaxHours": {"value": 72, "citation": "IT (Intermediary Guidelines) Rules 2021 r.3(1)(j)"},
+    "childAgeYears": {"value": 18, "citation": "DPDP Act s.2(f)"}
+  },
+  "conditionalLimits": [
+    {"key": "right.GRIEVANCE.maxDays", "value": 30, "when": "body-corporate", "until": "2027-05-13", "citation": "SPDI Rules 2011 r.5(9): grievance officer redresses within one month (until DPDP s.44(2) commences)"}
+  ],
+  "defaults": {
+    "ntp.servers": "samay1.nic.in,samay2.nic.in,time.nplindia.org",
+    "authority.CERT-IN.recipients": "incident@cert-in.org.in"
+  },
+  "legalBases": [
+    {"code": "CONSENT", "citation": "s.4(1)(a), s.6", "kind": "CONSENT", "description": "Consent of the Data Principal"},
+    {"code": "S7A_VOLUNTARY", "citation": "s.7(a)", "objectable": true, "description": "Data voluntarily provided for a specified purpose, without objection"},
+    {"code": "S7B_STATE_BENEFIT", "citation": "s.7(b), r.5, Second Schedule", "requiresLegalRef": true, "subGrounds": ["i", "ii"], "subGroundRequiringRegisterRef": "ii", "requiresStandardsAttestation": true, "description": "State subsidy, benefit, service, certificate, licence or permit: (i) prior consent to any such benefit, or (ii) notified State database"},
+    {"code": "S7C_STATE_FUNCTION", "citation": "s.7(c)", "requiresLegalRef": true, "impliesRetentionByLaw": true, "description": "Function of the State under law, sovereignty, integrity or security of the State"},
+    {"code": "S7D_LEGAL_DISCLOSURE", "citation": "s.7(d)", "requiresLegalRef": true, "impliesRetentionByLaw": true, "description": "Obligation under law to disclose information to the State"},
+    {"code": "S7E_COURT_ORDER", "citation": "s.7(e)", "requiresLegalRef": true, "impliesRetentionByLaw": true, "description": "Compliance with a judgment, decree or order"},
+    {"code": "S7F_MEDICAL_EMERGENCY", "citation": "s.7(f)", "description": "Medical emergency: threat to life or immediate threat to health"},
+    {"code": "S7G_EPIDEMIC", "citation": "s.7(g)", "description": "Medical treatment or health services during an epidemic or threat to public health"},
+    {"code": "S7H_DISASTER", "citation": "s.7(h)", "description": "Safety or assistance during a disaster or breakdown of public order"},
+    {"code": "S7I_EMPLOYMENT", "citation": "s.7(i)", "description": "Employment purposes, safeguarding the employer, benefits sought by an employee"}
+  ],
+  "exemptions": [
+    {"code": "S17_1_A", "citation": "s.17(1)(a)", "disappliesNoticeAndConsent": true, "disappliesErasure": true, "description": "Enforcing a legal right or claim"},
+    {"code": "S17_1_B", "citation": "s.17(1)(b)", "disappliesNoticeAndConsent": true, "disappliesErasure": true, "description": "Courts, tribunals, judicial, quasi-judicial, regulatory or supervisory bodies"},
+    {"code": "S17_1_C", "citation": "s.17(1)(c)", "disappliesNoticeAndConsent": true, "disappliesErasure": true, "description": "Prevention, detection, investigation or prosecution of offences"},
+    {"code": "S17_1_D", "citation": "s.17(1)(d)", "disappliesNoticeAndConsent": true, "disappliesErasure": true, "description": "Principals outside India under a contract with a foreign person"},
+    {"code": "S17_1_E", "citation": "s.17(1)(e)", "disappliesNoticeAndConsent": true, "disappliesErasure": true, "description": "Approved scheme of compromise, arrangement, merger or amalgamation"},
+    {"code": "S17_1_F", "citation": "s.17(1)(f)", "disappliesNoticeAndConsent": true, "disappliesErasure": true, "description": "Financial information of a loan defaulter"},
+    {"code": "S17_2_A", "citation": "s.17(2)(a)", "disappliesNoticeAndConsent": true, "disappliesErasure": true, "description": "Instrumentality of the State notified by the Central Government"},
+    {"code": "S17_2_B", "citation": "s.17(2)(b), r.16, Second Schedule", "disappliesNoticeAndConsent": true, "disappliesErasure": true, "requiresStandardsAttestation": true, "description": "Research, archiving or statistical purposes"},
+    {"code": "S17_3", "citation": "s.17(3)", "disappliesErasure": true, "description": "Notified Data Fiduciaries / start-ups (exempt from s.5, 8(3), 8(7), 10, 11)"},
+    {"code": "S17_4", "citation": "s.17(4)", "disappliesErasure": true, "disappliesCorrectionWithoutDecision": true, "description": "State: no s.8(7), no s.12(3), no s.12(2) where no decision affecting the principal"},
+    {"code": "S17_5", "citation": "s.17(5)", "description": "Time-bound notified exemption within five years of commencement"}
+  ],
+  "childExemptions": [
+    {"code": "FOURTH_SCH_A1", "citation": "r.12, Fourth Sch. Part A item 1", "covers": ["TRACKING", "BEHAVIOURAL_MONITORING"], "description": "Clinical or mental health establishment, healthcare professional: health services"},
+    {"code": "FOURTH_SCH_A2", "citation": "r.12, Fourth Sch. Part A item 2", "covers": ["TRACKING", "BEHAVIOURAL_MONITORING"], "description": "Allied healthcare professional: treatment plan"},
+    {"code": "FOURTH_SCH_A3", "citation": "r.12, Fourth Sch. Part A item 3", "covers": ["TRACKING", "BEHAVIOURAL_MONITORING"], "description": "Educational institution: educational activities or child safety"},
+    {"code": "FOURTH_SCH_A4", "citation": "r.12, Fourth Sch. Part A item 4", "covers": ["TRACKING"], "description": "Creche or child day care centre: safety"},
+    {"code": "FOURTH_SCH_A5", "citation": "r.12, Fourth Sch. Part A item 5", "covers": ["TRACKING"], "description": "Transport for children: location tracking during travel"},
+    {"code": "FOURTH_SCH_B1", "citation": "r.12, Fourth Sch. Part B item 1", "covers": ["TRACKING", "BEHAVIOURAL_MONITORING"], "description": "Power or function in the interest of the child under law"},
+    {"code": "FOURTH_SCH_B2", "citation": "r.12, Fourth Sch. Part B item 2", "covers": ["TRACKING", "BEHAVIOURAL_MONITORING"], "description": "s.7(b) subsidy, benefit, certificate, licence or permit to the child"},
+    {"code": "FOURTH_SCH_B3", "citation": "r.12, Fourth Sch. Part B item 3", "covers": [], "description": "User account limited to e-mail communication"},
+    {"code": "FOURTH_SCH_B4", "citation": "r.12, Fourth Sch. Part B item 4", "covers": ["TRACKING"], "description": "Real-time location for the child's safety"},
+    {"code": "FOURTH_SCH_B5", "citation": "r.12, Fourth Sch. Part B item 5", "covers": ["BEHAVIOURAL_MONITORING"], "description": "Blocking information likely to harm the child"},
+    {"code": "FOURTH_SCH_B6", "citation": "r.12, Fourth Sch. Part B item 6", "covers": ["BEHAVIOURAL_MONITORING"], "description": "Confirming the user is not a child / Rule 10 due diligence"}
+  ],
+  "verification": {
+    "child": [
+      {"code": "DETAILS_ALREADY_HELD", "citation": "r.10(1)(a)", "description": "Reliable identity and age details already held"},
+      {"code": "VOLUNTARY_DETAILS", "citation": "r.10(1)(b)(i)", "description": "Details voluntarily provided by the individual"},
+      {"code": "VIRTUAL_TOKEN", "citation": "r.10(1)(b)(ii)", "description": "Virtual token issued by an authorised entity"},
+      {"code": "DIGILOCKER_TOKEN", "citation": "r.10(1)(b)(ii), illustration", "description": "Token verified through a DigiLocker service provider"}
+    ],
+    "guardian": [
+      {"code": "COURT", "citation": "r.11(a)", "description": "Guardian appointed by a court of law"},
+      {"code": "RPWD_S15_AUTHORITY", "citation": "r.11(b)", "description": "Designated authority under the RPwD Act 2016 s.15"},
+      {"code": "NATIONAL_TRUST_S13_LLC", "citation": "r.11(c)", "description": "Local level committee under the National Trust Act 1999 s.13"}
+    ]
+  },
+  "rights": [
+    {"code": "ACCESS", "category": "ACCESS", "citation": "s.11", "processKey": "sangam-dsr-access", "slaKey": "access", "defaultDays": 30},
+    {"code": "CORRECTION", "category": "RECTIFICATION", "citation": "s.12(2)(a)", "processKey": "sangam-dsr-rectification", "slaKey": "correction", "defaultDays": 30},
+    {"code": "COMPLETION", "category": "RECTIFICATION", "citation": "s.12(2)(b)", "processKey": "sangam-dsr-rectification", "slaKey": "correction", "defaultDays": 30},
+    {"code": "UPDATING", "category": "RECTIFICATION", "citation": "s.12(2)(c)", "processKey": "sangam-dsr-rectification", "slaKey": "correction", "defaultDays": 30},
+    {"code": "ERASURE", "category": "ERASURE", "citation": "s.12(3)", "processKey": "sangam-dsr-erasure", "slaKey": "erasure", "defaultDays": 30},
+    {"code": "GRIEVANCE", "category": "GRIEVANCE", "citation": "s.13, r.14(3)", "processKey": "sangam-dsr-grievance", "slaKey": "grievance", "defaultDays": 30, "maxDays": 90},
+    {"code": "NOMINATION", "category": "NOMINATION", "citation": "s.14, r.14(4)", "processKey": "sangam-dsr-nomination", "slaKey": "nomination", "defaultDays": 15}
+  ],
+  "retentionClasses": [
+    {"code": "THIRD_SCH_ECOMMERCE", "citation": "r.8(1), Third Schedule item 1", "periodDays": 1096, "floorFromPhase": "P3", "description": "E-commerce entity with at least 2 crore registered users in India"},
+    {"code": "THIRD_SCH_GAMING", "citation": "r.8(1), Third Schedule item 2", "periodDays": 1096, "floorFromPhase": "P3", "description": "Online gaming intermediary with at least 50 lakh registered users"},
+    {"code": "THIRD_SCH_SOCIAL_MEDIA", "citation": "r.8(1), Third Schedule item 3", "periodDays": 1096, "floorFromPhase": "P3", "description": "Social media intermediary with at least 2 crore registered users"}
+  ],
+  "authorities": [
+    {"code": "DPB", "role": "DATA_PROTECTION", "name": "Data Protection Board of India", "citation": "DPDP Act s.18, s.8(6), r.7(2)"},
+    {"code": "CERT-IN", "role": "INCIDENT", "name": "Indian Computer Emergency Response Team (CERT-In)", "citation": "CERT-In Directions 28-04-2022 para (ii), Annexure I",
+      "recipients": ["incident@cert-in.org.in"], "deadlineHours": 6, "warnHours": 4,
+      "catalogue": [
+        {"code": "i", "label": "Targeted scanning/probing of critical networks/systems"},
+        {"code": "ii", "label": "Compromise of critical systems/information", "personalDataLikely": true},
+        {"code": "iii", "label": "Unauthorised access of IT systems/data", "personalDataLikely": true},
+        {"code": "iv", "label": "Defacement of website or intrusion into a website and unauthorised changes such as inserting malicious code, links to external websites etc."},
+        {"code": "v", "label": "Malicious code attacks such as spreading of virus/worm/Trojan/Bots/Spyware/Ransomware/Cryptominers"},
+        {"code": "vi", "label": "Attack on servers such as Database, Mail and DNS and network devices such as Routers"},
+        {"code": "vii", "label": "Identity Theft, spoofing and phishing attacks"},
+        {"code": "viii", "label": "Denial of Service (DoS) and Distributed Denial of Service (DDoS) attacks"},
+        {"code": "ix", "label": "Attacks on Critical infrastructure, SCADA and operational technology systems and Wireless networks"},
+        {"code": "x", "label": "Attacks on Application such as E-Governance, E-Commerce etc."},
+        {"code": "xi", "label": "Data Breach", "personalDataLikely": true},
+        {"code": "xii", "label": "Data Leak", "personalDataLikely": true},
+        {"code": "xiii", "label": "Attacks on Internet of Things (IoT) devices and associated systems, networks, software, servers"},
+        {"code": "xiv", "label": "Attacks or incident affecting Digital Payment systems"},
+        {"code": "xv", "label": "Attacks through Malicious mobile Apps"},
+        {"code": "xvi", "label": "Fake mobile Apps"},
+        {"code": "xvii", "label": "Unauthorised access to social media accounts"},
+        {"code": "xviii", "label": "Attacks or malicious/suspicious activities affecting Cloud computing systems/servers/software/applications"},
+        {"code": "xix", "label": "Attacks or malicious/suspicious activities affecting systems/servers/networks/software/applications related to Big Data, Block chain, virtual assets, virtual asset exchanges, custodian wallets, Robotics, 3D and 4D Printing, additive manufacturing, Drones"},
+        {"code": "xx", "label": "Attacks or malicious/suspicious activities affecting systems/servers/software/applications related to Artificial Intelligence and Machine Learning"}
+      ],
+      "formItems": [
+        {"key": "organisation", "label": "Name of the organisation"},
+        {"key": "pointOfContact", "citation": "para (iii), Annexure II", "label": "Point of contact"},
+        {"key": "incidentType", "citation": "Annexure I", "label": "Type of incident"},
+        {"key": "occurredAt", "label": "Time of occurrence"},
+        {"key": "noticedAt", "label": "Time of detection / noticing"},
+        {"key": "timeZone", "citation": "FAQ Q40-Q43", "label": "Time zone of the timestamps"},
+        {"key": "affectedSystems", "label": "Affected systems, IP addresses, locations"},
+        {"key": "description", "label": "Description of the incident"},
+        {"key": "indicators", "label": "Indicators of compromise"},
+        {"key": "actionsTaken", "label": "Actions taken"}
+      ]},
+    {"code": "STATE-CERT", "role": "INCIDENT_SECONDARY", "name": "State CERT / State SOC (where the state mandates reporting)", "citation": "State cyber security policy, e.g. Tamil Nadu CERT-TN"}
+  ],
+  "breach": {
+    "authority": "DPB",
+    "citation": "DPDP Act s.8(6), r.7",
+    "initialTiming": "WITHOUT_DELAY",
+    "initialItems": [
+      {"key": "description", "citation": "r.7(2)(a)", "label": "Description of the breach"},
+      {"key": "nature", "citation": "r.7(2)(a)", "label": "Nature"},
+      {"key": "extent", "citation": "r.7(2)(a)", "label": "Extent"},
+      {"key": "timing", "citation": "r.7(2)(a)", "label": "Timing"},
+      {"key": "location", "citation": "r.7(2)(a)", "label": "Location of occurrence"},
+      {"key": "likelyImpact", "citation": "r.7(2)(a)", "label": "Likely impact"}
+    ],
+    "detailedReportHours": 72,
+    "detailedItems": [
+      {"key": "updatedDescription", "citation": "r.7(2)(b)(i)", "label": "Updated and detailed information"},
+      {"key": "factsAndReasons", "citation": "r.7(2)(b)(ii)", "label": "Broad facts: events, circumstances and reasons"},
+      {"key": "mitigation", "citation": "r.7(2)(b)(iii)", "label": "Measures implemented or proposed to mitigate risk"},
+      {"key": "findingsOnCause", "citation": "r.7(2)(b)(iv)", "label": "Findings regarding the person who caused the breach"},
+      {"key": "remedialMeasures", "citation": "r.7(2)(b)(v)", "label": "Remedial measures to prevent recurrence"}
+    ],
+    "subjectTiming": "WITHOUT_DELAY",
+    "subjectItems": [
+      {"key": "description", "citation": "r.7(1)(a)", "label": "Description: nature, extent, timing and location"},
+      {"key": "consequences", "citation": "r.7(1)(b)", "label": "Consequences relevant to the Data Principal"},
+      {"key": "mitigation", "citation": "r.7(1)(c)", "label": "Mitigation measures implemented or being implemented"},
+      {"key": "safetySteps", "citation": "r.7(1)(d)", "label": "Safety measures the Data Principal may take"},
+      {"key": "contact", "citation": "r.7(1)(e)", "label": "Business contact of a person able to respond"}
+    ],
+    "linkedIncidentAuthority": "CERT-IN",
+    "linkedIncidentType": "xi"
+  },
+  "contactRoles": [
+    {"code": "DPO", "citation": "s.10(2)(a)", "mustBeResident": true, "published": true, "description": "Data Protection Officer (Significant Data Fiduciary), based in India"},
+    {"code": "CONTACT_PERSON", "citation": "s.8(9), r.9", "published": true, "description": "Person able to answer questions on processing"},
+    {"code": "GRIEVANCE_OFFICER", "citation": "SPDI r.5(9); IT Rules r.3(2)", "published": true, "description": "Grievance officer"},
+    {"code": "CERT_IN_POC", "citation": "CERT-In Directions para (iii), Annexure II", "requiredFields": ["designation", "mobile", "address"], "description": "CERT-In point of contact"},
+    {"code": "CISO", "citation": "CERT-In government guidelines", "description": "Chief Information Security Officer"},
+    {"code": "RECORDS_OFFICER", "citation": "Public Records Act s.6-7", "description": "Records Officer"},
+    {"code": "STATE_CERT_NODAL", "citation": "State cyber security policy", "description": "Nodal officer for the state CERT"}
+  ],
+  "accountability": {
+    "elevatedTierName": "Significant Data Fiduciary",
+    "impactAssessmentMonths": 12,
+    "evidence": [
+      {"code": "DATA_AUDIT", "citation": "s.10(2)(b)-(c), r.13(1)", "months": 12, "elevatedTierOnly": true, "requiresIndependent": true, "description": "Data audit by an independent data auditor"},
+      {"code": "ALGORITHMIC_DUE_DILIGENCE", "citation": "r.13(3)", "months": 12, "elevatedTierOnly": true, "description": "Due diligence of algorithmic software"},
+      {"code": "CERT_IN_COMPREHENSIVE_AUDIT", "citation": "CERT-In Comprehensive Cyber Security Audit Policy Guidelines", "months": 12, "requiresAccreditationRef": true, "description": "Comprehensive cyber security audit by a CERT-In empanelled auditor"},
+      {"code": "APPLICATION_SECURITY_AUDIT", "citation": "CERT-In government guidelines Annexure 5.2, 5.19-5.20", "months": 12, "requiresAccreditationRef": true, "description": "Application security audit before hosting and yearly"},
+      {"code": "VAPT", "citation": "CERT-In government guidelines s.6.1", "months": 12, "description": "Vulnerability assessment and penetration test, APIs included"},
+      {"code": "INTERNAL_SECURITY_AUDIT", "citation": "CERT-In government guidelines s.15.3", "months": 6, "description": "Internal security audit"},
+      {"code": "ACCESS_REVIEW", "citation": "CERT-In government guidelines s.5", "months": 6, "description": "User access review reported to the head of department"},
+      {"code": "STQC_CLOUD_AUDIT", "citation": "MeitY cloud empanelment", "months": 12, "description": "STQC audit of the cloud service provider"},
+      {"code": "BACKUP_RESTORE_TEST", "citation": "DPDP r.6(1)(d); CERT-In government guidelines s.7", "months": 6, "description": "Backup and restore test"},
+      {"code": "ISO_27001_AUDIT", "citation": "SPDI r.8(2)-(4)", "months": 12, "description": "IS/ISO/IEC 27001 audit"}
+    ]
+  },
+  "hosting": {
+    "categories": [
+      {"code": "MEITY_EMPANELLED_CSP", "acceptableForPublicSector": true, "citation": "MeitY cloud contractual terms; CERT-In gov guidelines Annexure 5.1"},
+      {"code": "NIC_DATA_CENTRE", "acceptableForPublicSector": true, "citation": "CERT-In gov guidelines Annexure 5.1"},
+      {"code": "STATE_DATA_CENTRE", "acceptableForPublicSector": true, "citation": "State IT policy"},
+      {"code": "GOVT_DATA_CENTRE", "acceptableForPublicSector": true, "citation": "CERT-In gov guidelines Annexure 5.1"},
+      {"code": "OTHER", "acceptableForPublicSector": false, "citation": ""}
+    ],
+    "localisedCategories": ["AADHAAR", "PUBLIC_RECORD", "AUDIT_LOG", "ELEVATED_TIER_SPECIFIED"]
+  },
+  "nationalIdentifiers": [
+    {"code": "AADHAAR", "regex": "(?<![0-9])[2-9][0-9]{3}[ -]?[0-9]{4}[ -]?[0-9]{4}(?![0-9])", "checksum": "VERHOEFF", "keepLast": 4, "citation": "Aadhaar Act s.29; Aadhaar (Sharing of Information) Regulations 2016 reg. 6; UIDAI ADV circulars"}
+  ],
+  "lawfulRequestBases": [
+    {"code": "CERT_IN_S70B", "citation": "IT Act s.70B(6); CERT-In Directions para (iii); FAQ Q38", "withheldFromAccess": true, "recipientKind": "INCIDENT_AUTHORITY", "requiresRankAttestation": true, "rankRequirement": "officer not below Deputy Secretary"},
+    {"code": "IT_RULES_3_1_J", "citation": "IT (Intermediary Guidelines) Rules 2021 r.3(1)(j)", "maxHours": 72, "withheldFromAccess": true, "recipientKind": "LAW_ENFORCEMENT"},
+    {"code": "DPDP_R23", "citation": "DPDP Rules r.23, Seventh Schedule", "recipientKind": "STATE_AGENCY"},
+    {"code": "IT_ACT_S69", "citation": "IT Act s.69, s.69B", "withheldFromAccess": true, "recipientKind": "LAW_ENFORCEMENT"},
+    {"code": "COURT_ORDER", "citation": "Order of a court", "recipientKind": "COURT"},
+    {"code": "OTHER_LAW", "citation": "Other law", "recipientKind": "STATE_AGENCY"}
+  ],
+  "securityChecklist": [
+    {"id": "SEC-TLS", "citation": "SPDI r.8; CERT-In gov guidelines Annexure 5.21", "description": "All endpoints served over HTTPS with a valid certificate", "fact": "tls.enabled", "expected": "true"},
+    {"id": "SEC-MFA", "citation": "CERT-In gov guidelines s.5.3-5.4", "description": "Multi-factor authentication enforced for administrators and officers", "fact": "mfa.enforced", "expected": "true"},
+    {"id": "SEC-SESSION", "citation": "CERT-In gov guidelines s.5.6", "description": "Sessions end after at most 15 minutes of inactivity", "fact": "session.idle-minutes", "expected": "<=15"},
+    {"id": "SEC-ENC-REST", "citation": "DPDP r.6(1)(a); CERT-In gov guidelines s.7", "description": "Personal data encrypted at rest", "fact": "encryption.at-rest", "expected": "true"},
+    {"id": "SEC-AUTHZ", "citation": "DPDP r.6(1)(b)", "description": "Access control with deny-wins authorisation (sangam-security VI.4)", "fact": "authz.deny-wins", "expected": "true"},
+    {"id": "SEC-AUDIT", "citation": "DPDP r.6(1)(c)", "description": "Tamper-evident audit chain enabled", "fact": "audit.chain", "expected": "true"},
+    {"id": "SEC-LOG-SERVER", "citation": "CERT-In gov guidelines Annexure 6.1-6.2", "description": "Logs forwarded to a separate log server / SIEM", "fact": "logs.forwarder", "expected": "set"},
+    {"id": "SEC-DNS", "citation": "CERT-In gov guidelines Annexure 5.8", "description": "NIC DNS resolvers used", "fact": "dns.resolvers", "expected": "set"},
+    {"id": "SEC-BACKUP", "citation": "DPDP r.6(1)(d)", "description": "Backup restore tested within 6 months", "activity": "backup.restore-test", "maxAgeMonths": 6},
+    {"id": "SEC-VAPT", "citation": "CERT-In gov guidelines s.6.1", "description": "VAPT within 12 months", "activity": "vapt", "maxAgeMonths": 12},
+    {"id": "SEC-ACCESS-REVIEW", "citation": "CERT-In gov guidelines s.5", "description": "User access review within 6 months", "activity": "access-review", "maxAgeMonths": 6},
+    {"id": "SEC-ISMS", "citation": "SPDI r.8(1)-(2)", "description": "Documented information security programme (ISO/IEC 27001 or approved code)", "fact": "isms.documented", "expected": "true"}
+  ],
+  "noticeLint": ["waive", "waiver", "irrevocable", "shall not complain", "not approach the board", "give up the right", "cannot withdraw", "deemed consent", "pre-ticked", "अधित्याग", "अप्रतिसंहरणीय"],
+  "noticeTemplates": "compliance/jurisdictions/IN/notices",
+  "obligations": "compliance/jurisdictions/IN/obligations.tsv"
+}

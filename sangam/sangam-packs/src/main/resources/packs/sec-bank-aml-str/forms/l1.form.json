@@ -1,0 +1,47 @@
+{
+  "key": "sec-bank-aml-str/l1",
+  "version": "1.0.0",
+  "pack": "sec.bank.aml-str",
+  "title": {
+    "en": "L1 alert triage",
+    "hi": "एल1 चेतावनी प्राथमिक जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "l1Decision",
+    "required": true,
+    "options": [
+      {
+        "value": "close",
+        "label": {
+          "en": "Close",
+          "hi": "बंद करें"
+        }
+      },
+      {
+        "value": "escalate",
+        "label": {
+          "en": "Escalate",
+          "hi": "आगे बढ़ाएँ"
+        }
+      }
+    ]
+  }
+}

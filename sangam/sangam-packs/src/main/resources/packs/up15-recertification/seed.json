@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "IAM",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "REVIEWER",
+      "role": "REVIEWER",
+      "office": "IAM",
+      "reportsTo": null,
+      "name": {
+        "en": "Access reviewer",
+        "hi": "पहुँच समीक्षक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "REVIEWER",
+      "person": "u15.reviewer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "REVIEWER",
+      "name": {
+        "en": "Access reviewer",
+        "hi": "पहुँच समीक्षक"
+      }
+    }
+  ]
+}

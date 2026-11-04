@@ -1,0 +1,47 @@
+{
+  "key": "sec-ecom-return-refund/dispute",
+  "version": "1.0.0",
+  "pack": "sec.ecom.return-refund",
+  "title": {
+    "en": "Marketplace arbitration of the seller dispute",
+    "hi": "विक्रेता विवाद पर मध्यस्थता"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "disputeDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "customer",
+        "label": {
+          "en": "In favour of the customer",
+          "hi": "ग्राहक के पक्ष में"
+        }
+      },
+      {
+        "value": "seller",
+        "label": {
+          "en": "In favour of the seller",
+          "hi": "विक्रेता के पक्ष में"
+        }
+      }
+    ]
+  }
+}

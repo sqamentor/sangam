@@ -1,0 +1,244 @@
+{
+  "offices": [
+    {
+      "id": "PAO-OFFICE",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "DDO-1",
+      "role": "DDO",
+      "office": "PAO-OFFICE",
+      "reportsTo": "HOO-1",
+      "name": {
+        "en": "Drawing and disbursing officer",
+        "hi": "आहरण एवं संवितरण अधिकारी"
+      }
+    },
+    {
+      "id": "HOO-1",
+      "role": "HOO",
+      "office": "PAO-OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of Office",
+        "hi": "कार्यालय प्रमुख"
+      }
+    },
+    {
+      "id": "BD-1",
+      "role": "BILL_DISTRIBUTOR",
+      "office": "PAO-OFFICE",
+      "reportsTo": "AAO-1",
+      "name": {
+        "en": "Bill distributor",
+        "hi": "बिल वितरक"
+      }
+    },
+    {
+      "id": "DH-1",
+      "role": "DEALING_HAND",
+      "office": "PAO-OFFICE",
+      "reportsTo": "AAO-1",
+      "name": {
+        "en": "Dealing hand",
+        "hi": "व्यवहार सहायक"
+      }
+    },
+    {
+      "id": "AAO-1",
+      "role": "AAO",
+      "office": "PAO-OFFICE",
+      "reportsTo": "PAO-1",
+      "name": {
+        "en": "Assistant accounts officer",
+        "hi": "सहायक लेखा अधिकारी"
+      }
+    },
+    {
+      "id": "PAO-1",
+      "role": "PAO",
+      "office": "PAO-OFFICE",
+      "reportsTo": "PRAO-1",
+      "name": {
+        "en": "Pay and accounts officer",
+        "hi": "वेतन एवं लेखा अधिकारी"
+      }
+    },
+    {
+      "id": "SS-1",
+      "role": "SECOND_SIGNATORY",
+      "office": "PAO-OFFICE",
+      "reportsTo": "PRAO-1",
+      "name": {
+        "en": "Second signatory",
+        "hi": "द्वितीय हस्ताक्षरकर्ता"
+      }
+    },
+    {
+      "id": "PRAO-1",
+      "role": "PR_AO",
+      "office": "PAO-OFFICE",
+      "reportsTo": "FA-1",
+      "name": {
+        "en": "Principal accounts officer",
+        "hi": "प्रधान लेखा अधिकारी"
+      }
+    },
+    {
+      "id": "FA-1",
+      "role": "FA",
+      "office": "PAO-OFFICE",
+      "reportsTo": "SECY-1",
+      "name": {
+        "en": "Financial adviser",
+        "hi": "वित्तीय सलाहकार"
+      }
+    },
+    {
+      "id": "SECY-1",
+      "role": "CAA",
+      "office": "PAO-OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Secretary (Chief Accounting Authority)",
+        "hi": "सचिव (मुख्य लेखा प्राधिकारी)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DDO-1",
+      "person": "sd.ddo-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HOO-1",
+      "person": "sd.hoo-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BD-1",
+      "person": "sd.bd-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DH-1",
+      "person": "sd.dh-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AAO-1",
+      "person": "sd.aao-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PAO-1",
+      "person": "sd.pao-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SS-1",
+      "person": "sd.ss-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PRAO-1",
+      "person": "sd.prao-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "FA-1",
+      "person": "sd.fa-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SECY-1",
+      "person": "sd.secy-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DDO",
+      "name": {
+        "en": "Drawing and disbursing officer",
+        "hi": "आहरण एवं संवितरण अधिकारी"
+      }
+    },
+    {
+      "code": "HOO",
+      "name": {
+        "en": "Head of Office",
+        "hi": "कार्यालय प्रमुख"
+      }
+    },
+    {
+      "code": "BILL_DISTRIBUTOR",
+      "name": {
+        "en": "Bill distributor",
+        "hi": "बिल वितरक"
+      }
+    },
+    {
+      "code": "DEALING_HAND",
+      "name": {
+        "en": "Dealing hand",
+        "hi": "व्यवहार सहायक"
+      }
+    },
+    {
+      "code": "AAO",
+      "name": {
+        "en": "Assistant accounts officer",
+        "hi": "सहायक लेखा अधिकारी"
+      }
+    },
+    {
+      "code": "PAO",
+      "name": {
+        "en": "Pay and accounts officer",
+        "hi": "वेतन एवं लेखा अधिकारी"
+      }
+    },
+    {
+      "code": "SECOND_SIGNATORY",
+      "name": {
+        "en": "Second signatory",
+        "hi": "द्वितीय हस्ताक्षरकर्ता"
+      }
+    },
+    {
+      "code": "PR_AO",
+      "name": {
+        "en": "Principal accounts officer",
+        "hi": "प्रधान लेखा अधिकारी"
+      }
+    },
+    {
+      "code": "FA",
+      "name": {
+        "en": "Financial adviser",
+        "hi": "वित्तीय सलाहकार"
+      }
+    },
+    {
+      "code": "CAA",
+      "name": {
+        "en": "Secretary (Chief Accounting Authority)",
+        "hi": "सचिव (मुख्य लेखा प्राधिकारी)"
+      }
+    }
+  ]
+}

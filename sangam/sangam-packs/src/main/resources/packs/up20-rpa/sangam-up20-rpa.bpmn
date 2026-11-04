@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-20 RPA step. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up20_rpa" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <error id="err_RPA_SCREEN_FAILURE" name="RPA_SCREEN_FAILURE" errorCode="RPA_SCREEN_FAILURE"/>
+  <process id="sangam-up20-rpa" name="UP-20 RPA step" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up20-rpa</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>description,rpaScript</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u20_start" name="Work item" operaton:initiator="initiator" operaton:formKey="sangam:up20-rpa/item"></startEvent>
+    <serviceTask id="u20_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>rpaScript=legacy-entry;rpaScriptVersion=1.0.0;botPool=unattended;credentialRef=vault:legacy-erp;operatorSeat=BOT-OPERATOR</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u20_bot" name="Bot runs the legacy screen" operaton:type="external" operaton:topic="sangam.rpa"></serviceTask>
+    <userTask id="u20_handle" name="Bot failed: retry or do manually" operaton:candidateGroups="${operatorSeat}" operaton:formKey="sangam:up20-rpa/handle"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>botDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u20_gw" name="" default="up20_rpa_f6"></exclusiveGateway>
+    <userTask id="u20_manual" name="Attended step" operaton:candidateGroups="${operatorSeat}" operaton:formKey="sangam:up20-rpa/manual"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="u20_end" name="Done"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="u20_screenFail" name="Screen failure" attachedToRef="u20_bot" cancelActivity="true"><errorEventDefinition errorRef="err_RPA_SCREEN_FAILURE"/></boundaryEvent>
+    <sequenceFlow id="up20_rpa_f1" sourceRef="u20_start" targetRef="u20_defaults"/>
+    <sequenceFlow id="up20_rpa_f2" sourceRef="u20_defaults" targetRef="u20_bot"/>
+    <sequenceFlow id="up20_rpa_f3" sourceRef="u20_screenFail" targetRef="u20_handle"/>
+    <sequenceFlow id="up20_rpa_f4" sourceRef="u20_handle" targetRef="u20_gw"/>
+    <sequenceFlow id="up20_rpa_f5" name="retry" sourceRef="u20_gw" targetRef="u20_bot"><conditionExpression xsi:type="tFormalExpression">${botDecision == 'retry'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up20_rpa_f6" name="manual" sourceRef="u20_gw" targetRef="u20_manual"/>
+    <sequenceFlow id="up20_rpa_f7" sourceRef="u20_bot" targetRef="u20_end"/>
+    <sequenceFlow id="up20_rpa_f8" sourceRef="u20_manual" targetRef="u20_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up20_rpa_diagram">
+    <bpmndi:BPMNPlane id="up20_rpa_plane" bpmnElement="sangam-up20-rpa">
+      <bpmndi:BPMNShape id="u20_start_di" bpmnElement="u20_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u20_defaults_di" bpmnElement="u20_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u20_bot_di" bpmnElement="u20_bot"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u20_handle_di" bpmnElement="u20_handle"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u20_gw_di" bpmnElement="u20_gw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u20_manual_di" bpmnElement="u20_manual"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u20_end_di" bpmnElement="u20_end"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u20_screenFail_di" bpmnElement="u20_screenFail"><dc:Bounds x="358" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up20_rpa_f1_di" bpmnElement="up20_rpa_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up20_rpa_f2_di" bpmnElement="up20_rpa_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up20_rpa_f3_di" bpmnElement="up20_rpa_f3"><di:waypoint x="376" y="128"/><di:waypoint x="376" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up20_rpa_f4_di" bpmnElement="up20_rpa_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up20_rpa_f5_di" bpmnElement="up20_rpa_f5"><di:waypoint x="730" y="95"/><di:waypoint x="730" y="128"/><di:waypoint x="400" y="128"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up20_rpa_f6_di" bpmnElement="up20_rpa_f6"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up20_rpa_f7_di" bpmnElement="up20_rpa_f7"><di:waypoint x="450" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up20_rpa_f8_di" bpmnElement="up20_rpa_f8"><di:waypoint x="945" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "DISPUTES",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "DISPUTE-DESK",
+      "role": "DISPUTE",
+      "office": "DISPUTES",
+      "reportsTo": null,
+      "name": {
+        "en": "Disputes desk",
+        "hi": "विवाद डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DISPUTE-DESK",
+      "person": "bdp.dispute-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DISPUTE",
+      "name": {
+        "en": "Disputes desk",
+        "hi": "विवाद डेस्क"
+      }
+    }
+  ]
+}

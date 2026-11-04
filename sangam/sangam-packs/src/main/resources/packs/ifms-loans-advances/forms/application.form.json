@@ -1,0 +1,54 @@
+{
+  "key": "ifms-loans-advances/application",
+  "version": "1.0.0",
+  "pack": "gov.ifms.loans-advances",
+  "title": {
+    "en": "Advance application",
+    "hi": "अग्रिम आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "advanceKind",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Advance kind",
+        "hi": "अग्रिम का प्रकार"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "instalments",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Recovery instalments",
+        "hi": "वसूली किस्तें"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

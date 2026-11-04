@@ -1,0 +1,106 @@
+{
+  "offices": [
+    {
+      "id": "HOSPITAL",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "ED-PHYSICIAN",
+      "role": "EDMD",
+      "office": "HOSPITAL",
+      "reportsTo": "REV-CYCLE-MGR",
+      "name": {
+        "en": "Emergency physician",
+        "es": "Médico de urgencias"
+      }
+    },
+    {
+      "id": "PATIENT-ACCESS",
+      "role": "ACCESS",
+      "office": "HOSPITAL",
+      "reportsTo": "REV-CYCLE-MGR",
+      "name": {
+        "en": "Patient access",
+        "es": "Admisión de pacientes"
+      }
+    },
+    {
+      "id": "FINANCIAL-COUNSELOR",
+      "role": "FINCOUNSEL",
+      "office": "HOSPITAL",
+      "reportsTo": "REV-CYCLE-MGR",
+      "name": {
+        "en": "Financial counselor",
+        "es": "Asesor financiero"
+      }
+    },
+    {
+      "id": "REV-CYCLE-MGR",
+      "role": "RCM",
+      "office": "HOSPITAL",
+      "reportsTo": null,
+      "name": {
+        "en": "Revenue cycle manager",
+        "es": "Gerente del ciclo de ingresos"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "ED-PHYSICIAN",
+      "person": "uel.ed-physician",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PATIENT-ACCESS",
+      "person": "uel.patient-access",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "FINANCIAL-COUNSELOR",
+      "person": "uel.financial-counselor",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "REV-CYCLE-MGR",
+      "person": "uel.rev-cycle-mgr",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "EDMD",
+      "name": {
+        "en": "Emergency physician",
+        "es": "Médico de urgencias"
+      }
+    },
+    {
+      "code": "ACCESS",
+      "name": {
+        "en": "Patient access",
+        "es": "Admisión de pacientes"
+      }
+    },
+    {
+      "code": "FINCOUNSEL",
+      "name": {
+        "en": "Financial counselor",
+        "es": "Asesor financiero"
+      }
+    },
+    {
+      "code": "RCM",
+      "name": {
+        "en": "Revenue cycle manager",
+        "es": "Gerente del ciclo de ingresos"
+      }
+    }
+  ]
+}

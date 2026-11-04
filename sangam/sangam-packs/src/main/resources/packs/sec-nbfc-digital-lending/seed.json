@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "NBFC-CREDIT",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CREDIT-OFFICER",
+      "role": "CREDITOFFICER",
+      "office": "NBFC-CREDIT",
+      "reportsTo": "CREDIT-HEAD",
+      "name": {
+        "en": "Credit officer (RE)",
+        "hi": "ऋण अधिकारी"
+      }
+    },
+    {
+      "id": "CREDIT-HEAD",
+      "role": "CREDITHEAD",
+      "office": "NBFC-CREDIT",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of credit (RE)",
+        "hi": "ऋण प्रमुख"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CREDIT-OFFICER",
+      "person": "ndl.credit-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CREDIT-HEAD",
+      "person": "ndl.credit-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CREDITOFFICER",
+      "name": {
+        "en": "Credit officer (RE)",
+        "hi": "ऋण अधिकारी"
+      }
+    },
+    {
+      "code": "CREDITHEAD",
+      "name": {
+        "en": "Head of credit (RE)",
+        "hi": "ऋण प्रमुख"
+      }
+    }
+  ]
+}

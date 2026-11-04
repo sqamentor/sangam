@@ -1,0 +1,56 @@
+{
+  "key": "up15-recertification/review",
+  "version": "1.0.0",
+  "pack": "universal.up15-recertification",
+  "title": {
+    "en": "Recertify",
+    "hi": "पुनः प्रमाणित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "entityId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Entity under review",
+        "hi": "समीक्षाधीन इकाई"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "recertDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "yes",
+        "label": {
+          "en": "Yes",
+          "hi": "हाँ"
+        }
+      },
+      {
+        "value": "no",
+        "label": {
+          "en": "No",
+          "hi": "नहीं"
+        }
+      }
+    ]
+  }
+}

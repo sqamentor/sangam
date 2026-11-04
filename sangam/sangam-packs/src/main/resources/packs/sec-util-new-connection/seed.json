@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "SUBDIVISION",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SUBDIV-CLERK",
+      "role": "CLERK",
+      "office": "SUBDIVISION",
+      "reportsTo": "AE-SUBDIV",
+      "name": {
+        "en": "Sub-division clerk",
+        "hi": "उप-संभाग लिपिक"
+      }
+    },
+    {
+      "id": "JE-FIELD",
+      "role": "JE",
+      "office": "SUBDIVISION",
+      "reportsTo": "AE-SUBDIV",
+      "name": {
+        "en": "Junior engineer",
+        "hi": "कनिष्ठ अभियंता"
+      }
+    },
+    {
+      "id": "AE-SUBDIV",
+      "role": "AE",
+      "office": "SUBDIVISION",
+      "reportsTo": null,
+      "name": {
+        "en": "Assistant engineer",
+        "hi": "सहायक अभियंता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SUBDIV-CLERK",
+      "person": "uuc.subdiv-clerk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "JE-FIELD",
+      "person": "uuc.je-field",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AE-SUBDIV",
+      "person": "uuc.ae-subdiv",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CLERK",
+      "name": {
+        "en": "Sub-division clerk",
+        "hi": "उप-संभाग लिपिक"
+      }
+    },
+    {
+      "code": "JE",
+      "name": {
+        "en": "Junior engineer",
+        "hi": "कनिष्ठ अभियंता"
+      }
+    },
+    {
+      "code": "AE",
+      "name": {
+        "en": "Assistant engineer",
+        "hi": "सहायक अभियंता"
+      }
+    }
+  ]
+}

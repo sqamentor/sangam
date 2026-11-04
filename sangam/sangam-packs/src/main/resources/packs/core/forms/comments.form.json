@@ -1,0 +1,36 @@
+{
+  "key": "core/comments",
+  "version": "1.0.0",
+  "pack": "sangam.core",
+  "title": {
+    "en": "Comments",
+    "hi": "टिप्पणियाँ"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "comment",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Comments",
+        "hi": "टिप्पणियाँ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

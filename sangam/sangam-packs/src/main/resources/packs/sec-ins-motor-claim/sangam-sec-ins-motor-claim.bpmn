@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Motor claim. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ins_motor_claim" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_ins_untracedReport" name="sangam.ins.untracedReport"/>
+  <message id="msg_sangam_ins_vehicleRecovered" name="sangam.ins.vehicleRecovered"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ins-motor-claim" name="Motor claim" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ins.motor-claim</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>policyNo,vehicleRegNo,lossType,claimAmount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="mc_start" name="Claim intimated (FNOL)" operaton:initiator="initiator" operaton:formKey="sangam:sec-ins-motor-claim/fnol"></startEvent>
+    <serviceTask id="mc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>vehicleRegNo=@policyNo;lossType=OWN_DAMAGE;claimAmount=@amount;coverActive=true;fraudScore=10;totalLoss=false;amount=@claimAmount;caseType=CLAIM;routingDecisionKey=sec-ins-claim-authority;powersDecisionKey=sec-ins-claim-powers;sanctionSla=7D;executionConnector=claims.pay;executionStep=pay-claim;reconcileRequired=true;executionPayloadFields=policyNo,amount,garageId;garageId=REIMBURSEMENT;outputTemplate=settlement-letter;appellateSeat=GRIEVANCE-CELL;handlerSeat=CLAIMS-HANDLER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="mc_cover" name="Cover check" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>policy.coverCheck</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>policyNo,lossDate</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cover</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="mc_coverGw" name="Policy in force?" default="sec_ins_motor_claim_f7"></exclusiveGateway>
+    <serviceTask id="mc_rjCover_code" name="Reason: POLICY_NOT_IN_FORCE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=POLICY_NOT_IN_FORCE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="mc_rjCover_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="mc_rjCover_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="mc_fraud" name="Fraud score" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>fraud.score</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>score</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>policyNo,vehicleRegNo,claimAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>fraud</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="mc_triage" name="Claim triage (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ins-motor-triage</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="mc_typeGw" name="Loss type?" default="sec_ins_motor_claim_f16"></exclusiveGateway>
+    <userTask id="mc_tp" name="Third-party claim: defend or settle before MACT" operaton:candidateGroups="TP-LEGAL" operaton:formKey="sangam:sec-ins-motor-claim/tp"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="mc_endTp" name="Handled before MACT"></endEvent>
+    <eventBasedGateway id="mc_theftWait" name="Untraced report or recovery"></eventBasedGateway>
+    <intermediateCatchEvent id="mc_untraced" name="Police untraced report"><messageEventDefinition messageRef="msg_sangam_ins_untracedReport"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="mc_recovered" name="Vehicle recovered"><messageEventDefinition messageRef="msg_sangam_ins_vehicleRecovered"/></intermediateCatchEvent>
+    <userTask id="mc_subrogation" name="Collect RC transfer, keys and subrogation letter" operaton:candidateGroups="${handlerSeat}" operaton:formKey="sangam:sec-ins-motor-claim/subrogation"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="mc_survGw" name="Surveyor required?" default="sec_ins_motor_claim_f38"></exclusiveGateway>
+    <serviceTask id="mc_appoint_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>mc_appoint</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${surveyorAppointSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="mc_appoint" name="Appoint surveyor (24 hours)" operaton:candidateGroups="${handlerSeat}" operaton:formKey="sangam:sec-ins-motor-claim/appoint" operaton:dueDate="${mc_appointDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="mc_appoint_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>mc_appoint</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>handlerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="mc_appoint_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="mc_appoint_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>mc_appoint</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>handlerSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="mc_appoint_breachGw" name="Deemed?" default="sec_ins_motor_claim_f23"></exclusiveGateway>
+    <exclusiveGateway id="mc_appoint_done" name=""></exclusiveGateway>
+    <serviceTask id="mc_survey_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>mc_survey</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${surveyReportSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="mc_survey" name="Survey report (15 days)" operaton:candidateGroups="${surveyorGroup}" operaton:formKey="sangam:sec-ins-motor-claim/survey" operaton:dueDate="${mc_surveyDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="mc_survey_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>mc_survey</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>surveyorGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="mc_survey_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="mc_survey_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>mc_survey</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>surveyorGroup</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="mc_survey_breachGw" name="Deemed?" default="sec_ins_motor_claim_f32"></exclusiveGateway>
+    <exclusiveGateway id="mc_survey_done" name=""></exclusiveGateway>
+    <serviceTask id="mc_survSeat" name="Surveyor" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>surveyorGroup=@surveyorId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="mc_siuGw" name="SIU referral?" default="sec_ins_motor_claim_f41"></exclusiveGateway>
+    <userTask id="mc_siu" name="SIU investigation" operaton:candidateGroups="SIU" operaton:formKey="sangam:sec-ins-motor-claim/siu"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>siuDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <userTask id="mc_assess" name="Assess claim" operaton:candidateGroups="${handlerSeat}" operaton:formKey="sangam:sec-ins-motor-claim/assess"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>assessDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="mc_siuRes" name="" default="sec_ins_motor_claim_f45"></exclusiveGateway>
+    <callActivity id="mc_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="mc_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="mc_sanction" name="Settlement sanction (core sanction, 7 days)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="mc_assGw" name="" default="sec_ins_motor_claim_f48"></exclusiveGateway>
+    <callActivity id="mc_pay" name="Pay garage / insured (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="mc_sanGw" name="sanctionOutcome?" default="sec_ins_motor_claim_f51"></exclusiveGateway>
+    <serviceTask id="mc_salvage" name="Dispose salvage" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>salvage.auction</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>auction</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>vehicleRegNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>salvage</operaton:string></operaton:field><operaton:field name="step"><operaton:string>salvage</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="mc_close" name="Settlement letter and closure (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="mc_salvOptGw" name="Total loss?" default="sec_ins_motor_claim_f54"></exclusiveGateway>
+    <exclusiveGateway id="mc_salvOptMerge" name=""></exclusiveGateway>
+    <serviceTask id="mc_payFailed" name="Payment failed" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>claim-payment-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="mc_payGw" name="executionOutcome?" default="sec_ins_motor_claim_f57"></exclusiveGateway>
+    <endEvent id="mc_end" name="Settled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="mc_appoint_warn" name="SLA warning (75%)" attachedToRef="mc_appoint" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${mc_appointWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="mc_appoint_breach" name="SLA breached" attachedToRef="mc_appoint" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${mc_appointDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="mc_survey_warn" name="SLA warning (75%)" attachedToRef="mc_survey" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${mc_surveyWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="mc_survey_breach" name="SLA breached" attachedToRef="mc_survey" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${mc_surveyDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_ins_motor_claim_f1" sourceRef="mc_start" targetRef="mc_defaults"/>
+    <sequenceFlow id="sec_ins_motor_claim_f2" sourceRef="mc_defaults" targetRef="mc_cover"/>
+    <sequenceFlow id="sec_ins_motor_claim_f3" sourceRef="mc_cover" targetRef="mc_coverGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f4" sourceRef="mc_rjCover_reject" targetRef="mc_rjCover_endRejected"/>
+    <sequenceFlow id="sec_ins_motor_claim_f5" sourceRef="mc_rjCover_code" targetRef="mc_rjCover_reject"/>
+    <sequenceFlow id="sec_ins_motor_claim_f6" name="no" sourceRef="mc_coverGw" targetRef="mc_rjCover_code"><conditionExpression xsi:type="tFormalExpression">${!coverActive}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f7" name="yes" sourceRef="mc_coverGw" targetRef="mc_fraud"/>
+    <sequenceFlow id="sec_ins_motor_claim_f8" sourceRef="mc_fraud" targetRef="mc_triage"/>
+    <sequenceFlow id="sec_ins_motor_claim_f9" sourceRef="mc_triage" targetRef="mc_typeGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f10" name="third party" sourceRef="mc_typeGw" targetRef="mc_tp"><conditionExpression xsi:type="tFormalExpression">${lossType == 'THIRD_PARTY'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f11" sourceRef="mc_tp" targetRef="mc_endTp"/>
+    <sequenceFlow id="sec_ins_motor_claim_f12" name="theft" sourceRef="mc_typeGw" targetRef="mc_theftWait"><conditionExpression xsi:type="tFormalExpression">${lossType == 'THEFT'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f13" sourceRef="mc_theftWait" targetRef="mc_untraced"/>
+    <sequenceFlow id="sec_ins_motor_claim_f14" sourceRef="mc_theftWait" targetRef="mc_recovered"/>
+    <sequenceFlow id="sec_ins_motor_claim_f15" sourceRef="mc_untraced" targetRef="mc_subrogation"/>
+    <sequenceFlow id="sec_ins_motor_claim_f16" name="own damage" sourceRef="mc_typeGw" targetRef="mc_survGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f17" sourceRef="mc_recovered" targetRef="mc_survGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f18" sourceRef="mc_appoint_warn" targetRef="mc_appoint_warnNotify"/>
+    <sequenceFlow id="sec_ins_motor_claim_f19" sourceRef="mc_appoint_warnNotify" targetRef="mc_appoint_warnEnd"/>
+    <sequenceFlow id="sec_ins_motor_claim_f20" sourceRef="mc_appoint_breach" targetRef="mc_appoint_breachAct"/>
+    <sequenceFlow id="sec_ins_motor_claim_f21" sourceRef="mc_appoint_breachAct" targetRef="mc_appoint_breachGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f22" name="deemed" sourceRef="mc_appoint_breachGw" targetRef="mc_appoint_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f23" name="escalated" sourceRef="mc_appoint_breachGw" targetRef="mc_appoint_slaPlan"/>
+    <sequenceFlow id="sec_ins_motor_claim_f24" sourceRef="mc_appoint_slaPlan" targetRef="mc_appoint"/>
+    <sequenceFlow id="sec_ins_motor_claim_f25" sourceRef="mc_appoint" targetRef="mc_appoint_done"/>
+    <sequenceFlow id="sec_ins_motor_claim_f26" name="yes" sourceRef="mc_survGw" targetRef="mc_appoint_slaPlan"><conditionExpression xsi:type="tFormalExpression">${surveyorRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f27" sourceRef="mc_survey_warn" targetRef="mc_survey_warnNotify"/>
+    <sequenceFlow id="sec_ins_motor_claim_f28" sourceRef="mc_survey_warnNotify" targetRef="mc_survey_warnEnd"/>
+    <sequenceFlow id="sec_ins_motor_claim_f29" sourceRef="mc_survey_breach" targetRef="mc_survey_breachAct"/>
+    <sequenceFlow id="sec_ins_motor_claim_f30" sourceRef="mc_survey_breachAct" targetRef="mc_survey_breachGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f31" name="deemed" sourceRef="mc_survey_breachGw" targetRef="mc_survey_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f32" name="escalated" sourceRef="mc_survey_breachGw" targetRef="mc_survey_slaPlan"/>
+    <sequenceFlow id="sec_ins_motor_claim_f33" sourceRef="mc_survey_slaPlan" targetRef="mc_survey"/>
+    <sequenceFlow id="sec_ins_motor_claim_f34" sourceRef="mc_survey" targetRef="mc_survey_done"/>
+    <sequenceFlow id="sec_ins_motor_claim_f35" sourceRef="mc_appoint_done" targetRef="mc_survSeat"/>
+    <sequenceFlow id="sec_ins_motor_claim_f36" sourceRef="mc_survSeat" targetRef="mc_survey_slaPlan"/>
+    <sequenceFlow id="sec_ins_motor_claim_f37" sourceRef="mc_survey_done" targetRef="mc_siuGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f38" name="below the surveyor threshold: desk assessment" sourceRef="mc_survGw" targetRef="mc_siuGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f39" sourceRef="mc_subrogation" targetRef="mc_siuGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f40" name="yes" sourceRef="mc_siuGw" targetRef="mc_siu"><conditionExpression xsi:type="tFormalExpression">${siuReferral}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f41" name="no" sourceRef="mc_siuGw" targetRef="mc_assess"/>
+    <sequenceFlow id="sec_ins_motor_claim_f42" sourceRef="mc_siu" targetRef="mc_siuRes"/>
+    <sequenceFlow id="sec_ins_motor_claim_f43" name="genuine" sourceRef="mc_siuRes" targetRef="mc_assess"><conditionExpression xsi:type="tFormalExpression">${siuDecision == 'genuine'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f44" sourceRef="mc_rj_reject" targetRef="mc_rj_endRejected"/>
+    <sequenceFlow id="sec_ins_motor_claim_f45" name="fraud" sourceRef="mc_siuRes" targetRef="mc_rj_reject"/>
+    <sequenceFlow id="sec_ins_motor_claim_f46" sourceRef="mc_assess" targetRef="mc_assGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f47" name="approve" sourceRef="mc_assGw" targetRef="mc_sanction"><conditionExpression xsi:type="tFormalExpression">${assessDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f48" name="reject" sourceRef="mc_assGw" targetRef="mc_rj_reject"/>
+    <sequenceFlow id="sec_ins_motor_claim_f49" name="SANCTIONED" sourceRef="mc_sanGw" targetRef="mc_pay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f50" name="RETURNED" sourceRef="mc_sanGw" targetRef="mc_assess"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f51" name="otherwise" sourceRef="mc_sanGw" targetRef="mc_rj_reject"/>
+    <sequenceFlow id="sec_ins_motor_claim_f52" sourceRef="mc_sanction" targetRef="mc_sanGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f53" name="yes" sourceRef="mc_salvOptGw" targetRef="mc_salvage"><conditionExpression xsi:type="tFormalExpression">${totalLoss}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f54" name="no" sourceRef="mc_salvOptGw" targetRef="mc_salvOptMerge"/>
+    <sequenceFlow id="sec_ins_motor_claim_f55" sourceRef="mc_salvage" targetRef="mc_salvOptMerge"/>
+    <sequenceFlow id="sec_ins_motor_claim_f56" name="DONE" sourceRef="mc_payGw" targetRef="mc_salvOptGw"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_motor_claim_f57" name="otherwise" sourceRef="mc_payGw" targetRef="mc_payFailed"/>
+    <sequenceFlow id="sec_ins_motor_claim_f58" sourceRef="mc_pay" targetRef="mc_payGw"/>
+    <sequenceFlow id="sec_ins_motor_claim_f59" sourceRef="mc_payFailed" targetRef="mc_sanction"/>
+    <sequenceFlow id="sec_ins_motor_claim_f60" sourceRef="mc_salvOptMerge" targetRef="mc_close"/>
+    <sequenceFlow id="sec_ins_motor_claim_f61" sourceRef="mc_close" targetRef="mc_end"/>
+    <subProcess id="mc_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="mc_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="mc_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="mc_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="mc_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_motor_claim_f62" sourceRef="mc_withdrawStart" targetRef="mc_withdrawKind"/>
+      <sequenceFlow id="sec_ins_motor_claim_f63" sourceRef="mc_withdrawKind" targetRef="mc_withdrawCall"/>
+      <sequenceFlow id="sec_ins_motor_claim_f64" sourceRef="mc_withdrawCall" targetRef="mc_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="mc_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="mc_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="mc_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="mc_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="mc_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_motor_claim_f65" sourceRef="mc_cancelStart" targetRef="mc_cancelKind"/>
+      <sequenceFlow id="sec_ins_motor_claim_f66" sourceRef="mc_cancelKind" targetRef="mc_cancelCall"/>
+      <sequenceFlow id="sec_ins_motor_claim_f67" sourceRef="mc_cancelCall" targetRef="mc_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ins_motor_claim_diagram">
+    <bpmndi:BPMNPlane id="sec_ins_motor_claim_plane" bpmnElement="sangam-sec-ins-motor-claim">
+      <bpmndi:BPMNShape id="mc_start_di" bpmnElement="mc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_defaults_di" bpmnElement="mc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_cover_di" bpmnElement="mc_cover"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_coverGw_di" bpmnElement="mc_coverGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_rjCover_code_di" bpmnElement="mc_rjCover_code"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_rjCover_reject_di" bpmnElement="mc_rjCover_reject"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_rjCover_endRejected_di" bpmnElement="mc_rjCover_endRejected"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_fraud_di" bpmnElement="mc_fraud"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_triage_di" bpmnElement="mc_triage"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_typeGw_di" bpmnElement="mc_typeGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_tp_di" bpmnElement="mc_tp"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_endTp_di" bpmnElement="mc_endTp"><dc:Bounds x="1372" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_theftWait_di" bpmnElement="mc_theftWait"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_untraced_di" bpmnElement="mc_untraced"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_recovered_di" bpmnElement="mc_recovered"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_subrogation_di" bpmnElement="mc_subrogation"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survGw_di" bpmnElement="mc_survGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_appoint_slaPlan_di" bpmnElement="mc_appoint_slaPlan"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_appoint_di" bpmnElement="mc_appoint"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_appoint_warnNotify_di" bpmnElement="mc_appoint_warnNotify"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_appoint_warnEnd_di" bpmnElement="mc_appoint_warnEnd"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_appoint_breachAct_di" bpmnElement="mc_appoint_breachAct"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_appoint_breachGw_di" bpmnElement="mc_appoint_breachGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_appoint_done_di" bpmnElement="mc_appoint_done"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survey_slaPlan_di" bpmnElement="mc_survey_slaPlan"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survey_di" bpmnElement="mc_survey"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survey_warnNotify_di" bpmnElement="mc_survey_warnNotify"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survey_warnEnd_di" bpmnElement="mc_survey_warnEnd"><dc:Bounds x="3187" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survey_breachAct_di" bpmnElement="mc_survey_breachAct"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survey_breachGw_di" bpmnElement="mc_survey_breachGw"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survey_done_di" bpmnElement="mc_survey_done"><dc:Bounds x="3345" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survSeat_di" bpmnElement="mc_survSeat"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_siuGw_di" bpmnElement="mc_siuGw"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_siu_di" bpmnElement="mc_siu"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_assess_di" bpmnElement="mc_assess"><dc:Bounds x="3980" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_siuRes_di" bpmnElement="mc_siuRes"><dc:Bounds x="3840" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_rj_reject_di" bpmnElement="mc_rj_reject"><dc:Bounds x="4640" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_rj_endRejected_di" bpmnElement="mc_rj_endRejected"><dc:Bounds x="4837" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_sanction_di" bpmnElement="mc_sanction"><dc:Bounds x="4310" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_assGw_di" bpmnElement="mc_assGw"><dc:Bounds x="4170" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_pay_di" bpmnElement="mc_pay"><dc:Bounds x="4640" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_sanGw_di" bpmnElement="mc_sanGw"><dc:Bounds x="4500" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_salvage_di" bpmnElement="mc_salvage"><dc:Bounds x="5135" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_close_di" bpmnElement="mc_close"><dc:Bounds x="5465" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_salvOptGw_di" bpmnElement="mc_salvOptGw"><dc:Bounds x="4995" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_salvOptMerge_di" bpmnElement="mc_salvOptMerge"><dc:Bounds x="5325" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_payFailed_di" bpmnElement="mc_payFailed"><dc:Bounds x="4970" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_payGw_di" bpmnElement="mc_payGw"><dc:Bounds x="4830" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_end_di" bpmnElement="mc_end"><dc:Bounds x="5662" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_appoint_warn_di" bpmnElement="mc_appoint_warn"><dc:Bounds x="1843" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_appoint_breach_di" bpmnElement="mc_appoint_breach"><dc:Bounds x="1873" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survey_warn_di" bpmnElement="mc_survey_warn"><dc:Bounds x="2833" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_survey_breach_di" bpmnElement="mc_survey_breach"><dc:Bounds x="2863" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_withdraw_di" bpmnElement="mc_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_withdrawStart_di" bpmnElement="mc_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_withdrawKind_di" bpmnElement="mc_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_withdrawCall_di" bpmnElement="mc_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_withdrawEnd_di" bpmnElement="mc_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_cancel_di" bpmnElement="mc_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_cancelStart_di" bpmnElement="mc_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_cancelKind_di" bpmnElement="mc_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_cancelCall_di" bpmnElement="mc_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mc_cancelEnd_di" bpmnElement="mc_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f1_di" bpmnElement="sec_ins_motor_claim_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f2_di" bpmnElement="sec_ins_motor_claim_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f3_di" bpmnElement="sec_ins_motor_claim_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f4_di" bpmnElement="sec_ins_motor_claim_f4"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f5_di" bpmnElement="sec_ins_motor_claim_f5"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f6_di" bpmnElement="sec_ins_motor_claim_f6"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f7_di" bpmnElement="sec_ins_motor_claim_f7"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f8_di" bpmnElement="sec_ins_motor_claim_f8"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f9_di" bpmnElement="sec_ins_motor_claim_f9"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f10_di" bpmnElement="sec_ins_motor_claim_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f11_di" bpmnElement="sec_ins_motor_claim_f11"><di:waypoint x="1275" y="195"/><di:waypoint x="1323" y="195"/><di:waypoint x="1323" y="320"/><di:waypoint x="1372" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f12_di" bpmnElement="sec_ins_motor_claim_f12"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f13_di" bpmnElement="sec_ins_motor_claim_f13"><di:waypoint x="1250" y="70"/><di:waypoint x="1311" y="70"/><di:waypoint x="1311" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f14_di" bpmnElement="sec_ins_motor_claim_f14"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f15_di" bpmnElement="sec_ins_motor_claim_f15"><di:waypoint x="1408" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f16_di" bpmnElement="sec_ins_motor_claim_f16"><di:waypoint x="1085" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f17_di" bpmnElement="sec_ins_motor_claim_f17"><di:waypoint x="1408" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f18_di" bpmnElement="sec_ins_motor_claim_f18"><di:waypoint x="1861" y="128"/><di:waypoint x="1861" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f19_di" bpmnElement="sec_ins_motor_claim_f19"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f20_di" bpmnElement="sec_ins_motor_claim_f20"><di:waypoint x="1891" y="128"/><di:waypoint x="1891" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f21_di" bpmnElement="sec_ins_motor_claim_f21"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f22_di" bpmnElement="sec_ins_motor_claim_f22"><di:waypoint x="2240" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f23_di" bpmnElement="sec_ins_motor_claim_f23"><di:waypoint x="2215" y="95"/><di:waypoint x="2215" y="142"/><di:waypoint x="1720" y="142"/><di:waypoint x="1720" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f24_di" bpmnElement="sec_ins_motor_claim_f24"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f25_di" bpmnElement="sec_ins_motor_claim_f25"><di:waypoint x="1935" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f26_di" bpmnElement="sec_ins_motor_claim_f26"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f27_di" bpmnElement="sec_ins_motor_claim_f27"><di:waypoint x="2851" y="128"/><di:waypoint x="2851" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f28_di" bpmnElement="sec_ins_motor_claim_f28"><di:waypoint x="3090" y="195"/><di:waypoint x="3187" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f29_di" bpmnElement="sec_ins_motor_claim_f29"><di:waypoint x="2881" y="128"/><di:waypoint x="2881" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f30_di" bpmnElement="sec_ins_motor_claim_f30"><di:waypoint x="3090" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f31_di" bpmnElement="sec_ins_motor_claim_f31"><di:waypoint x="3230" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f32_di" bpmnElement="sec_ins_motor_claim_f32"><di:waypoint x="3205" y="95"/><di:waypoint x="3205" y="149"/><di:waypoint x="2710" y="149"/><di:waypoint x="2710" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f33_di" bpmnElement="sec_ins_motor_claim_f33"><di:waypoint x="2760" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f34_di" bpmnElement="sec_ins_motor_claim_f34"><di:waypoint x="2925" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f35_di" bpmnElement="sec_ins_motor_claim_f35"><di:waypoint x="2405" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f36_di" bpmnElement="sec_ins_motor_claim_f36"><di:waypoint x="2595" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f37_di" bpmnElement="sec_ins_motor_claim_f37"><di:waypoint x="3395" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f38_di" bpmnElement="sec_ins_motor_claim_f38"><di:waypoint x="1580" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f39_di" bpmnElement="sec_ins_motor_claim_f39"><di:waypoint x="1605" y="195"/><di:waypoint x="2557" y="195"/><di:waypoint x="2557" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f40_di" bpmnElement="sec_ins_motor_claim_f40"><di:waypoint x="3560" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f41_di" bpmnElement="sec_ins_motor_claim_f41"><di:waypoint x="3560" y="70"/><di:waypoint x="3980" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f42_di" bpmnElement="sec_ins_motor_claim_f42"><di:waypoint x="3750" y="70"/><di:waypoint x="3840" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f43_di" bpmnElement="sec_ins_motor_claim_f43"><di:waypoint x="3890" y="70"/><di:waypoint x="3980" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f44_di" bpmnElement="sec_ins_motor_claim_f44"><di:waypoint x="4740" y="70"/><di:waypoint x="4837" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f45_di" bpmnElement="sec_ins_motor_claim_f45"><di:waypoint x="3890" y="70"/><di:waypoint x="4640" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f46_di" bpmnElement="sec_ins_motor_claim_f46"><di:waypoint x="4080" y="70"/><di:waypoint x="4170" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f47_di" bpmnElement="sec_ins_motor_claim_f47"><di:waypoint x="4220" y="70"/><di:waypoint x="4310" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f48_di" bpmnElement="sec_ins_motor_claim_f48"><di:waypoint x="4220" y="70"/><di:waypoint x="4640" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f49_di" bpmnElement="sec_ins_motor_claim_f49"><di:waypoint x="4550" y="70"/><di:waypoint x="4595" y="70"/><di:waypoint x="4595" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f50_di" bpmnElement="sec_ins_motor_claim_f50"><di:waypoint x="4525" y="95"/><di:waypoint x="4525" y="135"/><di:waypoint x="4030" y="135"/><di:waypoint x="4030" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f51_di" bpmnElement="sec_ins_motor_claim_f51"><di:waypoint x="4550" y="70"/><di:waypoint x="4640" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f52_di" bpmnElement="sec_ins_motor_claim_f52"><di:waypoint x="4410" y="70"/><di:waypoint x="4500" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f53_di" bpmnElement="sec_ins_motor_claim_f53"><di:waypoint x="5045" y="320"/><di:waypoint x="5135" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f54_di" bpmnElement="sec_ins_motor_claim_f54"><di:waypoint x="5045" y="320"/><di:waypoint x="5325" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f55_di" bpmnElement="sec_ins_motor_claim_f55"><di:waypoint x="5235" y="320"/><di:waypoint x="5325" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f56_di" bpmnElement="sec_ins_motor_claim_f56"><di:waypoint x="4880" y="195"/><di:waypoint x="4937" y="195"/><di:waypoint x="4937" y="320"/><di:waypoint x="4995" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f57_di" bpmnElement="sec_ins_motor_claim_f57"><di:waypoint x="4880" y="195"/><di:waypoint x="4970" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f58_di" bpmnElement="sec_ins_motor_claim_f58"><di:waypoint x="4740" y="195"/><di:waypoint x="4830" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f59_di" bpmnElement="sec_ins_motor_claim_f59"><di:waypoint x="5020" y="235"/><di:waypoint x="5020" y="267"/><di:waypoint x="4360" y="267"/><di:waypoint x="4360" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f60_di" bpmnElement="sec_ins_motor_claim_f60"><di:waypoint x="5375" y="320"/><di:waypoint x="5465" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f61_di" bpmnElement="sec_ins_motor_claim_f61"><di:waypoint x="5565" y="320"/><di:waypoint x="5662" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f62_di" bpmnElement="sec_ins_motor_claim_f62"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f63_di" bpmnElement="sec_ins_motor_claim_f63"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f64_di" bpmnElement="sec_ins_motor_claim_f64"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f65_di" bpmnElement="sec_ins_motor_claim_f65"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f66_di" bpmnElement="sec_ins_motor_claim_f66"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_motor_claim_f67_di" bpmnElement="sec_ins_motor_claim_f67"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

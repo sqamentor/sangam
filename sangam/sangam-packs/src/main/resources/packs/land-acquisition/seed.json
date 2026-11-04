@@ -1,0 +1,152 @@
+{
+  "offices": [
+    {
+      "id": "DIST-LA",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SIA-UNIT",
+      "role": "SIA",
+      "office": "DIST-LA",
+      "reportsTo": "COLLECTOR",
+      "name": {
+        "en": "Social impact assessment unit",
+        "hi": "सामाजिक प्रभाव आकलन इकाई"
+      }
+    },
+    {
+      "id": "EXPERT-1",
+      "role": "EXPERT",
+      "office": "DIST-LA",
+      "reportsTo": "COLLECTOR",
+      "name": {
+        "en": "Expert group member 1",
+        "hi": "विशेषज्ञ समूह सदस्य 1"
+      }
+    },
+    {
+      "id": "EXPERT-2",
+      "role": "EXPERT",
+      "office": "DIST-LA",
+      "reportsTo": "COLLECTOR",
+      "name": {
+        "en": "Expert group member 2",
+        "hi": "विशेषज्ञ समूह सदस्य 2"
+      }
+    },
+    {
+      "id": "EXPERT-3",
+      "role": "EXPERT",
+      "office": "DIST-LA",
+      "reportsTo": "COLLECTOR",
+      "name": {
+        "en": "Expert group member 3",
+        "hi": "विशेषज्ञ समूह सदस्य 3"
+      }
+    },
+    {
+      "id": "COLLECTOR",
+      "role": "COLLECTOR",
+      "office": "DIST-LA",
+      "reportsTo": "SECY-LA",
+      "name": {
+        "en": "Collector",
+        "hi": "कलेक्टर"
+      }
+    },
+    {
+      "id": "SECY-LA",
+      "role": "SECRETARY",
+      "office": "DIST-LA",
+      "reportsTo": null,
+      "name": {
+        "en": "Secretary, Revenue",
+        "hi": "सचिव, राजस्व"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SIA-UNIT",
+      "person": "la.sia-unit",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EXPERT-1",
+      "person": "la.expert-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EXPERT-2",
+      "person": "la.expert-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EXPERT-3",
+      "person": "la.expert-3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "COLLECTOR",
+      "person": "la.collector",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SECY-LA",
+      "person": "la.secy-la",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "SIA",
+      "name": {
+        "en": "Social impact assessment unit",
+        "hi": "सामाजिक प्रभाव आकलन इकाई"
+      }
+    },
+    {
+      "code": "EXPERT",
+      "name": {
+        "en": "Expert group member 1",
+        "hi": "विशेषज्ञ समूह सदस्य 1"
+      }
+    },
+    {
+      "code": "EXPERT",
+      "name": {
+        "en": "Expert group member 2",
+        "hi": "विशेषज्ञ समूह सदस्य 2"
+      }
+    },
+    {
+      "code": "EXPERT",
+      "name": {
+        "en": "Expert group member 3",
+        "hi": "विशेषज्ञ समूह सदस्य 3"
+      }
+    },
+    {
+      "code": "COLLECTOR",
+      "name": {
+        "en": "Collector",
+        "hi": "कलेक्टर"
+      }
+    },
+    {
+      "code": "SECRETARY",
+      "name": {
+        "en": "Secretary, Revenue",
+        "hi": "सचिव, राजस्व"
+      }
+    }
+  ]
+}

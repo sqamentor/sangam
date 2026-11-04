@@ -1,0 +1,106 @@
+{
+  "offices": [
+    {
+      "id": "LEGAL-U",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "LEGAL-COUNSEL",
+      "role": "COUNSEL",
+      "office": "LEGAL-U",
+      "reportsTo": null,
+      "name": {
+        "en": "Contract counsel",
+        "hi": "अनुबंध अधिवक्ता"
+      }
+    },
+    {
+      "id": "COUNTERPARTY",
+      "role": "EXTERNAL",
+      "office": "LEGAL-U",
+      "reportsTo": null,
+      "name": {
+        "en": "Counterparty (portal)",
+        "hi": "प्रतिपक्ष (पोर्टल)"
+      }
+    },
+    {
+      "id": "LEGAL-REVIEW",
+      "role": "LEGAL",
+      "office": "LEGAL-U",
+      "reportsTo": null,
+      "name": {
+        "en": "Legal reviewer",
+        "hi": "विधिक समीक्षक"
+      }
+    },
+    {
+      "id": "FINANCE-REVIEW",
+      "role": "FINANCE",
+      "office": "LEGAL-U",
+      "reportsTo": null,
+      "name": {
+        "en": "Finance reviewer",
+        "hi": "वित्त समीक्षक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "LEGAL-COUNSEL",
+      "person": "u19.legal-counsel",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "COUNTERPARTY",
+      "person": "u19.counterparty",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "LEGAL-REVIEW",
+      "person": "u19.legal-review",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "FINANCE-REVIEW",
+      "person": "u19.finance-review",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "COUNSEL",
+      "name": {
+        "en": "Contract counsel",
+        "hi": "अनुबंध अधिवक्ता"
+      }
+    },
+    {
+      "code": "EXTERNAL",
+      "name": {
+        "en": "Counterparty (portal)",
+        "hi": "प्रतिपक्ष (पोर्टल)"
+      }
+    },
+    {
+      "code": "LEGAL",
+      "name": {
+        "en": "Legal reviewer",
+        "hi": "विधिक समीक्षक"
+      }
+    },
+    {
+      "code": "FINANCE",
+      "name": {
+        "en": "Finance reviewer",
+        "hi": "वित्त समीक्षक"
+      }
+    }
+  ]
+}

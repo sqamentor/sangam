@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: scrutiny and clarification. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_scrutiny" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_clarificationReceived" name="sangam.clarificationReceived"/>
+  <process id="sangam-core-scrutiny" name="Core: scrutiny and clarification" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>SCRUTINY &lt;&gt; CLARIFICATION_SOUGHT (IX.3, GP-16). The statutory clock pauses while the applicant is asked for clarification when the pack says so (GP-45, J-P4 step 6), and the case version moves n to n+1 on the response (R43). Inputs: scrutinySeat, scrutinySla, clarificationWindow, pauseOnClarification. Output: scrutinyOutcome ACCEPTED / REJECTED / LAPSED.</documentation>
+    <startEvent id="sc_start" name="Scrutiny requested"></startEvent>
+    <serviceTask id="sc_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>scrutinySeat=scrutiny-pool;scrutinySla=5WD;scrutinyOnBreach=ESCALATE;clarificationWindow=P15D;pauseOnClarification=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sc_state" name="State: SCRUTINY" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>SCRUTINY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sc_scrutiny_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sc_scrutiny</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${scrutinySla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="sc_scrutiny" name="Scrutiny" operaton:candidateGroups="${scrutinySeat}" operaton:formKey="sangam:core/scrutiny" operaton:dueDate="${sc_scrutinyDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>scrutinyDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="sc_scrutiny_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sc_scrutiny</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>scrutinySeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sc_scrutiny_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="sc_scrutiny_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sc_scrutiny</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:expression>${scrutinyOnBreach}</operaton:expression></operaton:field><operaton:field name="seatVar"><operaton:string>scrutinySeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>scrutinyDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sc_scrutiny_breachGw" name="Deemed?" default="core_scrutiny_f6"></exclusiveGateway>
+    <exclusiveGateway id="sc_scrutiny_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="sc_gw" name="Scrutiny decision?" default="core_scrutiny_f14"></exclusiveGateway>
+    <serviceTask id="sc_accepted" name="Accepted" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>scrutinyOutcome=ACCEPTED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sc_rejected" name="Rejected" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>scrutinyOutcome=REJECTED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sc_endAccepted" name="Accepted"></endEvent>
+    <endEvent id="sc_endRejected" name="Rejected"></endEvent>
+    <serviceTask id="sc_clarState" name="State: CLARIFICATION_SOUGHT" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>CLARIFICATION_SOUGHT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sc_pauseGw" name="Pause clock?" default="core_scrutiny_f20"></exclusiveGateway>
+    <serviceTask id="sc_pause" name="Pause statutory clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PAUSE</operaton:string></operaton:field><operaton:field name="reason"><operaton:string>clarification sought</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sc_pauseJoin" name=""></exclusiveGateway>
+    <serviceTask id="sc_deadline" name="Clarification window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>clarification</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${clarificationWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sc_notify" name="Tell applicant" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>clarification-sought</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="sc_wait" name="Response or lapse"></eventBasedGateway>
+    <intermediateCatchEvent id="sc_received" name="Clarification received"><messageEventDefinition messageRef="msg_sangam_clarificationReceived"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="sc_lapsed" name="Window lapsed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${clarificationDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="sc_resume" name="Resume statutory clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUME</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sc_version" name="New case version" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUBMIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sc_backToScrutiny" name="State: SCRUTINY" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>SCRUTINY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sc_resume2" name="Resume statutory clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUME</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sc_lapsedOut" name="Lapsed" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>scrutinyOutcome=LAPSED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sc_endLapsed" name="Lapsed"></endEvent>
+    <boundaryEvent id="sc_scrutiny_warn" name="SLA warning (75%)" attachedToRef="sc_scrutiny" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sc_scrutinyWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="sc_scrutiny_breach" name="SLA breached" attachedToRef="sc_scrutiny" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sc_scrutinyDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="core_scrutiny_f1" sourceRef="sc_scrutiny_warn" targetRef="sc_scrutiny_warnNotify"/>
+    <sequenceFlow id="core_scrutiny_f2" sourceRef="sc_scrutiny_warnNotify" targetRef="sc_scrutiny_warnEnd"/>
+    <sequenceFlow id="core_scrutiny_f3" sourceRef="sc_scrutiny_breach" targetRef="sc_scrutiny_breachAct"/>
+    <sequenceFlow id="core_scrutiny_f4" sourceRef="sc_scrutiny_breachAct" targetRef="sc_scrutiny_breachGw"/>
+    <sequenceFlow id="core_scrutiny_f5" name="deemed" sourceRef="sc_scrutiny_breachGw" targetRef="sc_scrutiny_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_scrutiny_f6" name="escalated" sourceRef="sc_scrutiny_breachGw" targetRef="sc_scrutiny_slaPlan"/>
+    <sequenceFlow id="core_scrutiny_f7" sourceRef="sc_scrutiny_slaPlan" targetRef="sc_scrutiny"/>
+    <sequenceFlow id="core_scrutiny_f8" sourceRef="sc_scrutiny" targetRef="sc_scrutiny_done"/>
+    <sequenceFlow id="core_scrutiny_f9" sourceRef="sc_start" targetRef="sc_defaults"/>
+    <sequenceFlow id="core_scrutiny_f10" sourceRef="sc_defaults" targetRef="sc_state"/>
+    <sequenceFlow id="core_scrutiny_f11" sourceRef="sc_state" targetRef="sc_scrutiny_slaPlan"/>
+    <sequenceFlow id="core_scrutiny_f12" sourceRef="sc_scrutiny_done" targetRef="sc_gw"/>
+    <sequenceFlow id="core_scrutiny_f13" name="accept" sourceRef="sc_gw" targetRef="sc_accepted"><conditionExpression xsi:type="tFormalExpression">${scrutinyDecision == 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_scrutiny_f14" name="reject" sourceRef="sc_gw" targetRef="sc_rejected"/>
+    <sequenceFlow id="core_scrutiny_f15" sourceRef="sc_accepted" targetRef="sc_endAccepted"/>
+    <sequenceFlow id="core_scrutiny_f16" sourceRef="sc_rejected" targetRef="sc_endRejected"/>
+    <sequenceFlow id="core_scrutiny_f17" name="clarify" sourceRef="sc_gw" targetRef="sc_clarState"><conditionExpression xsi:type="tFormalExpression">${scrutinyDecision == 'clarify'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_scrutiny_f18" sourceRef="sc_clarState" targetRef="sc_pauseGw"/>
+    <sequenceFlow id="core_scrutiny_f19" name="pause" sourceRef="sc_pauseGw" targetRef="sc_pause"><conditionExpression xsi:type="tFormalExpression">${pauseOnClarification}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_scrutiny_f20" name="no pause" sourceRef="sc_pauseGw" targetRef="sc_pauseJoin"/>
+    <sequenceFlow id="core_scrutiny_f21" sourceRef="sc_pause" targetRef="sc_pauseJoin"/>
+    <sequenceFlow id="core_scrutiny_f22" sourceRef="sc_pauseJoin" targetRef="sc_deadline"/>
+    <sequenceFlow id="core_scrutiny_f23" sourceRef="sc_deadline" targetRef="sc_notify"/>
+    <sequenceFlow id="core_scrutiny_f24" sourceRef="sc_notify" targetRef="sc_wait"/>
+    <sequenceFlow id="core_scrutiny_f25" sourceRef="sc_wait" targetRef="sc_received"/>
+    <sequenceFlow id="core_scrutiny_f26" sourceRef="sc_wait" targetRef="sc_lapsed"/>
+    <sequenceFlow id="core_scrutiny_f27" sourceRef="sc_received" targetRef="sc_resume"/>
+    <sequenceFlow id="core_scrutiny_f28" sourceRef="sc_resume" targetRef="sc_version"/>
+    <sequenceFlow id="core_scrutiny_f29" sourceRef="sc_version" targetRef="sc_backToScrutiny"/>
+    <sequenceFlow id="core_scrutiny_f30" sourceRef="sc_backToScrutiny" targetRef="sc_scrutiny_slaPlan"/>
+    <sequenceFlow id="core_scrutiny_f31" sourceRef="sc_lapsed" targetRef="sc_resume2"/>
+    <sequenceFlow id="core_scrutiny_f32" sourceRef="sc_resume2" targetRef="sc_lapsedOut"/>
+    <sequenceFlow id="core_scrutiny_f33" sourceRef="sc_lapsedOut" targetRef="sc_endLapsed"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_scrutiny_diagram">
+    <bpmndi:BPMNPlane id="core_scrutiny_plane" bpmnElement="sangam-core-scrutiny">
+      <bpmndi:BPMNShape id="sc_start_di" bpmnElement="sc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_defaults_di" bpmnElement="sc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_state_di" bpmnElement="sc_state"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_scrutiny_slaPlan_di" bpmnElement="sc_scrutiny_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_scrutiny_di" bpmnElement="sc_scrutiny"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_scrutiny_warnNotify_di" bpmnElement="sc_scrutiny_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_scrutiny_warnEnd_di" bpmnElement="sc_scrutiny_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_scrutiny_breachAct_di" bpmnElement="sc_scrutiny_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_scrutiny_breachGw_di" bpmnElement="sc_scrutiny_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_scrutiny_done_di" bpmnElement="sc_scrutiny_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_gw_di" bpmnElement="sc_gw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_accepted_di" bpmnElement="sc_accepted"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_rejected_di" bpmnElement="sc_rejected"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_endAccepted_di" bpmnElement="sc_endAccepted"><dc:Bounds x="1702" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_endRejected_di" bpmnElement="sc_endRejected"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_clarState_di" bpmnElement="sc_clarState"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_pauseGw_di" bpmnElement="sc_pauseGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_pause_di" bpmnElement="sc_pause"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_pauseJoin_di" bpmnElement="sc_pauseJoin"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_deadline_di" bpmnElement="sc_deadline"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_notify_di" bpmnElement="sc_notify"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_wait_di" bpmnElement="sc_wait"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_received_di" bpmnElement="sc_received"><dc:Bounds x="2692" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_lapsed_di" bpmnElement="sc_lapsed"><dc:Bounds x="2692" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_resume_di" bpmnElement="sc_resume"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_version_di" bpmnElement="sc_version"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_backToScrutiny_di" bpmnElement="sc_backToScrutiny"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_resume2_di" bpmnElement="sc_resume2"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_lapsedOut_di" bpmnElement="sc_lapsedOut"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_endLapsed_di" bpmnElement="sc_endLapsed"><dc:Bounds x="3187" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_scrutiny_warn_di" bpmnElement="sc_scrutiny_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_scrutiny_breach_di" bpmnElement="sc_scrutiny_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_scrutiny_f1_di" bpmnElement="core_scrutiny_f1"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f2_di" bpmnElement="core_scrutiny_f2"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f3_di" bpmnElement="core_scrutiny_f3"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f4_di" bpmnElement="core_scrutiny_f4"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f5_di" bpmnElement="core_scrutiny_f5"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f6_di" bpmnElement="core_scrutiny_f6"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="135"/><di:waypoint x="565" y="135"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f7_di" bpmnElement="core_scrutiny_f7"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f8_di" bpmnElement="core_scrutiny_f8"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f9_di" bpmnElement="core_scrutiny_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f10_di" bpmnElement="core_scrutiny_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f11_di" bpmnElement="core_scrutiny_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f12_di" bpmnElement="core_scrutiny_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f13_di" bpmnElement="core_scrutiny_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f14_di" bpmnElement="core_scrutiny_f14"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f15_di" bpmnElement="core_scrutiny_f15"><di:waypoint x="1605" y="320"/><di:waypoint x="1702" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f16_di" bpmnElement="core_scrutiny_f16"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f17_di" bpmnElement="core_scrutiny_f17"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f18_di" bpmnElement="core_scrutiny_f18"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f19_di" bpmnElement="core_scrutiny_f19"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f20_di" bpmnElement="core_scrutiny_f20"><di:waypoint x="1745" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f21_di" bpmnElement="core_scrutiny_f21"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f22_di" bpmnElement="core_scrutiny_f22"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f23_di" bpmnElement="core_scrutiny_f23"><di:waypoint x="2265" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f24_di" bpmnElement="core_scrutiny_f24"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f25_di" bpmnElement="core_scrutiny_f25"><di:waypoint x="2570" y="70"/><di:waypoint x="2631" y="70"/><di:waypoint x="2631" y="195"/><di:waypoint x="2692" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f26_di" bpmnElement="core_scrutiny_f26"><di:waypoint x="2570" y="70"/><di:waypoint x="2692" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f27_di" bpmnElement="core_scrutiny_f27"><di:waypoint x="2728" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f28_di" bpmnElement="core_scrutiny_f28"><di:waypoint x="2925" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f29_di" bpmnElement="core_scrutiny_f29"><di:waypoint x="3090" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f30_di" bpmnElement="core_scrutiny_f30"><di:waypoint x="3205" y="235"/><di:waypoint x="3205" y="260"/><di:waypoint x="565" y="260"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f31_di" bpmnElement="core_scrutiny_f31"><di:waypoint x="2728" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f32_di" bpmnElement="core_scrutiny_f32"><di:waypoint x="2925" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_scrutiny_f33_di" bpmnElement="core_scrutiny_f33"><di:waypoint x="3090" y="70"/><di:waypoint x="3187" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,65 @@
+{
+  "key": "ifms-bill/revise",
+  "version": "1.0.0",
+  "pack": "gov.ifms.bill",
+  "title": {
+    "en": "Reply to objection / correct",
+    "hi": "आपत्ति का उत्तर / सुधार"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "objectionMemo",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Objection memo",
+        "hi": "आपत्ति ज्ञापन"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reviseDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

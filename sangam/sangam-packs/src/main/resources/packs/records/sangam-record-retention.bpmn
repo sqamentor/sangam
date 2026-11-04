@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Record retention. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_record_retention" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_legalHoldReleased" name="sangam.legalHoldReleased"/>
+  <message id="msg_sangam_legalHoldSet" name="sangam.legalHoldSet"/>
+  <process id="sangam-record-retention" name="Record retention" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.records</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>fileNo,retentionCategory</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="rr_start" name="Record closed" operaton:initiator="initiator" operaton:formKey="sangam:records/register"></startEvent>
+    <serviceTask id="rr_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>legalHold=false;recordOfficerSeat=RECORD-OFFICER;reReviewPeriod=P5Y;recordAgeYears=0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rr_schedule" name="Review date from the schedule" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>review</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${'P'.concat(retentionYears).concat('Y')}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="rr_review" name="Review due"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${reviewDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="rr_decide" name="Record review (Public Records Rules r.9)" operaton:candidateGroups="${recordOfficerSeat}" operaton:formKey="sangam:records/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="rr_gw" name="Decision?" default="record_retention_f10"></exclusiveGateway>
+    <serviceTask id="rr_again" name="Next review" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>review</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${reReviewPeriod}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rr_nai" name="Transfer to National Archives (PDF/A)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>archive.nai</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>transfer</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>fileNo,subject,retentionCategory</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>nai</operaton:string></operaton:field><operaton:field name="step"><operaton:string>nai</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rr_endTransferred" name="Transferred"></endEvent>
+    <exclusiveGateway id="rr_holdGw" name="Legal hold?" default="record_retention_f13"></exclusiveGateway>
+    <serviceTask id="rr_blocked" name="Destruction blocked by legal hold" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>destruction-blocked</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>recordOfficerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="rr_appraisal" name="Appraisal needed? (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>records-destruction-check</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="rr_apprGw" name="Appraisal?" default="record_retention_f16"></exclusiveGateway>
+    <userTask id="rr_appraise" name="Appraisal before destruction" operaton:candidateGroups="NAI-APPRAISER" operaton:formKey="sangam:records/appraisal"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>appraisalDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="rr_form6" name="Form 6 destruction list (kept permanently)" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>form-6-destruction-list</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rr_apprDecGw" name="" default="record_retention_f19"></exclusiveGateway>
+    <serviceTask id="rr_destroy" name="Destroy digital copies" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>archive.destroyCopies</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>destroy</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>fileNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>destroy</operaton:string></operaton:field><operaton:field name="step"><operaton:string>destroy</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rr_endDestroyed" name="Destroyed"></endEvent>
+    <sequenceFlow id="record_retention_f1" sourceRef="rr_start" targetRef="rr_defaults"/>
+    <sequenceFlow id="record_retention_f2" sourceRef="rr_defaults" targetRef="rr_schedule"/>
+    <sequenceFlow id="record_retention_f3" sourceRef="rr_schedule" targetRef="rr_review"/>
+    <sequenceFlow id="record_retention_f4" sourceRef="rr_review" targetRef="rr_decide"/>
+    <sequenceFlow id="record_retention_f5" sourceRef="rr_decide" targetRef="rr_gw"/>
+    <sequenceFlow id="record_retention_f6" name="retain" sourceRef="rr_gw" targetRef="rr_again"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'retain'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="record_retention_f7" sourceRef="rr_again" targetRef="rr_review"/>
+    <sequenceFlow id="record_retention_f8" name="transfer" sourceRef="rr_gw" targetRef="rr_nai"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'transferNai'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="record_retention_f9" sourceRef="rr_nai" targetRef="rr_endTransferred"/>
+    <sequenceFlow id="record_retention_f10" name="destroy" sourceRef="rr_gw" targetRef="rr_holdGw"/>
+    <sequenceFlow id="record_retention_f11" name="held" sourceRef="rr_holdGw" targetRef="rr_blocked"><conditionExpression xsi:type="tFormalExpression">${legalHold}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="record_retention_f12" sourceRef="rr_blocked" targetRef="rr_again"/>
+    <sequenceFlow id="record_retention_f13" name="no hold" sourceRef="rr_holdGw" targetRef="rr_appraisal"/>
+    <sequenceFlow id="record_retention_f14" sourceRef="rr_appraisal" targetRef="rr_apprGw"/>
+    <sequenceFlow id="record_retention_f15" name="older than 25 years / category A" sourceRef="rr_apprGw" targetRef="rr_appraise"><conditionExpression xsi:type="tFormalExpression">${appraisalRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="record_retention_f16" name="no" sourceRef="rr_apprGw" targetRef="rr_form6"/>
+    <sequenceFlow id="record_retention_f17" sourceRef="rr_appraise" targetRef="rr_apprDecGw"/>
+    <sequenceFlow id="record_retention_f18" name="archival value" sourceRef="rr_apprDecGw" targetRef="rr_nai"><conditionExpression xsi:type="tFormalExpression">${appraisalDecision == 'transferNai'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="record_retention_f19" name="destroy" sourceRef="rr_apprDecGw" targetRef="rr_form6"/>
+    <sequenceFlow id="record_retention_f20" sourceRef="rr_form6" targetRef="rr_destroy"/>
+    <sequenceFlow id="record_retention_f21" sourceRef="rr_destroy" targetRef="rr_endDestroyed"/>
+    <subProcess id="rr_hold" name="Legal hold set" triggeredByEvent="true">
+      <startEvent id="rr_holdStart" name="Hold" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_legalHoldSet"/></startEvent>
+      <serviceTask id="rr_holdSet" name="Set hold" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>LEGAL_HOLD</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="rr_holdEnd" name="Held"></endEvent>
+      <sequenceFlow id="record_retention_f22" sourceRef="rr_holdStart" targetRef="rr_holdSet"/>
+      <sequenceFlow id="record_retention_f23" sourceRef="rr_holdSet" targetRef="rr_holdEnd"/>
+    </subProcess>
+    <subProcess id="rr_release" name="Legal hold released" triggeredByEvent="true">
+      <startEvent id="rr_relStart" name="Release" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_legalHoldReleased"/></startEvent>
+      <serviceTask id="rr_relSet" name="Release hold" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RELEASE_HOLD</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="rr_relEnd" name="Released"></endEvent>
+      <sequenceFlow id="record_retention_f24" sourceRef="rr_relStart" targetRef="rr_relSet"/>
+      <sequenceFlow id="record_retention_f25" sourceRef="rr_relSet" targetRef="rr_relEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="record_retention_diagram">
+    <bpmndi:BPMNPlane id="record_retention_plane" bpmnElement="sangam-record-retention">
+      <bpmndi:BPMNShape id="rr_start_di" bpmnElement="rr_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_defaults_di" bpmnElement="rr_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_schedule_di" bpmnElement="rr_schedule"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_review_di" bpmnElement="rr_review"><dc:Bounds x="547" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_decide_di" bpmnElement="rr_decide"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_gw_di" bpmnElement="rr_gw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_again_di" bpmnElement="rr_again"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_nai_di" bpmnElement="rr_nai"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_endTransferred_di" bpmnElement="rr_endTransferred"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_holdGw_di" bpmnElement="rr_holdGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_blocked_di" bpmnElement="rr_blocked"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_appraisal_di" bpmnElement="rr_appraisal"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_apprGw_di" bpmnElement="rr_apprGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_appraise_di" bpmnElement="rr_appraise"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_form6_di" bpmnElement="rr_form6"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_apprDecGw_di" bpmnElement="rr_apprDecGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_destroy_di" bpmnElement="rr_destroy"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_endDestroyed_di" bpmnElement="rr_endDestroyed"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_hold_di" bpmnElement="rr_hold" isExpanded="true"><dc:Bounds x="30" y="285" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_holdStart_di" bpmnElement="rr_holdStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_holdSet_di" bpmnElement="rr_holdSet"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_holdEnd_di" bpmnElement="rr_holdEnd"><dc:Bounds x="422" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_release_di" bpmnElement="rr_release" isExpanded="true"><dc:Bounds x="30" y="475" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_relStart_di" bpmnElement="rr_relStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_relSet_di" bpmnElement="rr_relSet"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rr_relEnd_di" bpmnElement="rr_relEnd"><dc:Bounds x="422" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="record_retention_f1_di" bpmnElement="record_retention_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f2_di" bpmnElement="record_retention_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f3_di" bpmnElement="record_retention_f3"><di:waypoint x="450" y="70"/><di:waypoint x="547" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f4_di" bpmnElement="record_retention_f4"><di:waypoint x="583" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f5_di" bpmnElement="record_retention_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f6_di" bpmnElement="record_retention_f6"><di:waypoint x="920" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f7_di" bpmnElement="record_retention_f7"><di:waypoint x="1390" y="235"/><di:waypoint x="1390" y="267"/><di:waypoint x="565" y="267"/><di:waypoint x="565" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f8_di" bpmnElement="record_retention_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1377" y="70"/><di:waypoint x="1377" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f9_di" bpmnElement="record_retention_f9"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f10_di" bpmnElement="record_retention_f10"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f11_di" bpmnElement="record_retention_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f12_di" bpmnElement="record_retention_f12"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f13_di" bpmnElement="record_retention_f13"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f14_di" bpmnElement="record_retention_f14"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f15_di" bpmnElement="record_retention_f15"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f16_di" bpmnElement="record_retention_f16"><di:waypoint x="1415" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f17_di" bpmnElement="record_retention_f17"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f18_di" bpmnElement="record_retention_f18"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f19_di" bpmnElement="record_retention_f19"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f20_di" bpmnElement="record_retention_f20"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f21_di" bpmnElement="record_retention_f21"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f22_di" bpmnElement="record_retention_f22"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f23_di" bpmnElement="record_retention_f23"><di:waypoint x="325" y="365"/><di:waypoint x="422" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f24_di" bpmnElement="record_retention_f24"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="record_retention_f25_di" bpmnElement="record_retention_f25"><di:waypoint x="325" y="555"/><di:waypoint x="422" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-breach/log",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.breach",
+  "title": {
+    "en": "Enter in the annual breach log",
+    "es": "Registrar en el registro anual"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "annualLogYearEnd",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "End of the calendar year of discovery (31 Dec)",
+        "es": "Fin del año calendario del descubrimiento (31 dic)"
+      }
+    }
+  ]
+}

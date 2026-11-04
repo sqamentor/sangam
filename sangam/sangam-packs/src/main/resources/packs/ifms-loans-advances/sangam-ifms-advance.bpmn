@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Employee advance. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_advance" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-ifms-advance" name="Employee advance" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.loans-advances</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>advanceKind,amount,instalments</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="av_start" name="Application" operaton:initiator="initiator" operaton:formKey="sangam:ifms-loans-advances/application"></startEvent>
+    <serviceTask id="av_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>amount=0;instalments=1;advanceKind=COMPUTER;basicPay=0;billType=HBA;caseType=ADVANCE;routingDecisionKey=ifms-advance-authority;scrutinySeat=DDO-1;appealAllowed=false;outputTemplate=advance-sanction;ledgerId=RECOVERY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="av_rules" name="Advance limits (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>ifms-advance-limits</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <callActivity id="av_sanction" name="Sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="av_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="av_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="av_bill" name="Advance bill" calledElement="sangam-ifms-bill"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="av_demand" name="Recovery schedule (RECEIVABLE demand)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.allocate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>allocate</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,amount,instalments</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>dem</operaton:string></operaton:field><operaton:field name="step"><operaton:string>demand</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="av_okGw" name="" default="ifms_advance_f8"></exclusiveGateway>
+    <serviceTask id="av_rjRule_code" name="Reason: ADVANCE_LIMIT" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=ADVANCE_LIMIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="av_rjRule_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="av_rjRule_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="av_sanGw" name="sanctionOutcome?" default="ifms_advance_f10"></exclusiveGateway>
+    <endEvent id="av_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="ifms_advance_f1" sourceRef="av_rj_reject" targetRef="av_rj_endRejected"/>
+    <sequenceFlow id="ifms_advance_f2" sourceRef="av_start" targetRef="av_defaults"/>
+    <sequenceFlow id="ifms_advance_f3" sourceRef="av_defaults" targetRef="av_rules"/>
+    <sequenceFlow id="ifms_advance_f4" sourceRef="av_rules" targetRef="av_okGw"/>
+    <sequenceFlow id="ifms_advance_f5" sourceRef="av_rjRule_reject" targetRef="av_rjRule_endRejected"/>
+    <sequenceFlow id="ifms_advance_f6" sourceRef="av_rjRule_code" targetRef="av_rjRule_reject"/>
+    <sequenceFlow id="ifms_advance_f7" name="above limit" sourceRef="av_okGw" targetRef="av_rjRule_code"><conditionExpression xsi:type="tFormalExpression">${advanceAllowed == false}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_advance_f8" name="within limit" sourceRef="av_okGw" targetRef="av_sanction"/>
+    <sequenceFlow id="ifms_advance_f9" name="SANCTIONED" sourceRef="av_sanGw" targetRef="av_bill"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_advance_f10" name="otherwise" sourceRef="av_sanGw" targetRef="av_rj_reject"/>
+    <sequenceFlow id="ifms_advance_f11" sourceRef="av_sanction" targetRef="av_sanGw"/>
+    <sequenceFlow id="ifms_advance_f12" sourceRef="av_bill" targetRef="av_demand"/>
+    <sequenceFlow id="ifms_advance_f13" sourceRef="av_demand" targetRef="av_end"/>
+    <subProcess id="av_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="av_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="av_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="av_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="av_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_advance_f14" sourceRef="av_withdrawStart" targetRef="av_withdrawKind"/>
+      <sequenceFlow id="ifms_advance_f15" sourceRef="av_withdrawKind" targetRef="av_withdrawCall"/>
+      <sequenceFlow id="ifms_advance_f16" sourceRef="av_withdrawCall" targetRef="av_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="av_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="av_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="av_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="av_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="av_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_advance_f17" sourceRef="av_cancelStart" targetRef="av_cancelKind"/>
+      <sequenceFlow id="ifms_advance_f18" sourceRef="av_cancelKind" targetRef="av_cancelCall"/>
+      <sequenceFlow id="ifms_advance_f19" sourceRef="av_cancelCall" targetRef="av_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_advance_diagram">
+    <bpmndi:BPMNPlane id="ifms_advance_plane" bpmnElement="sangam-ifms-advance">
+      <bpmndi:BPMNShape id="av_start_di" bpmnElement="av_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_defaults_di" bpmnElement="av_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_rules_di" bpmnElement="av_rules"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_sanction_di" bpmnElement="av_sanction"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_rj_reject_di" bpmnElement="av_rj_reject"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_rj_endRejected_di" bpmnElement="av_rj_endRejected"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_bill_di" bpmnElement="av_bill"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_demand_di" bpmnElement="av_demand"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_okGw_di" bpmnElement="av_okGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_rjRule_code_di" bpmnElement="av_rjRule_code"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_rjRule_reject_di" bpmnElement="av_rjRule_reject"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_rjRule_endRejected_di" bpmnElement="av_rjRule_endRejected"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_sanGw_di" bpmnElement="av_sanGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_end_di" bpmnElement="av_end"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_withdraw_di" bpmnElement="av_withdraw" isExpanded="true"><dc:Bounds x="30" y="388" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_withdrawStart_di" bpmnElement="av_withdrawStart"><dc:Bounds x="92" y="450" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_withdrawKind_di" bpmnElement="av_withdrawKind"><dc:Bounds x="225" y="428" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_withdrawCall_di" bpmnElement="av_withdrawCall"><dc:Bounds x="390" y="428" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_withdrawEnd_di" bpmnElement="av_withdrawEnd"><dc:Bounds x="587" y="450" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_cancel_di" bpmnElement="av_cancel" isExpanded="true"><dc:Bounds x="30" y="578" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_cancelStart_di" bpmnElement="av_cancelStart"><dc:Bounds x="92" y="640" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_cancelKind_di" bpmnElement="av_cancelKind"><dc:Bounds x="225" y="618" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_cancelCall_di" bpmnElement="av_cancelCall"><dc:Bounds x="390" y="618" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="av_cancelEnd_di" bpmnElement="av_cancelEnd"><dc:Bounds x="587" y="640" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_advance_f1_di" bpmnElement="ifms_advance_f1"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f2_di" bpmnElement="ifms_advance_f2"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f3_di" bpmnElement="ifms_advance_f3"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f4_di" bpmnElement="ifms_advance_f4"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f5_di" bpmnElement="ifms_advance_f5"><di:waypoint x="945" y="195"/><di:waypoint x="993" y="195"/><di:waypoint x="993" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f6_di" bpmnElement="ifms_advance_f6"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f7_di" bpmnElement="ifms_advance_f7"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f8_di" bpmnElement="ifms_advance_f8"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f9_di" bpmnElement="ifms_advance_f9"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f10_di" bpmnElement="ifms_advance_f10"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f11_di" bpmnElement="ifms_advance_f11"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f12_di" bpmnElement="ifms_advance_f12"><di:waypoint x="1110" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f13_di" bpmnElement="ifms_advance_f13"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f14_di" bpmnElement="ifms_advance_f14"><di:waypoint x="128" y="468"/><di:waypoint x="225" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f15_di" bpmnElement="ifms_advance_f15"><di:waypoint x="325" y="468"/><di:waypoint x="390" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f16_di" bpmnElement="ifms_advance_f16"><di:waypoint x="490" y="468"/><di:waypoint x="587" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f17_di" bpmnElement="ifms_advance_f17"><di:waypoint x="128" y="658"/><di:waypoint x="225" y="658"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f18_di" bpmnElement="ifms_advance_f18"><di:waypoint x="325" y="658"/><di:waypoint x="390" y="658"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_advance_f19_di" bpmnElement="ifms_advance_f19"><di:waypoint x="490" y="658"/><di:waypoint x="587" y="658"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

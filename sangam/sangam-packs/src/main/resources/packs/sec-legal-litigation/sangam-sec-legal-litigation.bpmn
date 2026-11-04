@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Litigation matter. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_legal_litigation" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_court_judgment" name="sangam.court.judgment"/>
+  <message id="msg_sangam_hearingDateSet" name="sangam.hearingDateSet"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-legal-litigation" name="Litigation matter" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.legal.litigation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>matterType,court,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="lt_start" name="Notice / summons received or claim to file" operaton:initiator="initiator" operaton:formKey="sangam:sec-legal-litigation/intake"></startEvent>
+    <serviceTask id="lt_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>matterType=SUMMONS;counterpartyName=X;court=CIVIL;counselSeat=LEGAL-COUNSEL;appealRecommended=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="lt_rule" name="Response and appeal periods (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-legal-periods</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="lt_clock" name="Regulatory clock: response" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>response</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${responseSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="lt_assess_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lt_assess</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>5WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="lt_assess" name="Assess, engage counsel and approve fee" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-legal-litigation/assess" operaton:dueDate="${lt_assessDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>legalDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lt_assess_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lt_assess</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>counselSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lt_assess_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="lt_assess_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lt_assess</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>counselSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>legalDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lt_assess_breachGw" name="Deemed?" default="sec_legal_litigation_f6"></exclusiveGateway>
+    <exclusiveGateway id="lt_assess_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="lt_gw" name="" default="sec_legal_litigation_f17"></exclusiveGateway>
+    <userTask id="lt_settle" name="Negotiate settlement" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-legal-litigation/settle"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>settleDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="lt_setGw" name="" default="sec_legal_litigation_f18"></exclusiveGateway>
+    <endEvent id="lt_endSettled" name="Settled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="lt_reply" name="Reply / written statement / plaint before the deadline" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-legal-litigation/reply" operaton:dueDate="${responseDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lt_lateNotify" name="Deadline reached: escalate" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>legal-deadline</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>counselSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lt_lateEnd" name="Escalated"></endEvent>
+    <serviceTask id="lt_file" name="File / serve" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.reply</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>file</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>matterType,court</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>filing</operaton:string></operaton:field><operaton:field name="step"><operaton:string>filing</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="lt_wait" name="Next hearing or judgment"></eventBasedGateway>
+    <intermediateCatchEvent id="lt_hearing" name="Hearing date from the court"><messageEventDefinition messageRef="msg_sangam_hearingDateSet"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="lt_judgment" name="Judgment / final order"><messageEventDefinition messageRef="msg_sangam_court_judgment"/></intermediateCatchEvent>
+    <userTask id="lt_attend" name="Attend hearing and record the order" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-legal-litigation/hearing"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lt_appealClock" name="Regulatory clock: appeal" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>appeal</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${appealSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <userTask id="lt_decide" name="Comply or appeal (within the appeal period)" operaton:candidateGroups="LEGAL-HEAD" operaton:formKey="sangam:sec-legal-litigation/decide" operaton:dueDate="${appealDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>judgmentDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="lt_jGw" name="" default="sec_legal_litigation_f32"></exclusiveGateway>
+    <serviceTask id="lt_appealCase" name="Open the appeal as a linked matter" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-sec-legal-litigation</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>appeal</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>counterpartyName,amount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lt_endAppealed" name="Appeal filed"></endEvent>
+    <userTask id="lt_comply" name="Comply with the order" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-legal-litigation/comply"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="lt_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="lt_assess_warn" name="SLA warning (75%)" attachedToRef="lt_assess" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lt_assessWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="lt_assess_breach" name="SLA breached" attachedToRef="lt_assess" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lt_assessDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="lt_lateWarn" name="Deadline reached" attachedToRef="lt_reply" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${responseDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_legal_litigation_f1" sourceRef="lt_assess_warn" targetRef="lt_assess_warnNotify"/>
+    <sequenceFlow id="sec_legal_litigation_f2" sourceRef="lt_assess_warnNotify" targetRef="lt_assess_warnEnd"/>
+    <sequenceFlow id="sec_legal_litigation_f3" sourceRef="lt_assess_breach" targetRef="lt_assess_breachAct"/>
+    <sequenceFlow id="sec_legal_litigation_f4" sourceRef="lt_assess_breachAct" targetRef="lt_assess_breachGw"/>
+    <sequenceFlow id="sec_legal_litigation_f5" name="deemed" sourceRef="lt_assess_breachGw" targetRef="lt_assess_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_litigation_f6" name="escalated" sourceRef="lt_assess_breachGw" targetRef="lt_assess_slaPlan"/>
+    <sequenceFlow id="sec_legal_litigation_f7" sourceRef="lt_assess_slaPlan" targetRef="lt_assess"/>
+    <sequenceFlow id="sec_legal_litigation_f8" sourceRef="lt_assess" targetRef="lt_assess_done"/>
+    <sequenceFlow id="sec_legal_litigation_f9" sourceRef="lt_start" targetRef="lt_defaults"/>
+    <sequenceFlow id="sec_legal_litigation_f10" sourceRef="lt_defaults" targetRef="lt_rule"/>
+    <sequenceFlow id="sec_legal_litigation_f11" sourceRef="lt_rule" targetRef="lt_clock"/>
+    <sequenceFlow id="sec_legal_litigation_f12" sourceRef="lt_clock" targetRef="lt_assess_slaPlan"/>
+    <sequenceFlow id="sec_legal_litigation_f13" sourceRef="lt_assess_done" targetRef="lt_gw"/>
+    <sequenceFlow id="sec_legal_litigation_f14" name="settle" sourceRef="lt_gw" targetRef="lt_settle"><conditionExpression xsi:type="tFormalExpression">${legalDecision == 'settle'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_litigation_f15" sourceRef="lt_settle" targetRef="lt_setGw"/>
+    <sequenceFlow id="sec_legal_litigation_f16" name="settled" sourceRef="lt_setGw" targetRef="lt_endSettled"><conditionExpression xsi:type="tFormalExpression">${settleDecision == 'settled'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_litigation_f17" name="contest / file" sourceRef="lt_gw" targetRef="lt_reply"/>
+    <sequenceFlow id="sec_legal_litigation_f18" name="failed" sourceRef="lt_setGw" targetRef="lt_reply"/>
+    <sequenceFlow id="sec_legal_litigation_f19" sourceRef="lt_lateWarn" targetRef="lt_lateNotify"/>
+    <sequenceFlow id="sec_legal_litigation_f20" sourceRef="lt_lateNotify" targetRef="lt_lateEnd"/>
+    <sequenceFlow id="sec_legal_litigation_f21" sourceRef="lt_reply" targetRef="lt_file"/>
+    <sequenceFlow id="sec_legal_litigation_f22" sourceRef="lt_file" targetRef="lt_wait"/>
+    <sequenceFlow id="sec_legal_litigation_f23" sourceRef="lt_wait" targetRef="lt_hearing"/>
+    <sequenceFlow id="sec_legal_litigation_f24" sourceRef="lt_wait" targetRef="lt_judgment"/>
+    <sequenceFlow id="sec_legal_litigation_f25" sourceRef="lt_hearing" targetRef="lt_attend"/>
+    <sequenceFlow id="sec_legal_litigation_f26" sourceRef="lt_attend" targetRef="lt_wait"/>
+    <sequenceFlow id="sec_legal_litigation_f27" sourceRef="lt_judgment" targetRef="lt_appealClock"/>
+    <sequenceFlow id="sec_legal_litigation_f28" sourceRef="lt_appealClock" targetRef="lt_decide"/>
+    <sequenceFlow id="sec_legal_litigation_f29" sourceRef="lt_decide" targetRef="lt_jGw"/>
+    <sequenceFlow id="sec_legal_litigation_f30" name="appeal" sourceRef="lt_jGw" targetRef="lt_appealCase"><conditionExpression xsi:type="tFormalExpression">${judgmentDecision == 'appeal'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_litigation_f31" sourceRef="lt_appealCase" targetRef="lt_endAppealed"/>
+    <sequenceFlow id="sec_legal_litigation_f32" name="comply" sourceRef="lt_jGw" targetRef="lt_comply"/>
+    <sequenceFlow id="sec_legal_litigation_f33" sourceRef="lt_comply" targetRef="lt_end"/>
+    <subProcess id="lt_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="lt_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="lt_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="lt_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="lt_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_legal_litigation_f34" sourceRef="lt_withdrawStart" targetRef="lt_withdrawKind"/>
+      <sequenceFlow id="sec_legal_litigation_f35" sourceRef="lt_withdrawKind" targetRef="lt_withdrawCall"/>
+      <sequenceFlow id="sec_legal_litigation_f36" sourceRef="lt_withdrawCall" targetRef="lt_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="lt_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="lt_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="lt_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="lt_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="lt_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_legal_litigation_f37" sourceRef="lt_cancelStart" targetRef="lt_cancelKind"/>
+      <sequenceFlow id="sec_legal_litigation_f38" sourceRef="lt_cancelKind" targetRef="lt_cancelCall"/>
+      <sequenceFlow id="sec_legal_litigation_f39" sourceRef="lt_cancelCall" targetRef="lt_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_legal_litigation_diagram">
+    <bpmndi:BPMNPlane id="sec_legal_litigation_plane" bpmnElement="sangam-sec-legal-litigation">
+      <bpmndi:BPMNShape id="lt_start_di" bpmnElement="lt_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_defaults_di" bpmnElement="lt_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_rule_di" bpmnElement="lt_rule"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_clock_di" bpmnElement="lt_clock"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_assess_slaPlan_di" bpmnElement="lt_assess_slaPlan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_assess_di" bpmnElement="lt_assess"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_assess_warnNotify_di" bpmnElement="lt_assess_warnNotify"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_assess_warnEnd_di" bpmnElement="lt_assess_warnEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_assess_breachAct_di" bpmnElement="lt_assess_breachAct"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_assess_breachGw_di" bpmnElement="lt_assess_breachGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_assess_done_di" bpmnElement="lt_assess_done"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_gw_di" bpmnElement="lt_gw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_settle_di" bpmnElement="lt_settle"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_setGw_di" bpmnElement="lt_setGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_endSettled_di" bpmnElement="lt_endSettled"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_reply_di" bpmnElement="lt_reply"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_lateNotify_di" bpmnElement="lt_lateNotify"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_lateEnd_di" bpmnElement="lt_lateEnd"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_file_di" bpmnElement="lt_file"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_wait_di" bpmnElement="lt_wait"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_hearing_di" bpmnElement="lt_hearing"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_judgment_di" bpmnElement="lt_judgment"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_attend_di" bpmnElement="lt_attend"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_appealClock_di" bpmnElement="lt_appealClock"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_decide_di" bpmnElement="lt_decide"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_jGw_di" bpmnElement="lt_jGw"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_appealCase_di" bpmnElement="lt_appealCase"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_endAppealed_di" bpmnElement="lt_endAppealed"><dc:Bounds x="3352" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_comply_di" bpmnElement="lt_comply"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_end_di" bpmnElement="lt_end"><dc:Bounds x="3352" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_assess_warn_di" bpmnElement="lt_assess_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_assess_breach_di" bpmnElement="lt_assess_breach"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_lateWarn_di" bpmnElement="lt_lateWarn"><dc:Bounds x="2008" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_withdraw_di" bpmnElement="lt_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_withdrawStart_di" bpmnElement="lt_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_withdrawKind_di" bpmnElement="lt_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_withdrawCall_di" bpmnElement="lt_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_withdrawEnd_di" bpmnElement="lt_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_cancel_di" bpmnElement="lt_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_cancelStart_di" bpmnElement="lt_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_cancelKind_di" bpmnElement="lt_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_cancelCall_di" bpmnElement="lt_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lt_cancelEnd_di" bpmnElement="lt_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f1_di" bpmnElement="sec_legal_litigation_f1"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f2_di" bpmnElement="sec_legal_litigation_f2"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f3_di" bpmnElement="sec_legal_litigation_f3"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f4_di" bpmnElement="sec_legal_litigation_f4"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f5_di" bpmnElement="sec_legal_litigation_f5"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f6_di" bpmnElement="sec_legal_litigation_f6"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="135"/><di:waypoint x="730" y="135"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f7_di" bpmnElement="sec_legal_litigation_f7"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f8_di" bpmnElement="sec_legal_litigation_f8"><di:waypoint x="945" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f9_di" bpmnElement="sec_legal_litigation_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f10_di" bpmnElement="sec_legal_litigation_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f11_di" bpmnElement="sec_legal_litigation_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f12_di" bpmnElement="sec_legal_litigation_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f13_di" bpmnElement="sec_legal_litigation_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f14_di" bpmnElement="sec_legal_litigation_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f15_di" bpmnElement="sec_legal_litigation_f15"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f16_di" bpmnElement="sec_legal_litigation_f16"><di:waypoint x="1910" y="70"/><di:waypoint x="1971" y="70"/><di:waypoint x="1971" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f17_di" bpmnElement="sec_legal_litigation_f17"><di:waypoint x="1580" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f18_di" bpmnElement="sec_legal_litigation_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f19_di" bpmnElement="sec_legal_litigation_f19"><di:waypoint x="2026" y="128"/><di:waypoint x="2026" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f20_di" bpmnElement="sec_legal_litigation_f20"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f21_di" bpmnElement="sec_legal_litigation_f21"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f22_di" bpmnElement="sec_legal_litigation_f22"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f23_di" bpmnElement="sec_legal_litigation_f23"><di:waypoint x="2405" y="70"/><di:waypoint x="2466" y="70"/><di:waypoint x="2466" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f24_di" bpmnElement="sec_legal_litigation_f24"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f25_di" bpmnElement="sec_legal_litigation_f25"><di:waypoint x="2563" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f26_di" bpmnElement="sec_legal_litigation_f26"><di:waypoint x="2710" y="235"/><di:waypoint x="2710" y="260"/><di:waypoint x="2380" y="260"/><di:waypoint x="2380" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f27_di" bpmnElement="sec_legal_litigation_f27"><di:waypoint x="2563" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f28_di" bpmnElement="sec_legal_litigation_f28"><di:waypoint x="2760" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f29_di" bpmnElement="sec_legal_litigation_f29"><di:waypoint x="2925" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f30_di" bpmnElement="sec_legal_litigation_f30"><di:waypoint x="3065" y="70"/><di:waypoint x="3110" y="70"/><di:waypoint x="3110" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f31_di" bpmnElement="sec_legal_litigation_f31"><di:waypoint x="3255" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f32_di" bpmnElement="sec_legal_litigation_f32"><di:waypoint x="3065" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f33_di" bpmnElement="sec_legal_litigation_f33"><di:waypoint x="3255" y="70"/><di:waypoint x="3352" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f34_di" bpmnElement="sec_legal_litigation_f34"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f35_di" bpmnElement="sec_legal_litigation_f35"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f36_di" bpmnElement="sec_legal_litigation_f36"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f37_di" bpmnElement="sec_legal_litigation_f37"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f38_di" bpmnElement="sec_legal_litigation_f38"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_litigation_f39_di" bpmnElement="sec_legal_litigation_f39"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,91 @@
+{
+  "key": "sec-bank-account-opening/vcip",
+  "version": "1.0.0",
+  "pack": "sec.bank.account-opening",
+  "title": {
+    "en": "V-CIP: live video identification",
+    "hi": "वी-सीआईपी: सजीव वीडियो पहचान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "livenessChecked",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Liveness checked",
+        "hi": "सजीवता जाँची गई"
+      }
+    },
+    {
+      "id": "geoTag",
+      "type": "geo",
+      "required": true,
+      "label": {
+        "en": "Geo-tag",
+        "hi": "जियो-टैग"
+      }
+    },
+    {
+      "id": "panCaptured",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "PAN image captured",
+        "hi": "पैन की छवि ली गई"
+      }
+    },
+    {
+      "id": "vcipRecordingRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Video recording reference",
+        "hi": "वीडियो रिकॉर्डिंग संदर्भ"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "vcipDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "pass",
+        "label": {
+          "en": "Pass",
+          "hi": "सफल"
+        }
+      },
+      {
+        "value": "reschedule",
+        "label": {
+          "en": "Reschedule",
+          "hi": "पुनर्निर्धारित करें"
+        }
+      },
+      {
+        "value": "fail",
+        "label": {
+          "en": "Fail",
+          "hi": "असफल"
+        }
+      }
+    ]
+  },
+  "help": "Official of the RE (not an agent) conducts the session in India; liveness, geo-tag, PAN image, random questions; the recording is stored with date and time."
+}

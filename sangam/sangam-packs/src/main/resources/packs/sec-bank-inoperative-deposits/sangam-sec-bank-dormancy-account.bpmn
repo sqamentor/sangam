@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Dormancy of one account. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_dormancy_accoun" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_account_reactivated" name="sangam.account.reactivated"/>
+  <process id="sangam-sec-bank-dormancy-account" name="Dormancy of one account" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.inoperative-deposits</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="da_start" name="Account inactive"></startEvent>
+    <serviceTask id="da_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>yearsInactive=2;applicantRef=@key;opsSeat=OPS-CHECKER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="da_rule" name="Inoperative / unclaimed (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-dormancy</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="da_gw" name="Action?" default="sec_bank_dormancy_accoun_f6"></exclusiveGateway>
+    <serviceTask id="da_notice" name="Advance intimation to the customer and nominee" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>account-inoperative-notice</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email,letter</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="da_wait" name="Customer acts or notice period ends"></eventBasedGateway>
+    <endEvent id="da_endActive" name="Still within limits"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <intermediateCatchEvent id="da_active" name="Customer transacts / updates KYC"><messageEventDefinition messageRef="msg_sangam_account_reactivated"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="da_period" name="Notice period over"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P30D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="da_endReactivated" name="Reactivated"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="da_g2" name="Unclaimed 10 years?" default="sec_bank_dormancy_accoun_f11"></exclusiveGateway>
+    <serviceTask id="da_mark" name="Mark inoperative (no charge)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.markInoperative</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>mark</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>mark</operaton:string></operaton:field><operaton:field name="step"><operaton:string>mark</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="da_endInoperative" name="Inoperative"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>INOPERATIVE</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="da_approve" name="Approve DEA Fund transfer (checker)" operaton:candidateGroups="${opsSeat}" operaton:formKey="sangam:sec-bank-inoperative-deposits/approve"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>deaDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="da_apGw" name="" default="sec_bank_dormancy_accoun_f16"></exclusiveGateway>
+    <serviceTask id="da_transfer" name="Transfer to the DEA Fund" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>rbi.deaTransfer</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>transfer</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>dea</operaton:string></operaton:field><operaton:field name="step"><operaton:string>dea-transfer</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="da_endTransferred" name="Transferred to DEA Fund"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>TRANSFERRED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f1" sourceRef="da_start" targetRef="da_defaults"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f2" sourceRef="da_defaults" targetRef="da_rule"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f3" sourceRef="da_rule" targetRef="da_gw"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f4" name="inoperative / unclaimed" sourceRef="da_gw" targetRef="da_notice"><conditionExpression xsi:type="tFormalExpression">${dormancyAction == 'INOPERATIVE' || dormancyAction == 'DEA'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f5" sourceRef="da_notice" targetRef="da_wait"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f6" name="none" sourceRef="da_gw" targetRef="da_endActive"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f7" sourceRef="da_wait" targetRef="da_active"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f8" sourceRef="da_wait" targetRef="da_period"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f9" sourceRef="da_active" targetRef="da_endReactivated"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f10" sourceRef="da_period" targetRef="da_g2"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f11" name="inoperative" sourceRef="da_g2" targetRef="da_mark"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f12" sourceRef="da_mark" targetRef="da_endInoperative"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f13" name="10 years" sourceRef="da_g2" targetRef="da_approve"><conditionExpression xsi:type="tFormalExpression">${dormancyAction == 'DEA'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f14" sourceRef="da_approve" targetRef="da_apGw"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f15" name="approve" sourceRef="da_apGw" targetRef="da_transfer"><conditionExpression xsi:type="tFormalExpression">${deaDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f16" name="retain (dispute / legal hold)" sourceRef="da_apGw" targetRef="da_mark"/>
+    <sequenceFlow id="sec_bank_dormancy_accoun_f17" sourceRef="da_transfer" targetRef="da_endTransferred"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_dormancy_accoun_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_dormancy_accoun_plane" bpmnElement="sangam-sec-bank-dormancy-account">
+      <bpmndi:BPMNShape id="da_start_di" bpmnElement="da_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_defaults_di" bpmnElement="da_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_rule_di" bpmnElement="da_rule"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_gw_di" bpmnElement="da_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_notice_di" bpmnElement="da_notice"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_wait_di" bpmnElement="da_wait"><dc:Bounds x="870" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_endActive_di" bpmnElement="da_endActive"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_active_di" bpmnElement="da_active"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_period_di" bpmnElement="da_period"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_endReactivated_di" bpmnElement="da_endReactivated"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_g2_di" bpmnElement="da_g2"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_mark_di" bpmnElement="da_mark"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_endInoperative_di" bpmnElement="da_endInoperative"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_approve_di" bpmnElement="da_approve"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_apGw_di" bpmnElement="da_apGw"><dc:Bounds x="1530" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_transfer_di" bpmnElement="da_transfer"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="da_endTransferred_di" bpmnElement="da_endTransferred"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f1_di" bpmnElement="sec_bank_dormancy_accoun_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f2_di" bpmnElement="sec_bank_dormancy_accoun_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f3_di" bpmnElement="sec_bank_dormancy_accoun_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f4_di" bpmnElement="sec_bank_dormancy_accoun_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f5_di" bpmnElement="sec_bank_dormancy_accoun_f5"><di:waypoint x="780" y="195"/><di:waypoint x="870" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f6_di" bpmnElement="sec_bank_dormancy_accoun_f6"><di:waypoint x="590" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f7_di" bpmnElement="sec_bank_dormancy_accoun_f7"><di:waypoint x="920" y="195"/><di:waypoint x="981" y="195"/><di:waypoint x="981" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f8_di" bpmnElement="sec_bank_dormancy_accoun_f8"><di:waypoint x="920" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f9_di" bpmnElement="sec_bank_dormancy_accoun_f9"><di:waypoint x="1078" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f10_di" bpmnElement="sec_bank_dormancy_accoun_f10"><di:waypoint x="1078" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f11_di" bpmnElement="sec_bank_dormancy_accoun_f11"><di:waypoint x="1250" y="195"/><di:waypoint x="1460" y="195"/><di:waypoint x="1460" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f12_di" bpmnElement="sec_bank_dormancy_accoun_f12"><di:waypoint x="1770" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f13_di" bpmnElement="sec_bank_dormancy_accoun_f13"><di:waypoint x="1250" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f14_di" bpmnElement="sec_bank_dormancy_accoun_f14"><di:waypoint x="1440" y="195"/><di:waypoint x="1530" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f15_di" bpmnElement="sec_bank_dormancy_accoun_f15"><di:waypoint x="1580" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f16_di" bpmnElement="sec_bank_dormancy_accoun_f16"><di:waypoint x="1580" y="195"/><di:waypoint x="1625" y="195"/><di:waypoint x="1625" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dormancy_accoun_f17_di" bpmnElement="sec_bank_dormancy_accoun_f17"><di:waypoint x="1770" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

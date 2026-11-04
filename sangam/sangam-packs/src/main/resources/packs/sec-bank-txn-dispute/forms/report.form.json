@@ -1,0 +1,81 @@
+{
+  "key": "sec-bank-txn-dispute/report",
+  "version": "1.0.0",
+  "pack": "sec.bank.txn-dispute",
+  "title": {
+    "en": "Transaction dispute",
+    "hi": "लेनदेन विवाद"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "disputeType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Dispute type",
+        "hi": "विवाद का प्रकार"
+      }
+    },
+    {
+      "id": "txnRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Transaction reference (RRN / UTR)",
+        "hi": "लेनदेन संदर्भ (आरआरएन / यूटीआर)"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "channel",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Channel",
+        "hi": "माध्यम"
+      }
+    },
+    {
+      "id": "reportedWithinDays",
+      "type": "integer",
+      "required": false,
+      "label": {
+        "en": "Reported after (working days)",
+        "hi": "कितने कार्य दिवस बाद सूचित"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Re-KYC campaign. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_rekyc_campaign" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-bank-rekyc-campaign" name="Re-KYC campaign" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.rekyc</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="rk_timer" name="Monthly"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 7 2 * ?</timeCycle></timerEventDefinition></startEvent>
+    <serviceTask id="rk_load" name="Customers due" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>cbs.kycDue</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rk_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rk_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-sec-bank-rekyc-customer</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>100</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rk_fanGw" name="All started?" default="sec_bank_rekyc_campaign_f5"></exclusiveGateway>
+    <intermediateCatchEvent id="rk_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT1H</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="rk_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rk_doneGw" name="Round complete?" default="sec_bank_rekyc_campaign_f10"></exclusiveGateway>
+    <endEvent id="rk_end" name="Campaign closed"></endEvent>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f1" sourceRef="rk_timer" targetRef="rk_load"/>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f2" sourceRef="rk_open" targetRef="rk_fanOut"/>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f3" sourceRef="rk_fanOut" targetRef="rk_fanGw"/>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f4" name="next chunk" sourceRef="rk_fanGw" targetRef="rk_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f5" name="all started" sourceRef="rk_fanGw" targetRef="rk_poll"/>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f6" sourceRef="rk_poll" targetRef="rk_aggregate"/>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f7" sourceRef="rk_aggregate" targetRef="rk_doneGw"/>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f8" name="not yet" sourceRef="rk_doneGw" targetRef="rk_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f9" sourceRef="rk_load" targetRef="rk_open"/>
+    <sequenceFlow id="sec_bank_rekyc_campaign_f10" name="complete" sourceRef="rk_doneGw" targetRef="rk_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_rekyc_campaign_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_rekyc_campaign_plane" bpmnElement="sangam-sec-bank-rekyc-campaign">
+      <bpmndi:BPMNShape id="rk_timer_di" bpmnElement="rk_timer"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rk_load_di" bpmnElement="rk_load"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rk_open_di" bpmnElement="rk_open"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rk_fanOut_di" bpmnElement="rk_fanOut"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rk_fanGw_di" bpmnElement="rk_fanGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rk_poll_di" bpmnElement="rk_poll"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rk_aggregate_di" bpmnElement="rk_aggregate"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rk_doneGw_di" bpmnElement="rk_doneGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rk_end_di" bpmnElement="rk_end"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f1_di" bpmnElement="sec_bank_rekyc_campaign_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f2_di" bpmnElement="sec_bank_rekyc_campaign_f2"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f3_di" bpmnElement="sec_bank_rekyc_campaign_f3"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f4_di" bpmnElement="sec_bank_rekyc_campaign_f4"><di:waypoint x="730" y="95"/><di:waypoint x="730" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f5_di" bpmnElement="sec_bank_rekyc_campaign_f5"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f6_di" bpmnElement="sec_bank_rekyc_campaign_f6"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f7_di" bpmnElement="sec_bank_rekyc_campaign_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f8_di" bpmnElement="sec_bank_rekyc_campaign_f8"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="134"/><di:waypoint x="895" y="134"/><di:waypoint x="895" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f9_di" bpmnElement="sec_bank_rekyc_campaign_f9"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_campaign_f10_di" bpmnElement="sec_bank_rekyc_campaign_f10"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

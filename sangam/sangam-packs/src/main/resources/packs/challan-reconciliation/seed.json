@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "TREASURY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "TREASURY-RECON",
+      "role": "RECON",
+      "office": "TREASURY",
+      "reportsTo": "TO",
+      "name": {
+        "en": "Reconciliation desk",
+        "hi": "मिलान डेस्क"
+      }
+    },
+    {
+      "id": "TO",
+      "role": "TO",
+      "office": "TREASURY",
+      "reportsTo": null,
+      "name": {
+        "en": "Treasury officer",
+        "hi": "कोषागार अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "TREASURY-RECON",
+      "person": "cr.treasury-recon",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TO",
+      "person": "cr.to",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "RECON",
+      "name": {
+        "en": "Reconciliation desk",
+        "hi": "मिलान डेस्क"
+      }
+    },
+    {
+      "code": "TO",
+      "name": {
+        "en": "Treasury officer",
+        "hi": "कोषागार अधिकारी"
+      }
+    }
+  ]
+}

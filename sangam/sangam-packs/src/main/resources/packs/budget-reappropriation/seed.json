@@ -1,0 +1,106 @@
+{
+  "offices": [
+    {
+      "id": "DEPT-FIN",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "BUDGET-SO",
+      "role": "BUDGET-SO",
+      "office": "DEPT-FIN",
+      "reportsTo": "HOD-B",
+      "name": {
+        "en": "Budget section officer",
+        "hi": "बजट अनुभाग अधिकारी"
+      }
+    },
+    {
+      "id": "HOD-B",
+      "role": "HOD",
+      "office": "DEPT-FIN",
+      "reportsTo": "SECY-B",
+      "name": {
+        "en": "Head of department",
+        "hi": "विभागाध्यक्ष"
+      }
+    },
+    {
+      "id": "SECY-B",
+      "role": "SECRETARY",
+      "office": "DEPT-FIN",
+      "reportsTo": "FINSECY",
+      "name": {
+        "en": "Administrative secretary",
+        "hi": "प्रशासनिक सचिव"
+      }
+    },
+    {
+      "id": "FINSECY",
+      "role": "FIN-SECY",
+      "office": "DEPT-FIN",
+      "reportsTo": null,
+      "name": {
+        "en": "Finance secretary",
+        "hi": "वित्त सचिव"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "BUDGET-SO",
+      "person": "br.budget-so",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HOD-B",
+      "person": "br.hod-b",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SECY-B",
+      "person": "br.secy-b",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "FINSECY",
+      "person": "br.finsecy",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "BUDGET-SO",
+      "name": {
+        "en": "Budget section officer",
+        "hi": "बजट अनुभाग अधिकारी"
+      }
+    },
+    {
+      "code": "HOD",
+      "name": {
+        "en": "Head of department",
+        "hi": "विभागाध्यक्ष"
+      }
+    },
+    {
+      "code": "SECRETARY",
+      "name": {
+        "en": "Administrative secretary",
+        "hi": "प्रशासनिक सचिव"
+      }
+    },
+    {
+      "code": "FIN-SECY",
+      "name": {
+        "en": "Finance secretary",
+        "hi": "वित्त सचिव"
+      }
+    }
+  ]
+}

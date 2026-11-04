@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Inspection programme. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_inspection_programme" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_inspectionDrive" name="sangam.inspectionDrive"/>
+  <process id="sangam-inspection-programme" name="Inspection programme" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.inspection</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ip_timer" name="Monthly on the 1st"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 3 1 * ?</timeCycle></timerEventDefinition></startEvent>
+    <startEvent id="ip_manual" name="Special drive (message)"><messageEventDefinition messageRef="msg_sangam_inspectionDrive"/></startEvent>
+    <exclusiveGateway id="ip_join" name=""></exclusiveGateway>
+    <serviceTask id="ip_load" name="Establishments due (risk-ranked)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>inspection.establishments</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ip_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ip_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-inspection</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ip_fanGw" name="All started?" default="inspection_programme_f7"></exclusiveGateway>
+    <intermediateCatchEvent id="ip_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT1H</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="ip_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ip_doneGw" name="Round complete?" default="inspection_programme_f12"></exclusiveGateway>
+    <serviceTask id="ip_report" name="Programme report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>inspection-programme-report</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ip_end" name="Programme closed"></endEvent>
+    <sequenceFlow id="inspection_programme_f1" sourceRef="ip_timer" targetRef="ip_join"/>
+    <sequenceFlow id="inspection_programme_f2" sourceRef="ip_manual" targetRef="ip_join"/>
+    <sequenceFlow id="inspection_programme_f3" sourceRef="ip_join" targetRef="ip_load"/>
+    <sequenceFlow id="inspection_programme_f4" sourceRef="ip_open" targetRef="ip_fanOut"/>
+    <sequenceFlow id="inspection_programme_f5" sourceRef="ip_fanOut" targetRef="ip_fanGw"/>
+    <sequenceFlow id="inspection_programme_f6" name="next chunk" sourceRef="ip_fanGw" targetRef="ip_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="inspection_programme_f7" name="all started" sourceRef="ip_fanGw" targetRef="ip_poll"/>
+    <sequenceFlow id="inspection_programme_f8" sourceRef="ip_poll" targetRef="ip_aggregate"/>
+    <sequenceFlow id="inspection_programme_f9" sourceRef="ip_aggregate" targetRef="ip_doneGw"/>
+    <sequenceFlow id="inspection_programme_f10" name="not yet" sourceRef="ip_doneGw" targetRef="ip_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="inspection_programme_f11" sourceRef="ip_load" targetRef="ip_open"/>
+    <sequenceFlow id="inspection_programme_f12" name="complete" sourceRef="ip_doneGw" targetRef="ip_report"/>
+    <sequenceFlow id="inspection_programme_f13" sourceRef="ip_report" targetRef="ip_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="inspection_programme_diagram">
+    <bpmndi:BPMNPlane id="inspection_programme_plane" bpmnElement="sangam-inspection-programme">
+      <bpmndi:BPMNShape id="ip_timer_di" bpmnElement="ip_timer"><dc:Bounds x="52" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_manual_di" bpmnElement="ip_manual"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_join_di" bpmnElement="ip_join"><dc:Bounds x="210" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_load_di" bpmnElement="ip_load"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_open_di" bpmnElement="ip_open"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_fanOut_di" bpmnElement="ip_fanOut"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_fanGw_di" bpmnElement="ip_fanGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_poll_di" bpmnElement="ip_poll"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_aggregate_di" bpmnElement="ip_aggregate"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_doneGw_di" bpmnElement="ip_doneGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_report_di" bpmnElement="ip_report"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ip_end_di" bpmnElement="ip_end"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="inspection_programme_f1_di" bpmnElement="inspection_programme_f1"><di:waypoint x="88" y="195"/><di:waypoint x="149" y="195"/><di:waypoint x="149" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f2_di" bpmnElement="inspection_programme_f2"><di:waypoint x="88" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f3_di" bpmnElement="inspection_programme_f3"><di:waypoint x="260" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f4_di" bpmnElement="inspection_programme_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f5_di" bpmnElement="inspection_programme_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f6_di" bpmnElement="inspection_programme_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="730" y="135"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f7_di" bpmnElement="inspection_programme_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f8_di" bpmnElement="inspection_programme_f8"><di:waypoint x="1078" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f9_di" bpmnElement="inspection_programme_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f10_di" bpmnElement="inspection_programme_f10"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="120"/><di:waypoint x="1060" y="120"/><di:waypoint x="1060" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f11_di" bpmnElement="inspection_programme_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f12_di" bpmnElement="inspection_programme_f12"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_programme_f13_di" bpmnElement="inspection_programme_f13"><di:waypoint x="1605" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

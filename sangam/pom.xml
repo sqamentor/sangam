@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sangam product build (Stage C). Operaton is consumed as a dependency and extended through plugins (ADR-D-16). -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.sangam</groupId>
+  <artifactId>sangam-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Sangam</name>
+  <url>https://github.com/sqamentor/sangam</url>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
+  </licenses>
+
+  <!-- Module ownership: ARCHITECTURE.md section 3. Each module is owned by one workstream. -->
+  <modules>
+    <module>sangam-core</module>
+    <module>sangam-persistence</module>
+    <module>sangam-engine</module>
+    <module>sangam-security</module>
+    <module>sangam-integration</module>
+    <!-- US-HEALTH workstream: FHIR R4 / SMART, X12 005010, Da Vinci PAS, CDS Hooks -->
+    <module>sangam-connectors-health</module>
+    <module>sangam-flowable-ports</module>
+    <module>sangam-rest</module>
+    <module>sangam-packs</module>
+    <module>sangam-compliance</module>
+    <module>sangam-config</module>
+    <module>sangam-ledger</module>
+    <module>sangam-registry</module>
+    <module>sangam-billing</module>
+    <!-- GENERIC-CASE-PROGRAMME workstream: N04/N16 case file, meetings, references; N15 programmes and returns -->
+    <module>sangam-case</module>
+    <module>sangam-programme</module>
+    <module>sangam-resources</module>
+    <!-- GENERIC-FIELD-GEO workstream: N13 geometry/jurisdiction/geofence; N05 field capture + N17 dispatch -->
+    <module>sangam-geo</module>
+    <module>sangam-field</module>
+    <module>sangam-server</module>
+    <module>sdks/java</module>
+    <!-- SCALE workstream (SCALE-ARCHITECTURE.md) -->
+    <module>sangam-cell</module>
+    <module>sangam-control-plane</module>
+    <module>sangam-gateway</module>
+    <module>sangam-rollup</module>
+  </modules>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <version.operaton>2.2.0</version.operaton>
+    <!-- 2.22.3: Operaton FEEL needs >= 2.22.1; 2.22.3 fixes the OSV findings (spike E12-E15) -->
+    <version.jackson>2.22.3</version.jackson>
+    <!-- D-7 / LIC-7: 5.x only after legal review -->
+    <version.liquibase>4.33.0</version.liquibase>
+    <version.junit>5.11.4</version.junit>
+    <version.testcontainers>1.21.4</version.testcontainers>
+    <version.postgresql>42.7.7</version.postgresql>
+    <version.mariadb>3.5.3</version.mariadb>
+    <version.mssql>12.10.1.jre11</version.mssql>
+    <version.hikari>6.3.0</version.hikari>
+    <version.slf4j>2.0.17</version.slf4j>
+    <version.h2>2.3.232</version.h2>
+    <!-- The one Spring line for every module: the Boot version operaton-bpm-spring-boot-starter 2.2.0 is built
+         against (operaton-root 2.2.0: Spring Boot 4.1.2, Spring Framework 7.0.10, Spring Security 7.1.2). -->
+    <version.spring-boot>4.1.2</version.spring-boot>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.operaton.bpm</groupId>
+        <artifactId>operaton-bom</artifactId>
+        <version>${version.operaton}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${version.jackson}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${version.junit}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${version.testcontainers}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Spring Boot 4.1.2 BOM (manages Spring Framework 7.0.10 and Spring Security 7.1.2). Imported after the BOMs
+           above and below the explicit pins, so Jackson 2.22.3, JUnit, Testcontainers, H2, Hikari, Liquibase 4.33.0
+           (D-7) and the JDBC drivers keep the versions set in this file. Modules must not import another Spring,
+           Spring Security or Spring Boot BOM. -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${version.spring-boot}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-core</artifactId>
+        <version>${version.liquibase}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>${version.postgresql}</version>
+      </dependency>
+      <!-- LIC-4: the MariaDB driver (LGPL-2.1) is the shipped MySQL driver; Connector/J is never bundled -->
+      <dependency>
+        <groupId>org.mariadb.jdbc</groupId>
+        <artifactId>mariadb-java-client</artifactId>
+        <version>${version.mariadb}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.microsoft.sqlserver</groupId>
+        <artifactId>mssql-jdbc</artifactId>
+        <version>${version.mssql}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>${version.h2}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>${version.hikari}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${version.slf4j}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${version.slf4j}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-persistence</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-engine</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-security</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-integration</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-flowable-ports</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-rest</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-packs</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-compliance</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-config</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-ledger</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-billing</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-resources</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-cell</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-case</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.sangam</groupId>
+        <artifactId>sangam-programme</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.14.0</version>
+          <configuration>
+            <parameters>true</parameters>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.3</version>
+          <configuration>
+            <!-- quoted: the project path contains spaces -->
+            <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}"</argLine>
+            <systemPropertyVariables>
+              <!-- Testcontainers with Docker 29 -->
+              <api.version>1.44</api.version>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>3.5.3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.4.2</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

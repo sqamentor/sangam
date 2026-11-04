@@ -1,0 +1,193 @@
+# SPDX-License-Identifier: Apache-2.0
+# Database test matrix, SANGAM.md CF-11 (supersedes "all Tier-1 on every PR"):
+#   every PR      : PostgreSQL + each affected Tier-1 DB when the change touches dialect-specific SQL, mappings or
+#                   migrations (shared migrations/mappings -> all Tier-1);
+#   nightly       : full Tier-1 matrix (PostgreSQL, Oracle, SQL Server, MySQL 8.4 - ARCHITECTURE.md 1.5);
+#   weekly        : Tier 2 (MariaDB, Db2 experimental) - R17;
+#   release       : full Tier-1 matrix, mandatory (VIII.9 condition 2) - called by release.yml.
+# Images and settings = the Stage B Testcontainers set (spike/RUN-QUEUE.md): postgres:17, Oracle Free 23,
+# SQL Server 2022 with READ_COMMITTED_SNAPSHOT ON, MySQL 8.4 with READ-COMMITTED / utf8mb4.
+# Oracle JDBC is fetched by the CI build at test scope only, never shipped (LIC-2).
+name: db-matrix
+
+on:
+  pull_request:
+    paths: ["sangam/**", ".github/workflows/db-matrix.yml"]
+  schedule:
+    - cron: "30 20 * * *"   # nightly 02:00 IST: Tier-1
+    - cron: "30 21 * * 6"   # weekly Sunday 03:00 IST: Tier-2
+  workflow_dispatch:
+    inputs:
+      dbs:
+        description: "Comma-separated: postgres,oracle,sqlserver,mysql,mariadb,db2"
+        default: "postgres,oracle,sqlserver,mysql"
+        required: true
+  workflow_call:
+    inputs:
+      dbs:
+        type: string
+        default: "postgres,oracle,sqlserver,mysql"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: db-matrix-${{ github.ref }}-${{ github.event_name }}-${{ inputs.dbs || github.event.schedule || 'pr' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  MAVEN_ARGS: -B -ntp
+  TZ: UTC
+
+jobs:
+  plan:
+    name: Plan DB matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      dbs: ${{ steps.plan.outputs.dbs }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            shared:
+              - 'sangam/sangam-persistence/**'
+              - 'sangam/**/*.sql'
+              - 'sangam/**/db/changelog/**'
+              - 'sangam/**/mappings/**'
+              - 'sangam/**/*Mapping*.xml'
+              - 'sangam/**/*Dialect*.java'
+              - 'sangam/**/dialect/**'
+              - 'sangam/**/LeaseTable*.java'
+              - 'sangam/sangam-engine/PATCHES.md'
+              - 'sangam/pom.xml'
+            oracle:
+              - 'sangam/**/oracle/**'
+              - 'sangam/**/*[Oo]racle*'
+            sqlserver:
+              - 'sangam/**/sqlserver/**'
+              - 'sangam/**/mssql/**'
+              - 'sangam/**/*[Ss]ql[Ss]erver*'
+              - 'sangam/**/*[Mm]ssql*'
+            mysql:
+              - 'sangam/**/mysql/**'
+              - 'sangam/**/*[Mm]y[Ss]ql*'
+              - 'sangam/**/*[Mm]aria*'
+      - name: Compute matrix
+        id: plan
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          INPUT_DBS: ${{ inputs.dbs }}
+          CH_SHARED: ${{ steps.changes.outputs.shared }}
+          CH_ORACLE: ${{ steps.changes.outputs.oracle }}
+          CH_SQLSERVER: ${{ steps.changes.outputs.sqlserver }}
+          CH_MYSQL: ${{ steps.changes.outputs.mysql }}
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          ev = os.environ["EVENT"]; sched = os.environ.get("SCHEDULE", ""); given = os.environ.get("INPUT_DBS", "")
+          tier1 = ["postgres", "oracle", "sqlserver", "mysql"]
+          if given.strip():
+              dbs = [d.strip() for d in given.split(",") if d.strip()]
+              why = "explicit input"
+          elif ev == "schedule" and sched == "30 21 * * 6":
+              dbs, why = ["mariadb", "db2"], "weekly Tier-2"
+          elif ev == "schedule":
+              dbs, why = tier1, "nightly Tier-1"
+          elif ev == "pull_request":
+              if os.environ.get("CH_SHARED") == "true":
+                  dbs, why = tier1, "PR touches shared SQL / mappings / migrations"
+              else:
+                  dbs = ["postgres"] + [d for d, k in (("oracle", "CH_ORACLE"), ("sqlserver", "CH_SQLSERVER"), ("mysql", "CH_MYSQL")) if os.environ.get(k) == "true"]
+                  why = "PR: PostgreSQL + affected dialects"
+          else:
+              dbs, why = ["postgres"], "default"
+          allowed = set(tier1 + ["mariadb", "db2"])
+          bad = [d for d in dbs if d not in allowed]
+          if bad:
+              raise SystemExit(f"unknown database(s): {bad}")
+          tier = {"postgres": "1", "oracle": "1", "sqlserver": "1", "mysql": "1", "mariadb": "2", "db2": "2-experimental"}
+          inc = [{"db": d, "tier": tier[d]} for d in dict.fromkeys(dbs)]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("matrix=" + json.dumps({"include": inc}) + "\n")
+              f.write("dbs=" + ",".join(d["db"] for d in inc) + "\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write(f"### DB matrix ({why})\n\n" + "\n".join(f"- {d['db']} (Tier {d['tier']})" for d in inc) + "\n")
+          PY
+
+  test:
+    name: DB ${{ matrix.db }}
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    continue-on-error: ${{ matrix.tier == '2-experimental' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      # Read by the Sangam integration-test base classes (same images as spike Databases.java).
+      SANGAM_IT_DB: ${{ matrix.db }}
+      SANGAM_IT_IMAGE_POSTGRES: postgres:17
+      SANGAM_IT_IMAGE_ORACLE: gvenzl/oracle-free:23-slim-faststart
+      SANGAM_IT_IMAGE_SQLSERVER: mcr.microsoft.com/mssql/server:2022-latest
+      SANGAM_IT_IMAGE_MYSQL: mysql:8.4
+      SANGAM_IT_IMAGE_MARIADB: mariadb:11.4
+      SANGAM_IT_IMAGE_DB2: icr.io/db2_community/db2:12.1.2.0
+      TESTCONTAINERS_RYUK_DISABLED: "false"
+    defaults:
+      run:
+        working-directory: sangam
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: sangam/**/pom.xml
+      - name: Free disk space for large DB images
+        if: matrix.db == 'oracle' || matrix.db == 'sqlserver' || matrix.db == 'db2'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
+      - name: Pre-pull database image
+        run: |
+          img_var="SANGAM_IT_IMAGE_$(echo '${{ matrix.db }}' | tr a-z A-Z)"
+          docker pull "${!img_var}"
+      - name: Integration tests on ${{ matrix.db }}
+        run: |
+          extra=""
+          # LIC-2: ojdbc at test scope through a CI-only profile; never in a shipped artefact.
+          [ "${{ matrix.db }}" = "oracle" ] && extra="-Psangam-oracle-driver"
+          [ "${{ matrix.db }}" = "db2" ] && extra="-Psangam-db2-driver"
+          mvn $MAVEN_ARGS verify -Psangam-db-it -Dsangam.db=${{ matrix.db }} $extra
+      - name: Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-${{ matrix.db }}-reports
+          path: |
+            sangam/**/target/surefire-reports/
+            sangam/**/target/failsafe-reports/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  result:
+    name: DB matrix result
+    needs: [plan, test]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Gate
+        run: |
+          echo "databases: ${{ needs.plan.outputs.dbs }}"
+          echo "test result: ${{ needs.test.result }}"
+          [ "${{ needs.plan.result }}" = "success" ] || exit 1
+          case "${{ needs.test.result }}" in success|skipped) ;; *) exit 1 ;; esac

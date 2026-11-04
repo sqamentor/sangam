@@ -1,0 +1,302 @@
+# SPDX-License-Identifier: Apache-2.0
+# Default values for the Sangam chart. Secrets are NEVER written here: every credential comes from an
+# existing Kubernetes Secret (existingSecret) that the operator creates (or that an external secrets operator
+# / sealed secret provides).
+
+global:
+  # Air-gapped installs: point at the internal registry the bundle was loaded into (deploy/airgap/load-images.*).
+  imageRegistry: ""
+  imagePullSecrets: []
+  # Extra labels on every object.
+  labels: {}
+
+nameOverride: ""
+fullnameOverride: ""
+
+# ------------------------------------------------------------------------------------------------ database
+database:
+  # postgres | oracle | sqlserver | mysql  (the four Tier-1 databases, ARCHITECTURE.md 1.5)
+  type: postgres
+  host: ""
+  # 0 = the default port of the type (5432, 1521, 1433, 3306)
+  port: 0
+  # PostgreSQL/SQL Server/MySQL: database name. Oracle: service name (e.g. FREEPDB1, SANGAMPDB).
+  name: sangam
+  # Full JDBC URL override (wins over host/port/name).
+  jdbcUrl: ""
+  # Extra JDBC parameters appended to the generated URL (without leading ? or ;).
+  params: ""
+  # REQUIRED: Secret holding the application user's credentials.
+  existingSecret: ""
+  usernameKey: username
+  passwordKey: password
+  pool:
+    maximumPoolSize: 30
+    minimumIdle: 5
+    connectionTimeoutMs: 10000
+    maxLifetimeMs: 1500000
+  sqlserver:
+    # The server refuses SQL Server without READ_COMMITTED_SNAPSHOT ON (VI.1.6); TLS on by default.
+    encrypt: true
+    trustServerCertificate: false
+
+# Bring-your-own JDBC driver (LIC-2/3/4): Oracle (ojdbc11/ojdbc17) and Db2 drivers are never shipped.
+# Exactly one source; jars land in /opt/sangam/drivers.
+drivers:
+  # A PVC (ReadOnlyMany or ReadWriteOnce) holding the jar(s).
+  existingClaim: ""
+  # Or an image you build that contains the jar(s) under initImageDir; copied by an init container.
+  initImage: ""
+  initImageDir: /drivers
+  initImagePullPolicy: IfNotPresent
+
+# ------------------------------------------------------------------------------------------------ Liquibase (R12)
+liquibase:
+  # job     : a single Helm pre-install/pre-upgrade hook Job runs the migrations (Liquibase session lock + Operaton
+  #           schema update) before any new server pod starts; server pods only validate. Recommended (R12).
+  # startup : every server pod runs migrations at start-up (the Liquibase lock serialises them). Dev/small installs.
+  # none    : the DBA applies the SQL produced by `SANGAM_LIQUIBASE_MODE=update-sql` out of band; pods validate.
+  mode: job
+  job:
+    activeDeadlineSeconds: 1800
+    # 0 on purpose: a failed migration is NOT retried automatically (see deploy/README.md "Failed migration").
+    backoffLimit: 0
+    ttlSecondsAfterFinished: 86400
+    resources:
+      requests: { cpu: 250m, memory: 768Mi }
+      limits: { memory: 1536Mi }
+    extraEnv: []
+
+# ------------------------------------------------------------------------------------------------ identity (OIDC)
+oidc:
+  # The `iss` the tokens carry (public URL of the realm / Parichay / state IdP broker).
+  issuerUri: ""
+  # Optional internal JWKS URL (when the pods cannot reach the public issuer URL).
+  jwkSetUri: ""
+  audience: sangam-server
+  tenantClaim: tenant
+  rolesClaim: roles
+  seatsClaim: seats
+  # Public client used by the browser (PKCE).
+  uiClientId: sangam-ui
+
+# ------------------------------------------------------------------------------------------------ telemetry (R13, R56)
+otel:
+  # Off by default: no outbound telemetry unless configured (R56).
+  enabled: false
+  endpoint: http://otel-collector.observability:4318
+  protocol: http/protobuf
+  samplerRatio: "0.1"
+  resourceAttributes: ""
+
+metrics:
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    labels: {}
+
+# ------------------------------------------------------------------------------------------------ server
+server:
+  image:
+    registry: ghcr.io
+    repository: sqamentor/sangam-server
+    tag: ""            # defaults to .Chart.AppVersion
+    digest: ""         # set in production / air-gapped installs (sha256:...)
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  springProfiles: ""   # extra profiles, appended after the database type
+  javaToolOptions: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -XX:+UseG1GC -Duser.timezone=UTC -Dfile.encoding=UTF-8"
+  defaultTenant: ""
+  # Key material (draft encryption keys, audit/package signing keys, connector client certificates). Mounted
+  # read-only at /opt/sangam/secrets. Rotation: deploy/README.md "Key rotation".
+  keys:
+    existingSecret: ""
+  # Extra Spring configuration (rendered to /opt/sangam/config/application-helm.yaml). No secrets.
+  config: {}
+  env: []
+  envFrom: []
+  resources:
+    requests: { cpu: "1", memory: 2Gi }
+    limits: { memory: 3Gi }
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile: { type: RuntimeDefault }
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities: { drop: [ALL] }
+  service:
+    type: ClusterIP
+    port: 8080
+    managementPort: 8081
+    annotations: {}
+  probes:
+    startup:   { path: /actuator/health/liveness,  periodSeconds: 5,  failureThreshold: 72, timeoutSeconds: 3 }
+    liveness:  { path: /actuator/health/liveness,  periodSeconds: 10, failureThreshold: 6,  timeoutSeconds: 3 }
+    readiness: { path: /actuator/health/readiness, periodSeconds: 5,  failureThreshold: 3,  timeoutSeconds: 3 }
+  # Job executor drain: the server stops acquiring jobs on SIGTERM and finishes running ones.
+  terminationGracePeriodSeconds: 90
+  preStopSleepSeconds: 10
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 0
+  pdb:
+    enabled: true
+    minAvailable: 1
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  topologySpread: true
+  podAnnotations: {}
+  podLabels: {}
+
+# ------------------------------------------------------------------------------------------------ UI
+ui:
+  enabled: true
+  image:
+    registry: ghcr.io
+    repository: sqamentor/sangam-ui
+    tag: ""
+    digest: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  environmentLabel: production
+  defaultLocale: en
+  locales: en,hi
+  cspConnectExtra: ""
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { memory: 128Mi }
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+    runAsGroup: 101
+    fsGroup: 101
+    seccompProfile: { type: RuntimeDefault }
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities: { drop: [ALL] }
+  service:
+    type: ClusterIP
+    port: 8080
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+  pdb:
+    enabled: true
+    minAvailable: 1
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podAnnotations: {}
+
+# ------------------------------------------------------------------------------------------------ ingress
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: sangam.example.gov.in
+  tls:
+    enabled: true
+    secretName: ""
+  # UI at /, API at /api and /engine-rest (server). With ui.enabled=false everything goes to the server.
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  automountServiceAccountToken: false
+
+# ------------------------------------------------------------------------------------------------ network policies
+networkPolicy:
+  enabled: true
+  # Namespace of the ingress controller (matched by kubernetes.io/metadata.name).
+  ingressControllerNamespace: ingress-nginx
+  # Namespace allowed to scrape :8081 (Prometheus).
+  monitoringNamespace: monitoring
+  # Pods (any namespace in clientNamespaces, or this namespace) labelled sangam.io/api-client=true may call the API
+  # (external-task workers, integrations).
+  clientNamespaces: []
+  dns:
+    namespace: kube-system
+    podLabels: { k8s-app: kube-dns }
+  # Where the database lives: CIDRs (VM / managed DB) and/or in-cluster selectors.
+  database:
+    cidrs: []
+    namespaceSelector: {}
+    podSelector: {}
+  # Identity provider (JWKS fetch), when outside the cluster.
+  oidc:
+    cidrs: []
+    ports: [443]
+  otelCollector:
+    namespace: observability
+    podLabels: {}
+  # Connector targets (IFMS/PFMS SFTP, eSign ESP, DLT SMS, DigiLocker, payment gateways, SMTP). Air-gapped
+  # default: none. Each item is a NetworkPolicyEgressRule.
+  extraEgress: []
+
+# ------------------------------------------------------------------------------------------------ backups (ADR-D-12)
+# EXAMPLES that meet RPO <= 5 min / RTO <= 1 h together with asynchronous replication to the DR site
+# (deploy/README.md "Backup and restore", "Disaster recovery"). Review them with the DBA before production.
+backup:
+  enabled: false
+  # Credentials of a backup user (keys: username, password). Defaults to database.existingSecret.
+  existingSecret: ""
+  retentionDays: 14
+  persistence:
+    existingClaim: ""
+    create: true
+    storageClass: ""
+    size: 200Gi
+    # The CronJobs (and pg-receivewal) may land on different nodes: use ReadWriteMany storage (NFS/CephFS),
+    # or keep ReadWriteOnce and pin all backup pods to one node.
+    accessModes: [ReadWriteOnce]
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+  postgres:
+    image: postgres:17
+    fullSchedule: "15 1 * * *"          # daily base backup (pg_basebackup, tar + gzip, WAL streamed)
+    logicalSchedule: "45 2 * * 0"       # weekly pg_dump -Fc (portable, for restore tests)
+    # Continuous WAL archive with pg_receivewal (a Deployment, not a CronJob): RPO = seconds.
+    walReceiver:
+      enabled: true
+      slot: sangam_backup
+  oracle:
+    # RMAN is not redistributable: supply an image with the Oracle client + rman (LIC-2).
+    image: ""
+    fullSchedule: "15 1 * * 0"          # weekly level 0
+    incrementalSchedule: "15 1 * * 1-6" # daily level 1
+    archivelogSchedule: "*/5 * * * *"   # archive log backup every 5 min
+    connectAs: "AS SYSBACKUP"
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    fullSchedule: "15 1 * * *"
+    diffSchedule: "15 */6 * * *"
+    logSchedule: "*/5 * * * *"
+    # Path as seen BY THE SQL SERVER host (BACKUP ... TO DISK runs on the server), or a URL (S3-compatible, 2022).
+    destination: /var/opt/mssql/backup
+    destinationType: DISK               # DISK | URL
+    urlCredential: ""                   # name of the SQL Server CREDENTIAL for TO URL
+  mysql:
+    image: mysql:8.4
+    fullSchedule: "15 1 * * *"          # mysqldump --single-transaction (consistent, GTIDs recorded)
+    binlogSchedule: "*/5 * * * *"       # FLUSH BINARY LOGS + copy closed binlogs (RPO <= 5 min)
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile: { type: RuntimeDefault }
+
+extraObjects: []

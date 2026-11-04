@@ -1,0 +1,72 @@
+{
+  "key": "up17-prior-authorisation/review",
+  "version": "1.0.0",
+  "pack": "universal.up17-prior-authorisation",
+  "title": {
+    "en": "Clinical review",
+    "hi": "नैदानिक समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "clinicalCriteriaMet",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Clinical criteria met",
+        "hi": "नैदानिक मानदंड पूरे"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "clinicalDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      },
+      {
+        "value": "peer",
+        "label": {
+          "en": "Refer for peer review",
+          "hi": "सहकर्मी समीक्षा हेतु भेजें"
+        }
+      }
+    ]
+  }
+}

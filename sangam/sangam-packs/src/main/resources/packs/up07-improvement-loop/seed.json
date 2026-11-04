@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "PMO",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PROCESS-OWNER",
+      "role": "OWNER",
+      "office": "PMO",
+      "reportsTo": "PROCESS-BOARD",
+      "name": {
+        "en": "Process owner",
+        "hi": "प्रक्रिया स्वामी"
+      }
+    },
+    {
+      "id": "PROCESS-BOARD",
+      "role": "PROCESSBOARD",
+      "office": "PMO",
+      "reportsTo": null,
+      "name": {
+        "en": "Process board",
+        "hi": "प्रक्रिया बोर्ड"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PROCESS-OWNER",
+      "person": "u7.process-owner",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PROCESS-BOARD",
+      "person": "u7.process-board",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "OWNER",
+      "name": {
+        "en": "Process owner",
+        "hi": "प्रक्रिया स्वामी"
+      }
+    },
+    {
+      "code": "PROCESSBOARD",
+      "name": {
+        "en": "Process board",
+        "hi": "प्रक्रिया बोर्ड"
+      }
+    }
+  ]
+}

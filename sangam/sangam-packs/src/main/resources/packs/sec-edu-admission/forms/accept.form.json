@@ -1,0 +1,47 @@
+{
+  "key": "sec-edu-admission/accept",
+  "version": "1.0.0",
+  "pack": "sec.edu.admission",
+  "title": {
+    "en": "Accept offer and pay fee",
+    "hi": "प्रस्ताव स्वीकार कर शुल्क जमा करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "offerDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "declined",
+        "label": {
+          "en": "Declined",
+          "hi": "अस्वीकार किया"
+        }
+      }
+    ]
+  }
+}

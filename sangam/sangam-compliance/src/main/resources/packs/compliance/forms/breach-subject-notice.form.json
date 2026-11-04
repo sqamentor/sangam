@@ -1,0 +1,1 @@
+{"key":"compliance/breach-subject-notice","title":{"en":"Notice to data subjects"},"fields":[{"key":"subjectNotice","type":"json","required":true,"label":{"en":"Notice items (pack subjectItems)"}}]}

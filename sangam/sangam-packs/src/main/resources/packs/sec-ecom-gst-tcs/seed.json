@@ -1,0 +1,37 @@
+{
+  "offices": [
+    {
+      "id": "TAX",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "TAX-TEAM",
+      "role": "TAX",
+      "office": "TAX",
+      "reportsTo": null,
+      "name": {
+        "en": "Indirect tax team",
+        "hi": "अप्रत्यक्ष कर दल"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "TAX-TEAM",
+      "person": "egt.tax-team",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "TAX",
+      "name": {
+        "en": "Indirect tax team",
+        "hi": "अप्रत्यक्ष कर दल"
+      }
+    }
+  ]
+}

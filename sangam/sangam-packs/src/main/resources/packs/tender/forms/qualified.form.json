@@ -1,0 +1,36 @@
+{
+  "key": "tender/qualified",
+  "version": "1.0.0",
+  "pack": "gov.tender",
+  "title": {
+    "en": "Record technically qualified bidders",
+    "hi": "तकनीकी रूप से योग्य बोलीदाता दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "technicallyQualified",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Technically qualified bidders",
+        "hi": "तकनीकी रूप से योग्य बोलीदाता"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "PLANT",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "QC-ANALYST",
+      "role": "QC",
+      "office": "PLANT",
+      "reportsTo": "QA-HEAD",
+      "name": {
+        "en": "QC analyst",
+        "hi": "गुणवत्ता नियंत्रण विश्लेषक"
+      }
+    },
+    {
+      "id": "QA-HEAD",
+      "role": "QAHEAD",
+      "office": "PLANT",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of quality assurance",
+        "hi": "गुणवत्ता आश्वासन प्रमुख"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "QC-ANALYST",
+      "person": "mbr.qc-analyst",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "QA-HEAD",
+      "person": "mbr.qa-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "QC",
+      "name": {
+        "en": "QC analyst",
+        "hi": "गुणवत्ता नियंत्रण विश्लेषक"
+      }
+    },
+    {
+      "code": "QAHEAD",
+      "name": {
+        "en": "Head of quality assurance",
+        "hi": "गुणवत्ता आश्वासन प्रमुख"
+      }
+    }
+  ]
+}

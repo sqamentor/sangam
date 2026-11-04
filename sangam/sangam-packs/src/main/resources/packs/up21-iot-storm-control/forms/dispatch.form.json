@@ -1,0 +1,36 @@
+{
+  "key": "up21-iot-storm-control/dispatch",
+  "version": "1.0.0",
+  "pack": "universal.up21-iot-storm-control",
+  "title": {
+    "en": "Field maintenance",
+    "hi": "क्षेत्र रखरखाव"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "findings",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    },
+    {
+      "id": "photos",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Photographs (geo-tagged)",
+        "hi": "फ़ोटो (जियो-टैग)"
+      }
+    }
+  ]
+}

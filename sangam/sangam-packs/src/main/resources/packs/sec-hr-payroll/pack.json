@@ -1,0 +1,96 @@
+{
+  "id": "sec.hr.payroll",
+  "version": "1.0.0",
+  "name": {
+    "en": "Monthly payroll with PF and ESI returns",
+    "hi": "पीएफ एवं ईएसआई विवरणी सहित मासिक वेतन"
+  },
+  "domain": "HR",
+  "description": "Monthly: inputs frozen, payroll computed with PF (12 % on wages up to the ceiling) and ESI (0.75 % / 3.25 % up to the wage limit) by rule, maker-checker approval, wages paid by the 7th (Code on Wages s.17), PF ECR and ESI contributions filed and paid by the 15th, payslips issued.",
+  "mainProcesses": [
+    "sangam-sec-hr-payroll"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-hr-payroll/sangam-sec-hr-payroll.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-hr-payroll/sec-hr-statutory.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-hr-payroll/sec-hr-payroll-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-hr-payroll/sec-hr-payroll-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-payroll/forms/make.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-payroll/forms/pf.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-payroll/forms/esi.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-hr-payroll/seed.json"
+    }
+  ],
+  "seed": "packs/sec-hr-payroll/seed.json",
+  "connectors": [
+    {
+      "id": "hris.inputs",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Attendance and inputs"
+    },
+    {
+      "id": "bank.transfer",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Salary payment file"
+    },
+    {
+      "id": "epfo.ecr",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "PF ECR"
+    },
+    {
+      "id": "esic.contribution",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "ESI contribution"
+    },
+    {
+      "id": "docs.payslip",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Payslips"
+    }
+  ],
+  "covers": [
+    "SEC-HR-005",
+    "GP-01",
+    "GP-30",
+    "GP-12",
+    "UP-05"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution",
+    "sangam-core-sanction"
+  ]
+}

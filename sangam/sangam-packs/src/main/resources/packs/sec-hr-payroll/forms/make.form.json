@@ -1,0 +1,36 @@
+{
+  "key": "sec-hr-payroll/make",
+  "version": "1.0.0",
+  "pack": "sec.hr.payroll",
+  "title": {
+    "en": "Review payroll register (maker)",
+    "hi": "वेतन रजिस्टर की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "grossWages",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Gross wages (INR)",
+        "hi": "सकल मजदूरी (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

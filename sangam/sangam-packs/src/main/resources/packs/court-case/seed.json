@@ -1,0 +1,83 @@
+{
+  "offices": [
+    {
+      "id": "LEGAL",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "LEGAL-NODAL",
+      "role": "LEGALNODAL",
+      "office": "LEGAL",
+      "reportsTo": "JS-L",
+      "name": {
+        "en": "Nodal officer (litigation)",
+        "hi": "नोडल अधिकारी (वाद)"
+      }
+    },
+    {
+      "id": "DEPT-OFFICER",
+      "role": "DEPTOFFICER",
+      "office": "LEGAL",
+      "reportsTo": "LEGAL-NODAL",
+      "name": {
+        "en": "Dealing officer",
+        "hi": "संबंधित अधिकारी"
+      }
+    },
+    {
+      "id": "JS-L",
+      "role": "JS",
+      "office": "LEGAL",
+      "reportsTo": null,
+      "name": {
+        "en": "Joint Secretary",
+        "hi": "संयुक्त सचिव"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "LEGAL-NODAL",
+      "person": "cc.legal-nodal",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DEPT-OFFICER",
+      "person": "cc.dept-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "JS-L",
+      "person": "cc.js-l",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "LEGALNODAL",
+      "name": {
+        "en": "Nodal officer (litigation)",
+        "hi": "नोडल अधिकारी (वाद)"
+      }
+    },
+    {
+      "code": "DEPTOFFICER",
+      "name": {
+        "en": "Dealing officer",
+        "hi": "संबंधित अधिकारी"
+      }
+    },
+    {
+      "code": "JS",
+      "name": {
+        "en": "Joint Secretary",
+        "hi": "संयुक्त सचिव"
+      }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-15 Recertification campaign. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up15_recertification" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-up15-recertification" name="UP-15 Recertification campaign" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up15-recertification</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u15_timer" name="Monthly"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 6 1 * ?</timeCycle></timerEventDefinition></startEvent>
+    <serviceTask id="u15_load" name="Entities due" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>iam.entitiesDue</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>4</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u15_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u15_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-up15-recertify</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>100</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u15_fanGw" name="All started?" default="up15_recertification_f5"></exclusiveGateway>
+    <intermediateCatchEvent id="u15_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT1H</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="u15_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u15_doneGw" name="Round complete?" default="up15_recertification_f10"></exclusiveGateway>
+    <endEvent id="u15_end" name="Campaign closed"></endEvent>
+    <sequenceFlow id="up15_recertification_f1" sourceRef="u15_timer" targetRef="u15_load"/>
+    <sequenceFlow id="up15_recertification_f2" sourceRef="u15_open" targetRef="u15_fanOut"/>
+    <sequenceFlow id="up15_recertification_f3" sourceRef="u15_fanOut" targetRef="u15_fanGw"/>
+    <sequenceFlow id="up15_recertification_f4" name="next chunk" sourceRef="u15_fanGw" targetRef="u15_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up15_recertification_f5" name="all started" sourceRef="u15_fanGw" targetRef="u15_poll"/>
+    <sequenceFlow id="up15_recertification_f6" sourceRef="u15_poll" targetRef="u15_aggregate"/>
+    <sequenceFlow id="up15_recertification_f7" sourceRef="u15_aggregate" targetRef="u15_doneGw"/>
+    <sequenceFlow id="up15_recertification_f8" name="not yet" sourceRef="u15_doneGw" targetRef="u15_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up15_recertification_f9" sourceRef="u15_load" targetRef="u15_open"/>
+    <sequenceFlow id="up15_recertification_f10" name="complete" sourceRef="u15_doneGw" targetRef="u15_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up15_recertification_diagram">
+    <bpmndi:BPMNPlane id="up15_recertification_plane" bpmnElement="sangam-up15-recertification">
+      <bpmndi:BPMNShape id="u15_timer_di" bpmnElement="u15_timer"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15_load_di" bpmnElement="u15_load"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15_open_di" bpmnElement="u15_open"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15_fanOut_di" bpmnElement="u15_fanOut"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15_fanGw_di" bpmnElement="u15_fanGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15_poll_di" bpmnElement="u15_poll"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15_aggregate_di" bpmnElement="u15_aggregate"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15_doneGw_di" bpmnElement="u15_doneGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15_end_di" bpmnElement="u15_end"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up15_recertification_f1_di" bpmnElement="up15_recertification_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertification_f2_di" bpmnElement="up15_recertification_f2"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertification_f3_di" bpmnElement="up15_recertification_f3"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertification_f4_di" bpmnElement="up15_recertification_f4"><di:waypoint x="730" y="95"/><di:waypoint x="730" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertification_f5_di" bpmnElement="up15_recertification_f5"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertification_f6_di" bpmnElement="up15_recertification_f6"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertification_f7_di" bpmnElement="up15_recertification_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertification_f8_di" bpmnElement="up15_recertification_f8"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="134"/><di:waypoint x="895" y="134"/><di:waypoint x="895" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertification_f9_di" bpmnElement="up15_recertification_f9"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertification_f10_di" bpmnElement="up15_recertification_f10"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

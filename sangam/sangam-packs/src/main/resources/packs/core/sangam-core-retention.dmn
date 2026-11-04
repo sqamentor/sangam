@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sangam_core_retention" name="Retention category by case type (R61)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sangam-core-retention" name="Retention category by case type (R61)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sangam-core-retention_t" hitPolicy="FIRST">
+      <input id="sangam-core-retention_i0" label="Case type"><inputExpression id="sangam-core-retention_ie0" typeRef="string"><text>caseType</text></inputExpression></input>
+      <output id="sangam-core-retention_o0" label="Category" name="retentionCategory" typeRef="string"/>
+      <output id="sangam-core-retention_o1" label="Years" name="retentionYears" typeRef="integer"/>
+      <rule id="sangam-core-retention_r0"><description>policy files: permanent, review at 25 years</description>
+        <inputEntry id="sangam-core-retention_r0_i0"><text>"POLICY"</text></inputEntry>
+        <outputEntry id="sangam-core-retention_r0_o0"><text>"A"</text></outputEntry>
+        <outputEntry id="sangam-core-retention_r0_o1"><text>25</text></outputEntry>
+      </rule>
+      <rule id="sangam-core-retention_r1"><description>routine e-office files</description>
+        <inputEntry id="sangam-core-retention_r1_i0"><text>"FILE"</text></inputEntry>
+        <outputEntry id="sangam-core-retention_r1_o0"><text>"C"</text></outputEntry>
+        <outputEntry id="sangam-core-retention_r1_o1"><text>10</text></outputEntry>
+      </rule>
+      <rule id="sangam-core-retention_r2"><description>default (CSMOP 2022 category C, up to 10 years)</description>
+        <inputEntry id="sangam-core-retention_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="sangam-core-retention_r2_o0"><text>"C"</text></outputEntry>
+        <outputEntry id="sangam-core-retention_r2_o1"><text>10</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,60 @@
+{
+  "offices": [
+    {
+      "id": "SELLER-OPS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SELLER-ONBOARDING",
+      "role": "ONBOARDING",
+      "office": "SELLER-OPS",
+      "reportsTo": "SELLER-APPROVER",
+      "name": {
+        "en": "Seller onboarding desk",
+        "hi": "विक्रेता पंजीकरण डेस्क"
+      }
+    },
+    {
+      "id": "SELLER-APPROVER",
+      "role": "APPROVER",
+      "office": "SELLER-OPS",
+      "reportsTo": null,
+      "name": {
+        "en": "Seller approver",
+        "hi": "विक्रेता अनुमोदक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SELLER-ONBOARDING",
+      "person": "ees.seller-onboarding",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SELLER-APPROVER",
+      "person": "ees.seller-approver",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "ONBOARDING",
+      "name": {
+        "en": "Seller onboarding desk",
+        "hi": "विक्रेता पंजीकरण डेस्क"
+      }
+    },
+    {
+      "code": "APPROVER",
+      "name": {
+        "en": "Seller approver",
+        "hi": "विक्रेता अनुमोदक"
+      }
+    }
+  ]
+}

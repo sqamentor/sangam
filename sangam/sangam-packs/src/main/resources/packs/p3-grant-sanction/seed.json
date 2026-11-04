@@ -1,0 +1,190 @@
+{
+  "offices": [
+    {
+      "id": "DIR-WEL",
+      "parent": ""
+    },
+    {
+      "id": "DIST-A",
+      "parent": "DIR-WEL"
+    },
+    {
+      "id": "BLOCK-A1",
+      "parent": "DIST-A"
+    }
+  ],
+  "seats": [
+    {
+      "id": "DEO-A1",
+      "role": "DEO",
+      "office": "BLOCK-A1",
+      "reportsTo": "DOCVERIFIER-A1",
+      "name": {
+        "en": "Data-entry operator, Block A1",
+        "hi": "डेटा प्रविष्टि संचालक, ब्लॉक ए1"
+      }
+    },
+    {
+      "id": "DOCVERIFIER-A1",
+      "role": "DOCVERIFIER",
+      "office": "BLOCK-A1",
+      "reportsTo": "DWO-A",
+      "name": {
+        "en": "Document verifier, Block A1",
+        "hi": "दस्तावेज़ सत्यापनकर्ता, ब्लॉक ए1"
+      }
+    },
+    {
+      "id": "DOCVERIFIER-A2",
+      "role": "DOCVERIFIER",
+      "office": "DIST-A",
+      "reportsTo": "DWO-A",
+      "name": {
+        "en": "Document verifier (district pool)",
+        "hi": "दस्तावेज़ सत्यापनकर्ता (ज़िला)"
+      }
+    },
+    {
+      "id": "FIELD-A1",
+      "role": "FIELDVERIFIER",
+      "office": "BLOCK-A1",
+      "reportsTo": "DWO-A",
+      "name": {
+        "en": "Field verifier, Block A1",
+        "hi": "क्षेत्र सत्यापनकर्ता, ब्लॉक ए1"
+      }
+    },
+    {
+      "id": "DWO-A",
+      "role": "DWO",
+      "office": "DIST-A",
+      "reportsTo": "JD-WEL",
+      "name": {
+        "en": "District Welfare Officer",
+        "hi": "ज़िला कल्याण अधिकारी"
+      }
+    },
+    {
+      "id": "JD-WEL",
+      "role": "JD",
+      "office": "DIR-WEL",
+      "reportsTo": "DIR-W",
+      "name": {
+        "en": "Joint Director",
+        "hi": "संयुक्त निदेशक"
+      }
+    },
+    {
+      "id": "DIR-W",
+      "role": "DIRECTOR",
+      "office": "DIR-WEL",
+      "name": {
+        "en": "Director",
+        "hi": "निदेशक"
+      }
+    },
+    {
+      "id": "APPELLATE-DIR",
+      "role": "APPELLATE",
+      "office": "DIR-WEL",
+      "name": {
+        "en": "Appellate authority (Additional Director)",
+        "hi": "अपीलीय प्राधिकारी (अपर निदेशक)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DEO-A1",
+      "person": "p3.deo-a1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DOCVERIFIER-A1",
+      "person": "p3.docverifier-a1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DOCVERIFIER-A2",
+      "person": "p3.docverifier-a2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "FIELD-A1",
+      "person": "p3.field-a1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DWO-A",
+      "person": "p3.dwo-a",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "JD-WEL",
+      "person": "p3.jd-wel",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DIR-W",
+      "person": "p3.dir-w",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "APPELLATE-DIR",
+      "person": "p3.appellate-dir",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DEO",
+      "name": {
+        "en": "Data-entry operator",
+        "hi": "डेटा प्रविष्टि संचालक"
+      }
+    },
+    {
+      "code": "DOCVERIFIER",
+      "name": {
+        "en": "Document verifier",
+        "hi": "दस्तावेज़ सत्यापनकर्ता"
+      }
+    },
+    {
+      "code": "FIELDVERIFIER",
+      "name": {
+        "en": "Field verifier",
+        "hi": "क्षेत्र सत्यापनकर्ता"
+      }
+    },
+    {
+      "code": "DWO",
+      "name": {
+        "en": "District Welfare Officer",
+        "hi": "ज़िला कल्याण अधिकारी"
+      }
+    },
+    {
+      "code": "JD",
+      "name": {
+        "en": "Joint Director",
+        "hi": "संयुक्त निदेशक"
+      }
+    },
+    {
+      "code": "DIRECTOR",
+      "name": {
+        "en": "Director",
+        "hi": "निदेशक"
+      }
+    }
+  ]
+}

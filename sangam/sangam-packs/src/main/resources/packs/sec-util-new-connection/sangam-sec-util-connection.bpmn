@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- New connection. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_util_connection" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-util-connection" name="New connection" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.util.new-connection</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>applicantName,premisesAddress,loadKw</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="uc_start" name="Application" operaton:initiator="initiator" operaton:formKey="sangam:sec-util-new-connection/apply"></startEvent>
+    <serviceTask id="uc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>areaType=MUNICIPAL;loadKw=5;worksRequired=false;compensationDue=false;scrutinySeat=SUBDIV-CLERK;scrutinySla=1WD;pauseOnClarification=true;executionConnector=pg.collect;executionStep=charges;verifyApproval=false;reconcileRequired=false;executionPayloadFields=applicantName,loadKw;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="uc_sop" name="Standard of performance (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-util-sop</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="uc_clock" name="Regulatory clock: connection" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>connection</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${connSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <callActivity id="uc_scrutiny" name="Document scrutiny (core)" calledElement="sangam-core-scrutiny"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="uc_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="uc_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="uc_inspect" name="Site inspection and feasibility" operaton:candidateGroups="JE-FIELD" operaton:formKey="sangam:sec-util-new-connection/inspect" operaton:dueDate="${connectionDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>feasibility</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="uc_scrGw" name="scrutinyOutcome?" default="sec_util_connection_f7"></exclusiveGateway>
+    <exclusiveGateway id="uc_feasGw" name="" default="sec_util_connection_f14"></exclusiveGateway>
+    <serviceTask id="uc_rjFeas_code" name="Reason: NOT_FEASIBLE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=NOT_FEASIBLE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="uc_rjFeas_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="uc_rjFeas_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="uc_estimate" name="Estimate and demand note" operaton:candidateGroups="AE-SUBDIV" operaton:formKey="sangam:sec-util-new-connection/estimate"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <callActivity id="uc_fee" name="Collect charges (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <userTask id="uc_install" name="Install meter and energise" operaton:candidateGroups="JE-FIELD" operaton:formKey="sangam:sec-util-new-connection/install" operaton:dueDate="${connectionDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="uc_inspect_lateFlag" name="Compensation due" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>compensationDue=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="uc_inspect_lateEnd" name="Recorded"></endEvent>
+    <serviceTask id="uc_install_lateFlag" name="Compensation due" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>compensationDue=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="uc_install_lateEnd" name="Recorded"></endEvent>
+    <serviceTask id="uc_mdm" name="Register meter" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>mdm.install</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>register</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>meterNo,applicantName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>mdm</operaton:string></operaton:field><operaton:field name="step"><operaton:string>meter</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="uc_comp" name="Credit compensation in the next bill" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>billing.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>applicantName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>comp</operaton:string></operaton:field><operaton:field name="step"><operaton:string>compensation</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="uc_compOptGw" name="Delayed?" default="sec_util_connection_f23"></exclusiveGateway>
+    <exclusiveGateway id="uc_compOptMerge" name=""></exclusiveGateway>
+    <endEvent id="uc_end" name="Energised"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="uc_inspect_late" name="Standard of performance missed" attachedToRef="uc_inspect" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${connectionDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="uc_install_late" name="Standard of performance missed" attachedToRef="uc_install" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${connectionDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_util_connection_f1" sourceRef="uc_start" targetRef="uc_defaults"/>
+    <sequenceFlow id="sec_util_connection_f2" sourceRef="uc_defaults" targetRef="uc_sop"/>
+    <sequenceFlow id="sec_util_connection_f3" sourceRef="uc_sop" targetRef="uc_clock"/>
+    <sequenceFlow id="sec_util_connection_f4" sourceRef="uc_clock" targetRef="uc_scrutiny"/>
+    <sequenceFlow id="sec_util_connection_f5" sourceRef="uc_rj_reject" targetRef="uc_rj_endRejected"/>
+    <sequenceFlow id="sec_util_connection_f6" name="ACCEPTED" sourceRef="uc_scrGw" targetRef="uc_inspect"><conditionExpression xsi:type="tFormalExpression">${scrutinyOutcome == 'ACCEPTED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_util_connection_f7" name="otherwise" sourceRef="uc_scrGw" targetRef="uc_rj_reject"/>
+    <sequenceFlow id="sec_util_connection_f8" sourceRef="uc_scrutiny" targetRef="uc_scrGw"/>
+    <sequenceFlow id="sec_util_connection_f9" sourceRef="uc_inspect" targetRef="uc_feasGw"/>
+    <sequenceFlow id="sec_util_connection_f10" sourceRef="uc_rjFeas_reject" targetRef="uc_rjFeas_endRejected"/>
+    <sequenceFlow id="sec_util_connection_f11" sourceRef="uc_rjFeas_code" targetRef="uc_rjFeas_reject"/>
+    <sequenceFlow id="sec_util_connection_f12" name="not feasible" sourceRef="uc_feasGw" targetRef="uc_rjFeas_code"><conditionExpression xsi:type="tFormalExpression">${feasibility == 'notFeasible'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_util_connection_f13" name="works needed" sourceRef="uc_feasGw" targetRef="uc_estimate"><conditionExpression xsi:type="tFormalExpression">${feasibility == 'worksNeeded'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_util_connection_f14" name="feasible" sourceRef="uc_feasGw" targetRef="uc_fee"/>
+    <sequenceFlow id="sec_util_connection_f15" sourceRef="uc_estimate" targetRef="uc_fee"/>
+    <sequenceFlow id="sec_util_connection_f16" sourceRef="uc_fee" targetRef="uc_install"/>
+    <sequenceFlow id="sec_util_connection_f17" sourceRef="uc_inspect_late" targetRef="uc_inspect_lateFlag"/>
+    <sequenceFlow id="sec_util_connection_f18" sourceRef="uc_inspect_lateFlag" targetRef="uc_inspect_lateEnd"/>
+    <sequenceFlow id="sec_util_connection_f19" sourceRef="uc_install_late" targetRef="uc_install_lateFlag"/>
+    <sequenceFlow id="sec_util_connection_f20" sourceRef="uc_install_lateFlag" targetRef="uc_install_lateEnd"/>
+    <sequenceFlow id="sec_util_connection_f21" sourceRef="uc_install" targetRef="uc_mdm"/>
+    <sequenceFlow id="sec_util_connection_f22" name="yes" sourceRef="uc_compOptGw" targetRef="uc_comp"><conditionExpression xsi:type="tFormalExpression">${compensationDue}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_util_connection_f23" name="no" sourceRef="uc_compOptGw" targetRef="uc_compOptMerge"/>
+    <sequenceFlow id="sec_util_connection_f24" sourceRef="uc_comp" targetRef="uc_compOptMerge"/>
+    <sequenceFlow id="sec_util_connection_f25" sourceRef="uc_mdm" targetRef="uc_compOptGw"/>
+    <sequenceFlow id="sec_util_connection_f26" sourceRef="uc_compOptMerge" targetRef="uc_end"/>
+    <subProcess id="uc_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="uc_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="uc_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="uc_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="uc_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_util_connection_f27" sourceRef="uc_withdrawStart" targetRef="uc_withdrawKind"/>
+      <sequenceFlow id="sec_util_connection_f28" sourceRef="uc_withdrawKind" targetRef="uc_withdrawCall"/>
+      <sequenceFlow id="sec_util_connection_f29" sourceRef="uc_withdrawCall" targetRef="uc_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="uc_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="uc_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="uc_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="uc_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="uc_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_util_connection_f30" sourceRef="uc_cancelStart" targetRef="uc_cancelKind"/>
+      <sequenceFlow id="sec_util_connection_f31" sourceRef="uc_cancelKind" targetRef="uc_cancelCall"/>
+      <sequenceFlow id="sec_util_connection_f32" sourceRef="uc_cancelCall" targetRef="uc_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_util_connection_diagram">
+    <bpmndi:BPMNPlane id="sec_util_connection_plane" bpmnElement="sangam-sec-util-connection">
+      <bpmndi:BPMNShape id="uc_start_di" bpmnElement="uc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_defaults_di" bpmnElement="uc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_sop_di" bpmnElement="uc_sop"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_clock_di" bpmnElement="uc_clock"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_scrutiny_di" bpmnElement="uc_scrutiny"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_rj_reject_di" bpmnElement="uc_rj_reject"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_rj_endRejected_di" bpmnElement="uc_rj_endRejected"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_inspect_di" bpmnElement="uc_inspect"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_scrGw_di" bpmnElement="uc_scrGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_feasGw_di" bpmnElement="uc_feasGw"><dc:Bounds x="1200" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_rjFeas_code_di" bpmnElement="uc_rjFeas_code"><dc:Bounds x="1340" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_rjFeas_reject_di" bpmnElement="uc_rjFeas_reject"><dc:Bounds x="1505" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_rjFeas_endRejected_di" bpmnElement="uc_rjFeas_endRejected"><dc:Bounds x="1702" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_estimate_di" bpmnElement="uc_estimate"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_fee_di" bpmnElement="uc_fee"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_install_di" bpmnElement="uc_install"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_inspect_lateFlag_di" bpmnElement="uc_inspect_lateFlag"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_inspect_lateEnd_di" bpmnElement="uc_inspect_lateEnd"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_install_lateFlag_di" bpmnElement="uc_install_lateFlag"><dc:Bounds x="1835" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_install_lateEnd_di" bpmnElement="uc_install_lateEnd"><dc:Bounds x="2032" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_mdm_di" bpmnElement="uc_mdm"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_comp_di" bpmnElement="uc_comp"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_compOptGw_di" bpmnElement="uc_compOptGw"><dc:Bounds x="2025" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_compOptMerge_di" bpmnElement="uc_compOptMerge"><dc:Bounds x="2355" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_end_di" bpmnElement="uc_end"><dc:Bounds x="2527" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_inspect_late_di" bpmnElement="uc_inspect_late"><dc:Bounds x="1018" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_install_late_di" bpmnElement="uc_install_late"><dc:Bounds x="1678" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_withdraw_di" bpmnElement="uc_withdraw" isExpanded="true"><dc:Bounds x="30" y="535" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_withdrawStart_di" bpmnElement="uc_withdrawStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_withdrawKind_di" bpmnElement="uc_withdrawKind"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_withdrawCall_di" bpmnElement="uc_withdrawCall"><dc:Bounds x="390" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_withdrawEnd_di" bpmnElement="uc_withdrawEnd"><dc:Bounds x="587" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_cancel_di" bpmnElement="uc_cancel" isExpanded="true"><dc:Bounds x="30" y="725" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_cancelStart_di" bpmnElement="uc_cancelStart"><dc:Bounds x="92" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_cancelKind_di" bpmnElement="uc_cancelKind"><dc:Bounds x="225" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_cancelCall_di" bpmnElement="uc_cancelCall"><dc:Bounds x="390" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="uc_cancelEnd_di" bpmnElement="uc_cancelEnd"><dc:Bounds x="587" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_util_connection_f1_di" bpmnElement="sec_util_connection_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f2_di" bpmnElement="sec_util_connection_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f3_di" bpmnElement="sec_util_connection_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f4_di" bpmnElement="sec_util_connection_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f5_di" bpmnElement="sec_util_connection_f5"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f6_di" bpmnElement="sec_util_connection_f6"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f7_di" bpmnElement="sec_util_connection_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f8_di" bpmnElement="sec_util_connection_f8"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f9_di" bpmnElement="sec_util_connection_f9"><di:waypoint x="1110" y="195"/><di:waypoint x="1155" y="195"/><di:waypoint x="1155" y="320"/><di:waypoint x="1200" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f10_di" bpmnElement="sec_util_connection_f10"><di:waypoint x="1605" y="445"/><di:waypoint x="1702" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f11_di" bpmnElement="sec_util_connection_f11"><di:waypoint x="1440" y="445"/><di:waypoint x="1505" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f12_di" bpmnElement="sec_util_connection_f12"><di:waypoint x="1250" y="320"/><di:waypoint x="1295" y="320"/><di:waypoint x="1295" y="445"/><di:waypoint x="1340" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f13_di" bpmnElement="sec_util_connection_f13"><di:waypoint x="1250" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f14_di" bpmnElement="sec_util_connection_f14"><di:waypoint x="1250" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f15_di" bpmnElement="sec_util_connection_f15"><di:waypoint x="1440" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f16_di" bpmnElement="sec_util_connection_f16"><di:waypoint x="1605" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f17_di" bpmnElement="sec_util_connection_f17"><di:waypoint x="1036" y="253"/><di:waypoint x="1036" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f18_di" bpmnElement="sec_util_connection_f18"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f19_di" bpmnElement="sec_util_connection_f19"><di:waypoint x="1696" y="378"/><di:waypoint x="1696" y="445"/><di:waypoint x="1835" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f20_di" bpmnElement="sec_util_connection_f20"><di:waypoint x="1935" y="445"/><di:waypoint x="2032" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f21_di" bpmnElement="sec_util_connection_f21"><di:waypoint x="1770" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f22_di" bpmnElement="sec_util_connection_f22"><di:waypoint x="2075" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f23_di" bpmnElement="sec_util_connection_f23"><di:waypoint x="2075" y="320"/><di:waypoint x="2355" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f24_di" bpmnElement="sec_util_connection_f24"><di:waypoint x="2265" y="320"/><di:waypoint x="2355" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f25_di" bpmnElement="sec_util_connection_f25"><di:waypoint x="1935" y="320"/><di:waypoint x="2025" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f26_di" bpmnElement="sec_util_connection_f26"><di:waypoint x="2405" y="320"/><di:waypoint x="2527" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f27_di" bpmnElement="sec_util_connection_f27"><di:waypoint x="128" y="615"/><di:waypoint x="225" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f28_di" bpmnElement="sec_util_connection_f28"><di:waypoint x="325" y="615"/><di:waypoint x="390" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f29_di" bpmnElement="sec_util_connection_f29"><di:waypoint x="490" y="615"/><di:waypoint x="587" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f30_di" bpmnElement="sec_util_connection_f30"><di:waypoint x="128" y="805"/><di:waypoint x="225" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f31_di" bpmnElement="sec_util_connection_f31"><di:waypoint x="325" y="805"/><di:waypoint x="390" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_connection_f32_di" bpmnElement="sec_util_connection_f32"><di:waypoint x="490" y="805"/><di:waypoint x="587" y="805"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

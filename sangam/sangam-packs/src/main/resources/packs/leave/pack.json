@@ -1,0 +1,100 @@
+{
+  "id": "gov.leave",
+  "version": "1.0.0",
+  "name": {
+    "en": "Leave and charge arrangement",
+    "hi": "अवकाश एवं प्रभार व्यवस्था"
+  },
+  "domain": "HR / leave",
+  "description": "Leave application checked against the balance ledger carried across years (GP-48), auto-approved below the threshold or routed by rule (GP-29), with a state-specific routing override (GP-37); charge arrangement creates the additional-charge holding for the leave period (GP-18); joining report; cancellation re-credits; annual credit and lapse one instance per employee (GP-30, GP-09).",
+  "mainProcesses": [
+    "sangam-leave"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/leave/sangam-leave.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/leave/sangam-leave-yearend.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/leave/sangam-leave-credit.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/leave/leave-routing.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/leave/leave-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/leave/leave-yearend.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/leave/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/leave/forms/joining.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/leave/seed.json"
+    }
+  ],
+  "seed": "packs/leave/seed.json",
+  "connectors": [
+    {
+      "id": "hr.chargeArrangement",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Additional charge for the leave period (WS-SECURITY)"
+    },
+    {
+      "id": "hr.chargeRevert",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "End of the additional charge"
+    },
+    {
+      "id": "hrms.employees",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Employees for the annual credit"
+    }
+  ],
+  "covers": [
+    "D-LEAVE",
+    "GP-18",
+    "GP-29",
+    "GP-30",
+    "GP-37",
+    "GP-48",
+    "GP-09",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [
+    {
+      "tenant": "state-b",
+      "kind": "DMN",
+      "path": "packs/leave/overrides/state-b/leave-routing.dmn"
+    }
+  ],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

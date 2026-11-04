@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_reapp_rules" name="Re-appropriation rules (DFPR 2024 Rule 10 and GoI decisions)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- FIRST hit, ordered: refusals, then Finance Ministry cases, then Parliament reporting, then within CAA powers. Thresholds come from the GOI profile budgetControl.reappropriation; a State deploys its own table as a tenant override. -->
+  <decision id="ifms-reapp-rules" name="Re-appropriation rules (DFPR 2024 Rule 10 and GoI decisions)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-reapp-rules_t" hitPolicy="FIRST">
+      <input id="ifms-reapp-rules_i0" label="Charged to voted"><inputExpression id="ifms-reapp-rules_ie0" typeRef="boolean"><text>chargedToVoted</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i1" label="Capital to revenue"><inputExpression id="ifms-reapp-rules_ie1" typeRef="boolean"><text>capitalRevenue</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i2" label="Between grants"><inputExpression id="ifms-reapp-rules_ie2" typeRef="boolean"><text>betweenGrants</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i3" label="New service"><inputExpression id="ifms-reapp-rules_ie3" typeRef="boolean"><text>newService</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i4" label="From supplementary head"><inputExpression id="ifms-reapp-rules_ie4" typeRef="boolean"><text>fromSupplementary</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i5" label="From CF-advance activity"><inputExpression id="ifms-reapp-rules_ie5" typeRef="boolean"><text>fromCfAdvance</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i6" label="Works without AA/TS"><inputExpression id="ifms-reapp-rules_ie6" typeRef="boolean"><text>worksWithoutAaTs</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i7" label="Quarter"><inputExpression id="ifms-reapp-rules_ie7" typeRef="integer"><text>quarter</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i8" label="NER technical"><inputExpression id="ifms-reapp-rules_ie8" typeRef="boolean"><text>nerTechnical</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i9" label="Object group"><inputExpression id="ifms-reapp-rules_ie9" typeRef="string"><text>objectGroup</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i10" label="Amount"><inputExpression id="ifms-reapp-rules_ie10" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i11" label="Increase % of BE"><inputExpression id="ifms-reapp-rules_ie11" typeRef="double"><text>percentOfBe</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i12" label="Secret service %"><inputExpression id="ifms-reapp-rules_ie12" typeRef="double"><text>secretServicePercent</text></inputExpression></input>
+      <output id="ifms-reapp-rules_o0" label="Allowed" name="reappAllowed" typeRef="boolean"/>
+      <output id="ifms-reapp-rules_o1" label="Finance Ministry approval" name="mofCase" typeRef="boolean"/>
+      <output id="ifms-reapp-rules_o2" label="Report to Parliament" name="parliamentReport" typeRef="boolean"/>
+      <output id="ifms-reapp-rules_o3" label="Rule" name="ruleRef" typeRef="string"/>
+      <rule id="ifms-reapp-rules_r0"><description>charged &lt;-&gt; voted</description>
+        <inputEntry id="ifms-reapp-rules_r0_i0"><text>true</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r0_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r0_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r0_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r0_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r0_o3"><text>"DFPR 2024 r.10(4)"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r1"><description>capital &lt;-&gt; revenue</description>
+        <inputEntry id="ifms-reapp-rules_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i1"><text>true</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r1_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r1_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r1_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r1_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r1_o3"><text>"DFPR 2024 r.10(6)"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r2"><description>between grants</description>
+        <inputEntry id="ifms-reapp-rules_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i2"><text>true</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r2_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r2_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r2_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r2_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r2_o3"><text>"DFPR 2024 r.10(5)"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r3"><description>new service</description>
+        <inputEntry id="ifms-reapp-rules_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i3"><text>true</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r3_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r3_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r3_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r3_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r3_o3"><text>"DFPR 2024 r.10(1)"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r4"><description>head augmented by supplementary</description>
+        <inputEntry id="ifms-reapp-rules_r4_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i4"><text>true</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r4_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r4_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r4_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r4_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r4_o3"><text>"DFPR 2024 r.10(7)"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r5"><description>CF advance activity</description>
+        <inputEntry id="ifms-reapp-rules_r5_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i5"><text>true</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r5_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r5_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r5_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r5_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r5_o3"><text>"DFPR 2024 r.10(8)"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r6"><description>works without AA/TS</description>
+        <inputEntry id="ifms-reapp-rules_r6_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i6"><text>true</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r6_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r6_o0"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r6_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r6_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r6_o3"><text>"DFPR 2024 r.10(3)"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r7"><description>Q1 ban</description>
+        <inputEntry id="ifms-reapp-rules_r7_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i7"><text>1</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i8"><text>false</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r7_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r7_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r7_o1"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r7_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r7_o3"><text>"DoE OM 01-04-2024: Q1 needs MoF"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r8"><description>establishment group above 2 cr</description>
+        <inputEntry id="ifms-reapp-rules_r8_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i9"><text>"EST_2CR"</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i10"><text>&gt; 20000000</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r8_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r8_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r8_o1"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r8_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r8_o3"><text>"GoI decision (1) para 3(v): 2 cr"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r9"><description>group above 5 cr</description>
+        <inputEntry id="ifms-reapp-rules_r9_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i9"><text>"NONEST_5CR"</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i10"><text>&gt; 50000000</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r9_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r9_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r9_o1"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r9_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r9_o3"><text>"GoI decision (1) para 3(v): 5 cr"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r10"><description>other above 15 cr</description>
+        <inputEntry id="ifms-reapp-rules_r10_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i9"><text>"OTHER_15CR"</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i10"><text>&gt; 150000000</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r10_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r10_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r10_o1"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r10_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r10_o3"><text>"GoI decision (1) para 3(v): 15 cr"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r11"><description>Parliament: above 100 cr</description>
+        <inputEntry id="ifms-reapp-rules_r11_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i10"><text>&gt; 1000000000</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r11_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r11_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r11_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r11_o2"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r11_o3"><text>"GoI decision (1) para 4: &gt; 100 cr"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r12"><description>Parliament: above 20% of BE</description>
+        <inputEntry id="ifms-reapp-rules_r12_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i11"><text>&gt; 20</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r12_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r12_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r12_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r12_o2"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r12_o3"><text>"GoI decision (1) para 4: &gt; 20% of BE"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r13"><description>secret service &gt;= 25%</description>
+        <inputEntry id="ifms-reapp-rules_r13_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r13_i12"><text>&gt;= 25</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r13_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r13_o1"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r13_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r13_o3"><text>"DFPR 2024 r.10(10)(v): C&amp;AG too"</text></outputEntry>
+      </rule>
+      <rule id="ifms-reapp-rules_r14"><description>within CAA powers</description>
+        <inputEntry id="ifms-reapp-rules_r14_i0"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i1"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i2"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i3"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i4"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i5"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i6"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i7"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i8"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i9"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i10"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i11"><text>-</text></inputEntry>
+        <inputEntry id="ifms-reapp-rules_r14_i12"><text>-</text></inputEntry>
+        <outputEntry id="ifms-reapp-rules_r14_o0"><text>true</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r14_o1"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r14_o2"><text>false</text></outputEntry>
+        <outputEntry id="ifms-reapp-rules_r14_o3"><text>"DFPR 2024 r.10(9)"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,54 @@
+{
+  "key": "sec-health-blood-bank/request",
+  "version": "1.0.0",
+  "pack": "sec.health.blood-bank",
+  "title": {
+    "en": "Blood request",
+    "hi": "रक्त अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "hi": "रोगी का नाम"
+      }
+    },
+    {
+      "id": "bloodGroup",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Blood group",
+        "hi": "रक्त समूह"
+      }
+    },
+    {
+      "id": "component",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Blood component",
+        "hi": "रक्त घटक"
+      }
+    },
+    {
+      "id": "urgency",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Urgency",
+        "hi": "तात्कालिकता"
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "key": "sec-bank-loan-closure/release",
+  "version": "1.0.0",
+  "pack": "sec.bank.loan-closure",
+  "title": {
+    "en": "Release original documents and NOC",
+    "hi": "मूल दस्तावेज़ एवं अनापत्ति प्रमाणपत्र लौटाएँ"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "physicalReceived",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Physical item received",
+        "hi": "भौतिक वस्तु प्राप्त हुई"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "releaseDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "released",
+        "label": {
+          "en": "Released",
+          "hi": "लौटाए गए"
+        }
+      },
+      {
+        "value": "docsLost",
+        "label": {
+          "en": "Documents lost / damaged",
+          "hi": "दस्तावेज़ खोए / क्षतिग्रस्त"
+        }
+      }
+    ]
+  }
+}
