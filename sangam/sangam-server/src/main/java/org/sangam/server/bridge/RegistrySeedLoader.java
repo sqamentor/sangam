@@ -22,7 +22,8 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
  * the default layer; administrator changes in {@code REG_PARTY_CONFIG} win). Seeds are read from every jar on the class
  * path at {@value #PACK_SEEDS} and {@value #MODULE_SEEDS}. A seed file is either a JSON array of identifier-type
  * definitions, or an object {@code {"tenant": "*", "identifierTypes": [...], "matchConfig": {...}}}
- * ({@code tenant} defaults to {@code *} = every tenant). Idempotent: defining the same seed again replaces it.
+ * ({@code tenant} defaults to {@code *} = every tenant; {@code jurisdiction} limits a file to tenants of that
+ * jurisdiction). Idempotent: defining the same seed again replaces it.
  */
 public final class RegistrySeedLoader {
 
@@ -63,6 +64,10 @@ public final class RegistrySeedLoader {
                     Map<String, Object> map = new LinkedHashMap<>((Map<String, Object>) m);
                     if (map.get("tenant") != null) {
                         tenant = String.valueOf(map.get("tenant"));
+                    }
+                    if (map.get("jurisdiction") != null) {
+                        tenant = org.sangam.registry.party.IdentifierTypeCatalogue.jurisdictionScope(
+                                String.valueOf(map.get("jurisdiction")));
                     }
                     if (map.get("identifierTypes") instanceof List<?> l) {
                         defs = (List<Map<String, Object>>) l;

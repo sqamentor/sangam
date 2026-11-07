@@ -44,6 +44,12 @@ public final class Jdbc {
 
     public static <T> List<T> query(Connection c, String sql, RowMapper<T> mapper, Object... params) {
         try (PreparedStatement ps = c.prepareStatement(sql)) {
+            int limit = Dialect.markedLimit(sql);
+            if (limit > 0) {
+                // Oracle SKIP LOCKED locks rows as they are fetched: never prefetch or read past the claim limit
+                ps.setMaxRows(limit);
+                ps.setFetchSize(limit);
+            }
             bind(ps, 1, params);
             try (ResultSet rs = ps.executeQuery()) {
                 List<T> out = new ArrayList<>();

@@ -147,7 +147,9 @@ public class HealthConnectorsWiring {
 
     @Bean
     public HealthHooksPort sangamHealthHooks(HealthConnectorsProperties props, CdsHooksService cds,
-            ObjectProvider<InboxService> inbox, ObjectProvider<SecretResolver> secrets, Environment env) {
+            ObjectProvider<InboxService> inbox, ObjectProvider<SecretResolver> secrets, Environment env,
+            ObjectProvider<org.operaton.bpm.engine.ProcessEngine> engine, ObjectProvider<org.sangam.integration.inbox.UniqueStartGuard> uniqueStart,
+            ObjectProvider<org.sangam.integration.inbox.PoisonInbound> poison) {
         Map<String, FhirSubscriptionReceiver> receivers = new LinkedHashMap<>();
         InboxService in = inbox.getIfAvailable();
         boolean dev = Arrays.asList(env.getActiveProfiles()).contains("h2");
@@ -175,7 +177,13 @@ public class HealthConnectorsWiring {
         } else if (!props.getFhirChannels().isEmpty()) {
             LOG.warn("FHIR subscription channels configured but sangam-integration is off: notifications are refused");
         }
-        return new HealthHooksBridge(receivers, cds);
+        org.sangam.server.bridge.Remittance835Router remittance = null;
+        if (in != null && engine.getIfAvailable() != null && uniqueStart.getIfAvailable() != null && poison.getIfAvailable() != null) {
+            in.registerHandler(org.sangam.server.bridge.Remittance835Router.EVENT_TYPE,
+                    org.sangam.server.bridge.Remittance835Router.handler(engine.getIfAvailable(), uniqueStart.getIfAvailable()));
+            remittance = new org.sangam.server.bridge.Remittance835Router(in, poison.getIfAvailable());
+        }
+        return new HealthHooksBridge(receivers, cds, remittance);
     }
 
     // ---------------------------------------------------------------- live connectors

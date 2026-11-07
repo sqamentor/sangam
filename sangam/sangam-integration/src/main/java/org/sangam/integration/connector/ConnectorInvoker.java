@@ -26,8 +26,8 @@ import java.util.UUID;
  * R36, R37, R28).
  *
  * <ol>
- *   <li><b>Intent</b> (own short transaction): {@code OPERATION_LEDGER.recordIntent} with the operationId derived from
- *       engine identity, the request fingerprint, attemptId and lockVersion (fencing); {@code CONNECTOR_CALL} records the
+ *   <li><b>Intent</b> (own short transaction): {@code OPERATION_LEDGER.recordIntent} with the one operationId minted by
+ *       the engine (T35; derived only as a logged fallback), the request fingerprint, attemptId and lockVersion (fencing); {@code CONNECTOR_CALL} records the
  *       request and the attempt; {@code OPERATION_DISPATCHED} audit on the root's chain.</li>
  *   <li><b>Decide</b>: a settled operation is never dispatched again; its stored outcome is returned
  *       ({@link Outcome#replayed()}). A repeat attempt follows the capability class: (a) dispatch again with the same
@@ -46,7 +46,15 @@ public final class ConnectorInvoker {
     /** Engine identity and payload of one call. */
     public record Invocation(String tenantId, String rootId, String activityInstanceId, int loopCounter, String retrySafeKey,
                              String businessKey, String connectorId, String operation, Map<String, Object> input,
-                             String attemptId, long lockVersion, Instant deadline) {
+                             String attemptId, long lockVersion, Instant deadline, UUID explicitOperationId) {
+
+        /** Without a minted id: the identity is derived, with a warning, because it can differ from the engine's (T35). */
+        public Invocation(String tenantId, String rootId, String activityInstanceId, int loopCounter, String retrySafeKey,
+                          String businessKey, String connectorId, String operation, Map<String, Object> input,
+                          String attemptId, long lockVersion, Instant deadline) {
+            this(tenantId, rootId, activityInstanceId, loopCounter, retrySafeKey, businessKey, connectorId, operation, input,
+                    attemptId, lockVersion, deadline, null);
+        }
 
         /**
          * The ledger key component: the activity instance id, extended by the retry-safe key when one is declared, so
@@ -61,7 +69,7 @@ public final class ConnectorInvoker {
         }
 
         public UUID operationId() {
-            return ref().operationId();
+            return explicitOperationId != null ? explicitOperationId : ref().operationId();
         }
     }
 
@@ -127,6 +135,10 @@ public final class ConnectorInvoker {
         SangamConnector connector = registry.require(inv.tenantId(), inv.connectorId());
         CapabilityClass cls = connector.capabilityClass();
         UUID op = inv.operationId();
+        if (inv.explicitOperationId() == null) {
+            LOG.warn("connector {} call on root {} has no minted operationId; using the derived id {} (it may differ from the"
+                    + " engine's T35 id)", inv.connectorId(), inv.rootId(), op);
+        }
         String requestJson = Json.write(inv.input() == null ? Map.of() : inv.input());
         byte[] fp = fingerprint(inv.connectorId(), inv.operation(), inv.input());
 
@@ -138,7 +150,11 @@ public final class ConnectorInvoker {
                 if (audit != null) {
                     audit.append(c, inv.tenantId(), inv.rootId(), "OPERATION_DISPATCHED", auditPayload(inv, op, cls, null));
                 }
-                OperationLedger.Intent intent = ledger.recordIntent(c, inv.ref(), cls, fp, inv.attemptId(), inv.lockVersion());
+                OperationLedger.Intent intent = ledger.recordIntent(c, op, inv.ref(), cls, fp, inv.attemptId(), inv.lockVersion());
+                // the ledger key has no tenant part: never replay or settle another tenant's row (ids minted without a tenant)
+                ledger.find(c, op).filter(e -> !inv.tenantId().equals(e.tenantId())).ifPresent(e -> {
+                    throw new IllegalStateException("operationId " + op + " already belongs to another tenant");
+                });
                 ConnectorCallJournal.Call prior = journal.recordAttempt(c, op, inv.tenantId(), inv.connectorId(), inv.operation(),
                         inv.rootId(), inv.businessKey(), requestJson);
                 if (!intent.mayDispatch()) {

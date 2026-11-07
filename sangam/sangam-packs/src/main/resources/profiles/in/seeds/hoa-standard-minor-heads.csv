@@ -1,27 +1,270 @@
 # SPDX-License-Identifier: Apache-2.0
 scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
-HOA,minor,,001,Direction and Administration,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,003,Training,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,004,Research,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,052,Machinery and Equipment,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,101,"Programme minor head (101, varies by major)",standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,191,"Assistance to Local Bodies, Corporations etc.",standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,192,Assistance to Municipalities,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,193,Assistance to Nagar Panchayats,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,196,Assistance to Zilla Parishads,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,197,Assistance to Block Panchayats,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,198,Assistance to Gram Panchayats,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,500,Receipts awaiting transfer,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,502,Expenditure awaiting transfer,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,503,[U] new standard minor head (CS 1068 of 28-07-2025),standard=true,,,LMMH Standard Minor Heads (CS 1068),U
-HOA,minor,,789,Special Component Plan for Scheduled Castes,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,791,Loss / gain by exchange,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,796,Tribal Area Sub-Plan,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,797,Transfer to / from Reserve Fund / Deposit Account,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,799,Suspense,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,800,Other Expenditure / Other Receipts,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,900,Deduct - Refunds,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,902,Deduct - Amount met from funds,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,minor,,911,Deduct - Recoveries of Overpayments,standard=true,,,LMMH Standard Minor Heads (CS 1068),P
-HOA,subMajor,,00,No sub-major head,,,,LMMH,V
-HOA,subMajor,,80,General,,,,LMMH,V
+HOA,minor,,001,Direction and Administration,"standard=true;directions=3.1, 4.1",,,LMMH CS1127 p.27,V
+HOA,minor,,003,Training,standard=true;directions=3.1,,,LMMH CS1127 p.27,V
+HOA,minor,,004,Research/Research & Development,standard=true,,,LMMH CS1127 p.27,V
+HOA,minor,,005,Investigation,standard=true,,,LMMH CS1127 p.27,V
+HOA,minor,,050,Land,standard=true,,,LMMH CS1127 p.27,V
+HOA,minor,,051,Construction,standard=true,,,LMMH CS1127 p.27,V
+HOA,minor,,052,Machinery and Equipment,standard=true;directions=3.7,,,LMMH CS1127 p.27,V
+HOA,minor,,150,Assistance to I.C.A.R.,standard=true,,,LMMH CS1127 p.27,V
+HOA,minor,,187,Assistance to Industries/Companies,standard=true;directions=3.1,,,LMMH CS1127 p.27,V
+HOA,minor,,188,Assistance/Loans to Autonomous Bodies*,"standard=true;directions=3.1, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,190,Assistance to/Investments in/Loans to Public Sector and Other Undertakings*,"standard=true;directions=3.1, 4.2, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,191,Assistance/Loans to Municipal Corporation*,"standard=true;directions=3.1, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,192,Assistance/Loans to Municipalities/Municipal Councils*,"standard=true;directions=3.1, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,193,Assistance/Loans to Nagar Panchayats/Notified Area committees or equivalent thereof*,"standard=true;directions=3.1, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,194,Loans to Voluntary Organisations,standard=true;directions=6.1,,,LMMH CS1127 p.27,V
+HOA,minor,,195,Assistance to/ Investments in/Loans to Co-operatives*,"standard=true;directions=3.1, 4.2, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,196,Assistance/Loans to Zila Parishads/District level Panchayats*,"standard=true;directions=3.1, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,197,Assistance/Loans to Block Panchayats/ Intermediate level Panchayats*,"standard=true;directions=3.1, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,198,Assistance/Loans to Gram Panchayats*,"standard=true;directions=3.1, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,199,Assistance to Other Non-Government Institutions/Loans to Trading and Other Non- Government Institutions*,"standard=true;directions=3.1, 6.1",,,LMMH CS1127 p.27,V
+HOA,minor,,500,Receipts Awaiting Transfer to other Minor Heads (RAT),standard=true;directions=2.3,,,LMMH CS1127 p.27,V
+HOA,minor,,501,Services and Service Fees,standard=true;directions=2.1,,,LMMH CS1127 p.27,V
+HOA,minor,,502,Expenditure Awaiting Transfer to other Heads/Departments (EAT),standard=true;directions=3.1,,,LMMH CS1127 p.27,V
+HOA,minor,,503,Fines and Forfeitures,standard=true;directions=2.6,,,LMMH CS1127 p.27,V
+HOA,minor,,789,Development Action Plan for Scheduled Castes (DAPSC),standard=true;directions=3.8,,,LMMH CS1127 p.27,V
+HOA,minor,,790,International Conference/Meeting,standard=true;directions=3.2,,,LMMH CS1127 p.27,V
+HOA,minor,,791,Loss by Exchange/Gain by Exchange*,standard=true,,,LMMH CS1127 p.27,V
+HOA,minor,,792,Irrecoverable Loans Written Off,standard=true;directions=3.3,,,LMMH CS1127 p.28,V
+HOA,minor,,795,Irrecoverable Loans Written Off,standard=true;directions=3.3,,,LMMH CS1127 p.28,V
+HOA,minor,,793,Special Central Assistance for Scheduled Castes Component Plan,standard=true,,,LMMH CS1127 p.28,V
+HOA,minor,,794,Special Central Assistance for Tribal sub plan,standard=true,,,LMMH CS1127 p.28,V
+HOA,minor,,796,Development Action Plan for Scheduled Tribes (DAPST),standard=true;directions=3.8,,,LMMH CS1127 p.28,V
+HOA,minor,,797,Transfer to Reserve Funds/Deposits Accounts*,"standard=true;directions=3.4, 4.4",,,LMMH CS1127 p.28,V
+HOA,minor,,798,International Co-operation,standard=true;directions=3.2,,,LMMH CS1127 p.28,V
+HOA,minor,,799,Suspense,standard=true;directions=3.6,,,LMMH CS1127 p.28,V
+HOA,minor,,800,Other Receipts/Other Expenditure/Other Loans/Other Deposits*,"standard=true;directions=2.3, 3.1, 4.1, 6.2",,,LMMH CS1127 p.28,V
+HOA,minor,,801,Interest or other earnings from Grantee on unspent balances,standard=true;directions=2.5,,,LMMH CS1127 p.28,V
+HOA,minor,,802,Interest or other payments to Grantor on unspent balances,standard=true;directions=3.11,,,LMMH CS1127 p.28,V
+HOA,minor,,900,Deduct-Refunds,standard=true;directions=2.2,,,LMMH CS1127 p.16,V
+HOA,minor,,901,Deduct-Receipts and Recoveries on Capital Account,standard=true;directions=4.3,,,LMMH CS1127 p.21,V
+HOA,minor,,902,Deduct - Amount met from Reserve Fund/Deposit Account,standard=true;directions=3.4,,,LMMH CS1127 p.19,V
+HOA,minor,,911,Deduct-Recoveries of Overpayments,standard=true;directions=3.10,,,LMMH CS1127 p.20,V
+HOA,minor,,002,Minor head 002 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,006,Minor head 006 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,007,Minor head 007 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,009,Minor head 009 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,011,Minor head 011 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,012,Minor head 012 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,013,Minor head 013 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,015,Minor head 015 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,016,Minor head 016 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,020,Minor head 020 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,037,Minor head 037 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,038,Minor head 038 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,039,Minor head 039 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,053,Minor head 053 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,054,Minor head 054 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,070,Minor head 070 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,090,Minor head 090 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,091,Minor head 091 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,092,Minor head 092 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,093,Minor head 093 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,094,Minor head 094 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,095,Minor head 095 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,096,Minor head 096 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,097,Minor head 097 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,098,Minor head 098 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,099,Minor head 099 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,101,Minor head 101 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,102,Minor head 102 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,103,Minor head 103 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,104,Minor head 104 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,105,Minor head 105 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,106,Minor head 106 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,107,Minor head 107 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,108,Minor head 108 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,109,Minor head 109 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,110,Minor head 110 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,111,Minor head 111 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,112,Minor head 112 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,113,Minor head 113 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,114,Minor head 114 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,115,Minor head 115 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,116,Minor head 116 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,117,Minor head 117 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,118,Minor head 118 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,119,Minor head 119 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,120,Minor head 120 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,121,Minor head 121 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,122,Minor head 122 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,123,Minor head 123 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,124,Minor head 124 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,125,Minor head 125 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,126,Minor head 126 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,127,Minor head 127 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,128,Minor head 128 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,129,Minor head 129 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,130,Minor head 130 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,131,Minor head 131 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,132,Minor head 132 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,133,Minor head 133 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,134,Minor head 134 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,135,Minor head 135 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,136,Minor head 136 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,137,Minor head 137 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,138,Minor head 138 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,139,Minor head 139 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,140,Minor head 140 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,141,Minor head 141 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,142,Minor head 142 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,143,Minor head 143 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,144,Minor head 144 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,145,Minor head 145 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,146,Minor head 146 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,147,Minor head 147 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,148,Minor head 148 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,149,Minor head 149 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,151,Minor head 151 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,152,Minor head 152 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,153,Minor head 153 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,154,Minor head 154 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,155,Minor head 155 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,156,Minor head 156 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,157,Minor head 157 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,158,Minor head 158 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,200,Minor head 200 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,201,Minor head 201 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,202,Minor head 202 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,203,Minor head 203 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,204,Minor head 204 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,205,Minor head 205 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,206,Minor head 206 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,207,Minor head 207 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,208,Minor head 208 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,209,Minor head 209 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,210,Minor head 210 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,211,Minor head 211 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,212,Minor head 212 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,213,Minor head 213 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,214,Minor head 214 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,215,Minor head 215 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,216,Minor head 216 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,217,Minor head 217 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,218,Minor head 218 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,219,Minor head 219 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,220,Minor head 220 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,221,Minor head 221 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,222,Minor head 222 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,223,Minor head 223 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,224,Minor head 224 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,225,Minor head 225 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,226,Minor head 226 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,227,Minor head 227 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,228,Minor head 228 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,229,Minor head 229 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,230,Minor head 230 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,231,Minor head 231 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,232,Minor head 232 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,233,Minor head 233 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,234,Minor head 234 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,235,Minor head 235 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,236,Minor head 236 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,237,Minor head 237 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,238,Minor head 238 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,239,Minor head 239 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,240,Minor head 240 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,241,Minor head 241 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,242,Minor head 242 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,243,Minor head 243 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,244,Minor head 244 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,245,Minor head 245 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,246,Minor head 246 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,247,Minor head 247 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,248,Minor head 248 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,249,Minor head 249 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,250,Minor head 250 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,251,Minor head 251 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,252,Minor head 252 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,253,Minor head 253 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,254,Minor head 254 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,255,Minor head 255 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,277,Minor head 277 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,282,Minor head 282 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,283,Minor head 283 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,296,Minor head 296 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,298,Minor head 298 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,299,Minor head 299 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,305,Minor head 305 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,307,Minor head 307 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,310,Minor head 310 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,317,Minor head 317 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,321,Minor head 321 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,337,Minor head 337 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,338,Minor head 338 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,400,Minor head 400 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,401,Minor head 401 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,504,Minor head 504 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,505,Minor head 505 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,506,Minor head 506 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,507,Minor head 507 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,508,Minor head 508 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,509,Minor head 509 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,510,Minor head 510 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,511,Minor head 511 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,512,Minor head 512 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,533,Minor head 533 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,600,Minor head 600 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,700,Minor head 700 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,701,Minor head 701 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,702,Minor head 702 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,745,Minor head 745 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,746,Minor head 746 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,747,Minor head 747 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,748,Minor head 748 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,749,Minor head 749 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,810,Minor head 810 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,811,Minor head 811 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,813,Minor head 813 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,822,Minor head 822 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,829,Minor head 829 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,830,Minor head 830 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,903,Minor head 903 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,904,Minor head 904 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,905,Minor head 905 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,906,Minor head 906 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,907,Minor head 907 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,908,Minor head 908 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,909,Minor head 909 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,945,Minor head 945 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,946,Minor head 946 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,947,Minor head 947 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,948,Minor head 948 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,949,Minor head 949 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,950,Minor head 950 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,951,Minor head 951 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,952,Minor head 952 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,953,Minor head 953 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,954,Minor head 954 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,955,Minor head 955 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,956,Minor head 956 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,957,Minor head 957 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,958,Minor head 958 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,959,Minor head 959 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,960,Minor head 960 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,961,Minor head 961 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,962,Minor head 962 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,963,Minor head 963 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,964,Minor head 964 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,965,Minor head 965 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,966,Minor head 966 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,minor,,967,Minor head 967 (title varies by major head; see hoa-minor-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,00,No sub-major head,,,,LMMH CS1127 (minor heads directly under a major head),P
+HOA,subMajor,,01,Sub-major head 01 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,02,Sub-major head 02 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,03,Sub-major head 03 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,04,Sub-major head 04 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,05,Sub-major head 05 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,06,Sub-major head 06 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,07,Sub-major head 07 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,08,Sub-major head 08 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,09,Sub-major head 09 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,10,Sub-major head 10 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,11,Sub-major head 11 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,12,Sub-major head 12 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,13,Sub-major head 13 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,14,Sub-major head 14 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,60,Sub-major head 60 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V
+HOA,subMajor,,80,Sub-major head 80 (title varies by major head; see hoa-sub-major-heads.csv),index=true,,,LMMH CS1127,V

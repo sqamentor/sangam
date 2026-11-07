@@ -37,8 +37,9 @@ CREATE TABLE AUTH_GRANT_SOURCE (
   deny_flag     SMALLINT     NOT NULL,
   cond_key      VARCHAR(64)  NOT NULL,
   source_id     VARCHAR(255) NOT NULL,           -- policy:<id> role:<id> task:<id> privilege:<id> worker:<p>:<topic>
+  source_key    VARCHAR(64)  NOT NULL,           -- lower-case hex SHA-256 of source_id; replaces it in the key
   perms         BIGINT       NOT NULL,
-  PRIMARY KEY (tenant_id, principal_id, resource_type, resource_id, deny_flag, cond_key, source_id)
+  PRIMARY KEY (tenant_id, principal_id, resource_type, resource_id, deny_flag, cond_key, source_key)
 );
 CREATE INDEX AUTH_GRANT_SOURCE_SRC ON AUTH_GRANT_SOURCE (tenant_id, source_id);
 CREATE INDEX AUTH_GRANT_SOURCE_PRIN ON AUTH_GRANT_SOURCE (tenant_id, principal_id, source_id);

@@ -67,11 +67,11 @@ public final class Permissions {
 
     /** Generic modules (final integration wave): read / write / admin per module, plus the module-specific duties. */
     public static final Set<String> MODULE_READ = Set.of("config.read", "ledger.read", "billing.read", "registry.read",
-            "resources.read", "geo.read", "case.read", "programme.read");
+            "resources.read", "geo.read", "case.read", "programme.read", "channels.read");
     public static final Set<String> MODULE_WRITE = Set.of("ledger.write", "billing.write", "registry.write",
-            "resources.write", "geo.write", "case.write", "programme.write", "field.review", "dispatch.operate");
+            "resources.write", "geo.write", "case.write", "programme.write", "field.review", "dispatch.operate", "ai.read", "ops.tenant.read", "channels.write", "modeller.action.invoke");
     public static final Set<String> MODULE_ADMIN = Set.of("config.write", "config.admin", "ledger.admin", "billing.admin",
-            "registry.admin", "resources.admin", "case.admin", "programme.approve", "programme.admin", "field.admin");
+            "registry.admin", "resources.admin", "case.admin", "programme.approve", "programme.admin", "field.admin", "ai.review", "ai.admin", "ops.tenant.admin", "channels.admin", "modeller.action.publish", "modeller.lease.takeover");
 
     /** External applicants (PER-8): portal only, never staff APIs. */
     public static final String GROUP_CITIZEN = "sangam-citizen";
@@ -93,7 +93,7 @@ public final class Permissions {
             PROCESS_CANCEL, CASE_READ, CASE_WRITE, DECISION_EVALUATE, MESSAGE_SEND, DOCUMENT_READ, DOCUMENT_WRITE,
             FORM_READ, FORM_DRAFT, PACKAGE_READ, DEPLOYMENT_READ, LOWCODE_READ);
 
-    private static final Set<String> USER = union(union(USER_BASE, MODULE_READ), Set.of("field.capture"));
+    private static final Set<String> USER = union(union(USER_BASE, MODULE_READ), Set.of("field.capture", "ai.use", "search.use"));
 
     public static final Map<String, Set<String>> DEFAULT_GROUP_PERMISSIONS = Map.ofEntries(
             Map.entry(GROUP_USER, USER),

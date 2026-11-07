@@ -193,7 +193,9 @@ public class OpsIntegrationWiring {
         ConnectorInvoker.Outcome outcome = invoker.invoke(new ConnectorInvoker.Invocation(ctx.tenantId(), call.rootId(),
                 view.entry().activityInstanceId(), view.entry().loopCounter(), "resend:" + id, call.businessKey(),
                 call.connectorId(), call.operation(), input(call.requestJson()), UUID.randomUUID().toString(), 0L,
-                Instant.now().plus(Duration.ofSeconds(30))));
+                Instant.now().plus(Duration.ofSeconds(30)),
+                org.sangam.core.layer.OperationLedger.operationId(ctx.tenantId(), call.rootId(),
+                        view.entry().activityInstanceId() + "#resend:" + id, view.entry().loopCounter())));
         switch (outcome) {
             case ConnectorInvoker.Completed c -> {
                 // delivered (or a replay of the earlier resend with the same operation identity)

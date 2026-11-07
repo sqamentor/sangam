@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Pattern: prompt, wait for the reply message, branch on botInput. The prompt uses a worker topic served by the channel connector. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+             targetNamespace="urn:sangam:bots" id="sample-bot-definitions">
+  <message id="replyMessage" name="bot.reply"/>
+  <process id="sample-bot" isExecutable="true" operaton:historyTimeToLive="P30D">
+    <startEvent id="start"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="ask"/>
+    <serviceTask id="ask" name="Ask" operaton:type="external" operaton:topic="bot.prompt">
+      <extensionElements>
+        <operaton:inputOutput>
+          <operaton:inputParameter name="text">How can we help?</operaton:inputParameter>
+        </operaton:inputOutput>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f2" sourceRef="ask" targetRef="reply"/>
+    <intermediateCatchEvent id="reply">
+      <messageEventDefinition messageRef="replyMessage"/>
+    </intermediateCatchEvent>
+    <sequenceFlow id="f3" sourceRef="reply" targetRef="confirm"/>
+    <serviceTask id="confirm" name="Confirm" operaton:type="external" operaton:topic="bot.prompt">
+      <extensionElements>
+        <operaton:inputOutput>
+          <operaton:inputParameter name="text">Thank you. We have your request.</operaton:inputParameter>
+        </operaton:inputOutput>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f4" sourceRef="confirm" targetRef="end"/>
+    <endEvent id="end"/>
+  </process>
+</definitions>

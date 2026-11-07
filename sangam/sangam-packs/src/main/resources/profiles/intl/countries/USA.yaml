@@ -1,0 +1,145 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: USA
+  layer: jurisdiction
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL
+  - INTL-PFM
+  - REGIME-PRESIDENTIAL-APPORTIONMENT
+  name:
+    en: United States (federal)
+  source: INTERNATIONAL-PFM 5
+placeholders:
+- path: classification
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (TAS segments)'
+- path: treasury
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (TGA at the Federal Reserve;
+    rails ACH / check / wire)'
+- path: accountingBasis
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (FASAB)'
+- path: approvalChains.PFM-CH-3
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (certifying-officer liability
+    31 USC 3325, 3528)'
+locale:
+  zone: America/New_York
+  currency: USD
+  grouping:
+    first: 3
+    rest: 3
+  units:
+    K: 1000
+    M: 1000000
+    BN: 1000000000
+  fiscal:
+    startMonth: 10
+    startDay: 1
+    label: END
+  languages:
+  - tag: en
+    script: Latn
+    default: true
+integrations:
+  systems:
+  - CARS
+  - PAM
+  - G-Invoicing
+  - Do Not Pay
+  - agency core financial systems [U]
+ledgers:
+- id: BUDGET
+  stages:
+  - APPROPRIATION
+  - APPORTIONMENT
+  - ALLOTMENT
+  - SUB_ALLOTMENT
+  - COMMITMENT
+  - VERIFICATION
+  - DISBURSEMENT
+  checks:
+    APPROPRIATION: HARD
+    APPORTIONMENT: HARD
+    ALLOTMENT: HARD
+    SUB_ALLOTMENT: HARD
+    COMMITMENT: HARD
+    VERIFICATION: HARD
+    DISBURSEMENT: HARD
+  availability:
+    type: MULTI_YEAR
+    years: 1
+    carryForwardCommitments: true
+    cancelAfterYears: 5
+  currency: USD
+accountingBasis:
+- basis: BUDGETARY
+  effectiveFrom: '2000-01-01'
+- basis: ACCRUAL
+  standard: FASAB
+  effectiveFrom: '2000-01-01'
+classification:
+  schemes:
+  - id: TAS
+    separator: '-'
+    segments:
+    - id: agency
+      width: 3
+    - id: availabilityPeriod
+      width: 8
+      pattern: '[0-9X/]{1,8}'
+      optional: true
+    - id: availabilityType
+      width: 1
+      pattern: '[X ]'
+      optional: true
+    - id: mainAccount
+      width: 4
+    - id: subAccount
+      width: 3
+  - id: USSGL
+    separator: ''
+    segments:
+    - id: account
+      width: 6
+    derive:
+    - segment: account
+      prefix: '4'
+      set:
+        nature: BUDGETARY
+    - segment: account
+      prefix: '5'
+      set:
+        nature: REVENUE
+    - segment: account
+      prefix: '6'
+      set:
+        nature: EXPENSE
+apportionment:
+  categories:
+    A: by quarter
+    B: by programme / project / activity
+    AB: both
+    C: future years
+  footnotesBinding: true
+  interimAuthority:
+    kind: CONTINUING_RESOLUTION
+    formula: PERCENT_OF_PRIOR
+breach:
+  statutory: true
+  law: Antideficiency Act 31 USC 1341, 1517
+  reportTo:
+  - PRESIDENT
+  - CONGRESS
+  - GAO
+  chain: PFM-CH-7
+intragovernmental:
+  system: G-Invoicing
+  mandatoryFrom: FY2023
+  settlement: IPAC
+payeeChecks:
+- DO_NOT_PAY
+- DUPLICATE
+- BANK_ACCOUNT

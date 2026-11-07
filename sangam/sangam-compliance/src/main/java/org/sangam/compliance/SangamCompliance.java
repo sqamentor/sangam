@@ -80,6 +80,8 @@ public final class SangamCompliance {
     public final DataSubjectRightsService rights;
     public final IncidentReportingService incidents;
     public final BreachIncidentService breaches;
+    public final org.sangam.compliance.breach.BreachNotificationPlanner breachPlans;
+    public final org.sangam.compliance.rights.RestrictionService restrictions;
     public final LogArchiveService logs;
     public final NtpTimeSourceVerifier ntp;
     public final AuditIntegrityVerifier integrity;
@@ -119,6 +121,10 @@ public final class SangamCompliance {
         incidents = new IncidentReportingService(dialect, audit, config, contacts, p.incidentAuthority(), p.workflows());
         breaches = new BreachIncidentService(dialect, audit, config, p.supervisoryAuthority(), p.notifier(), p.principals(), holds, incidents,
                 contacts, templates, p.workflows());
+        breachPlans = new org.sangam.compliance.breach.BreachNotificationPlanner(dialect, audit, config, breaches);
+        restrictions = new org.sangam.compliance.rights.RestrictionService(dialect, audit);
+        rights.restrictions(restrictions);
+        disclosures.restrictionCheck((c, t, pr, rec, pc) -> restrictions.blocking(c, t, pr, rec, pc).map(x -> x.restrictionId()));
         logs = new LogArchiveService(dialect, audit, config, p.logArchive(), holds);
         ntp = new NtpTimeSourceVerifier(dialect, audit, config, p.sntp());
         integrity = new AuditIntegrityVerifier(chain, audit);

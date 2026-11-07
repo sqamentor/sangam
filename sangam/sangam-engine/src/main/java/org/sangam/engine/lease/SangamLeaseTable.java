@@ -167,13 +167,40 @@ public final class SangamLeaseTable {
     }
 
     /**
-     * Held leases with {@code expires_at_ms <= nowMs}: candidates by a plain read, then locked by key and re-checked
-     * in work_id order (fixed lock order; no locking range scan, which SQL Server would escalate).
+     * R2: claims held leases with {@code expires_at_ms <= nowMs} with dialect-specific acquisition SQL, so concurrent
+     * sweepers on several nodes never wait for each other and never deadlock (rows another sweeper holds are skipped):
+     * <ul>
+     *   <li>PostgreSQL / MySQL 8: {@code ... ORDER BY expires_at_ms LIMIT n FOR UPDATE SKIP LOCKED} on the
+     *       {@code SANGAM_LEASE_EXPIRY (state, expires_at_ms)} index. MySQL lock footprint under READ COMMITTED: record
+     *       locks on the returned rows only, no gap locks; skipped rows are not locked;</li>
+     *   <li>SQL Server: {@code SELECT TOP (n) ... WITH (UPDLOCK, READPAST, ROWLOCK)}: an index seek on the same index
+     *       (RCSI on), row locks only, so no lock escalation;</li>
+     *   <li>Oracle: two-step, because ROWNUM / FETCH FIRST is applied before SKIP LOCKED: an unlocked candidate read,
+     *       then {@code ... WHERE work_id = ? AND <condition> FOR UPDATE SKIP LOCKED} per candidate;</li>
+     *   <li>H2 (development): two-step with a blocking row lock.</li>
+     * </ul>
+     * Runs in the sweep's own short command, which is marked as an acquisition and never takes L2 (VI.1 rule 4).
      */
     public List<Row> lockExpired(Connection c, long nowMs, int limit) {
-        List<String> candidates = Jdbc.query(c, "SELECT work_id FROM SANGAM_LEASE WHERE state IN (?, ?) "
-                        + "AND expires_at_ms <= ? ORDER BY work_id", rs -> rs.getString(1),
-                State.LOCKED.name(), State.CANCEL_REQUESTED.name(), nowMs);
+        String cond = "state IN (?, ?) AND expires_at_ms <= ?";
+        Object[] args = {State.LOCKED.name(), State.CANCEL_REQUESTED.name(), nowMs};
+        List<String> claimed = switch (dialect) {
+            case POSTGRESQL, MYSQL -> Jdbc.query(c, "SELECT work_id FROM SANGAM_LEASE WHERE " + cond
+                    + " ORDER BY expires_at_ms LIMIT " + limit + " FOR UPDATE SKIP LOCKED", rs -> rs.getString(1), args);
+            case SQLSERVER -> Jdbc.query(c, "SELECT TOP (" + limit + ") work_id FROM SANGAM_LEASE WITH (UPDLOCK, READPAST, "
+                    + "ROWLOCK) WHERE " + cond + " ORDER BY expires_at_ms", rs -> rs.getString(1), args);
+            case ORACLE -> {
+                List<String> out = new ArrayList<>();
+                for (String id : candidates(c, cond, args, limit)) {
+                    Jdbc.one(c, "SELECT work_id FROM SANGAM_LEASE WHERE work_id = ? AND " + cond
+                                    + " FOR UPDATE SKIP LOCKED", rs -> rs.getString(1), id, args[0], args[1], args[2])
+                            .ifPresent(out::add);
+                }
+                yield out;
+            }
+            case H2 -> candidates(c, cond, args, limit);
+        };
+        List<String> candidates = claimed;
         List<Row> out = new ArrayList<>();
         for (String workId : candidates) {
             if (out.size() >= limit) {
@@ -185,6 +212,13 @@ public final class SangamLeaseTable {
             }
         }
         return out;
+    }
+
+    /** Unlocked candidate read (first step of the two-step claim), oldest expiry first. */
+    private List<String> candidates(Connection c, String cond, Object[] args, int limit) {
+        List<String> ids = Jdbc.query(c, "SELECT work_id FROM SANGAM_LEASE WHERE " + cond + " ORDER BY expires_at_ms",
+                rs -> rs.getString(1), args);
+        return ids.size() > limit ? ids.subList(0, limit) : ids;
     }
 
     private static Row row(ResultSet rs) throws SQLException {

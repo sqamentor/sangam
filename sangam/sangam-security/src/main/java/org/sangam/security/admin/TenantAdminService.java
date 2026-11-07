@@ -30,9 +30,56 @@ public final class TenantAdminService {
     public static final String PLATFORM_ADMIN_ROLE = "platform-admin";
     public static final String TENANT_ADMIN_ROLE = "tenant-admin";
 
-    /** AJ-01 step 10. */
-    public static final List<String> MANDATORY_CHECKLIST = List.of("CERT_IN_AUDIT_CLEARANCE", "GIGW_CONFORMANCE_MATRIX",
-            "DATA_PROCESSOR_AGREEMENT", "SMOKE_TEST_PER_PACK", "ISOLATION_CHECK");
+    /** Generic go-live items every tenant needs (AJ-01 step 10). Regime items are data; see {@link #requiredChecklist}. */
+    public static final List<String> CORE_CHECKLIST = List.of("DATA_PROCESSOR_AGREEMENT", "SMOKE_TEST_PER_PACK", "ISOLATION_CHECK");
+
+    /** Tenant config key: jurisdiction pack codes whose {@code goLiveEvidence} apply (ADR-D-20, data not code). */
+    public static final String CONFIG_JURISDICTIONS = "jurisdictions";
+    /** Tenant config key: further required items set by a profile. */
+    public static final String CONFIG_REQUIRED_EVIDENCE = "goLiveRequiredEvidence";
+
+    /** Items a jurisdiction requires; empty Optional means the pack is not installed (activation then fails closed). */
+    @FunctionalInterface
+    public interface JurisdictionChecklist {
+        Optional<List<String>> itemsOf(String jurisdictionCode);
+    }
+
+    /** Reads {@code goLiveEvidence} from the classpath pack {@code compliance/jurisdictions/<code>/pack.json}. */
+    public static final JurisdictionChecklist CLASSPATH_PACKS = code -> {
+        if (!code.matches("[A-Za-z0-9_-]{1,32}")) {
+            return Optional.empty();
+        }
+        try (java.io.InputStream in = TenantAdminService.class.getClassLoader()
+                .getResourceAsStream("compliance/jurisdictions/" + code + "/pack.json")) {
+            if (in == null) {
+                return Optional.empty();
+            }
+            Map<String, Object> pack = Sql.jsonMap(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            return Optional.of(strings(pack.get("goLiveEvidence")));
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("cannot read jurisdiction pack " + code, e);
+        }
+    };
+
+    /** Jurisdictions that apply to a tenant outside its stored config (the deployment's compliance settings). */
+    @FunctionalInterface
+    public interface JurisdictionSource {
+        List<String> of(String tenantId);
+    }
+
+    /** Installs the compliance module's view: the one source of pack items (plugin packs included) and of effective jurisdictions. */
+    public void useJurisdictions(JurisdictionChecklist checklist, JurisdictionSource source) {
+        this.jurisdictionChecklist = checklist;
+        this.jurisdictionSource = source;
+    }
+
+    /** Stored config, the deployment's effective jurisdictions, and {@code planned} (not yet stored; may be empty). */
+    public List<String> effectiveJurisdictions(Connection c, String tenantId, List<String> planned) {
+        java.util.Set<String> codes = new java.util.LinkedHashSet<>(planned);
+        codes.addAll(strings(find(c, tenantId).map(Tenant::config).orElse(Map.of()).get(CONFIG_JURISDICTIONS)));
+        codes.addAll(jurisdictionSource.of(tenantId));
+        return List.copyOf(codes);
+    }
 
     public record Tenant(String tenantId, String nameEn, String nameHi, String nameLocal, String hostingProfile, String status,
                          Map<String, Object> config, Map<String, Object> quotas, boolean fourEyes) {
@@ -41,11 +88,51 @@ public final class TenantAdminService {
     private final SecurityDialect dialect;
     private final AuthorizationService authz;
     private final SecurityAuditService audit;
+    private volatile JurisdictionChecklist jurisdictionChecklist;
+    private volatile JurisdictionSource jurisdictionSource = tenant -> List.of();
 
     public TenantAdminService(SecurityDialect dialect, AuthorizationService authz, SecurityAuditService audit) {
+        this(dialect, authz, audit, CLASSPATH_PACKS);
+    }
+
+    public TenantAdminService(SecurityDialect dialect, AuthorizationService authz, SecurityAuditService audit,
+                              JurisdictionChecklist jurisdictionChecklist) {
         this.dialect = dialect;
         this.authz = authz;
         this.audit = audit;
+        this.jurisdictionChecklist = jurisdictionChecklist;
+    }
+
+    /** Core items, plus the items of the tenant's jurisdiction packs and profile. Fails closed on an unknown pack. */
+    public List<String> requiredChecklist(Connection c, String tenantId) {
+        return requiredChecklist(c, tenantId, List.of());
+    }
+
+    public List<String> requiredChecklist(Connection c, String tenantId, List<String> planned) {
+        Map<String, Object> config = find(c, tenantId).map(Tenant::config).orElse(Map.of());
+        java.util.Set<String> items = new java.util.LinkedHashSet<>(CORE_CHECKLIST);
+        for (String code : effectiveJurisdictions(c, tenantId, planned)) {
+            items.addAll(jurisdictionChecklist.itemsOf(code).orElseThrow(() -> new SangamSecurityException.AdminConflict(
+                    "ACTIVATION_BLOCKED", "jurisdiction pack " + code + " is not installed")));
+        }
+        items.addAll(strings(config.get(CONFIG_REQUIRED_EVIDENCE)));
+        return List.copyOf(items);
+    }
+
+    /** Required items with no recorded evidence. */
+    public List<String> missingEvidence(Connection c, String tenantId) {
+        return missingEvidence(c, tenantId, List.of());
+    }
+
+    /** With jurisdictions a request plans but has not stored yet, so a dry run sees the same requirement. */
+    public List<String> missingEvidence(Connection c, String tenantId, List<String> planned) {
+        List<String> have = Jdbc.query(c, "SELECT item FROM SEC_TENANT_CHECKLIST WHERE tenant_id=? AND evidence_ref IS NOT NULL",
+                rs -> rs.getString(1), tenantId);
+        return requiredChecklist(c, tenantId, planned).stream().filter(i -> !have.contains(i)).toList();
+    }
+
+    private static List<String> strings(Object v) {
+        return v instanceof java.util.Collection<?> l ? l.stream().map(String::valueOf).toList() : List.of();
     }
 
     public Tenant createTenant(Connection c, SecurityIdentity platformAdmin, String tenantId, String nameEn, String nameHi,
@@ -100,7 +187,7 @@ public final class TenantAdminService {
         authz.require(c, admin, ResourceRegistry.TENANT, Permission.ADMIN, admin.tenantId());
         List<String> have = Jdbc.query(c, "SELECT item FROM SEC_TENANT_CHECKLIST WHERE tenant_id=? AND evidence_ref IS NOT NULL",
                 rs -> rs.getString(1), admin.tenantId());
-        List<String> missing = MANDATORY_CHECKLIST.stream().filter(i -> !have.contains(i)).toList();
+        List<String> missing = missingEvidence(c, admin.tenantId());
         if (!missing.isEmpty()) {
             throw new SangamSecurityException.AdminConflict("ACTIVATION_BLOCKED", "missing go-live evidence: " + missing);
         }

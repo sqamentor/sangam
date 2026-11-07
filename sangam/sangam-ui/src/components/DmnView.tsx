@@ -11,7 +11,7 @@ import 'dmn-js/dist/assets/dmn-js-literal-expression.css';
 import 'dmn-js/dist/assets/dmn-font/css/dmn-embedded.css';
 import { ProblemAlert } from './ui';
 
-export function DmnView({ xml, title }: { xml: string; title: string }) {
+export function DmnView({ xml, title, highlightRules = [] }: { xml: string; title: string; highlightRules?: string[] }) {
   const { t } = useTranslation();
   const host = useRef<HTMLDivElement>(null);
   const viewer = useRef<DmnViewer | null>(null);
@@ -26,6 +26,15 @@ export function DmnView({ xml, title }: { xml: string; title: string }) {
       .catch((e: Error) => setErr(e));
     return () => v.destroy();
   }, [xml]);
+  // Matched-rule highlighting (Operaton highlightRules): mark the cells of the rules that fired.
+  useEffect(() => {
+    const run = () => {
+      host.current?.querySelectorAll('.sg-rule-hit').forEach((e) => e.classList.remove('sg-rule-hit'));
+      for (const id of highlightRules) host.current?.querySelectorAll(`[data-row-id="${CSS.escape(id)}"]`).forEach((e) => e.classList.add('sg-rule-hit'));
+    };
+    const timer = window.setTimeout(run, 300);
+    return () => window.clearTimeout(timer);
+  }, [highlightRules, views]);
   return (
     <figure className="diagram">
       <figcaption>{title}</figcaption>

@@ -36,6 +36,10 @@
       "path": "packs/sec-util-new-connection/forms/install.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-util-new-connection/forms/compensation-manual.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-util-new-connection/seed.json"
     }
@@ -58,7 +62,7 @@
       "id": "mdm.install",
       "capabilityClass": "a",
       "govTag": "",
-      "purpose": "Meter data management"
+      "purpose": "Meter data management; keeps the business key as the connection case of the consumer"
     }
   ],
   "covers": [

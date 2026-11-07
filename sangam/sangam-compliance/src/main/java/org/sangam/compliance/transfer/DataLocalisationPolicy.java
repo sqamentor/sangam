@@ -28,7 +28,7 @@ public final class DataLocalisationPolicy {
     }
 
     public boolean isHome(String tenantId, String country) {
-        return country != null && config.forTenant(tenantId).pack.homeCountry().equals(country.trim().toUpperCase(Locale.ROOT));
+        return config.forTenant(tenantId).pack.isHome(country);
     }
 
     public void requireHome(String tenantId, String country, String what) {
@@ -46,7 +46,7 @@ public final class DataLocalisationPolicy {
         ComplianceConfig cfg = config.forTenant(tenantId);
         JurisdictionPack pack = cfg.pack;
         List<String> f = new ArrayList<>();
-        if (cfg.publicSector() && !pack.homeCountry().equals(cfg.hostingCountry)) {
+        if (cfg.publicSector() && !pack.isHome(cfg.hostingCountry)) {
             f.add("hosting country is " + cfg.hostingCountry + ", not " + pack.homeCountry());
         }
         Optional<JurisdictionPack.HostingCategory> cat = pack.hostingCategory(cfg.hostingCategory);
@@ -62,7 +62,7 @@ public final class DataLocalisationPolicy {
         if (!cfg.requiredHostingCategory.isBlank() && !cfg.requiredHostingCategory.equals(cfg.hostingCategory)) {
             f.add("hosting category " + cfg.requiredHostingCategory + " is required, but the deployment uses " + cfg.hostingCategory);
         }
-        if (cfg.pack.hasLimit(ComplianceConfig.INCIDENT_LOG_MIN) && !pack.homeCountry().equals(cfg.logRegion)) {
+        if (cfg.hasLimit(ComplianceConfig.INCIDENT_LOG_MIN) && !pack.isHome(cfg.logRegion)) {
             f.add("log region is " + cfg.logRegion + ", not " + pack.homeCountry());
         }
         if (cfg.publicSector() && !cfg.denyCrossBorderByDefault) {

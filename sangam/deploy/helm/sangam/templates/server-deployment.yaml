@@ -109,6 +109,8 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: state
+              mountPath: /var/lib/sangam
             - name: config
               mountPath: /opt/sangam/config
               readOnly: true
@@ -124,6 +126,9 @@ spec:
         - name: tmp
           emptyDir:
             sizeLimit: 1Gi
+        - name: state
+          persistentVolumeClaim:
+            claimName: {{ include "sangam.server.stateClaim" . }}
         - name: config
           configMap:
             name: {{ $fullname }}-server-config

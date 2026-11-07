@@ -7,45 +7,54 @@
   <process id="sangam-sec-util-bill" name="Bill of one consumer" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.util.meter-to-cash</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key</operaton:string></operaton:field></operaton:executionListener></extensionElements>
     <startEvent id="bl_start" name="Consumer in the cycle"></startEvent>
-    <serviceTask id="bl_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>units=100;readStatus=NORMAL;tariffCategory=DOMESTIC;applicantRef=@key;billingSeat=BILLING-CLERK;dueSpec=15D</operaton:string></operaton:field></extensionElements></serviceTask>
-    <serviceTask id="bl_read" name="Meter read" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>mdm.read</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>read</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>read</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>units=100;mdmReadStatus=NORMAL;tariffCategory=DOMESTIC;applicantRef=@key;billingSeat=BILLING-CLERK;dueSpec=15D;consumer=@key;tariffId=DEFAULT;cycle=@batchId;connectionCaseKey=</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_read" name="Meter read" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>mdm.read</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>read</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>mdm</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="bl_readGw" name="Read valid?" default="sec_util_bill_f5"></exclusiveGateway>
     <userTask id="bl_exception" name="Resolve read exception (provisional bill if meter defective)" operaton:candidateGroups="${billingSeat}" operaton:formKey="sangam:sec-util-meter-to-cash/exception"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
     <businessRuleTask id="bl_tariff" name="Tariff (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-util-tariff</operaton:string></operaton:field></extensionElements></businessRuleTask>
     <serviceTask id="bl_compute" name="Bill amount" operaton:expression="${execution.setVariable('billAmount', fixedCharge + units * energyRate)}"></serviceTask>
-    <serviceTask id="bl_bill" name="Generate and deliver bill" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>billing.generate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>bill</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key,units,billAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bill</operaton:string></operaton:field><operaton:field name="step"><operaton:string>bill</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_bill" name="Generate and deliver bill" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>billing.generate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>bill</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key,consumer,units,billAmount,tariffId,cycle</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bill</operaton:string></operaton:field><operaton:field name="step"><operaton:string>bill</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="bl_due" name="Regulatory clock: payment" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>payment</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${dueSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
     <eventBasedGateway id="bl_wait" name="Paid, disputed or due date"></eventBasedGateway>
+    <serviceTask id="bl_tellConnection" name="First bill: release a held compensation credit" operaton:class="org.sangam.packs.core.CorrelationDelegate"><extensionElements><operaton:field name="messageName"><operaton:string>sangam.util.firstBill</operaton:string></operaton:field><operaton:field name="targetBusinessKey"><operaton:expression>${connectionCaseKey}</operaton:expression></operaton:field><operaton:field name="optional"><operaton:string>true</operaton:string></operaton:field><operaton:field name="variables"><operaton:string>consumer,cycle,head</operaton:string></operaton:field></extensionElements></serviceTask>
     <intermediateCatchEvent id="bl_paid" name="Payment received"><messageEventDefinition messageRef="msg_sangam_util_paid"/></intermediateCatchEvent>
     <intermediateCatchEvent id="bl_dispute" name="Bill disputed"><messageEventDefinition messageRef="msg_sangam_util_billDispute"/></intermediateCatchEvent>
     <intermediateCatchEvent id="bl_overdue" name="Due date passed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${paymentDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
     <endEvent id="bl_end" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <userTask id="bl_revise" name="Examine dispute and revise bill" operaton:candidateGroups="${billingSeat}" operaton:formKey="sangam:sec-util-meter-to-cash/dispute"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>disputeDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
-    <exclusiveGateway id="bl_revGw" name="" default="sec_util_bill_f19"></exclusiveGateway>
-    <serviceTask id="bl_reviseBill" name="Issue revised bill" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>billing.revise</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revise</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key,units</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rev</operaton:string></operaton:field><operaton:field name="step"><operaton:string>revise</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bl_revGw" name="" default="sec_util_bill_f24"></exclusiveGateway>
+    <serviceTask id="bl_superseded" name="Amount of the bill being replaced" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>supersededAmount=@billAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_recompute" name="Revised bill amount" operaton:expression="${execution.setVariable('billAmount', fixedCharge + units * energyRate)}"></serviceTask>
+    <serviceTask id="bl_reviseBill" name="Issue revised bill" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>billing.revise</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revise</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key,consumer,units,tariffId,cycle,head,supersededAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rev</operaton:string></operaton:field><operaton:field name="step"><operaton:string>revise</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bl_revRes" name="Revised?" default="sec_util_bill_f23"></exclusiveGateway>
     <serviceTask id="bl_disconnect" name="Hand over to disconnection (notice case)" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-sec-util-disconnection</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>non-payment</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>key,billAmount,applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="bl_endOverdue" name="Overdue: disconnection case opened"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>OVERDUE</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
     <sequenceFlow id="sec_util_bill_f1" sourceRef="bl_start" targetRef="bl_defaults"/>
     <sequenceFlow id="sec_util_bill_f2" sourceRef="bl_defaults" targetRef="bl_read"/>
     <sequenceFlow id="sec_util_bill_f3" sourceRef="bl_read" targetRef="bl_readGw"/>
-    <sequenceFlow id="sec_util_bill_f4" name="zero / abnormal / defective" sourceRef="bl_readGw" targetRef="bl_exception"><conditionExpression xsi:type="tFormalExpression">${readStatus != 'NORMAL'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_util_bill_f4" name="zero / abnormal / defective" sourceRef="bl_readGw" targetRef="bl_exception"><conditionExpression xsi:type="tFormalExpression">${mdmReadStatus != 'NORMAL'}</conditionExpression></sequenceFlow>
     <sequenceFlow id="sec_util_bill_f5" name="normal" sourceRef="bl_readGw" targetRef="bl_tariff"/>
     <sequenceFlow id="sec_util_bill_f6" sourceRef="bl_exception" targetRef="bl_tariff"/>
     <sequenceFlow id="sec_util_bill_f7" sourceRef="bl_tariff" targetRef="bl_compute"/>
     <sequenceFlow id="sec_util_bill_f8" sourceRef="bl_compute" targetRef="bl_bill"/>
-    <sequenceFlow id="sec_util_bill_f9" sourceRef="bl_bill" targetRef="bl_due"/>
-    <sequenceFlow id="sec_util_bill_f10" sourceRef="bl_due" targetRef="bl_wait"/>
-    <sequenceFlow id="sec_util_bill_f11" sourceRef="bl_wait" targetRef="bl_paid"/>
-    <sequenceFlow id="sec_util_bill_f12" sourceRef="bl_wait" targetRef="bl_dispute"/>
-    <sequenceFlow id="sec_util_bill_f13" sourceRef="bl_wait" targetRef="bl_overdue"/>
-    <sequenceFlow id="sec_util_bill_f14" sourceRef="bl_paid" targetRef="bl_end"/>
-    <sequenceFlow id="sec_util_bill_f15" sourceRef="bl_dispute" targetRef="bl_revise"/>
-    <sequenceFlow id="sec_util_bill_f16" sourceRef="bl_revise" targetRef="bl_revGw"/>
-    <sequenceFlow id="sec_util_bill_f17" name="upheld" sourceRef="bl_revGw" targetRef="bl_reviseBill"><conditionExpression xsi:type="tFormalExpression">${disputeDecision == 'customer'}</conditionExpression></sequenceFlow>
-    <sequenceFlow id="sec_util_bill_f18" sourceRef="bl_reviseBill" targetRef="bl_due"/>
-    <sequenceFlow id="sec_util_bill_f19" name="bill correct" sourceRef="bl_revGw" targetRef="bl_wait"/>
-    <sequenceFlow id="sec_util_bill_f20" sourceRef="bl_overdue" targetRef="bl_disconnect"/>
-    <sequenceFlow id="sec_util_bill_f21" sourceRef="bl_disconnect" targetRef="bl_endOverdue"/>
+    <sequenceFlow id="sec_util_bill_f9" sourceRef="bl_bill" targetRef="bl_tellConnection"/>
+    <sequenceFlow id="sec_util_bill_f10" sourceRef="bl_tellConnection" targetRef="bl_due"/>
+    <sequenceFlow id="sec_util_bill_f11" sourceRef="bl_due" targetRef="bl_wait"/>
+    <sequenceFlow id="sec_util_bill_f12" sourceRef="bl_wait" targetRef="bl_paid"/>
+    <sequenceFlow id="sec_util_bill_f13" sourceRef="bl_wait" targetRef="bl_dispute"/>
+    <sequenceFlow id="sec_util_bill_f14" sourceRef="bl_wait" targetRef="bl_overdue"/>
+    <sequenceFlow id="sec_util_bill_f15" sourceRef="bl_paid" targetRef="bl_end"/>
+    <sequenceFlow id="sec_util_bill_f16" sourceRef="bl_dispute" targetRef="bl_revise"/>
+    <sequenceFlow id="sec_util_bill_f17" sourceRef="bl_revise" targetRef="bl_revGw"/>
+    <sequenceFlow id="sec_util_bill_f18" name="upheld" sourceRef="bl_revGw" targetRef="bl_superseded"><conditionExpression xsi:type="tFormalExpression">${disputeDecision == 'customer'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_util_bill_f19" sourceRef="bl_superseded" targetRef="bl_recompute"/>
+    <sequenceFlow id="sec_util_bill_f20" sourceRef="bl_recompute" targetRef="bl_reviseBill"/>
+    <sequenceFlow id="sec_util_bill_f21" name="refused: re-examine" sourceRef="bl_revRes" targetRef="bl_revise"><conditionExpression xsi:type="tFormalExpression">${revStatus == 'FAILED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_util_bill_f22" sourceRef="bl_reviseBill" targetRef="bl_revRes"/>
+    <sequenceFlow id="sec_util_bill_f23" name="revised" sourceRef="bl_revRes" targetRef="bl_due"/>
+    <sequenceFlow id="sec_util_bill_f24" name="bill correct" sourceRef="bl_revGw" targetRef="bl_wait"/>
+    <sequenceFlow id="sec_util_bill_f25" sourceRef="bl_overdue" targetRef="bl_disconnect"/>
+    <sequenceFlow id="sec_util_bill_f26" sourceRef="bl_disconnect" targetRef="bl_endOverdue"/>
   </process>
   <bpmndi:BPMNDiagram id="sec_util_bill_diagram">
     <bpmndi:BPMNPlane id="sec_util_bill_plane" bpmnElement="sangam-sec-util-bill">
@@ -57,17 +66,21 @@
       <bpmndi:BPMNShape id="bl_tariff_di" bpmnElement="bl_tariff"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_compute_di" bpmnElement="bl_compute"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="bl_bill_di" bpmnElement="bl_bill"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_due_di" bpmnElement="bl_due"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_wait_di" bpmnElement="bl_wait"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_paid_di" bpmnElement="bl_paid"><dc:Bounds x="1702" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_dispute_di" bpmnElement="bl_dispute"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_overdue_di" bpmnElement="bl_overdue"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_end_di" bpmnElement="bl_end"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_revise_di" bpmnElement="bl_revise"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_revGw_di" bpmnElement="bl_revGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_reviseBill_di" bpmnElement="bl_reviseBill"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_disconnect_di" bpmnElement="bl_disconnect"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="bl_endOverdue_di" bpmnElement="bl_endOverdue"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_due_di" bpmnElement="bl_due"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_wait_di" bpmnElement="bl_wait"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_tellConnection_di" bpmnElement="bl_tellConnection"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_paid_di" bpmnElement="bl_paid"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_dispute_di" bpmnElement="bl_dispute"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_overdue_di" bpmnElement="bl_overdue"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_end_di" bpmnElement="bl_end"><dc:Bounds x="2032" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_revise_di" bpmnElement="bl_revise"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_revGw_di" bpmnElement="bl_revGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_superseded_di" bpmnElement="bl_superseded"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_recompute_di" bpmnElement="bl_recompute"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_reviseBill_di" bpmnElement="bl_reviseBill"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_revRes_di" bpmnElement="bl_revRes"><dc:Bounds x="2850" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_disconnect_di" bpmnElement="bl_disconnect"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_endOverdue_di" bpmnElement="bl_endOverdue"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="sec_util_bill_f1_di" bpmnElement="sec_util_bill_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_util_bill_f2_di" bpmnElement="sec_util_bill_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_util_bill_f3_di" bpmnElement="sec_util_bill_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
@@ -77,18 +90,23 @@
       <bpmndi:BPMNEdge id="sec_util_bill_f7_di" bpmnElement="sec_util_bill_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_util_bill_f8_di" bpmnElement="sec_util_bill_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="sec_util_bill_f9_di" bpmnElement="sec_util_bill_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f10_di" bpmnElement="sec_util_bill_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f11_di" bpmnElement="sec_util_bill_f11"><di:waypoint x="1580" y="70"/><di:waypoint x="1641" y="70"/><di:waypoint x="1641" y="320"/><di:waypoint x="1702" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f12_di" bpmnElement="sec_util_bill_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1641" y="70"/><di:waypoint x="1641" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f13_di" bpmnElement="sec_util_bill_f13"><di:waypoint x="1580" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f14_di" bpmnElement="sec_util_bill_f14"><di:waypoint x="1738" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f15_di" bpmnElement="sec_util_bill_f15"><di:waypoint x="1738" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f16_di" bpmnElement="sec_util_bill_f16"><di:waypoint x="1935" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f17_di" bpmnElement="sec_util_bill_f17"><di:waypoint x="2075" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f18_di" bpmnElement="sec_util_bill_f18"><di:waypoint x="2215" y="235"/><di:waypoint x="2215" y="260"/><di:waypoint x="1390" y="260"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f19_di" bpmnElement="sec_util_bill_f19"><di:waypoint x="2050" y="220"/><di:waypoint x="2050" y="252"/><di:waypoint x="1555" y="252"/><di:waypoint x="1555" y="95"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f20_di" bpmnElement="sec_util_bill_f20"><di:waypoint x="1738" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="sec_util_bill_f21_di" bpmnElement="sec_util_bill_f21"><di:waypoint x="1935" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f10_di" bpmnElement="sec_util_bill_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f11_di" bpmnElement="sec_util_bill_f11"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f12_di" bpmnElement="sec_util_bill_f12"><di:waypoint x="1745" y="70"/><di:waypoint x="1806" y="70"/><di:waypoint x="1806" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f13_di" bpmnElement="sec_util_bill_f13"><di:waypoint x="1745" y="70"/><di:waypoint x="1806" y="70"/><di:waypoint x="1806" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f14_di" bpmnElement="sec_util_bill_f14"><di:waypoint x="1745" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f15_di" bpmnElement="sec_util_bill_f15"><di:waypoint x="1903" y="320"/><di:waypoint x="2032" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f16_di" bpmnElement="sec_util_bill_f16"><di:waypoint x="1903" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f17_di" bpmnElement="sec_util_bill_f17"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f18_di" bpmnElement="sec_util_bill_f18"><di:waypoint x="2240" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f19_di" bpmnElement="sec_util_bill_f19"><di:waypoint x="2430" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f20_di" bpmnElement="sec_util_bill_f20"><di:waypoint x="2595" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f21_di" bpmnElement="sec_util_bill_f21"><di:waypoint x="2875" y="220"/><di:waypoint x="2875" y="253"/><di:waypoint x="2050" y="253"/><di:waypoint x="2050" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f22_di" bpmnElement="sec_util_bill_f22"><di:waypoint x="2760" y="195"/><di:waypoint x="2850" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f23_di" bpmnElement="sec_util_bill_f23"><di:waypoint x="2875" y="220"/><di:waypoint x="2875" y="252"/><di:waypoint x="1555" y="252"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f24_di" bpmnElement="sec_util_bill_f24"><di:waypoint x="2215" y="220"/><di:waypoint x="2215" y="259"/><di:waypoint x="1720" y="259"/><di:waypoint x="1720" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f25_di" bpmnElement="sec_util_bill_f25"><di:waypoint x="1903" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_bill_f26_di" bpmnElement="sec_util_bill_f26"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

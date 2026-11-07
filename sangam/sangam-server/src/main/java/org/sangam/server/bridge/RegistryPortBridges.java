@@ -340,7 +340,9 @@ public final class RegistryPortBridges {
             }
             var outcome = invoker.invoke(new ConnectorInvoker.Invocation(event.tenantId(), event.rootId(),
                     "registry-" + kind, 0, event.eventId().toString(), null, connectorId, operation, input, null, 0,
-                    Instant.now().plusSeconds(60)));
+                    Instant.now().plusSeconds(60),
+                    org.sangam.core.layer.OperationLedger.operationId(event.tenantId(), event.rootId(),
+                            "registry-" + kind + "#" + event.eventId(), 0)));
             if (outcome instanceof ConnectorInvoker.Failed f) {
                 throw new org.sangam.integration.relay.PermanentPublishException(
                         "registry " + kind + " via " + connectorId + " failed: " + f.code() + " " + f.message());

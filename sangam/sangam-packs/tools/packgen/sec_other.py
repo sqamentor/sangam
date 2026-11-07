@@ -774,7 +774,7 @@ def util_connection():
                'energised; delay beyond the standard credits the compensation notified by the SERC.',
                ['SEC-UTIL-001', 'SEC-UTIL-002', 'GP-06', 'GP-12', 'GP-17'] + SIDE,
                [('pg.collect', 'b', '', 'Connection charges'), ('billing.credit', 'a', '', 'Compensation credit'),
-                ('mdm.install', 'a', '', 'Meter data management')])
+                ('mdm.install', 'a', '', 'Meter data management; keeps the business key as the connection case of the consumer')])
     p = pk.proc('sangam-sec-util-connection', 'New connection', '', start={'materialFields': 'applicantName,premisesAddress,loadKw'})
     s = p.root
     st = start_form(p, s, 'uc_start', 'Application', 'sec-util-new-connection/apply', 'New connection application | नए कनेक्शन हेतु आवेदन',
@@ -812,17 +812,37 @@ def util_connection():
         f = s.setv(host + '_lateFlag', 'Compensation due', values='compensationDue=true')
         s.flow(b, f)
         s.flow(f, s.end(host + '_lateEnd', 'Recorded'))
-    md = s.conn('uc_mdm', 'Register meter', 'mdm.install', 'register', 'submit', 'meterNo,applicantName', 'mdm', step='meter')
-    cp = s.conn('uc_comp', 'Credit compensation in the next bill', 'billing.credit', 'credit', 'submit', 'applicantName',
-                'comp', step='compensation')
+    md = s.conn('uc_mdm', 'Register meter', 'mdm.install', 'register', 'submit', 'meterNo,applicantName,applicantRef', 'mdm', step='meter')
+    # the credit needs a demand: held until the consumer's first bill names consumer, cycle and head
+    cw = s.egw('uc_compWait', 'First bill or timeout')
+    fb = s.catch_msg('uc_firstBill', 'First bill raised', 'sangam.util.firstBill')
+    ft = s.catch_timer('uc_noBill', 'No bill in time', duration='P60D')
+    s.flow(cw, fb)
+    s.flow(cw, ft)
+    cc = s.setv('uc_compCfg', 'Compensation credit inputs', values='amount=@compensationAmount')
+    s.flow(fb, cc)
+    cp = s.conn('uc_comp', 'Credit compensation in the next bill', 'billing.credit', 'credit', 'submit',
+                'consumer,amount,head,cycle', 'comp', step='compensation')
+    s.flow(cc, cp)
+    cr = s.xgw('uc_compRes', 'Credited?')
+    s.flow(cp, cr)
+    cm = s.user('uc_compManual', 'Compensation not credited: credit by hand | क्षतिपूर्ति जमा नहीं हुई: स्वयं जमा करें', 'AE-SUBDIV',
+                form='sec-util-new-connection/compensation-manual', decision=None, fields=['remarks*'])
+    cj = s.xgw('uc_compJoin')
+    s.flow(cr, cm, "compStatus == 'FAILED'", 'refused (no demand in that cycle yet)')
+    s.flow(cr, cj, None, 'credited', default=True)
+    s.flow(cm, cj)
+    s.flow(ft, cm)
     s.flow(inst, md)
-    g, m = maybe(s, 'uc_compOpt', 'compensationDue', cp, cp, 'Delayed?')
+    g, m = maybe(s, 'uc_compOpt', 'compensationDue', cw, cj, 'Delayed?')
     s.flow(md, g)
     s.flow(m, end_ok(p, s, 'uc_end', 'Energised'))
     s.side_exits('uc')
     pk.dmn('sec-util-sop', 'Connection timeline by area (Electricity (Rights of Consumers) Rules 2020)', 'FIRST',
-           [('Area', 'areaType', 'string')], [('connSpec', 'Connect within', 'string')],
-           [([q('METRO')], [q('7D')], ''), ([q('MUNICIPAL')], [q('15D')], ''), (['-'], [q('30D')], 'rural / hilly')])
+           [('Area', 'areaType', 'string')],
+           [('connSpec', 'Connect within', 'string'), ('compensationAmount', 'Compensation (SYNTHETIC, SERC notifies)', 'double')],
+           [([q('METRO')], [q('7D'), '1000'], ''), ([q('MUNICIPAL')], [q('15D'), '1000'], ''),
+            (['-'], [q('30D'), '500'], 'rural / hilly')])
     simple_seeds(pk, 'SUBDIVISION', [('SUBDIV-CLERK', 'CLERK', 'AE-SUBDIV', 'Sub-division clerk', 'उप-संभाग लिपिक'),
                                      ('JE-FIELD', 'JE', 'AE-SUBDIV', 'Junior engineer', 'कनिष्ठ अभियंता'),
                                      ('AE-SUBDIV', 'AE', None, 'Assistant engineer', 'सहायक अभियंता')], 'uuc')

@@ -53,11 +53,13 @@ import java.util.function.Function;
  *   <li>{@link #openReconciliation}: opens (or reuses) the O04 item on the operation's ledger id.</li>
  *   <li>{@link #capabilityOf}: the bound connector's class, else the pack's declared class, else (c).</li>
  * </ul>
- * The ledger operation id is {@code UUIDv5(tenant, root, "pack:" + operationId, 0)}; it is what the downstream system
- * sees as idempotency key, and it is stable for one pack operationId. Pack connectors without a binding go to the
+ * The ledger operation id is the pack's operationId itself (a UUID), so worker, ledger and downstream share one id; a
+ * non-UUID id falls back to a derived one, with a warning. Pack connectors without a binding go to the
  * {@code fallback} gateway (the packs' simulator in development) or fail with {@code CONNECTOR_NOT_CONFIGURED}.
  */
 public final class IntegrationConnectorGateway implements ConnectorGateway {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(IntegrationConnectorGateway.class);
 
     public static final String DISPATCH_DESTINATION = "pack-dispatch";
     public static final String DISPATCH_EVENT = "sangam.pack.dispatch";
@@ -90,7 +92,12 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
 
     /** Ledger operation id of a pack operation. */
     public static UUID ledgerOperationId(String tenantId, String rootId, String packOperationId) {
-        return OperationLedger.operationId(tenantId, rootId, "pack:" + packOperationId, 0);
+        try {
+            return UUID.fromString(packOperationId);   // the pack's own id is the one id, downstream too
+        } catch (IllegalArgumentException e) {
+            LOG.warn("pack operationId {} is not a UUID; deriving the ledger id", packOperationId);
+            return OperationLedger.operationId(tenantId, rootId, "pack:" + packOperationId, 0);
+        }
     }
 
     // ------------------------------------------------------------------ submit
@@ -100,7 +107,7 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
         if (req.operationId() == null || req.operationId().isBlank()) {
             return ConnectorResult.failed("OPERATION_ID_REQUIRED", "effects need an operationId (VI.3)");
         }
-        if (bindings.binding(req.connector()).isEmpty()) {
+        if (bindings.binding(req.tenantId(), req.connector()).isEmpty()) {
             return fallback != null ? fallback.submit(req)
                     : ConnectorResult.failed("CONNECTOR_NOT_CONFIGURED", "no integration connector bound to " + req.connector());
         }
@@ -141,7 +148,7 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
 
     @Override
     public ConnectorResult query(org.sangam.packs.port.ConnectorRequest req) {
-        Optional<PackConnectorBindings.Binding> b = bindings.binding(req.connector());
+        Optional<PackConnectorBindings.Binding> b = bindings.binding(req.tenantId(), req.connector());
         if (b.isEmpty()) {
             return fallback != null ? fallback.query(req)
                     : ConnectorResult.failed("CONNECTOR_NOT_CONFIGURED", "no integration connector bound to " + req.connector());
@@ -171,7 +178,7 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
         String tenant = tenantOf(tenantId);
         Optional<PackOperationStore.Row> row = tx.inTransaction(c -> store.find(c, tenant, operationId));
         if (row.isEmpty()) {
-            return fallback != null && bindings.binding(connector).isEmpty() ? fallback.lookup(tenantId, connector, operationId)
+            return fallback != null && bindings.binding(tenantId, connector).isEmpty() ? fallback.lookup(tenantId, connector, operationId)
                     : ConnectorResult.failed("NOT_FOUND", "no operation " + operationId);
         }
         PackOperationStore.Row r = row.get();
@@ -225,7 +232,7 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
         return inScope(c -> {
             Optional<PackOperationStore.Row> row = store.lock(c, tenant, operationId);
             if (row.isEmpty()) {
-                return fallback != null && bindings.binding(connector).isEmpty() ? fallback.cancel(tenantId, connector, operationId, reason)
+                return fallback != null && bindings.binding(tenantId, connector).isEmpty() ? fallback.cancel(tenantId, connector, operationId, reason)
                         : new ConnectorResult(OperationStatus.CANCELLED, null, "nothing was submitted", null, Map.of());
             }
             PackOperationStore.Row r = row.get();

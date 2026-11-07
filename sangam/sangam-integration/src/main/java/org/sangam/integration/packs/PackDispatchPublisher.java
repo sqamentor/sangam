@@ -93,7 +93,7 @@ public final class PackDispatchPublisher implements Publisher {
             messages.cancelAck(r, "CANCELLED");
             return;
         }
-        Optional<PackConnectorBindings.Binding> b = bindings.binding(r.connector());
+        Optional<PackConnectorBindings.Binding> b = bindings.binding(r.tenantId(), r.connector());
         if (b.isEmpty()) {
             settle(r, PackOperationStore.Status.FAILED, "CONNECTOR_NOT_CONFIGURED", null, null);
             return;
@@ -101,7 +101,7 @@ public final class PackDispatchPublisher implements Publisher {
         Map<String, Object> input = b.get().payloadMapper().apply(Json.readMap(r.payloadJson()));
         ConnectorInvoker.Invocation inv = new ConnectorInvoker.Invocation(r.tenantId(), r.rootId(), "pack:" + r.operationId(), 0,
                 null, r.businessKey(), b.get().connectorId(), b.get().operation() == null ? r.operation() : b.get().operation(), input,
-                UUID.randomUUID().toString(), 0L, Instant.now().plus(callTimeout));
+                UUID.randomUUID().toString(), 0L, Instant.now().plus(callTimeout), r.ledgerOperationId());
         ConnectorInvoker.Outcome o = invoker.invoke(inv);
         switch (o) {
             case ConnectorInvoker.Completed done -> settle(r, PackOperationStore.Status.COMPLETED, null, done.providerRef(), done.output());

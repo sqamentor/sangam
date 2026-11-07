@@ -51,6 +51,33 @@ public final class DocumentTypeCatalogue {
         public boolean mayReturn(String role) {
             return returnBy.isEmpty() || returnBy.contains(role);
         }
+
+        /**
+         * Steps owned by another tenant or an external body (PFM-076: an independent authority approving withdrawals;
+         * donor no-objection; ministerial direction PFM-077). Step shape:
+         * {@code {role: CONTROLLER_OF_BUDGET, ownerTenant: KE.COB, external: true, sla: 5WD, refusalBlocks: true}}.
+         * Packs route such a step through the core referral block to {@code ownerTenant}.
+         */
+        public List<Map<String, Object>> externalSteps() {
+            List<Map<String, Object>> out = new ArrayList<>();
+            for (Map<String, Object> s : Tree.maps(raw.get("steps"))) {
+                if (Tree.bool(s.get("external"), false) || s.get("ownerTenant") != null) {
+                    out.add(s);
+                }
+            }
+            return out;
+        }
+
+        /** Steps that record personal liability of the signer (certifying officer, ordenador de despesa; PFM-048). */
+        public List<String> liableRoles() {
+            List<String> out = new ArrayList<>();
+            for (Map<String, Object> s : Tree.maps(raw.get("steps"))) {
+                if ("PERSONAL".equalsIgnoreCase(Tree.str(s.get("liability"), ""))) {
+                    out.add(Tree.str(s.get("role"), null));
+                }
+            }
+            return out;
+        }
     }
 
     private final Map<String, DocumentType> types = new LinkedHashMap<>();

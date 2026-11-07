@@ -102,6 +102,14 @@
     {
       "kind": "SEED",
       "path": "packs/core/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/core/registry/identifier-types-in.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/core/registry/identifier-types.json"
     }
   ],
   "seed": "packs/core/seed.json",

@@ -65,7 +65,7 @@ Paths are under `src/main/java/org/sangam/compliance/`. CMP ids refer to the IN 
 | `resources/.../IN/obligations.tsv` | CMP-001…153, with bearer, evidence area and verification status. |
 | `config/ComplianceConfig` | Tenant configuration, legal floors and ceilings from the pack, publication gaps. |
 | `ComplianceAudit` | Consent ledger, breach and incident timelines and evidence on the core `AuditChain`, using per-tenant and per-subject chains (CMP-012, CMP-056). |
-| `ComplianceSchema` | Reference DDL for 26 tables, in the four dialects through `Dialect` tokens. |
+| `ComplianceSchema` | Reference DDL for 28 tables, in the four dialects through `Dialect` tokens. |
 | `consent/NoticeTemplate` | Templates per pack and language, with required keys and a lint for invalid clauses (CMP-004, 006, 047-049). |
 | `consent/ConsentNoticeService` | Versioned, hashed notices in every enabled language; links, contact and itemisation enforced; non-consent intimation (CMP-053); privacy policy (CMP-120, GIGW); legacy notices (CMP-003). |
 | `consent/ConsentService` | Affirmative, specific consent bound to the exact notice version; partial or full withdrawal; processor cessation; withdrawal listeners (CMP-005, 008-012). |
@@ -106,8 +106,9 @@ Paths are under `src/main/java/org/sangam/compliance/`. CMP ids refer to the IN 
    - breach and incidents: `CMP_INCIDENT`, `CMP_BREACH`, `CMP_BREACH_NOTICE`, `CMP_BREACH_ROOT`
    - logs and time: `CMP_LOG_SEGMENT`, `CMP_LOG_SOURCE`, `CMP_NTP_CHECK`
    - transfer and reports: `CMP_TRANSFER_DECISION`, `CMP_REPORT`
+   - restrictions and breach plans: `CMP_RESTRICTION`, `CMP_BREACH_PLAN`
 
-   Add the 16 indexes listed there as well. The module also uses `LEGAL_HOLD` (integration) and the core
+   Add the 18 indexes listed there as well. The module also uses `LEGAL_HOLD` (integration) and the core
    `AUDIT_EVENT`, `AUDIT_PAYLOAD` and `ROOT_SEQ`.
 2. **Wiring.**
    - Build `new SangamCompliance(dialect, Transactions.of(engineAdapter), configProvider, ports)`, then call
@@ -165,3 +166,79 @@ jackson-databind and slf4j, all Apache-2.0.
   Board yet.
 - **Not in Sangam's scope.** Cloud/VPN KYC record keeping (CERT-In para (v)/(vi)) and other deployer-only obligations
   (bearer DF) are listed in the report as DEPLOYER.
+
+## Jurisdiction packs US-HIPAA and EU-GDPR (ADR-D-23)
+
+Set `sangam.compliance.jurisdiction` to `US-HIPAA` or `EU-GDPR`, and `region` to a state (`US-FL`) or member state (`FR`).
+
+Generic framework additions: regions (limit, authority, default and breach-rule overrides), right extensions and calendar-month periods, access exceptions, threshold-driven breach plans with risk assessment and law-enforcement delay (`BreachNotificationPlanner`, `CMP_BREACH_PLAN`), `RestrictionService` (`CMP_RESTRICTION`), accounting of disclosures, objection, human review, minimum necessary, special-category conditions, adequacy/safeguard/derogation transfers, prior consultation, advisory checklist items. New processes: `sangam-dsr-accounting`, `-restriction`, `-objection`, `-automated-decision`, `sangam-breach-notification-plan`.
+
+**Verification.** [V] = read in official text (govinfo CFR 2024; the Commission adequacy page). [S] = from US-HEALTH-WORKFLOWS.md, not re-read. [U] = unverified. All GDPR article values are [U] because EUR-Lex returned empty pages. State and member-state values are all [U]. 42 CFR 489.20(m) has no hour limit in the text; the 72 hours is from the CMS manual [U].
+
+**Deployer setup and limits.** `authority.CMS-SA.recipients` must be set for US-HIPAA. Only English notice templates ship, so a member-state region whose default language is not English cannot publish a notice until a translation is added. The planner records plans and sends but does not dispatch notifications itself. Sangam-default review periods are marked [U] in the pack. EU coverage is 12 member-state regions, US 6 states.
+
+### US-HLT coverage map
+
+| Id | Bearer | Status | Where |
+|---|---|---|---|
+| US-HLT-001 | SHARED | [S] | PurposeBindingGuard (pack legal bases TREATMENT/PAYMENT/HEALTH_CARE_OPERATIONS/AUTHORIZATION/164.512; minimum necessary enforced by requiresMinimumNecessary) |
+| US-HLT-002 | SANGAM | [V] | right ACCESS 30+30 (extend()); also pack sec.ushealth.access-request |
+| US-HLT-003 | SHARED | [S] | PersonalDataPort summary / portability export; pack sec.ushealth.access-request |
+| US-HLT-004 | DF | [S] | deployer fee policy; pack sec.ushealth.access-request |
+| US-HLT-005 | SANGAM | [S] | denyWithException with HIPAA_DENIAL_* codes; response carries complaint route |
+| US-HLT-006 | SANGAM | [S] | PrincipalAuthenticator at intake (Rule-neutral) |
+| US-HLT-007 | SANGAM | [S] | right AMENDMENT 60+30 (sangam-dsr-rectification, extend()) |
+| US-HLT-008 | SANGAM | [V] | right ACCOUNTING 60+30, look-back accountingLookbackDays=2190, TPO/authorization excluded (sangam-dsr-accounting, buildAccounting) |
+| US-HLT-009 | SHARED | [S] | retention class HIPAA_DOCUMENTATION; logRetentionMinDays 2190; audit chain evidence |
+| US-HLT-010 | SHARED | [U] | lawful-request basis REPRODUCTIVE_HEALTH_ATTESTATION, requiresAttestation=false (rule vacated 2025, verify) |
+| US-HLT-011 | SHARED | [S] | evidence RISK_ANALYSIS, ACTIVITY_REVIEW; checklist HIPAA-RISK-ANALYSIS, HIPAA-ACTIVITY-REVIEW |
+| US-HLT-012 | SHARED | [S] | checklist HIPAA-UNIQUE-ID, HIPAA-EMERGENCY-ACCESS, HIPAA-AUTO-LOGOFF, HIPAA-ENCRYPTION; sangam-security OIDC/MFA |
+| US-HLT-013 | SANGAM | [S] | core AuditChain + AuditIntegrityVerifier; checklist HIPAA-AUDIT-CONTROLS |
+| US-HLT-014 | SHARED | [S] | checklist HIPAA-TRANSMISSION, HIPAA-INTEGRITY; sangam-connectors-health TLS |
+| US-HLT-015 | SHARED | [S] | evidence SECURITY_INCIDENT_PROCEDURE_REVIEW; IncidentReportingService; breach plan |
+| US-HLT-016 | SHARED | [U] | checklist NPRM-* items enforced=false (ADVISORY): proposed rule, not final |
+| US-HLT-020 | SANGAM | [S] | BreachNotificationPlanner.assessRisk four factors, presumption NOTIFIABLE_UNLESS_LOW_PROBABILITY |
+| US-HLT-021 | SANGAM | [S] | awareAt = discovery; all plan clocks from it |
+| US-HLT-022 | SANGAM | [V] | plan rule INDIVIDUALS 60 days; subject items 164.404(c) |
+| US-HLT-023 | SHARED | [V] | rule INDIVIDUALS citation (substitute notice); PrincipalNotifier channel choice |
+| US-HLT-024 | SANGAM | [V] | subjectItems A-E enforced by notifySubjects |
+| US-HLT-025 | SHARED | [V] | urgent telephone notice: PrincipalNotifier channel (deployer) |
+| US-HLT-026 | SANGAM | [S] | plan rule MEDIA minAffectedInRegion 501 |
+| US-HLT-027 | SANGAM | [V] | plan rules HHS_500_OR_MORE (contemporaneous) and HHS_ANNUAL_LOG (60 days after year end) |
+| US-HLT-028 | SANGAM | [S] | plan rule BA_TO_COVERED_ENTITY (entity attribute business-associate) |
+| US-HLT-029 | SANGAM | [S] | lawEnforcementDelay (written: stated period; oral: max 30 days) |
+| US-HLT-030 | SANGAM | [S] | assessment, plan and sends on the audit chain; CMP_BREACH_PLAN |
+| US-HLT-031 | SHARED | [U] | regions US-CA/TX/FL/NY/CO/WA override deadlines and add STATE_AG notice (verify each statute) |
+| US-HLT-035 | SHARED | [S] | evidence BAA_REVIEW; hosting CLOUD_WITH_BAA; pack sec.ushealth.baa |
+| US-HLT-036 | DF | [S] | BAA content: pack sec.ushealth.baa |
+| US-HLT-037 | DF | [S] | pack sec.ushealth.baa |
+| US-HLT-038 | SHARED | [U] | evidence BAA_REVIEW 12 months (SYNTHETIC); pack sec.ushealth.baa |
+| US-HLT-040 | SHARED | [S] | entity attribute business-associate; pack sec.ushealth.baa |
+| US-HLT-041 | SANGAM | [S] | see 020-031 |
+| US-HLT-042 | DF | [S] | penalty tiers: risk weighting only; deployer |
+| US-HLT-043 | SANGAM | [S] | right RESTRICTION + RestrictionService; DisclosureRegister refuses restricted disclosures |
+| US-HLT-045 | SANGAM | [S] | access requests cannot be refused without a pack accessException (reject blocked; denyWithException) |
+| US-HLT-046 | SHARED | [S] | terminology personalData/EHI; PersonalDataPort covers the designated record set (deployer mapping) |
+| US-HLT-047 | SANGAM | [S] | accessExceptions 171.201-205 |
+| US-HLT-048 | SANGAM | [S] | accessException INFEASIBILITY responseBusinessDays 10; pack sec.ushealth.access-request timer |
+| US-HLT-049 | SANGAM | [S] | accessExceptions MANNER, FEES, LICENSING, TEFCA_MANNER |
+| US-HLT-050 | DF | [U] | OIG disincentives: deployer exposure; evidence INFORMATION_BLOCKING_REVIEW |
+| US-HLT-051 | SHARED | [S] | SLA + exception code required; pack sec.ushealth.access-request |
+| US-HLT-061 | DF | [S] | payer Patient Access API: not in compliance scope (payer-side hosting; gap for sangam-connectors-health) |
+| US-HLT-062 | DF | [S] | payer Provider Access API: not in compliance scope (gap) |
+| US-HLT-063 | DF | [S] | payer-to-payer API: not in compliance scope (gap) |
+| US-HLT-064 | DF | [U] | 1-business-day response: not in compliance scope (gap) |
+| US-HLT-066 | DF | [S] | MIPS attestation: deployer reporting |
+| US-HLT-067 | DF | [S] | API standards: sangam-connectors-health (gap in register) |
+| US-HLT-114 | DF | [S] | No Surprises Act payment timing: payer workflow, not compliance (gap for sec.ushealth packs) |
+| US-HLT-115 | DF | [S] | Federal IDR: not in compliance scope (gap; PPDR pack is the template) |
+| US-HLT-116 | DF | [U] | Advanced EOB: enforcement deferred; not modelled |
+| US-HLT-120 | SHARED | [S] | clinical workflow (eligibility pack must not delay screening); not a compliance-module control |
+| US-HLT-121 | SHARED | [S] | clinical workflow (prior-auth pack); not a compliance-module control |
+| US-HLT-122 | SHARED | [S] | stabilisation/transfer is a clinical workflow: gap for a sec.ushealth emergency pack |
+| US-HLT-123 | SHARED | [V] | retention class EMTALA_TRANSFER_RECORDS 5 years; central log and on-call list: deployer/clinical pack |
+| US-HLT-124 | SANGAM | [V] | U] |
+
+GDPR coverage (GDPR-001…044, Arts 5-10, 12-22, 25, 27, 28, 30, 32-39, 44-49) is in `compliance/jurisdictions/EU-GDPR/obligations.tsv`.
+
+**Not implemented here:** US-HLT-061-064, 066, 067, 114-116 and 122 are outside this module; they are listed for traceability only and remain gaps for the owning modules.

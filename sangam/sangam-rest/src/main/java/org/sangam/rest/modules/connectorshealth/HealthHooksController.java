@@ -32,9 +32,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class HealthHooksController {
 
     private final HealthHooksPort hooks;
+    private final org.sangam.rest.port.PermissionPort permissions;
 
-    public HealthHooksController(HealthHooksPort hooks) {
+    public HealthHooksController(HealthHooksPort hooks, org.sangam.rest.port.PermissionPort permissions) {
         this.hooks = hooks;
+        this.permissions = permissions;
+    }
+
+    /** An authenticated hand-over of a received 835 (an SFTP collector or an operator). Always the caller's tenant. */
+    @PostMapping(value = "/api/v1/connectors-health/x12/835", consumes = {"application/edi-x12", MediaType.TEXT_PLAIN_VALUE})
+    public ResponseEntity<HealthHooksPort.RemittanceResult> remittance835(org.sangam.rest.port.RequestContext ctx, @RequestBody String x12) {
+        permissions.require(ctx, org.sangam.rest.support.Permissions.OPS_WRITE);
+        HealthHooksPort.RemittanceResult r = hooks.remittance835(ctx.tenantId(), ctx.principalId(), x12);
+        return ResponseEntity.status(r.poisonItemId() != null ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.ACCEPTED).body(r);
     }
 
     @PostMapping(value = "/api/v1/hooks/fhir/{channel}", consumes = {"application/fhir+json", "application/json"})

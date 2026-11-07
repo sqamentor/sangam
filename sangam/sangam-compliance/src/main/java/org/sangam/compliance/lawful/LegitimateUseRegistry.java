@@ -55,7 +55,7 @@ public final class LegitimateUseRegistry {
                 Sql.jsonList(new TreeSet<>(d.exemptions())), Sql.blankToNull(d.exemptionRef()), Sql.jsonList(new TreeSet<>(d.childExemptions())),
                 Sql.enumList(d.flags()), d.retentionTrigger(), Sql.seconds(d.retention()), Sql.blankToNull(d.retentionClass()),
                 Sql.blankToNull(d.recordClass()), Sql.seconds(d.recordRetention()), Sql.blankToNull(d.recordRetentionRef()), version,
-                d.active(), actor};
+                d.active(), Sql.blankToNull(d.specialCondition()), actor};
         Object[] p = new Object[values.length + 2];
         if (old.isPresent()) {
             System.arraycopy(values, 0, p, 0, values.length);
@@ -64,7 +64,7 @@ public final class LegitimateUseRegistry {
             Jdbc.update(c, "UPDATE CMP_PURPOSE SET names_json=?, descriptions_json=?, data_items_json=?, basis=?, legal_ref=?, sub_ground=?,"
                     + " register_ref=?, standards_attested=?, exemptions_json=?, exemption_ref=?, child_exemptions_json=?, flags_json=?,"
                     + " retention_trigger=?, retention_seconds=?, retention_class=?, record_class=?, record_retention_seconds=?,"
-                    + " record_retention_ref=?, version=?, active=?, defined_by=?, defined_at=" + dialect.now()
+                    + " record_retention_ref=?, version=?, active=?, special_condition=?, defined_by=?, defined_at=" + dialect.now()
                     + " WHERE tenant_id=? AND purpose_code=?", p);
         } else {
             p[0] = tenantId;
@@ -73,7 +73,7 @@ public final class LegitimateUseRegistry {
             Jdbc.update(c, "INSERT INTO CMP_PURPOSE(tenant_id, purpose_code, names_json, descriptions_json, data_items_json, basis,"
                     + " legal_ref, sub_ground, register_ref, standards_attested, exemptions_json, exemption_ref, child_exemptions_json,"
                     + " flags_json, retention_trigger, retention_seconds, retention_class, record_class, record_retention_seconds,"
-                    + " record_retention_ref, version, active, defined_by, defined_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
+                    + " record_retention_ref, version, active, special_condition, defined_by, defined_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
                     + dialect.now() + ")", p);
         }
         Map<String, Object> ev = new LinkedHashMap<>();
@@ -143,6 +143,13 @@ public final class LegitimateUseRegistry {
         if (d.retentionClass() != null && !d.retentionClass().isBlank() && pack.retentionClass(d.retentionClass()).isEmpty()) {
             p.add("retention class " + d.retentionClass() + " is not defined by jurisdiction " + pack.code());
         }
+        boolean sensitive = d.dataItems().stream().anyMatch(PurposeDefinition.DataItem::sensitive);
+        if (sensitive && !pack.specialCategoryConditions().isEmpty()) {
+            if (d.specialCondition() == null || pack.specialCategoryConditions().stream().noneMatch(m -> m.code().equals(d.specialCondition()))) {
+                p.add("sensitive data needs a special-category condition, one of " + pack.specialCategoryConditions().stream()
+                        .map(JurisdictionPack.VerificationMethod::code).toList());
+            }
+        }
         if (d.flags().contains(ProcessingFlag.DETRIMENTAL_TO_WELLBEING)) {
             p.add("processing flagged detrimental to a child's well-being is not allowed for any purpose");
         }
@@ -169,7 +176,7 @@ public final class LegitimateUseRegistry {
         define(c, tenantId, new PurposeDefinition(d.code(), d.names(), d.descriptions(), d.dataItems(), d.basis(), d.legalRef(),
                 d.subGround(), d.registerRef(), d.standardsAttested(), d.exemptions(), d.exemptionRef(), d.childExemptions(), d.flags(),
                 d.retentionTrigger(), d.retention(), d.retentionClass(), d.recordClass(), d.recordRetention(), d.recordRetentionRef(),
-                d.version(), false), actor);
+                d.version(), false, d.specialCondition()), actor);
     }
 
     /** The data subject objected to processing on an objectable basis (IN: s.7(a)). */
@@ -200,7 +207,7 @@ public final class LegitimateUseRegistry {
     private static final String SELECT = "SELECT purpose_code, names_json, descriptions_json, data_items_json, basis, legal_ref,"
             + " sub_ground, register_ref, standards_attested, exemptions_json, exemption_ref, child_exemptions_json, flags_json,"
             + " retention_trigger, retention_seconds, retention_class, record_class, record_retention_seconds, record_retention_ref,"
-            + " version, active FROM CMP_PURPOSE";
+            + " version, active, special_condition FROM CMP_PURPOSE";
 
     private static PurposeDefinition map(ResultSet rs) throws SQLException {
         List<PurposeDefinition.DataItem> items = new ArrayList<>();
@@ -215,6 +222,6 @@ public final class LegitimateUseRegistry {
                 Sql.enums(ProcessingFlag.class, rs.getString("flags_json")),
                 Sql.enumOrNull(RetentionSchedule.Trigger.class, rs.getString("retention_trigger")), Sql.duration(rs, "retention_seconds"),
                 rs.getString("retention_class"), rs.getString("record_class"), Sql.duration(rs, "record_retention_seconds"),
-                rs.getString("record_retention_ref"), rs.getInt("version"), Sql.bool(rs.getInt("active")));
+                rs.getString("record_retention_ref"), rs.getInt("version"), Sql.bool(rs.getInt("active")), rs.getString("special_condition"));
     }
 }

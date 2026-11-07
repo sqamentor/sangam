@@ -194,6 +194,14 @@ Versions come from the Spring Boot 4.1.2 BOM imported by the parent (no BOM in t
      `SEC_BULK_PLAN`, `SEC_FIELD_RULE`, `SEC_TENANT_CHECKLIST`, `SEC_ORG_LEVEL`, `SEC_CASE_ACTOR`,
      `SEC_SOD_EXCEPTION`, `SEC_APPROVAL`.
    - SQL Server: `SEC_PERSON_SUBJECT` must be a filtered unique index (`WHERE external_subject IS NOT NULL`).
+   - `AUTH_GRANT_SOURCE` key: the primary key ends in `source_key` (hex SHA-256 of `source_id`, written by
+     `AuthEffectiveMaintainer`), not `source_id`. Worst-case key: SQL Server 1,534 bytes (limit 1,700), MySQL 3,066
+     bytes (limit 3,072). `source_id` stays as a plain column for lookups through `AUTH_GRANT_SOURCE_SRC`.
+   - Go-live checklist (ADR-D-20): core items in code; regime items come from `goLiveEvidence` in the jurisdiction
+     packs named by tenant config `jurisdictions`, plus config `goLiveRequiredEvidence`. Whoever enables a jurisdiction
+     must also write it to tenant config, otherwise its items are not required. Use `TenantAdminService.missingEvidence`.
+   - Resource type `document` maps to `AI_KB_CHUNK.document_id` (scope `kb:<kb_key>`), with no default grant.
+     `KnowledgeBaseService`'s default predicate ignores `*`-type rows and `kb:` scopes; bind its `visibility` to `PolicyCompiler`.
 2. **Audit chain id length.** Case events use the case id (the business key, else the process instance id) as
    `AUDIT_EVENT.chain_id`, which is `VARCHAR(64)`. Business keys must be ≤ 64 characters, or widen the column.
 3. **Engine plugin.** Add `new SangamSecurityEnginePlugin(sangamSecurity)` next to `SangamProcessEnginePlugin`. It

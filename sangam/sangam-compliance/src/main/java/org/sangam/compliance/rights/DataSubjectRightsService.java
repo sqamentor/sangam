@@ -86,6 +86,11 @@ public final class DataSubjectRightsService {
     private final ErasurePort erasure;
     private final ContactDirectory contacts;
     private final WorkflowStarter workflows;
+    private volatile RestrictionService restrictions;
+
+    public void restrictions(RestrictionService restrictions) {
+        this.restrictions = restrictions;
+    }
 
     public DataSubjectRightsService(Dialect dialect, Transactions tx, ComplianceAudit audit, ComplianceConfig.Provider config,
                                     PrincipalAuthenticator authenticator, NominationService nominations, ConsentService consents,
@@ -134,11 +139,18 @@ public final class DataSubjectRightsService {
             }
         }
         Instant now = Sql.now(c, dialect);
-        int days = cfg.rightSlaDays(right.code(), now);
-        if (days < 1) {
-            throw new ComplianceException(Code.SLA_EXCEEDS_LEGAL_MAXIMUM, "SLA for " + right.code() + " is not positive");
+        Instant due;
+        int days;
+        if (right.defaultMonths() > 0) {
+            due = now.atZone(cfg.pack.timeZone()).plusMonths(right.defaultMonths()).toInstant();
+            days = (int) Duration.between(now, due).toDays();
+        } else {
+            days = cfg.rightSlaDays(right.code(), now);
+            if (days < 1) {
+                throw new ComplianceException(Code.SLA_EXCEEDS_LEGAL_MAXIMUM, "SLA for " + right.code() + " is not positive");
+            }
+            due = now.plus(Duration.ofDays(days));
         }
-        Instant due = now.plus(Duration.ofDays(days));
         String id = Sql.newId();
         Jdbc.update(c, "INSERT INTO CMP_RIGHTS_REQUEST(tenant_id, request_id, principal_ref, right_code, category, status, identifier_type,"
                         + " channel, acting_nominee_ref, received_at, due_at, closed_at, process_instance_id, details_json, outcome, outcome_hash,"
@@ -172,8 +184,129 @@ public final class DataSubjectRightsService {
         }
     }
 
+    /**
+     * One extension of the response period with a written notice of the reason and the new date, given within the
+     * original period (US-HIPAA 164.524(b)(2)(ii), 164.526(b)(2), 164.528(c)(1); EU-GDPR Art. 12(3)).
+     */
+    public RightsRequest extend(Connection c, String tenantId, String requestId, String reason, String actor) {
+        Sql.requireText(reason, "reason");
+        RightsRequest r = get(c, tenantId, requestId);
+        ComplianceConfig cfg = config.forTenant(tenantId);
+        JurisdictionPack.Right right = cfg.pack.right(r.right()).orElseThrow();
+        if (!right.extendable()) {
+            throw new ComplianceException(Code.INVALID_STATE, "the right " + right.code() + " allows no extension (" + right.citation() + ")");
+        }
+        if (r.closedAt() != null || Jdbc.one(c, "SELECT extended FROM CMP_RIGHTS_REQUEST WHERE tenant_id=? AND request_id=?",
+                rs -> rs.getInt(1), tenantId, requestId).orElse(0) == 1) {
+            throw new ComplianceException(Code.INVALID_STATE, "only one extension is allowed for an open request");
+        }
+        Instant now = Sql.now(c, dialect);
+        if (now.isAfter(r.dueAt())) {
+            throw new ComplianceException(Code.INVALID_STATE, "the extension notice must be given within the original period");
+        }
+        Instant due = right.extensionMonths() > 0 ? r.dueAt().atZone(cfg.pack.timeZone()).plusMonths(right.extensionMonths()).toInstant()
+                : r.dueAt().plus(Duration.ofDays(right.extensionDays()));
+        Jdbc.update(c, "UPDATE CMP_RIGHTS_REQUEST SET due_at=?, extended=1, extension_reason=? WHERE tenant_id=? AND request_id=?",
+                due, reason, tenantId, requestId);
+        audit.principal(c, tenantId, r.principalRef(), ComplianceAudit.RIGHTS_REQUEST_EXTENDED, Sql.kv("request", requestId,
+                "right", r.right(), "newDueAt", due.toString(), "reasonHash", Sql.hashHex(reason), "actor", actor));
+        return get(c, tenantId, requestId);
+    }
+
+    /**
+     * Accounting of disclosures over the pack look-back ({@code accountingLookbackDays}), leaving out disclosures on
+     * bases the pack excludes (US-HIPAA 164.528(a)(1): treatment, payment, operations, authorisation ...) and withheld ones.
+     */
+    public List<Map<String, Object>> buildAccounting(Connection c, String tenantId, String requestId, String actor) {
+        RightsRequest r = open(c, tenantId, requestId, RightCategory.ACCOUNTING);
+        ComplianceConfig cfg = config.forTenant(tenantId);
+        Instant from = Sql.now(c, dialect).minus(Duration.ofDays(cfg.limit("accountingLookbackDays", 36500)));
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (DisclosureRegister.Disclosure d : disclosures.all(c, tenantId, r.principalRef())) {
+            if (d.withheldFromAccess() || d.disclosedAt() == null || d.disclosedAt().isBefore(from)) {
+                continue;
+            }
+            boolean excluded = d.purposeCode() != null && purposes.find(c, tenantId, d.purposeCode())
+                    .flatMap(p -> cfg.pack.legalBasis(p.basis())).map(JurisdictionPack.LegalBasis::excludedFromAccounting).orElse(false);
+            if (!excluded) {
+                out.add(Sql.kv("date", d.disclosedAt().toString(), "recipient", d.recipient(), "recipientKind", d.recipientKind().name(),
+                        "dataCategories", new ArrayList<>(d.dataCategories()), "purpose", d.purposeCode(), "legalRef", d.legalRef()));
+            }
+        }
+        close(c, tenantId, requestId, Status.RESOLVED, "ACCOUNTING " + out.size() + " DISCLOSURES " + Sql.evidenceHash(out), actor);
+        return out;
+    }
+
+    /**
+     * Denies (fully or partly) an access request under a pack access exception (US: 45 CFR 171.201-205, 171.301-303 ...).
+     * Without a valid exception an access request cannot be refused where the pack defines exceptions.
+     */
+    public void denyWithException(Connection c, String tenantId, String requestId, String exceptionCode, boolean partial, String reason,
+                                  String actor) {
+        Sql.requireText(reason, "reason");
+        RightsRequest r = get(c, tenantId, requestId);
+        if (r.category() != RightCategory.ACCESS && r.category() != RightCategory.PORTABILITY) {
+            throw new ComplianceException(Code.INVALID_STATE, "access exceptions apply to access requests");
+        }
+        JurisdictionPack.AccessException ex = config.forTenant(tenantId).pack.accessException(exceptionCode).orElseThrow(() ->
+                ComplianceException.invalid("access exception " + exceptionCode + " is not defined by the jurisdiction pack"));
+        Jdbc.update(c, "UPDATE CMP_RIGHTS_REQUEST SET access_exception=? WHERE tenant_id=? AND request_id=?", ex.code(), tenantId, requestId);
+        close(c, tenantId, requestId, partial ? Status.PARTIALLY_RESOLVED : Status.REJECTED,
+                "EXCEPTION " + ex.code() + " (" + ex.citation() + "): " + reason, actor);
+    }
+
+    /** Records an agreed restriction (US-HIPAA 164.522; EU-GDPR Art. 18) and closes the request. */
+    public void applyRestriction(Connection c, String tenantId, String requestId, String recipientPattern, String purposeCode,
+                                 boolean accepted, String reason, String actor) {
+        RightsRequest r = open(c, tenantId, requestId, RightCategory.RESTRICTION);
+        if (!accepted) {
+            Sql.requireText(reason, "reason");
+            close(c, tenantId, requestId, Status.REJECTED, "RESTRICTION DECLINED: " + reason, actor);
+            return;
+        }
+        if (restrictions == null) {
+            throw new IllegalStateException("RestrictionService is not configured");
+        }
+        RestrictionService.Restriction x = restrictions.add(c, tenantId, r.principalRef(), recipientPattern, purposeCode, reason,
+                config.forTenant(tenantId).pack.right(r.right()).map(JurisdictionPack.Right::citation).orElse(""), actor);
+        close(c, tenantId, requestId, Status.RESOLVED, "RESTRICTION " + x.restrictionId(), actor);
+    }
+
+    /**
+     * Objection (EU-GDPR Art. 21): processing on an objectable basis stops unless the controller records compelling
+     * legitimate grounds; consent purposes are withdrawn instead.
+     */
+    public void applyObjection(Connection c, String tenantId, String requestId, String purposeCode, boolean compellingGrounds,
+                               String reason, String actor) {
+        RightsRequest r = open(c, tenantId, requestId, RightCategory.OBJECTION);
+        ComplianceConfig cfg = config.forTenant(tenantId);
+        PurposeDefinition p = purposes.require(c, tenantId, purposeCode);
+        if (p.consentBased(cfg.pack)) {
+            consents.withdrawPurpose(c, tenantId, r.principalRef(), purposeCode, "rights-request:" + requestId, r.principalRef());
+            close(c, tenantId, requestId, Status.RESOLVED, "CONSENT WITHDRAWN " + purposeCode, actor);
+        } else if (compellingGrounds) {
+            Sql.requireText(reason, "reason");
+            close(c, tenantId, requestId, Status.REJECTED, "COMPELLING GROUNDS: " + reason, actor);
+        } else {
+            purposes.recordObjection(c, tenantId, r.principalRef(), purposeCode, "rights-request:" + requestId);
+            close(c, tenantId, requestId, Status.RESOLVED, "OBJECTION RECORDED " + purposeCode, actor);
+        }
+    }
+
+    /** Human review of a solely automated decision (EU-GDPR Art. 22(3)). */
+    public void recordHumanReview(Connection c, String tenantId, String requestId, String outcome, String reviewer) {
+        open(c, tenantId, requestId, RightCategory.AUTOMATED_DECISION);
+        Sql.requireText(outcome, "outcome");
+        close(c, tenantId, requestId, Status.RESOLVED, "HUMAN REVIEW by " + reviewer + ": " + outcome, reviewer);
+    }
+
     public Map<String, Object> buildAccessSummary(Connection c, String tenantId, String requestId, String actor) {
-        RightsRequest r = open(c, tenantId, requestId, RightCategory.ACCESS);
+        RightsRequest r = get(c, tenantId, requestId);
+        if (r.category() != RightCategory.PORTABILITY) {
+            r = open(c, tenantId, requestId, RightCategory.ACCESS);
+        } else if (r.closedAt() != null) {
+            throw new ComplianceException(Code.INVALID_STATE, "request " + requestId + " is closed");
+        }
         JurisdictionPack pack = config.forTenant(tenantId).pack;
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("personalData", personalData == null ? Map.of() : personalData.summarise(c, tenantId, r.principalRef()));
@@ -291,6 +424,12 @@ public final class DataSubjectRightsService {
 
     public void reject(Connection c, String tenantId, String requestId, String reason, String actor) {
         Sql.requireText(reason, "reason");
+        RightsRequest req = get(c, tenantId, requestId);
+        if ((req.category() == RightCategory.ACCESS || req.category() == RightCategory.PORTABILITY)
+                && !config.forTenant(tenantId).pack.accessExceptions().isEmpty()) {
+            throw new ComplianceException(Code.INVALID_STATE, "an access request can only be refused under a pack access exception"
+                    + " (denyWithException)");
+        }
         close(c, tenantId, requestId, Status.REJECTED, "REJECTED: " + reason, actor);
     }
 

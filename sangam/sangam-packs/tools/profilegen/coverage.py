@@ -108,15 +108,25 @@ setm([75], 'config admin service (maker-checker, change register); ledger audit 
 setm([76], 'connector bindings / ledger SHADOW mode', 'in/states/*.yaml#integrations')
 setm([77], 'profile offlineUnits flags only', 'in/states/*.yaml#operations')
 setm([78], 'existing DBT pack; ledger striping', '-')
-setm([34, 37], 'classification tags (TSP) / grants to ULBs', 'in/states/*.yaml#tags')
+# IFS-029, IFS-034 and IFS-037 have no item of their own: IFMS-STATES section 3.11 defines all three in the single
+# combined line "IFS-029, 034, 037" (TSA assignment accounts; tagging of Art. 275(1) / TSP flows; transfers to ULBs and
+# RLBs through IFMS). Each row cites that line and its own clause.
+IFS_MAP['IFS-029'] = ('TSA assignment accounts (IFMS-STATES 3.11 combined item "IFS-029, 034, 037", first clause): '
+                      'ledger + SNA-SPARSH pack; profile snaSparsh', 'in/IN.yaml#snaSparsh; in/states/*.yaml#integrations')
+IFS_MAP['IFS-034'] = ('classification tags for Art. 275(1) / TSP flows (`IN.yaml` tags; state `tags`)',
+                      'in/IN.yaml#classification.tags; in/states/*.yaml#tags')
+IFS_MAP['IFS-037'] = ('transfers to ULBs and RLBs through IFMS: local-body deposit heads and GIA to local bodies '
+                      '(`gov.ifms.gia-uc`)', 'in/states/*.yaml#publicAccounts.localBodyHeads')
 IFS_GAPS = {'IFS-077': 'store-and-forward: field workstream (sangam-field)'}
+IFS_NOTES = {'IFS-034': 'defined in IFMS-STATES section 3.11 as the combined item "IFS-029, 034, 037" (second clause)',
+             'IFS-037': 'defined in IFMS-STATES section 3.11 as the combined item "IFS-029, 034, 037" (third clause)'}
 rows_ifs = []
 for k in ifs:
     cap, data = IFS_MAP.get(k, ('profile', 'in/states/*.yaml'))
     packs = sorted(set(cov.get(k, [])))
     st = 'G' if k in IFS_GAPS else ('C' if packs else 'D')
     counts[st] += 1
-    rows_ifs.append(f'| {k} | {cap} | `{data}` | ' + (', '.join(f'`{p}`' for p in packs) or '-') + f' | {st} | {IFS_GAPS.get(k, "")} |')
+    rows_ifs.append(f'| {k} | {cap} | `{data}` | ' + (', '.join(f'`{p}`' for p in packs) or '-') + f' | {st} | {IFS_GAPS.get(k, IFS_NOTES.get(k, ""))} |')
 
 # ------------------------------------------------------------------ state-specific
 st_ids = sorted(set(re.findall(r'(IFS-[A-Z]{2}-\d{3})', states + delta)))
@@ -131,7 +141,7 @@ for k in st_ids:
 # ------------------------------------------------------------------ GA
 GA = {
     'GA-01': ('profile hierarchy (n-level scopes, layers, inheritance, locks, effective dating, admin workflow)', 'C', ''),
-    'GA-02': ('classification registry + per-state schemes + seeds', 'P', 'LMMH seed partial; per-state master codes below minor to load'),
+    'GA-02': ('classification registry + per-state schemes + seeds', 'P', 'official LMMH seed to CS 1127 (slips 1128-1132 pending); per-state master codes below minor to load'),
     'GA-03': ('ledger N-stage chain + allocation / surrender packs', 'C', ''),
     'GA-04': ('bill pack: sanction reference checked by the catalogue', 'P', 'sanction as linked case: via sanction chain template, no Work ID entity'),
     'GA-05': ('document-type catalogue', 'C', 'state form lists partly [U] (OD 20 types, JK 37)'),
@@ -190,7 +200,7 @@ w('| `in/presets/IN-PRESET-*.yaml` | category | GENERAL, NE-HIMALAYAN, UT-LEG, U
 w('| `in/GOI.yaml` | government | Union profile: rulebooks (GFR 2017, DFPR 2024, RPR 2022, CAM 2024 ...), org model and registry (AoBR series 386: 94 business units), budget control (DFPR Rule 10 rule set), appraisal ladder, PAO chain, receipts, grants, establishment, accounts calendar, the RPR bill catalogue (~35 types) and chain templates |')
 w('| `in/goi/GOI.<DEPT>.yaml` | department | RAILWAYS, DEFENCE, POSTS, TELECOM, MEA (multi-currency), DAE, SPACE, MHA (CAPF), REVENUE |')
 w('| `in/states/<CODE>.yaml` | government | the 28 States and 8 UTs: systems, topology, rulebooks, rail, SNA-SPARSH hosting, per-state head-of-account scheme (`HOA_<CODE>`), statutory languages (scope, script, direction, effective date), procurement family, state forms, specials |')
-w('| `in/seeds/*.csv` | - | head-of-account major heads (partial sample), standard minor heads, object heads (pre-2027 list, closes 01-04-2027) |')
+w('| `in/seeds/*.csv` | - | official LMMH major, sub-major and minor heads (CS 1127), standard minor heads, object heads (pre-2027 list, closes 01-04-2027) |')
 w('| `profiles.idx` | - | classpath index of the profile documents |')
 w('')
 w('A department tenant `RJ.PWD` resolves `INTL > REGIME > IN > IN-PRESET-GENERAL > RJ > RJ.PWD` (plus `RJ.PWD/<office>`). '
@@ -250,6 +260,6 @@ w('Code structures of GJ, WB, TG, OD, ML, JK, LA (Union layout used); budget-doc
   'procurement rules; works manuals (GJ, HP, CT, ML, MN, MZ, TR, AR, LD); SNA-SPARSH dates (KL, JK); Chandigarh treasury '
   'software; rush-of-expenditure percentages (unset); March Prelim and Sy-II dates; e-bill post-check sampling; ATN months; '
   'GPF days; commutation rule number and full commutation table; CPWD manual after 2022; the 61-head object list from '
-  'FY 2027-28 and its old -> new map; the full LMMH list (the seed is a sample).')
+  'FY 2027-28 and its old -> new map; the LMMH slips after CS 1127 (the seed is the official list to CS 1127).')
 open(OUT, 'w', encoding='utf-8', newline='\n').write('\n'.join(o) + '\n')
 print('IFC', len(rows_ifc), 'IFS', len(rows_ifs), 'state', len(rows_st), 'GA', len(rows_ga))

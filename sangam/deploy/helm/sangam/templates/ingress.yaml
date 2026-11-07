@@ -1,6 +1,8 @@
 {{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
 {{- if .Values.ingress.enabled }}
 {{- $fullname := include "sangam.fullname" . -}}
+{{- /* With the SCALE gateway enabled, API traffic enters through it (tenant -> cell routing). */ -}}
+{{- $api := ternary (printf "%s-gateway" $fullname) (printf "%s-server" $fullname) .Values.scale.gateway.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -28,13 +30,13 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ $fullname }}-server
+                name: {{ $api }}
                 port: { name: http }
           - path: /engine-rest
             pathType: Prefix
             backend:
               service:
-                name: {{ $fullname }}-server
+                name: {{ $api }}
                 port: { name: http }
           - path: /
             pathType: Prefix

@@ -32,6 +32,50 @@ const an = () => import('../areas/analytics/Analytics');
 const au = () => import('../areas/audit/Audit');
 const po = () => import('../areas/portal/Portal');
 const hp = () => import('../areas/help/Help');
+const mReg = () => import('../modules/registry');
+const mRes = () => import('../modules/resources');
+const mCase = () => import('../modules/casework');
+const mFin = () => import('../modules/finance');
+const mProg = () => import('../modules/programme');
+const mFG = () => import('../modules/fieldgeo');
+const mComp = () => import('../modules/compliance');
+const mCfg = () => import('../modules/config');
+const mCompat = () => import('../modules/compat');
+const mOp = () => import('../modules/operaton');
+const RegistryPage = named(mReg, 'RegistryPage');
+const PublicVerify = named(mReg, 'PublicVerify');
+const ResourcesPage = named(mRes, 'ResourcesPage');
+const QueuesPage = named(mRes, 'QueuesPage');
+const QueueDisplay = named(mRes, 'QueueDisplay');
+const RostersPage = named(mRes, 'RostersPage');
+const CaseFilesPage = named(mCase, 'CaseFilesPage');
+const CommitteesPage = named(mCase, 'CommitteesPage');
+const ReferencesPage = named(mCase, 'ReferencesPage');
+const LedgerPage = named(mFin, 'LedgerPage');
+const BillingPage = named(mFin, 'BillingPage');
+const ProgrammesPage = named(mProg, 'ProgrammesPage');
+const FieldPage = named(mFG, 'FieldPage');
+const GeoPage = named(mFG, 'GeoPage');
+const CompliancePage = named(mComp, 'CompliancePage');
+const ConfigPage = named(mCfg, 'ConfigPage');
+const OnboardingWizard = named(mCfg, 'OnboardingWizard');
+const CompatibilityMatrix = named(mCompat, 'CompatibilityMatrix');
+const OperatonOpsPage = named(mOp, 'OperatonOpsPage');
+const TaskFiltersPage = named(mOp, 'TaskFiltersPage');
+const EngineAdminPage = named(mOp, 'EngineAdminPage');
+const Welcome = named(mOp, 'Welcome');
+const Account = named(mOp, 'Account');
+const mPl = () => import('../modules/platform');
+const AiPage = named(mPl, 'AiPage');
+const ChannelsPage = named(mPl, 'ChannelsPage');
+const ModellerToolsPage = named(mPl, 'ModellerToolsPage');
+const OpsToolsPage = named(mPl, 'OpsToolsPage');
+const mOp2 = () => import('../modules/operaton2');
+const DrdPage = named(mOp2, 'DrdPage');
+const PluginsPage = named(mOp2, 'PluginsPage');
+const pl = () => import('../plugins/host');
+const PluginPage = named(pl, 'PluginPage');
+const TaskDashboard = named(mOp, 'TaskDashboard');
 
 const TaskInbox = named(tl, 'TaskInbox');
 const TaskDetail = named(td, 'TaskDetail');
@@ -122,7 +166,7 @@ function Guard({ roles, children }: { roles: Role[]; children: ReactNode }) {
 function Home() {
   const { hasRole } = useAuth();
   const first = NAV.find((a) => hasRole(...a.roles));
-  return <Navigate to={first?.items[0]?.to ?? '/help/about'} replace />;
+  return <Navigate to={first ? '/welcome' : '/help/about'} replace />;
 }
 
 const WORK: Role[] = ['TASK_USER'];
@@ -141,7 +185,36 @@ function AuthedRoutes() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/tasks" element={g(WORK, <TaskInbox />)} />
+          <Route path="/tasks/filters" element={g(['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], <TaskFiltersPage />)} />
           <Route path="/tasks/:id" element={g(WORK, <TaskDetail />)} />
+          <Route path="/welcome" element={<Welcome />} />
+          <Route path="/m/ai" element={<AiPage />} />
+          <Route path="/m/channels" element={<ChannelsPage />} />
+          <Route path="/modeller/tools" element={g(MODEL, <ModellerToolsPage />)} />
+          <Route path="/ops/tools" element={g(OPS, <OpsToolsPage />)} />
+          <Route path="/ops/drd/:id" element={g(['PLATFORM_OPERATOR'], <DrdPage />)} />
+          <Route path="/admin/plugins" element={g(['PLATFORM_ADMIN'], <PluginsPage />)} />
+          <Route path="/x/:pluginId/:id" element={<PluginPage />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/ops/engine" element={g(['PLATFORM_OPERATOR'], <OperatonOpsPage />)} />
+          <Route path="/ops/task-dashboard" element={g(['PLATFORM_OPERATOR'], <TaskDashboard />)} />
+          <Route path="/admin/engine" element={g(['PLATFORM_ADMIN'], <EngineAdminPage />)} />
+          <Route path="/admin/config" element={g(ADMIN, <ConfigPage />)} />
+          <Route path="/admin/onboarding" element={g(ADMIN, <OnboardingWizard />)} />
+          <Route path="/modeller/compatibility" element={g(MODEL, <CompatibilityMatrix />)} />
+          <Route path="/m/registry" element={<RegistryPage />} />
+          <Route path="/m/resources" element={<ResourcesPage />} />
+          <Route path="/m/queues" element={<QueuesPage />} />
+          <Route path="/m/rosters" element={<RostersPage />} />
+          <Route path="/m/case-files" element={<CaseFilesPage />} />
+          <Route path="/m/committees" element={<CommitteesPage />} />
+          <Route path="/m/references" element={<ReferencesPage />} />
+          <Route path="/m/ledger" element={<LedgerPage />} />
+          <Route path="/m/billing" element={<BillingPage />} />
+          <Route path="/m/programmes" element={<ProgrammesPage />} />
+          <Route path="/m/field" element={<FieldPage />} />
+          <Route path="/m/geo" element={<GeoPage />} />
+          <Route path="/m/compliance" element={<CompliancePage />} />
           <Route path="/start" element={g(WORK, <StartCatalog />)} />
           <Route path="/cases" element={g(WORK, <CaseList />)} />
           <Route path="/cases/:id" element={g([...WORK, ...OPS], <CaseWorkspace />)} />
@@ -235,8 +308,12 @@ function Gate() {
   const { status } = useAuth();
   const loc = useLocation();
   if (loc.pathname === config().oidc.redirectPath) return <AuthCallback />;
+  // Public page: certificate verification (QR).
+  if (loc.pathname.startsWith('/verify')) return <Suspense fallback={<Loading />}><Routes><Route path="/verify/:tenant?" element={<PublicVerify />} /></Routes></Suspense>;
   if (status === 'loading') return <Loading />;
   if (status !== 'authenticated') return <SignIn />;
+  // Hall display: signed-in kiosk account, no navigation chrome.
+  if (loc.pathname.startsWith('/display/queue/')) return <Suspense fallback={<Loading />}><Routes><Route path="/display/queue/:servicePointId" element={<QueueDisplay />} /></Routes></Suspense>;
   return <AuthedRoutes />;
 }
 

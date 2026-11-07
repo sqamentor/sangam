@@ -31,7 +31,8 @@ public final class ComplianceConnectors {
                        Map<String, Object> input) {
         ConnectorInvoker.Invocation inv = new ConnectorInvoker.Invocation(tenantId, id64("cmp:", rootId),
                 id64("cmp:", activityKey), 0, null, null, connectorId, operation, input, UUID.randomUUID().toString(), 0L,
-                Instant.now().plus(timeout));
+                Instant.now().plus(timeout),
+                org.sangam.core.layer.OperationLedger.operationId(tenantId, id64("cmp:", rootId), id64("cmp:", activityKey), 0));
         ConnectorInvoker.Outcome o = invoker.invoke(inv);
         return switch (o) {
             case ConnectorInvoker.Completed c -> new Result(true,

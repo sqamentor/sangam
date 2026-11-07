@@ -1,0 +1,27 @@
+{
+  "key": "sec-util-new-connection/compensation-manual",
+  "version": "1.0.0",
+  "pack": "sec.util.new-connection",
+  "title": {
+    "en": "Compensation not credited: credit by hand",
+    "hi": "क्षतिपूर्ति जमा नहीं हुई: स्वयं जमा करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

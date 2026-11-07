@@ -711,7 +711,7 @@ op("get", "/tasks", "listTasks", "Tasks", "List tasks",
    ["VI.4", "A-16", "R76"], list_=True, resp=(200, "array:Task"), perm="task.read", errors=STD_R,
    params=[q("assignee"), q("mine", "bool", "Assigned to me or I am a candidate"), q("unassigned", "bool"), q("candidateGroup"),
            q("seatId"), q("processInstanceId"), q("caseInstanceId"), q("businessKey"), q("processDefinitionKey"),
-           q("taskDefinitionKey"), q("state"), q("sortBy", enum=["created", "due", "priority", "name"]), q("sortOrder", enum=["asc", "desc"])])
+           q("taskDefinitionKey"), q("state"), q("sortBy", desc="created, due, priority or name; a comma-separated list sorts by several keys"), q("sortOrder", desc="asc or desc per key, comma-separated")])
 op("get", "/tasks/{id}", "getTask", "Tasks", "Get a task", "Task with variables (field masks applied, K11), the material payload hash and case version (VI.4 rule 5).",
    ["VI.4", "R47"], params=[ID], resp=(200, "TaskDetail"), perm="task.read", errors=GET_E)
 op("get", "/tasks/{id}/variables", "getTaskVariables", "Tasks", "Task variables", "Variables visible on the task (K11).", ["VI.4"],

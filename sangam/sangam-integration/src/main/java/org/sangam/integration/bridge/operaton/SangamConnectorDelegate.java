@@ -5,6 +5,7 @@ import org.operaton.bpm.engine.delegate.BpmnError;
 import org.operaton.bpm.engine.delegate.DelegateExecution;
 import org.operaton.bpm.engine.delegate.Expression;
 import org.operaton.bpm.engine.delegate.JavaDelegate;
+import org.sangam.core.engine.OperationIdentity;
 import org.sangam.integration.connector.ConnectorInvoker;
 import org.sangam.integration.connector.Json;
 
@@ -78,7 +79,7 @@ public final class SangamConnectorDelegate implements JavaDelegate {
         ConnectorInvoker.Invocation inv = new ConnectorInvoker.Invocation(
                 EngineContext.tenant(execution, bridge.defaultTenant()), EngineContext.rootId(execution),
                 execution.getActivityInstanceId(), EngineContext.loopCounter(execution), text(retrySafeKey, execution, null),
-                execution.getProcessBusinessKey(), connectorId, op, inputOf(execution), UUID.randomUUID().toString(), 0L, null);
+                execution.getProcessBusinessKey(), connectorId, op, inputOf(execution), UUID.randomUUID().toString(), 0L, null, mintedId(execution, bridge));
         ConnectorInvoker.Outcome o = bridge.delegateInvoker().invoke(inv);
         execution.setVariable(result + "_operationId", o.operationId().toString());
         switch (o) {
@@ -94,6 +95,20 @@ public final class SangamConnectorDelegate implements JavaDelegate {
                     + "): held for reconciliation: " + u.reason());
             case ConnectorInvoker.Stale s -> throw new IllegalStateException("stale: " + s.message());
         }
+    }
+
+    /** The same T35 identity the engine adapter mints for external tasks (a delegate has no adapter call). */
+    private UUID mintedId(DelegateExecution execution, IntegrationBridge bridge) {
+        String activity = execution.getCurrentActivityId();
+        long visit = execution.getProcessEngineServices().getHistoryService().createHistoricActivityInstanceQuery()
+                .processInstanceId(execution.getProcessInstanceId()).activityId(activity).finished().count();
+        Object loop = execution.getVariable("loopCounter");
+        String bk = execution.getProcessBusinessKey();
+        if (bk == null || bk.isEmpty()) {
+            bk = EngineContext.rootId(execution);
+        }
+        return OperationIdentity.of(EngineContext.tenant(execution, bridge.defaultTenant()), bk, activity,
+                OperationIdentity.scope(visit, loop instanceof Number n ? n.intValue() : null, text(retrySafeKey, execution, null)));
     }
 
     @SuppressWarnings("unchecked")

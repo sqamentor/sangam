@@ -28,6 +28,8 @@ export interface SangamConfig {
   devToken: string;
   defaultLanguage: Locale;
   locales: Locale[];
+  /** Configurable links on the Welcome page. */
+  welcomeLinks: { url: string; label: { en: string; hi: string } }[];
   /** Per-tenant font override (state-government fonts first); FONTS.md. */
   fonts: FontsConfig;
 }
@@ -42,6 +44,7 @@ interface RawConfig {
   defaultLanguage?: string;
   /** A list, or the comma-separated string the nginx template renders (SANGAM_LOCALES="en,hi"). */
   locales?: string[] | string;
+  welcomeLinks?: { url: string; label: { en: string; hi: string } }[];
   fonts?: FontsConfig;
 }
 
@@ -59,6 +62,7 @@ const defaults: SangamConfig = {
   devToken: 'dev-token',
   defaultLanguage: 'en',
   locales: ['en', 'hi'],
+  welcomeLinks: [],
   fonts: {},
 };
 
@@ -87,6 +91,7 @@ export function normalise(raw: RawConfig): SangamConfig {
     devToken: raw.devToken ?? defaults.devToken,
     defaultLanguage: asLocale(raw.defaultLocale) ?? asLocale(raw.defaultLanguage) ?? defaults.defaultLanguage,
     locales: locales.length ? locales : defaults.locales,
+    welcomeLinks: raw.welcomeLinks ?? [],
     fonts: raw.fonts && typeof raw.fonts === 'object' ? raw.fonts : defaults.fonts,
   };
 }

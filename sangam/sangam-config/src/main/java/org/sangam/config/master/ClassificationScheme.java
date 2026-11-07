@@ -28,6 +28,9 @@ import java.util.Map;
  *       render: "{major}-{subMajor}-{minor}-({subHead})-{detailed}-{object}"   # optional display template
  *       derive:                       # attribute derivation rules, first match per attribute
  *         - {segment: major, prefix: "2", set: {section: REVENUE, nature: EXPENDITURE}}
+ *       # optional per segment: hierarchy (parent-child validation), see ClassificationRegistry#validate:
+ *       #   {path: [major, subMajor], separator: "-", noneCode: "00", openRuleFlag: minorRule,
+ *       #    anyParentFlag: standard, templateWildcard: "*", templateChild: minor}
  *       attributes: [chargedVoted]    # attributes that a full code line carries outside the segments
  * </pre>
  */
@@ -42,7 +45,7 @@ public record ClassificationScheme(String id, String separator, List<Segment> se
      * @param pattern  optional regex the segment value must match (otherwise digits of {@code width})
      */
     public record Segment(String id, int width, boolean optional, boolean master, String parent, String scheme,
-                          String owner, String pattern) {
+                          String owner, String pattern, Map<String, Object> hierarchy) {
     }
 
     public static ClassificationScheme from(Map<String, Object> m) {
@@ -50,7 +53,8 @@ public record ClassificationScheme(String id, String separator, List<Segment> se
         for (Map<String, Object> s : Tree.maps(m.get("segments"))) {
             segs.add(new Segment(Tree.str(s.get("id"), null), Tree.integer(s.get("width"), 0),
                     Tree.bool(s.get("optional"), false), Tree.bool(s.get("master"), false), Tree.str(s.get("parent"), null),
-                    Tree.str(s.get("scheme"), null), Tree.str(s.get("owner"), null), Tree.str(s.get("pattern"), null)));
+                    Tree.str(s.get("scheme"), null), Tree.str(s.get("owner"), null), Tree.str(s.get("pattern"), null),
+                    Tree.map(s.get("hierarchy"))));
         }
         return new ClassificationScheme(Tree.str(m.get("id"), null), Tree.str(m.get("separator"), "-"), List.copyOf(segs),
                 Tree.str(m.get("render"), null), Tree.maps(m.get("derive")), Tree.strings(m.get("attributes")));

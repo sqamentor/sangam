@@ -1,0 +1,1 @@
+{"key":"compliance/objection-decide","title":{"en":"objection-decide"},"fields":[{"key":"purposeCode","type":"text","required":true,"label":{"en":"Purpose"}},{"key":"compellingGrounds","type":"boolean","label":{"en":"Compelling legitimate grounds override"}},{"key":"decisionReason","type":"textarea","label":{"en":"Reason"}}]}

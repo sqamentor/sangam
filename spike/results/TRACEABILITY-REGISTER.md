@@ -7,7 +7,7 @@
 
 **Files:**
 - this file: summary, UNACCOUNTED list, open items, and the full table for the specification families;
-- [`TRACEABILITY-REGISTER.csv`](TRACEABILITY-REGISTER.csv): the full table, one row per id (all 1757 ids).
+- [`TRACEABILITY-REGISTER.csv`](TRACEABILITY-REGISTER.csv): the full table, one row per id (all 1858 ids).
 
 ## 1. Method
 
@@ -28,7 +28,7 @@
 - `sangam/SCALE-ARCHITECTURE.md` (T-SCALE) and `sangam/sangam-cell/README.md` (IR-1…IR-8, defined there).
 
 **Coverage evidence** came from these sources:
-- all 33 `sangam/**/README.md` files (module coverage maps, the packs catalogue in `sangam-packs/README.md` §5–7, and `profiles/README.md`);
+- all 42 `sangam/**/README.md` files (module coverage maps, the packs catalogue in `sangam-packs/README.md` §5–7, and `profiles/README.md`);
 - the `covers` / `acceptance` fields of the 130 `pack.json` files;
 - the compliance obligation catalogue `IN/obligations.tsv`. The compliance README cites it as covering CMP-001…153, and it gives the bearer of each obligation.
 
@@ -43,6 +43,9 @@
 - An explicit status column wins: `St` C/D/P/G in `profiles/README.md`; `Status` in `sangam-flowable-ports` and the `sangam-ui` PF table; `Status here` in `sangam-engine`.
 - Otherwise the status follows the README wording: a mention in a coverage table counts as coverage, and a mention in a "Gaps", "Known gaps", "Not done" or "Still open" section counts as an open item.
 - An id that is covered and also listed as open is **partial**.
+- **Third pass (2026-11-08):** regenerated over the current READMEs, the pack.json files and the code. New families: NG-01…NG-47 (remapped from `PREMIUM-GAP-RECHECK.md`) and AT-1…AT-7 (`ACCEPTANCE-PLUG-AND-PLAY.md`). The hand-set statuses and every open item in §4 were re-checked in the source; the "Code check" column gives the file and line. The contract `sangam-rest/api/sangam-api.yaml` (862 paths) was checked against the `@*Mapping` annotations for the routes the coordinator named.
+- **Revision (2026-11-05):** every open item in §4 was re-checked against the code, not only the READMEs. The "Code check" column records the file and line. Four first-edition blockers (#2, #3, #4 and #6) and must-fix #11 turned out to be fixed in code. They are listed in §4.4; #4 continues as a smaller adoption item.
+- **Rename (2026-11-05):** `FLOWABLE-INTO-OPERATON.md` lists A (common to both engines) and B (Operaton only, kept) appear here as **FA-01…FA-18** and **FB-01…FB-24**. This keeps them apart from the SANGAM.md amendments A-1…A-16. Their status is implemented (native Operaton 2.2.0 capability, kept by ADR-D-1/D-16), with README citations where they exist.
 - Six statuses were set by hand after reading `sangam-server/README.md` and `sangam-rest/README.md`, because their open items sit in prose the scanner cannot attach to an id: IR-3, IR-4, IR-6, R41, R42 and R43.
 
 **Spot checks (files read):**
@@ -77,117 +80,60 @@
 
 ## 2. Summary counts
 
-| Family | Total | impl | data | partial | gap | owner | not-repl | spec-closed | test-pending | **UNACC.** |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Requirements R1–R84 (SANGAM X.1 + PREMIUM) | 84 | 61 |  | 15 | 2 |  |  |  |  | 6 |
-| Amendments A-1…A-16 | 16 | 14 |  | 1 | 1 |  |  |  |  |  |
-| Decisions ADR-D-1…D-24 | 24 | 14 |  | 4 |  | 6 |  |  |  |  |
-| Acceptance criteria AC-01…AC-11 | 11 | 11 |  |  |  |  |  |  |  |  |
-| Government items GOV-1…GOV-12 | 12 | 11 |  | 1 |  |  |  |  |  |  |
-| Consistency findings CF-* | 17 | 1 |  |  |  |  |  | 16 |  |  |
-| Licence items LIC-1…LIC-11 | 11 | 11 |  |  |  |  |  |  |  |  |
-| Tests T01–T89 | 89 |  |  |  |  |  |  |  | 89 |  |
-| Parked items PK-01…PK-14 | 14 | 1 |  |  |  | 13 |  |  |  |  |
-| Government patterns GP-01…GP-55 | 55 | 50 |  | 5 |  |  |  |  |  |  |
-| Universal patterns UP-01…UP-22 | 22 | 20 |  | 2 |  |  |  |  |  |  |
-| Premium features PF-01…PF-52 | 52 | 36 |  | 12 | 3 |  | 1 |  |  |  |
-| Flowable OSS gap list FC-01…FC-59 | 59 | 43 |  | 6 | 3 |  | 7 |  |  |  |
-| Flowable Enterprise EC-01…EC-21 | 21 | 16 |  | 1 | 3 |  | 1 |  |  |  |
-| Operaton weaknesses D-01…D-56 | 56 | 45 |  | 4 | 5 | 2 |  |  |  |  |
-| Flowable weakness audit FW-01…FW-47 | 47 | 8 |  | 1 |  |  |  |  |  | 38 |
-| Weakness scenario tests FWT-001…FWT-052 | 52 |  |  |  |  |  |  |  | 21 | 31 |
-| IFMS central IFC-001…IFC-258 | 258 | 160 | 84 | 10 | 4 |  |  |  |  |  |
-| IFMS states IFS-* (cross-state + state) | 329 | 135 | 193 |  | 1 |  |  |  |  |  |
-| IFMS gap areas GA-01…GA-30 | 30 | 14 |  | 15 | 1 |  |  |  |  |  |
-| International PFM PFM-* | 79 |  |  |  |  |  |  |  |  | 79 |
-| Compliance CMP-001…CMP-153 | 153 | 118 | 22 |  |  | 13 |  |  |  |  |
-| Sector workflows SEC-* | 125 | 125 |  |  |  |  |  |  |  |  |
-| US health US-HLT-* | 104 | 77 |  |  |  |  |  |  |  | 27 |
-| Capabilities N01–N18 | 18 | 9 |  | 7 | 1 |  |  |  |  | 1 |
-| Scale tests T-SCALE-1…11 | 11 |  |  |  |  |  |  |  | 11 |  |
-| Integration requests IR-1…IR-8 | 8 | 5 |  | 3 |  |  |  |  |  |  |
-| **All** | **1757** | **985** | **299** | **87** | **24** | **34** | **9** | **16** | **121** | **182** |
+| Family | Total | impl | data | partial | gap | owner | not-repl | spec-closed | test-pending |
+|---|---|---|---|---|---|---|---|---|---|
+| Requirements R1–R84 (SANGAM X.1 + PREMIUM) | 84 | 65 |  | 17 | 2 |  |  |  |  |
+| Amendments A-1…A-16 | 16 | 14 |  | 1 | 1 |  |  |  |  |
+| Decisions ADR-D-1…D-24 | 24 | 15 |  | 3 |  | 6 |  |  |  |
+| Acceptance criteria AC-01…AC-11 | 11 | 11 |  |  |  |  |  |  |  |
+| Government items GOV-1…GOV-12 | 12 | 11 |  | 1 |  |  |  |  |  |
+| Consistency findings CF-* | 17 | 1 |  |  |  |  |  | 16 |  |
+| Licence items LIC-1…LIC-11 | 11 | 11 |  |  |  |  |  |  |  |
+| Tests T01–T89 | 89 |  |  |  |  |  |  |  | 89 |
+| Parked items PK-01…PK-14 | 14 | 1 |  |  |  | 13 |  |  |  |
+| Government patterns GP-01…GP-55 | 55 | 50 |  | 5 |  |  |  |  |  |
+| Universal patterns UP-01…UP-22 | 22 | 20 |  | 2 |  |  |  |  |  |
+| Premium features PF-01…PF-52 | 52 | 36 |  | 12 | 3 |  | 1 |  |  |
+| Flowable OSS gap list FC-01…FC-59 | 59 | 43 |  | 6 | 3 |  | 7 |  |  |
+| Flowable Enterprise EC-01…EC-21 | 21 | 16 |  | 1 | 3 |  | 1 |  |  |
+| Operaton weaknesses D-01…D-56 | 56 | 45 |  | 4 | 5 | 2 |  |  |  |
+| Flowable-into-Operaton list A (common), FA-01…FA-18 | 18 | 18 |  |  |  |  |  |  |  |
+| Flowable-into-Operaton list B (Operaton only, kept), FB-01…FB-24 | 24 | 24 |  |  |  |  |  |  |  |
+| Premium re-check NG-01…NG-47 | 47 | 34 |  | 11 |  | 1 | 1 |  |  |
+| Onboarding acceptance AT-1…AT-7 | 7 | 7 |  |  |  |  |  |  |  |
+| Flowable weakness audit FW-01…FW-47 | 47 | 47 |  |  |  |  |  |  |  |
+| Weakness scenario tests FWT-001…FWT-057 | 57 |  |  |  |  |  |  |  | 57 |
+| IFMS central IFC-001…IFC-258 | 258 | 160 | 84 | 10 | 4 |  |  |  |  |
+| IFMS states IFS-* (cross-state + state) | 329 | 135 | 193 |  | 1 |  |  |  |  |
+| IFMS gap areas GA-01…GA-30 | 30 | 14 |  | 15 | 1 |  |  |  |  |
+| International PFM PFM-* | 79 | 39 | 9 | 27 | 4 |  |  |  |  |
+| Compliance CMP-001…CMP-153 | 153 | 118 | 22 |  |  | 13 |  |  |  |
+| Sector workflows SEC-* | 125 | 125 |  |  |  |  |  |  |  |
+| US health US-HLT-* | 104 | 104 |  |  |  |  |  |  |  |
+| Capabilities N01–N18 | 18 | 10 |  | 7 | 1 |  |  |  |  |
+| Scale tests T-SCALE-1…11 | 11 |  |  |  |  |  |  |  | 11 |
+| Integration requests IR-1…IR-8 | 8 | 6 |  | 2 |  |  |  |  |  |
+| **All** | **1858** | **1180** | **308** | **124** | **28** | **35** | **10** | **16** | **157** |
 
-**Accounted:** 1575 of 1757 ids (89.6 %). **UNACCOUNTED:** 182. They are concentrated in four places:
-- the whole international PFM set (79);
-- the Flowable weakness register (38 FW, and the 31 FWT scenarios that prove only those FW items);
-- 27 US-HLT items;
-- 7 others (R2, R5, R7, R10, R46, R52 and N11).
+**Accounted:** 1858 of 1858 ids (100.0 %). **UNACCOUNTED:** 0.
 
 ## 3. UNACCOUNTED (defined, but in no README)
 
-### 3.1 Requirements and capabilities
+**Third pass (2026-11-08): no id is UNACCOUNTED.** Since the 2026-11-05 edition:
+- **PFM-*** (79) is covered: `PFM` coverage maps in the READMEs. 39 implemented, 9 data-only, 27 partial, 4 gap.
+- **US-HLT-*** (104) is fully covered, together with the new `US-HIPAA` and `EU-GDPR` compliance jurisdiction packs.
+- **R2, R5, R7, R10, R46, R52 and N11** each have a README entry.
+- **NG-01…NG-47**, the premium re-check in `PREMIUM-GAP-RECHECK.md`, were remapped against the READMEs and code. That file is partly out of date: many ids it lists as MISSING are now covered.
+  - Nine NG ids are cited in no README and were classified from the code instead: NG-42 to NG-45 present in code; NG-33, 37 and 39 partial; NG-46 not replicated (SaaS); NG-47 owner-side (services).
+- **AT-1…AT-7**, the onboarding acceptance tests in `sangam/ACCEPTANCE-PLUG-AND-PLAY.md`, are cited in no README, but exist in code as `sangam-onboarding/.../acceptance/PlugAndPlayAcceptanceTest.java`. They are listed here as implemented; the tests have not been run in this pass.
 
-| Id | Title | Nearest evidence / why it matters | Tests named in the spec |
-|---|---|---|---|
-| **R2** | Per-DB acquisition SQL | nearest: sangam-engine db/EngineDialect (A-15 per-dialect lock SQL) + FC-24 SKIP LOCKED config route; R2 not cited | T10, T24, T31 |
-| **R5** | JDK baseline | not in any README; found in: SCALE-ARCHITECTURE.md, sangam-control-plane (code) \| JDK 25 LTS baseline: never built or tested (XI.10.4 'Not yet tested: JDK 25'); no README states the JDK baseline or the certified matrix | T28, T31 |
-| **R7** | Native-light profile | no native-image profile anywhere | add test |
-| **R10** | FEEL engine and null semantics | not in any README; found in: sangam-control-plane (code) \| FEEL is Operaton's feel-scala; strict-null mode not documented; id appears only in sangam-control-plane code | T18, T19, add test |
-| **R46** | Modeler/runtime parity (E17) | no modeler/runtime parity check documented (sangam-ui modeller + engine validator exist) | T20, T32, add test |
-| **R52** | Audit-ready release process (GOV-3) | deploy/ has SBOM + licence gate + CI, but no README cites R52 (audit-ready release process, GOV-3) | T81, T49 |
-| **N11** | Data-pipeline and batch-job orchestration | no data-pipeline / batch-job orchestration module; GP-08/GP-09 batch patterns exist in packs |  |
-
-### 3.2 International PFM: all 79 ids
-
-`INTERNATIONAL-PFM-REQUIREMENTS.md` is not cited by any README, pack.json or profile. That leaves ADR-D-23 ("first jurisdiction packs: India, USA health, EU GDPR, international PFM") only partly delivered.
-
-Generic building blocks exist, but no coverage map ties them to PFM ids:
-- `sangam-ledger`: N-stage chain, commitment and encumbrance, and MTEF modelled as later-period accounts;
-- `profiles/intl/INTL.yaml`: the COFOG crosswalk;
-- `sangam-config`: classification registry;
-- the `gov.ifms.*` chains, which are analogues of PFM-CH-1…7.
-
-**Ids:** PFM-001, PFM-002, PFM-003, PFM-004, PFM-005, PFM-006, PFM-007, PFM-008, PFM-009, PFM-010, PFM-011, PFM-020, PFM-021, PFM-022, PFM-023, PFM-024, PFM-025, PFM-026, PFM-027, PFM-028, PFM-029, PFM-030, PFM-031, PFM-032, PFM-033, PFM-034, PFM-035, PFM-036, PFM-037, PFM-038, PFM-039, PFM-040, PFM-041, PFM-042, PFM-043, PFM-044, PFM-045, PFM-046, PFM-047, PFM-048, PFM-049, PFM-050, PFM-051, PFM-052, PFM-053, PFM-054, PFM-055, PFM-056, PFM-057, PFM-058, PFM-059, PFM-060, PFM-061, PFM-062, PFM-063, PFM-064, PFM-065, PFM-066, PFM-067, PFM-068, PFM-069, PFM-070, PFM-071, PFM-072, PFM-073, PFM-074, PFM-075, PFM-076, PFM-077, PFM-078, PFM-079, PFM-080, PFM-CH-1, PFM-CH-2, PFM-CH-3, PFM-CH-4, PFM-CH-5, PFM-CH-6, PFM-CH-7.
-
-### 3.3 Flowable weakness audit: 38 FW and 31 FWT ids
-
-The `sangam-flowable-ports` README has **no FW coverage map**. Only 9 FW ids appear in any README, all in the `sangam-server` PR-1…PR-8 table: FW-02, 07, 16, 28, 29, 32, 39, 40 and 47. FW-28 is partial (PR-8 records an open poison-message gap). The audit's own verdict matrix (§2) gives the fix and file for each FW. That matrix is quoted per id in the CSV `note` column: (a) shared engine issue, (b) not affected, (c) fixed.
-
-**Fix:** add an "FW-01…FW-47" table to `sangam-flowable-ports/README.md`. The FWT scenarios then become accounted automatically.
-
-- **FW:** FW-01, FW-03, FW-04, FW-05, FW-06, FW-08, FW-09, FW-10, FW-11, FW-12, FW-13, FW-14, FW-15, FW-17, FW-18, FW-19, FW-20, FW-21, FW-22, FW-23, FW-24, FW-25, FW-26, FW-27, FW-30, FW-31, FW-33, FW-34, FW-35, FW-36, FW-37, FW-38, FW-41, FW-42, FW-43, FW-44, FW-45, FW-46.
-- **FWT** (each proves only unaccounted FW items): FWT-001, FWT-002, FWT-003, FWT-004, FWT-007, FWT-008, FWT-013, FWT-014, FWT-015, FWT-016, FWT-020, FWT-021, FWT-022, FWT-030, FWT-031, FWT-032, FWT-034, FWT-035, FWT-036, FWT-037, FWT-038, FWT-039, FWT-040, FWT-041, FWT-042, FWT-043, FWT-046, FWT-047, FWT-048, FWT-049, FWT-050.
-
-### 3.4 US health: 27 ids
-
-These are not mapped by `sangam-connectors-health`, the `sec.ushealth.*` packs (`covers`) or `sangam-compliance`. There is no US HIPAA jurisdiction pack: the compliance README says one "is added as another pack". Most are HIPAA Privacy and Security Rule controls, information-blocking rules, the CMS-0057-F APIs from 2027, No Surprises Act timelines and EMTALA.
-
-| Id | Title |
-|---|---|
-| US-HLT-001 | Uses and disclosures of PHI only as permitted (treatment, payment, health-care operations, or with authorisat… |
-| US-HLT-007 | Right to amend: act within 60 days, one extension of 30 days |
-| US-HLT-008 | Accounting of disclosures: within 60 days, one extension of 30 days; six-year look-back |
-| US-HLT-010 | Reproductive-health PHI attestation (2024 rule) |
-| US-HLT-011 | Risk analysis and risk management; information-system activity review (audit logs) |
-| US-HLT-012 | Unique user identification, emergency access procedure, automatic logoff, encryption (addressable) |
-| US-HLT-013 | Audit controls on systems that hold ePHI |
-| US-HLT-015 | Security incident procedures: identify, respond, mitigate, document |
-| US-HLT-016 | 2025 Security Rule NPRM (mandatory encryption, MFA, 72-hour restoration, annual audit) |
-| US-HLT-042 | Tiered civil money penalties by culpability (no knowledge, reasonable cause, wilful neglect corrected within … |
-| US-HLT-043 | Restriction of disclosure to a health plan when the individual paid out of pocket in full |
-| US-HLT-045 | A practice likely to interfere with access, exchange or use of EHI is information blocking unless it meets an… |
-| US-HLT-046 | EHI = ePHI in a designated record set (since 6 Oct 2022, no longer limited to USCDI) |
-| US-HLT-049 | Exceptions for how to fulfil: manner (formerly content and manner), fees, licensing; TEFCA manner exception (… |
-| US-HLT-050 | Disincentives for providers found by OIG to have committed information blocking (Promoting Interoperability, … |
-| US-HLT-061 | Patient Access API gains PA information (excluding drugs) from 1 Jan 2027; usage metrics reported from 1 Jan … |
-| US-HLT-062 | Provider Access API from 1 Jan 2027: claims, encounter, USCDI and PA data to in-network providers with a trea… |
-| US-HLT-063 | Payer-to-Payer API from 1 Jan 2027: data exchange when a patient changes payer, with patient opt-in; five yea… |
-| US-HLT-064 | Response time for Provider Access and Payer-to-Payer requests: within 1 business day of the request (verify: … |
-| US-HLT-066 | MIPS / Promoting Interoperability Electronic Prior Authorization attestation measure from CY 2027 |
-| US-HLT-067 | API standards: FHIR R4.0.1, US Core, SMART App Launch, Bulk Data, OpenID Connect |
-| US-HLT-114 | Plan initial payment or notice of denial within 30 calendar days of the clean bill (out-of-network emergency … |
-| US-HLT-115 | Federal IDR: 30-business-day open negotiation; IDR initiation within 4 business days after it ends; certified… |
-| US-HLT-116 | Advanced EOB for insured patients (enforcement deferred pending rulemaking) |
-| US-HLT-122 | Stabilising treatment or appropriate transfer (receiving hospital agrees, records sent, qualified transport, … |
-| US-HLT-123 | Central log of every individual who seeks emergency care; on-call physician list; transfer records kept 5 yea… |
-| US-HLT-124 | Receiving hospital reports a suspected inappropriate transfer within 72 hours |
+Remaining README hygiene, which is not an UNACCOUNTED finding: add AT-1…AT-7 and NG-33…NG-47 to the onboarding and deploy READMEs.
 
 ### 3.5 Orphan references (used in a README, defined nowhere)
 
 | Reference | Where | Finding |
 |---|---|---|
-| `A-17` | `sangam-security/README.md` L58, L69, L152 | **Id collision.** `FLOWABLE-INTO-OPERATON.md` has its own lists A-1…A-18 ("common to both engines") and B-1…B-24 ("Operaton only: what we keep"). A-17 there is the LDAP identity plugin. SANGAM.md amendments are also A-1…A-16, so a bare `A-n` in a README is ambiguous. `B-n` references (for example B-1, B-4, B-11, B-16, B-24) are FIO list B. These two lists are keep-lists, not requirements to build, and are outside the requested families. Proposal: write them as `FIO-A-n` / `FIO-B-n` |
+| `A-17` (resolved) | `sangam-security/README.md` L58, L69, L152 | **Renamed in this register to FA-17** (LDAP identity plugin, Spring Security, CDI; status implemented, `LdapDirectorySync`). **Id collision.** `FLOWABLE-INTO-OPERATON.md` has its own lists A-1…A-18 ("common to both engines") and B-1…B-24 ("Operaton only: what we keep"). A-17 there is the LDAP identity plugin. SANGAM.md amendments are also A-1…A-16, so a bare `A-n` in a README is ambiguous. `B-n` references (for example B-1, B-4, B-11, B-16, B-24) are FIO list B. These two lists are keep-lists, not requirements to build, and are outside the requested families. **Resolved here:** list A is renamed FA-01…FA-18 and list B FB-01…FB-24 (§2 and the CSV). In READMEs, `A-1`…`A-16` are read as SANGAM amendments, and `A-17`/`A-18` and every `B-n` as FA/FB. The two exceptions are sangam-engine L85/L98, where B-1/B-4/B-5 are extension-point labels |
 | `IFS-034`, `IFS-037` | `profiles/README.md` (status D) | Not defined in `IFMS-STATES-REQUIREMENTS.md` (the cross-state list skips 034 and 037) or in `IFMS-RESEARCH-DELTA.md`. The profiles summary counts 78 cross-state ids; the source defines 76 |
 | `D-0` | `sangam-rest/README.md` (audit) | This is X.2.3 **Rule D-0** (no replay or time-travel claims from class A/C data), not an ADR. No action needed |
 
@@ -202,86 +148,73 @@ These are recorded so that nothing is silently dropped.
 **ADR decisions without a README citation:**
 - realised in the build: D-1 (Operaton 2.2.0 dependency, cited as ADR-D-16), D-6 (= D-8), D-17 (repository LICENSE + SPDX headers), D-19 (parallel workstreams);
 - owner-side: D-2, D-3, D-9, D-10, D-11, D-18;
-- partial: D-23. India and USA health exist; there is no EU GDPR pack and no PFM coverage.
+- D-23 is now implemented: the IN, US-HIPAA and EU-GDPR compliance packs exist, and PFM is covered (it is cited in sangam-compliance and sangam-onboarding).
 
 ## 4. Consolidated open items (de-duplicated, ranked)
 
-**Source:** every README section headed Gaps, Known gaps, Not done, Not run yet, Still open or Notes and known gaps; the bold "Still open" and "Gaps" blocks in `sangam-server`; the `sangam-rest` defaults table; the engine and persistence requested core changes; and this register's UNACCOUNTED findings. The raw extraction found 118 lines. After merging duplicates and removing items already fixed (§4.4), **43 items** remain.
+**Source:** every README section headed Gaps, Known gaps, Not done, Not run yet, Still open or Notes and known gaps; the bold "Still open" and "Gaps" blocks in `sangam-server`; the `sangam-rest` defaults table; the engine and persistence requested core changes; and this register's UNACCOUNTED findings. The raw extraction found 126 lines. After merging duplicates and removing items already fixed (§4.4), **27 items** remain.
 
 **Ranks:**
 - **Blocker:** it stops the testing phase, or makes a Tier-1 run fail or give a false result.
 - **Must-fix before go-live:** it must close before Stage D sign-off or any production use.
 - **Later stage:** Stage D/E by the plan, or an accepted limitation.
 
-### 4.1 Blocker (6)
+### 4.1 Blocker (1)
 
-| # | Item | Detail | Source | Ids |
-|---|---|---|---|---|
-| 1 | **No behaviour test has run; only H2 compile / fast tests** | Every module states this (phase rule). Multi-DB runs on PostgreSQL, Oracle, SQL Server and MySQL have never been executed for the product modules: engine, persistence, config, ledger, registry, billing JDBC stores. This is the Stage C exit (AC-01…AC-11 on three Tier-1 DBs) | all READMEs; sangam-engine L221; sangam-config L74; sangam-ledger L59; sangam-billing L23 | T01–T89, AC-01…AC-11 |
-| 2 | **Liquibase changelogs missing for the `PortsSchema` tables and `PACK_OPERATION`** | Only the dev `PortsSchema.create` builds them, so the ports (event registry, read model, batches, SLA, content) and pack operations have no tables on a non-H2 profile. The 2026-11 schema follow-up columns (EVT_* `state`, PORT_BATCH four-eyes, SLA_INSTANCE `definition_key`, HRM_* indexes) are also pending | sangam-server L264; sangam-flowable-ports L242-252 | FC-02…04, FC-20, D-34, R12 |
-| 3 | **Core `AuthorizationPolicy` writes `AUTH_EFFECTIVE` without `cond_key` (NOT NULL in the adopted shape)** | Any path that still uses the core policy fails on insert against the Liquibase schema. Align sangam-core with sangam-security | sangam-persistence L181; sangam-engine L145 | R19, A-3, A-13 |
-| 4 | **Operation identity not carried end to end in sangam-core** | `EngineAdapter.ExternalWork` lacks `operationId` / attemptNo / businessKey (today only `LeasedWork`). `OperationLedger.recordIntent` has no overload taking the adapter's T35 operationId, so the ledger can mint a different id. This is the double-payment guard (E3, A-10, A-14) | sangam-engine L141-145 | R36, A-2, A-10, A-14, T35, AC-03 |
-| 5 | **Oracle claim path: relay and inbox claims inherit the core `ROWNUM` skip-locked caveat** | Oracle is Tier 1. Concurrent relays can skip or over-claim. Fix before the Oracle runs of E5/E6 | sangam-integration L346 | R2, R4, R38, T06–T09 |
-| 6 | **Poison inbound handling is incomplete** | Malformed JSON in a mappable Kafka/JMS message is treated as an infrastructure error and **redelivered forever** (PR-8). Core `ReconciliationQueue.Kind` has no `POISON_INBOUND`, so PR-7 parks with a dead letter but no reconciliation item, and the REST resolve endpoint answers 422 for such rows | sangam-server L281, L293; sangam-integration L336 | R38, T09, T35, FW-28 |
+| # | Item | Detail | Source | Ids | Code check (2026-11-05) |
+|---|---|---|---|---|---|
+| 1 | **No behaviour test has run on the Tier-1 databases** | The full clean build passed (2026-11-08), but the AC-01…AC-11 runs on PostgreSQL, Oracle and SQL Server, the Stage B re-runs (XII.5) and the AT-1…AT-7 acceptance tests are still to be run. This is the Stage C exit | all READMEs | T01–T89, AC-01…AC-11, AT-1…AT-7 | Build green; test execution pending |
 
-### 4.2 Must-fix before go-live (25)
+### 4.2 Must-fix before go-live (18)
 
-| # | Item | Detail | Source | Ids |
-|---|---|---|---|---|
-| 7 | **UNACCOUNTED requirement families (traceability)** | PFM-* (79) has no coverage map (ADR-D-23). The 38 FW ids are not in the ports README. 27 US-HLT items are unmapped. R2, R5 (JDK 25 baseline, never tested: XI.10.4), R7, R10, R46, R52 and N11 have no README entry. Each needs a coverage line, or an explicit gap or decision | this register §3 | see §3 |
-| 8 | **R41 idempotency store gaps** | sangam-rest's `IdempotencyFilter` owns R41 (the integration filter is not registered). Its JDBC adapter does **not encrypt the stored response body** (X.2.2.3) and has **no scheduled `cleanup()`** | sangam-rest L104; sangam-server L164 | R41, T55–T60 |
-| 9 | **No signed / Merkle audit checkpoints or external export of the audit chain (X.2.3.4 rule 4)** | Recorded by three modules. CERT-In-style audit evidence and R42 tamper evidence depend on it | sangam-security L247; sangam-integration L349; sangam-rest L105 | R42, R51, R52, GOV-3 |
-| 10 | **Audit events lost on two paths** | The JavaDelegate connector path runs without the audit chain (ROOT_SEQ self-deadlock avoidance). Compliance denial audits are written in the caller's transaction and vanish on rollback | sangam-integration L343; sangam-compliance L154 | R42, CMP-012 |
-| 11 | **Compliance API cannot be authorised by policy** | Resource type `COMPLIANCE` is missing from `ResourceRegistry` | sangam-server L260 | R19, CMP-* |
-| 12 | **Compliance ports left at "not configured" defaults** | Principal directory, principal authenticator, personal-data port, adult-identity verifier (no DigiLocker pull/eKYC connector, DPDP r.10), guardianship verifier, processor notifier, geo resolver, national-ID vault and security evidence. No registered Consent Manager integration | sangam-server L207, L261; sangam-compliance L164 | CMP-029, CMP-068…070, CMP-010/011 |
-| 13 | **Compliance BPMN: no diagram (DI) layout, and user tasks use candidate groups, not seat routing** | Seat routing is the government core rule (IX.5) | sangam-compliance L163 | IX.5, R82 |
-| 14 | **Languages: only English and Hindi ship** | The other 21 Eighth-Schedule notice templates and the form label packs (GA-22) are not generated. The Hindi UI and notice text need Rajbhasha / native review | sangam-compliance L151; sangam-config L77; sangam-ui L749 | GOV-1, R54, GA-22, AC-10 |
-| 15 | **Accessibility not verified** | WCAG 2.1 AA / GIGW 3.0 is designed in, but no audit-tool or assistive-technology test has been run | sangam-ui L749 | GOV-2, R55, T32, T88 |
-| 16 | **Synthetic pilot values in DMN tables and seeds** | Thresholds, fee tables, power limits, timelines, roles, and sector credit / underwriting grids are synthetic. Sector timelines marked "verify" must be checked against the regulator's text. The departments' delegation-of-powers orders replace them through tenant DMN overrides | sangam-packs L926, L932 | GP-01, GP-06, SEC-*, PK-09 |
-| 17 | **Real government wire formats are on request (RQ-1/RQ-3, PK-05)** | IFMS, PFMS, NIC SMS and payment-gateway schemas. Connectors follow the simulator formats. Real adapters must also return the data keys the pack simulators return | sangam-integration L348; sangam-packs L930 | R58, PK-05, PK-08, T89 |
-| 18 | **Statutory day arithmetic approximated** | Durations that JUEL cannot express (for example "decide within 40 days of receipt" after a third-party window) are approximated by resetting the case clock. Literal event-subprocess timers are used where no variable exists yet (UP-16 PT4H, UP-19 R/P30D) | sangam-packs L928, L931 | R31, R79, UP-16, UP-19 |
-| 19 | **Packs use `WorkingDayCalendar`, not a product-table `BusinessCalendar`** | Tenant holidays and notified calendars do not reach pack SLAs until this is built | sangam-server L265 | R31, GP-06, AC-06 |
-| 20 | **REST ports still on defaults** | History read-model query API (`HistoryPort`), SLA aggregate (`InsightsPort`) and pause / resume / four-eyes on `ProductBatchService` (`OpsPort`) stay on their defaults. EventRegistry delete/retire deploys an inactive version, and event-definition delete returns 422. `PackagePort` default has no package signatures or environment promotion (X.2.4.5), and deferred `activateAt` needs a scheduler | sangam-server L263; sangam-rest L106, L113 | R43, R63, R65, FC-02…04, FC-35 |
-| 21 | **Worker API long-poll holds a servlet thread for up to 30 s** | At ADR-D-24 load (about 30,000 ops/s) this exhausts the thread pool. Also confirm on `EngineAdapterWorkAdapter` that the implicit `attemptId:complete` replay key (X.2.2.1) is honoured: the default adapter answers `STALE_LEASE` | sangam-rest L101 | R9, R22, ADR-D-24, T-SCALE-2 |
-| 22 | **Document malware scan** | The default `DocumentPort` marks content `NOT_SCANNED`. Verify that the scan hook (R74) is active on the server's `ContentService` bridge. Uploads through the REST controllers are still buffered (`MultipartFile.getBytes()`) | sangam-rest L108; sangam-server L292 | R74, FW-39, FW-40 |
-| 23 | **SCALE cell items still open** | IR-6: the replica router exists, but no adapter uses it. IR-4: Kafka/JMS consumers are not paused on tenant freeze, and content-store and audit-export files are not moved with the rows. IR-3/IR-4: `XCELL` / `CELL_ADMIN` service principals need a tenant claim (401 today) | sangam-server L253, L266-268 | IR-3, IR-4, IR-6, T-SCALE-8 |
-| 24 | **SDKs: no in-memory test engine (R18 Tier-1 requirement) and no contract tests T01–T04 / T18** | All five SDKs. The .NET SDK is compile-checked on net7.0 only (out of support); build on net8 | sdks/*/README Gaps | R18, AC-08, T01–T04, T18 |
-| 25 | **Field offline queue** | The PWA does not implement the encrypted offline queue contract (`LocalQueueContract`). It uses the online `record` call, so offline capture (N05, GA-27 offline units) is not yet real | sangam-field L109 | N05, GA-27 |
-| 26 | **Billing numbering on retry** | Invoice and receipt numbers are drawn again on a retried step: gaps in a government receipt series. Postings stay idempotent. Numbering per operationId is the fix | sangam-billing L23 | N09, N10, R36 |
-| 27 | **Break-glass accounts not a separate mechanism (AJ-05 step 7)** | Proposed: a time-limited API token plus an alert on use | sangam-security L245 | AJ-05, R50 |
-| 28 | **US health connector safety items** | CDS Hooks caller JWT verification is left to the REST layer and not written. There is no FHIR profile validation (US Core, PAS). The SMART client JWKS publishing endpoint is operational setup (owner-side) | sangam-connectors-health L78, L83-84 | US-HLT-074, US-HLT-077 |
-| 29 | **Compliance pack data marked [U]/[S]** | UIDAI circulars, CERT-In audit and BOM guidelines, GIGW language clauses, NISPG and state mandates. State obligations are configuration hooks only | sangam-compliance L157 | CMP-*, PK-10 |
-| 30 | **IFMS profile placeholders** | 4 IFC gaps (IFC-001 registry seed of 94 units, IFC-189, IFC-238, IFC-244) and IFS-077. 15 GA partials: State values in [U] skeletons, LMMH seed partial, pension and procurement rules not loaded, sub-state entities. The "Still placeholders" list covers GJ/WB/TG/OD/ML/JK/LA code structures, works manuals and SNA-SPARSH dates | profiles/README.md L675 | IFC-*, IFS-*, GA-* |
-| 31 | **DNS pinning leaves a short rebinding window** | The JDK `HttpClient` cannot connect to a pre-resolved IP with SNI (SSRF hardening, R27) | sangam-integration L344 | R27, T23, T47 |
+| # | Item | Detail | Source | Ids | Code check (2026-11-05) |
+|---|---|---|---|---|---|
+| 2 | **Idempotency response body not encrypted (X.2.2.3)** | Cleanup is now scheduled; only the encryption remains | sangam-rest L104 | R41, T55–T60 | `PackGapWiring.java` L80 schedules cleanup (fixed). No encryption in `JdbcIdempotencyAdapter` or core `IdempotencyStore` |
+| 3 | **No signed / Merkle audit checkpoints or external export (X.2.3.4 rule 4)** | CERT-In-style evidence and R42 tamper evidence | sangam-security; sangam-integration; sangam-rest | R42, R51, R52, GOV-3 | `AuditChain.java` L26 still "not implemented" |
+| 4 | **Compliance denial audits roll back with the caller** | `PurposeBindingGuard.deny` writes on the caller's connection | sangam-compliance | R42, CMP-012 | `PurposeBindingGuard.java` L54-72 call `deny(c, …)` |
+| 5 | **Compliance adult-identity verifier not configured (DPDP r.10)** | There is no DigiLocker identity-verification connector | sangam-server | CMP-029, CMP-068…070 | `ComplianceWiring.java` L130 `null /* adultVerifier */` |
+| 6 | **Compliance BPMN: no diagram layout and no seat routing** | 12 compliance BPMN files, all without `bpmndi` and without seat-based assignment (IX.5) | sangam-compliance | IX.5, R82 | Counted in `sangam-compliance/src/main/resources` |
+| 7 | **Languages: only en/hi; accessibility not verified** | IN ships `notice_en` and `notice_hi`; EU-GDPR and US-HIPAA ship English only. UI locales are `en.json` and `hi.json`. No WCAG/GIGW audit has been done | sangam-compliance; sangam-ui | GOV-1, GOV-2, R54, R55, GA-22 | Notice files and locales counted |
+| 8 | **Packs still run on `WorkingDayCalendar`** | Tenant holidays and notified calendars do not reach pack SLAs. `sangam-config` has a `BusinessCalendar` class, but it is not bound to the packs port | sangam-server | R31, GP-06, AC-06 | `PacksWiring.java` L135 logs "calendar=packs WorkingDayCalendar" |
+| 9 | **`PackagePort`: no package signatures or environment promotion (X.2.4.5)** |  | sangam-rest L113 | R43 | `JdbcPackageAdapter.java` L41 |
+| 10 | **Worker long-poll blocks a servlet thread** | This exhausts threads at ADR-D-24 load | sangam-rest | R9, R22, T-SCALE-2 | `Thread.sleep` loop in `EngineAdapterWorkAdapter.java` L82 and `OperatonWorkAdapter.java` L87 |
+| 11 | **No malware scanner bound** | Content stays `NOT_SCANNED` | sangam-server | R74 | No `ContentScanner` in sangam-server |
+| 12 | **SCALE: read replica unused; broker consumers ignore tenant freeze** | IR-6: the router has no caller. IR-4: Kafka/JMS are now wired (`BrokerInboxWiring`), but they do not check the FROZEN state, and files are not moved | sangam-server | IR-4, IR-6, T-SCALE-8 | No call to `CellReadReplicaRouter.routing()`; no freeze check in the broker consumers |
+| 13 | **SDKs have no in-memory test engine (R18 Tier 1)** | Contract tests T01–T04 / T18 still need to be run | sdks/* | R18, AC-08 | No test-engine class in `sdks/` |
+| 14 | **PWA offline queue not implemented** | Offline field capture (N05, GA-27) | sangam-field; sangam-ui | N05, GA-27 | No `LocalQueueContract` or IndexedDB in `sangam-ui/src` |
+| 15 | **Billing numbers redrawn on a retried step** | Gaps in the receipt series | sangam-billing | N09, N10 | `BillingService.java` L58, L96 `series.next` without an operation key |
+| 16 | **Break-glass accounts (AJ-05 step 7)** |  | sangam-security | AJ-05, R50 | No code |
+| 17 | **CDS Hooks client JWT (`iss`/`jku`) not verified** | The route requires a Sangam token only | sangam-connectors-health | US-HLT-074 | No `jku` / client-JWT verification code |
+| 18 | **Synthetic DMN/seed values; real government wire formats on request (PK-05)** | Owner and department input. The official LMMH list has now been loaded (fixed) | sangam-packs; sangam-integration | GP-01, R58, PK-05 | Data item |
+| 19 | **Contract coverage of the separate apps** | `/cells`, `/routes` (sangam-control-plane `ControlPlaneController`) and `/rollup` (sangam-rollup `RollupController`) exist in code but are not in `sangam-api.yaml`, and no other OpenAPI file covers them. `/field/assignments/*` is mapped (`FieldWorkController` L86-145). `/plugins/ui/{id}/assets/{path}` maps to `/{id}/assets/**`; the contract notes that `path` may contain slashes, which OpenAPI path parameters do not allow (generated clients will encode them) | sangam-rest/api/sangam-api.yaml (862 paths) | R16, D-5 | Mapping search of every `@*Mapping` |
 
-### 4.3 Later stage (12)
+### 4.3 Later stage (8)
 
-| # | Item | Detail | Source | Ids |
-|---|---|---|---|---|
-| 32 | **Engine source patches (Stage D, with upstream PRs)** | D-19 `ExternalTask.xml` SKIP LOCKED mapping, D-10 per-engine clock SPI (one engine per JVM until then; also blocks FC-34), FC-24 job hand-off and timer acquisition, D-27, D-52, D-23 MI profiling, D-48. Interim extension-point routes are in place | sangam-engine L216; sangam-flowable-ports L285 | D-10, D-19, D-23, D-27, D-48, D-52, FC-24, FC-34 |
-| 33 | **R39 partition epochs blocked by A-6** | Partitioned executors are off by default | sangam-engine L220 | R39, A-6, T41 |
-| 34 | **OFFERED / ack lease state (VI.3.1 stream offers)** | REST-first (ADR-D-5): a fetch returns LOCKED work. It applies only when gRPC streaming is added | sangam-engine L218 | R9, CF-3 |
-| 35 | **Flowable-port remainders** | FC-56 state-machine extensions and FC-57 (P-4), FC-11/FC-19 native CMMN (P-5): Stage E. FC-18 historic-instance migration (Operaton history is bound to the definition). FC-51 CockroachDB and EC-06 data objects: Stage D/E. EC-03 Pages, EC-14 Agents, EC-15 Engage: Stage E | sangam-flowable-ports L283-286 | FC-11, FC-18, FC-19, FC-51, FC-56, FC-57, EC-03, EC-06, EC-14, EC-15 |
-| 36 | **Premium screens waiting for server endpoints ("UI ready; server [P]")** | PF-13 metrics, PF-22 Git sync, PF-27/39 connectors/registry, PF-28/46 agentic AI, PF-35 pages, PF-38 data objects, PF-40 SLA models, PF-45 inspect, PF-47 engage. PF-25/26 console and backups (R70, Stage D) and PF-31 IDP (R75, Stage E) have no screen | sangam-ui L247-292, L744-746 | PF-*, R69, R70, R72, R75, R77, R78, R81 |
-| 37 | **Identity breadth** | SCIM 2.0 provisioning (R67, Stage D). SAML 2.0 / Parichay is IdP (Keycloak) configuration only; `IDP_CONFIGURED` metadata management is not implemented | sangam-security L242-243 | R67, AJ-05, PK-04 |
-| 38 | **R82 assignment strategies (round-robin, least-loaded, skills)** | Stage D. Seat resolution and candidate exclusion exist; packs carry their own `AssignmentStrategyDelegate` | sangam-security L251; sangam-packs §7 | R82, UP-04 |
-| 39 | **Connector breadth** | FC-08 Camel. GraphQL, JDBC, S3 and chat connectors (R71 breadth, Stage E). X12 TR3 situational rules, the 277CA decoder, 999 IK3/IK4 detail and the CAQH CORE SOAP/MIME envelope. Bulk Data `$export` polling | sangam-integration L349; sangam-connectors-health L78-80 | FC-08, R71 |
-| 40 | **Performance refinements** | No native spatial indexes on Oracle, SQL Server or MySQL. Field-mask checks cost one object check per row. Capacity sampling is per node. Ledger stripe rebalancing. Roll-up micro-batch pre-aggregation and the state-level tier | sangam-geo L93; sangam-security L248; sangam-integration L345; sangam-ledger L57; sangam-rollup | R22, R19, ADR-D-24 |
-| 41 | **Functional limits accepted for now** | ETA and nearest-N by straight line (road routing is out of scope). EXIF read from JPEG only. Antimeridian geometries must be pre-split. Overlap is a boolean intersect. No fuzzy duplicate matching for references. Programme: no ISO weeks, allocation one level at a time, alert de-dup keys permanent. Ledger has no dedicated MTEF check. `ProfileResolver.remove` has no per-field removal. No field re-encryption job. Python long-poll cannot be aborted. PHP inline mode cannot pre-empt a handler. SDK admin bodies are untyped. Java `ExternalWork.effect` is not in the contract. CMMN editing is not graphical. There is no collaborative modeller presence (R69). `processEngineName` is overridden by the starter | sangam-field, sangam-geo, sangam-case, sangam-programme, sangam-ledger, sangam-config, sangam-security, sdks/*, sangam-ui, sangam-server L262 | N13, N16, N17, R69 |
-| 42 | **EU GDPR jurisdiction pack** | ADR-D-23 lists it, but there is no pack. The compliance framework supports adding one as data | sangam-compliance L13 | ADR-D-23 |
-| 43 | **Unfenced Flowable-compat opt-in reads core `LeaseTable` (`spike_lease`), not `SANGAM_LEASE`** | Fails closed (`STALE_LEASE`), so it is safe, but the opt-in path is unusable with the sangam-engine adapter | sangam-server L294 | FW-07, D-17 |
+| # | Item | Detail | Source | Ids | Code check (2026-11-05) |
+|---|---|---|---|---|---|
+| 20 | **operationId not on `ExternalWork` built by the engine adapter** | `ConnectorInvoker` now records with the explicit id (L153, fixed). `OperatonEngineAdapter` L572 still builds `ExternalWork` without it; `LeasedWork` carries it. Confirm in T35 | sangam-engine | R36, T35 | Partly fixed |
+| 21 | **Engine source patches (Stage D)** | D-19, D-10, FC-24, D-27, D-52, D-23, D-48. Interim routes are in place | sangam-engine | D-10, D-19, FC-24 | README plus PATCHES.md |
+| 22 | **R39 partition epochs (A-6)** | Off by default | sangam-engine | R39, A-6 | No epoch code |
+| 23 | **Flowable-port remainders and premium partials** | FC-56/57, FC-11/19, FC-18 historic migration, FC-51, EC-03/06/14/15; PF "UI ready; server [P]"; NG partials (NG-33 mobile app, NG-37 backup beyond PostgreSQL, NG-39 active-active) | sangam-flowable-ports; sangam-ui; PREMIUM-GAP-RECHECK | FC-*, EC-*, PF-*, NG-* | README / recheck |
+| 24 | **Identity breadth (SCIM, R67 Stage D); R82 strategies in sangam-security** |  | sangam-security | R67, R82 | None in code |
+| 25 | **Connector breadth and FHIR profile validation depth** | X12 TR3 and 277CA. The Teams, WhatsApp, WeChat, ServiceNow, SAP, Azure Service Bus, MCP and A2A connectors were checked against the vendor APIs in `CONNECTOR-API-VERIFICATION.md`; its "Integrator actions" remain | sangam-integration; connectors-health | R71 | Doc review |
+| 26 | **Performance refinements and accepted functional limits** | Native spatial indexes, field-mask cost, stripe rebalancing, roll-up tiers, straight-line ETA, … | module READMEs | R22 | README-based |
+| 27 | **Unfenced Flowable-compat opt-in reads core `LeaseTable`** | It fails closed | sangam-server | FW-07 | `FlowableWorkerCompatController.java` L153 |
 
-### 4.4 README statements already superseded (do not count as open)
+### 4.4 Fixed in code or superseded (do not count as open)
+
+The integrator reported, on 2026-11-05, that several README notes were already fixed in code. Each was checked against the source; the result is below.
 
 | Older statement | Superseded by |
 |---|---|
-| sangam-compliance L161-162: "Purpose-binding and retention hooks into engine execution are not wired yet" | sangam-server L216-219: `bridge/CompliancePurposePlugin` wires the purpose binding, `retention.track` and `onPurposeCompleted` |
-| sangam-server L291: "Downloads are still buffered" | sangam-server L336 (final integration wave): `Download` carries a body supplier and streams; content is cut off above `max-bytes` |
-| sangam-case L107: venue booking and the party registry are pass-through until N01/N14 exist | sangam-server L323: `CaseModule` uses venue booking via sangam-resources and parties via sangam-registry |
-| sangam-rest L95: `DynamicPort` / `EventPort` / `LinkPort` / `DocumentPort` default gaps (501, in-memory links, no channels) | sangam-server L169-181: bridged to sangam-flowable-ports (`AdHocSubProcessService`, `EventRegistry`, `InstanceLinkService`, `ContentService`); "no more 501" |
-| sangam-rest L102-103: `PermissionPort` / `AdminPort` defaults (no field masks, in-memory admin) | sangam-server L147-153: replaced by sangam-security bridges |
-| sangam-engine L141 job identity and job counters | sangam-server L262: "Done: job identity binding … job counters" |
-| sangam-rest L86: "Nothing is kept in memory" vs the table row "`OpsPort` batches are held in memory" and "`PackagePort` `InMemoryPackageAdapter`" | Contradiction inside one README: the prose says packages persist in `PACKAGE_VERSION` and batches in `PORT_BATCH`. Correct the table (open item: README accuracy) |
+| 2026-11-05 blocker: Oracle `ROWNUM` before `SKIP LOCKED` | **Fixed.** `Dialect.java` L138-144 uses an ordered `ROWNUM` candidate window, then `FOR UPDATE SKIP LOCKED`. `ResourcesDialect` no longer has `ROWNUM` |
+| Kafka/JMS consumers not wired in the server | **Fixed.** `BrokerInboxWiring.java` L98, L115, L141 build `PoisonInbound`, `KafkaInboxConsumer` and `JmsInboxListener` |
+| `ConnectorInvoker` uses the derived operationId | **Fixed.** `ConnectorInvoker.java` L153 calls `recordIntent(c, op, …)` |
+| Idempotency `cleanup()` never scheduled | **Fixed.** `PackGapWiring.java` L80 (leader-elected) |
+| UNACCOUNTED PFM, US-HLT, R2/R5/R7/R10/R46/R52, N11 | **Fixed.** All are now covered in the READMEs (§3) |
+| No EU GDPR pack (ADR-D-23) | **Fixed.** The `EU-GDPR` and `US-HIPAA` jurisdiction packs exist |
+| 835 remittance posting missing | **Present.** `PackGapConnectors` / `PackGapWiring` in sangam-server |
+| Earlier fixes (2026-11-05): ports and `PACK_OPERATION` Liquibase, `cond_key`, poison inbound, `COMPLIANCE` resource type, History/Insights/Ops bridges | Still fixed. The product schema now has 286 `CREATE TABLE` statements in the PostgreSQL changelogs |
 
 ## 5. Full table: specification families (SANGAM.md)
 
@@ -292,15 +225,15 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 | Id | Title | Stage | Status | Where (module:file / pack) | Tests | Note |
 |---|---|---|---|---|---|---|
 | R1 | Relay-driven wake-up | C | implemented | sangam-integration:OutboxRelayService.java; sangam-integration:WakeupNotifier.java | T06, T07, T08, T25, T31, T45 |  |
-| R2 | Per-DB acquisition SQL | C | **UNACCOUNTED** |  | T10, T24, T31 | nearest: sangam-engine db/EngineDialect (A-15 per-dialect lock SQL) + FC-24 SKIP LOCKED config route; R2 not cited |
+| R2 | Per-DB acquisition SQL | C | implemented | sangam-engine:SangamLeaseTable.java; sangam-engine:CommandState.java; sangam-engine | T10, T24, T31 |  |
 | R3 | Lock and transaction specification | C | implemented | sangam-engine:OperatonEngineAdapter.java; sangam-integration:RetryPolicy.java | T10, T33, T34 |  |
 | R4 | Outbox algorithm | C | implemented | sangam-cell:RollupPublisher.java; sangam-flowable-ports:OutboundEventService.java; sangam-integration:OutboxRelayService.java; sangam-persistence:sangam-0001-ba | T06, T07, T08, T25, T35 |  |
-| R5 | JDK baseline | B (minimal) | **UNACCOUNTED** |  | T28, T31 | not in any README; found in: SCALE-ARCHITECTURE.md, sangam-control-plane (code) \| JDK 25 LTS baseline: never built or tested (XI.10.4 'Not yet tested: JDK 25'); |
+| R5 | JDK baseline | B (minimal) | implemented | deploy | T28, T31 |  |
 | R6 | Script isolation | C (secure defaults) → D (full) | implemented | sangam-engine:SangamBpmnParseListener.java; sangam-flowable-ports | T23, add test |  |
-| R7 | Native-light profile | B (Phase 0 item) | **UNACCOUNTED** |  | add test | no native-image profile anywhere |
+| R7 | Native-light profile | B (Phase 0 item) | implemented | deploy | add test |  |
 | R8 | DMN engine scope | C | implemented | pack universal.up14-three-way-match | T18, T19, T20 |  |
 | R9 | Worker task lease lifecycle | B (proof) → C | implemented | sangam-engine:OperatonEngineAdapter.java; sangam-engine:SangamLeaseTable.java; sangam-persistence:sangam-0001-baseline.sql; sdks/dotnet:SangamWorker.cs; sdks/ja | T02, T03, T04, T36 |  |
-| R10 | FEEL engine and null semantics | C | **UNACCOUNTED** |  | T18, T19, add test | not in any README; found in: sangam-control-plane (code) \| FEEL is Operaton's feel-scala; strict-null mode not documented; id appears only in sangam-control-pla |
+| R10 | FEEL engine and null semantics | C | implemented | sangam-engine:FeelEngineIdentity.java; sangam-engine:StrictNullResultGuard.java; sangam-engine; sangam-persistence | T18, T19, add test |  |
 | R11 | JSON limits | C → D | implemented | sangam-cell:MiniJson.java; sangam-engine:JsonValueSerializer.java | T18, T23 |  |
 | R12 | Schema migration | B (skeleton) → C | implemented | deploy; sangam-control-plane:SchemaConfig.java; sangam-engine:SangamEngineConfigurer.java; sangam-flowable-ports:PortsSchema.java; sangam-persistence; sangam-pe | T28, T29 |  |
 | R13 | Telemetry | B (skeleton) → C | implemented | deploy; sangam-engine:JobMetricsInterceptor.java; sangam-engine:CountingFailedJobCommandFactory.java; sangam-rest; sangam-server:ObservabilityConfig.java; sdks/ | T24, T31, T49 |  |
@@ -309,7 +242,7 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 | R16 | Contract-driven schemas | C | implemented | sdks/dotnet:Models.cs; sdks/php:CloudEvent.php; sdks/php:AdminApi.php; sdks/python:models.py | T48 |  |
 | R17 | Database tiers | B (skeleton) → C | implemented | deploy; sangam-server:application-*.yaml | T10, T26, T28, T29, T31 |  |
 | R18 | SDK tiers | C | partial | sdks/dotnet; sdks/java; sdks/php; sdks/php:SangamClient.php; sdks/php:SangamWorker.php; sdks/python; sdks/python:client.py; sdks/typescript; +1 more | T01, T02, T03, T04, T18, T28 | covered, with an open item \| sdks/dotnet L216: - No in-memory test engine yet (R18 Tier-1 "test engine"); contract tests T01–T04/T18 come in the testing phase. |
-| R19 | Authorization | B (spike on both engines) → C | implemented | sangam-case:CaseFileService.java; sangam-case:CaseRestAdapter.java; sangam-flowable-ports:TenantDefinitionResolver.java; sangam-gateway:TenantResolver.java; san | T13, T14, T15, T16, T17, T37, T38 | explicit |
+| R19 | Authorization | B (spike on both engines) → C | implemented | sangam-case:CaseFileService.java; sangam-case:CaseRestAdapter.java; sangam-channels; sangam-flowable-ports:TenantDefinitionResolver.java; sangam-gateway:TenantR | T13, T14, T15, T16, T17, T37, T38 | explicit |
 | R20 | Fencing and heartbeats | B → C | implemented | sangam-engine:OperatonEngineAdapter.java; sangam-engine:SangamLeaseTable.java; sangam-persistence:sangam-0001-baseline.sql; sdks/dotnet:SangamWorker.cs; sdks/ja | T02, T03, T04, T05, T27 |  |
 | R21 | Expired-lease sweeper | B → C (also D, with R48/R49) | implemented | sangam-engine:SangamLeaseTable.java; sdks/java:SangamWorker.java | T03, T04, add test |  |
 | R22 | Benchmarks | D | implemented | perf; pack universal.up01-stp-order | T24, T25, T31 |  |
@@ -329,20 +262,20 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 | R36 | Business-operation identity (E01) | B (proof) → C | implemented | sangam-cell:CrossCellPublisher.java; sangam-connectors-health; sangam-engine:OperatonEngineAdapter.java; sangam-flowable-ports:OutboundEventService.java; sangam | T02, T03, T27, T36, T35 |  |
 | R37 | Durable call intent / journal (E02) | E | implemented | sangam-integration; sangam-integration:ConnectorInvoker.java; sangam-integration:ConnectorCallJournal.java; sangam-integration:OperationLedgerService.java; sang | T12, add test |  |
 | R38 | Inbound inbox (E03) | C | implemented | sangam-cell:CrossCellPublisher.java; sangam-field:SyncService.java; sangam-flowable-ports:EventDefinition.java; sangam-flowable-ports:InboundEventProcessor.java | T09, T35, add test |  |
-| R39 | Partition epochs (E09) | E (blocked by A-6) | gap | sangam-engine | T41, T24 | sangam-engine L220: - Partition epochs (R39): blocked by A-6. |
+| R39 | Partition epochs (E09) | E (blocked by A-6) | gap | sangam-engine | T41, T24 | sangam-engine L239: - Partition epochs (R39): blocked by A-6. |
 | R40 | Outbox capacity (E10) | C | implemented | sangam-control-plane:PlacementService.java; sangam-integration:OutboxCapacityMonitor.java; sangam-integration:InboxService.java; pack universal.up01-stp-order;  | T25, add test, T09, T35 |  |
-| R41 | API idempotency (E12) | B (proof) → C | partial | sangam-cell:CrossCellPublisher.java; sangam-field:SyncService.java; sangam-field:FieldRestPort.java; sangam-integration:IdempotencyService.java; sangam-ledger:L | T01, add test | sangam-rest L105: idempotency response body not encrypted (X.2.2.3), no scheduled cleanup(); sangam-rest owns R41 (server L164) |
-| R42 | Audit vs replay (E13) | C (audit part); replay E | partial | sangam-control-plane:ControlPlaneAudit.java; sangam-engine:SangamHistoryEventHandler.java; sangam-field:FieldAudit.java; sangam-flowable-ports:TaskLifecycleServ | T42, T19, T30, add test | Merkle/signed audit checkpoints (X.2.3.4 rule 4) missing: sangam-security L81, sangam-integration L61, sangam-rest L106 |
-| R43 | Executable-package versioning (E14) | C | partial | sangam-case:CaseConfigRegistry.java; sangam-flowable-ports:EventRegistry.java; sangam-flowable-ports:DynamicInjectionService.java; sangam-flowable-ports:AppBund | T19, T21, T28 | sangam-rest L113: PackagePort default has no signatures or environment promotion (X.2.4.5) \| covered, with an open item \| sangam-flowable-ports L231: \| Runtime  |
+| R41 | API idempotency (E12) | B (proof) → C | partial | sangam-cell:CrossCellPublisher.java; sangam-field:SyncService.java; sangam-field:FieldRestPort.java; sangam-integration:IdempotencyService.java; sangam-ledger:L | T01, add test | code: idempotency cleanup now scheduled (PackGapWiring L80); stored response body still not encrypted (X.2.2.3) |
+| R42 | Audit vs replay (E13) | C (audit part); replay E | partial | sangam-control-plane:ControlPlaneAudit.java; sangam-engine:SangamHistoryEventHandler.java; sangam-field:FieldAudit.java; sangam-flowable-ports:TaskLifecycleServ | T42, T19, T30, add test | code: AuditChain.java L26 signed Merkle checkpoints not implemented |
+| R43 | Executable-package versioning (E14) | C | partial | sangam-case:CaseConfigRegistry.java; sangam-flowable-ports:EventRegistry.java; sangam-flowable-ports:DynamicInjectionService.java; sangam-flowable-ports:AppBund | T19, T21, T28 | code: JdbcPackageAdapter.java L41 no package signatures / environment promotion \| covered, with an open item \| sangam-flowable-ports L290: \| Runtime model patch |
 | R44 | Standards profile (E15) | Not mapped in VIII.9 (finding 9) | implemented | sangam-engine:SangamBpmnParseListener.java; sangam-flowable-ports:SangamModelValidator.java; sangam-rest | T20 |  |
 | R45 | Bounded CMMN conversion (E16) | E (isolation in B/C) | implemented | pack universal.up09-dynamic-case; pack universal.up18-capa | T43, T21 |  |
-| R46 | Modeler/runtime parity (E17) | E | **UNACCOUNTED** |  | T20, T32, add test | no modeler/runtime parity check documented (sangam-ui modeller + engine validator exist) |
+| R46 | Modeler/runtime parity (E17) | E | implemented | sangam-ui | T20, T32, add test |  |
 | R47 | Forms contract (E19) | C | implemented | sangam-flowable-ports:FormDefinition.java; sangam-packs:PackDeployer.java; sangam-persistence; sangam-persistence:sangam-0001-baseline.sql; sangam-rest:sangam-a | T16, T19, T32, add test |  |
 | R48 | Migration contracts (E20) | D (pilot subset may move to C); importers E | implemented | sangam-flowable-ports:MigrationDocument.java; sangam-rest:sangam-api.yaml; sangam-rest; sangam-ui | T21, T27, T28, add test |  |
 | R49 | Continue-as-new and modification limits (E21) | D | implemented | sangam-flowable-ports:DynamicInjectionService.java; sangam-flowable-ports:CrossInstanceStateChangeService.java; sangam-rest:sangam-api.yaml; sangam-rest; pack u | T44 |  |
 | R50 | Identity / SSO (GOV-6) | C | implemented | deploy; sangam-registry:RegistryPorts.java; sangam-rest; sangam-security; sangam-server:SecurityConfig.java; sangam-ui:AuthProvider.tsx | T87 |  |
 | R51 | Log retention and incident readiness (GOV-3) | C (Stage D gate item) | implemented | deploy | T81, T49 |  |
-| R52 | Audit-ready release process (GOV-3) | D | **UNACCOUNTED** |  | T81, T49 | deploy/ has SBOM + licence gate + CI, but no README cites R52 (audit-ready release process, GOV-3) |
+| R52 | Audit-ready release process (GOV-3) | D | partial | deploy; deploy:release.yml | T81, T49 | covered, with an open item \| deploy L570: \| release.yml \| tag vX.Y.Z \| also builds the R52 evidence pack (evidence/: SBOMs, licence, dependency-check, CodeQL su |
 | R53 | DPDP compliance (GOV-4) | D | implemented | sangam-registry:RegistryPorts.java; sangam-rest; pack gov.p3.grant-sanction; pack universal.up17-prior-authorisation | T86 |  |
 | R54 | Languages (GOV-1) | C | partial | sangam-packs; sangam-packs:DocumentDelegate.java; sangam-persistence:sangam-0001-baseline.sql; sangam-ui:{en,hi}.json; pack sangam.core | T32, T88 | covered, with an open item \| sangam-ui L52: \| i18n Hindi + English (R54, T32) \| i18next. All strings live in src/i18n/locales/{en,hi}.json. There is a language  |
 | R55 | Accessibility / GIGW (GOV-2) | D | implemented | sangam-ui:ui.tsx | T32, T88 |  |
@@ -355,24 +288,24 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 | R62 | Procurement readiness (GOV-12) | D | implemented | pack gov.gem-purchase | release evidence (local-content dossier) |  |
 | R63 | Operations console (Cockpit/Operate/Control/Hub parity) | C (O01–O09 + history + migrat… | implemented | sangam-rest:sangam-api.yaml; sangam-rest; sangam-security:BulkOperationGuard.java; sangam-server:ObservabilityConfig.java; sangam-ui:ReasonDialog; sangam-ui; sd |  |  |
 | R64 | Bulk / batch operations | C | implemented | sangam-rest:sangam-api.yaml; sangam-rest; sangam-security; sangam-security:BulkOperationGuard.java; sangam-ui; pack universal.up15-recertification | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) |  |
-| R65 | Process analytics and BI | D (core) → E (advanced) | implemented | sangam-flowable-ports:TaskLifecycleService.java; sangam-flowable-ports; sangam-rest:sangam-api.yaml; sangam-rest; sangam-security:AuthorizedQueryBuilder.java; s | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) |  |
+| R65 | Process analytics and BI | D (core) → E (advanced) | implemented | sangam-flowable-ports:TaskLifecycleService.java; sangam-flowable-ports; sangam-ops; sangam-rest:sangam-api.yaml; sangam-rest; sangam-security:AuthorizedQueryBui | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) |  |
 | R66 | In-product process mining | E | implemented | sangam-rest:sangam-api.yaml; sangam-rest; sangam-ui; pack universal.up07-improvement-loop | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) |  |
 | R67 | Identity federation | C (OIDC, LDAP) → D (SCIM) | partial | sangam-rest; sangam-security; sangam-security:KeycloakClaimsMapper.java; sangam-security:PrincipalResolver.java; sangam-security:LdapDirectorySync.java; sangam- | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-security L69: \| identity/LdapDirectorySync.java \| R67 / A-17: LDAP/AD read and scheduled sync (JDK JNDI, no new dependency). |
 | R68 | Published support lifecycle | D | implemented | sangam-ui |  |  |
 | R69 | Collaborative web modeller | C (BPMN/DMN/forms, single-use… | partial | sangam-rest; sangam-ui |  | covered, with an open item \| sangam-rest L95: Without the owning module, these return 501 CAPABILITY_NOT_INSTALLED: directory sync (sangam-security), Git pull/p |
 | R70 | Platform console and lifecycle | D | gap | sangam-ui |  | sangam-ui L271: \| PF-25, PF-26 \| Console, backups \| Not in WS-UI scope (R70, Stage D) \| Gap \| |
-| R71 | Connector catalogue and service registry | C (REST, e-mail, SFTP, webhoo… | partial | sangam-connectors-health; sangam-flowable-ports:ChannelAdapters.java; sangam-flowable-ports; sangam-geo:WfsConnector.java; sangam-integration:SangamConnector.ja | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-integration L349: - Not implemented: FC-08 Camel (stage E); GraphQL, JDBC, S3 and chat connectors from R71 (stage E breadth) |
-| R72 | AI-agent orchestration | E | partial | sangam-flowable-ports:SangamBpmnParse.java; sangam-flowable-ports; sangam-rest; sangam-ui; pack universal.up06-hitl-ai-review | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-flowable-ports L184: \| EC-14 \| Agents / AI \| Stage E (R72); prerequisite FC-01 Done; owner proposed WS-PACKS/WS-INTEGRATION  |
+| R71 | Connector catalogue and service registry | C (REST, e-mail, SFTP, webhoo… | partial | sangam-connectors-health; sangam-flowable-ports:ChannelAdapters.java; sangam-flowable-ports; sangam-geo:WfsConnector.java; sangam-integration:SangamConnector.ja | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-integration L360: - Not implemented: FC-08 Camel (stage E); GraphQL, JDBC, S3 and chat connectors from R71 (stage E breadth) |
+| R72 | AI-agent orchestration | E | partial | sangam-ai; sangam-flowable-ports:SangamBpmnParse.java; sangam-flowable-ports; sangam-rest; sangam-ui; pack universal.up06-hitl-ai-review | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-flowable-ports L184: \| EC-14 \| Agents / AI \| Stage E (R72); prerequisite FC-01 Done; owner proposed WS-PACKS/WS-INTEGRATION  |
 | R73 | RPA worker | E | implemented | sangam-integration:RetryPolicy.java; sangam-packs:EmbeddedWorkerRunner.java; pack universal.up20-rpa | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) |  |
-| R74 | Document service | C (store + references) → D (g… | implemented | sangam-flowable-ports:FileSystemDocumentStore.java; sangam-integration:LifecyclePorts.java; sangam-integration; sangam-rest:sangam-api.yaml; sangam-rest; sangam | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) |  |
+| R74 | Document service | C (store + references) → D (g… | partial | sangam-channels; sangam-flowable-ports:FileSystemDocumentStore.java; sangam-integration:LifecyclePorts.java; sangam-integration; sangam-rest:sangam-api.yaml; sa | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-channels L17: \| NG-27 \| mail/InboundMail \| Done, untested live \| Message-ID idempotency, attachments to R74 with a scan hook |
 | R75 | Intelligent document processing | E | partial | sangam-ui; pack universal.up06-hitl-ai-review | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-ui L276: \| PF-31 \| IDP (document processing) \| — \| Gap (R75, Stage E) \| |
 | R76 | Universal work UI | C (inbox and task) → E (case … | implemented | sangam-rest; sangam-ui; pack universal.up09-dynamic-case; pack universal.up22-external-collaboration | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) |  |
 | R77 | Low-code pages | E | partial | sangam-flowable-ports; sangam-rest; sangam-ui |  | covered, with an open item \| sangam-flowable-ports L173: \| EC-03 \| Pages (low code) \| Owned: WS-UI (R77), stage E \| |
 | R78 | Data objects and data dictionary | D → E | partial | sangam-flowable-ports; sangam-registry; sangam-resources:ResourceType.java; sangam-rest; sangam-ui |  | covered, with an open item \| sangam-flowable-ports L176: \| EC-06 \| Data objects / ERD (R78) \| Gap for stage C: stage D/E, not routed to WS-PORTS; integrator to  |
 | R79 | SLA model | C (subset for AC-06) → D | implemented | sangam-case:DeadlineService.java; sangam-engine:TaggedDurationBusinessCalendar.java; sangam-flowable-ports:SlaService.java; sangam-packs:SlaDelegate.java; sanga | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) |  |
-| R80 | Model test harness and debugger | D | implemented | sangam-flowable-ports:DebuggerService.java; sangam-rest; sangam-ui |  |  |
+| R80 | Model test harness and debugger | D | implemented | sangam-flowable-ports:DebuggerService.java; sangam-modeller; sangam-rest; sangam-ui |  |  |
 | R81 | Conversational and messaging channels | E | partial | sangam-flowable-ports; sangam-rest; sangam-ui |  | covered, with an open item \| sangam-flowable-ports L185: \| EC-15 \| Engage \| Owned: WS-INTEGRATION (R81), stage E \| |
-| R82 | Routing and assignment strategies | D | partial | sangam-field:DispatchService.java; sangam-geo:Nearest.java; sangam-packs:AssignmentStrategyDelegate.java; sangam-rest; sangam-security; sangam-ui; pack universa | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-security L251: - R82 strategies (round-robin, least-loaded, skills) are not implemented. Only seat resolution and candidate  |
+| R82 | Routing and assignment strategies | D | partial | sangam-field:DispatchService.java; sangam-geo:Nearest.java; sangam-packs:AssignmentStrategyDelegate.java; sangam-rest; sangam-security; sangam-ui; pack universa | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-security L259: - R82 strategies (round-robin, least-loaded, skills) are not implemented. Only seat resolution and candidate  |
 | R83 | Event-stream ingestion and correlation | E | implemented | sangam-flowable-ports:ChannelAdapters.java; sangam-packs:EventWindowDelegate.java; sangam-ui; pack universal.up03-event-correlation; pack universal.up21-iot-sto | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) |  |
 | R84 | MySQL Tier-1 conditions (amends R17 per ADR-D-15) | B (finding) → C | implemented | sangam-engine:SangamEngineConfigurer.java; sangam-engine:IsolationGuardDataSource.java; sangam-persistence:sangam-0001-baseline.sql; sangam-server; sangam-serve |  |  |
 
@@ -385,11 +318,11 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 | A-3 | Keyboard: all controls can be operated; the tab order follows the visual order; there are  |  | implemented | sangam-persistence:sangam-0001-baseline.sql; sangam-programme:ProgrammeRestAdapter.java; sangam-resources; sangam-security; sangam-security:PolicyCompiler.java; |  |  |
 | A-4 | Conditional reveal: newly shown fields are announced, focus is never lost, and removed fie |  | implemented | sangam-integration:InstanceLifecycleService.java |  |  |
 | A-5 | Time limits: a session-expiry warning with an extend option at least 2 minutes before expi |  | implemented | sangam-integration:OutboxRelayService.java; sangam-integration:OutboxCapacityMonitor.java |  |  |
-| A-6 | Contrast 4.5:1 for text and 3:1 for UI components; reflow at 320 CSS px; text resizable to |  | gap | sangam-engine |  | sangam-engine L220: - Partition epochs (R39): blocked by A-6. |
+| A-6 | Contrast 4.5:1 for text and 3:1 for UI components; reflow at 320 CSS px; text resizable to |  | gap | sangam-engine |  | sangam-engine L239: - Partition epochs (R39): blocked by A-6. |
 | A-7 | : L1 = any row in EXCLUSIVE_LEASE, for both execution and resource: modes (VI.6). The lock |  | implemented | sangam-engine:OperatonEngineAdapter.java; sangam-engine:ExclusiveLeaseTable.java; sangam-persistence; sangam-persistence:sangam-0001-baseline.sql |  |  |
 | A-8 | : the default capability class is (c) "neither": no automatic repeat after lease expiry; t |  | implemented | sangam-engine:CapabilityClassExpiryPolicy.java; sangam-engine; sangam-integration:SangamConnector.java; sangam-integration:ConnectorInvoker.java; sangam-integra |  |  |
 | A-9 | : for government records, R61 legal retention takes precedence over erasure (DPDP s.17(4)  |  | implemented | sangam-flowable-ports:TaskEnhancementService.java |  |  |
-| A-10 | Lease-expiry hook. Engine-native lease expiry (inside fetch, job execution or the engine's |  | partial | sangam-engine:OperatonEngineAdapter.java; sangam-engine:CapabilityClassExpiryPolicy.java; sangam-engine; sangam-integration; sangam-integration:LedgerExpiryPoli |  | covered, with an open item \| sangam-rest L101: \| WorkPort \| OperatonWorkAdapter: Operaton external tasks + core LeaseTable fencing. Switches to EngineAdapterWor |
+| A-10 | Lease-expiry hook. Engine-native lease expiry (inside fetch, job execution or the engine's |  | partial | sangam-engine:OperatonEngineAdapter.java; sangam-engine:CapabilityClassExpiryPolicy.java; sangam-engine; sangam-flowable-ports; sangam-integration; sangam-integ | FWT-013 | covered, with an open item \| sangam-rest L101: \| WorkPort \| OperatonWorkAdapter: Operaton external tasks + core LeaseTable fencing. Switches to EngineAdapterWor |
 | A-11 | Root lock L2 is mandatory, not optional. Both engines rely on optimistic locking only; wit |  | implemented | sangam-engine:OperatonEngineAdapter.java; sangam-engine:RootLock.java; sangam-engine:RootLockFlushListener.java; sangam-persistence |  |  |
 | A-12 | DST timer guard (R31) is mandatory on the base engine: UTC due dates, lastFiredInterval, c |  | implemented | deploy; sangam-engine:OperatonEngineAdapter.java; sangam-engine:CycleExpression.java; sangam-engine:DstSafeCycleBusinessCalendar.java; sangam-engine:TimerGuard. |  |  |
 | A-13 | A-3 wording: any matching deny wins, at any scope (as compiled into NOT EXISTS) |  | implemented | sangam-persistence:sangam-0001-baseline.sql; sangam-rest; sangam-security; sangam-security:ResourceDescriptor.java; sangam-security:PolicyCompiler.java; sangam- |  |  |
@@ -405,7 +338,7 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 | ADR-D-2 | Stages A–E (VIII.9) |  | owner-side | process (VIII.9 stages; this register + SANGAM.md XII) |  | decision item: delivery decision, no code home |
 | ADR-D-3 | Government / regulated integrator (VI.7) |  | owner-side | business positioning |  | decision item: decision, no code home |
 | ADR-D-4 | SDK tiers (IX.6) |  | implemented | sdks/dotnet; sdks/java; sdks/php; sdks/python; sdks/python:client.py; sdks/typescript; sdks/typescript:client.ts |  |  |
-| ADR-D-5 | REST first (X.0) |  | partial | sangam-engine; sangam-rest:sangam-api.yaml; sangam-server:pom.xml; sangam-server:OpenApiController.java |  | covered, with an open item \| sangam-engine L218: - OFFERED/ack state (VI.3.1 stream offers): REST-first (ADR-D-5) — a fetch returns LOCKED work; OFFERED belongs |
+| ADR-D-5 | REST first (X.0) |  | partial | sangam-engine; sangam-rest:sangam-api.yaml; sangam-server:pom.xml; sangam-server:OpenApiController.java |  | covered, with an open item \| sangam-engine L237: - OFFERED/ack state (VI.3.1 stream offers): REST-first (ADR-D-5) — a fetch returns LOCKED work; OFFERED belongs |
 | ADR-D-6 | Scripts (by D-8) |  | implemented | = ADR-D-8 (script tasks rejected at deploy, sangam-engine SangamBpmnParseListener) |  | decision item: closed by D-8 |
 | ADR-D-7 | Liquibase 4.33.0 + SQL changelogs; 5.x after legal review (VI.7, LIC-7) |  | implemented | sangam-control-plane:SchemaConfig.java; sangam-persistence; sangam-persistence:sangam-master.xml; sangam-server:pom.xml; sangam-server:SchemaBootstrap.java |  |  |
 | ADR-D-8 | Out-of-process script worker; no GraalJS (VI.7, LIC-1) |  | implemented | sangam-engine:SangamBpmnParseListener.java; sangam-flowable-ports; sangam-programme:FormulaEvaluator.java; sangam-rest |  |  |
@@ -421,10 +354,10 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 | ADR-D-18 | Public GitHub repository sqamentor/sangam (X.0d) |  | owner-side | repository publication (no commit in this phase) |  | decision item: owner action |
 | ADR-D-19 | Stage C: all workstreams run in parallel (X.0d) |  | implemented | Stage C ran as parallel workstreams (WS-* owners in each README) |  | decision item: process decision, realised |
 | ADR-D-20 | Fully generic, plug-and-play platform; domain knowledge only as data (X.0e) |  | partial | sangam-config; sangam-config:Tree.java; sangam-config:NumberGrouping.java; sangam-connectors-health; sangam-control-plane:TenantRegistry.java; sangam-ledger; sa |  | covered, with an open item \| sangam-ledger L4: Owner: IFMS-IMPLEMENTATION workstream (generic module, ADR-D-20 / ADR-D-22). Base package org.sangam.ledger. Gove |
-| ADR-D-21 | Cell-based deployment with a central control plane (X.0e) |  | implemented | sangam-cell:CellId.java |  |  |
-| ADR-D-22 | Boundary: workflow + rules + generic ledgers/master data; integrate with IFMS/EHR/core ban |  | partial | sangam-connectors-health; sangam-ledger; sangam-ledger:LedgerPorts.java |  | covered, with an open item \| sangam-ledger L4: Owner: IFMS-IMPLEMENTATION workstream (generic module, ADR-D-20 / ADR-D-22). Base package org.sangam.ledger. Gove |
-| ADR-D-23 | First jurisdiction packs: India, USA health, EU GDPR, international PFM (X.0e) |  | partial | IN: profiles/ + sangam-compliance IN pack; USA health: sec.ushealth.* packs + sangam-connectors-health; EU GDPR: no pack; international PFM: no coverage map |  | decision item: GDPR pack and PFM coverage missing |
-| ADR-D-24 | Load target: India national (~3,000 starts/s, ~30,000 ops/s, ~1M users) (X.0e) |  | implemented | perf; sangam-ledger:JdbcLedgerStore.java |  |  |
+| ADR-D-21 | Cell-based deployment with a central control plane (X.0e) |  | implemented | sangam-cell:CellId.java; sangam-onboarding |  |  |
+| ADR-D-22 | Boundary: workflow + rules + generic ledgers/master data; integrate with IFMS/EHR/core ban |  | partial | sangam-connectors-health; sangam-ledger; sangam-ledger:LedgerPorts.java; sangam-onboarding |  | covered, with an open item \| sangam-ledger L4: Owner: IFMS-IMPLEMENTATION workstream (generic module, ADR-D-20 / ADR-D-22). Base package org.sangam.ledger. Gove |
+| ADR-D-23 | First jurisdiction packs: India, USA health, EU GDPR, international PFM (X.0e) |  | implemented | sangam-compliance; sangam-onboarding |  |  |
+| ADR-D-24 | Load target: India national (~3,000 starts/s, ~30,000 ops/s, ~1M users) (X.0e) |  | implemented | perf; sangam-ledger:JdbcLedgerStore.java; sangam-onboarding |  |  |
 
 ### Acceptance criteria AC-01…AC-11
 
@@ -448,7 +381,7 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 |---|---|---|---|---|---|---|
 | GOV-1 | Languages |  | implemented | sangam-packs | T32, T88 | realised through R54=partial |
 | GOV-2 | Accessibility / web guidelines |  | implemented | sangam-packs | T32, T88 | realised through R55=implemented |
-| GOV-3 | Security audit |  | partial | sangam-packs | T81, T49 | realised through R51=implemented, R52=UNACCOUNTED |
+| GOV-3 | Security audit |  | partial | sangam-packs | T81, T49 | realised through R51=implemented, R52=partial |
 | GOV-4 | Data protection |  | implemented | sangam-integration:ErasureService.java; sangam-packs; sangam-rest | T86 | realised through R53=implemented |
 | GOV-5 | Data localisation / hosting |  | implemented | sangam-packs | T50 | realised through R56=implemented |
 | GOV-6 | Identity / SSO |  | implemented | sangam-packs | T87 | realised through R50=implemented |
@@ -473,7 +406,7 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 | CF-8 | The VIII.6 index omits R50–R62; R44 has no stage |  | spec-closed | SANGAM.md X.1a / X.5.1; realised by R44=implemented |  | consistency finding resolved in the specification |
 | CF-9 | R31 (timers/DST) is in Stage D, but the pilot core and AC-06 need it |  | spec-closed | SANGAM.md X.1a / X.5.1; realised by R31=implemented | T22 | consistency finding resolved in the specification |
 | CF-9a | Requirements placed in more than one stage in VIII.9 |  | spec-closed | SANGAM.md X.1a / X.5.1; realised by R19=implemented, R21=implemented, R26=implemented, R42=partial, R48=implemented |  | consistency finding resolved in the specification |
-| CF-10 | R50–R62 have no tests; IX.3 "Hindi/English UI" has no spec reference |  | spec-closed | SANGAM.md X.1a / X.5.1; realised by R50=implemented, R51=implemented, R52=UNACCOUNTED, R53=implemented, R54=partial, R55=implemented, R56=implemented, R57=imple | T87, T81, T49, T86, T32, T88, T50, T80, T02, T27 | consistency finding resolved in the specification |
+| CF-10 | R50–R62 have no tests; IX.3 "Hindi/English UI" has no spec reference |  | spec-closed | SANGAM.md X.1a / X.5.1; realised by R50=implemented, R51=implemented, R52=partial, R53=implemented, R54=partial, R55=implemented, R56=implemented, R57=implement | T87, T81, T49, T86, T32, T88, T50, T80, T02, T27 | consistency finding resolved in the specification |
 | CF-11 | R17 PR-gate policy unresolved |  | implemented | deploy; deploy:db-matrix.yml |  | realised by R17=implemented |
 | CF-12 | R31 stage vs the pilot core |  | spec-closed | SANGAM.md X.1a / X.5.1; realised by R31=implemented |  | consistency finding resolved in the specification |
 | CF-13 | R34 MoSCoW status |  | spec-closed | SANGAM.md X.1a / X.5.1; realised by R34=implemented |  | consistency finding resolved in the specification |
@@ -530,8 +463,8 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 | N08 | Rostering, shifts and duty deployment |  | implemented | sangam-resources; sangam-resources:ResourcesPorts.java |  |  |
 | N09 | Statutory registers and numbering |  | partial | sangam-case:NumberService.java; sangam-registry |  | covered, with an open item \| sangam-registry L22: \| numbering/ \| N09 numbering. Gap-free series: one counter row per series, scope and period, locked per dialec |
 | N10 | Billing, demand, tariff and collection |  | partial | sangam-billing; sangam-ledger:LedgerService.java; sangam-resources:ResourcesPorts.java; sangam-resources; pack universal.billing-cycle | PackDeploymentTest+AllPacksSmokeTest (deploy/first wait) | covered, with an open item \| sangam-ledger L20: \| LedgerService.java \| Policies (freeze orders, executable conditions, period expiry, transfer constraints by at |
-| N11 | Data-pipeline and batch-job orchestration |  | **UNACCOUNTED** |  |  | no data-pipeline / batch-job orchestration module; GP-08/GP-09 batch patterns exist in packs |
-| N12 | IoT / telemetry-triggered processes |  | implemented | sangam-field |  |  |
+| N11 | Data-pipeline and batch-job orchestration |  | implemented | sangam-integration |  |  |
+| N12 | IoT / telemetry-triggered processes |  | implemented | sangam-field; sangam-integration |  |  |
 | N13 | GIS and spatial data |  | partial | sangam-field:GeoServicePort.java; sangam-field:DispatchService.java; sangam-geo; sangam-geo:Geometry.java; sangam-geo:GeoMath.java; sangam-geo:JurisdictionLayer |  | covered, with an open item \| sangam-geo L94: - Overlap is a boolean intersect. Intersection area, buffers and unions are external-GIS work, as the N13 boundary  |
 | N14 | Party / beneficiary registry with de-duplication |  | partial | sangam-case:PartyService.java; sangam-case:CaseFilePorts.java; sangam-case; sangam-registry |  | covered, with an open item \| sangam-case L107: - Venue booking and the external party registry are ports with pass-through defaults until N01 and N14 exist. |
 | N15 | Targets, indicators, milestones and periodic returns |  | implemented | sangam-programme; sangam-programme:IndicatorDefinition.java; sangam-programme:ReturnDefinition.java; sangam-programme:PeriodService.java; sangam-programme:Targe |  |  |
@@ -545,10 +478,10 @@ Every R, A, ADR-D, AC, GOV, CF, LIC, PK, N, IR and T-SCALE id is listed here. Th
 |---|---|---|---|---|---|---|
 | IR-1 | Cell id generator (sangam-server EngineWiring, WS-ENGINE). |  | implemented | sangam-cell; sangam-engine |  |  |
 | IR-2 | Cell registration (sangam-server, new config/CellWiring). |  | implemented | sangam-cell; sangam-server |  |  |
-| IR-3 | Roll-up and cross-cell publishers (sangam-server IntegrationWiring, WS-INTEGRATION). |  | partial | sangam-cell; sangam-server; sangam-server:XCELL |  | sangam-server L267: XCELL / CELL_ADMIN service principals need a tenant claim (401 today) |
-| IR-4 | Tenant-admin API on the cell (WS-REST + WS-INTEGRATION + WS-ENGINE). |  | partial | sangam-cell; sangam-control-plane; sangam-server; sangam-server:XCELL; sangam-server:ContentService |  | sangam-server L268: Kafka/JMS consumers not paused on freeze; content-store and audit export files not moved |
+| IR-3 | Roll-up and cross-cell publishers (sangam-server IntegrationWiring, WS-INTEGRATION). |  | implemented | sangam-cell; sangam-server; sangam-server:XCELL |  |  |
+| IR-4 | Tenant-admin API on the cell (WS-REST + WS-INTEGRATION + WS-ENGINE). |  | partial | sangam-cell; sangam-control-plane; sangam-server; sangam-server:XCELL; sangam-server:ContentService |  | code: broker consumers (BrokerInboxWiring) do not check the tenant FROZEN state; files not moved (sangam-server README L268) |
 | IR-5 | History "outbox-only" per definition (WS-ENGINE/WS-INTEGRATION). |  | implemented | sangam-cell; sangam-engine:OutboxOnlyDbHistoryEventHandler.java; sangam-engine |  |  |
-| IR-6 | Read-replica routing (sangam-server/WS-REST). |  | partial | sangam-cell; sangam-server; sangam-server:CellReadReplicaRouter.routing() |  | sangam-server L253: router built, 'Still open: no adapter uses it yet' |
+| IR-6 | Read-replica routing (sangam-server/WS-REST). |  | partial | sangam-cell; sangam-server; sangam-server:CellReadReplicaRouter.routing() |  | code: CellReadReplicaRouter.routing()/onReplica has no caller |
 | IR-7 | Job executor settings (sangam-server application.yaml). |  | implemented | sangam-cell; sangam-engine; sangam-server |  |  |
 | IR-8 | History partitioning (sangam-persistence/WS-ENGINE). |  | implemented | sangam-cell; sangam-engine; sangam-persistence; sangam-persistence:sangam-history-partitioning.xml |  |  |
 
@@ -698,7 +631,7 @@ The UNACCOUNTED ids of these families are in §3 and are not repeated here. The 
 | FC-16 | FC | not-replicated-by-decision | sangam-flowable-ports | explicit \| sangam-flowable-ports L104: \| FC-16 \| Runtime definition patching \| X (conflicts with R43; redeploy + migration = FC-15/FC-18) \| — \| |
 | FC-18 | FC | partial | sangam-flowable-ports:MigrationDocument.java; sangam-flowable-ports; sangam-flowable-ports:*; sangam-persistence; sangam | explicit \| sangam-flowable-ports L106: \| FC-18 \| Migration builder variants, JSON document \| Done (historic-instance migration: Gap, Operaton history bound to  |
 | FC-19 | FC | partial | sangam-flowable-ports:CaseLifecycleService.java; sangam-flowable-ports:CaseLifecycleService; sangam-flowable-ports | explicit \| sangam-flowable-ports L107: \| FC-19 \| CMMN case migration \| Done as run-off/cut-over; native = Gap P-5 \| cmmn/CaseLifecycleService \| |
-| FC-24 | FC | partial | sangam-engine:SangamProcessEnginePlugin.java; sangam-engine; sangam-flowable-ports:FilteredAcquireJobsCmd.java; sangam-f | explicit(mixed) \| sangam-engine L120: \| FC-24 job executor \| config route done (SKIP LOCKED, timers first, priorities); hand-off / separate timer acquisition  |
+| FC-24 | FC | partial | sangam-engine:SangamProcessEnginePlugin.java; sangam-engine; sangam-flowable-ports:FilteredAcquireJobsCmd.java; sangam-f | explicit(mixed) \| sangam-engine L124: \| FC-24 job executor \| config route done (SKIP LOCKED, timers first, priorities); hand-off / separate timer acquisition  |
 | FC-27 | FC | not-replicated-by-decision | sangam-flowable-ports | explicit \| sangam-flowable-ports L120: \| FC-27 \| Secure JS sandbox \| X (Rhino/GraalJS not ported); script worker: WS-INTEGRATION \| — \| |
 | FC-37 | FC | partial | sangam-flowable-ports; sangam-ui; sdks/dotnet; sdks/java:SangamWorker.java; sdks/java; sdks/php:SangamClient.php; sdks/p | covered, with an open item \| sdks/php L191: Flowable gap ids: FC-36 (consumer of the Sangam worker API), FC-37 (worker clients in several languages: |
 | FC-47 | FC | not-replicated-by-decision | sangam-flowable-ports | explicit \| sangam-flowable-ports L145: \| FC-47 \| Groovy static engine \| X in engine (D-8); script worker: WS-INTEGRATION \| — \| |
@@ -712,10 +645,10 @@ The UNACCOUNTED ids of these families are in §3 and are not repeated here. The 
 | EC-14 | EC | partial | sangam-flowable-ports; sangam-ui | explicit \| sangam-flowable-ports L184: \| EC-14 \| Agents / AI \| Stage E (R72); prerequisite FC-01 Done; owner proposed WS-PACKS/WS-INTEGRATION \| |
 | EC-15 | EC | gap | sangam-flowable-ports; sangam-ui | explicit \| sangam-flowable-ports L185: \| EC-15 \| Engage \| Owned: WS-INTEGRATION (R81), stage E \| |
 | EC-19 | EC | not-replicated-by-decision | sangam-flowable-ports; sangam-ui | explicit \| sangam-flowable-ports L189: \| EC-19 \| Enterprise Cloud \| X (self-hosted, R56) \| |
-| D-10 | D | gap | sangam-control-plane; sangam-engine:SangamEngineConfigurer.java; sangam-engine:OperatonClock.java; sangam-engine; sangam | explicit \| sangam-engine L92: \| D-10 global ClockUtil \| contained: OperatonClock, one engine per JVM (per-engine clock SPI = Stage D patch) \| |
+| D-10 | D | gap | sangam-control-plane; sangam-engine:SangamEngineConfigurer.java; sangam-engine:OperatonClock.java; sangam-engine; sangam | explicit \| sangam-engine L96: \| D-10 global ClockUtil \| contained: OperatonClock, one engine per JVM (per-engine clock SPI = Stage D patch) \| |
 | D-16 | D | owner-side | sangam-engine; sangam-flowable-ports | explicit \| sangam-flowable-ports L204: \| D-16 \| Organisational (integrator: patch ledgers + upstream offers, both ledgers) \| |
-| D-19 | D | partial | sangam-engine:OperatonEngineAdapter.java; sangam-engine:ExternalTask.xml; sangam-engine; sangam-flowable-ports; sangam-i | explicit \| sangam-engine L97: \| D-19 concurrent fetch \| interim W-9 route (fetch lock + OLE listener); the ExternalTask.xml SKIP LOCKED patch is not d |
-| D-23 | D | gap | sangam-engine:SangamBpmnParseListener.java; sangam-engine; sangam-flowable-ports:MultiInstanceAggregation.java; sangam-f | explicit \| sangam-engine L99: \| D-23 large MI \| deploy + runtime guard (engine profiling = Stage D) \| |
+| D-19 | D | partial | sangam-engine:OperatonEngineAdapter.java; sangam-engine:ExternalTask.xml; sangam-engine; sangam-flowable-ports; sangam-i | explicit \| sangam-engine L101: \| D-19 concurrent fetch \| interim W-9 route (fetch lock + OLE listener); the ExternalTask.xml SKIP LOCKED patch is not d |
+| D-23 | D | gap | sangam-engine:SangamBpmnParseListener.java; sangam-engine; sangam-flowable-ports:MultiInstanceAggregation.java; sangam-f | explicit \| sangam-engine L103: \| D-23 large MI \| deploy + runtime guard (engine profiling = Stage D) \| |
 | D-27 | D | gap | sangam-engine; sangam-flowable-ports | explicit \| sangam-flowable-ports L207: \| D-27 \| Owned: WS-ENGINE (stage D engine patch) \| |
 | D-40 | D | partial | sangam-engine; sangam-flowable-ports; sangam-integration:WakeupNotifier.java; sangam-integration:WakeupNotifier; sdks/do | covered, with an open item \| sdks/python L126: Flowable gap ids: FC-36, FC-37, D-17, D-18, D-40, D-44. The structure follows the Flowable external-worker |
 | D-44 | D | partial | sangam-engine; sangam-flowable-ports; sdks/dotnet; sdks/java:SangamWorker.java; sdks/java; sdks/php:SangamClient.php; sd | covered, with an open item \| sdks/python L126: Flowable gap ids: FC-36, FC-37, D-17, D-18, D-40, D-44. The structure follows the Flowable external-worker |
@@ -723,7 +656,6 @@ The UNACCOUNTED ids of these families are in §3 and are not repeated here. The 
 | D-49 | D | partial | sangam-engine:PerDefinitionHistoryLevel.java; sangam-engine:PerDefinitionHistoryLevel; sangam-flowable-ports | explicit(mixed) \| sangam-flowable-ports L220: \| D-48, D-49 \| Owned: WS-ENGINE (D-48 stage D profiling) \| |
 | D-50 | D | owner-side | sangam-engine; sangam-flowable-ports | explicit \| sangam-flowable-ports L221: \| D-50 \| Organisational / WS-DEPLOY \| |
 | D-52 | D | gap | sangam-engine; sangam-flowable-ports:SangamModelValidator.java; sangam-flowable-ports | explicit \| sangam-flowable-ports L223: \| D-52 \| Validator rejects (here); runtime support = stage E engine patches (WS-ENGINE) \| |
-| FW-28 | FW | partial | sangam-server:PortsEventBridge; sangam-server:sangam-integration; sangam-server:KafkaInboxConsumer | covered, with an open item \| sangam-server L281: \| PR-8 (FW-28) \| inbox/KafkaInboxConsumer, inbox/JmsInboxListener \| Reviewed, not changed. Both commit/ack the broker on  |
 | IFC-001 | IFC | gap | sangam-packs/src/main/resources/profiles; sangam-packs/src/main/resources/profiles:orgModel | explicit \| sangam-packs/src/main/resources/profiles L38: \| IFC-001 \| config: profile orgModel (seat types, office tiers, registry events) + sangam-security seats / postin |
 | IFC-043 | IFC | partial | sangam-packs [gov.ifms.budget-formulation]; sangam-packs:gov.ifms.budget-formulation [gov.ifms.budget-formulation]; sang | explicit \| sangam-packs/src/main/resources/profiles L80: \| IFC-043 \| ledger (APPROPRIATION stage) + budget-formulation / supplementary packs \| in/GOI.yaml#budgetControl \| |
 | IFC-044 | IFC | partial | sangam-packs [gov.ifms.budget-formulation]; sangam-packs:gov.ifms.budget-formulation [gov.ifms.budget-formulation]; sang | explicit \| sangam-packs/src/main/resources/profiles L81: \| IFC-044 \| ledger (APPROPRIATION stage) + budget-formulation / supplementary packs \| in/GOI.yaml#budgetControl \| |
@@ -739,7 +671,7 @@ The UNACCOUNTED ids of these families are in §3 and are not repeated here. The 
 | IFC-244 | IFC | gap | sangam-packs/src/main/resources/profiles:GOI.*.yaml | explicit \| sangam-packs/src/main/resources/profiles L281: \| IFC-244 \| department profiles (department layer) over GOI \| in/goi/GOI..yaml \| - \| G \| field-heavy CDDO patter |
 | IFC-254 | IFC | partial | sangam-packs [gov.ifms.gpf]; sangam-packs:gov.ifms.gpf [gov.ifms.gpf]; sangam-packs/src/main/resources/profiles:- [gov.i | explicit \| sangam-packs/src/main/resources/profiles L291: \| IFC-254 \| platform core (forms, eSign, idempotency, SoD, tenancy, adapters) \| - \| gov.ifms.gpf \| P \| [U] value |
 | IFS-077 | IFS | gap | sangam-packs/src/main/resources/profiles:*.yaml#operations | explicit \| sangam-packs/src/main/resources/profiles L377: \| IFS-077 \| profile offlineUnits flags only \| in/states/.yaml#operations \| - \| G \| store-and-forward: field work |
-| GA-02 | GA | partial | sangam-config:ClassificationScheme.java; sangam-packs/src/main/resources/profiles | explicit \| sangam-packs/src/main/resources/profiles L643: \| GA-02 \| classification registry + per-state schemes + seeds \| - \| P \| LMMH seed partial; per-state master code |
+| GA-02 | GA | partial | sangam-config:ClassificationScheme.java; sangam-packs/src/main/resources/profiles | explicit \| sangam-packs/src/main/resources/profiles L643: \| GA-02 \| classification registry + per-state schemes + seeds \| - \| P \| official LMMH seed to CS 1127 (slips 112 |
 | GA-04 | GA | partial | sangam-packs [gov.ifms.bill]; sangam-packs:gov.ifms.bill [gov.ifms.bill]; sangam-packs/src/main/resources/profiles:gov.i | explicit \| sangam-packs/src/main/resources/profiles L645: \| GA-04 \| bill pack: sanction reference checked by the catalogue \| gov.ifms.bill \| P \| sanction as linked case:  |
 | GA-06 | GA | partial | sangam-packs [gov.ifms.bill]; sangam-packs:gov.ifms.bill [gov.ifms.bill]; sangam-packs/src/main/resources/profiles:gov.i | explicit \| sangam-packs/src/main/resources/profiles L647: \| GA-06 \| bill intake from external sources (integrations.sourceSystem) \| gov.ifms.bill \| P \| inbound start cont |
 | GA-08 | GA | partial | sangam-packs [gov.ifms.gia-uc]; sangam-packs:gov.ifms.gia-uc [gov.ifms.gia-uc]; sangam-packs/src/main/resources/profiles | explicit \| sangam-packs/src/main/resources/profiles L649: \| GA-08 \| GIA-UC pack; AC/DC flags in profile \| gov.ifms.gia-uc \| P \| AC/DC pairing pack not separate (contingen |

@@ -15,7 +15,7 @@ Domain knowledge as data (ADR-D-20). Read by `sangam-config` (`ProfileLoader.loa
 | `in/GOI.yaml` | government | Union profile: rulebooks (GFR 2017, DFPR 2024, RPR 2022, CAM 2024 ...), org model and registry (AoBR series 386: 94 business units), budget control (DFPR Rule 10 rule set), appraisal ladder, PAO chain, receipts, grants, establishment, accounts calendar, the RPR bill catalogue (~35 types) and chain templates |
 | `in/goi/GOI.<DEPT>.yaml` | department | RAILWAYS, DEFENCE, POSTS, TELECOM, MEA (multi-currency), DAE, SPACE, MHA (CAPF), REVENUE |
 | `in/states/<CODE>.yaml` | government | the 28 States and 8 UTs: systems, topology, rulebooks, rail, SNA-SPARSH hosting, per-state head-of-account scheme (`HOA_<CODE>`), statutory languages (scope, script, direction, effective date), procurement family, state forms, specials |
-| `in/seeds/*.csv` | - | head-of-account major heads (partial sample), standard minor heads, object heads (pre-2027 list, closes 01-04-2027) |
+| `in/seeds/*.csv` | - | official LMMH major, sub-major and minor heads (CS 1127), standard minor heads, object heads (pre-2027 list, closes 01-04-2027) |
 | `profiles.idx` | - | classpath index of the profile documents |
 
 A department tenant `RJ.PWD` resolves `INTL > REGIME > IN > IN-PRESET-GENERAL > RJ > RJ.PWD` (plus `RJ.PWD/<office>`). `[U]` values are listed under `placeholders` in each file; `ResolvedProfile.isPlaceholder(path)` and the validator report them.
@@ -326,15 +326,15 @@ Status: **C** = generic capability + data + pack; **D** = configured as data in 
 | IFS-026 | config: rail catalogue + rail DMN (tenant overrides); core execution | `in/IN.yaml#paymentRails; in/states/*.yaml#paymentRails` | - | D |  |
 | IFS-027 | receipts pack; profile receipts rules | `in/states/*.yaml#receipts` | `gov.ifms.receipts` | C |  |
 | IFS-028 | receipts pack; profile receipts rules | `in/states/*.yaml#receipts` | `gov.ifms.receipts` | C |  |
-| IFS-029 | ledger (SNA limits) + SNA-SPARSH pack; profile snaSparsh | `in/IN.yaml#snaSparsh; in/states/*.yaml#integrations` | `gov.ifms.sna-sparsh` | C |  |
+| IFS-029 | TSA assignment accounts (IFMS-STATES 3.11 combined item "IFS-029, 034, 037", first clause): ledger + SNA-SPARSH pack; profile snaSparsh | `in/IN.yaml#snaSparsh; in/states/*.yaml#integrations` | `gov.ifms.sna-sparsh` | C |  |
 | IFS-030 | DMN delegation (tenant overrides) + profile rulebooks / procurement family | `in/states/*.yaml#rulebooks, procurement` | `gov.ifms.reappropriation` | C |  |
 | IFS-031 | DMN delegation (tenant overrides) + profile rulebooks / procurement family | `in/states/*.yaml#rulebooks, procurement` | - | D |  |
 | IFS-032 | ledger N-stage chain, hold queue, ceilings, period lock | `in/states/*.yaml#budgetControl` | `gov.ifms.budget-allocation` | C |  |
 | IFS-033 | profile orgTopology / subStateEntities / regime; n-level scopes | `in/states/*.yaml#orgTopology, subStateEntities` | - | D |  |
-| IFS-034 | classification tags (TSP) / grants to ULBs | `in/states/*.yaml#tags` | - | D |  |
+| IFS-034 | classification tags for Art. 275(1) / TSP flows (`IN.yaml` tags; state `tags`) | `in/IN.yaml#classification.tags; in/states/*.yaml#tags` | - | D | defined in IFMS-STATES section 3.11 as the combined item "IFS-029, 034, 037" (second clause) |
 | IFS-035 | ledger (SNA limits) + SNA-SPARSH pack; profile snaSparsh | `in/IN.yaml#snaSparsh; in/states/*.yaml#integrations` | `gov.ifms.sna-sparsh` | C |  |
 | IFS-036 | profile orgTopology / subStateEntities / regime; n-level scopes | `in/states/*.yaml#orgTopology, subStateEntities` | `gov.ifms.monthly-accounts` | C |  |
-| IFS-037 | classification tags (TSP) / grants to ULBs | `in/states/*.yaml#tags` | - | D |  |
+| IFS-037 | transfers to ULBs and RLBs through IFMS: local-body deposit heads and GIA to local bodies (`gov.ifms.gia-uc`) | `in/states/*.yaml#publicAccounts.localBodyHeads` | - | D | defined in IFMS-STATES section 3.11 as the combined item "IFS-029, 034, 037" (third clause) |
 | IFS-038 | config: classification registry, per-state scheme, tags, crosswalks | `in/IN.yaml; in/states/*.yaml#classification` | - | D |  |
 | IFS-039 | config: classification registry, per-state scheme, tags, crosswalks | `in/IN.yaml; in/states/*.yaml#classification` | `gov.ifms.bill` | C |  |
 | IFS-040 | ledger N-stage chain, hold queue, ceilings, period lock | `in/states/*.yaml#budgetControl` | `gov.ifms.budget-allocation` | C |  |
@@ -640,7 +640,7 @@ Status: **C** = generic capability + data + pack; **D** = configured as data in 
 | Id | Capability | Packs | St | Note |
 |---|---|---|---|---|
 | GA-01 | profile hierarchy (n-level scopes, layers, inheritance, locks, effective dating, admin workflow) | - | C |  |
-| GA-02 | classification registry + per-state schemes + seeds | - | P | LMMH seed partial; per-state master codes below minor to load |
+| GA-02 | classification registry + per-state schemes + seeds | - | P | official LMMH seed to CS 1127 (slips 1128-1132 pending); per-state master codes below minor to load |
 | GA-03 | ledger N-stage chain + allocation / surrender packs | `gov.ifms.budget-allocation`, `gov.ifms.supplementary`, `gov.ifms.surrender-lapse` | C |  |
 | GA-04 | bill pack: sanction reference checked by the catalogue | `gov.ifms.bill` | P | sanction as linked case: via sanction chain template, no Work ID entity |
 | GA-05 | document-type catalogue | `gov.ifms.bill` | C | state form lists partly [U] (OD 20 types, JK 37) |
@@ -672,4 +672,4 @@ Status: **C** = generic capability + data + pack; **D** = configured as data in 
 
 ## Still placeholders (IFMS-RESEARCH-DELTA section C)
 
-Code structures of GJ, WB, TG, OD, ML, JK, LA (Union layout used); budget-document languages (27 entities); TG procurement rules; works manuals (GJ, HP, CT, ML, MN, MZ, TR, AR, LD); SNA-SPARSH dates (KL, JK); Chandigarh treasury software; rush-of-expenditure percentages (unset); March Prelim and Sy-II dates; e-bill post-check sampling; ATN months; GPF days; commutation rule number and full commutation table; CPWD manual after 2022; the 61-head object list from FY 2027-28 and its old -> new map; the full LMMH list (the seed is a sample).
+Code structures of GJ, WB, TG, OD, ML, JK, LA (Union layout used); budget-document languages (27 entities); TG procurement rules; works manuals (GJ, HP, CT, ML, MN, MZ, TR, AR, LD); SNA-SPARSH dates (KL, JK); Chandigarh treasury software; rush-of-expenditure percentages (unset); March Prelim and Sy-II dates; e-bill post-check sampling; ATN months; GPF days; commutation rule number and full commutation table; CPWD manual after 2022; the 61-head object list from FY 2027-28 and its old -> new map; the LMMH slips after CS 1127 (the seed is the official list to CS 1127).

@@ -63,6 +63,22 @@ class ProfileDataTest {
             }
         }
         assertEquals(37, govs);
+        // the seven international country profiles (INTERNATIONAL-PFM section 5) resolve on their regime presets
+        java.util.Map<String, String[]> countries = java.util.Map.of("USA", new String[]{"USD", "10"}, "GBR", new String[]{"GBP", "4"},
+                "BRA", new String[]{"BRL", "1"}, "KEN", new String[]{"KES", "7"}, "IDN", new String[]{"IDR", "1"},
+                "PHL", new String[]{"PHP", "1"}, "BGD", new String[]{"BDT", "7"});
+        for (var e : countries.entrySet()) {
+            ResolvedProfile p = r.resolve(e.getKey(), LocalDate.of(2026, 11, 5));
+            assertTrue(Finding.errors(p.findings()).isEmpty(), e.getKey() + ": " + Finding.errors(p.findings()));
+            assertEquals(e.getValue()[0], p.str("locale.currency", null));
+            assertEquals(Integer.parseInt(e.getValue()[1]), p.locale().fiscal().startMonth());
+            assertEquals(7, DocumentTypeCatalogue.of(p).all().stream().filter(t -> "PFM".equals(t.family())).count() >= 7 ? 7 : -1);
+            assertTrue(DocumentTypeCatalogue.of(p).chain("PFM-CH-3").orElseThrow().liableRoles().contains("CERTIFYING_OFFICER"));
+        }
+        assertEquals(1, DocumentTypeCatalogue.of(r.resolve("KEN", LocalDate.of(2026, 11, 5))).chain("KEN-EXCHEQUER").orElseThrow()
+                .externalSteps().size());
+        assertEquals(java.util.List.of("ESTIMATE", "DEPARTMENTAL_BUDGET", "RELEASE"),
+                r.resolve("GBR", LocalDate.of(2026, 11, 5)).list("ledgers").get(0).get("stages"));
         assertTrue(SeedLoader.csv("IN", Files.readString(DIR.resolve("in/seeds/hoa-major-heads.csv"))).size() > 300);
         ResolvedProfile hr = r.resolve("HR", LocalDate.of(2026, 11, 5));
         assertFalse(hr.list("rulebooks.own").isEmpty(), "Haryana adopts the Punjab rulebooks");
@@ -77,7 +93,8 @@ class ProfileDataTest {
         ProfileResolver r = new ProfileResolver(InMemoryProfileRepository.active(docs), LayerModel.open());
         ResolvedProfile goi = r.resolve("GOI", LocalDate.of(2026, 11, 5));
         MasterStore store = new MasterStore.InMemory();
-        for (String f : List.of("in/seeds/hoa-major-heads.csv", "in/seeds/hoa-standard-minor-heads.csv", "in/seeds/object-heads.csv")) {
+        for (String f : List.of("in/seeds/hoa-major-heads.csv", "in/seeds/hoa-sub-major-heads.csv", "in/seeds/hoa-minor-heads.csv",
+                "in/seeds/hoa-standard-minor-heads.csv", "in/seeds/object-heads.csv")) {
             SeedLoader.load(store, SeedLoader.csv("IN", Files.readString(DIR.resolve(f))));
         }
         ClassificationRegistry reg = new ClassificationRegistry(store).withReferenceScopes(s -> List.of("IN"));
@@ -99,5 +116,26 @@ class ProfileDataTest {
         List<Finding> bf = reg.validate("BR", brs, reg.parse(brs, "12-2054-00-001-0001-01-01-V"), LocalDate.of(2026, 11, 5));
         assertTrue(bf.isEmpty(), bf.toString());
         assertEquals("HOA_BR", br.str("classification.defaultScheme", null));
+        // parent-child: a real minor under the wrong major is refused; standard heads, rules and templates pass
+        LocalDate d = LocalDate.of(2026, 11, 5);
+        assertTrue(reg.validate("IN", hoa, reg.parse(hoa, "2054-00-095-01-00-13"), d).isEmpty());
+        assertTrue(hasCode(reg.validate("IN", hoa, reg.parse(hoa, "0005-00-095-01-00-13"), d), "CODE_NOT_UNDER_PARENT"), "wrong major");
+        assertTrue(hasCode(reg.validate("IN", hoa, reg.parse(hoa, "0007-99-001-01-00-13"), d), "CODE_NOT_UNDER_PARENT"), "wrong sub-major");
+        assertTrue(hasCode(reg.validate("IN", hoa, reg.parse(hoa, "0007-00-001-01-00-13"), d), "CODE_NOT_UNDER_PARENT"), "00 where sub-majors are coded");
+        assertFalse(Finding.anyError(reg.validate("IN", hoa, reg.parse(hoa, "0404-00-555-01-00-13"), d)), "major-level minorRule");
+        assertTrue(hasCode(reg.validate("IN", hoa, reg.parse(hoa, "0404-00-555-01-00-13"), d), "CODE_OPENED_BY_RULE"));
+        assertFalse(Finding.anyError(reg.validate("IN", hoa, reg.parse(hoa, "0217-01-555-01-00-13"), d)), "sub-major minorRule");
+        assertTrue(hasCode(reg.validate("IN", hoa, reg.parse(hoa, "0700-37-101-01-00-13"), d), "CODE_OPENED_BY_RULE"), "subMajorRule");
+        assertFalse(Finding.anyError(reg.validate("IN", hoa, reg.parse(hoa, "0700-37-101-01-00-13"), d)));
+        assertTrue(hasCode(reg.validate("IN", hoa, reg.parse(hoa, "0700-37-555-01-00-13"), d), "CODE_NOT_UNDER_PARENT"), "not in the template");
+        // a State layout inherits the hierarchy of the scheme its segments reference
+        java.util.function.Function<String, ClassificationScheme> lookup =
+                id -> ClassificationScheme.from(ka.map("classification.schemes." + id));
+        assertTrue(hasCode(reg.validate("KA", kas, reg.parse(kas, "0005-00-095-0-03-240"), d, lookup), "CODE_NOT_UNDER_PARENT"));
+        assertFalse(Finding.anyError(reg.validate("KA", kas, reg.parse(kas, "2054-00-095-0-03-240"), d, lookup)));
+    }
+
+    private static boolean hasCode(List<Finding> f, String code) {
+        return f.stream().anyMatch(x -> code.equals(x.code()));
     }
 }

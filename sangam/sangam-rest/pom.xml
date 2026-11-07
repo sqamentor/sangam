@@ -143,6 +143,18 @@
     <!-- /api/v1/compliance (org.sangam.rest.compliance); optional: the endpoints exist only when the server has it -->
     <dependency>
       <groupId>org.sangam</groupId>
+      <artifactId>sangam-ai</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-ops</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
       <artifactId>sangam-compliance</artifactId>
       <optional>true</optional>
     </dependency>
@@ -157,6 +169,18 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-channels</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-modeller</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
     </dependency>
   </dependencies>
 </project>

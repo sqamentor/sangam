@@ -66,7 +66,9 @@ public final class EngineConfigurationCustomizer implements BeanPostProcessor, B
             // compliance hooks (purpose binding, national-id guard, retention tracking) run after the module plugins
             "org.sangam.server.bridge.CompliancePurposePlugin",
             // profile binding of a case (R43: profileVersion + CFG_CASE_BINDING) after compliance accepted the start
-            "org.sangam.server.bridge.ConfigCaseBindingPlugin");
+            "org.sangam.server.bridge.ConfigCaseBindingPlugin",
+            // global task listeners (sangam-ops) attach last, seeing every task the earlier plugins shaped
+            "org.sangam.server.bridge.OpsTaskListenerPlugin");
 
     private ListableBeanFactory beans;
     private boolean done;

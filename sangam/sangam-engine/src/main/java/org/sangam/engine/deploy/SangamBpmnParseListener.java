@@ -2,6 +2,7 @@
 package org.sangam.engine.deploy;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.operaton.bpm.engine.ProcessEngineException;
@@ -16,6 +17,7 @@ import org.operaton.bpm.engine.impl.pvm.process.ScopeImpl;
 import org.operaton.bpm.engine.impl.util.xml.Element;
 import org.sangam.core.engine.TimerCatchUpPolicy;
 import org.sangam.engine.SangamEngineSettings;
+import org.sangam.engine.feel.StrictNullResultGuard;
 import org.sangam.engine.timer.TimerPolicies;
 
 /**
@@ -101,6 +103,23 @@ public class SangamBpmnParseListener implements BpmnParseListener {
 
     @Override
     public void parseBusinessRuleTask(Element businessRuleTaskElement, ScopeImpl scope, ActivityImpl activity) {
+        // R10 strict null only where declared: sangam:routing=true, sangam:requiredOutputs=a,b
+        Map<String, String> props = properties(businessRuleTaskElement);
+        boolean routing = "true".equalsIgnoreCase(props.get("sangam:routing"));
+        List<String> required = props.get("sangam:requiredOutputs") == null ? List.of()
+                : java.util.Arrays.stream(props.get("sangam:requiredOutputs").split(","))
+                        .map(String::trim).filter(x -> !x.isEmpty()).toList();
+        if (routing || !required.isEmpty()) {
+            String resultVariable = businessRuleTaskElement.attributes().stream()
+                    .filter(a -> a.equals("resultVariable") || a.endsWith(":resultVariable"))
+                    .map(a -> attributeValue(businessRuleTaskElement, a)).findFirst().orElse(null);
+            if (resultVariable == null || resultVariable.isBlank()) {
+                throw new ProcessEngineException("R10: business rule task '" + activity.getId() + "' declares "
+                        + "sangam:routing / sangam:requiredOutputs but no operaton:resultVariable");
+            }
+            activity.addBuiltInListener(ExecutionListener.EVENTNAME_END,
+                    new StrictNullResultGuard(activity.getId(), resultVariable, routing, required));
+        }
         if (settings.isDefaultBindingDeployment() && businessRuleTaskElement.attributes().stream()
                 .anyMatch(a -> a.endsWith("decisionRef")) && !hasAttribute(businessRuleTaskElement, "decisionRefBinding")) {
             throw new ProcessEngineException("D-12: business rule task '" + activity.getId() + "' has no "
@@ -161,6 +180,18 @@ public class SangamBpmnParseListener implements BpmnParseListener {
             }
         }
         return out;
+    }
+
+    /** Value of an attribute by its map key as returned by {@code Element.attributes()} (namespace-qualified). */
+    private static String attributeValue(Element e, String key) {
+        int i = key.lastIndexOf(':');
+        if (i > 0) {
+            String v = e.attribute(key.substring(0, i), key.substring(i + 1));
+            if (v != null) {
+                return v;
+            }
+        }
+        return e.attribute(key);
     }
 
     private static boolean hasAttribute(Element e, String localName) {

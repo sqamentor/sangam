@@ -89,6 +89,7 @@ export function Decisions() {
   const [vars, setVars] = useState('{}');
   const evalAct = useAction();
   const [out, setOut] = useState<unknown>();
+  const [hit, setHit] = useState<string[]>([]);
   return (
     <>
       <PageHeader title={t('ops.decisionsTitle')} />
@@ -118,7 +119,7 @@ export function Decisions() {
       <Pagination data={defs.data} page={defs.page} size={defs.size} setPage={defs.setPage} setSize={defs.setSize} />
       {sel && (
         <>
-          {xml.data && <DmnView xml={xml.data.dmnXml} title={sel.name ?? sel.key} />}
+          {xml.data && <DmnView xml={xml.data.dmnXml} title={sel.name ?? sel.key} highlightRules={hit} />}
           <Section title={t('ops.evaluate')}>
             <TextArea label={t('ops.variablesJson')} value={vars} onChange={setVars} />
             <button
@@ -147,7 +148,15 @@ export function Decisions() {
                 rows={inst.data.items}
                 rowKey={(r) => r.id}
                 columns={[
-                  { key: 'time', header: t('task.when'), render: (r) => fmtDate(r.evaluationTime) },
+                  {
+                    key: 'time',
+                    header: t('task.when'),
+                    render: (r) => (
+                      <button type="button" className="link" onClick={() => setHit(((r.outputs ?? []) as { rule?: string; ruleId?: string }[]).map((x) => x.ruleId ?? x.rule ?? '').filter(Boolean))}>
+                        {fmtDate(r.evaluationTime)}
+                      </button>
+                    ),
+                  },
                   { key: 'v', header: t('ops.version'), render: (r) => String(r.decisionVersion) },
                   { key: 'pi', header: t('ops.instance'), render: (r) => (r.processInstanceId ? <Link to={`/ops/instances/${encodeURIComponent(r.processInstanceId)}`}>{r.businessKey ?? r.processInstanceId}</Link> : '—') },
                   { key: 'in', header: t('ops.inputs'), render: (r) => r.inputs.map((x) => `${x.name}=${JSON.stringify(x.value)}`).join(', ') },

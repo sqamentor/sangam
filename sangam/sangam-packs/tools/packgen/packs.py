@@ -25,6 +25,7 @@ class Pack:
         self.main = list(main or [])
         self.procs, self.dmns, self.cmmns, self.acceptance, self.overrides = [], [], [], [], []
         self.seed = None
+        self.identifier_types = None
         ALL.append(self)
 
     def proc(self, pid, name, doc='', start=None, ttl=3650):
@@ -171,6 +172,13 @@ def write_all(root):
             seed_path = f'packs/{pk.dir}/seed.json'
             write(os.path.join(root, seed_path), json.dumps(pk.seed, ensure_ascii=False, indent=2) + '\n')
             resources.append({'kind': 'SEED', 'path': seed_path})
+        if pk.identifier_types:
+            for jur, types in pk.identifier_types:
+                rpath = f'packs/{pk.dir}/registry/identifier-types{"-" + jur.lower() if jur else ""}.json'
+                doc = ({'jurisdiction': jur} if jur else {})
+                doc['identifierTypes'] = types
+                write(os.path.join(root, rpath), json.dumps(doc, ensure_ascii=False, indent=2) + '\n')
+                resources.append({'kind': 'OTHER', 'path': rpath})
         conns = {}
         for c in pk.connectors:
             conns[c[0]] = {'id': c[0], 'capabilityClass': c[1], 'govTag': c[2], 'purpose': c[3]}

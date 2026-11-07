@@ -113,7 +113,7 @@ imagePullSecrets:
 {{- else if eq $type "sqlserver" -}}
 {{- printf "jdbc:sqlserver://%s:%s;databaseName=%s;encrypt=%t;trustServerCertificate=%t;sendTimeAsDatetime=false;applicationName=sangam-server%s" $host $port $d.name $d.sqlserver.encrypt $d.sqlserver.trustServerCertificate (ternary (printf ";%s" $d.params) "" (ne $d.params "")) -}}
 {{- else -}}
-{{- printf "jdbc:mariadb://%s:%s/%s?permitMysqlScheme=true&useServerPrepStmts=true&sessionVariables=transaction_isolation='READ-COMMITTED',time_zone='+00:00'%s" $host $port $d.name (ternary (printf "&%s" $d.params) "" (ne $d.params "")) -}}
+{{- printf "jdbc:mariadb://%s:%s/%s?permitMysqlScheme=true&useServerPrepStmts=true&connectionCollation=utf8mb4_bin&sessionVariables=transaction_isolation='READ-COMMITTED',time_zone='+00:00'%s" $host $port $d.name (ternary (printf "&%s" $d.params) "" (ne $d.params "")) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -124,24 +124,40 @@ imagePullSecrets:
 
 {{/* Environment shared by the server pods and the migration job. */}}
 {{- define "sangam.server.env" -}}
-- name: SPRING_DATASOURCE_URL
+- name: SANGAM_DB_URL
   value: {{ include "sangam.db.jdbcUrl" . | quote }}
-- name: SPRING_DATASOURCE_USERNAME
+- name: SANGAM_DB_USER
   valueFrom:
     secretKeyRef:
       name: {{ include "sangam.db.secret" . }}
       key: {{ .Values.database.usernameKey }}
-- name: SPRING_DATASOURCE_PASSWORD
+- name: SANGAM_DB_PASSWORD
   valueFrom:
     secretKeyRef:
       name: {{ include "sangam.db.secret" . }}
       key: {{ .Values.database.passwordKey }}
-{{- if eq (include "sangam.db.type" .) "mysql" }}
-- name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
-  value: org.mariadb.jdbc.Driver
+{{- if and .Values.database.replica.jdbcUrl .Values.database.replica.existingSecret }}
+- name: SANGAM_DB_REPLICA_USER
+  valueFrom:
+    secretKeyRef: { name: {{ .Values.database.replica.existingSecret }}, key: {{ .Values.database.usernameKey }} }
+- name: SANGAM_DB_REPLICA_PASSWORD
+  valueFrom:
+    secretKeyRef: { name: {{ .Values.database.replica.existingSecret }}, key: {{ .Values.database.passwordKey }} }
+{{- end }}
+{{- if .Values.scale.cell.id }}
+{{- $s := required "scale.cell.existingSecret is required with scale.cell.id (keys controlPlaneToken, rollupToken, serviceToken)" .Values.scale.cell.existingSecret }}
+- name: SANGAM_CONTROL_PLANE_TOKEN
+  valueFrom:
+    secretKeyRef: { name: {{ $s }}, key: controlPlaneToken }
+- name: SANGAM_ROLLUP_TOKEN
+  valueFrom:
+    secretKeyRef: { name: {{ $s }}, key: rollupToken }
+- name: SANGAM_SERVICE_TOKEN
+  valueFrom:
+    secretKeyRef: { name: {{ $s }}, key: serviceToken }
 {{- end }}
 - name: SPRING_PROFILES_ACTIVE
-  value: {{ trimSuffix "," (printf "%s,%s" (include "sangam.db.type" .) .Values.server.springProfiles) | quote }}
+  value: {{ trimSuffix "," (printf "%s,oidc,%s" (include "sangam.db.type" .) .Values.server.springProfiles) | quote }}
 - name: JAVA_TOOL_OPTIONS
   value: {{ printf "%s -Djava.io.tmpdir=/tmp" .Values.server.javaToolOptions | quote }}
 {{- end -}}
@@ -333,4 +349,14 @@ spec:
               persistentVolumeClaim: { claimName: {{ include "sangam.backup.claim" $ctx }} }
             - name: tmp
               emptyDir: { sizeLimit: 256Mi }
+{{- end -}}
+
+{{- define "sangam.server.stateClaim" -}}
+{{- if .Values.server.state.existingClaim -}}
+{{- .Values.server.state.existingClaim -}}
+{{- else if .Values.server.state.create -}}
+{{- printf "%s-server-state" (include "sangam.fullname" .) -}}
+{{- else -}}
+{{- fail "server.state: set existingClaim or create=true (compliance log archive, R51)" -}}
+{{- end -}}
 {{- end -}}

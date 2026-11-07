@@ -4,6 +4,12 @@
 # Build output
 target/
 **/target/
+# per-workstream build folders (-Dsangam.target=target-<ws>)
+target-*/
+**/target-*/
+# local Python virtual environments
+.venv/
+**/.venv/
 
 # Local tooling and session state
 .claude/

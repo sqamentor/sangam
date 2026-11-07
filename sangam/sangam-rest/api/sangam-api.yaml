@@ -86,10 +86,14 @@ tags:
   description: 'Data protection and incident reporting: notices, consent, rights, breaches, lawful requests, evidence (GOV-4, R53)'
 - name: Cell
   description: SCALE cell tenant-admin API for tenant moves between cells (sangam-cell IR-4; service role CELL_ADMIN)
+- name: AI
+  description: Agent runs and approvals, knowledge bases, drafts, expressions, classification, MCP and A2A. sangam-ai; off unless enabled
 - name: Billing
   description: Invoices, collections, arrears, penalties, waivers and refunds on receivable ledgers (sangam-billing)
 - name: CaseFiles
   description: Case files, parties, hearings, deadlines (N04); committees, meetings, minutes, action items and references (N16). sangam-case
+- name: Channels
+  description: Conversations, opt-ins, channel status and provider webhooks (sangam-channels)
 - name: Config
   description: Configuration profiles with maker-checker lifecycle, master codes, classification schemes, document types and crosswalks (sangam-config,
     ADR-D-20)
@@ -99,6 +103,15 @@ tags:
   description: Jurisdiction layers and boundaries, geofences, nearest and overlap queries, object geometry and external WFS/WMS layers (sangam-geo)
 - name: Ledger
   description: 'Limit, quantity and receivable ledgers: balances, idempotent operations, freeze orders, holds, period close, reconciliation (sangam-ledger)'
+- name: Modeller
+  description: Landscape, token walk, edit leases, templates, actions, test reports, catalogue (sangam-modeller)
+- name: Onboarding
+  description: Plug-and-play tenant onboarding as a BPMN process with maker-checker at go-live, dry run, pack dependency resolution and signed
+    tenant bundles (sangam-onboarding)
+- name: Plugins
+  description: 'Signed plugin drop-in: list, enable or disable (effective at restart), audit trail'
+- name: Tenant operations
+  description: Search, usage, outliers, variables, secrets, sequences, index jobs, retention, migration status (R19). sangam-ops; off unless enabled
 - name: Programmes
   description: 'Programme monitoring: programmes, targets, milestones, periodic returns, roll-up, progress, variance alerts, dashboards (N15).
     sangam-programme'
@@ -552,18 +565,12 @@ paths:
         in: query
         schema:
           type: string
-          enum:
-          - created
-          - due
-          - priority
-          - name
+        description: created, due, priority or name; a comma-separated list sorts by several keys
       - name: sortOrder
         in: query
         schema:
           type: string
-          enum:
-          - asc
-          - desc
+        description: asc or desc per key, comma-separated
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: task.read
@@ -16821,6 +16828,1472 @@ paths:
         '410':
           $ref: '#/components/responses/Gone'
       security: []
+  /ai/runs:
+    post:
+      operationId: aiStartRun
+      tags:
+      - AI
+      summary: Start an agent run
+      description: Starts a configured agent as the caller.
+      x-sangam-command-type: ai.run.start
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiStartRun'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    get:
+      operationId: aiListRuns
+      tags:
+      - AI
+      summary: List agent runs
+      description: Own runs; all runs of the tenant with ai.read.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/runs/{id}:
+    get:
+      operationId: aiGetRun
+      tags:
+      - AI
+      summary: Get an agent run
+      description: Visible to its owner and to ai.read.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/runs/{id}/cancel:
+    post:
+      operationId: aiCancelRun
+      tags:
+      - AI
+      summary: Cancel an agent run
+      description: Cancels a run the caller can see.
+      x-sangam-command-type: ai.run.cancel
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiReason'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/approvals:
+    get:
+      operationId: aiListApprovals
+      tags:
+      - AI
+      summary: Pending tool approvals
+      description: Pending approvals of the tenant.
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/approvals/{id}/decide:
+    post:
+      operationId: aiDecideApproval
+      tags:
+      - AI
+      summary: Decide a tool approval
+      description: The decider differs from the requester and confirms the reviewed argument hash.
+      x-sangam-command-type: ai.approval.decide
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiDecide'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiApproval'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/knowledge-bases/{kb}/versions:
+    post:
+      operationId: aiKbNewVersion
+      tags:
+      - AI
+      summary: Create a knowledge base version
+      description: Starts a BUILDING version.
+      x-sangam-command-type: ai.kb.version
+      x-sangam-idempotent: true
+      parameters:
+      - name: kb
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.admin
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiKbVersion'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/knowledge-bases/{kb}/versions/{version}/documents:
+    post:
+      operationId: aiKbIngest
+      tags:
+      - AI
+      summary: Ingest a document
+      description: Only a BUILDING version accepts documents.
+      x-sangam-command-type: ai.kb.ingest
+      x-sangam-idempotent: true
+      parameters:
+      - name: kb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.admin
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiIngest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiIngestResult'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/knowledge-bases/{kb}/versions/{version}/activate:
+    post:
+      operationId: aiKbActivate
+      tags:
+      - AI
+      summary: Activate a version
+      description: Makes the version the searched one.
+      x-sangam-command-type: ai.kb.activate
+      x-sangam-idempotent: true
+      parameters:
+      - name: kb
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.admin
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/knowledge-bases/{kb}/search:
+    post:
+      operationId: aiKbSearch
+      tags:
+      - AI
+      summary: Search a knowledge base
+      description: Results are filtered by what the caller may read.
+      parameters:
+      - name: kb
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiKbSearch'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/drafts:
+    post:
+      operationId: aiGenerateDraft
+      tags:
+      - AI
+      summary: Generate a draft
+      description: Generates and validates content for review.
+      x-sangam-command-type: ai.draft.generate
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiDraftGenerate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiDraft'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    get:
+      operationId: aiUiListDrafts
+      tags:
+      - AI
+      summary: List drafts
+      description: Own drafts; all of the tenant with ai.review. Filter by status or packageId.
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: packageId
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/drafts/{id}:
+    get:
+      operationId: aiGetDraft
+      tags:
+      - AI
+      summary: Get a draft
+      description: Visible to its author and to ai.review.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiDraft'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/drafts/{id}/approve:
+    post:
+      operationId: aiApproveDraft
+      tags:
+      - AI
+      summary: Approve a draft
+      description: Stores the content as a package draft; never deploys. Also needs package.author.
+      x-sangam-command-type: ai.draft.approve
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiDraftReview'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiDraft'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/drafts/{id}/reject:
+    post:
+      operationId: aiRejectDraft
+      tags:
+      - AI
+      summary: Reject a draft
+      description: Rejects the reviewed content.
+      x-sangam-command-type: ai.draft.reject
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiDraftReview'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiDraft'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/expressions/evaluate:
+    post:
+      operationId: aiEvaluateExpression
+      tags:
+      - AI
+      summary: Evaluate a FEEL expression
+      description: Time-limited evaluation against sample variables.
+      parameters:
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiEvaluate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiEvaluation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/expressions/propose:
+    post:
+      operationId: aiProposeExpression
+      tags:
+      - AI
+      summary: Propose a FEEL expression
+      description: Needs a configured LLM; otherwise 503 LLM_DISABLED.
+      parameters:
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiPropose'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiProposal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/classifications:
+    post:
+      operationId: aiClassify
+      tags:
+      - AI
+      summary: Classify a document
+      description: Low confidence routes to human review.
+      x-sangam-command-type: ai.classify
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiClassify'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiClassification'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    get:
+      operationId: aiUiListClassifications
+      tags:
+      - AI
+      summary: List classifications
+      description: The tenant only.
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/classifications/{id}/correct:
+    post:
+      operationId: aiCorrectClassification
+      tags:
+      - AI
+      summary: Correct a classification
+      description: Records the reviewer label.
+      x-sangam-command-type: ai.classify.correct
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiCorrect'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/classifications/evaluation:
+    get:
+      operationId: aiClassificationEvaluation
+      tags:
+      - AI
+      summary: Classification accuracy
+      description: Reviewed samples and correct count for a template version.
+      parameters:
+      - name: key
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: version
+        in: query
+        schema:
+          type: integer
+          format: int32
+        required: true
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiEvalResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/mcp:
+    post:
+      operationId: aiMcp
+      tags:
+      - AI
+      summary: MCP endpoint
+      description: JSON-RPC. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins;
+        MCP-Protocol-Version, Mcp-Method and Mcp-Name must match the body (400).
+      parameters:
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/a2a/{agent}/card:
+    get:
+      operationId: aiA2aCard
+      tags:
+      - AI
+      summary: A2A agent card
+      description: Card of a configured inbound agent of the tenant.
+      parameters:
+      - name: agent
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/a2a/{agent}:
+    post:
+      operationId: aiA2a
+      tags:
+      - AI
+      summary: A2A endpoint
+      description: JSON-RPC; the caller must be on the agent allow-list. Honours the A2A-Version header; a browser Origin must be allow-listed.
+      parameters:
+      - name: agent
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/agent-runs:
+    get:
+      operationId: aiUiListRuns
+      tags:
+      - AI
+      summary: List agent runs (console)
+      description: Own runs; all of the tenant with ai.read.
+      parameters:
+      - name: agentKey
+        in: query
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: businessKey
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/agent-runs/{runId}:
+    get:
+      operationId: aiUiGetRun
+      tags:
+      - AI
+      summary: Get an agent run (console)
+      description: Visible to its owner and to ai.read.
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/agent-runs/{runId}/steps:
+    get:
+      operationId: aiUiRunSteps
+      tags:
+      - AI
+      summary: Steps of an agent run
+      description: Visible to its owner and to ai.read.
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: ai.use
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/agent-approvals:
+    get:
+      operationId: aiUiListApprovals
+      tags:
+      - AI
+      summary: List approvals
+      description: The tenant only.
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ai/agent-approvals/{approvalId}/approve:
+    post:
+      operationId: aiUiApprove
+      tags:
+      - AI
+      summary: Approve a tool call
+      description: Not by the requester.
+      x-sangam-command-type: ai.approval.approve
+      x-sangam-idempotent: true
+      parameters:
+      - name: approvalId
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/agent-approvals/{approvalId}/reject:
+    post:
+      operationId: aiUiReject
+      tags:
+      - AI
+      summary: Reject a tool call
+      description: Not by the requester.
+      x-sangam-command-type: ai.approval.reject
+      x-sangam-idempotent: true
+      parameters:
+      - name: approvalId
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/knowledge-bases:
+    get:
+      operationId: aiUiListKb
+      tags:
+      - AI
+      summary: List knowledge bases
+      description: Active version, else newest.
+      x-sangam-permission: ai.admin
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: aiUiPublishKb
+      tags:
+      - AI
+      summary: Publish a knowledge base
+      description: A new version with this text, activated.
+      x-sangam-command-type: ai.kb.publish
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.admin
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/knowledge-bases/{key}/retire:
+    post:
+      operationId: aiUiRetireKb
+      tags:
+      - AI
+      summary: Retire a knowledge base
+      description: Retrieval stops. Needs a reason; actor and reason are kept.
+      x-sangam-command-type: ai.kb.retire
+      x-sangam-idempotent: true
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.admin
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ai/classifications/{id}/review:
+    post:
+      operationId: aiUiReviewClassification
+      tags:
+      - AI
+      summary: Review a classification
+      description: ACCEPT or RETURN.
+      x-sangam-command-type: ai.classification.review
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ai.review
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
   /billing/{ledger}/accounts:
     get:
       operationId: listBillingAccounts
@@ -21810,6 +23283,731 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+  /channels/conversations:
+    post:
+      operationId: createConversation
+      tags:
+      - Channels
+      summary: Create a conversation
+      description: The caller becomes a participant.
+      x-sangam-command-type: channels.conversation.create
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: channels.write
+      x-sangam-requirements:
+      - R19
+      - R81
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelCreateConversation'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelConversation'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    get:
+      operationId: listConversations
+      tags:
+      - Channels
+      summary: List conversations
+      description: Only conversations the caller participates in; caseRef narrows to a case.
+      parameters:
+      - name: caseRef
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: channels.read
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /channels/conversations/{id}/participants:
+    post:
+      operationId: addConversationParticipant
+      tags:
+      - Channels
+      summary: Add a participant
+      description: Same tenant only (R19).
+      x-sangam-command-type: channels.conversation.addParticipant
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: channels.write
+      x-sangam-requirements:
+      - R19
+      - R81
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelAddParticipant'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /channels/conversations/{id}/messages:
+    get:
+      operationId: getConversationMessages
+      tags:
+      - Channels
+      summary: Conversation history
+      description: Participants only.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: channels.read
+      x-sangam-requirements:
+      - R19
+      - R81
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChannelMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: sendConversationMessage
+      tags:
+      - Channels
+      summary: Send a message
+      description: Stored first; live delivery follows commit.
+      x-sangam-command-type: channels.conversation.send
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: channels.write
+      x-sangam-requirements:
+      - R19
+      - R81
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelSendMessage'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelMessage'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /channels/conversations/{id}/attachments:
+    post:
+      operationId: uploadConversationAttachment
+      tags:
+      - Channels
+      summary: Upload an attachment
+      description: Scanned before it is stored; refused when no scanner is configured unless sangam.channels.allow-unscanned=true.
+      x-sangam-command-type: channels.conversation.upload
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        schema:
+          type: string
+        required: true
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: channels.write
+      x-sangam-requirements:
+      - R19
+      - R81
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelAttachment'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /channels/conversations/{id}/stream:
+    get:
+      operationId: streamConversation
+      tags:
+      - Channels
+      summary: Live message stream
+      description: Server-sent events, event name 'message'. Streams live on one node; reconnect and read history to catch up.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: channels.read
+      x-sangam-requirements:
+      - R19
+      - R81
+      responses:
+        '200':
+          description: Success
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ChannelMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /channels/conversations/search:
+    get:
+      operationId: searchConversations
+      tags:
+      - Channels
+      summary: Search messages
+      description: Only conversations the caller takes part in.
+      parameters:
+      - name: text
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: channels.read
+      x-sangam-requirements:
+      - R19
+      - R81
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChannelMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /channels/opt-ins:
+    post:
+      operationId: recordChannelOptIn
+      tags:
+      - Channels
+      summary: Record an opt-in
+      description: Audited, with evidence.
+      x-sangam-command-type: channels.optIn
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: channels.admin
+      x-sangam-requirements:
+      - R19
+      - R81
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelOptInRequest'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    get:
+      operationId: listChannelOptIns
+      tags:
+      - Channels
+      summary: List opt-ins
+      description: The tenant's mappings, without evidence.
+      parameters:
+      - name: channel
+        in: query
+        schema:
+          type: string
+      x-sangam-permission: channels.admin
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /channels/opt-ins/withdraw:
+    post:
+      operationId: withdrawChannelOptIn
+      tags:
+      - Channels
+      summary: Withdraw an opt-in
+      description: Audited, with evidence.
+      x-sangam-command-type: channels.optOut
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: channels.admin
+      x-sangam-requirements:
+      - R19
+      - R81
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelOptInRequest'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /channels/status:
+    get:
+      operationId: getChannelStatus
+      tags:
+      - Channels
+      summary: Channel status
+      description: State of each conversation-channels entry.
+      x-sangam-permission: channels.read
+      x-sangam-requirements:
+      - R19
+      - R81
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChannelStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /hooks/channels/{tenant}/whatsapp:
+    get:
+      operationId: verifyWhatsAppHook
+      tags:
+      - Channels
+      summary: WhatsApp subscription check
+      description: 'Public: the verify token is compared.'
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: hub.verify_token
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: hub.challenge
+        in: query
+        schema:
+          type: string
+        required: true
+      x-sangam-requirements:
+      - R19
+      - R81
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+      security: []
+    post:
+      operationId: receiveWhatsAppHook
+      tags:
+      - Channels
+      summary: WhatsApp webhook
+      description: 'Public: X-Hub-Signature-256 is verified on the raw body first.'
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-requirements:
+      - R19
+      - R81
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+          application/xml:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelHookResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+      security: []
+  /hooks/channels/{tenant}/wechat:
+    get:
+      operationId: verifyWeChatHook
+      tags:
+      - Channels
+      summary: WeChat URL check
+      description: 'Public: the signature is verified.'
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: timestamp
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: nonce
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: signature
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: echostr
+        in: query
+        schema:
+          type: string
+        required: true
+      x-sangam-requirements:
+      - R19
+      - R81
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+      security: []
+    post:
+      operationId: receiveWeChatHook
+      tags:
+      - Channels
+      summary: WeChat webhook
+      description: 'Public: the signature is verified first.'
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: timestamp
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: nonce
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: signature
+        in: query
+        schema:
+          type: string
+        required: true
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-requirements:
+      - R19
+      - R81
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+          application/xml:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelHookResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+      security: []
+  /hooks/channels/{tenant}/teams:
+    post:
+      operationId: receiveTeamsHook
+      tags:
+      - Channels
+      summary: Teams webhook
+      description: 'Public: the Bot Framework token is verified first.'
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-requirements:
+      - R19
+      - R81
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+          application/xml:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelHookResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+      security: []
   /config/profiles:
     get:
       operationId: resolveConfigProfile
@@ -22673,6 +24871,54 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable'
       security: []
+  /connectors-health/x12/835:
+    post:
+      operationId: receiveRemittance835
+      tags:
+      - HealthHooks
+      summary: Hand over a received 835
+      description: Routes each claim to its waiting case, else starts the later-remittance process once per trace number. An unreadable file becomes
+        a poison item (422).
+      x-sangam-command-type: connectorshealth.remittance.receive
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.write
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+          application/edi-x12:
+            schema:
+              type: string
+      responses:
+        '202':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
   /field/templates:
     get:
       operationId: fieldWorkTemplates
@@ -26410,6 +28656,3402 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/LedgerReconcileRow'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /landscape:
+    get:
+      operationId: getProcessLandscape
+      tags:
+      - Modeller
+      summary: Process landscape
+      description: Call graph across packages, with cycles.
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /models/token-walk:
+    post:
+      operationId: walkModelToken
+      tags:
+      - Modeller
+      summary: Token walk
+      description: Reads the model only; nothing runs.
+      x-sangam-command-type: modeller.tokenWalk
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelTokenWalkRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /models/{file}/lease:
+    get:
+      operationId: getModelLease
+      tags:
+      - Modeller
+      summary: Current lease
+      description: The lease on a model file.
+      parameters:
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'model file: the package id'
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelEditLease'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: acquireModelLease
+      tags:
+      - Modeller
+      summary: Acquire the lease
+      description: Saves then send the fence in X-Sangam-Edit-Fence.
+      x-sangam-command-type: modeller.lease.acquire
+      x-sangam-idempotent: true
+      parameters:
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'model file: the package id'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.author
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelLeaseOutcome'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /models/{file}/lease/heartbeat:
+    post:
+      operationId: heartbeatModelLease
+      tags:
+      - Modeller
+      summary: Renew the lease
+      description: Holder only.
+      x-sangam-command-type: modeller.lease.heartbeat
+      x-sangam-idempotent: true
+      parameters:
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'model file: the package id'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.author
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelFenceRequest'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /models/{file}/lease/release:
+    post:
+      operationId: releaseModelLease
+      tags:
+      - Modeller
+      summary: Release the lease
+      description: Holder only.
+      x-sangam-command-type: modeller.lease.release
+      x-sangam-idempotent: true
+      parameters:
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'model file: the package id'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.author
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelFenceRequest'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /models/{file}/lease/request-takeover:
+    post:
+      operationId: requestModelLeaseTakeover
+      tags:
+      - Modeller
+      summary: Ask for the lease
+      description: Tells the holder.
+      x-sangam-command-type: modeller.lease.requestTakeover
+      x-sangam-idempotent: true
+      parameters:
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'model file: the package id'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.author
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /models/{file}/lease/takeover:
+    post:
+      operationId: takeOverModelLease
+      tags:
+      - Modeller
+      summary: Take over the lease
+      description: Needs modeller.lease.takeover; audited.
+      x-sangam-command-type: modeller.lease.takeover
+      x-sangam-idempotent: true
+      parameters:
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+        description: 'model file: the package id'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.author
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelTakeoverRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelEditLease'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /templates:
+    get:
+      operationId: listElementTemplates
+      tags:
+      - Modeller
+      summary: Element templates
+      description: Latest version of each template.
+      parameters:
+      - name: kind
+        in: query
+        schema:
+          type: string
+        required: true
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VariableMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: publishElementTemplate
+      tags:
+      - Modeller
+      summary: Publish a template
+      description: A new version for an existing id.
+      x-sangam-command-type: modeller.template.publish
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.author
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ElementTemplatePublish'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /templates/{id}/apply:
+    post:
+      operationId: applyElementTemplate
+      tags:
+      - Modeller
+      summary: Apply a template
+      description: Returns properties and field errors.
+      x-sangam-command-type: modeller.template.apply
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ElementTemplateApply'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /actions:
+    get:
+      operationId: listActionModels
+      tags:
+      - Modeller
+      summary: Available actions
+      description: Filtered by each action's own permission.
+      parameters:
+      - name: scope
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: scopeType
+        in: query
+        schema:
+          type: string
+      - name: targetRef
+        in: query
+        schema:
+          type: string
+      x-sangam-permission: modeller.action.invoke
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VariableMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: publishActionModel
+      tags:
+      - Modeller
+      summary: Publish an action
+      description: A new version for an existing key.
+      x-sangam-command-type: modeller.action.publish
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: modeller.action.publish
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionModelPublish'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /actions/{key}/invoke:
+    post:
+      operationId: invokeActionModel
+      tags:
+      - Modeller
+      summary: Invoke an action
+      description: BPMN and connector targets run; SCRIPT targets are refused.
+      x-sangam-command-type: modeller.action.invoke
+      x-sangam-idempotent: true
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: modeller.action.invoke
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionModelInvoke'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /packages/{id}/tests/reports:
+    get:
+      operationId: listPackageTestReports
+      tags:
+      - Modeller
+      summary: Stored test reports
+      description: Newest first.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VariableMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /packages/{id}/tests/export:
+    post:
+      operationId: exportPackageTests
+      tags:
+      - Modeller
+      summary: Export a test bundle
+      description: Hash-sealed.
+      x-sangam-command-type: modeller.tests.export
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.author
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestBundleExport'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /packages/tests/verify-bundle:
+    post:
+      operationId: verifyPackageTestBundle
+      tags:
+      - Modeller
+      summary: Verify a test bundle
+      description: Rejects a changed bundle.
+      x-sangam-command-type: modeller.tests.verify
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestBundleVerify'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /catalogue:
+    get:
+      operationId: getExtensionCatalogue
+      tags:
+      - Modeller
+      summary: Extension catalogue
+      description: Signed index read from a mirrored local file.
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VariableMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /templates/{key}:
+    get:
+      operationId: getElementTemplate
+      tags:
+      - Modeller
+      summary: Get a template
+      description: Latest version unless one is named.
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: package.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /models/{file}/lease/acquire:
+    post:
+      operationId: acquireModelLeaseUi
+      tags:
+      - Modeller
+      summary: Acquire the edit lease (console)
+      description: Same as POST on the lease.
+      x-sangam-command-type: modeller.lease.acquire.ui
+      x-sangam-idempotent: true
+      parameters:
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: package.author
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /actions/{key}/run:
+    post:
+      operationId: runActionModel
+      tags:
+      - Modeller
+      summary: Run an action
+      description: Permission checked on the subject; idempotent per request key.
+      x-sangam-command-type: modeller.action.run
+      x-sangam-idempotent: true
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: modeller.action.invoke
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /actions/{key}:
+    delete:
+      operationId: retireActionModel
+      tags:
+      - Modeller
+      summary: Retire an action
+      description: Needs a reason; audited.
+      x-sangam-command-type: modeller.action.retire
+      x-sangam-idempotent: true
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: reason
+        in: query
+        schema:
+          type: string
+        required: true
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: modeller.action.publish
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /service-mocks:
+    get:
+      operationId: listServiceMocks
+      tags:
+      - Modeller
+      summary: List service mocks
+      description: Not on a production profile.
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ops.read
+      x-sangam-requirements:
+      - R43
+      - R80
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createServiceMock
+      tags:
+      - Modeller
+      summary: Add a service mock
+      description: This node, until restart.
+      x-sangam-command-type: modeller.mock.create
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.write
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /service-mocks/global:
+    put:
+      operationId: setServiceMocksGlobal
+      tags:
+      - Modeller
+      summary: Toggle all mocks
+      description: This node.
+      x-sangam-command-type: modeller.mock.global
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.write
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /service-mocks/{id}:
+    patch:
+      operationId: toggleServiceMock
+      tags:
+      - Modeller
+      summary: Toggle a mock's service
+      description: Affects every rule of the service.
+      x-sangam-command-type: modeller.mock.toggle
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.write
+      x-sangam-requirements:
+      - R43
+      - R80
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VariableMap'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /onboarding/dry-run:
+    post:
+      operationId: dryRunOnboarding
+      tags:
+      - Onboarding
+      summary: Dry run
+      description: Evaluates every step and the readiness checklist on the planned state; changes nothing.
+      parameters:
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingDryRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /onboarding/runs:
+    post:
+      operationId: startOnboarding
+      tags:
+      - Onboarding
+      summary: Start a run
+      description: Starts the BPMN process (409 ONBOARDING_IN_PROGRESS when the tenant has an open run).
+      x-sangam-command-type: onboarding.start
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    get:
+      operationId: listOnboardingRuns
+      tags:
+      - Onboarding
+      summary: List runs
+      description: Newest first.
+      parameters:
+      - name: tenant
+        in: query
+        schema:
+          type: string
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnboardingRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /onboarding/runs/{id}:
+    get:
+      operationId: getOnboardingRun
+      tags:
+      - Onboarding
+      summary: Get a run
+      description: State of every step.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: onboarding run id
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /onboarding/runs/{id}/request:
+    put:
+      operationId: amendOnboardingRun
+      tags:
+      - Onboarding
+      summary: Amend the request
+      description: 'Maker fix: a new revision; the steps run again.'
+      x-sangam-command-type: onboarding.amend
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: onboarding run id
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /onboarding/runs/{id}/recheck:
+    post:
+      operationId: recheckOnboardingRun
+      tags:
+      - Onboarding
+      summary: Re-run the checks
+      description: After an external fix, without changing the request.
+      x-sangam-command-type: onboarding.recheck
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: onboarding run id
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /onboarding/runs/{id}/approve:
+    post:
+      operationId: approveOnboardingRun
+      tags:
+      - Onboarding
+      summary: Approve go-live
+      description: Checker must differ from the maker (422 SEGREGATION_OF_DUTIES); bound to the hash (409 APPROVAL_INVALIDATED).
+      x-sangam-command-type: onboarding.approve
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: onboarding run id
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingApproveRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /onboarding/runs/{id}/reject:
+    post:
+      operationId: rejectOnboardingRun
+      tags:
+      - Onboarding
+      summary: Reject go-live
+      description: Ends the run.
+      x-sangam-command-type: onboarding.reject
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: onboarding run id
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingReasonRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /onboarding/runs/{id}/resume:
+    post:
+      operationId: resumeOnboardingRun
+      tags:
+      - Onboarding
+      summary: Resume a failed run
+      description: Retries the failed step.
+      x-sangam-command-type: onboarding.resume
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: onboarding run id
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /onboarding/runs/{id}/cancel:
+    post:
+      operationId: cancelOnboardingRun
+      tags:
+      - Onboarding
+      summary: Cancel a run
+      description: Ends the process; what was configured stays.
+      x-sangam-command-type: onboarding.cancel
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: onboarding run id
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingReasonRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /onboarding/packs/resolve:
+    post:
+      operationId: resolveOnboardingPacks
+      tags:
+      - Onboarding
+      summary: Resolve packs
+      description: Dependencies, semantic versions, compatibility, conflicts and upgrade paths.
+      parameters:
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackResolveRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackResolution'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /onboarding/tenants/{tenant}/bundle:
+    get:
+      operationId: exportTenantBundle
+      tags:
+      - Onboarding
+      summary: Export a bundle
+      description: The tenant's configuration, signed. No secrets, no go-live evidence.
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantBundle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /onboarding/bundles/import:
+    post:
+      operationId: importTenantBundle
+      tags:
+      - Onboarding
+      summary: Import a bundle
+      description: Verifies the signature (422 BUNDLE_SIGNATURE_INVALID, BUNDLE_UNSIGNED), renames the scope, then dry-runs or starts.
+      x-sangam-command-type: onboarding.bundle.import
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BundleImportRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BundleImportResult'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /onboarding/bundles/diff:
+    post:
+      operationId: diffTenantBundles
+      tags:
+      - Onboarding
+      summary: Compare two bundles
+      description: Tenant ids are normalised, so only real differences show.
+      parameters:
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BundleDiffRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BundleDiffEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/plugins:
+    get:
+      operationId: listPlugins
+      tags:
+      - Plugins
+      summary: List plugins
+      description: Every jar found, with its status and reason.
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PluginInfo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/plugins/audit:
+    get:
+      operationId: getPluginAudit
+      tags:
+      - Plugins
+      summary: Plugin audit trail
+      description: Hash-chained JSON lines, oldest first.
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/plugins/{id}/enable:
+    post:
+      operationId: enablePlugin
+      tags:
+      - Plugins
+      summary: Enable a plugin
+      description: Effective at the next restart.
+      x-sangam-command-type: plugin.enable
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginInfo'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /admin/plugins/{id}/disable:
+    post:
+      operationId: disablePlugin
+      tags:
+      - Plugins
+      summary: Disable a plugin
+      description: Effective at the next restart.
+      x-sangam-command-type: plugin.disable
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginInfo'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /plugins/ui:
+    get:
+      operationId: listUiPlugins
+      tags:
+      - Plugins
+      summary: Enabled UI plugins
+      description: Manifests of the enabled, signature-verified UI bundles, for the shell to load. Any signed-in user.
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UiPluginManifest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /plugins/ui/{id}/assets/{path}:
+    get:
+      operationId: getUiPluginAsset
+      tags:
+      - Plugins
+      summary: A UI plugin asset
+      description: 'No token needed (same-origin module import); plugin code holds no secrets. `path` may contain slashes. Allowed file types
+        only, exact name, nosniff. Disabled or refused plugins: 404.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: path
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-requirements:
+      - ADR-D-20
+      - ADR-D-24
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security: []
+  /ops-admin/search:
+    get:
+      operationId: opsSearch
+      tags:
+      - Tenant operations
+      summary: Global search
+      description: Results per resource type, filtered by the policy compiler.
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: cap
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: search.use
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/usage:
+    get:
+      operationId: opsUsage
+      tags:
+      - Tenant operations
+      summary: Usage metrics
+      description: Daily metrics of the caller tenant.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+        required: true
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+        required: true
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/outliers:
+    get:
+      operationId: opsOutliers
+      tags:
+      - Tenant operations
+      summary: Slow-path analysis
+      description: Associations only, over server allow-listed variables.
+      parameters:
+      - name: processKey
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: activityId
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: minSamples
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/variables:
+    get:
+      operationId: opsVariables
+      tags:
+      - Tenant operations
+      summary: Scoped variables
+      description: Platform values overlaid with the tenant values.
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/variables/entries:
+    get:
+      operationId: opsVariableEntries
+      tags:
+      - Tenant operations
+      summary: Tenant variable entries
+      description: Tenant scope with version, last writer and reason.
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/variables/{name}:
+    put:
+      operationId: opsSetVariable
+      tags:
+      - Tenant operations
+      summary: Set a tenant variable
+      description: Secret-like names are refused.
+      x-sangam-command-type: ops.variable.set
+      x-sangam-idempotent: true
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpsValue'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    delete:
+      operationId: opsDeleteVariable
+      tags:
+      - Tenant operations
+      summary: Delete a tenant variable
+      description: Removes the tenant value.
+      x-sangam-command-type: ops.variable.delete
+      x-sangam-idempotent: true
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops-admin/secrets:
+    get:
+      operationId: opsSecrets
+      tags:
+      - Tenant operations
+      summary: List secrets
+      description: Names and versions; values are never returned.
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/secrets/{ref}:
+    put:
+      operationId: opsPutSecret
+      tags:
+      - Tenant operations
+      summary: Store a secret
+      description: Encrypted at rest; write-only.
+      x-sangam-command-type: ops.secret.put
+      x-sangam-idempotent: true
+      parameters:
+      - name: ref
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpsSecret'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    delete:
+      operationId: opsDeleteSecret
+      tags:
+      - Tenant operations
+      summary: Delete a secret
+      description: Removes the secret.
+      x-sangam-command-type: ops.secret.delete
+      x-sangam-idempotent: true
+      parameters:
+      - name: ref
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops-admin/sequences/{table}:
+    get:
+      operationId: opsSequences
+      tags:
+      - Tenant operations
+      summary: List sequences
+      description: Current values in a registered sequence table.
+      parameters:
+      - name: table
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/sequences/{table}/advance:
+    post:
+      operationId: opsAdvanceSequence
+      tags:
+      - Tenant operations
+      summary: Advance a sequence
+      description: Forward only, with a reason.
+      x-sangam-command-type: ops.sequence.advance
+      x-sangam-idempotent: true
+      parameters:
+      - name: table
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpsAdvance'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops-admin/index-jobs:
+    post:
+      operationId: opsRebuildIndex
+      tags:
+      - Tenant operations
+      summary: Rebuild the search index
+      description: Builds a new generation and switches when complete; an optional reason is kept on the job.
+      x-sangam-command-type: ops.index.rebuild
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpsReason'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpsJob'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops-admin/index-jobs/{generation}:
+    get:
+      operationId: opsIndexJob
+      tags:
+      - Tenant operations
+      summary: Get an index job
+      description: Platform operators only.
+      parameters:
+      - name: generation
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: ops.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpsJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/index-drift:
+    get:
+      operationId: opsIndexDrift
+      tags:
+      - Tenant operations
+      summary: Index drift
+      description: Source and indexed counts per type.
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/retention/plan:
+    get:
+      operationId: opsRetentionPlan
+      tags:
+      - Tenant operations
+      summary: Retention plan
+      description: Whole trees due; excludes definitions with a history time to live and held roots.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/retention/execute:
+    post:
+      operationId: opsRetentionExecute
+      tags:
+      - Tenant operations
+      summary: Execute retention
+      description: Re-plans on the server and purges due trees.
+      x-sangam-command-type: ops.retention.execute
+      x-sangam-idempotent: true
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpsReason'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpsPurge'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops-admin/retention/runs:
+    get:
+      operationId: opsRetentionRuns
+      tags:
+      - Tenant operations
+      summary: Retention runs
+      description: Executed purges with plan hash, reason and actor.
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops-admin/migration:
+    get:
+      operationId: opsMigration
+      tags:
+      - Tenant operations
+      summary: Migration status
+      description: Checkpoints of history migration jobs (copied, failed, mismatched, status); platform operators only.
+      x-sangam-permission: ops.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /search:
+    get:
+      operationId: uiSearch
+      tags:
+      - Tenant operations
+      summary: Global search
+      description: Flat rows, filtered by the policy compiler.
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+        required: true
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: search.use
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops/usage:
+    get:
+      operationId: uiOpsUsage
+      tags:
+      - Tenant operations
+      summary: Usage metrics
+      description: The caller tenant; last 30 days by default.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops/outliers:
+    get:
+      operationId: uiOpsOutliers
+      tags:
+      - Tenant operations
+      summary: Slow-path associations
+      description: Over server allow-listed variables only.
+      parameters:
+      - name: processDefinitionKey
+        in: query
+        schema:
+          type: string
+      - name: activityId
+        in: query
+        schema:
+          type: string
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops/variables:
+    get:
+      operationId: uiOpsVariables
+      tags:
+      - Tenant operations
+      summary: Tenant variables
+      description: As rows.
+      parameters:
+      - name: scope
+        in: query
+        schema:
+          type: string
+      - name: name
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: uiOpsSetVariable
+      tags:
+      - Tenant operations
+      summary: Set a variable
+      description: TENANT scope only.
+      x-sangam-command-type: ops.variable.set.ui
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops/variables/{id}:
+    delete:
+      operationId: uiOpsDeleteVariable
+      tags:
+      - Tenant operations
+      summary: Delete a variable
+      description: Needs a reason.
+      x-sangam-command-type: ops.variable.delete.ui
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: reason
+        in: query
+        schema:
+          type: string
+        required: true
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops/secrets:
+    get:
+      operationId: uiOpsSecrets
+      tags:
+      - Tenant operations
+      summary: Secrets
+      description: Metadata only.
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops/secrets/{name}:
+    put:
+      operationId: uiOpsPutSecret
+      tags:
+      - Tenant operations
+      summary: Set a secret
+      description: The value is write-only.
+      x-sangam-command-type: ops.secret.put.ui
+      x-sangam-idempotent: true
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    delete:
+      operationId: uiOpsDeleteSecret
+      tags:
+      - Tenant operations
+      summary: Delete a secret
+      description: Needs a reason.
+      x-sangam-command-type: ops.secret.delete.ui
+      x-sangam-idempotent: true
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: reason
+        in: query
+        schema:
+          type: string
+        required: true
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops/sequences:
+    get:
+      operationId: uiOpsSequences
+      tags:
+      - Tenant operations
+      summary: Sequences
+      description: All sequence tables.
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops/sequences/{name}/advance:
+    post:
+      operationId: uiOpsAdvance
+      tags:
+      - Tenant operations
+      summary: Advance a sequence
+      description: Forward only.
+      x-sangam-command-type: ops.sequence.advance.ui
+      x-sangam-idempotent: true
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops/index-jobs:
+    get:
+      operationId: uiOpsIndexJobs
+      tags:
+      - Tenant operations
+      summary: Index jobs
+      description: The caller tenant.
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: uiOpsStartIndexJob
+      tags:
+      - Tenant operations
+      summary: Rebuild or check the index
+      description: REBUILD needs ops.tenant.admin.
+      x-sangam-command-type: ops.index.start.ui
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ops/migration-status:
+    get:
+      operationId: uiOpsMigration
+      tags:
+      - Tenant operations
+      summary: Migration checkpoints
+      description: Platform operators.
+      parameters:
+      - name: source
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ops.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops/retention/plan:
+    get:
+      operationId: uiOpsRetentionPlan
+      tags:
+      - Tenant operations
+      summary: Preview retention
+      description: With a hash of the plan.
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops/retention/runs:
+    get:
+      operationId: uiOpsRetentionRuns
+      tags:
+      - Tenant operations
+      summary: Retention runs
+      description: Executed purges of the caller tenant, with plan hash, reason and actor.
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      x-sangam-permission: ops.tenant.read
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ops/retention/execute:
+    post:
+      operationId: uiOpsRetentionExecute
+      tags:
+      - Tenant operations
+      summary: Execute retention
+      description: Refused when the plan changed since the preview.
+      x-sangam-command-type: ops.retention.execute.ui
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: ops.tenant.admin
+      x-sangam-requirements:
+      - R19
+      - VI.4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
           headers:
             Idempotent-Replayed:
               $ref: '#/components/headers/Idempotent-Replayed'
@@ -47994,6 +53636,258 @@ components:
           additionalProperties: true
         contentHash:
           type: string
+    AiRun:
+      type: object
+      description: RunView.
+      properties:
+        runId:
+          type: string
+        agentKey:
+          type: string
+        state:
+          type: string
+        stepsUsed:
+          type: integer
+          format: int32
+        tokensUsed:
+          type: integer
+          format: int64
+        rootId:
+          type: string
+        businessKey:
+          type: string
+        principalId:
+          type: string
+        result:
+          type: string
+    AiStartRun:
+      type: object
+      description: StartRunRequest.
+      properties:
+        agentKey:
+          type: string
+        input:
+          type: string
+        businessKey:
+          type: string
+    AiReason:
+      type: object
+      description: ReasonRequest.
+      properties:
+        reason:
+          type: string
+    AiApproval:
+      type: object
+      description: Approval.
+      properties:
+        approvalId:
+          type: string
+        tenantId:
+          type: string
+        runId:
+          type: string
+        toolCallId:
+          type: string
+        toolName:
+          type: string
+        argsJson:
+          type: string
+        argsHash:
+          type: string
+        state:
+          type: string
+        requestedBy:
+          type: string
+        decidedBy:
+          type: string
+        reason:
+          type: string
+    AiDecide:
+      type: object
+      description: DecideRequest.
+      properties:
+        approve:
+          type: boolean
+        argsHash:
+          type: string
+        reason:
+          type: string
+    AiKbVersion:
+      type: object
+      description: KbVersion.
+      properties:
+        version:
+          type: integer
+          format: int32
+    AiIngest:
+      type: object
+      description: IngestRequest.
+      properties:
+        documentId:
+          type: string
+        docVersion:
+          type: string
+        text:
+          type: string
+    AiIngestResult:
+      type: object
+      description: IngestResult.
+      properties:
+        chunks:
+          type: integer
+          format: int32
+    AiKbSearch:
+      type: object
+      description: KbSearchRequest.
+      properties:
+        query:
+          type: string
+        k:
+          type: integer
+          format: int32
+    AiDraftGenerate:
+      type: object
+      description: GenerateDraftRequest.
+      properties:
+        kind:
+          type: string
+        prompt:
+          type: string
+        current:
+          type: string
+        context:
+          type: object
+          additionalProperties: true
+    AiDraft:
+      type: object
+      description: Draft.
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        kind:
+          type: string
+        state:
+          type: string
+        content:
+          type: string
+        validationErrors:
+          type: array
+          items:
+            type: string
+        prompt:
+          type: string
+        contentHash:
+          type: string
+        model:
+          type: string
+        createdBy:
+          type: string
+        reviewedBy:
+          type: string
+    AiDraftReview:
+      type: object
+      description: ReviewDraftRequest.
+      properties:
+        contentHash:
+          type: string
+        note:
+          type: string
+    AiEvaluate:
+      type: object
+      description: EvaluateRequest.
+      properties:
+        expression:
+          type: string
+        variables:
+          type: object
+          additionalProperties: true
+    AiEvaluation:
+      type: object
+      description: Evaluation.
+      properties:
+        ok:
+          type: boolean
+        value: {}
+        error:
+          type: string
+        millis:
+          type: integer
+          format: int64
+    AiPropose:
+      type: object
+      description: ProposeRequest.
+      properties:
+        intent:
+          type: string
+        variables:
+          type: object
+          additionalProperties: true
+    AiProposal:
+      type: object
+      description: Proposal.
+      properties:
+        expression:
+          type: string
+    AiClassify:
+      type: object
+      description: ClassifyRequest.
+      properties:
+        key:
+          type: string
+        version:
+          type: integer
+          format: int32
+        labels:
+          type: array
+          items:
+            type: string
+        fields:
+          type: array
+          items:
+            type: string
+        threshold:
+          type: number
+          format: double
+        sourceRef:
+          type: string
+        text:
+          type: string
+    AiClassification:
+      type: object
+      description: Classification.
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        confidence:
+          type: number
+          format: double
+        fields:
+          type: object
+          additionalProperties: true
+        route:
+          type: string
+        model:
+          type: string
+    AiCorrect:
+      type: object
+      description: CorrectRequest.
+      properties:
+        label:
+          type: string
+    AiEvalResult:
+      type: object
+      description: Evaluation of a template.
+      properties:
+        sampled:
+          type: integer
+          format: int64
+        correct:
+          type: integer
+          format: int64
     BillingInvoiceRequest:
       type: object
       description: Raise the invoice of one consumer for one cycle (idempotent per consumer x cycle).
@@ -49701,6 +55595,143 @@ components:
       properties:
         reason:
           type: string
+    ChannelAttachment:
+      type: object
+      description: A stored conversation attachment.
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        contentType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        sha256:
+          type: string
+    ChannelMessage:
+      type: object
+      description: A conversation message.
+      properties:
+        id:
+          type: string
+        conversationId:
+          type: string
+        sender:
+          type: string
+        body:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelAttachment'
+        at:
+          type: string
+      required:
+      - id
+      - conversationId
+      - sender
+    ChannelConversation:
+      type: object
+      description: A conversation.
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        title:
+          type: string
+        caseRef:
+          type: string
+        retentionClass:
+          type: string
+      required:
+      - id
+      - tenantId
+    ChannelCreateConversation:
+      type: object
+      description: Create a conversation.
+      properties:
+        title:
+          type: string
+        caseRef:
+          type: string
+        retentionClass:
+          type: string
+        participants:
+          type: array
+          items:
+            type: string
+      required:
+      - title
+    ChannelAddParticipant:
+      type: object
+      description: Add a participant.
+      properties:
+        principal:
+          type: string
+      required:
+      - principal
+    ChannelSendMessage:
+      type: object
+      description: Send a message.
+      properties:
+        body:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelAttachment'
+        clientKey:
+          type: string
+      required:
+      - body
+    ChannelOptInRequest:
+      type: object
+      description: Record or withdraw an opt-in.
+      properties:
+        channel:
+          type: string
+        externalId:
+          type: string
+        principalId:
+          type: string
+        evidence:
+          type: string
+      required:
+      - channel
+      - externalId
+      - principalId
+    ChannelStatus:
+      type: object
+      description: 'Runtime state of a channel entry: ACTIVE, NO_ADAPTER or INVALID.'
+      properties:
+        key:
+          type: string
+        channel:
+          type: string
+        state:
+          type: string
+        detail:
+          type: string
+      required:
+      - key
+      - channel
+      - state
+    ChannelHookResult:
+      type: object
+      description: What a webhook delivery produced.
+      properties:
+        accepted:
+          type: integer
+          format: int32
+        duplicates:
+          type: integer
+          format: int32
+        notOptedIn:
+          type: integer
+          format: int32
     ConfigFinding:
       type: object
       description: A validation finding.
@@ -50238,6 +56269,563 @@ components:
         attrs:
           type: object
           additionalProperties: true
+    ModelTokenWalkRequest:
+      type: object
+      description: Walk a token through a BPMN model.
+      properties:
+        bpmnXml:
+          type: string
+        xml:
+          type: string
+        file:
+          type: string
+        processId:
+          type: string
+        choices:
+          type: object
+          additionalProperties: true
+        maxSteps:
+          type: integer
+          format: int32
+        state:
+          type: object
+          additionalProperties: true
+        choice:
+          type: string
+    ModelEditLease:
+      type: object
+      description: The holder of a model file's edit lease.
+      properties:
+        fileId:
+          type: string
+        holder:
+          type: string
+        fence:
+          type: integer
+          format: int64
+        expiresAt:
+          type: string
+          format: date-time
+        requestedBy:
+          type: string
+      required:
+      - fileId
+      - holder
+      - fence
+    ModelLeaseOutcome:
+      type: object
+      description: Whether the caller may edit.
+      properties:
+        editable:
+          type: boolean
+        lease:
+          $ref: '#/components/schemas/ModelEditLease'
+      required:
+      - editable
+    ModelFenceRequest:
+      type: object
+      description: The fence given with the lease.
+      properties:
+        fence:
+          type: integer
+          format: int64
+        packageId:
+          type: string
+    ModelTakeoverRequest:
+      type: object
+      description: Take over a lease; the former editor's draft is kept.
+      properties:
+        formerDraft:
+          type: string
+        reason:
+          type: string
+      required:
+      - reason
+    ElementTemplatePublish:
+      type: object
+      description: Publish a template; the same id is a new version.
+      properties:
+        kind:
+          type: string
+        document:
+          type: object
+          additionalProperties: true
+        key:
+          type: string
+        name:
+          type: string
+        content:
+          type: string
+      required:
+      - kind
+    ElementTemplateApply:
+      type: object
+      description: Apply a template to an element.
+      properties:
+        elementType:
+          type: string
+        values:
+          type: object
+          additionalProperties: true
+      required:
+      - elementType
+    ActionModelPublish:
+      type: object
+      description: Publish an action model.
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        scope:
+          type: string
+        scopeType:
+          type: string
+        permission:
+          type: string
+        formKey:
+          type: string
+        targetType:
+          type: string
+        target:
+          type: string
+      required:
+      - key
+      - label
+      - scope
+      - permission
+      - targetType
+      - target
+    ActionModelInvoke:
+      type: object
+      description: Invoke an action.
+      properties:
+        targetRef:
+          type: string
+        input:
+          type: object
+          additionalProperties: true
+        clientKey:
+          type: string
+    TestBundleExport:
+      type: object
+      description: Export test cases as a sealed bundle.
+      properties:
+        packageRevision:
+          type: string
+        cases:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        mocks:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    TestBundleVerify:
+      type: object
+      description: Verify a sealed test bundle.
+      properties:
+        bundle:
+          type: string
+      required:
+      - bundle
+    OnboardingProblem:
+      type: object
+      description: One finding.
+      properties:
+        severity:
+          type: string
+          enum:
+          - ERROR
+          - WARNING
+          - INFO
+        code:
+          type: string
+        step:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+    OnboardingRequest:
+      type: object
+      description: Everything a new tenant needs, as data. See org.sangam.onboarding.api.OnboardingRequest.
+      properties:
+        tenant:
+          type: object
+          additionalProperties: true
+        profile:
+          type: object
+          additionalProperties: true
+        packs:
+          type: object
+          additionalProperties: true
+        connectors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        security:
+          type: object
+          additionalProperties: true
+        seeds:
+          type: object
+          additionalProperties: true
+        compliance:
+          type: object
+          additionalProperties: true
+        dmnOverrides:
+          type: object
+          additionalProperties:
+            type: string
+        goLive:
+          type: object
+          additionalProperties: true
+      required:
+      - tenant
+    OnboardingReadiness:
+      type: object
+      description: The go-live checklist; the checker approves `hash`.
+      properties:
+        ready:
+          type: boolean
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnboardingProblem'
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+        hash:
+          type: string
+        checkedAt:
+          type: string
+          format: date-time
+        revision:
+          type: integer
+          format: int32
+    OnboardingDryRun:
+      type: object
+      description: Every problem and the plan; nothing was changed.
+      properties:
+        tenantId:
+          type: string
+        ok:
+          type: boolean
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnboardingProblem'
+        plan:
+          type: object
+          additionalProperties: true
+        readiness:
+          $ref: '#/components/schemas/OnboardingReadiness'
+        requestHash:
+          type: string
+    OnboardingRun:
+      type: object
+      description: State of a run, per step.
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        status:
+          type: string
+          enum:
+          - RUNNING
+          - WAITING_FOR_FIX
+          - AWAITING_APPROVAL
+          - APPROVED
+          - LIVE
+          - REJECTED
+          - FAILED
+          - CANCELLED
+        maker:
+          type: string
+        checker:
+          type: string
+        revision:
+          type: integer
+          format: int32
+        request:
+          $ref: '#/components/schemas/OnboardingRequest'
+        requestHash:
+          type: string
+        processInstanceId:
+          type: string
+        steps:
+          type: object
+          additionalProperties: true
+        readiness:
+          $ref: '#/components/schemas/OnboardingReadiness'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    OnboardingApproveRequest:
+      type: object
+      description: Checker approval, bound to the readiness hash reviewed.
+      properties:
+        presentedHash:
+          type: string
+      required:
+      - presentedHash
+    OnboardingReasonRequest:
+      type: object
+      description: A reason.
+      properties:
+        reason:
+          type: string
+    PackResolveRequest:
+      type: object
+      description: Packs to resolve, optionally against what a tenant has.
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+        versions:
+          type: object
+          additionalProperties:
+            type: string
+        tenant:
+          type: string
+        allowUpgrade:
+          type: boolean
+      required:
+      - ids
+    PackResolution:
+      type: object
+      description: Dependency closure, order, requirements, upgrades and problems.
+      properties:
+        order:
+          type: array
+          items:
+            type: string
+        versions:
+          type: object
+          additionalProperties:
+            type: string
+        addedDependencies:
+          type: array
+          items:
+            type: string
+        connectors:
+          type: object
+          additionalProperties: true
+        profileKeys:
+          type: object
+          additionalProperties: true
+        upgrades:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnboardingProblem'
+    TenantBundle:
+      type: object
+      description: A signed tenant configuration bundle.
+      properties:
+        format:
+          type: integer
+          format: int32
+        body:
+          type: object
+          additionalProperties: true
+        signature:
+          type: object
+          additionalProperties: true
+      required:
+      - format
+      - body
+    BundleImportRequest:
+      type: object
+      description: Import a bundle as another tenant, or dry-run it.
+      properties:
+        bundle:
+          $ref: '#/components/schemas/TenantBundle'
+        targetTenant:
+          type: string
+        name:
+          type: string
+        names:
+          type: object
+          additionalProperties:
+            type: string
+        parentId:
+          type: string
+        profileOverrides:
+          type: object
+          additionalProperties: true
+        goLive:
+          type: object
+          additionalProperties: true
+        dryRun:
+          type: boolean
+      required:
+      - bundle
+      - targetTenant
+    BundleImportResult:
+      type: object
+      description: The dry-run report or the started run.
+      properties:
+        dryRun:
+          $ref: '#/components/schemas/OnboardingDryRun'
+        run:
+          $ref: '#/components/schemas/OnboardingRun'
+    BundleDiffRequest:
+      type: object
+      description: Two bundles.
+      properties:
+        left:
+          $ref: '#/components/schemas/TenantBundle'
+        right:
+          $ref: '#/components/schemas/TenantBundle'
+      required:
+      - left
+      - right
+    BundleDiffEntry:
+      type: object
+      description: One difference.
+      properties:
+        path:
+          type: string
+        kind:
+          type: string
+          enum:
+          - ADDED
+          - REMOVED
+          - CHANGED
+        left: {}
+        right: {}
+    PluginInfo:
+      type: object
+      description: A plugin found in the plugin folder.
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        name:
+          type: string
+        vendor:
+          type: string
+        file:
+          type: string
+        status:
+          type: string
+          enum:
+          - LOADED
+          - DISABLED
+          - REFUSED
+          - FAILED
+        reason:
+          type: string
+        signedBy:
+          type: string
+        enabledAfterRestart:
+          type: boolean
+        provides:
+          type: object
+          additionalProperties: true
+    UiPluginManifest:
+      type: object
+      description: 'A UI plugin: its entry module, styles and shell contributions.'
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        name:
+          type: string
+        vendor:
+          type: string
+        entry:
+          type: string
+        styles:
+          type: array
+          items:
+            type: string
+        contributes:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        requires:
+          type: object
+          additionalProperties: true
+      required:
+      - id
+      - version
+      - entry
+    OpsValue:
+      type: object
+      description: ValueRequest.
+      properties:
+        value: {}
+        reason:
+          type: string
+    OpsSecret:
+      type: object
+      description: SecretRequest; write-only.
+      properties:
+        value:
+          type: string
+    OpsAdvance:
+      type: object
+      description: AdvanceRequest; forward only.
+      properties:
+        series:
+          type: string
+        period:
+          type: string
+        value:
+          type: integer
+          format: int64
+        reason:
+          type: string
+    OpsReason:
+      type: object
+      description: ReasonRequest.
+      properties:
+        reason:
+          type: string
+    OpsJob:
+      type: object
+      description: Job.
+      properties:
+        generation:
+          type: integer
+          format: int64
+        state:
+          type: string
+        indexed:
+          type: integer
+          format: int64
+        expected:
+          type: integer
+          format: int64
+        message:
+          type: string
+        reason:
+          type: string
+    OpsPurge:
+      type: object
+      description: PurgeResult.
+      properties:
+        purged:
+          type: integer
+          format: int32
     PgPublished:
       type: object
       description: Published (Java IndicatorRegistry.Published).

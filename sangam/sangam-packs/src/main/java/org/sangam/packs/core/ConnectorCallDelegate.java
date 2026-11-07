@@ -55,7 +55,7 @@ public class ConnectorCallDelegate implements JavaDelegate {
                 attempt++;
             }
             ex.setVariable(prefix + "Attempt", attempt);
-            String id = Vars.operationId(bk, s, attempt);
+            String id = Vars.operationId(Vars.tenant(ex), bk, s, attempt);
             ex.setVariable(prefix + "OperationId", id);
             r = PackRuntime.gateway().submit(new ConnectorRequest(Vars.tenant(ex), c, opName, id, bk,
                     ex.getProcessInstanceId(), Vars.withDirective(ex, c, payload), Vars.hash(payload)));

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_dsr_objection" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.2.0">
+  <process id="sangam-dsr-objection" name="Objection to processing" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Objection right (EU-GDPR Art. 21): stop unless compelling legitimate grounds are recorded; consent purposes are withdrawn.</documentation>
+    <startEvent id="start" name="Objection received"/>
+    <serviceTask id="s_start" name="Mark in progress" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.start</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u_decide" name="Assess objection" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/objection-decide"></userTask>
+    <boundaryEvent id="t_due" name="Due date" attachedToRef="u_decide" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <serviceTask id="s_apply" name="Apply objection" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.applyObjection</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end" name="Decided"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="s_start"/>
+    <sequenceFlow id="f2" sourceRef="s_start" targetRef="u_decide"/>
+    <sequenceFlow id="f3" sourceRef="u_decide" targetRef="s_apply"/>
+    <sequenceFlow id="f4" sourceRef="s_apply" targetRef="end"/>
+    <serviceTask id="esc" name="Escalate overdue request" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.escalate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end_esc" name="Escalated"/>
+    <sequenceFlow id="f_esc1" sourceRef="t_due" targetRef="esc"/>
+    <sequenceFlow id="f_esc2" sourceRef="esc" targetRef="end_esc"/>
+  </process>
+</definitions>

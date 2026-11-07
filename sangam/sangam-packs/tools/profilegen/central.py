@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # Shared (reference, regime, jurisdiction, presets) profile data for India public finance.
+class FlowList(list):
+    """A list written inline in the YAML ([a, b]); main.py registers its representer."""
+
+
 U = '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live'
 
 LAYERS = {
@@ -53,11 +57,9 @@ IN = {
     'profile': {'id': 'IN', 'layer': 'jurisdiction', 'version': '2026.11.0', 'effectiveFrom': '2017-04-01',
                 'extends': ['REGIME-WESTMINSTER-SUPPLY'],
                 'name': {'en': 'India: national public-finance reference', 'hi': 'भारत: राष्ट्रीय लोक वित्त संदर्भ'},
-                'source': 'Art. 150; GAR 1990; LMMH (CGA, slips to CS 1132 of 16-10-2026); GFR 2017; DFPR 2024; '
+                'source': 'Art. 150; GAR 1990; LMMH (CGA; seeded from slips to CS 1127 of 09-10-2026); GFR 2017; DFPR 2024; '
                           'RPR 2022; SNA-SPARSH (DoE 13-07-2023, CGA OM 53 of 26-06-2025); IFMS-CENTRAL / IFMS-STATES'},
     'placeholders': [
-        {'path': 'classification.seedStatus', 'reason': 'major heads seeded (verified sample + [U] rows per LMMH pattern); '
-                                                       'major-specific minor heads not seeded: load the official CGA LMMH file'},
         {'path': 'snaSparsh.allCssFrom', 'reason': 'DoE OM 10-06-2025 date taken from research table (V)'},
     ],
     'locked': ['classification.schemes.HOA.segments', 'snaSparsh.motherSanction', 'snaSparsh.cutoff'],
@@ -71,13 +73,16 @@ IN = {
             'government': {'weekend': ['SATURDAY', 'SUNDAY']}},
     },
     'classification': {
-        'seedStatus': 'PARTIAL',
+        'seedStatus': 'OFFICIAL_LMMH_CS1127',
         'schemes': [
             {'id': 'HOA', 'separator': '-',
              'segments': [
                  {'id': 'major', 'width': 4, 'master': True, 'owner': 'jurisdiction'},
-                 {'id': 'subMajor', 'width': 2, 'master': True, 'owner': 'jurisdiction', 'parent': 'major'},
-                 {'id': 'minor', 'width': 3, 'master': True, 'owner': 'jurisdiction', 'parent': 'subMajor'},
+                 {'id': 'subMajor', 'width': 2, 'master': True, 'owner': 'jurisdiction', 'parent': 'major',
+                  'hierarchy': {'path': FlowList(['major']), 'noneCode': '00', 'templateWildcard': '*', 'templateChild': 'minor'}},
+                 {'id': 'minor', 'width': 3, 'master': True, 'owner': 'jurisdiction', 'parent': 'subMajor',
+                  'hierarchy': {'path': FlowList(['major', 'subMajor']), 'anyParentFlag': 'standard', 'openRuleFlag': 'minorRule',
+                                'templateWildcard': '*'}},
                  {'id': 'subHead', 'width': 2},
                  {'id': 'detailed', 'width': 2},
                  {'id': 'object', 'width': 2, 'scheme': 'OBJECT'}],
@@ -108,6 +113,8 @@ IN = {
                  {'id': 'PLAN_LEGACY', 'values': ['PLAN', 'NON_PLAN'], 'note': 'history only (merged by DoE OM 05-08-2016)'}],
     },
     'seeds': [{'scheme': 'HOA', 'file': 'in/seeds/hoa-major-heads.csv'},
+              {'scheme': 'HOA', 'file': 'in/seeds/hoa-sub-major-heads.csv'},
+              {'scheme': 'HOA', 'file': 'in/seeds/hoa-minor-heads.csv'},
               {'scheme': 'HOA', 'file': 'in/seeds/hoa-standard-minor-heads.csv'},
               {'scheme': 'OBJECT', 'file': 'in/seeds/object-heads.csv'}],
     'crosswalks': [{'id': 'HOA_TO_COFOG', 'from': 'HOA', 'to': 'COFOG', 'rows': [

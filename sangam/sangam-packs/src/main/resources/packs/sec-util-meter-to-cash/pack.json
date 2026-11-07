@@ -42,7 +42,7 @@
       "id": "mdm.consumersDue",
       "capabilityClass": "a",
       "govTag": "",
-      "purpose": "Consumers in the cycle"
+      "purpose": "Consumers in the cycle: items with key and, for a new connection, connectionCaseKey"
     },
     {
       "id": "mdm.read",

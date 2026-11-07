@@ -143,8 +143,16 @@ public class OperatonTaskAdapter implements TaskPort {
         return raw.map(t -> map(t, businessKeys.get(t.getProcessInstanceId()), null));
     }
 
+    /** sortBy and sortOrder may each be a comma-separated list, applied in order; a missing order means desc. */
     private static void sort(TaskQuery q, String by, String order) {
-        String b = by == null ? "created" : by;
+        String[] keys = (by == null ? "created" : by).split(",");
+        String[] orders = (order == null ? "" : order).split(",");
+        for (int i = 0; i < keys.length; i++) {
+            sortOne(q, keys[i].trim(), i < orders.length ? orders[i].trim() : "");
+        }
+    }
+
+    private static void sortOne(TaskQuery q, String b, String order) {
         switch (b) {
             case "due" -> q.orderByDueDate();
             case "priority" -> q.orderByTaskPriority();

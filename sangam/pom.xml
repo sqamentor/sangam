@@ -50,6 +50,13 @@
     <module>sangam-control-plane</module>
     <module>sangam-gateway</module>
     <module>sangam-rollup</module>
+    <!-- PREMIUM-GAP workstream: spike/results/PREMIUM-GAP-RECHECK.md NG-01..41 -->
+    <module>sangam-ai</module>
+    <module>sangam-channels</module>
+    <module>sangam-ops</module>
+    <module>sangam-modeller</module>
+    <module>tools/sangam-cli</module>
+    <module>sangam-onboarding</module>
   </modules>
 
   <properties>
@@ -71,6 +78,9 @@
     <!-- The one Spring line for every module: the Boot version operaton-bpm-spring-boot-starter 2.2.0 is built
          against (operaton-root 2.2.0: Spring Boot 4.1.2, Spring Framework 7.0.10, Spring Security 7.1.2). -->
     <version.spring-boot>4.1.2</version.spring-boot>
+    <!-- Build output folder per module. Concurrent builds of one checkout must each pass their own -Dsangam.target=...:
+         a shared target/ is rewritten under a running javac ("package does not exist"). -->
+    <sangam.target>target</sangam.target>
   </properties>
 
   <dependencyManagement>
@@ -239,6 +249,7 @@
   </dependencyManagement>
 
   <build>
+    <directory>${project.basedir}/${sangam.target}</directory>
     <pluginManagement>
       <plugins>
         <plugin>

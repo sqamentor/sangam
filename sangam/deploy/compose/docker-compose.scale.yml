@@ -1,0 +1,108 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# SCALE add-on (sangam-cell / sangam-control-plane / sangam-gateway / sangam-rollup, SCALE-ARCHITECTURE.md):
+# the server becomes cell "cell-dev-1", registers with the control plane, publishes roll-up events, and the gateway
+# routes tenants to it. Used as an override file because SANGAM_CELL_ID switches the cell on when it is SET (even
+# empty), so it cannot live in the base file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.scale.yml --profile postgres up -d --build
+#
+# Control-plane and roll-up use their own H2 file databases here (development). Production: their own PostgreSQL /
+# Oracle / SQL Server / MySQL database each (never a cell database), see deploy/helm/sangam values `scale.*`.
+# All tokens below are DEVELOPMENT-ONLY values.
+
+x-cell-env: &cell-env
+  SANGAM_CELL_ID: ${SANGAM_CELL_ID:-cell-dev-1}
+  SANGAM_CELL_REGION: ${SANGAM_CELL_REGION:-in-dev}
+  SANGAM_CELL_JURISDICTION: IN
+  SANGAM_CELL_PUBLIC_URL: http://sangam-server:8080
+  SANGAM_CELL_ADMIN_URL: http://sangam-server:8080
+  SANGAM_CONTROL_PLANE_URL: http://control-plane:8090
+  SANGAM_CONTROL_PLANE_TOKEN: ${SANGAM_CP_CELL_TOKEN:-dev-cell-token}
+  SANGAM_ROLLUP_INGEST_URL: http://rollup:8095/api/v1/ingest
+  SANGAM_ROLLUP_TOKEN: ${SANGAM_RU_CELL_TOKEN:-dev-rollup-cell-token}
+  SANGAM_GATEWAY_URL: http://gateway:8000
+  SANGAM_SERVICE_TOKEN: ${SANGAM_SERVICE_TOKEN:-dev-xcell-service-token}
+  SANGAM_OUTBOX_DESTINATIONS: rollup:national
+
+x-scale-app: &scale-app
+  restart: unless-stopped
+  networks: [sangam]
+  environment: &scale-app-env
+    TZ: UTC
+
+services:
+  server-postgres:
+    environment: *cell-env
+  server-oracle:
+    environment: *cell-env
+  server-sqlserver:
+    environment: *cell-env
+  server-mysql:
+    environment: *cell-env
+
+  control-plane:
+    <<: *scale-app
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-control-plane:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/server.Dockerfile
+      args:
+        APP_MODULE: sangam-control-plane
+    environment:
+      <<: *scale-app-env
+      SANGAM_CP_DB_URL: jdbc:h2:file:/var/lib/sangam/control-plane/cp;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE
+      SANGAM_CP_DB_USER: sa
+      SANGAM_CP_DB_PASSWORD: ""
+      # comma-separated <token>:<ROLE> entries (a list bound from one string: one role per entry); ADMIN, CELL, GATEWAY, ROLLUP
+      SANGAM_CP_TOKENS: "${SANGAM_CP_ADMIN_TOKEN:-dev-cp-admin-token}:ADMIN,${SANGAM_CP_CELL_TOKEN:-dev-cell-token}:CELL,${SANGAM_CP_GATEWAY_TOKEN:-dev-gateway-token}:GATEWAY,${SANGAM_CP_ROLLUP_TOKEN:-dev-rollup-token}:ROLLUP"
+      SANGAM_CP_CELL_ADMIN_TOKEN: ${SANGAM_CP_CELL_ADMIN_TOKEN:-dev-cell-admin-token}
+    volumes:
+      - control-plane-data:/var/lib/sangam
+    ports:
+      - "127.0.0.1:8090:8090"
+      - "127.0.0.1:8091:8091"
+
+  gateway:
+    <<: *scale-app
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-gateway:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/server.Dockerfile
+      args:
+        APP_MODULE: sangam-gateway
+    depends_on:
+      control-plane:
+        condition: service_started
+    environment:
+      <<: *scale-app-env
+      SANGAM_GW_CONTROL_PLANE_URL: http://control-plane:8090
+      SANGAM_GW_CONTROL_PLANE_TOKEN: ${SANGAM_CP_GATEWAY_TOKEN:-dev-gateway-token}
+      SANGAM_GW_TENANT_CLAIM: tenant
+    ports:
+      - "${SANGAM_GW_PORT:-8000}:8000"
+      - "127.0.0.1:8001:8001"
+
+  rollup:
+    <<: *scale-app
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-rollup:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/server.Dockerfile
+      args:
+        APP_MODULE: sangam-rollup
+    environment:
+      <<: *scale-app-env
+      SANGAM_RU_DB_URL: jdbc:h2:file:/var/lib/sangam/rollup/rollup;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE
+      SANGAM_RU_DB_USER: sa
+      SANGAM_RU_DB_PASSWORD: ""
+      SANGAM_RU_TOKENS: "${SANGAM_RU_CELL_TOKEN:-dev-rollup-cell-token}:CELL,${SANGAM_RU_DASHBOARD_TOKEN:-dev-rollup-dashboard-token}:DASHBOARD"
+    volumes:
+      - rollup-data:/var/lib/sangam
+    ports:
+      - "127.0.0.1:8095:8095"
+      - "127.0.0.1:8096:8096"
+
+volumes:
+  control-plane-data:
+  rollup-data:

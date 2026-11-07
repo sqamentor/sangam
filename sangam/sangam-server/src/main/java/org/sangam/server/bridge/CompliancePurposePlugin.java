@@ -85,7 +85,14 @@ public final class CompliancePurposePlugin extends AbstractProcessEnginePlugin {
         String tenant = e.getTenantId();
         Map<String, Object> variables = e.getVariables();
         try {
-            c.nationalIds.requireNoRawIdentifiers(tenant, variables);
+            try {
+                c.nationalIds.requireNoRawIdentifiers(tenant, variables);
+            } catch (ComplianceException ex) {
+                // no jurisdiction means no identifier rule to apply; a declared purpose below still refuses
+                if (ex.code() != ComplianceException.Code.JURISDICTION_NOT_SET) {
+                    throw ex;
+                }
+            }
             String purpose = declaredPurpose != null ? declaredPurpose : str(variables.get(PURPOSE_VARIABLE));
             if (purpose == null) {
                 return;

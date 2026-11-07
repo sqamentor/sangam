@@ -26,6 +26,17 @@ Requirements covered:
 | Upgrades | R32 (N/N-1 rolling upgrade) |
 | Hosting | R51 (log retention), R56 (no outbound calls by default) |
 
+Also: `SUPPORT-MATRIX.md` (R5, R7: JDK, framework, driver and deployment matrix, native-light APIs) and `evidence/` (R52: audit evidence pack).
+
+**Runtime since this update:**
+
+- JDK 25 is the default image runtime.
+- Spring Boot is 4.1.2.
+- Environment names follow `sangam-server/src/main/resources/application*.yaml` (`SANGAM_DB_URL`, `SANGAM_OIDC_ISSUER`, `SANGAM_OTLP_ENABLED`, ...).
+- `server.Dockerfile` also builds the SCALE apps through `--build-arg APP_MODULE=`.
+- Writable state is `/var/lib/sangam`. It holds the compliance log archive, so back it up and keep it at least 180 days (R51). Helm: `server.state`, ReadWriteMany.
+- SCALE on compose: `docker compose -f docker-compose.yml -f docker-compose.scale.yml --profile postgres up -d`. On Helm: `scale.*` (`examples/values-scale.yaml`).
+
 ---
 
 ## 0. Layout
@@ -556,7 +567,7 @@ The workflows are at the repository root, in `.github/workflows/`. GitHub ignore
 | `sdks.yml` | `sdks/**`, API spec | Java (JDK 21 + 25), .NET 8, Python 3.10/3.13, TypeScript, PHP 8.3; each skipped with a notice until its SDK exists |
 | `licence-check.yml` | pom/package changes, weekly | Aggregate CycloneDX SBOM + npm SBOM → `check_licences.py` (forbidden licences, components, versions, fat-jar contents); runtime dependency-tree grep |
 | `security.yml` | push/PR, weekly | CodeQL (Java, JS/TS; security-extended); OWASP Dependency-Check, which fails on CVSS ≥ 7 and uploads SARIF (`NVD_API_KEY` secret recommended) |
-| `release.yml` | tag `vX.Y.Z` | full Tier-1 matrix + security as gates → versioned build → strict licence gate → multi-arch images on GHCR with provenance + SBOM attestations → syft CycloneDX image SBOMs → Helm package → air-gapped bundle (split in < 2 GiB parts) → `SHA256SUMS` → GitHub release |
+| `release.yml` | tag `vX.Y.Z` | also builds the R52 evidence pack (`evidence/`: SBOMs, licence, dependency-check, CodeQL summary, test reports, compliance report, config manifest, cosign-signed checksums; a missing mandatory area fails the release); full Tier-1 matrix + security as gates → versioned build → strict licence gate → multi-arch images on GHCR with provenance + SBOM attestations → syft CycloneDX image SBOMs → Helm package → air-gapped bundle (split in < 2 GiB parts) → `SHA256SUMS` → GitHub release |
 
 Third-party actions are pinned to major versions. Pin them to commit SHAs (Dependabot `github-actions`) before the first public release.
 
@@ -568,7 +579,7 @@ WS-DEPLOY cannot edit these modules. The deployment artefacts assume the followi
 
 **WS-REST (sangam-server):**
 
-- Packaging: a Spring Boot 3.x fat jar `sangam-server-<v>.jar`.
+- Packaging: a Spring Boot 4.1.2 fat jar `sangam-server-<v>.jar`.
 - **MariaDB Connector/J must not be packaged inside it** (scope `provided` or excluded from repackage, LIC-5). The image adds it via `loader.path`.
 - The PropertiesLauncher entry point must work.
 - Ports: 8080 for the app, 8081 for management (`management.server.port`).
@@ -636,3 +647,7 @@ WS-DEPLOY cannot edit these modules. The deployment artefacts assume the followi
 | syft | Apache-2.0 | image SBOM |
 | OWASP Dependency-Check | Apache-2.0 | CVE scan |
 | CodeQL | GitHub terms (free for public repos) | SAST in CI only |
+
+## First administrator (install runbook note)
+
+Set `SANGAM_SECURITY_FIRST_ADMINS_TENANT` and `SANGAM_SECURITY_FIRST_ADMINS_SUBJECTS` (two different `person:subject:Display name` entries, comma-separated, with subjects from your identity provider) for the first start, then remove them. They take effect only while the tenant has no administrator role. No unauthenticated path creates users.

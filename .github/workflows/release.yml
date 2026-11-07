@@ -68,17 +68,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: "21", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+        with: { distribution: temurin, java-version: "25", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
       - name: Set version
         run: mvn $MAVEN_ARGS -q versions:set -DnewVersion=${{ needs.meta.outputs.version }} -DprocessAllModules=true -DgenerateBackupPoms=false
       - name: Build + unit tests
         run: mvn $MAVEN_ARGS -Dsangam.db=h2 -DskipITs verify
+      - name: Unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-unit-test-reports
+          path: sangam/**/target/surefire-reports/
+          if-no-files-found: ignore
       - name: Stage artefacts
         run: |
           set -euo pipefail
           V=${{ needs.meta.outputs.version }}
           mkdir -p ../dist/lib-ext ../dist/sbom
           cp sangam-server/target/sangam-server-$V.jar ../dist/sangam-server-$V.jar
+          for app in sangam-control-plane sangam-gateway sangam-rollup; do
+            cp $app/target/$app-$V.jar ../dist/$app-$V.jar
+          done
           mariadb=$(mvn -q -DforceStdout help:evaluate -Dexpression=version.mariadb -N)
           mvn $MAVEN_ARGS -q dependency:copy -Dartifact=org.mariadb.jdbc:mariadb-java-client:$mariadb -DoutputDirectory=../dist/lib-ext
           mvn $MAVEN_ARGS -q dependency:copy -Dartifact=org.mariadb.jdbc:mariadb-java-client:$mariadb:jar:sources -DoutputDirectory=../dist/lib-ext
@@ -188,6 +198,25 @@ jobs:
           provenance: mode=max
           sbom: true
           tags: ${{ env.REGISTRY }}/sangam-server:${{ needs.meta.outputs.version }}-distroless
+      - name: SCALE images (control plane, gateway, roll-up)
+        if: needs.meta.outputs.push == 'true'
+        run: |
+          V=${{ needs.meta.outputs.version }}
+          for app in sangam-control-plane sangam-gateway sangam-rollup; do
+            mkdir -p $app/target && cp ../dist/$app-$V.jar $app/target/$app.jar
+            docker buildx build -f deploy/docker/server.Dockerfile --target runtime \
+              --build-arg APP_MODULE=$app --build-arg JAR_SOURCE=prebuilt --build-arg PREBUILT_JAR=$app/target/$app.jar \
+              --platform linux/amd64,linux/arm64 --provenance=mode=max --sbom=true --push \
+              -t "$REGISTRY/$app:$V" .
+          done
+      - name: Native-light worker image (R7)
+        uses: docker/build-push-action@v6
+        with:
+          context: sangam
+          file: sangam/deploy/docker/sdk-worker-native.Dockerfile
+          platforms: linux/amd64
+          push: ${{ needs.meta.outputs.push == 'true' }}
+          tags: ${{ env.REGISTRY }}/sangam-sdk-worker:${{ needs.meta.outputs.version }}
       - name: sangam-ui
         if: steps.stage.outputs.ui == 'true'
         uses: docker/build-push-action@v6
@@ -216,7 +245,7 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/v1.29.0/install.sh | sh -s -- -b /usr/local/bin v1.29.0
           mkdir -p ../image-sbom
           V=${{ needs.meta.outputs.version }}
-          for img in sangam-server:$V sangam-server:$V-distroless $( [ "${{ steps.stage.outputs.ui }}" = true ] && echo sangam-ui:$V ); do
+          for img in sangam-server:$V sangam-server:$V-distroless sangam-control-plane:$V sangam-gateway:$V sangam-rollup:$V sangam-sdk-worker:$V $( [ "${{ steps.stage.outputs.ui }}" = true ] && echo sangam-ui:$V ); do
             syft "registry:${REGISTRY}/$img" -o cyclonedx-json="../image-sbom/$(echo "$img" | tr ':' '_').cdx.json"
           done
       - uses: actions/attest-build-provenance@v2
@@ -229,8 +258,76 @@ jobs:
         if: needs.meta.outputs.push == 'true'
         with: { name: image-sbom, path: image-sbom/ }
 
+  evidence:
+    # R52: audit evidence pack for a CERT-In-empanelled audit (GOV-3). A missing mandatory area fails the release.
+    name: Audit evidence pack
+    needs: [meta, build, db-matrix, security, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      security-events: read
+      id-token: write   # keyless signature of SHA256SUMS
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "25" }
+      - uses: actions/download-artifact@v4
+        with: { name: release-dist, path: . }
+      - uses: actions/download-artifact@v4
+        if: needs.meta.outputs.push == 'true'
+        with: { name: image-sbom, path: dist/sbom }
+      - name: Collect pipeline reports
+        uses: actions/download-artifact@v4
+        with:
+          path: pipeline
+          pattern: "{db-*-reports,release-unit-test-reports,dependency-check-report}"
+      - name: sangam-compliance evidence report
+        run: bash sangam/deploy/evidence/generate_compliance_report.sh "dist/sangam-server-${{ needs.meta.outputs.version }}.jar" evidence-input/compliance
+      - name: CodeQL summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence-input/codeql
+          gh api --paginate "repos/$GITHUB_REPOSITORY/code-scanning/alerts?ref=$GITHUB_REF&state=open&per_page=100" \
+            > evidence-input/codeql/open-alerts.json
+          python3 -I -c "import json,collections as c;a=json.load(open('evidence-input/codeql/open-alerts.json'));json.dump({'ref':'$GITHUB_REF','openAlerts':len(a),'bySeverity':c.Counter((x.get('rule') or {}).get('security_severity_level') or (x.get('rule') or {}).get('severity') or 'unknown' for x in a)},open('evidence-input/codeql/summary.json','w'),indent=2)"
+      - name: Configuration and version manifest
+        run: |
+          mkdir -p evidence-input/config
+          cp sangam/deploy/helm/sangam/values.yaml sangam/deploy/helm/sangam/Chart.yaml sangam/deploy/SUPPORT-MATRIX.md \
+             sangam/deploy/airgap/images.txt sangam/pom.xml evidence-input/config/
+          cp sangam/sangam-compliance/src/main/resources/compliance/jurisdictions/IN/obligations.tsv evidence-input/compliance/
+      - name: Assemble pack
+        run: |
+          mkdir -p evidence-input/tests
+          cp -r pipeline/db-*-reports pipeline/release-unit-test-reports evidence-input/tests/
+          args=(--version "${{ needs.meta.outputs.version }}" --commit "$GITHUB_SHA" --out evidence --pom sangam/pom.xml
+                --area sbom=dist/sbom --area licence=dist/sbom/licence-report.md
+                --area dependency-check=pipeline/dependency-check-report --area codeql=evidence-input/codeql
+                --area tests=evidence-input/tests --area compliance=evidence-input/compliance
+                --area config=evidence-input/config
+                --image "sangam-server@${{ needs.images.outputs.server-digest }}")
+          [ "${{ needs.meta.outputs.push }}" = true ] || args+=(--allow-missing)
+          python3 -I sangam/deploy/evidence/build_evidence_pack.py "${args[@]}"
+      - uses: sigstore/cosign-installer@v3
+        if: needs.meta.outputs.push == 'true'
+      - name: Sign checksums (keyless)
+        if: needs.meta.outputs.push == 'true'
+        run: |
+          V=${{ needs.meta.outputs.version }}
+          cd evidence/sangam-evidence-$V
+          cosign sign-blob --yes --bundle SHA256SUMS.sigstore.json SHA256SUMS
+          cd .. && rm -f sangam-evidence-$V.tar.gz && tar -czf sangam-evidence-$V.tar.gz sangam-evidence-$V
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evidence-pack
+          path: evidence/*.tar.gz
+          retention-days: 90
+
   publish:
-    needs: [meta, build, images]
+    needs: [meta, build, images, evidence]
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     permissions:
@@ -243,6 +340,8 @@ jobs:
       - uses: actions/download-artifact@v4
         if: needs.meta.outputs.push == 'true'
         with: { name: image-sbom, path: dist/sbom }
+      - uses: actions/download-artifact@v4
+        with: { name: evidence-pack, path: dist }
       - uses: azure/setup-helm@v4
         with: { version: v3.18.4 }
       - name: Helm chart
@@ -279,6 +378,7 @@ jobs:
             Server image digest: `${{ needs.images.outputs.server-digest }}`.
             Verified on the full Tier-1 matrix (PostgreSQL, Oracle, SQL Server, MySQL 8.4).
             Air-gapped bundle: concatenate the `.tar.part-*` files (`cat sangam-airgap-*.tar.part-* > sangam-airgap.tar`), then `sha256sum -c`.
+            Audit evidence pack (R52): `sangam-evidence-*.tar.gz`, start at `INDEX.md`; `SHA256SUMS` is signed with cosign (keyless).
             SBOMs (CycloneDX 1.6) and the licence report are in `sbom/`; the MariaDB Connector/J source offer is in `lib-ext/SOURCE-OFFER.txt`.
           files: |
             dist/*.jar
@@ -287,3 +387,4 @@ jobs:
             dist/sbom/*
             dist/sangam-airgap-*
             dist/SHA256SUMS
+            dist/sangam-evidence-*.tar.gz

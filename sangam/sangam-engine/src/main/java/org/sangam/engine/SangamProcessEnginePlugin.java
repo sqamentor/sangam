@@ -21,7 +21,13 @@ import org.operaton.bpm.engine.impl.jobexecutor.DefaultJobExecutor;
 import org.operaton.bpm.engine.impl.jobexecutor.JobHandler;
 import org.operaton.bpm.engine.impl.persistence.StrongUuidGenerator;
 import org.operaton.bpm.engine.impl.variable.serializer.TypedValueSerializer;
+import org.operaton.bpm.dmn.engine.DmnEngineConfiguration;
+import org.operaton.bpm.dmn.engine.delegate.DmnDecisionEvaluationListener;
+import org.operaton.bpm.dmn.engine.impl.DefaultDmnEngineConfiguration;
 import org.sangam.engine.deploy.SangamBpmnParseListener;
+import org.sangam.engine.feel.FeelBindingDeployer;
+import org.sangam.engine.feel.FeelBindingStore;
+import org.sangam.engine.feel.FeelPinningListener;
 import org.sangam.engine.deploy.SangamCmmnTransformListener;
 import org.sangam.engine.history.OutboxOnlyDbHistoryEventHandler;
 import org.sangam.engine.history.PerDefinitionHistoryLevel;
@@ -147,6 +153,20 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         calendars.addBusinessCalendar(DstSafeCycleBusinessCalendar.NAME, new DstSafeCycleBusinessCalendar(
                 components.clock(), components.timerGuard(), components.timerPolicies()));
         cfg.setBusinessCalendarManager(calendars);
+
+        // R10: FEEL engine pinned per model version (deploy-time binding, run-time refusal of a mismatch)
+        FeelBindingStore feel = new FeelBindingStore(components.dialect());
+        List<org.operaton.bpm.engine.impl.persistence.deploy.Deployer> postDeployers =
+                cfg.getCustomPostDeployers() == null ? new ArrayList<>() : new ArrayList<>(cfg.getCustomPostDeployers());
+        postDeployers.add(new FeelBindingDeployer(feel, components.clock()));
+        cfg.setCustomPostDeployers(postDeployers);
+        DefaultDmnEngineConfiguration dmn = cfg.getDmnEngineConfiguration() != null ? cfg.getDmnEngineConfiguration()
+                : (DefaultDmnEngineConfiguration) DmnEngineConfiguration.createDefaultDmnEngineConfiguration();
+        List<DmnDecisionEvaluationListener> dmnListeners = dmn.getCustomPreDecisionEvaluationListeners() == null
+                ? new ArrayList<>() : new ArrayList<>(dmn.getCustomPreDecisionEvaluationListeners());
+        dmnListeners.add(new FeelPinningListener(feel, components.clock()));
+        dmn.setCustomPreDecisionEvaluationListeners(dmnListeners);
+        cfg.setDmnEngineConfiguration(dmn);
 
         // deploy-time validation
         List<BpmnParseListener> bpmn = cfg.getCustomPostBPMNParseListeners() == null ? new ArrayList<>()

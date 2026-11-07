@@ -14,6 +14,9 @@ import type { ActivityInstance, ConsequencePreview, HistoryLogKind, Modification
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
+import { http } from '../../api/client';
+import { useAuth } from '../../auth/AuthProvider';
+import { PluginSlot, usePlugins } from '../../plugins/host';
 import {
   Badge,
   Checkbox,
@@ -47,7 +50,11 @@ export function InstanceDetail() {
   const stats = useAsync(() => api.processes.instanceStatistics(id), [id]);
   const tree = useAsync(() => api.processes.activityTree(id), [id]);
   const links = useAsync(() => api.processes.links(id), [id]);
+  const { hasRole } = useAuth();
+  const called = useAsync(() => http.get<{ activityId: string; calledProcessInstanceId?: string }[]>('/engine-rest/history/activity-instance', { processInstanceId: id, activityType: 'callActivity' }), [id], hasRole('PLATFORM_OPERATOR'));
+  const piActions = usePlugins('process-instance.action');
   const [tab, setTab] = useState('tree');
+  const [treeQ, setTreeQ] = useState('');
   const [dlg, setDlg] = useState<Dlg>(null);
   const [picked, setPicked] = useState<string[]>([]);
   const reloadAll = () => {
@@ -95,6 +102,12 @@ export function InstanceDetail() {
                 {t('ops.restart')}
               </button>
             )}
+            <Link to={`/ops/incidents?processInstanceId=${encodeURIComponent(id)}`}>{t('nav.incidents')}</Link>
+            {piActions.map((p) => (
+              <button key={p.pluginId + p.contribution.id} type="button" onClick={() => void p.contribution.run?.({ language: '', api: http, processInstanceId: id })}>
+                {p.contribution.label.en}
+              </button>
+            ))}
             {i.businessKey && <Link to={`/audit/timeline/${encodeURIComponent(i.businessKey)}`}>{t('task.viewTimeline')}</Link>}
           </>
         }
@@ -115,6 +128,7 @@ export function InstanceDetail() {
           xml={xml.data.bpmn20Xml}
           stats={stats.data?.activities}
           mode="tokens"
+          badges={(called.data ?? []).filter((x) => x.calledProcessInstanceId).map((x) => ({ activityId: x.activityId, text: '→', href: `/ops/instances/${encodeURIComponent(x.calledProcessInstanceId!)}` }))}
           selected={picked}
           onSelect={(a) => setPicked((p) => (p.includes(a) ? p.filter((x) => x !== a) : [...p, a]))}
         />
@@ -140,7 +154,8 @@ export function InstanceDetail() {
       />
       <TabPanel id="tree" active={tab}>
         <ProblemAlert error={tree.error} />
-        {tree.data && <ActivityTree node={tree.data} />}
+        <TextField label={t('common.search')} value={treeQ} onChange={setTreeQ} />
+        {tree.data && <ActivityTree node={tree.data} q={treeQ} />}
       </TabPanel>
       <TabPanel id="vars" active={tab}>
         <Variables instanceId={id} editable={running} />
@@ -169,6 +184,7 @@ export function InstanceDetail() {
         </ul>
       </TabPanel>
 
+      <PluginSlot point="process-instance.tab" ctx={{ processInstanceId: id }} />
       {dlg === 'cancel' && <CancelDialog instanceId={id} onClose={() => setDlg(null)} onDone={reloadAll} />}
       {dlg === 'suspend' && <SuspendDialog instanceId={id} suspended={i.state === 'SUSPENDED'} onClose={() => setDlg(null)} onDone={reloadAll} />}
       {dlg === 'modify' && <ModifyDialog instanceId={id} tree={tree.data} picked={picked} onClose={() => setDlg(null)} onDone={reloadAll} />}
@@ -181,15 +197,17 @@ export function InstanceDetail() {
   );
 }
 
-function ActivityTree({ node }: { node: ActivityInstance }) {
+function ActivityTree({ node, q = '' }: { node: ActivityInstance; q?: string }) {
   const { t } = useTranslation();
+  const hit = (n: ActivityInstance): boolean => `${n.activityName ?? ''} ${n.activityId}`.toLowerCase().includes(q.toLowerCase()) || (n.children ?? []).some(hit);
+  if (q && !hit(node)) return null;
   return (
     <ul className="plan-tree" role="tree">
       <li role="treeitem" aria-expanded={node.children?.length ? true : undefined}>
         <strong>{node.activityName ?? node.activityId}</strong> <span className="muted small">{node.activityType}</span>{' '}
         <code className="small">{node.id}</code> {node.incidentIds?.length ? <Badge value={t('ops.incidentN', { n: node.incidentIds.length })} tone="bad" /> : null}
         {node.startTime && <span className="small muted"> · {fmtDate(node.startTime)}</span>}
-        {node.children && node.children.length > 0 && node.children.map((c) => <ActivityTree key={c.id} node={c} />)}
+        {node.children && node.children.length > 0 && node.children.map((c) => <ActivityTree key={c.id} node={c} q={q} />)}
       </li>
     </ul>
   );
@@ -323,6 +341,9 @@ function HistoryLog({ instanceId, kind }: { instanceId: string; kind: HistoryLog
 function CancelDialog({ instanceId, onClose, onDone }: { instanceId: string; onClose: () => void; onDone: () => void }) {
   const { t } = useTranslation();
   const [mode, setMode] = useState<'BUSINESS' | 'TECHNICAL'>('BUSINESS');
+  const { hasRole } = useAuth();
+  const [skipL, setSkipL] = useState(false);
+  const [skipIo, setSkipIo] = useState(false);
   const preview = useAsync(() => api.processes.cancelPreview(instanceId, mode), [instanceId, mode]);
   const act = useAction();
   return (
@@ -335,7 +356,7 @@ function CancelDialog({ instanceId, onClose, onDone }: { instanceId: string; onC
       error={act.error ?? preview.error}
       onClose={onClose}
       onConfirm={(reason) =>
-        void act.run((k) => api.processes.cancel(instanceId, mode, reason, k).then(() => true)).then((ok) => {
+        void act.run((k) => (mode === 'TECHNICAL' && (skipL || skipIo) ? http.del(`/engine-rest/process-instance/${encodeURIComponent(instanceId)}`, { skipCustomListeners: skipL, skipIoMappings: skipIo, deleteReason: reason }, k) : api.processes.cancel(instanceId, mode, reason, k)).then(() => true)).then((ok) => {
           if (ok) {
             announce(t('ops.cancelled'));
             onClose();
@@ -352,6 +373,12 @@ function CancelDialog({ instanceId, onClose, onDone }: { instanceId: string; onC
           </label>
         ))}
       </fieldset>
+      {mode === 'TECHNICAL' && hasRole('PLATFORM_OPERATOR') && (
+        <>
+          <Checkbox label={t('fld.skipCustomListeners')} checked={skipL} onChange={setSkipL} />
+          <Checkbox label={t('fld.skipIoMappings')} checked={skipIo} onChange={setSkipIo} />
+        </>
+      )}
     </ReasonDialog>
   );
 }

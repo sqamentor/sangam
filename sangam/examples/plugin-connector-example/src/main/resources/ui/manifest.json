@@ -1,0 +1,8 @@
+{
+  "id": "example.echo-ledger",
+  "version": "1.0.0",
+  "name": "Example echo ledger panel",
+  "entry": "index.js",
+  "contributes": [{"slot": "admin.panel", "title": "Echo ledger"}],
+  "requires": {"sangam": ">=0.1.0-0"}
+}

@@ -24,11 +24,12 @@ export function TaskInbox() {
   const [q, setQ] = useState('');
   const [sla, setSla] = useState('');
   const [sort, setSort] = useState('slaDue');
+  const [sort2, setSort2] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkResult, setBulkResult] = useState<string>();
   const [bulkComplete, setBulkComplete] = useState<TaskAction | null>(null);
   const counts = useAsync(() => api.tasks.counts(), [seat?.seatId]);
-  const list = usePaged((p) => api.tasks.list({ ...p, section, q, slaState: sla || undefined, sort }), [section, q, sla, sort, seat?.seatId]);
+  const list = usePaged((p) => api.tasks.list({ ...p, section, q, slaState: sla || undefined, sort: sort2 ? `${sort},${sort2}` : sort }), [section, q, sla, sort, sort2, seat?.seatId]);
   const action = useAction();
   const baseline = useRef<string>('');
   const [newCount, setNewCount] = useState(0);
@@ -77,12 +78,11 @@ export function TaskInbox() {
       {
         key: 'reference',
         header: t('task.reference'),
-        sortable: true,
         render: (r: TaskSummary) => <Link to={`/tasks/${encodeURIComponent(r.id)}`}>{r.reference ?? r.businessKey ?? r.id}</Link>,
       },
       { key: 'subject', header: t('task.subject'), render: (r: TaskSummary) => r.subject ?? r.name },
       { key: 'packKey', header: t('task.pack'), render: (r: TaskSummary) => r.packKey ?? r.processDefinitionKey ?? '—' },
-      { key: 'amount', header: t('task.amount'), sortable: true, className: 'num', render: (r: TaskSummary) => (r.amount !== undefined ? fmtMoney(r.amount, r.currency) : '—') },
+      { key: 'amount', header: t('task.amount'), className: 'num', render: (r: TaskSummary) => (r.amount !== undefined ? fmtMoney(r.amount, r.currency) : '—') },
       {
         key: 'fromSeatName',
         header: t('task.fromSeat'),
@@ -141,6 +141,13 @@ export function TaskInbox() {
             options={['OK', 'WARNING', 'BREACHED', 'PAUSED'].map((v) => ({ value: v, label: t(`enum.${v}`) }))}
           />
         </div>
+        <SelectField
+          label={t('task.thenSortBy')}
+          value={sort2}
+          onChange={setSort2}
+          placeholder={t('common.no')}
+          options={['received', 'slaDue'].flatMap((k) => [{ value: k, label: t(`task.${k}`) + ' ▲' }, { value: `-${k}`, label: t(`task.${k}`) + ' ▼' }])}
+        />
         {newCount > 0 && (
           <Notice>
             {t('task.newTasks', { n: newCount })}{' '}

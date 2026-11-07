@@ -14,7 +14,23 @@
   <description>Spring Boot application: Sangam API (/api/v1), Operaton REST (/engine-rest) behind Sangam auth, profiles per database.</description>
 
   <dependencies>
+    <!-- Broker inbound (off by default): compile/runtime API for KafkaInboxConsumer, JmsInboxListener -->
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>3.9.1</version>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.jms</groupId>
+      <artifactId>jakarta.jms-api</artifactId>
+      <version>3.1.0</version>
+    </dependency>
     <!-- Generic modules wired in config/*Wiring (final integration wave) -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-onboarding</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.sangam</groupId>
       <artifactId>sangam-config</artifactId>
@@ -97,6 +113,16 @@
     <dependency>
       <groupId>org.sangam</groupId>
       <artifactId>sangam-packs</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-ai</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-ops</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.sangam</groupId>
@@ -184,6 +210,16 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-channels</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-modeller</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 

@@ -16,7 +16,8 @@
     "test": "vitest --run",
     "preview": "vite preview",
     "i18n:check": "node scripts/check-i18n.mjs",
-    "licences": "node scripts/list-licences.mjs"
+    "licences": "node scripts/list-licences.mjs",
+    "compat": "node scripts/gen-compat.mjs"
   },
   "dependencies": {
     "@bpmn-io/form-js-editor": "1.12.0",

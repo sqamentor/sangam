@@ -12,12 +12,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
 import { fileName } from '../../api/adapters';
+import { BulkTestReport, FeelPlayground, LeaseBanner, TokenWalk } from '../../modules/platform';
+import { ScanReport, hasBlocking, scanArtifacts } from '../../modules/compat';
 import type { ModelArtifact, ModelPackage, PackageDiff, PackageState, ValidationIssue } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { BpmnEditor, CmmnEditor, DmnEditor, EMPTY_BPMN, EMPTY_DMN, EMPTY_FORM, FormBuilder, type EditorHandle } from '../../components/Editors';
-import { Badge, DataTable, Dialog, Empty, KeyValues, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, Section, SelectField, TabPanel, Tabs, TextArea, TextField } from '../../components/ui';
+import { Badge, Checkbox, DataTable, Dialog, Empty, KeyValues, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, Section, SelectField, TabPanel, Tabs, TextArea, TextField } from '../../components/ui';
 
 const EMPTY_CMMN = `<?xml version="1.0" encoding="UTF-8"?>
 <cmmn:definitions xmlns:cmmn="http://www.omg.org/spec/CMMN/20151109/MODEL" id="Definitions_1" targetNamespace="http://sangam.org/cmmn">
@@ -128,6 +130,7 @@ export function PackageWorkspace() {
   const [adding, setAdding] = useState<{ name: string; kind: ModelArtifact['kind'] } | null>(null);
   const [transition, setTransition] = useState<'submit' | 'deploy' | 'retire' | null>(null);
   const [tenant, setTenant] = useState('');
+  const [ack, setAck] = useState(false);
   const act = useAction();
 
   useEffect(() => {
@@ -139,6 +142,7 @@ export function PackageWorkspace() {
   const p = pkg.data;
   const editable = p.state === 'DRAFT' || p.state === 'REJECTED';
   const art = p.artifacts.find((a) => a.id === current);
+  const scan = scanArtifacts(p.artifacts);
 
   const save = async (): Promise<boolean> => {
     if (!art || !handle.current) return true;
@@ -219,10 +223,13 @@ export function PackageWorkspace() {
         tabs={[
           { id: 'edit', label: t('modeller.edit') },
           { id: 'validation', label: t('modeller.validation'), badge: issues ? String(issues.filter((i) => i.severity === 'ERROR').length) : undefined },
+          { id: 'compat', label: t('mod.compat.scan'), badge: scan.length ? String(scan.length) : undefined },
           { id: 'diff', label: t('modeller.diff') },
           { id: 'history', label: t('modeller.history') },
           { id: 'tests', label: t('modeller.tests') },
           { id: 'play', label: t('modeller.play') },
+          { id: 'walk', label: t('mod.modeller2.tokenWalk') },
+          { id: 'feel', label: t('mod.ai.feel') },
           { id: 'git', label: t('modeller.git') },
           { id: 'comments', label: t('task.tab.comments') },
         ]}
@@ -248,6 +255,8 @@ export function PackageWorkspace() {
           <div className="artifact-editor">
             {art ? (
               editable ? (
+                <>
+                <LeaseBanner key={art.id} packageId={id} file={art.name} />
                 <ArtifactEditor
                   key={art.id}
                   artifact={art}
@@ -256,6 +265,7 @@ export function PackageWorkspace() {
                   }}
                   onChange={() => setDirty(true)}
                 />
+                </>
               ) : (
                 <>
                   <Notice>{t('modeller.readOnly')}</Notice>
@@ -272,6 +282,10 @@ export function PackageWorkspace() {
       <TabPanel id="validation" active={tab}>
         <ValidationReport issues={issues} />
       </TabPanel>
+      <TabPanel id="compat" active={tab}>
+        <ScanReport findings={scan} />
+        <Link to="/modeller/compatibility">{t('mod.compat.title')}</Link>
+      </TabPanel>
       <TabPanel id="diff" active={tab}>
         <DiffPanel packageId={id} />
       </TabPanel>
@@ -279,7 +293,13 @@ export function PackageWorkspace() {
         <HistoryPanel packageId={id} />
       </TabPanel>
       <TabPanel id="tests" active={tab}>
-        <TestsPanel packageId={id} />
+        <BulkTestReport packageId={id} />
+      </TabPanel>
+      <TabPanel id="walk" active={tab}>
+        {art?.kind === 'BPMN' ? <TokenWalk key={art.id} file={art.name} bpmnXml={art.content} /> : <Empty message={t('modeller.noArtifacts')} />}
+      </TabPanel>
+      <TabPanel id="feel" active={tab}>
+        <FeelPlayground />
       </TabPanel>
       <TabPanel id="play" active={tab}>
         <PlayPanel pkg={p} />
@@ -326,6 +346,7 @@ export function PackageWorkspace() {
       <ReasonDialog
         open={transition !== null}
         title={transition ? t(`modeller.tr.${transition}`) : ''}
+        preview={(transition === 'submit' || transition === 'deploy') && hasBlocking(scan) && !ack ? { summary: [], blocked: true, blockedReason: t('mod.compat.ackRequired') } : undefined}
         busy={act.busy}
         error={act.error}
         danger={transition === 'retire'}
@@ -340,6 +361,8 @@ export function PackageWorkspace() {
           })
         }
       >
+        {(transition === 'submit' || transition === 'deploy') && <ScanReport findings={scan} />}
+        {(transition === 'submit' || transition === 'deploy') && hasBlocking(scan) && <Checkbox label={t('mod.compat.ack')} checked={ack} onChange={setAck} />}
         {transition === 'submit' && <Notice>{t('modeller.submitHint')}</Notice>}
         {transition === 'deploy' && <TextField label={t('modeller.targetTenant')} value={tenant} onChange={setTenant} hint={t('modeller.targetTenantHint')} />}
         {transition === 'retire' && <Notice tone="warn">{t('modeller.retireHint')}</Notice>}
@@ -411,33 +434,6 @@ function HistoryPanel({ packageId }: { packageId: string }) {
           </li>
         ))}
       </ol>
-    </>
-  );
-}
-
-function TestsPanel({ packageId }: { packageId: string }) {
-  const { t } = useTranslation();
-  const act = useAction();
-  const [res, setRes] = useState<{ name: string; passed: boolean; message?: string; durationMs: number }[]>();
-  return (
-    <>
-      <p className="hint">{t('modeller.testsHint')}</p>
-      <button type="button" className="primary" disabled={act.busy} onClick={() => void act.run(() => api.packages.runTests(packageId)).then((r) => r && setRes(r))}>
-        {act.busy ? t('common.working') : t('modeller.runTests')}
-      </button>
-      <ProblemAlert error={act.error} />
-      {res && (
-        <>
-          <Notice tone={res.every((r) => r.passed) ? 'ok' : 'bad'}>{t('modeller.testSummary', { ok: res.filter((r) => r.passed).length, total: res.length })}</Notice>
-          <ul>
-            {res.map((r) => (
-              <li key={r.name}>
-                <Badge value={r.passed ? 'PASS' : 'FAIL'} /> {r.name} ({r.durationMs} ms) {r.message}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
     </>
   );
 }

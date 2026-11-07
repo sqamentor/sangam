@@ -51,6 +51,8 @@ spec:
               value: none
             - name: SANGAM_JOB_EXECUTOR_ENABLED
               value: "false"
+            - name: SANGAM_COMPLIANCE_SCHEDULE
+              value: "false"
             - name: TZ
               value: UTC
             {{- with .Values.liquibase.job.extraEnv }}
@@ -61,6 +63,8 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: state
+              mountPath: /var/lib/sangam
             - name: drivers
               mountPath: /opt/sangam/drivers
               readOnly: true
@@ -68,5 +72,9 @@ spec:
         - name: tmp
           emptyDir:
             sizeLimit: 512Mi
+        # one-shot run: no compliance scheduler, so a scratch directory is enough here
+        - name: state
+          emptyDir:
+            sizeLimit: 64Mi
         {{- include "sangam.drivers.volume" . | nindent 8 }}
 {{- end }}

@@ -21,7 +21,7 @@ import java.util.Optional;
  */
 public final class SecurityPracticesChecklist {
 
-    public enum Result { PASS, FAIL, UNKNOWN }
+    public enum Result { PASS, FAIL, UNKNOWN, ADVISORY }
 
     public record ItemResult(String id, String citation, String description, Result result, String evidence) {
         public Map<String, Object> asMap() {
@@ -40,6 +40,10 @@ public final class SecurityPracticesChecklist {
     public List<ItemResult> evaluate(String tenantId, Instant now) {
         List<ItemResult> out = new ArrayList<>();
         for (JurisdictionPack.ChecklistItem i : config.forTenant(tenantId).pack.checklist()) {
+            if (!i.enforced()) {
+                out.add(new ItemResult(i.id(), i.citation(), i.description(), Result.ADVISORY, "proposed / advisory: not enforced"));
+                continue;
+            }
             if (i.fact() != null) {
                 Optional<String> v = evidence.fact(tenantId, i.fact());
                 out.add(new ItemResult(i.id(), i.citation(), i.description(), v.map(x -> matches(x, i.expected())).orElse(Result.UNKNOWN),

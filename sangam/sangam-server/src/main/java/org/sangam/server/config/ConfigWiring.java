@@ -143,13 +143,40 @@ public class ConfigWiring {
             if (!env.getProperty("sangam.config.load-on-start", Boolean.class, true)) {
                 return;
             }
-            String index = env.getProperty("sangam.config.profiles-index", "profiles/profiles.idx");
+            // The release indexes: the base set and the international set (generic PFM reference, regime presets,
+            // country profiles with ISO 3-letter ids). A missing index is skipped; a broken one fails start-up.
+            String first = env.getProperty("sangam.config.profiles-index", "profiles/profiles.idx");
+            List<String> indexes = new ArrayList<>(List.of(first));
+            for (String extra : env.getProperty("sangam.config.extra-profile-indexes", "profiles/intl.idx").split(",")) {
+                if (!extra.isBlank() && !indexes.contains(extra.trim())) {
+                    indexes.add(extra.trim());
+                }
+            }
             ClassLoader cl = ConfigWiring.class.getClassLoader();
-            if (cl.getResource(index) == null) {
-                LOG.info("No configuration profile index at {}", index);
+            List<ProfileDocument> docs = new ArrayList<>();
+            Map<ProfileDocument, String> baseOf = new java.util.IdentityHashMap<>();
+            for (String index : indexes) {
+                if (cl.getResource(index) == null) {
+                    LOG.info("No configuration profile index at {} (skipped)", index);
+                    continue;
+                }
+                List<ProfileDocument> loaded;
+                try {
+                    loaded = ProfileLoader.loadIndex(cl, index);
+                } catch (RuntimeException e) {
+                    throw new IllegalStateException("Configuration profile index " + index + " is broken: "
+                            + e.getMessage(), e);
+                }
+                String base = index.contains("/") ? index.substring(0, index.lastIndexOf('/') + 1) : "";
+                for (ProfileDocument d : loaded) {
+                    baseOf.put(d, base);
+                }
+                docs.addAll(loaded);
+                LOG.info("Configuration profile index {}: {} profiles", index, loaded.size());
+            }
+            if (docs.isEmpty()) {
                 return;
             }
-            List<ProfileDocument> docs = ProfileLoader.loadIndex(cl, index);
             List<ProfileDocument> fresh = new ArrayList<>();
             for (ProfileDocument d : docs) {
                 if (store.get(d.id(), d.version()).isEmpty()) {
@@ -157,17 +184,17 @@ public class ConfigWiring {
                 }
             }
             if (!fresh.isEmpty()) {
+                // one import, so a country profile can reference a base or regime profile from the other index
                 admin.importActive(fresh, "release");
             }
             int seeded = 0;
             if (env.getProperty("sangam.config.seeds-on-start", Boolean.class, true)) {
-                String base = index.contains("/") ? index.substring(0, index.lastIndexOf('/') + 1) : "";
                 for (ProfileDocument d : docs) {
-                    seeded += seeds(cl, base, d, store);
+                    seeded += seeds(cl, baseOf.get(d), d, store);
                 }
             }
-            LOG.info("Configuration profiles: {} in the index, {} imported; {} master codes seeded", docs.size(),
-                    fresh.size(), seeded);
+            LOG.info("Configuration profiles: {} in {} indexes, {} imported; {} master codes seeded", docs.size(),
+                    indexes.size(), fresh.size(), seeded);
         };
     }
 

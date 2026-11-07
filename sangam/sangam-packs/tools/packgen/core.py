@@ -603,6 +603,20 @@ def build():
                       {'code': 'JS', 'name': {'en': 'Joint Secretary', 'hi': 'संयुक्त सचिव'}},
                       {'code': 'SECRETARY', 'name': {'en': 'Secretary', 'hi': 'सचिव'}},
                       {'code': 'APPELLATE', 'name': {'en': 'Appellate authority', 'hi': 'अपीलीय प्राधिकारी'}}])
+    # read by RegistrySeedLoader (packs/*/registry/*.json); national identifiers apply only to that jurisdiction (ADR-D-20)
+    core.identifier_types = [('IN', [
+        {'typeKey': 'AADHAAR', 'label': 'Aadhaar number', 'pattern': '[2-9][0-9]{11}', 'normalise': ['DIGITS_ONLY'],
+         'checksum': 'VERHOEFF', 'unique': True, 'sensitive': True, 'matchWeight': 12, 'appliesTo': 'PERSON'},
+        {'typeKey': 'PAN', 'label': 'Permanent account number', 'pattern': '[A-Z]{5}[0-9]{4}[A-Z]',
+         'normalise': ['UPPER', 'STRIP_SPACES'], 'unique': True, 'sensitive': True, 'matchWeight': 12},
+        {'typeKey': 'GSTIN', 'label': 'GST identification number', 'pattern': '[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]',
+         'normalise': ['UPPER', 'STRIP_SPACES'], 'unique': True, 'matchWeight': 12, 'appliesTo': 'ORGANISATION'},
+        {'typeKey': 'BENEFICIARY_ID', 'label': 'Scheme beneficiary id (vault token)', 'normalise': ['TRIM'], 'unique': True,
+         'matchWeight': 10}]), (None, [
+        {'typeKey': 'BANK_ACCOUNT', 'label': 'Bank account', 'pattern': '[0-9A-Z]{6,34}',
+         'normalise': ['UPPER', 'STRIP_SPACES', 'STRIP_PUNCT'], 'sensitive': True, 'matchWeight': 6},
+        {'typeKey': 'MOBILE', 'label': 'Mobile number', 'normalise': ['DIGITS_ONLY'], 'pattern': '[0-9]{10,15}',
+         'sensitive': True, 'matchWeight': 4, 'appliesTo': 'PERSON'}])]
     core.accept('CORE-1', 'Return to any earlier level and resubmission', ['GP-02', 'R43', 'T19'],
                 'a chain of three recommendation seats', 'level 3 returns to level 1, then all recommend',
                 'caseVersion is unchanged, the case passes levels 1..3 again, CASE_RETURNED is audited')

@@ -11,21 +11,25 @@ import type { CasePlanItem, FormSchema } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
 import { FormRenderer, validateForm, type FormValues } from '../../components/FormRenderer';
+import { AddVariables } from '../../modules/operaton3';
+import { ConversationPanel } from '../../modules/platform';
 import { Badge, DataTable, Empty, KeyValues, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, Section, TabPanel, Tabs, TextArea, TextField } from '../../components/ui';
 
 export function StartCatalog() {
   const { t } = useTranslation();
   const cat = useAsync(() => api.catalogue.list(), []);
   const [chosen, setChosen] = useState<{ key: string; name: string; kind: 'PROCESS' | 'CASE'; formKey?: string } | null>(null);
+  const [search, setSearch] = useState('');
   return (
     <>
       <PageHeader title={t('start.title')} description={t('start.description')} />
       <ProblemAlert error={cat.error} onRetry={cat.reload} />
       {cat.loading && <Loading />}
       {cat.data && cat.data.length === 0 && <Empty message={t('start.empty')} />}
+      {!chosen && <TextField label={t('common.search')} value={search} onChange={setSearch} />}
       {!chosen && (
         <ul className="cards">
-          {cat.data?.map((c) => (
+          {cat.data?.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())).map((c) => (
             <li key={c.key} className="card">
               <h2>{c.name}</h2>
               <p className="muted">{c.description}</p>
@@ -56,6 +60,7 @@ function StartForm({ item, onCancel }: { item: { key: string; name: string; kind
       <ProblemAlert error={form.error ?? act.error} />
       <TextField label={t('start.businessKey')} hint={t('start.businessKeyHint')} value={businessKey} onChange={setBusinessKey} />
       {form.data && <FormRenderer schema={form.data} values={values} onChange={setValues} errors={errors} />}
+      <AddVariables values={values} onChange={setValues} />
       <div className="toolbar">
         <button type="button" onClick={onCancel}>
           {t('common.cancel')}
@@ -229,6 +234,7 @@ export function CaseWorkspace() {
           { id: 'docs', label: t('case.documents') },
           { id: 'comments', label: t('task.tab.comments') },
           { id: 'people', label: t('case.participants') },
+          { id: 'conv', label: t('mod.channels.conversations') },
         ]}
       />
       <ProblemAlert error={act.error} />
@@ -277,6 +283,9 @@ export function CaseWorkspace() {
         >
           {t('task.postComment')}
         </button>
+      </TabPanel>
+      <TabPanel id="conv" active={tab}>
+        <ConversationPanel caseId={id} />
       </TabPanel>
       <TabPanel id="people" active={tab}>
         <ul>

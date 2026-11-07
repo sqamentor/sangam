@@ -1,38 +1,191 @@
 {
   "id": "sangam.compliance",
-  "version": "1.0.0",
-  "name": {"en": "Data protection and cyber-incident compliance", "hi": "डेटा संरक्षण और साइबर घटना अनुपालन"},
+  "version": "1.1.0",
+  "name": {
+    "en": "Data protection and cyber-incident compliance",
+    "hi": "डेटा संरक्षण और साइबर घटना अनुपालन"
+  },
   "domain": "Compliance",
-  "description": "Jurisdiction-neutral workflows for data-subject rights (access, rectification, erasure, grievance, nomination), personal data breach handling and cyber-incident reporting. Rights, time limits, authorities and report items come from the tenant's jurisdiction pack (first pack: IN).",
-  "mainProcesses": ["sangam-dsr-access", "sangam-dsr-rectification", "sangam-dsr-erasure", "sangam-dsr-grievance", "sangam-dsr-nomination", "sangam-breach-incident", "sangam-incident-report"],
+  "description": "Jurisdiction-neutral workflows for data-subject rights (access, rectification, erasure, grievance, nomination), personal data breach handling and cyber-incident reporting. Rights, time limits, authorities and report items come from the tenant's jurisdiction pack (first pack: IN). Adds accounting of disclosures, restriction, objection, automated-decision review and the threshold-driven breach notification plan (US-HIPAA, EU-GDPR).",
+  "mainProcesses": [
+    "sangam-dsr-access",
+    "sangam-dsr-rectification",
+    "sangam-dsr-erasure",
+    "sangam-dsr-grievance",
+    "sangam-dsr-nomination",
+    "sangam-breach-incident",
+    "sangam-incident-report",
+    "sangam-breach-notification-plan",
+    "sangam-dsr-accounting",
+    "sangam-dsr-automated-decision",
+    "sangam-dsr-objection",
+    "sangam-dsr-restriction"
+  ],
   "resources": [
-    {"kind": "BPMN", "path": "packs/compliance/sangam-breach-incident.bpmn"},
-    {"kind": "BPMN", "path": "packs/compliance/sangam-dsr-access.bpmn"},
-    {"kind": "BPMN", "path": "packs/compliance/sangam-dsr-erasure.bpmn"},
-    {"kind": "BPMN", "path": "packs/compliance/sangam-dsr-grievance.bpmn"},
-    {"kind": "BPMN", "path": "packs/compliance/sangam-dsr-nomination.bpmn"},
-    {"kind": "BPMN", "path": "packs/compliance/sangam-dsr-rectification.bpmn"},
-    {"kind": "BPMN", "path": "packs/compliance/sangam-incident-report.bpmn"},
-    {"kind": "FORM", "path": "packs/compliance/forms/access-compile.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/access-release.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/breach-close.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/breach-escalation.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/breach-facts.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/breach-report.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/breach-subject-notice.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/erasure-approve.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/grievance-delayed.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/grievance-examine.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/incident-escalation.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/incident-follow-up.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/incident-prepare.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/nomination-verify.form.json"},
-    {"kind": "FORM", "path": "packs/compliance/forms/rectification-examine.form.json"},
-    {"kind": "SEED", "path": "packs/compliance/seed.json"}
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-breach-incident.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-dsr-access.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-dsr-erasure.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-dsr-grievance.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-dsr-nomination.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-dsr-rectification.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-incident-report.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/access-compile.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/access-release.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/breach-close.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/breach-escalation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/breach-facts.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/breach-report.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/breach-subject-notice.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/erasure-approve.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/grievance-delayed.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/grievance-examine.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/incident-escalation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/incident-follow-up.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/incident-prepare.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/nomination-verify.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/rectification-examine.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/compliance/seed.json"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-breach-notification-plan.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-dsr-accounting.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-dsr-automated-decision.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-dsr-objection.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/compliance/sangam-dsr-restriction.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/accounting-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/automated-decision-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/breach-plan-send.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/breach-risk-assessment.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/objection-decide.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/compliance/forms/restriction-decide.form.json"
+    }
   ],
   "seed": "packs/compliance/seed.json",
   "connectors": [],
-  "covers": ["CMP-024", "CMP-028", "CMP-035", "CMP-037", "CMP-038", "CMP-039", "CMP-040", "CMP-061", "CMP-062", "CMP-063", "CMP-078", "CMP-079", "CMP-087", "CMP-088"],
+  "covers": [
+    "CMP-024",
+    "CMP-028",
+    "CMP-035",
+    "CMP-037",
+    "CMP-038",
+    "CMP-039",
+    "CMP-040",
+    "CMP-061",
+    "CMP-062",
+    "CMP-063",
+    "CMP-078",
+    "CMP-079",
+    "CMP-087",
+    "CMP-088",
+    "US-HLT-007",
+    "US-HLT-008",
+    "US-HLT-020",
+    "US-HLT-043",
+    "GDPR-ART-18",
+    "GDPR-ART-21",
+    "GDPR-ART-22",
+    "GDPR-ART-33",
+    "GDPR-ART-34"
+  ],
   "acceptance": [],
   "dependsOn": [],
   "tenantOverrides": [],

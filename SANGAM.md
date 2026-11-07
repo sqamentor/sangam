@@ -6550,6 +6550,7 @@ Methods are in `spike/results/scorecard.md`. The patch and market-fit methods ar
 | `sangam-ui` | React 18 SPA: tasklist, operations console, administration, modeller, analytics, audit, citizen portal | WS-UI |
 | `deploy/` | Images, Helm, compose, VM install, upgrade, backup and restore, DR, air-gapped bundle, CI | WS-DEPLOY |
 | `perf/` | k6 load model for T-SCALE-1…11 (testing phase only) | SCALE |
+| `sangam-onboarding`, `sangam-ai`, `sangam-channels`, `sangam-modeller`, `sangam-ops`, `tools/sangam-cli`, `examples/` | Added after 2026-11-05: tenant onboarding and plug-and-play acceptance (AT-1…7), AI/agent features, messaging channels, modeller services, operations tooling, CLI (NG-23), plugin examples (README per module) | later waves |
 
 ## XII.2 Totals
 
@@ -6560,8 +6561,8 @@ Methods are in `spike/results/scorecard.md`. The patch and market-fit methods ar
 | Packs (`pack.json`) | 130, with 386 BPMN, 464 DMN and 8 CMMN files |
 | Java sources | About 1,190 main files. 13 test classes, H2 fast tests only |
 | Engine source patches | 0 (two MySQL schema patches, P-1 and P-2) |
-| Ids traced | 1,757, in 27 families |
-| Status of the traced ids | implemented 985, data-only 299, partial 87, gap 24, owner-side 34, not replicated by decision 9, spec-closed 16, test-pending 121, **UNACCOUNTED 182** |
+| Ids traced | 1,858, in 31 families (FA/FB: the Flowable-into-Operaton lists A and B; NG: premium re-check; AT: onboarding acceptance) |
+| Status of the traced ids (third pass, 2026-11-08) | implemented 1,180, data-only 308, partial 124, gap 28, owner-side 35, not replicated by decision 10, spec-closed 16, test-pending 157, **UNACCOUNTED 0** |
 
 ## XII.3 Traceability register
 
@@ -6570,38 +6571,29 @@ The register is [`spike/results/TRACEABILITY-REGISTER.md`](spike/results/TRACEAB
 - the module, file or pack that covers it;
 - the tests that will prove it.
 
-1,575 of the 1,757 ids (89.6 %) are accounted for. The 182 UNACCOUNTED ids are defined in a source document but appear in no README:
-- **international PFM:** all 79 PFM ids;
-- **Flowable weakness audit:** 38 FW ids, and the 31 FWT scenarios that prove only those ids. The ports README has no FW map;
-- **US health:** 27 US-HLT ids, mostly HIPAA Privacy / Security Rule controls, information blocking, the 2027 CMS APIs and EMTALA;
-- **requirements:** R2, R5 (JDK 25 has never been built), R7, R10, R46 and R52;
-- **capability:** N11.
-
-The register also records three orphan or colliding references (A-17, IFS-034/037 and D-0). It lists 43 de-duplicated open items: 6 blockers, 25 must-fix before go-live and 12 later stage.
+**Third pass (2026-11-08):** all 1,858 ids are accounted for. PFM, US-HLT, R2/R5/R7/R10/R46/R52 and N11 are now covered by READMEs. NG-01…NG-47 were remapped against the code; nine of them, and AT-1…AT-7, are classified from code because no README cites them. Every open item was re-checked in the source. 27 items remain: 1 blocker, 18 must-fix before go-live and 8 later stage.
 
 ## XII.4 Top open items
 
 | # | Rank | Item | Ids |
 |---|---|---|---|
-| 1 | Blocker | No behaviour test has run. Multi-DB runs (PostgreSQL, Oracle, SQL Server, MySQL) have never been executed for the product modules | T01–T89, AC-01…AC-11 |
-| 2 | Blocker | Liquibase changelogs missing for the `PortsSchema` tables and `PACK_OPERATION`. Only the dev schema builds them | FC-02…04, R12 |
-| 3 | Blocker | Core `AuthorizationPolicy` writes `AUTH_EFFECTIVE` without `cond_key` (NOT NULL in the adopted schema) | R19, A-3 |
-| 4 | Blocker | sangam-core does not carry the operationId end to end (`ExternalWork`, `OperationLedger.recordIntent`). This is the double-payment guard | R36, A-2, A-14, T35 |
-| 5 | Blocker | Oracle relay and inbox claims inherit the core `ROWNUM` skip-locked caveat | R4, R38 |
-| 6 | Blocker | Poison inbound: malformed JSON on Kafka/JMS is redelivered forever, and core has no `POISON_INBOUND` reconciliation kind | R38, T09 |
-| 7 | Must-fix | UNACCOUNTED families (PFM, FW, US-HLT, R2/R5/R7/R10/R46/R52, N11) need a coverage line or an explicit decision | XII.3 |
-| 8 | Must-fix | Idempotency response body not encrypted and never cleaned up; no signed / Merkle audit checkpoints | R41, R42 |
-| 9 | Must-fix | Audit events lost on the JavaDelegate connector path and on compliance denials | R42 |
-| 10 | Must-fix | Compliance: no `COMPLIANCE` resource type for policy authorisation; nine compliance ports at "not configured" defaults | R19, CMP-* |
-| 11 | Must-fix | Languages: English and Hindi only, and the Hindi needs native review. Accessibility (WCAG / GIGW) not verified | GOV-1, GOV-2, R54, R55 |
-| 12 | Must-fix | Synthetic DMN and seed values, and real government wire formats on request (PK-05) | GP-01, R58 |
+| 1 | Blocker | No behaviour test has run on the Tier-1 databases. The full clean build passed on 2026-11-08; AC-01…AC-11, the Stage B re-runs and AT-1…AT-7 are pending | T01–T89, AC-*, AT-* |
+| 2 | Must-fix | Idempotency response body not encrypted (cleanup is now scheduled); no signed / Merkle audit checkpoints | R41, R42 |
+| 3 | Must-fix | Compliance: denial audits roll back with the caller; no adult-identity verifier; BPMN without DI layout or seat routing | R42, CMP-*, IX.5 |
+| 4 | Must-fix | Languages: en/hi only (GDPR and HIPAA packs in English only); accessibility not verified | GOV-1, GOV-2, R54, R55 |
+| 5 | Must-fix | Packs still use `WorkingDayCalendar`; `PackagePort` produces no signatures or promotion; billing redraws numbers on retry | R31, R43, N09 |
+| 6 | Must-fix | Worker long-poll blocks a servlet thread; no malware scanner bound | R9, R22, R74 |
+| 7 | Must-fix | SCALE: read replica unused; broker consumers ignore tenant freeze | IR-4, IR-6 |
+| 8 | Must-fix | SDKs have no in-memory test engine; PWA has no offline queue; no break-glass; CDS Hooks client JWT not verified | R18, N05, AJ-05 |
+| 9 | Must-fix | Contract: `/cells`, `/routes` (control plane) and `/rollup` have code but no OpenAPI contract; the plugin asset `{path}` contains slashes | R16, D-5 |
+| 10 | Must-fix | Synthetic DMN and seed values; real government wire formats on request (PK-05) | GP-01, R58 |
 
 ## XII.5 Test plan entry point
 
 The testing phase starts by re-running the Stage B benchmark cases (XI.4) one at a time. They now run against the **product modules** instead of the spike adapters, PostgreSQL first.
 
 **Order:**
-1. Fix blockers 2–6 in XII.4.
+1. The Oracle claim fix is in place (XII.8); start with PostgreSQL.
 2. Run each case below and record its result before starting the next.
 3. Repeat the DB-dependent cases (E2–E7) on Oracle, SQL Server and MySQL.
 
@@ -6613,7 +6605,7 @@ Every Testcontainers or benchmark build runs inside the shared heavy-build lock.
 | 2 | E2 authorization equivalence | `list == {r : allow(r)}`, deny wins, count matches | T13–T17, T37, T38 | Count p95 at 10k × 300 groups (A-16; 386 ms in the spike) |
 | 3 | E3 lease, operationId, unknown outcome | Stale worker rejected; class (c) to reconciliation | T02–T04, T36, T35 | A-10 expiry hook: no double payment |
 | 4 | E4 idempotency with engine state | Duplicate start, conflicting reuse, crash window | T01, T55–T60 | The R41 open items above |
-| 5 | E5 outbox / inbox | Late low sequence delivered; poison policy; early message | T06–T09, T35 | Blocker 6 |
+| 5 | E5 outbox / inbox | Late low sequence delivered; poison policy; early message | T06–T09, T35 | Kafka/JMS consumers are wired (`BrokerInboxWiring`) |
 | 6 | E6 concurrency (PG / Oracle / SQL Server / MySQL) | 0 deadlocks, 0 lost updates, **0 unrecovered** with L2 (A-11) | T10, T33, T34 | The spike had 511–758 unrecovered without L2 |
 | 7 | E7 cancel / delete with work in flight | Tombstone, late-result audit, reconciliation item | T11, T39 | — |
 | 8 | E8 timers / DST | `R/PT1H` across the fold fires once per interval | T22 | A-12: the runaway must be gone |
@@ -6638,6 +6630,37 @@ Every Testcontainers or benchmark build runs inside the shared heavy-build lock.
 In the Stage status table, the Stage C row changed from "Pending" to "Coding complete; testing pending". No other line of this document changed. The original row, verbatim:
 
 `| C: full pilot | Pending | AC-01…AC-11 on PostgreSQL + Oracle + SQL Server with the Tier-1 SDKs |`
+
+## XII.7 Revision: open items re-checked against the code (2026-11-05)
+
+The integrator reported that several first-edition blockers came from out-of-date README notes. Each was checked in the source:
+
+| First-edition item | Finding in the code |
+|---|---|
+| Blocker 2: no Liquibase for the `PortsSchema` tables and `PACK_OPERATION` | **Fixed.** Each dialect changelog (`sangam-persistence/.../{postgresql,oracle,mssql,mysql}/sangam-0001-baseline.sql`) has 249 tables, including `PACK_OPERATION`, all 21 ports tables and the follow-up columns |
+| Blocker 3: `AuthorizationPolicy` without `cond_key` | **Fixed.** `sangam-core/.../layer/AuthorizationPolicy.java` L197-205 uses `cond_key='-'` |
+| Blocker 4: no operationId in `ExternalWork`; no explicit-id `recordIntent` | **Core fixed** (`EngineAdapter.java` L146-148; `OperationLedger.java` L107). Callers not migrated: now must-fix #3 |
+| Blocker 5: Oracle `ROWNUM` caveat | **Real** (`Dialect.java` L137-138; `ResourcesDialect.java` L153). Stays a blocker: XII.4 #2 |
+| Blocker 6: poison JSON redelivered forever | **Fixed** in sangam-integration (`InboxService` L127; Kafka/JMS consumers dead-letter, open a `POISON_INBOUND` item and ack; core `ReconciliationQueue.Kind` L21). The consumers are not wired in the server: now must-fix #4 |
+| Must-fix: no `COMPLIANCE` resource type | **Fixed.** `sangam-security/.../policy/ModuleResourceTypes.java` L69, L200, registered by `ResourceRegistry` L63 |
+| Must-fix: History / Insights / Ops REST ports on defaults; EventRegistry delete | **Fixed** (`PortsHistoryBridge`, `PortsInsightsBridge`, `PortsOpsBridge`; `EventRegistry` retire/restore). Package signatures remain |
+
+The figures in XII.2–XII.4 above are the revised ones. The first-edition figures were 1,757 ids, 182 UNACCOUNTED, and 43 open items with 6 blockers.
+
+## XII.8 Third pass: register regenerated and checked against the code (2026-11-08)
+
+The register was rebuilt over the current READMEs, the pack.json files and the code. These first- and second-edition items are now **fixed in code**:
+- the Oracle skip-locked claim (`Dialect.java` L138-144: ordered `ROWNUM` candidate window, then `FOR UPDATE SKIP LOCKED`; `ResourcesDialect` no longer uses `ROWNUM`);
+- the Kafka/JMS consumers with poison handling, wired by `BrokerInboxWiring`;
+- `ConnectorInvoker` records the explicit operationId (L153);
+- idempotency cleanup is scheduled (`PackGapWiring` L80);
+- the EU-GDPR and US-HIPAA compliance packs exist (ADR-D-23 is now implemented);
+- 835 posting is present;
+- PFM, US-HLT, R2, R5, R7, R10, R46, R52 and N11 are covered.
+
+PostgreSQL changelogs count 286 `CREATE TABLE` statements (integrator figure: 287).
+
+The figures in XII.2–XII.4 above are the third-pass ones. Earlier figures: 1,757 ids / 182 UNACCOUNTED / 43 items (first edition); 1,804 / 113 / 40 (second edition).
 
 # Appendix A — PDF Report, Full Extracted Text (raw)
 

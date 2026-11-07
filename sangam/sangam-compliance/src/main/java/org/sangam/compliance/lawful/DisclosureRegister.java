@@ -28,8 +28,19 @@ public final class DisclosureRegister {
                              Instant disclosedAt) {
     }
 
+    /** Refuses a disclosure the data subject restricted; installed by the facade. */
+    @FunctionalInterface
+    public interface RestrictionCheck {
+        java.util.Optional<String> blockingRestriction(Connection c, String tenantId, String principalRef, String recipient, String purposeCode);
+    }
+
     private final Dialect dialect;
     private final ComplianceAudit audit;
+    private volatile RestrictionCheck restrictions = (c, t, p, r, pc) -> java.util.Optional.empty();
+
+    public void restrictionCheck(RestrictionCheck check) {
+        this.restrictions = check;
+    }
 
     public DisclosureRegister(Dialect dialect, ComplianceAudit audit) {
         this.dialect = dialect;
@@ -42,6 +53,13 @@ public final class DisclosureRegister {
         Sql.requireText(recipient, "recipient");
         if (withheldFromAccess && (legalRef == null || legalRef.isBlank())) {
             throw org.sangam.compliance.ComplianceException.invalid("a disclosure withheld from access needs the written request reference");
+        }
+        if (!withheldFromAccess && kind != RecipientKind.COURT && kind != RecipientKind.LAW_ENFORCEMENT) {
+            java.util.Optional<String> r = restrictions.blockingRestriction(c, tenantId, principalRef, recipient, purposeCode);
+            if (r.isPresent()) {
+                throw new org.sangam.compliance.ComplianceException(org.sangam.compliance.ComplianceException.Code.PURPOSE_NOT_PERMITTED,
+                        "disclosure to " + recipient + " is restricted (" + r.get() + ")");
+            }
         }
         String id = Sql.newId();
         Jdbc.update(c, "INSERT INTO CMP_DISCLOSURE(tenant_id, disclosure_id, principal_ref, recipient, recipient_kind, purpose_code,"

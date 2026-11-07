@@ -43,8 +43,8 @@ public final class RootLockFlushListener implements CommandContextListener {
                 em = m;
             }
         }
-        if (em == null) {
-            return; // the command touched no engine entity
+        if (em == null || org.sangam.engine.tx.CommandState.of(cc).isAcquisition()) {
+            return; // no engine entity touched, or an acquisition command (R2, VI.1 rule 4: never L2)
         }
         Map<String, String> roots = new HashMap<>();
         String metricKey = null;

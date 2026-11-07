@@ -106,14 +106,24 @@ public final class CellTenantMover {
 
     /** Tables re-inserted with new database-generated ids: table → id column. */
     private static final Map<String, String> REMAPPED = Map.of("RECONCILIATION_ITEM", "ID", "INTEGRATION_DEAD_LETTER",
-            "ID", "EVT_LOG", "ID", "INSTANCE_LINK", "ID");
+            "ID", "EVT_LOG", "ID", "INSTANCE_LINK", "ID", "CFG_CHANGE", "CHANGE_ID");
+
+    /** Tables keyed by configuration scope, not tenant: table → scope column. The scope is the tenant id or its office overlays. */
+    private static final Map<String, String> SCOPED = Map.of("CFG_PROFILE", "PROFILE_ID", "CFG_CHANGE", "PROFILE_ID",
+            "CFG_MASTER_CODE", "SCOPE_ID", "CFG_SERIES", "SCOPE_ID");
+
+    /** Export section: active profile documents the tenant's chain needs outside its own scope (inserted only if absent). */
+    private static final String SHARED_PROFILES = "CFG_PROFILE#SHARED";
 
     /** Tenant-less child tables: table → [column, parent table, parent key column]. */
     private static final Map<String, String[]> CHILDREN = Map.of(
             "AUDIT_PAYLOAD", new String[]{"EVENT_ID", "AUDIT_EVENT", "EVENT_ID"},
             "RECONCILIATION_ATTEMPT", new String[]{"ITEM_ID", "RECONCILIATION_ITEM", "ID"},
             "CONTENT_VERSION", new String[]{"ITEM_ID", "CONTENT_ITEM", "ID"},
-            "PORT_BATCH_ITEM", new String[]{"BATCH_ID", "PORT_BATCH", "ID"});
+            "PORT_BATCH_ITEM", new String[]{"BATCH_ID", "PORT_BATCH", "ID"},
+            "AI_AGENT_STEP", new String[]{"RUN_ID", "AI_AGENT_RUN", "RUN_ID"},
+            "PIPELINE_STEP_RUN", new String[]{"RUN_ID", "PIPELINE_RUN", "RUN_ID"},
+            "SANGAM_FEEL_BINDING", new String[]{"DEPLOYMENT_ID", "ACT_RE_DEPLOYMENT", "ID_"});
 
     public record DrainStatus(long inFlightCommands, long pendingOutbox, long lockedWork, long dueTimers) {
         public boolean drained() {
@@ -215,6 +225,7 @@ public final class CellTenantMover {
                 for (Plan p : plans(c)) {
                     rows += exportTable(c, p, tenant, w);
                 }
+                exportSharedProfiles(c, tenant, w);
             } catch (IOException | SQLException e) {
                 throw new IllegalStateException("export of tenant " + tenant + " failed", e);
             }
@@ -252,6 +263,63 @@ public final class CellTenantMover {
             throw ApiProblem.gone("EXPORT_EXPIRED", "export " + exportId + " has expired");
         }
         return Files.newInputStream(Path.of(String.valueOf(b.get("file"))));
+    }
+
+    /** Walks prefixes, extends and adopt from the tenant's documents, and writes the chain documents outside its scope. */
+    private void exportSharedProfiles(Connection c, String tenant, BufferedWriter w) throws SQLException, IOException {
+        List<String> cols = List.of("profile_id", "version", "layer_id", "status", "effective_from", "effective_to",
+                "content_hash", "document_json", "updated_at");
+        java.util.ArrayDeque<String> queue = new java.util.ArrayDeque<>();
+        Set<String> seen = new LinkedHashSet<>();
+        queue.add(tenant);
+        String select = "SELECT " + String.join(", ", cols) + " FROM CFG_PROFILE WHERE profile_id=? AND status='ACTIVE'";
+        ObjectNode head = JSON.createObjectNode().put("table", SHARED_PROFILES);
+        ArrayNode ca = head.putArray("columns");
+        cols.forEach(ca::add);
+        w.write(head.toString());
+        w.newLine();
+        while (!queue.isEmpty()) {
+            String id = queue.poll();
+            if (!seen.add(id)) {
+                continue;
+            }
+            for (int dot = id.lastIndexOf('.'); dot > 0; dot = id.lastIndexOf('.', dot - 1)) {
+                queue.add(id.substring(0, dot));
+            }
+            try (PreparedStatement ps = c.prepareStatement(select)) {
+                ps.setString(1, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        JsonNode header = JSON.readTree(rs.getString("document_json")).path("profile");
+                        header.path("extends").forEach(x -> queue.add(x.asText()));
+                        header.path("adopt").forEach(x -> queue.add(x.path("profile").asText()));
+                        if (!id.equals(tenant)) {
+                            ArrayNode row = JSON.createArrayNode();
+                            for (int i = 1; i <= cols.size(); i++) {
+                                row.add(encode(rs, i));
+                            }
+                            w.write(JSON.createObjectNode().set("r", row).toString());
+                            w.newLine();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void loadSharedProfiles(Connection c, Plan p, List<String> cols, List<JsonNode> rows,
+                                    Map<String, Map<String, Object>> idMaps, List<Runnable> secondPass) throws SQLException {
+        int id = indexOfIgnoreCase(cols, "profile_id");
+        int version = indexOfIgnoreCase(cols, "version");
+        List<JsonNode> absent = new ArrayList<>();
+        for (JsonNode r : rows) {
+            if (count(c, "SELECT COUNT(*) FROM CFG_PROFILE WHERE profile_id=? AND version=?", decode(r.get(id)), decode(r.get(version))) == 0) {
+                absent.add(r);
+            }
+        }
+        if (!absent.isEmpty()) {
+            insertRows(c, p, cols, absent, idMaps, secondPass);
+        }
     }
 
     private long exportTable(Connection c, Plan p, String tenant, BufferedWriter w) throws SQLException, IOException {
@@ -369,12 +437,23 @@ public final class CellTenantMover {
         Map<String, Map<String, Object>> idMaps = new HashMap<>();
         List<Runnable> secondPass = new ArrayList<>();
         for (Plan p : order(new ArrayList<>(targetPlans.values()))) {
+            if (SCOPED.containsKey(p.upper()) && rows.containsKey(p.upper())) {
+                // release data for this scope may exist here; the source's state replaces it
+                try (PreparedStatement del = c.prepareStatement("DELETE FROM " + p.table() + " WHERE " + p.where())) {
+                    bindTenant(del, p, tenant);
+                    del.executeUpdate();
+                }
+            }
             List<JsonNode> tableRows = rows.get(p.upper());
             if (tableRows == null || tableRows.isEmpty()) {
                 continue;
             }
             List<String> cols = exportCols.get(p.upper());
             counts.put(p.upper(), insertRows(c, p, cols, tableRows, idMaps, secondPass));
+        }
+        if (rows.containsKey(SHARED_PROFILES) && targetPlans.containsKey("CFG_PROFILE")) {
+            loadSharedProfiles(c, targetPlans.get("CFG_PROFILE"), exportCols.get(SHARED_PROFILES), rows.get(SHARED_PROFILES),
+                    idMaps, secondPass);
         }
         for (Runnable r : secondPass) {
             r.run();
@@ -645,15 +724,20 @@ public final class CellTenantMover {
                 String byDeployment = "DEPLOYMENT_ID_ IN (SELECT ID_ FROM " + dep + " WHERE TENANT_ID_=?)";
                 where = tenantCol == null ? byDeployment : "(" + tenantCol + "=? OR " + byDeployment + ")";
                 params = tenantCol == null ? 1 : 2;
+            } else if (SCOPED.containsKey(upper)) {
+                String col = actualName(cols, SCOPED.get(upper));
+                where = "(" + col + "=? OR " + col + " LIKE ? ESCAPE '!')";
+                params = 2;
             } else if (tenantCol != null) {
                 where = tenantCol + "=?";
                 params = 1;
             } else if (CHILDREN.containsKey(upper) && realNames.containsKey(CHILDREN.get(upper)[1])) {
                 String[] ch = CHILDREN.get(upper);
                 where = actualName(cols, ch[0]) + " IN (SELECT " + ch[2] + " FROM " + realNames.get(ch[1])
-                        + " WHERE tenant_id=?)";
+                        + " WHERE " + (ch[1].startsWith("ACT_") ? "TENANT_ID_" : "tenant_id") + "=?)";
                 params = 1;
             } else {
+                LOG.debug("Table {} has no tenant column or mapping: not moved", upper);
                 continue;
             }
             List<String> pk = new ArrayList<>();
@@ -756,6 +840,11 @@ public final class CellTenantMover {
     }
 
     private static void bindTenant(PreparedStatement ps, Plan p, String tenant) throws SQLException {
+        if (SCOPED.containsKey(p.upper())) {
+            ps.setString(1, tenant);
+            ps.setString(2, tenant.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "/%");
+            return;
+        }
         for (int i = 1; i <= p.whereParams(); i++) {
             ps.setString(i, tenant);
         }

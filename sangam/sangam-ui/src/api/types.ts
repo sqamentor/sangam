@@ -267,6 +267,12 @@ export interface FormField {
   /** Sangam extension: per-language labels. */
   i18n?: { hi?: { label?: string; description?: string; text?: string } };
   sensitive?: boolean;
+  /** Generic module screens: parse the value as JSON before sending. */
+  json?: boolean;
+  /** Suggest values from this GET path (rows' id and name), as a searchable list. */
+  lookup?: string;
+  /** Generic module screens: send the value as a query parameter instead of in the body. */
+  inQuery?: boolean;
 }
 
 export interface FormSchema {

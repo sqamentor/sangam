@@ -54,7 +54,7 @@ public class NotifyDelegate implements JavaDelegate, ExecutionListener {
                             ConnectorGateway gw) {
         String connector = "notify." + channel;
         int version = Vars.intVal(ex, Vars.CASE_VERSION, 1);
-        String opId = Vars.operationId(ex.getProcessBusinessKey() == null ? ex.getProcessInstanceId()
+        String opId = Vars.operationId(Vars.tenant(ex), ex.getProcessBusinessKey() == null ? ex.getProcessInstanceId()
                 : ex.getProcessBusinessKey(), "notify:" + channel + ":" + template + ":" + recipient + ":"
                 + ex.getCurrentActivityId(), version);
         Map<String, Object> payload = Vars.map("template", template, "recipient", recipient,

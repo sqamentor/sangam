@@ -46,6 +46,8 @@ public class ComplianceException extends RuntimeException {
         NOT_FOUND(404),
         /** Invalid state transition. */
         INVALID_STATE(409),
+        /** No compliance jurisdiction is set for the tenant; none is ever assumed (ADR-D-20). */
+        JURISDICTION_NOT_SET(409),
         /** Invalid input. */
         INVALID_INPUT(400);
 

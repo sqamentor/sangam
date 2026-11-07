@@ -6,7 +6,7 @@
  * capability class (a)/(b) after a lookup (A-2), SoD (resolver ≠ initiator/approver) and four-eyes above a value.
  */
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
 import type { ConsequencePreview, ReconStatus } from '../../api/types';
@@ -36,7 +36,10 @@ export function Incidents() {
   const { t } = useTranslation();
   const [type, setType] = useState('');
   const [q, setQ] = useState('');
-  const list = usePaged((p) => api.ops.incidents({ ...p, type: type || undefined, q }), [type, q]);
+  const [sp] = useSearchParams();
+  const defKey = sp.get('processDefinitionKey') ?? undefined;
+  const piId = sp.get('processInstanceId') ?? undefined;
+  const list = usePaged((p) => api.ops.incidents({ ...p, type: type || undefined, q, processDefinitionKey: defKey, processInstanceId: piId }), [type, q, defKey, piId]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulk, setBulk] = useState(false);
   const act = useAction();
@@ -111,6 +114,11 @@ export function Incidents() {
   );
 }
 
+function cause(i: object, key: string) {
+  const id = (i as Record<string, unknown>)[key];
+  return id ? <Link key={key} to={`/ops/incidents/${encodeURIComponent(String(id))}`}>{String(id)}</Link> : undefined;
+}
+
 export function IncidentDetail() {
   const { id = '' } = useParams();
   const { t } = useTranslation();
@@ -159,6 +167,8 @@ export function IncidentDetail() {
           [t('ops.firstSeen'), fmtDate(i.firstSeen)],
           [t('ops.lastSeen'), fmtDate(i.lastSeen)],
           [t('ops.owner'), i.owner],
+          [t('ops.causeIncident'), cause(i, 'causeIncidentId')],
+          [t('ops.rootCauseIncident'), cause(i, 'rootCauseIncidentId')],
         ]}
       />
       {i.externalEffectStatus === 'UNKNOWN_OUTCOME' && <Notice tone="warn">{t('ops.unknownOutcomeHint')}</Notice>}

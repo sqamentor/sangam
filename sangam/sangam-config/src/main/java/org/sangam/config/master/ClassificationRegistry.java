@@ -108,6 +108,15 @@ public final class ClassificationRegistry {
 
     /** Validates every segment: presence, width / pattern, and master codes valid on {@code asOf} in the scope chain. */
     public List<Finding> validate(String scope, ClassificationScheme s, Code c, LocalDate asOf) {
+        return validate(scope, s, c, asOf, id -> id.equals(s.id()) ? s : null);
+    }
+
+    /**
+     * As above, with a scheme lookup: a segment that references another scheme ({@code scheme: HOA}) follows the
+     * hierarchy declared on that scheme's segment of the same id, so a government's own layout inherits it.
+     */
+    public List<Finding> validate(String scope, ClassificationScheme s, Code c, LocalDate asOf,
+                                  java.util.function.Function<String, ClassificationScheme> schemes) {
         List<Finding> out = new ArrayList<>();
         for (ClassificationScheme.Segment seg : s.segments()) {
             String v = c.segment(seg.id());
@@ -125,13 +134,107 @@ public final class ClassificationRegistry {
             if (seg.master() || seg.scheme() != null) {
                 String parent = seg.parent() == null ? null : c.segment(seg.parent());
                 String scheme = seg.scheme() != null ? seg.scheme() : s.id();
-                String segId = seg.scheme() != null ? seg.id() : seg.id();
+                String segId = seg.id();
+                ClassificationScheme ref = seg.scheme() == null ? s : schemes.apply(seg.scheme());
+                ClassificationScheme.Segment def = ref == null ? null : ref.segment(segId);
+                if (def != null && !def.hierarchy().isEmpty()) {
+                    checkHierarchy(scope, scheme, def, c, v, asOf, out);
+                    continue;
+                }
                 Optional<MasterCode> m = lookup(scope, scheme, segId, seg.scheme() != null ? null : parent, v, asOf);
                 if (m.isEmpty()) {
                     out.add(Finding.error("CODE_UNKNOWN", seg.id(), "code " + v + (parent == null ? "" : " under " + parent)
                             + " is not valid on " + asOf, null));
                 }
             }
+        }
+        return out;
+    }
+
+    /**
+     * Parent-child check of one segment, configured by {@code hierarchy}:
+     * <ul>
+     *   <li>{@code path}: ancestor segments; their values joined by {@code separator} form the parent key;</li>
+     *   <li>{@code anyParentFlag}: a code with this flag and no parent is valid under any parent;</li>
+     *   <li>{@code openRuleFlag}: an ancestor, or a sibling row, with this flag lets codes be opened by that rule;</li>
+     *   <li>{@code templateWildcard}: rows whose parent is {@code <ancestor>-<wildcard>n} apply when the immediate parent
+     *       segment was itself opened by rule;</li>
+     *   <li>{@code noneCode}: valid when the parent has no coded children; {@code templateChild}: this segment's codes
+     *       are opened by rule when that child segment has template rows under the parent.</li>
+     * </ul>
+     * A parent with no coded children and no rule cannot refute a code: it passes with a WARNING. A rule-opened code
+     * passes with an INFO finding quoting the rule.
+     */
+    private void checkHierarchy(String scope, String scheme, ClassificationScheme.Segment def, Code c, String v, LocalDate asOf,
+                                List<Finding> out) {
+        Map<String, Object> h = def.hierarchy();
+        List<String> path = Tree.strings(h.get("path"));
+        String sep = Tree.str(h.get("separator"), "-");
+        List<String> values = new ArrayList<>();
+        for (String p : path) {
+            if (c.segment(p) == null) {
+                return; // reported as a missing or optional ancestor
+            }
+            values.add(c.segment(p));
+        }
+        String parent = String.join(sep, values);
+        if (lookup(scope, scheme, def.id(), path.isEmpty() ? null : parent, v, asOf).isPresent()) {
+            return;
+        }
+        String anyFlag = Tree.str(h.get("anyParentFlag"), null);
+        if (anyFlag != null && lookup(scope, scheme, def.id(), null, v, asOf)
+                .filter(m -> Tree.bool(m.flags().get(anyFlag), false)).isPresent()) {
+            return;
+        }
+        if (v.equals(Tree.str(h.get("noneCode"), null)) && !path.isEmpty()
+                && children(scope, scheme, def.id(), parent, asOf).isEmpty()) {
+            return;
+        }
+        String wildcard = Tree.str(h.get("templateWildcard"), null);
+        String template = wildcard == null || path.size() < 2 ? null
+                : String.join(sep, values.subList(0, values.size() - 1)) + sep + wildcard;
+        if (template != null && children(scope, scheme, def.id(), template, asOf).stream().anyMatch(m -> m.code().equals(v))) {
+            return;
+        }
+        String childSeg = Tree.str(h.get("templateChild"), null);
+        if (childSeg != null && wildcard != null && !children(scope, scheme, childSeg, parent + sep + wildcard, asOf).isEmpty()) {
+            out.add(Finding.info("CODE_OPENED_BY_RULE", def.id(), "code " + v + " opened by rule under " + parent, null));
+            return;
+        }
+        String ruleFlag = Tree.str(h.get("openRuleFlag"), null);
+        if (ruleFlag != null) {
+            String rule = null;
+            for (int i = 0; i < path.size() && rule == null; i++) {
+                String ancestorParent = i == 0 ? null : String.join(sep, values.subList(0, i));
+                rule = lookup(scope, scheme, path.get(i), ancestorParent, values.get(i), asOf)
+                        .map(m -> Tree.str(m.flags().get(ruleFlag), null)).orElse(null);
+            }
+            if (rule == null) {
+                rule = children(scope, scheme, def.id(), parent, asOf).stream()
+                        .filter(m -> parent.equals(m.parentCode()) && m.flags().get(ruleFlag) != null)
+                        .map(m -> Tree.str(m.flags().get(ruleFlag), null)).findFirst().orElse(null);
+            }
+            if (rule != null) {
+                out.add(Finding.info("CODE_OPENED_BY_RULE", def.id(), "code " + v + " under " + parent + ": " + rule, null));
+                return;
+            }
+        }
+        if (!path.isEmpty() && children(scope, scheme, def.id(), parent, asOf).isEmpty()
+                && (template == null || children(scope, scheme, def.id(), template, asOf).isEmpty())) {
+            out.add(Finding.warn("PARENT_HAS_NO_CODES", def.id(), "no codes listed under " + parent + "; " + v + " not verified", null));
+            return;
+        }
+        out.add(Finding.error("CODE_NOT_UNDER_PARENT", def.id(), "code " + v + " is not valid under " + parent + " on " + asOf, null));
+    }
+
+    /** Codes valid on the date whose parent starts with the prefix, through the scope chain. */
+    private List<MasterCode> children(String scope, String scheme, String segment, String prefix, LocalDate asOf) {
+        List<String> scopes = new ArrayList<>(ScopeRef.parse(scope).prefixes());
+        scopes.addAll(referenceScopes.apply(scope));
+        scopes.add("*");
+        List<MasterCode> out = new ArrayList<>();
+        for (String sc : scopes) {
+            store.children(sc, scheme, segment, prefix).stream().filter(m -> m.validOn(asOf)).forEach(out::add);
         }
         return out;
     }

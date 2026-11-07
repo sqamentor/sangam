@@ -17,10 +17,20 @@ public final class HealthHooksBridge implements HealthHooksPort {
 
     private final Map<String, FhirSubscriptionReceiver> channels;
     private final CdsHooksService cds;
+    private final Remittance835Router remittance;
 
-    public HealthHooksBridge(Map<String, FhirSubscriptionReceiver> channels, CdsHooksService cds) {
+    public HealthHooksBridge(Map<String, FhirSubscriptionReceiver> channels, CdsHooksService cds, Remittance835Router remittance) {
         this.channels = Map.copyOf(channels);
         this.cds = cds;
+        this.remittance = remittance;
+    }
+
+    @Override
+    public RemittanceResult remittance835(String tenantId, String principal, String x12) {
+        if (remittance == null) {
+            throw ApiProblem.notInstalled("835 routing", "the integration inbox and engine");
+        }
+        return remittance.route(tenantId, principal, x12);
     }
 
     @Override

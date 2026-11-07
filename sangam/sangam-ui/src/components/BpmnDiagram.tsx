@@ -58,6 +58,8 @@ export function BpmnDiagram({
   onSelect,
   height = 460,
   title,
+  badges = [],
+  compact,
 }: {
   xml: string;
   stats?: ActivityStatistic[];
@@ -67,6 +69,9 @@ export function BpmnDiagram({
   onSelect?: (activityId: string, name?: string) => void;
   height?: number;
   title: string;
+  /** Extra overlays: job definitions, called processes, plugin badges. */
+  badges?: { activityId: string; text: string; href?: string }[];
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   const host = useRef<HTMLDivElement>(null);
@@ -159,8 +164,16 @@ export function BpmnDiagram({
         overlays.add(f.flowId, 'sg-flow', { position: { top: 0, left: 0 }, html: b });
       }
     }
+    for (const x of badges) {
+      if (!reg.get(x.activityId)) continue;
+      const el = document.createElement(x.href ? 'a' : 'span');
+      el.className = 'sg-badge sg-badge-flow';
+      el.textContent = x.text;
+      if (x.href) (el as HTMLAnchorElement).href = x.href;
+      overlays.add(x.activityId, 'sg-extra', { position: { top: -10, right: 10 }, html: el });
+    }
     for (const id of selected ?? []) if (reg.get(id)) canvas.addMarker(id, 'sg-selected');
-  }, [stats, flows, mode, ready, selected]);
+  }, [stats, flows, mode, ready, selected, badges]);
 
   const rows = useMemo(() => stats.filter((s) => s.count > 0 || s.incidents > 0 || s.avgDurationMs), [stats]);
 
@@ -183,8 +196,8 @@ export function BpmnDiagram({
           if (e.key === '0') c.zoom('fit-viewport');
         }}
       />
-      <p className="hint">{t('diagram.keyboardHint')}</p>
-      {rows.length > 0 && (
+      {!compact && <p className="hint">{t('diagram.keyboardHint')}</p>}
+      {!compact && rows.length > 0 && (
         <details>
           <summary>{t('diagram.tableAlternative')}</summary>
           <DataTable

@@ -62,6 +62,11 @@ public final class PurposeBindingGuard {
         }
         JurisdictionPack.LegalBasis basis = pack.legalBasis(p.basis()).orElseThrow(() ->
                 new ComplianceException(Code.PURPOSE_NOT_PERMITTED, "basis " + p.basis() + " unknown to jurisdiction " + pack.code()));
+        if (basis.requiresMinimumNecessary() && (dataCategories == null || dataCategories.isEmpty())) {
+            deny(c, tenantId, principalRef, purposeCode, "minimum necessary: data categories not declared");
+            throw new ComplianceException(Code.PURPOSE_NOT_PERMITTED, "basis " + basis.code() + " requires the minimum necessary data to be"
+                    + " declared for each use or disclosure (" + basis.citation() + ")");
+        }
         if (basis.consent() && !p.noticeAndConsentDisapplied(pack)) {
             if (!consents.isConsented(c, tenantId, principalRef, purposeCode)) {
                 deny(c, tenantId, principalRef, purposeCode, "no active consent");

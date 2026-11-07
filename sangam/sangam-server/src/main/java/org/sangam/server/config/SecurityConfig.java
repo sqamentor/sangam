@@ -70,6 +70,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info",
                                 "/livez", "/readyz", "/api/v1/openapi.yaml").permitAll()
+                        // verified UI plugin assets: same-origin, loaded by module import (no secrets, plugin guide)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/plugins/ui/*/assets/**").permitAll()
                         // Public compliance endpoints (DPDP: notices and privacy policy are published; rights requests
                         // authenticate by the published identifier; consent-manager artefacts need mTLS at the ingress).
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/compliance/notices/**",
@@ -77,6 +79,9 @@ public class SecurityConfig {
                         // FHIR subscription notifications: authenticated by the channel secret in the receiver
                         // (sangam-connectors-health), not by a Sangam token
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/hooks/fhir/**").permitAll()
+                        // Channel webhooks: public only because the controller verifies the provider signature first
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/hooks/channels/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/hooks/channels/**").permitAll()
                         // CDS Hooks discovery and services (HL7 CDS Hooks paths, outside /api/v1): signed-in callers
                         .requestMatchers("/cds-services", "/cds-services/**").authenticated()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/compliance/rights-requests",

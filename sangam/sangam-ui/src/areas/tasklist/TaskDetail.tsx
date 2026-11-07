@@ -15,6 +15,11 @@ import { ApiError } from '../../api/client';
 import type { CompleteTaskResult, FieldChange, TaskAction, TaskDetail as TD } from '../../api/types';
 import { announce, useAction, useAsync } from '../../lib/hooks';
 import { fmtDate, fmtMoney, fmtNumber } from '../../i18n';
+import { BpmnDiagram } from '../../components/BpmnDiagram';
+import { http } from '../../api/client';
+import { classifyFormKey, embeddedHtmlToSchema, externalFormUrl } from '../../components/embeddedForm';
+import { PluginSlot } from '../../plugins/host';
+import { AddVariables, TaskDates } from '../../modules/operaton3';
 import { FormRenderer, schemaFromVariables, validateForm, type FormValues } from '../../components/FormRenderer';
 import {
   Badge,
@@ -41,7 +46,7 @@ export function TaskDetail() {
   const { id = '' } = useParams();
   const { t, i18n } = useTranslation();
   const nav = useNavigate();
-  const { me, seat } = useAuth();
+  const { me, seat, hasRole } = useAuth();
   const task = useAsync(() => api.tasks.get(id), [id, seat?.seatId]);
   const [values, setValues] = useState<FormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -61,7 +66,11 @@ export function TaskDetail() {
   }, [task.data]);
 
   const d = task.data;
-  const schema = useMemo(() => d?.form ?? (d ? schemaFromVariables(d.variables) : { components: [] }), [d]);
+  const formKind = d?.form ? 'other' : classifyFormKey(d?.formKey);
+  // Deployed HTML is read as data and parsed inertly; its scripts never run.
+  const embedded = useAsync(async () => embeddedHtmlToSchema(await http.get<string>(`/engine-rest/task/${encodeURIComponent(id)}/deployed-form`)), [id, d?.formKey], formKind === 'embedded');
+  const schema = useMemo(() => d?.form ?? embedded.data?.schema ?? (d ? schemaFromVariables(d.variables) : { components: [] }), [d, embedded.data]);
+  const externalUrl = d?.formKey && formKind === 'external' ? externalFormUrl(d.formKey, id) : null;
   const isMine = !!d && (d.assignee === me?.userId || d.section === 'MY_SEAT' || d.section === 'ACTING_FOR' || d.section === 'RETURNED');
   const canAct = isMine && !stale;
 
@@ -264,6 +273,7 @@ export function TaskDetail() {
           { id: 'comments', label: t('task.tab.comments') },
           { id: 'versions', label: t('task.tab.versions') },
           { id: 'lifecycle', label: t('task.tab.lifecycle') },
+          ...(d.processInstanceId ? [{ id: 'diagram', label: t('task.tab.diagram') }] : []),
         ]}
       />
       <TabPanel id="form" active={tab}>
@@ -273,7 +283,15 @@ export function TaskDetail() {
           }}
           lang={i18n.language}
         >
+          {embedded.data?.scriptsIgnored && <Notice tone="warn">{t('task.formScriptsIgnored')}</Notice>}
+          {embedded.error && <ProblemAlert error={embedded.error} />}
+          {externalUrl && (
+            <Notice>
+              <a href={externalUrl} target="_blank" rel="noopener noreferrer">{t('task.externalForm')}</a>
+            </Notice>
+          )}
           <FormRenderer schema={schema} values={values} onChange={setValues} errors={errors} readOnly={!canAct} changed={d.changedSinceLastSeen} />
+          {canAct && !d.form && <AddVariables values={values} onChange={setValues} />}
           {canAct && (
             <div className="toolbar">
               <button type="button" onClick={() => void saveDraft()} disabled={cmd.busy}>
@@ -297,6 +315,12 @@ export function TaskDetail() {
         <Lifecycle taskId={id} />
       </TabPanel>
 
+      <TabPanel id="diagram" active={tab}>
+        {d.processInstanceId && <TaskDiagram instanceId={d.processInstanceId} />}
+      </TabPanel>
+
+      {hasRole('PLATFORM_OPERATOR') && <TaskDates taskId={id} />}
+      <PluginSlot point="task.tab" ctx={{ taskId: id }} />
       <ProblemAlert error={cmd.error} />
 
       {canAct && (
@@ -373,6 +397,19 @@ export function TaskDetail() {
           }}
         />
       )}
+    </>
+  );
+}
+
+function TaskDiagram({ instanceId }: { instanceId: string }) {
+  const { t } = useTranslation();
+  const inst = useAsync(() => api.processes.instance(instanceId), [instanceId]);
+  const xml = useAsync(() => api.processes.xml(inst.data!.definitionId), [inst.data?.definitionId], !!inst.data);
+  const stats = useAsync(() => api.processes.instanceStatistics(instanceId), [instanceId]);
+  return (
+    <>
+      <ProblemAlert error={inst.error ?? xml.error ?? stats.error} />
+      {xml.data && <BpmnDiagram title={t('task.tab.diagram')} xml={xml.data.bpmn20Xml} stats={stats.data?.activities} mode="tokens" />}
     </>
   );
 }

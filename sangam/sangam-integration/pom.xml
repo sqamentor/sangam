@@ -84,6 +84,13 @@
       <version>${version.jms}</version>
       <optional>true</optional>
     </dependency>
+    <!-- N12 MQTT telemetry consumer: Eclipse Paho MQTT v3. EPL-2.0 OR EDL-1.0 (BSD-3-Clause). -->
+    <dependency>
+      <groupId>org.eclipse.paho</groupId>
+      <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+      <version>1.2.5</version>
+      <optional>true</optional>
+    </dependency>
     <!-- Idempotency servlet filter. EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0. Provided by the servlet container. -->
     <dependency>
       <groupId>jakarta.servlet</groupId>

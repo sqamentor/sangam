@@ -265,8 +265,17 @@ public final class Vars {
         return hash(materialPayload(s));
     }
 
-    public static String operationId(String businessKey, String step, int attempt) {
-        return Hashes.uuidV5(OPERATION_NS, businessKey + "|" + step + "|" + attempt).toString();
+    /**
+     * The stable operation id: a UUIDv5 string, which IntegrationConnectorGateway uses directly as the ledger id. The
+     * tenant is part of the name, so two tenants with the same business key never collide in the global ledger. A case
+     * without a tenant keeps the name {@code businessKey|step|attempt}.
+     */
+    public static String operationId(String tenantId, String businessKey, String step, int attempt) {
+        String name = businessKey + "|" + step + "|" + attempt;
+        if (tenantId != null && !tenantId.isBlank()) {
+            name = "tenant=" + tenantId.length() + ":" + tenantId + "|" + name;
+        }
+        return Hashes.uuidV5(OPERATION_NS, name).toString();
     }
 
     // ---- audit ---------------------------------------------------------------------------------------------------

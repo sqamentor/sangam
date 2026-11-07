@@ -26,6 +26,11 @@ spec:
         - podSelector:
             matchLabels:
               sangam.io/api-client: "true"
+        # SCALE: the gateway proxies tenant traffic to the cell, the control plane calls the cell admin API (IR-4)
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/instance, operator: In, values: [{{ .Release.Name | quote }}] }
+              - { key: app.kubernetes.io/component, operator: In, values: [gateway, control-plane] }
         {{- range $np.clientNamespaces }}
         - namespaceSelector:
             matchLabels:
@@ -69,6 +74,14 @@ spec:
         - { protocol: TCP, port: 4317 }
         - { protocol: TCP, port: 4318 }
     {{- end }}
+    {{- if .Values.scale.cell.id }}
+    # SCALE cell: registration/heartbeat, roll-up ingest and cross-cell messages to this release's components
+    - to:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/instance, operator: In, values: [{{ .Release.Name | quote }}] }
+              - { key: app.kubernetes.io/component, operator: In, values: [gateway, control-plane, rollup] }
+    {{- end }}
     {{- with $np.extraEgress }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -98,10 +111,12 @@ spec:
     {{- include "sangam.np.dnsEgress" . | nindent 4 }}
     - to:
         - podSelector:
-            matchLabels:
-              {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 14 }}
+            matchExpressions:
+              - { key: app.kubernetes.io/instance, operator: In, values: [{{ .Release.Name | quote }}] }
+              - { key: app.kubernetes.io/component, operator: In, values: [server, gateway] }
       ports:
         - { protocol: TCP, port: {{ .Values.server.service.port }} }
+        - { protocol: TCP, port: {{ .Values.scale.gateway.port }} }
 {{- end }}
 ---
 # Migration job and backup jobs: no ingress; DNS + database only.

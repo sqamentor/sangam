@@ -152,6 +152,29 @@ public final class X12Decoders {
                 }
             }
         }
+        Map<String, Integer> seen = new LinkedHashMap<>();
+        for (Map<String, Object> c : claims) {
+            // occurrence of this patient control number in the file: the claim-scoped posting key with the trace number
+            c.put("occurrence", seen.merge(String.valueOf(c.get("patientControlNumber")), 1, Integer::sum) - 1);
+        }
+        for (Map<String, Object> c : claims) {
+            // [U] claim balance CLP03 - sum(CAS) = CLP04: from knowledge of the 835 TR3, no public text could be read
+            Map<String, String> totals = new LinkedHashMap<>();
+            BigDecimal adjSum = BigDecimal.ZERO;
+            if (c.get("adjustments") instanceof List<?> l) {
+                for (Object o : l) {
+                    if (o instanceof Map<?, ?> a) {
+                        BigDecimal v = dec(String.valueOf(a.get("amount")));
+                        adjSum = adjSum.add(v);
+                        totals.merge(String.valueOf(a.get("group")), v.toPlainString(),
+                                (x, y) -> new BigDecimal(x).add(new BigDecimal(y)).toPlainString());
+                    }
+                }
+            }
+            c.put("adjustmentTotals", totals);
+            c.put("claimBalanced", dec(String.valueOf(c.get("chargeAmount"))).subtract(adjSum)
+                    .compareTo(dec(String.valueOf(c.get("paidAmount")))) == 0);
+        }
         m.put("claims", claims);
         if (!claims.isEmpty()) {
             m.putAll(firstNonList(claims.get(0)));
@@ -307,6 +330,24 @@ public final class X12Decoders {
                 }
             }
         }
+        for (Map<String, Object> c : claims) {
+            // [U] claim balance CLP03 - sum(CAS) = CLP04: from knowledge of the 835 TR3, no public text could be read
+            Map<String, String> totals = new LinkedHashMap<>();
+            BigDecimal adjSum = BigDecimal.ZERO;
+            if (c.get("adjustments") instanceof List<?> l) {
+                for (Object o : l) {
+                    if (o instanceof Map<?, ?> a) {
+                        BigDecimal v = dec(String.valueOf(a.get("amount")));
+                        adjSum = adjSum.add(v);
+                        totals.merge(String.valueOf(a.get("group")), v.toPlainString(),
+                                (x, y) -> new BigDecimal(x).add(new BigDecimal(y)).toPlainString());
+                    }
+                }
+            }
+            c.put("adjustmentTotals", totals);
+            c.put("claimBalanced", dec(String.valueOf(c.get("chargeAmount"))).subtract(adjSum)
+                    .compareTo(dec(String.valueOf(c.get("paidAmount")))) == 0);
+        }
         m.put("claims", claims);
         m.put("providerAdjustments", plbs);
         BigDecimal bpr = dec(String.valueOf(m.getOrDefault("paymentAmount", "0")));
@@ -317,6 +358,7 @@ public final class X12Decoders {
             Map<String, Object> c0 = claims.get(0);
             m.put("claimStatus", c0.get("status"));
             m.put("paidAmount", c0.get("paidAmount"));
+            m.put("chargeAmount", c0.get("chargeAmount"));
             m.put("patientResponsibility", c0.getOrDefault("patientResponsibility", "0"));
             m.put("denied", "DENIED".equals(c0.get("status")));
             Object adjs = c0.get("adjustments");
@@ -324,6 +366,43 @@ public final class X12Decoders {
                 m.put("firstReasonCode", a0.get("reasonCode"));
                 m.put("firstAdjustmentGroup", a0.get("group"));
             }
+        }
+        return m;
+    }
+
+    /**
+     * Scopes a decoded 835 to one claim: {@code claims} keeps only that patient control number and the top-level claim
+     * fields (status, amounts, first adjustment) describe it; {@code claimStatus = NOT_IN_FILE} when it is absent.
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> focusClaim(Map<String, Object> remit, String patientControlNumber) {
+        Map<String, Object> m = new LinkedHashMap<>(remit);
+        List<Map<String, Object>> all = m.get("claims") instanceof List<?> l ? (List<Map<String, Object>>) l : List.of();
+        List<Map<String, Object>> mine = new ArrayList<>();
+        for (Map<String, Object> c : all) {
+            if (patientControlNumber.equals(String.valueOf(c.get("patientControlNumber")))) {
+                mine.add(c);
+            }
+        }
+        m.put("claims", mine);
+        m.put("claimFound", !mine.isEmpty());
+        for (String k : List.of("paidAmount", "chargeAmount", "patientResponsibility", "firstReasonCode", "firstAdjustmentGroup")) {
+            m.remove(k);
+        }
+        if (mine.isEmpty()) {
+            m.put("claimStatus", "NOT_IN_FILE");
+            m.put("denied", false);
+            return m;
+        }
+        Map<String, Object> c0 = mine.get(0);
+        m.put("claimStatus", c0.get("status"));
+        m.put("paidAmount", c0.get("paidAmount"));
+        m.put("chargeAmount", c0.get("chargeAmount"));
+        m.put("patientResponsibility", c0.getOrDefault("patientResponsibility", "0"));
+        m.put("denied", "DENIED".equals(c0.get("status")));
+        if (c0.get("adjustments") instanceof List<?> adjs && !adjs.isEmpty() && adjs.get(0) instanceof Map<?, ?> a0) {
+            m.put("firstReasonCode", a0.get("reasonCode"));
+            m.put("firstAdjustmentGroup", a0.get("group"));
         }
         return m;
     }

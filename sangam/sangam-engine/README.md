@@ -45,6 +45,10 @@ the end.
 | `lock/RootLock.java` | **A-11/D-24** L2 on `ROOT_SEQ` (shared with core RootSeq/AuditChain/Outbox), ascending order, `root_lock_wait_seconds` metric |
 | `lock/RootLockFlushListener.java` | A-11 backstop: roots of changed executions/tasks locked just before flush |
 | `lease/SangamLeaseTable.java` | **VI.3/R9/R20/R21/XI.10.4** `SANGAM_LEASE`: idempotent CAS grant per (work_id, lock_version), check, extend, end, cancel request, expired sweep in key order |
+| `lease/SangamLeaseTable.java` (`lockExpired`) | **R2** product-side acquisition: expired-lease claim per dialect (PG/MySQL `FOR UPDATE SKIP LOCKED` on the expiry index; SQL Server `TOP (n) WITH (UPDLOCK, READPAST, ROWLOCK)` index seek; Oracle two-step candidate read + per-row `FOR UPDATE SKIP LOCKED`; H2 two-step blocking), in its own short command |
+| `tx/CommandState.java` + `tx/RollbackGuardInterceptor.java` + `lock/RootLockFlushListener.java` (acquisition mark) | **R2 / VI.1 rule 4**: job acquisition (`AcquireJobsCmd`), external-task fetch (`FetchExternalTasksCmd`) and the adapter's sweep/fetch commands are marked as acquisitions and never take L2, not even the flush backstop |
+| `feel/FeelEngineIdentity.java`, `feel/FeelBindingStore.java`, `feel/FeelBindingDeployer.java`, `feel/FeelPinningListener.java` | **R10** one FEEL engine pinned per model version: identity (factory / feel-engine version / strict-or-legacy) recorded in `SANGAM_FEEL_BINDING` at deploy for every decision, process and case definition; every decision evaluation (incl. required decisions) refuses a mismatch; pre-existing definitions are pinned on first evaluation |
+| `feel/StrictNullResultGuard.java` (+ `SangamBpmnParseListener.parseBusinessRuleTask`) | **R10** strict null only where required: `sangam:routing=true` → the mapped result must be a non-null Boolean; `sangam:requiredOutputs=a,b` → mandatory outputs non-null; all other nulls stay valid; gateway conditions are already strict in Operaton (`UelExpressionCondition`) |
 | `lease/ExclusiveLeaseTable.java` | **R35/VI.6/A-7** `EXCLUSIVE_LEASE` acquire/extend/release |
 | `lease/CapabilityClassExpiryPolicy.java` | **A-10/A-8/VI.3 rule 5** default policy: ledger class (c) → UNKNOWN_OUTCOME + reconciliation item + hold; undeclared = (c) |
 | `timer/CycleExpression.java` | **A-12/R31/D-01/D-02/D-29/D-31** UTC elapsed cadence, anchored calendar cadence, `Rn` semantics, lastFiredInterval |
@@ -199,7 +203,22 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
 21. **IR-8 history partitioning.** `settings.partitionedHistory=true` (env `SANGAM_PARTITIONED_HISTORY=true`) runs
     `SangamSchema.applyHistoryPartitioning` after the engine build on PostgreSQL, Oracle and SQL Server (warning only on
     MySQL/H2). Limits per dialect: sangam-persistence README "History partitioning".
-22. **LockScope**: connectors (WS-INTEGRATION) call `LockScope.assertNoLockHeld("http …")` before remote calls.
+22. **R2 acquisition SQL that Sangam cannot change without an engine patch** (Operaton 2.2.0 MyBatis mappings):
+    - `Job.xml selectNextJobsToExecute` (job executor): with `jobExecutorAcquireWithSkipLocked=true` (set by Sangam)
+      PostgreSQL/H2/MySQL use `FOR UPDATE SKIP LOCKED`, SQL Server `WITH (UPDLOCK, READPAST)`, DB2 `SKIP LOCKED DATA`;
+      **Oracle has no row-limited SKIP LOCKED branch** (no two-step), so concurrent acquirers on Oracle rely on the
+      lock update's optimistic `REV_` check; then `AcquireJobsCmd` locks each job by `UPDATE … WHERE ID_ = ? AND REV_ = ?`.
+    - `ExternalTask.xml selectExternalTasksForTopics` (external-task fetch): **no `FOR UPDATE` / `SKIP LOCKED` on any
+      dialect**; concurrent fetches compete through optimistic locking on `REV_`. Sangam's mitigation is the per-topic
+      `SANGAM_FETCH_LOCK` row lock (a deliberately **blocking**, bounded wait: it serializes fetches of one topic
+      with the engine's query; starvation is bounded by `lockTimeout`) plus the OLE→THROW listener (W-9, D-19).
+    - Both acquisitions run in their own command and never take L2 (acquisition mark above). A real SKIP LOCKED /
+      Oracle two-step in these mappings is the engine patch D-19 (Stage D, upstream PR).
+23. **R10 models.** Mark routing decisions with `operaton:properties` `sangam:routing=true` and mandatory outputs with
+    `sangam:requiredOutputs=out1,out2` on the business rule task (an `operaton:resultVariable` is then required).
+    After a FEEL engine upgrade, decisions of models deployed under the old engine fail with an R10 message until the
+    model is redeployed (re-validated); the start-up log lists them.
+24. **LockScope**: connectors (WS-INTEGRATION) call `LockScope.assertNoLockHeld("http …")` before remote calls.
 
 ## Third-party dependencies
 

@@ -1,0 +1,1 @@
+{"key":"compliance/restriction-decide","title":{"en":"restriction-decide"},"fields":[{"key":"restrictionAccepted","type":"boolean","label":{"en":"Agree restriction"}},{"key":"recipientPattern","type":"text","label":{"en":"Recipient (or prefix*)"}},{"key":"purposeCode","type":"text","label":{"en":"Purpose"}},{"key":"decisionReason","type":"textarea","label":{"en":"Reason"}}]}

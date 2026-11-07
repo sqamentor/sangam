@@ -62,6 +62,7 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
     }
 
     private final Map<String, Stored> operations = new ConcurrentHashMap<>();
+    private final Map<String, String> installed = new ConcurrentHashMap<>();
     private final Map<String, ReconciliationRequest> reconciliations = new ConcurrentHashMap<>();
     private final Map<String, String> seenBills = new ConcurrentHashMap<>();
     private final Map<String, String> seenBeneficiaries = new ConcurrentHashMap<>();
@@ -186,6 +187,19 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
     }
 
     private ConnectorResult firstOutcome(ConnectorRequest r, String directive) {
+        if ("mdm.install".equals(r.connector()) && r.payload().get("applicantRef") != null) {
+            installed.put(r.tenantId() + "|" + r.payload().get("applicantRef"), String.valueOf(r.businessKey()));
+        }
+        if (directive != null && directive.contains("=")) {
+            Map<String, Object> data = new HashMap<>(effectData(r));
+            for (String pair : directive.split(";")) {
+                int eq = pair.indexOf('=');
+                if (eq > 0) {
+                    data.put(pair.substring(0, eq).trim(), coerce(pair.substring(eq + 1).trim()));
+                }
+            }
+            return ConnectorResult.completed("SIM-" + r.operationId().substring(0, 8), data);
+        }
         if (directive == null || directive.isBlank() || directive.equals("COMPLETED")) {
             return ConnectorResult.completed("SIM-" + r.operationId().substring(0, 8), effectData(r));
         }
@@ -239,6 +253,22 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
                 boolean happened = s != null && (s.first().status() == OperationStatus.COMPLETED
                         || (s.directive() != null && s.directive().endsWith("_THEN_COMPLETED")));
                 d.put("match", happened ? "MATCHED" : "PENDING"); // the statement shows what really happened
+            }
+            case "mdm.consumersDue" -> {
+                // the MDM knows the connection case of a newly energised consumer, so its first bill can release the credit
+                List<Map<String, Object>> items = new ArrayList<>();
+                installed.forEach((k, bk) -> {
+                    if (k.startsWith(r.tenantId() + "|")) {
+                        Map<String, Object> it = new HashMap<>();
+                        it.put("key", k.substring(k.indexOf('|') + 1));
+                        it.put("connectionCaseKey", bk);
+                        items.add(it);
+                    }
+                });
+                for (int i = 1; i <= 3; i++) {
+                    items.add(Map.of("key", "CONS-" + i));
+                }
+                d.put("items", items);
             }
             case "digilocker.pull" -> {
                 d.put("fetched", true);

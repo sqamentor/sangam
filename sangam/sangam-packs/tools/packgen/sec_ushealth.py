@@ -372,6 +372,16 @@ def claim():
                [('x12.claim', 'b', '', '837 submission'), ('x12.claimStatus', 'a', '', '276/277 status'),
                 ('x12.remit', 'a', '', '835 decode'), ('payer.appeal', 'b', '', 'Appeal / redetermination'),
                 ('ledger.post', 'a', '', 'Payment posting')])
+    # NPI: no LUHN here, its check digit is computed with the 80840 prefix (validated by the npi.registry connector)
+    pk.identifier_types = [('US', [
+        {'typeKey': 'NPI', 'label': 'National Provider Identifier', 'pattern': '[0-9]{10}', 'normalise': ['DIGITS_ONLY'],
+         'unique': True, 'matchWeight': 12},
+        {'typeKey': 'EIN', 'label': 'Employer Identification Number', 'pattern': '[0-9]{9}', 'normalise': ['DIGITS_ONLY'],
+         'unique': True, 'matchWeight': 12, 'appliesTo': 'ORGANISATION'},
+        {'typeKey': 'MEMBER_ID', 'label': 'Health plan member id', 'normalise': ['UPPER', 'STRIP_SPACES'], 'sensitive': True,
+         'matchWeight': 8, 'appliesTo': 'PERSON'},
+        {'typeKey': 'MRN', 'label': 'Medical record number', 'normalise': ['UPPER', 'STRIP_SPACES'], 'sensitive': True,
+         'matchWeight': 8, 'appliesTo': 'PERSON'}])]
     p = pk.proc('sangam-sec-ushealth-claim', 'Claim to cash', '',
                 start={'materialFields': 'patientName,patientControlNumber,totalCharge'})
     s = p.root
@@ -382,12 +392,14 @@ def claim():
                defaults='patientName=@customerId;memberId=@customerId;payerId=SIMPAYER;payerProgram=COMMERCIAL;'
                         'providerNpi=1234567893;patientControlNumber=@customerId;totalCharge=100;claimType=837P;'
                         'clmAccepted=true;csStatus=PENDING;eraClaimStatus=PAID_PRIMARY;eraPatientResponsibility=0;'
-                        'frequency=1;coderSeat=CODER;billerSeat=BILLER;denialSeat=DENIAL-ANALYST;rcmSeat=REV-CYCLE-MGR')
+                        'frequency=1;coderSeat=CODER;billerSeat=BILLER;denialSeat=DENIAL-ANALYST;rcmSeat=REV-CYCLE-MGR;'
+                        'ledgerId=RECEIVABLES;line=CLAIM;period=OPEN;eraBalanced=true;postExceptionCount=0;'
+                        'receivableRaised=null;correctionNo=0;eraTraceNumber=no-trace')
     cfg = s.rule('cl_cfg', 'Timely filing, follow-up and appeal windows (DMN)', 'sec-ushealth-claim-clocks')
     tf = clock(s, 'cl_filing', 'filing', '${filingSpec}')
     s.seq(st, d, cfg, tf)
     scrub = s.user('cl_scrub', 'Code and scrub the claim | Codificar y depurar la reclamación', '${coderSeat}',
-                   form='sec-ushealth-claim/scrub', decision=None, fields=['codingNotes*', 'priorAuthNumber'])
+                   form='sec-ushealth-claim/scrub', decision=None, fields=['codingNotes*', 'priorAuthNumber', 'totalCharge'])
     s.flow(tf, scrub)
     sub = s.conn('cl_submit', 'Submit claim 837P / 837I (999 acknowledgment)', 'x12.claim', 'submitClaim', 'submit',
                  'memberId,payerId,providerNpi,patientControlNumber,totalCharge,serviceDate,claimType,priorAuthNumber,frequency',
@@ -400,7 +412,34 @@ def claim():
     s.flow(ag, fix, '!clmAccepted', 'rejected')
     s.flow(fix, scrub)
     w = s.egw('cl_wait', 'Remittance or follow-up')
-    s.flow(ag, w, None, 'accepted', default=True)
+    ra = s.setv('cl_receivableCfg', 'Receivable for the claim', values='holder=@patientControlNumber;amount=@totalCharge')
+    al = s.conn('cl_receivable', 'Raise the claim receivable', 'ledger.allocate', 'allocate', 'submit',
+                'ledgerId,line,period,holder,amount', 'recv', step='receivable')
+    fg = s.xgw('cl_firstGw', 'Receivable raised already?')
+    s.flow(ag, fg, None, 'accepted', default=True)
+    s.flow(fg, ra, 'receivableRaised == null', 'first submission')
+    s.flow(ra, al)
+    dl = s.expr('cl_delta', 'Change in the charge (corrected claim)',
+                "${execution.setVariable('receivableDelta', totalCharge - receivableRaised)}")
+    s.flow(fg, dl, None, 'corrected claim', default=True)
+    dg2 = s.xgw('cl_deltaGw', 'Charge changed?')
+    s.flow(dl, dg2)
+    s.flow(dg2, w, 'receivableDelta == 0', 'no')
+    da = s.setv('cl_adjustCfg', 'Adjustment leg', values='holder=@patientControlNumber;amount=@receivableDelta')
+    s.flow(dg2, da, None, 'yes', default=True)
+    aj = s.conn('cl_adjust', 'Adjust the claim receivable', 'ledger.adjust', 'adjust', 'submit',
+                'ledgerId,line,period,holder,amount', 'recv', step='receivable-adjust:${correctionNo}')
+    s.flow(da, aj)
+    rg0 = s.xgw('cl_recvGw', 'Receivable posted?')
+    s.flow(al, rg0)
+    s.flow(aj, rg0)
+    rx = s.user('cl_recvException', 'Receivable not posted: resolve | Cuenta por cobrar no registrada: resolver', '${billerSeat}',
+                form='sec-ushealth-claim/receivable-exception', decision=None, fields=['remarks*'])
+    s.flow(rg0, rx, "recvStatus == 'FAILED'", 'refused')
+    s.flow(rx, w)
+    rok = s.setv('cl_recvOk', 'Receivable now stands at the charge', values='receivableRaised=@totalCharge')
+    s.flow(rg0, rok, None, 'posted', default=True)
+    s.flow(rok, w)
     remit = s.catch_msg('cl_remit', 'Remittance received (835)', 'sangam.ushealth.remit')
     fu = s.catch_timer('cl_followUp', 'No remittance yet', duration='${statusFollowUp}')
     s.flow(w, remit)
@@ -409,12 +448,21 @@ def claim():
                 'memberId,payerId,providerNpi,patientControlNumber,totalCharge,serviceDate', 'cs')
     s.flow(fu, cs)
     s.flow(cs, w)
-    era = s.conn('cl_parse', 'Decode the 835 remittance', 'x12.remit', 'parse', 'query', 'x12', 'era')
+    era = s.conn('cl_parse', 'Decode this claim of the 835', 'x12.remit', 'parse', 'query',
+                 'x12,eraTraceNumber,patientControlNumber', 'era')
     post = s.conn('cl_post', 'Post payment and adjustments', 'ledger.post', 'post', 'submit',
-                  'patientControlNumber,eraPaidAmount,eraPatientResponsibility', 'post', step='posting')
+                  'patientControlNumber,eraClaims,eraClaimStatus,eraPaidAmount,eraPatientResponsibility,eraTraceNumber,'
+                  'ledgerId,line,period', 'post', step='posting:${eraTraceNumber}')
     s.seq(remit, era, post)
     pg = s.xgw('cl_paidGw', 'Paid or denied?')
-    s.flow(post, pg)
+    qg = s.xgw('cl_postGw', 'Posted cleanly?')
+    s.flow(post, qg)
+    pq = s.user('cl_postException', 'Resolve the posting exception | Resolver la excepción de contabilización', '${billerSeat}',
+                form='sec-ushealth-claim/post-exception', decision=None, fields=['remitSummary', 'remarks*'])
+    s.flow(qg, pq, "postStatus == 'FAILED' || postExceptionCount > 0 || !eraBalanced || eraClaimStatus == 'NOT_IN_FILE'",
+           'US-HLT-106 work queue')
+    s.flow(qg, pg, None, 'clean', default=True)
+    s.flow(pq, pg)
     bal = s.user('cl_patientBill', 'Bill the patient balance | Facturar el saldo al paciente', '${billerSeat}',
                  form='sec-ushealth-claim/patient-bill', decision=None, fields=['patientBalance*', 'remarks'])
     g2, m2 = maybe(s, 'cl_balOpt', 'eraPatientResponsibility > 0', bal, bal, 'Patient balance?')
@@ -429,8 +477,9 @@ def claim():
     dg = s.xgw('cl_denialGw')
     s.flow(wk, dg)
     corr = s.setv('cl_corrected', 'Corrected claim (frequency 7)', values='frequency=7')
+    cn = s.expr('cl_correctionNo', 'Count the correction', "${execution.setVariable('correctionNo', correctionNo + 1)}")
     s.flow(dg, corr, "denialAction == 'resubmit'", 'correct')
-    s.flow(corr, scrub)
+    s.seq(corr, cn, scrub)
     adl = clock(s, 'cl_appealWindow', 'appealFiling', '${appealFilingSpec}')
     ap = s.user('cl_appeal', 'File the appeal / redetermination | Presentar la apelación / redeterminación',
                 '${denialSeat}', form='sec-ushealth-claim/appeal', decision=None, fields=['appealGrounds*', 'documents'],
@@ -475,6 +524,33 @@ def claim():
             (['-'], [q('180D'), q('P30D'), q('180D'), q('60D')], 'commercial: 45 CFR 147.136 (180 d to appeal, '
                                                                  'post-service 60 d); SYNTHETIC filing limit')],
            doc='US-HLT-100…103.')
+    # later 835s (secondary payer, take-back) arrive after the claim case has ended: one case per (trace, PCN)
+    rp = pk.proc('sangam-sec-ushealth-remittance', 'Later remittance (835)', '', start={'materialFields': 'x12'})
+    sr = rp.root
+    r0 = sr.start('rm_start', 'Remittance received (835)', msg='sangam.ushealth.remittance', initiator=None)
+    r1 = sr.setv('rm_defaults', 'Configuration', defaults='ledgerId=RECEIVABLES;line=CLAIM;period=OPEN;billerSeat=BILLER;'
+                 'eraBalanced=true;postExceptionCount=0;eraTraceNumber=no-trace;eraClaimStatus=PAID_PRIMARY;'
+                 'patientControlNumber=')
+    r2 = sr.conn('rm_parse', 'Decode this claim of the 835', 'x12.remit', 'parse', 'query',
+                 'x12,eraTraceNumber,patientControlNumber', 'era')
+    r3 = sr.xgw('rm_traceGw', 'Trace number present?')
+    sr.seq(r0, r1, r2, r3)
+    r4 = sr.conn('rm_post', 'Post the remittance', 'ledger.post', 'post', 'submit',
+                 'patientControlNumber,eraClaims,eraClaimStatus,eraPaidAmount,eraPatientResponsibility,eraTraceNumber,'
+                 'ledgerId,line,period',
+                 'post', step='posting:${eraTraceNumber}')
+    rq = sr.user('rm_exception', 'Resolve the remittance exception | Resolver la excepción de la remesa', '${billerSeat}',
+                 form='sec-ushealth-claim/remittance-exception', decision=None, fields=['remitSummary', 'remarks*'])
+    sr.flow(r3, rq, "eraTraceNumber == 'no-trace'", 'cannot be made idempotent')
+    sr.flow(r3, r4, None, 'yes', default=True)
+    r5 = sr.xgw('rm_postGw', 'Posted cleanly?')
+    sr.flow(r4, r5)
+    sr.flow(r5, rq, "postStatus == 'FAILED' || postExceptionCount > 0 || !eraBalanced || eraClaimStatus == 'DENIED'"
+                    " || eraClaimStatus == 'NOT_IN_FILE'",
+            'US-HLT-106 work queue')
+    r6 = end_ok(rp, sr, 'rm_end', 'Posted', outcome='POSTED')
+    sr.flow(r5, r6, None, 'clean', default=True)
+    sr.flow(rq, r6)
     pk.dmn('sec-ushealth-claim-denials', 'Denial routing by CARC (SYNTHETIC)', 'FIRST',
            [('First adjustment reason code', 'eraFirstReasonCode', 'string')],
            [('denialRoute', 'Suggested route', 'string')],

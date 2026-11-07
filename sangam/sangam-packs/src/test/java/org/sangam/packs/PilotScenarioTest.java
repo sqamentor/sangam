@@ -179,6 +179,122 @@ class PilotScenarioTest {
     }
 
     @Test
+    void billRevisionPassesFullInputs() {
+        String bk = "UTIL/BILL/1";
+        start("sangam-sec-util-bill", bk, vars("key", "CONS-1", "batchId", "CYCLE-2026-11", "units", 100));
+        driver.run(bk, t -> null, 10);
+        engine.getRuntimeService().createMessageCorrelation("sangam.util.billDispute").processInstanceBusinessKey(bk)
+                .correlate();
+        driver.run(bk, t -> "bl_revise".equals(t.getTaskDefinitionKey())
+                ? asSeat(t, "disputeDecision", "customer", "units", 80) : null, 10);
+        var sim = (org.sangam.packs.sim.SimulatorConnectorGateway) PackRuntime.gateway();
+        var in = sim.journal().stream().filter(r -> "billing.revise".equals(r.connector())).findFirst().orElseThrow().payload();
+        for (String k : List.of("consumer", "units", "tariffId", "cycle", "head", "supersededAmount")) {
+            assertTrue(in.get(k) != null, k);
+        }
+        assertEquals("CYCLE-2026-11", in.get("cycle"));
+    }
+
+    static org.sangam.packs.sim.SimulatorConnectorGateway sim() {
+        return (org.sangam.packs.sim.SimulatorConnectorGateway) PackRuntime.gateway();
+    }
+
+    @Test
+    void claimPostingExceptionCorrectedClaimAndSecondRemittance() {
+        String bk = "CLAIM/1";
+        start("sangam-sec-ushealth-claim", bk, vars("customerId", "P1", "patientControlNumber", "PCN-9", "totalCharge", 100,
+                "serviceDate", "2026-11-01", "statusFollowUp", "P30D", "sim_ledger_post", "exceptionCount=1"));
+        driver.run(bk, t -> "cl_scrub".equals(t.getTaskDefinitionKey()) ? asSeat(t, "codingNotes", "ok") : null, 20);
+        engine.getRuntimeService().createMessageCorrelation("sangam.ushealth.remit").processInstanceBusinessKey(bk)
+                .setVariable("x12", "835").setVariable("sim_x12_remit",
+                        "traceNumber=T1;claimStatus=DENIED;paidAmount=0;patientResponsibility=0;balanced=true;firstReasonCode=16")
+                .correlate();
+        List<String> first = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
+            case "cl_postException" -> asSeat(t, "remarks", "seen");
+            case "cl_denial" -> asSeat(t, "denialAction", "resubmit");
+            case "cl_scrub" -> asSeat(t, "codingNotes", "fixed", "totalCharge", 80);
+            default -> null;
+        }, 30);
+        assertEquals(List.of("cl_postException", "cl_denial", "cl_scrub"), first);
+        var adjust = sim().journal().stream().filter(r -> "ledger.adjust".equals(r.connector())
+                && bk.equals(r.businessKey())).findFirst().orElseThrow();
+        assertEquals(-20.0, Double.parseDouble(String.valueOf(adjust.payload().get("amount"))), "adjustment leg");
+        engine.getRuntimeService().createMessageCorrelation("sangam.ushealth.remit").processInstanceBusinessKey(bk)
+                .setVariable("sim_x12_remit", "traceNumber=T2;claimStatus=PAID_PRIMARY;paidAmount=80;patientResponsibility=0;balanced=true")
+                .setVariable("sim_ledger_post", "exceptionCount=0").correlate();
+        driver.run(bk, t -> null, 20);
+        assertTrue(driver.ended(bk), "still running");
+        var posts = sim().journal().stream().filter(r -> "ledger.post".equals(r.connector()) && bk.equals(r.businessKey()))
+                .map(r -> r.operationId()).distinct().toList();
+        assertEquals(2, posts.size(), "each remittance has its own operation");
+    }
+
+    static void remittance(String bk, String era, String post) {
+        engine.getRuntimeService().createMessageCorrelation("sangam.ushealth.remittance").processInstanceBusinessKey(bk)
+                .setVariable("x12", "835").setVariable("sim_x12_remit", era).setVariable("sim_ledger_post", post).correlate();
+    }
+
+    @Test
+    void laterRemittancePostsIdempotentlyAndExceptionsQueue() {
+        String ok = "REMIT/T9";
+        String era = "traceNumber=T9;claimStatus=REVERSAL;paidAmount=-50;balanced=true";
+        remittance(ok, era, "exceptionCount=0");
+        driver.run(ok, t -> null, 10);
+        assertTrue(driver.ended(ok), "clean take-back ends");
+        remittance(ok, era, "exceptionCount=0"); // the same 835 delivered again
+        driver.run(ok, t -> null, 10);
+        assertEquals(1, sim().journal().stream().filter(r -> "ledger.post".equals(r.connector()) && ok.equals(r.businessKey()))
+                .map(r -> r.operationId()).distinct().count(), "replay keeps the operation id");
+        String bad = "REMIT/T10";
+        remittance(bad, "traceNumber=T10;claimStatus=PAID_SECONDARY;paidAmount=5;balanced=true", "exceptionCount=1");
+        assertEquals(List.of("rm_exception"), driver.run(bad, t -> asSeat(t, "remarks", "unmatched"), 10));
+        String none = "REMIT/none";
+        remittance(none, "claimStatus=PAID_SECONDARY;paidAmount=5;balanced=true", "exceptionCount=0");
+        assertEquals(List.of("rm_exception"), driver.run(none, t -> asSeat(t, "remarks", "no trace"), 10));
+        assertTrue(sim().journal().stream().noneMatch(r -> "ledger.post".equals(r.connector()) && none.equals(r.businessKey())));
+    }
+
+    @Test
+    void receivableRefusalGoesToTheWorkQueue() {
+        String bk = "CLAIM/2";
+        start("sangam-sec-ushealth-claim", bk, vars("customerId", "P2", "patientControlNumber", "PCN-10", "totalCharge", 100,
+                "serviceDate", "2026-11-01", "statusFollowUp", "P30D", "sim_ledger_allocate", "FAILED:LEDGER_REQUEST_INVALID"));
+        List<String> done = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
+            case "cl_scrub" -> asSeat(t, "codingNotes", "ok");
+            case "cl_recvException" -> asSeat(t, "remarks", "seen");
+            default -> null;
+        }, 20);
+        assertEquals(List.of("cl_scrub", "cl_recvException"), done);
+    }
+
+    @Test
+    void compensationCreditWaitsForTheFirstBill() {
+        String bk = "CONN/1";
+        start("sangam-sec-util-connection", bk, vars("applicantName", "A", "applicantRef", "CONS-77", "premisesAddress", "X",
+                "areaType", "METRO", "loadKw", 5, "compensationDue", true, "initiator", "citizen.a", "meterNo", "M1"));
+        driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
+            case "sc_scrutiny" -> asSeat(t, "scrutinyDecision", "accept");
+            case "uc_inspect" -> asSeat(t, "feasibility", "feasible", "findings", "ok");
+            case "uc_install" -> asSeat(t, "meterNo", "M1");
+            default -> null;
+        }, 30);
+        assertTrue(!driver.ended(bk), "held for the first bill");
+        assertTrue(sim().journal().stream().noneMatch(r -> "billing.credit".equals(r.connector()) && bk.equals(r.businessKey())));
+        var due = sim().query(new org.sangam.packs.port.ConnectorRequest(null, "mdm.consumersDue", "list", null, null, null, Map.of(), null));
+        assertTrue(String.valueOf(due.data().get("items")).contains("connectionCaseKey=" + bk), String.valueOf(due.data()));
+        String bill = "UTIL/BILL/77";
+        start("sangam-sec-util-bill", bill, vars("key", "CONS-77", "batchId", "CYCLE-1", "units", 100, "connectionCaseKey", bk));
+        driver.run(bill, t -> null, 10);
+        driver.run(bk, t -> null, 10);
+        assertTrue(driver.ended(bk), "credit done");
+        var in = sim().journal().stream().filter(r -> "billing.credit".equals(r.connector()) && bk.equals(r.businessKey()))
+                .findFirst().orElseThrow().payload();
+        assertEquals("CYCLE-1", in.get("cycle"));
+        assertEquals("ENERGY", in.get("head"));
+        assertEquals("CONS-77", in.get("consumer"));
+    }
+
+    @Test
     void p1UnknownPaymentOutcomeIsReconciledWithoutRepeat() {
         String bk = "BILL/2026/00999";
         Map<String, Object> v = bill();

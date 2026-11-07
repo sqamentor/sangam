@@ -36,7 +36,7 @@ import java.util.function.BiFunction;
  *   <li>period: {@code period}, {@code fiscalYear} (missing or {@code current}: the period resolver);</li>
  *   <li>stage: {@code stage} (missing: the definition's consume stage; for {@code allocate} the first stage);</li>
  *   <li>amount: {@code amount}, {@code surrenderAmount}, {@code beAmount};</li>
- *   <li>target for transfer: line {@code toHead}; for distribute / withdraw: the parent stage with holder
+ *   <li>target for transfer: line {@code toHead} and / or holder {@code toHolder}; for distribute / withdraw: the parent stage with holder
  *       {@code fromHolder} (default {@code -}).</li>
  * </ul>
  */
@@ -64,7 +64,7 @@ public final class LedgerConnector implements SangamConnector {
     public ConnectorDescriptor descriptor() {
         return new ConnectorDescriptor("ledger", "in-process", CapabilityClass.A_IDEMPOTENT_WITH_LOOKUP,
                 List.of("available", "allocate", "distribute", "withdraw", "commit", "encumber", "release", "consume", "transfer",
-                        "adjust", "releaseHolds", "closePeriod"), ConnectorProfile.LIVE);
+                        "adjust", "reverse", "write_off", "releaseHolds", "closePeriod"), ConnectorProfile.LIVE);
     }
 
     @Override
@@ -127,7 +127,15 @@ public final class LedgerConnector implements SangamConnector {
             default -> op.toUpperCase();
         };
         if ("transfer".equals(op)) {
-            target = acct.withLine(first(r, List.of("toHead", "toLine"), "-"));
+            String toLine = first(r, List.of("toHead", "toLine"), null);
+            String toHolder = first(r, List.of("toHolder"), null);
+            if (toLine == null && toHolder == null) {
+                toLine = "-";
+            }
+            target = toLine == null ? acct : acct.withLine(toLine);
+            if (toHolder != null) {
+                target = target.atStage(target.stage(), toHolder);
+            }
         } else if ("distribute".equals(op) || "withdraw".equals(op)) {
             String parent = def.parentStage(acct.stage());
             target = acct.atStage(parent == null ? acct.stage() : parent, first(r, List.of("fromHolder"), "-"));

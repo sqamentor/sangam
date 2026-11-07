@@ -73,6 +73,8 @@ public final class SangamSchema {
             "PACK_OPERATION", "PACK_LEDGER_ACCOUNT", "PACK_LEDGER_POSTING", "PACK_BATCH_ITEM",
             // sangam-config ConfigSchema
             "CFG_PROFILE", "CFG_CHANGE", "CFG_MASTER_CODE", "CFG_SERIES", "CFG_CASE_BINDING",
+            // sangam-onboarding
+            "ONB_RUN",
             // sangam-ledger LedgerSchema (also the billing tables)
             "LDG_BALANCE", "LDG_ENTRY", "LDG_HOLD", "LDG_FREEZE", "LDG_ACCOUNTING",
             // sangam-registry RegistrySchema
@@ -108,6 +110,14 @@ public final class SangamSchema {
             "PG_CONFIG", "PG_PROGRAMME", "PG_INDICATOR", "PG_PERIOD", "PG_TARGET", "PG_MILESTONE",
             "PG_RETURN_DEF", "PG_RETURN", "PG_RETURN_VALUE", "PG_RETURN_FINDING", "PG_RETURN_EVENT",
             "PG_ACHIEVEMENT", "PG_FINANCIAL", "PG_ALERT", "PG_DASHBOARD_SNAPSHOT",
+            "SANGAM_FEEL_BINDING", // R10
+            "MOD_SERVICE_MOCK", "OPS_RETENTION_RUN",
+            // ChannelsSchema, ModellerSchema, OpsSchema
+            "CH_CONVERSATION", "CH_PARTICIPANT", "CH_MESSAGE", "CH_OPT_IN", "CH_INBOUND_SEEN", "CH_POLL_CURSOR", "MOD_EDIT_LEASE", "MOD_TAKEOVER_DRAFT", "MOD_TEMPLATE", "MOD_ACTION", "MOD_ACTION_RUN", "MOD_TEST_RUN", "OPS_MIG_CHECKPOINT", "OPS_MIG_ROW", "OPS_USAGE_DAILY", "OPS_SEARCH_DOC", "OPS_SEARCH_ALIAS", "OPS_INDEX_JOB", "OPS_VARIABLE", "OPS_SECRET",
+            // AiSchema, ComplianceSchema, PipelineStore, TelemetrySchema
+            "AI_AGENT_RUN", "AI_AGENT_STEP", "AI_AGENT_APPROVAL", "AI_KB_VERSION", "AI_KB_CHUNK", "AI_DRAFT",
+            "AI_CLASSIFICATION", "CMP_RESTRICTION", "CMP_BREACH_PLAN", "PIPELINE_RUN", "PIPELINE_STEP_RUN",
+            "PIPELINE_SCHEDULE", "TELEMETRY_DEVICE", "ALARM_EPISODE",
             "SANGAM_TIMER_GUARD", "SANGAM_PAUSE",
             // WS-REST default adapters: typed JSON documents and binary contents (nothing kept in memory)
             "REST_DOCUMENT", "REST_BLOB",

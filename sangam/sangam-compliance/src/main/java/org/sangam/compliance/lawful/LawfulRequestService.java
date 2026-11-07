@@ -91,8 +91,17 @@ public final class LawfulRequestService {
 
     public void respond(Connection c, String tenantId, String requestId, String responseRef, List<String> principalRefs,
                         Set<String> dataCategories, String responder) {
+        respond(c, tenantId, requestId, responseRef, principalRefs, dataCategories, null, responder);
+    }
+
+    /** {@code attestationRef}: the requester's signed attestation where the basis requires one. */
+    public void respond(Connection c, String tenantId, String requestId, String responseRef, List<String> principalRefs,
+                        Set<String> dataCategories, String attestationRef, String responder) {
         LawfulRequest r = require(c, tenantId, requestId, Status.APPROVED);
         JurisdictionPack.LawfulRequestBasis basis = basis(config.forTenant(tenantId), r.basis());
+        if (basis.requiresAttestation() && (attestationRef == null || attestationRef.isBlank())) {
+            throw new ComplianceException(Code.REPORT_INCOMPLETE, "basis " + basis.code() + " requires a signed attestation (" + basis.citation() + ")");
+        }
         Instant now = Sql.now(c, dialect);
         boolean late = now.isAfter(r.dueAt());
         Jdbc.update(c, "UPDATE CMP_LAWFUL_REQUEST SET status=?, responded_by=?, responded_at=?, response_ref=?, late=?"

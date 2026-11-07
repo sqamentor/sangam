@@ -48,7 +48,7 @@ public class DocumentDelegate implements JavaDelegate {
         payload.put("reasons", Vars.str(ex, "rejectionReasonCodes"));
         payload.put("approvedPayloadHash", Vars.str(ex, Vars.APPROVED_HASH));
         String bk = ex.getProcessBusinessKey() == null ? ex.getProcessInstanceId() : ex.getProcessBusinessKey();
-        String opId = Vars.operationId(bk, "doc:" + tpl, Vars.intVal(ex, Vars.CASE_VERSION, 1));
+        String opId = Vars.operationId(Vars.tenant(ex), bk, "doc:" + tpl, Vars.intVal(ex, Vars.CASE_VERSION, 1));
         ConnectorResult r = PackRuntime.gateway().submit(new ConnectorRequest(Vars.tenant(ex), "docs.issue", tpl,
                 opId, bk, ex.getProcessInstanceId(), Vars.withDirective(ex, "docs.issue", payload),
                 Vars.hash(payload)));

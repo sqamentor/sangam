@@ -131,7 +131,7 @@ public final class ConnectorExternalTaskWorker implements AutoCloseable {
         Instant deadline = w.lockExpiresAt() == null ? null : w.lockExpiresAt().minusSeconds(5);
         ConnectorInvoker.Invocation inv = new ConnectorInvoker.Invocation(ctx.tenantId(), ctx.rootId(),
                 w.activityInstanceId() == null ? w.id() : w.activityInstanceId(), ctx.loopCounter(), retrySafe, ctx.businessKey(),
-                b.connectorId(), b.operation(), input, w.attemptId(), w.lockVersion(), deadline);
+                b.connectorId(), b.operation(), input, w.attemptId(), w.lockVersion(), deadline, mintedId(w));
         ScheduledFuture<?> hb = heartbeat(w, b.lockDuration());
         ConnectorInvoker.Outcome outcome;
         try {
@@ -181,6 +181,19 @@ public final class ConnectorExternalTaskWorker implements AutoCloseable {
                             + (u.reconciliationItemId() == null ? "" : " item " + u.reconciliationItemId()) + ": " + u.reason(),
                     0, Duration.ZERO);
             case ConnectorInvoker.Stale s -> LOG.info("stale lease for {}: {}", w.id(), s.message());
+        }
+    }
+
+    /** The adapter's T35 operationId; null (invoker warns and derives) when absent or not a UUID. */
+    private static java.util.UUID mintedId(EngineAdapter.ExternalWork w) {
+        if (w.operationId() == null || w.operationId().isBlank()) {
+            return null;
+        }
+        try {
+            return java.util.UUID.fromString(w.operationId());
+        } catch (IllegalArgumentException e) {
+            LOG.warn("work {} carries a malformed operationId {}", w.id(), w.operationId());
+            return null;
         }
     }
 

@@ -155,8 +155,12 @@ public final class AccountabilityService {
         out.add(new ObligationStatus("CONTACT:PUBLISHED", "A published contact is designated", contacts.publishedContact(c, tenantId).isPresent(),
                 null, contacts.publishedContact(c, tenantId).map(Contact -> Contact.role()).orElse("missing")));
         for (JurisdictionPack.ContactRole r : pack.contactRoles()) {
-            if (r.mustBeResident() && !elevated) {
+            boolean requiredByAttribute = r.requiredForAttributes().stream().anyMatch(a -> config.forTenant(tenantId).has(a));
+            if (r.mustBeResident() && !elevated && !requiredByAttribute) {
                 continue; // resident roles in packs are elevated-tier officers
+            }
+            if (!r.requiredForAttributes().isEmpty() && !requiredByAttribute && !elevated) {
+                continue;
             }
             Optional<ContactDirectory.Contact> ct = contacts.current(c, tenantId, r.code());
             out.add(new ObligationStatus("CONTACT:" + r.code(), r.description() + " (" + r.citation() + ")",
@@ -171,6 +175,17 @@ public final class AccountabilityService {
                     ia.map(x -> "last " + x.assessedAt()).orElse("none recorded")));
             out.add(new ObligationStatus("IMPACT_ASSESSMENT_REPORT", pack.elevatedTierName() + ": significant observations reported to the authority",
                     ia.map(x -> x.authorityReportRef() != null && !x.authorityReportRef().isBlank()).orElse(false), null, null));
+        }
+        if (pack.priorConsultationRequired()) {
+            Optional<ImpactAssessment> ia = latestImpactAssessment(c, tenantId);
+            boolean highResidual = ia.map(x -> "HIGH".equalsIgnoreCase(x.residualRisk())).orElse(false);
+            if (highResidual) {
+                Optional<AuditEvidence> pc = pack.priorConsultationEvidence() == null ? Optional.empty()
+                        : latestAudit(c, tenantId, pack.priorConsultationEvidence());
+                boolean met = pc.isPresent() && !pc.get().completedAt().isBefore(ia.get().assessedAt());
+                out.add(new ObligationStatus("PRIOR_CONSULTATION", "Prior consultation of the authority before processing with high residual"
+                        + " risk (" + pack.priorConsultationCitation() + ")", met, null, met ? null : "high residual risk without consultation"));
+            }
         }
         for (JurisdictionPack.EvidenceKind k : pack.evidenceKinds()) {
             if (k.elevatedTierOnly() && !elevated) {

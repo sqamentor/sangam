@@ -24,6 +24,17 @@ for (const f of files) {
   const s = readFileSync(f, 'utf8');
   for (const m of s.matchAll(keyRe)) used.add(m[1]);
   for (const m of s.matchAll(labelRe)) used.add(m[1]);
+  // Declarative module fields: f.text('x') and c('x') default to fld.x; f.select options to opt.VALUE.
+  for (const m of s.matchAll(/\bf\.(?:text|num|money|date|dt|area|json|bool)\('([\w.]+)'(?:\)|, undefined)/g)) used.add('fld.' + m[1]);
+  for (const m of s.matchAll(/\bc\('(\w+)'\)/g)) used.add('fld.' + m[1]);
+  for (const m of s.matchAll(/\bf\.select\('(\w+)', \[([^\]]*)\](, undefined)?/g)) {
+    if (m[3] !== undefined || !/\[[^\]]*\], '/.test(m[0] + s.slice(m.index + m[0].length, m.index + m[0].length + 3))) used.add('fld.' + m[1]);
+    for (const v of m[2].matchAll(/'([^']+)'/g)) used.add('opt.' + v[1]);
+  }
+  for (const m of s.matchAll(/\b(?:label|hint|description|emptyHint|title):\s*'([a-z]+\.[\w.]+)'/g)) used.add(m[1]);
+  for (const m of s.matchAll(/\bf\.\w+\('[\w.]+', '([a-z]+\.[\w.]+)'/g)) used.add(m[1]);
+  for (const m of s.matchAll(/\bc\('\w+', '([a-z]+\.[\w.]+)'/g)) used.add(m[1]);
+  for (const m of s.matchAll(/title="([a-z]+\.[\w.]+)"|description="([a-z]+\.[\w.]+)"/g)) used.add(m[1] ?? m[2]);
 }
 
 const dyn = JSON.parse(readFileSync(join(root, 'scripts', 'i18n-dynamic.json'), 'utf8'));

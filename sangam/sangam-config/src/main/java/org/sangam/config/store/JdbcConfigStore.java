@@ -136,6 +136,12 @@ public final class JdbcConfigStore implements ProfileRepository, MasterStore, Nu
                 JdbcConfigStore::code, scope, scheme, segment));
     }
 
+    @Override
+    public List<MasterCode> children(String scope, String scheme, String segment, String parentPrefix) {
+        return inTx(c -> Jdbc.query(c, "SELECT * FROM CFG_MASTER_CODE WHERE scope_id = ? AND scheme_id = ? AND segment_id = ? "
+                + "AND parent_code LIKE ?", JdbcConfigStore::code, scope, scheme, segment, parentPrefix + "%"));
+    }
+
     private static MasterCode code(java.sql.ResultSet rs) throws SQLException {
         String from = rs.getString("valid_from");
         String parent = rs.getString("parent_code");

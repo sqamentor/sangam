@@ -37,7 +37,7 @@ public final class JdbcRegistryAdapter implements RegistryPort {
     private static final Set<String> STRATEGIES = Set.of("ROUND_ROBIN", "LEAST_LOADED", "SKILLS", "SLA_PRIORITY",
             "PULL_QUEUE");
     private static final Set<String> FORMATS = Set.of("HTML", "PDFA", "DOCX");
-    private static final Set<String> CHANNELS = Set.of("MATRIX", "TEAMS", "SLACK", "WHATSAPP");
+    private static final Set<String> CHANNELS = Set.of("MATRIX", "TEAMS", "SLACK", "WHATSAPP", "WECHAT");
     private static final Set<String> CATEGORIES = Set.of("A", "B", "C");
 
     private final DocumentStore store;

@@ -45,9 +45,26 @@ public class CellTenantAdminController {
     private final CellTenantMover mover;
     private final CellTenantStateStore states;
 
-    public CellTenantAdminController(CellTenantMover mover, CellTenantStateStore states) {
+    public CellTenantAdminController(CellTenantMover mover, CellTenantStateStore states,
+            org.springframework.beans.factory.ObjectProvider<org.sangam.server.config.OnboardingWiring.OnboardingRestorer> restorer,
+            org.springframework.beans.factory.ObjectProvider<org.sangam.server.config.OnboardingWiring.OnboardingMoveGuard> moveGuard) {
+        this.moveGuard = moveGuard;
+        this.restorer = restorer;
         this.mover = mover;
         this.states = states;
+    }
+
+    private final org.springframework.beans.factory.ObjectProvider<org.sangam.server.config.OnboardingWiring.OnboardingRestorer> restorer;
+
+    private final org.springframework.beans.factory.ObjectProvider<org.sangam.server.config.OnboardingWiring.OnboardingMoveGuard> moveGuard;
+
+    private void refuseOpenOnboarding(String tenant) {
+        moveGuard.ifAvailable(g -> {
+            if (g.openRun(tenant)) {
+                throw ApiProblem.conflict("ONBOARDING_IN_PROGRESS", "tenant " + tenant
+                        + " has an open onboarding run; finish or cancel it before moving the tenant");
+            }
+        });
     }
 
     public record MoveRequest(String moveId) {
@@ -66,6 +83,7 @@ public class CellTenantAdminController {
     public ResponseEntity<Map<String, Object>> prepareImport(RequestContext ctx, @PathVariable String tenant,
                                                              @RequestBody(required = false) MoveRequest body) {
         requireRole(ctx);
+        refuseOpenOnboarding(tenant);
         CellTenantStateStore.TenantState s = states.read(tenant);
         String moveId = moveId(body == null ? null : body.moveId());
         if (s.state() == State.IMPORTING && moveId.equals(s.moveId())) {
@@ -85,6 +103,7 @@ public class CellTenantAdminController {
     public ResponseEntity<Map<String, Object>> freeze(RequestContext ctx, @PathVariable String tenant,
                                                       @RequestBody(required = false) MoveRequest body) {
         requireRole(ctx);
+        refuseOpenOnboarding(tenant);
         CellTenantStateStore.TenantState s = states.read(tenant);
         String moveId = moveId(body == null ? null : body.moveId());
         if (s.state() == State.FROZEN) {
@@ -108,6 +127,7 @@ public class CellTenantAdminController {
                                                                @RequestBody(required = false) MoveRequest body) {
         requireRole(ctx);
         requireState(tenant, State.FROZEN);
+        refuseOpenOnboarding(tenant);
         CellTenantMover.ExportHandle h = mover.export(ctx, tenant, moveId(body == null ? null : body.moveId()));
         return Lists.okRef(tenant, h);
     }
@@ -160,6 +180,7 @@ public class CellTenantAdminController {
         String moveId = moveId(body == null ? null : body.moveId());
         mover.auditCell(ctx, tenant, "TENANT_MOVED_IN", Map.of("moveId", moveId, "sourceAuditHead",
                 source == null ? head : source));
+        restorer.ifAvailable(r -> r.restore(tenant));
         return Lists.okRef(tenant, state(states.set(tenant, State.ACTIVE, moveId, null, ctx.principalId())));
     }
 
@@ -196,6 +217,7 @@ public class CellTenantAdminController {
         }
         String moveId = moveId(body == null ? null : body.moveId());
         mover.auditCell(ctx, tenant, "TENANT_UNFROZEN", Map.of("moveId", moveId));
+        restorer.ifAvailable(r -> r.restore(tenant));
         return Lists.okRef(tenant, state(states.set(tenant, State.ACTIVE, moveId, null, ctx.principalId())));
     }
 

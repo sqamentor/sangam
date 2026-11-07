@@ -91,6 +91,8 @@ public final class BillingPaymentPort implements BillingService.PaymentPort {
                                                           String operation, Map<String, Object> input) {
         return new ConnectorInvoker.Invocation(tenant, ComplianceConnectors.id64("bill:", root),
                 ComplianceConnectors.id64("bill:", activity), 0, null, null, connector, operation, input,
-                UUID.randomUUID().toString(), 0L, Instant.now().plus(Duration.ofMinutes(2)));
+                UUID.randomUUID().toString(), 0L, Instant.now().plus(Duration.ofMinutes(2)),
+                org.sangam.core.layer.OperationLedger.operationId(tenant, ComplianceConnectors.id64("bill:", root),
+                        ComplianceConnectors.id64("bill:", activity), 0));
     }
 }

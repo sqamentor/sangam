@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: BGD
+  layer: jurisdiction
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL
+  - INTL-PFM
+  - REGIME-WESTMINSTER-SUPPLY
+  name:
+    en: Bangladesh (central)
+  source: INTERNATIONAL-PFM 5
+placeholders:
+- path: integrations
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources'
+- path: classification
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (BACS)'
+- path: payments
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (BEFTN EFT)'
+locale:
+  zone: Asia/Dhaka
+  currency: BDT
+  grouping:
+    first: 3
+    rest: 3
+  units:
+    K: 1000
+    M: 1000000
+    BN: 1000000000
+  fiscal:
+    startMonth: 7
+    startDay: 1
+    label: END
+  languages:
+  - tag: bn
+    script: Beng
+    default: true
+  - tag: en
+    script: Latn
+    default: false
+integrations:
+  systems:
+  - iBAS++ [U]
+ledgers:
+- id: BUDGET
+  currency: BDT
+accountingBasis:
+- basis: MODIFIED_CASH
+payments:
+  rail: EFT_BEFTN
+  direct: true
+  g2p: true
+development:
+  budget: ADP
+  donorFunded: true
+audit:
+  sai: C&AG Bangladesh

@@ -221,7 +221,11 @@ public final class IncidentReportingService {
     }
 
     private static JurisdictionPack.Authority authority(ComplianceConfig cfg, String code) {
-        return cfg.pack.authority(code).orElseThrow(() -> ComplianceException.invalid("authority " + code + " is not defined by jurisdiction " + cfg.pack.code()));
+        try {
+            return cfg.authority(code);
+        } catch (IllegalArgumentException e) {
+            throw ComplianceException.invalid(e.getMessage());
+        }
     }
 
     private static final String SELECT = "SELECT incident_id, authority, incident_type, occurred_at, noticed_at, due_at, status, reported_at,"

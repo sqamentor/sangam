@@ -57,6 +57,39 @@ public final class ComplianceSteps {
             r.escalate(c, t, s(v, "requestId"), "system:sla");
             return Map.of("escalated", true);
         }));
+        steps.put("rights.extend", (t, v) -> tx(c -> Map.of("dueAt", r.extend(c, t, s(v, "requestId"), s(v, "extensionReason"), actor(v)).dueAt().toString())));
+        steps.put("rights.accounting", (t, v) -> tx(c -> Map.of("disclosuresListed", r.buildAccounting(c, t, s(v, "requestId"), actor(v)).size())));
+        steps.put("rights.denyWithException", (t, v) -> tx(c -> {
+            r.denyWithException(c, t, s(v, "requestId"), s(v, "accessException"), Boolean.TRUE.equals(v.get("partial")), s(v, "decisionReason"), actor(v));
+            return Map.of();
+        }));
+        steps.put("rights.applyRestriction", (t, v) -> tx(c -> {
+            r.applyRestriction(c, t, s(v, "requestId"), (String) v.getOrDefault("recipientPattern", "*"), (String) v.get("purposeCode"),
+                    Boolean.TRUE.equals(v.get("restrictionAccepted")), (String) v.get("decisionReason"), actor(v));
+            return Map.of();
+        }));
+        steps.put("rights.applyObjection", (t, v) -> tx(c -> {
+            r.applyObjection(c, t, s(v, "requestId"), s(v, "purposeCode"), Boolean.TRUE.equals(v.get("compellingGrounds")),
+                    (String) v.get("decisionReason"), actor(v));
+            return Map.of();
+        }));
+        steps.put("rights.humanReview", (t, v) -> tx(c -> {
+            r.recordHumanReview(c, t, s(v, "requestId"), s(v, "reviewOutcome"), actor(v));
+            return Map.of();
+        }));
+        steps.put("breach.assessRisk", (t, v) -> tx(c -> Map.of("riskOutcome", cmp.breachPlans.assessRisk(c, t, s(v, "breachId"),
+                strings(v.get("riskFactors")), Boolean.TRUE.equals(v.get("lowProbability")), Boolean.TRUE.equals(v.get("highRisk")), actor(v)).name())));
+        steps.put("breach.plan", (t, v) -> tx(c -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Integer> perRegion = new java.util.LinkedHashMap<>();
+            if (v.get("affectedPerRegion") instanceof Map<?, ?> m) {
+                m.forEach((k, x) -> perRegion.put(String.valueOf(k), Integer.parseInt(String.valueOf(x))));
+            }
+            var plan = cmp.breachPlans.plan(c, t, s(v, "breachId"), Integer.parseInt(s(v, "affectedCount")), perRegion, actor(v));
+            java.time.Instant first = plan.stream().map(p -> p.dueAt()).filter(java.util.Objects::nonNull).min(java.util.Comparator.naturalOrder())
+                    .orElse(java.time.Instant.now().plus(java.time.Duration.ofDays(1)));
+            return Map.of("plannedNotifications", plan.size(), "firstNotificationDueAt", first.toString());
+        }));
         steps.put("nomination.register", (t, v) -> tx(c -> {
             DataSubjectRightsService.RightsRequest req = r.get(c, t, s(v, "requestId"));
             NominationService.Nomination n = cmp.nominations.nominate(c, t, req.principalRef(), s(v, "nomineeRef"),
@@ -69,6 +102,7 @@ public final class ComplianceSteps {
                 cmp.breaches.notifySubjects(c, t, s(v, "breachId"), strings(v.get("subjectNotice")), actor(v)))));
         steps.put("breach.submitReport", (t, v) -> tx(c -> Map.of("reportRef",
                 cmp.breaches.submitDetailedReport(c, t, s(v, "breachId"), strings(v.get("detailedReport")), actor(v)))));
+        steps.put("breach.planOverdue", (t, v) -> tx(c -> Map.of("overdue", !cmp.breachPlans.overdue(c, t).isEmpty())));
         steps.put("breach.overdue", (t, v) -> tx(c -> Map.of("overdue", !cmp.breaches.overdue(c, t).isEmpty())));
         steps.put("breach.close", (t, v) -> tx(c -> {
             cmp.breaches.close(c, t, s(v, "breachId"), actor(v));

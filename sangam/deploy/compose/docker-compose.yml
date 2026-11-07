@@ -22,6 +22,8 @@ x-server-common: &server-common
   build:
     context: ../..
     dockerfile: deploy/docker/server.Dockerfile
+    args:
+      APP_MODULE: sangam-server
   restart: unless-stopped
   depends_on: &server-depends
     keycloak:
@@ -35,6 +37,8 @@ x-server-common: &server-common
     - ./drivers:/opt/sangam/drivers:ro
     - ./config/server:/opt/sangam/config:ro
     - pfms-files:/data/pfms
+    # compliance log archive (R51, 180 days) + cell exports
+    - server-state:/var/lib/sangam
   networks:
     sangam:
       aliases: [sangam-server]
@@ -42,22 +46,29 @@ x-server-common: &server-common
     TZ: UTC
     SANGAM_LIQUIBASE_MODE: ${SANGAM_LIQUIBASE_MODE:-startup}
     SANGAM_TENANT_DEFAULT: ${SANGAM_TENANT_DEFAULT:-dept-finance}
-    # Keys are fetched over the internal network; the iss claim is the public issuer the browser sees.
+    # This example is an India deployment; the server has no default jurisdiction.
+    SANGAM_COMPLIANCE_JURISDICTIONS: ${SANGAM_COMPLIANCE_JURISDICTIONS:-IN}
+    SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY: ${SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY:-IN}
+    # Profile "oidc" (application-oidc.yaml) reads SANGAM_OIDC_ISSUER = the iss the browser's tokens carry; the keys
+    # are fetched over the internal network (OidcConfig prefers jwk-set-uri and still validates iss).
+    SANGAM_OIDC_ISSUER: ${SANGAM_OIDC_ISSUER_PUBLIC:-http://localhost:8180/realms/sangam}
     SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${SANGAM_OIDC_ISSUER_INTERNAL:-http://keycloak:8180/realms/sangam}/protocol/openid-connect/certs
-    SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${SANGAM_OIDC_ISSUER_PUBLIC:-http://localhost:8180/realms/sangam}
     SANGAM_SECURITY_OIDC_AUDIENCE: sangam-server
     SANGAM_SECURITY_OIDC_TENANT_CLAIM: tenant
     SANGAM_SECURITY_OIDC_ROLES_CLAIM: roles
     SANGAM_SECURITY_OIDC_SEATS_CLAIM: seats
-    MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus,metrics
-    MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
-    OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false}
-    OTEL_SERVICE_NAME: sangam-server
-    OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-    OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
-    MANAGEMENT_OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
-    LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
-    SANGAM_SIMULATORS_ENABLED: ${SANGAM_SIMULATORS_ENABLED:-false}
+    SANGAM_CORS_ORIGINS: ${SANGAM_CORS_ORIGINS:-http://localhost:3000}
+    # OTLP export is off unless enabled (ARCHITECTURE 1.9, R56); the local collector drops it by default anyway.
+    SANGAM_OTLP_ENABLED: ${SANGAM_OTLP_ENABLED:-false}
+    SANGAM_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+    MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://otel-collector:4318/v1/metrics
+    # sangam-compliance (DPDP / CERT-In). The log archive is the server-state volume (image default path).
+    SANGAM_COMPLIANCE_JURISDICTIONS: ${SANGAM_COMPLIANCE_JURISDICTIONS:-IN}
+    SANGAM_COMPLIANCE_ORGANISATION: ${SANGAM_COMPLIANCE_ORGANISATION:-Sangam development}
+    SANGAM_COMPLIANCE_TENANTS: ${SANGAM_COMPLIANCE_TENANTS:-dept-finance,dept-social-welfare,dept-industries}
+    SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY: IN
+    # In-process simulators of sangam-integration (SimulatorProfile); the sim-* containers are the standalone variant.
+    SANGAM_INTEGRATION_SIMULATORS_ENABLED: ${SANGAM_SIMULATORS_ENABLED:-false}
     SANGAM_CONNECTORS_IFMS_BASE_URL: http://sim-ifms:9000
     SANGAM_CONNECTORS_ESIGN_BASE_URL: http://sim-esign:9000
     SANGAM_CONNECTORS_DLT_BASE_URL: http://sim-dlt:9000
@@ -224,10 +235,10 @@ services:
         condition: service_healthy
     environment:
       <<: *server-env
-      SPRING_PROFILES_ACTIVE: postgres
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sangam?ApplicationName=sangam-server
-      SPRING_DATASOURCE_USERNAME: sangam
-      SPRING_DATASOURCE_PASSWORD: ${PG_PASSWORD:-sangam-dev-only}
+      SPRING_PROFILES_ACTIVE: postgres,oidc
+      SANGAM_DB_URL: jdbc:postgresql://postgres:5432/sangam?ApplicationName=sangam-server
+      SANGAM_DB_USER: sangam
+      SANGAM_DB_PASSWORD: ${PG_PASSWORD:-sangam-dev-only}
 
   server-oracle:
     <<: *server-common
@@ -238,10 +249,10 @@ services:
         condition: service_healthy
     environment:
       <<: *server-env
-      SPRING_PROFILES_ACTIVE: oracle
-      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
-      SPRING_DATASOURCE_USERNAME: sangam
-      SPRING_DATASOURCE_PASSWORD: ${ORACLE_PASSWORD:-SangamDev_0nly}
+      SPRING_PROFILES_ACTIVE: oracle,oidc
+      SANGAM_DB_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
+      SANGAM_DB_USER: sangam
+      SANGAM_DB_PASSWORD: ${ORACLE_PASSWORD:-SangamDev_0nly}
 
   server-sqlserver:
     <<: *server-common
@@ -252,10 +263,10 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *server-env
-      SPRING_PROFILES_ACTIVE: sqlserver
-      SPRING_DATASOURCE_URL: jdbc:sqlserver://sqlserver:1433;databaseName=sangam;encrypt=true;trustServerCertificate=true;sendTimeAsDatetime=false;applicationName=sangam-server
-      SPRING_DATASOURCE_USERNAME: sangam
-      SPRING_DATASOURCE_PASSWORD: ${MSSQL_PASSWORD:-SangamDev_0nly!}
+      SPRING_PROFILES_ACTIVE: sqlserver,oidc
+      SANGAM_DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=sangam;encrypt=true;trustServerCertificate=true;sendTimeAsDatetime=false;applicationName=sangam-server
+      SANGAM_DB_USER: sangam
+      SANGAM_DB_PASSWORD: ${MSSQL_PASSWORD:-SangamDev_0nly!}
 
   server-mysql:
     <<: *server-common
@@ -266,12 +277,11 @@ services:
         condition: service_healthy
     environment:
       <<: *server-env
-      SPRING_PROFILES_ACTIVE: mysql
+      SPRING_PROFILES_ACTIVE: mysql,oidc
       # MariaDB Connector/J (shipped, LIC-4/LIC-5) against MySQL 8.4; READ COMMITTED per session as well (P-1).
-      SPRING_DATASOURCE_URL: "jdbc:mariadb://mysql:3306/sangam?permitMysqlScheme=true&allowPublicKeyRetrieval=true&useServerPrepStmts=true&sessionVariables=transaction_isolation='READ-COMMITTED',time_zone='+00:00'"
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.mariadb.jdbc.Driver
-      SPRING_DATASOURCE_USERNAME: sangam
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-sangam-dev-only}
+      SANGAM_DB_URL: "jdbc:mariadb://mysql:3306/sangam?permitMysqlScheme=true&allowPublicKeyRetrieval=true&useServerPrepStmts=true&connectionCollation=utf8mb4_bin&sessionVariables=transaction_isolation='READ-COMMITTED',time_zone='+00:00'"
+      SANGAM_DB_USER: sangam
+      SANGAM_DB_PASSWORD: ${MYSQL_PASSWORD:-sangam-dev-only}
 
   # ------------------------------------------------------------------------------------------------ UI
   ui:
@@ -396,6 +406,7 @@ networks:
     name: sangam
 
 volumes:
+  server-state:
   pg-data:
   oracle-data:
   mssql-data:

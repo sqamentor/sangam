@@ -1,0 +1,1 @@
+{"key":"compliance/automated-decision-review","title":{"en":"automated-decision-review"},"fields":[{"key":"reviewOutcome","type":"textarea","required":true,"label":{"en":"Review outcome"}}]}

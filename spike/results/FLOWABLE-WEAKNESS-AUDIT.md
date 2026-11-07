@@ -230,10 +230,16 @@ bridge always passes one).
 | FWT-050 | 46 | Change-tenant batch item without `targetTenant` | `IllegalArgumentException`; no deployment in tenant "null" |
 | FWT-051 | 47 | Webhook with `secretRef`: missing / wrong / right signature | 403 / 403 / accepted |
 | FWT-052 | 02, 28 | Soak: 10k mixed valid/poison events across Kafka, JMS, webhook | No stuck partition, no heap growth, EVT_LOG has one REJECTED per poison |
+| FWT-053 | 13 | Import a Flowable model with a parallel MI `external-worker` task (no `exclusive` attribute); fetch 10 | All MI items fetched (Operaton external tasks are not exclusive jobs) |
+| FWT-054 | 15 | Claimed user task keeps running while a cross-instance move / injection starts another activity | Running task keeps its id, assignee and claim |
+| FWT-055 | 18 | Instance with 36 timer cycles; open-activities query on the read model | Open-activity rows stay flat; no runtime table growth |
+| FWT-056 | 23 | Product row written through `EngineTx.connection()`, then the engine command fails (with and without engine writes) | Product row rolled back in both cases |
+| FWT-057 | 44 | Import `flowable:type="shell"` and a `scriptTask`; deploy a script task directly | Importer: UNSUPPORTED for both; deploy rejected (D-46) |
 
 ## 6. Limits
 
-- The ports have no unit tests in the module; every fix is compile-verified only. FWT-001…052 are the acceptance set.
+- The ports have no unit tests in the module; every fix is compile-verified only. FWT-001…057 are the acceptance set.
+- FW coverage map (verdict, file:line, FWT ids per FW): `sangam/sangam-flowable-ports/README.md`, section "FW. Flowable weaknesses".
 - FW-27…FW-47 are found by source reading [S]; Flowable's own behaviour for FW-29/31/33/39/40/42/45/47 is a judgement [I]
   from its API shape, not reproduced on Flowable 8.0.0.
 - `sangam-server`, `sangam-integration` and `sangam-rest` were read, not built; the ports' public signatures used there are

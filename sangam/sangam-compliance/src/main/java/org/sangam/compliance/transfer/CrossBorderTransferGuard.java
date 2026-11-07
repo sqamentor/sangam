@@ -28,8 +28,19 @@ import java.util.Set;
  */
 public final class CrossBorderTransferGuard {
 
+    /**
+     * @param mechanism              transfer tool under an adequacy-or-safeguard pack (e.g. EU {@code SCC_2021_914}, {@code BCR},
+     *                               or an Art. 49 derogation code)
+     * @param impactAssessmentRef    transfer impact assessment reference when the pack requires one with safeguards
+     * @param recipientConditionMet  the recipient meets the adequacy condition (e.g. certified under the EU-US DPF)
+     */
     public record TransferRequest(String destinationCountry, String recipient, String purposeCode, Set<String> dataCategories,
-                                  String approvalRef, boolean recipientSameProtectionAttested) {
+                                  String approvalRef, boolean recipientSameProtectionAttested, String mechanism,
+                                  String impactAssessmentRef, boolean recipientConditionMet) {
+        public TransferRequest(String destinationCountry, String recipient, String purposeCode, Set<String> dataCategories,
+                               String approvalRef, boolean recipientSameProtectionAttested) {
+            this(destinationCountry, recipient, purposeCode, dataCategories, approvalRef, recipientSameProtectionAttested, null, null, false);
+        }
     }
 
     public record Decision(String decisionId, boolean allowed, String rule, String reason) {
@@ -69,7 +80,7 @@ public final class CrossBorderTransferGuard {
             allowed = false;
             rule = "UNKNOWN_DESTINATION";
             reason = "destination country unknown: denied (fail closed)";
-        } else if (cfg.pack.homeCountry().equals(cc)) {
+        } else if (cfg.pack.isHome(cc)) {
             allowed = true;
             rule = "DOMESTIC";
             reason = "destination in the home country";
@@ -85,6 +96,34 @@ public final class CrossBorderTransferGuard {
             allowed = false;
             rule = "LOCALISED_CATEGORY";
             reason = "localised data categories " + localised + " may not leave the home country";
+        } else if ("NONE".equals(cfg.pack.transferMode())) {
+            allowed = true;
+            rule = "NO_TRANSFER_RESTRICTION";
+            reason = "the jurisdiction does not restrict transfers abroad (contractual safeguards still apply)";
+        } else if ("ADEQUACY_OR_SAFEGUARD".equals(cfg.pack.transferMode())) {
+            var adequate = cfg.pack.adequateDestinations().stream().filter(a -> a.country().equals(cc)).findFirst();
+            var safeguard = cfg.pack.transferSafeguards().stream().filter(s -> s.code().equals(r.mechanism())).findFirst();
+            var derogation = cfg.pack.transferDerogations().stream().filter(s -> s.code().equals(r.mechanism())).findFirst();
+            if (adequate.isPresent() && (adequate.get().condition() == null || r.recipientConditionMet())) {
+                allowed = true;
+                rule = "ADEQUACY";
+                reason = "adequacy decision " + adequate.get().citation();
+            } else if (safeguard.isPresent()) {
+                boolean tiaMissing = cfg.pack.transferImpactAssessmentRequired()
+                        && (r.impactAssessmentRef() == null || r.impactAssessmentRef().isBlank());
+                allowed = !tiaMissing;
+                rule = tiaMissing ? "SAFEGUARD_WITHOUT_IMPACT_ASSESSMENT" : "APPROPRIATE_SAFEGUARD";
+                reason = safeguard.get().code() + " (" + safeguard.get().citation() + ")" + (tiaMissing ? ": transfer impact assessment missing" : "");
+            } else if (derogation.isPresent()) {
+                allowed = true;
+                rule = "DEROGATION";
+                reason = derogation.get().code() + " (" + derogation.get().citation() + ")";
+            } else {
+                allowed = false;
+                rule = "NO_TRANSFER_MECHANISM";
+                reason = cc + " has no adequacy finding" + (adequate.isPresent() ? " for this recipient" : "")
+                        + " and no safeguard or derogation was given";
+            }
         } else if (cfg.denyCrossBorderByDefault && !hasApproval) {
             allowed = false;
             rule = "DENY_BY_DEFAULT";

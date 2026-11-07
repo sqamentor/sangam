@@ -41,7 +41,7 @@ public class EmbeddedWorkerRunner {
                 handled++;
                 Map<String, Object> vars = t.getVariables();
                 String bk = t.getBusinessKey() == null ? t.getProcessInstanceId() : t.getBusinessKey();
-                String opId = Vars.operationId(bk, t.getActivityId() + ":" + w.topic(), 1);
+                String opId = Vars.operationId(t.getTenantId(), bk, t.getActivityId() + ":" + w.topic(), 1);
                 try {
                     Map<String, Object> out = w.handle(t.getTenantId(), bk, opId, vars);
                     ets.complete(t.getId(), workerId, out);

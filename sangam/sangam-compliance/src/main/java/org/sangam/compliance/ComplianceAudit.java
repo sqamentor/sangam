@@ -69,6 +69,12 @@ public final class ComplianceAudit {
     public static final String DISCLOSURE_RECORDED = "CMP_DISCLOSURE_RECORDED";
     public static final String LAWFUL_REQUEST_CHANGED = "CMP_LAWFUL_REQUEST_CHANGED";
     public static final String REPORT_GENERATED = "CMP_EVIDENCE_REPORT_GENERATED";
+    public static final String RESTRICTION_CHANGED = "CMP_RESTRICTION_CHANGED";
+    public static final String RIGHTS_REQUEST_EXTENDED = "CMP_RIGHTS_REQUEST_EXTENDED";
+    public static final String BREACH_RISK_ASSESSED = "CMP_BREACH_RISK_ASSESSED";
+    public static final String BREACH_PLAN = "CMP_BREACH_NOTIFICATION_PLAN";
+    public static final String BREACH_NOTIFICATION_SENT = "CMP_BREACH_NOTIFICATION_SENT";
+    public static final String BREACH_DELAYED = "CMP_BREACH_LAW_ENFORCEMENT_DELAY";
 
     private final AuditChain chain;
 

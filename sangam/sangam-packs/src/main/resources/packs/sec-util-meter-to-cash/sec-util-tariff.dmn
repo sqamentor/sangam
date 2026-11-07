@@ -7,23 +7,27 @@
       <input id="sec-util-tariff_i1" label="Units"><inputExpression id="sec-util-tariff_ie1" typeRef="double"><text>units</text></inputExpression></input>
       <output id="sec-util-tariff_o0" label="Fixed charge" name="fixedCharge" typeRef="double"/>
       <output id="sec-util-tariff_o1" label="Energy rate per unit" name="energyRate" typeRef="double"/>
+      <output id="sec-util-tariff_o2" label="Bill head (must equal the tariff line head)" name="head" typeRef="string"/>
       <rule id="sec-util-tariff_r0">
         <inputEntry id="sec-util-tariff_r0_i0"><text>"DOMESTIC"</text></inputEntry>
         <inputEntry id="sec-util-tariff_r0_i1"><text>&lt;= 100</text></inputEntry>
         <outputEntry id="sec-util-tariff_r0_o0"><text>50</text></outputEntry>
         <outputEntry id="sec-util-tariff_r0_o1"><text>3.5</text></outputEntry>
+        <outputEntry id="sec-util-tariff_r0_o2"><text>"ENERGY"</text></outputEntry>
       </rule>
       <rule id="sec-util-tariff_r1">
         <inputEntry id="sec-util-tariff_r1_i0"><text>"DOMESTIC"</text></inputEntry>
         <inputEntry id="sec-util-tariff_r1_i1"><text>-</text></inputEntry>
         <outputEntry id="sec-util-tariff_r1_o0"><text>50</text></outputEntry>
         <outputEntry id="sec-util-tariff_r1_o1"><text>5.5</text></outputEntry>
+        <outputEntry id="sec-util-tariff_r1_o2"><text>"ENERGY"</text></outputEntry>
       </rule>
       <rule id="sec-util-tariff_r2"><description>commercial</description>
         <inputEntry id="sec-util-tariff_r2_i0"><text>-</text></inputEntry>
         <inputEntry id="sec-util-tariff_r2_i1"><text>-</text></inputEntry>
         <outputEntry id="sec-util-tariff_r2_o0"><text>200</text></outputEntry>
         <outputEntry id="sec-util-tariff_r2_o1"><text>8</text></outputEntry>
+        <outputEntry id="sec-util-tariff_r2_o2"><text>"ENERGY"</text></outputEntry>
       </rule>
     </decisionTable>
   </decision>

@@ -12,9 +12,9 @@ import java.util.Map;
  * <ul>
  *   <li><b>Skip-locked claim.</b> PostgreSQL {@code ... ORDER BY .. LIMIT n FOR UPDATE OF x SKIP LOCKED};
  *       MySQL 8.0+ {@code ... ORDER BY .. LIMIT n FOR UPDATE SKIP LOCKED};
- *       Oracle {@code ... AND ROWNUM <= n FOR UPDATE SKIP LOCKED} (Oracle forbids {@code FETCH FIRST}/
- *       {@code ORDER BY} together with {@code FOR UPDATE}; ROWNUM is applied before rows are skipped, so a
- *       production Oracle relay should fetch from an unbounded {@code SKIP LOCKED} cursor and stop after n rows);
+ *       Oracle {@code ... WHERE x.ROWID IN (ordered ROWNUM window of 8n) ORDER BY .. FOR UPDATE SKIP LOCKED}, fetched
+ *       with maxRows/fetchSize n by {@link Jdbc#query} (Oracle forbids {@code FETCH FIRST} with {@code FOR UPDATE} and
+ *       applies ROWNUM before skipping; SKIP LOCKED locks rows as they are fetched, so only n rows are locked);
  *       SQL Server {@code SELECT TOP (n) ... FROM t x WITH (UPDLOCK, READPAST, ROWLOCK)} (RCSI required).</li>
  *   <li><b>Row lock (L2 surrogate).</b> PostgreSQL/MySQL/Oracle {@code FOR UPDATE} (Oracle: {@code FOR UPDATE WAIT 2}
  *       in production); SQL Server {@code WITH (UPDLOCK, ROWLOCK)} on an index seek.</li>
@@ -124,7 +124,7 @@ public enum Dialect {
      * @param table    table name
      * @param alias    table alias
      * @param where    predicate (may contain {@code ?} placeholders)
-     * @param orderBy  order clause without {@code ORDER BY} (ignored on Oracle, see class comment)
+     * @param orderBy  order clause without {@code ORDER BY}
      * @param limit    maximum rows (inlined as an integer literal)
      */
     public String skipLockedSelect(String columns, String table, String alias, String where, String orderBy, int limit) {
@@ -134,13 +134,42 @@ public enum Dialect {
         return switch (this) {
             case POSTGRESQL -> "SELECT " + columns + " FROM " + table + " " + alias + " WHERE " + where
                     + " ORDER BY " + orderBy + " LIMIT " + limit + " FOR UPDATE OF " + alias + " SKIP LOCKED";
-            case ORACLE -> "SELECT " + columns + " FROM " + table + " " + alias + " WHERE (" + where + ") AND ROWNUM <= "
-                    + limit + " FOR UPDATE SKIP LOCKED";
+            // Oracle numbers rows before it skips locked ones, and FETCH FIRST cannot be combined with FOR UPDATE.
+            // So: pick a candidate window in priority order (ROWNUM over an ordered inline view), then lock-and-skip
+            // inside that window, still in order. With SKIP LOCKED, Oracle locks rows as they are fetched, and the
+            // limit marker makes Jdbc.query stop fetching (and locking) at `limit`; concurrent claimers get the next
+            // rows of the window instead of an empty batch.
+            case ORACLE -> "SELECT " + limitMarker(limit) + columns + " FROM " + table + " " + alias
+                    + " WHERE " + alias + ".ROWID IN (SELECT sgm_rid FROM (SELECT " + alias + ".ROWID AS sgm_rid FROM "
+                    + table + " " + alias + " WHERE (" + where + ") ORDER BY " + orderBy + ") WHERE ROWNUM <= "
+                    + Math.multiplyExact(limit, ORACLE_CANDIDATE_WINDOW) + ")"
+                    + " ORDER BY " + orderBy + " FOR UPDATE SKIP LOCKED";
             case SQLSERVER -> "SELECT TOP (" + limit + ") " + columns + " FROM " + table + " " + alias
                     + " WITH (UPDLOCK, READPAST, ROWLOCK) WHERE " + where + " ORDER BY " + orderBy;
             case MYSQL -> "SELECT " + columns + " FROM " + table + " " + alias + " WHERE " + where
                     + " ORDER BY " + orderBy + " LIMIT " + limit + " FOR UPDATE SKIP LOCKED";
         };
+    }
+
+    /** Oracle claim window: candidates per requested row, so up to this many concurrent claimers each get a batch. */
+    static final int ORACLE_CANDIDATE_WINDOW = 8;
+
+    private static final String LIMIT_MARKER = "/*sangam:limit=";
+
+    /** Comment read by {@link Jdbc#query}: fetch (and, on Oracle SKIP LOCKED, lock) at most {@code limit} rows. */
+    static String limitMarker(int limit) {
+        return LIMIT_MARKER + limit + "*/ ";
+    }
+
+    /** The row limit carried by {@link #limitMarker}, or 0 when the statement has none. */
+    static int markedLimit(String sql) {
+        int at = sql.indexOf(LIMIT_MARKER);
+        if (at < 0) {
+            return 0;
+        }
+        int start = at + LIMIT_MARKER.length();
+        int end = sql.indexOf("*/", start);
+        return end < 0 ? 0 : Integer.parseInt(sql.substring(start, end));
     }
 
     /** A blocking row lock by key (the L2 surrogate on {@code ROOT_SEQ}). */

@@ -16,6 +16,10 @@
       "path": "packs/sec-ushealth-claim/sangam-sec-ushealth-claim.bpmn"
     },
     {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-claim/sangam-sec-ushealth-remittance.bpmn"
+    },
+    {
       "kind": "DMN",
       "path": "packs/sec-ushealth-claim/sec-ushealth-claim-clocks.dmn"
     },
@@ -34,6 +38,14 @@
     {
       "kind": "FORM",
       "path": "packs/sec-ushealth-claim/forms/fix.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/receivable-exception.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/post-exception.form.json"
     },
     {
       "kind": "FORM",
@@ -56,8 +68,16 @@
       "path": "packs/sec-ushealth-claim/forms/write-off.form.json"
     },
     {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/remittance-exception.form.json"
+    },
+    {
       "kind": "SEED",
       "path": "packs/sec-ushealth-claim/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ushealth-claim/registry/identifier-types-us.json"
     }
   ],
   "seed": "packs/sec-ushealth-claim/seed.json",

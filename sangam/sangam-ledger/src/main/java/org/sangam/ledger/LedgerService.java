@@ -41,6 +41,7 @@ public final class LedgerService {
     private LedgerPorts.ExternalLedgerPort external;
     private LedgerPorts.AccountingSink accountingSink = e -> { };
     private LedgerPorts.AuditLink audit = (t, r, o, a, act, s) -> { };
+    private LedgerPorts.BreachSink breaches = (b, r) -> { };
 
     /** Production constructor: balances, holds and freeze orders are all durable (nothing lost on restart). */
     public LedgerService(LedgerStore store, LedgerControlStore control, Clock clock) {
@@ -71,6 +72,13 @@ public final class LedgerService {
 
     public LedgerService withAccounting(LedgerPorts.AccountingSink s) {
         this.accountingSink = s;
+        return this;
+    }
+
+    /** Receives limit breaches (an account below zero after a SOFT-checked posting): a statutory event in some
+     *  jurisdictions (Antideficiency Act report, Excess Vote, PFM-039); the integrator opens a case of the configured type. */
+    public LedgerService withBreaches(LedgerPorts.BreachSink b) {
+        this.breaches = b;
         return this;
     }
 
@@ -192,6 +200,11 @@ public final class LedgerService {
         }
         List<LedgerPorts.AccountingEntry> acc = pr.duplicate() ? List.of() : accounting(def, r);
         if (!pr.duplicate()) {
+            for (Balance b : pr.after()) {
+                if (b.available().signum() < 0 && !def.allowNegative()) {
+                    breaches.breach(b, r);
+                }
+            }
             if (!acc.isEmpty()) {
                 accountingSink.accept(acc);
             }
@@ -355,8 +368,12 @@ public final class LedgerService {
     // ------------------------------------------------------------------------------------------------ accounting
     private List<LedgerPorts.AccountingEntry> accounting(LedgerDefinition def, LedgerRequest r) {
         List<LedgerPorts.AccountingEntry> out = new ArrayList<>();
+        List<String> bases = Tree.strings(def.get("bases")); // accounting bases in force for this ledger (PFM-054)
         for (Map<String, Object> m : Tree.maps(def.get("accounting"))) {
             if (!r.operation().equals(Tree.str(m.get("event"), ""))) {
+                continue;
+            }
+            if (!bases.isEmpty() && !bases.contains(Tree.str(m.get("basis"), "CASH"))) {
                 continue;
             }
             String debit = expand(Tree.str(m.get("debit"), ""), r);
@@ -380,6 +397,81 @@ public final class LedgerService {
     private static String expand(String t, LedgerRequest r) {
         return t.replace("{line}", r.account().line()).replace("{holder}", r.account().holder())
                 .replace("{period}", r.account().period()).replace("{sub}", r.account().sub());
+    }
+
+    // ------------------------------------------------------------------------------------------------ multi-year, ageing, cash
+    /**
+     * Multi-year commitment (PFM-021, PFM-036): one atomic posting commits each period's instalment against that
+     * period's account, so an outer-year ceiling (the account's total in a later period, e.g. an MTEF ceiling stage)
+     * can never be exceeded. {@code schedule} maps period label to amount.
+     */
+    public Result commitMultiYear(AccountKey firstYear, Map<String, BigDecimal> schedule, String reference, String actor,
+                                  Map<String, Object> attrs) {
+        LedgerDefinition def = definition(firstYear.tenant(), firstYear.ledger());
+        LedgerRequest r = new LedgerRequest("COMMIT", firstYear, null,
+                schedule.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add), null, null, reference, null, actor, null,
+                false, false, false, attrs);
+        List<Finding> findings = new ArrayList<>(policies(def, r));
+        if (Finding.anyError(findings)) {
+            return new Result(false, false, false, findings.get(0).code(), findings, List.of(), List.of());
+        }
+        List<Movement> legs = new ArrayList<>();
+        BigDecimal guard = guard(def, firstYear.stage());
+        schedule.forEach((period, amount) -> legs.add(mv(firstYear.withPeriod(period), def.currency(),
+                Map.of(Bucket.COMMITTED, amount), guard, true)));
+        return post(def, r, legs, findings);
+    }
+
+    /**
+     * Payables ageing (PFM-038): open encumbrances (verified, unpaid) grouped by days past their {@code dueDate}
+     * attribute into the configured buckets, e.g. {@code [30, 60, 90]} gives 0-30, 31-60, 61-90 and over 90.
+     */
+    public Map<String, BigDecimal> payablesAgeing(String tenant, String ledger, LocalDate asOf, List<Integer> buckets) {
+        Map<String, BigDecimal> out = new LinkedHashMap<>();
+        int prev = 0;
+        for (int b : buckets) {
+            out.put(prev + "-" + b, BigDecimal.ZERO);
+            prev = b + 1;
+        }
+        out.put(">" + (buckets.isEmpty() ? 0 : buckets.get(buckets.size() - 1)), BigDecimal.ZERO);
+        out.put("notDue", BigDecimal.ZERO);
+        for (Balance b : store.find(tenant, ledger, null, null, null, null)) {
+            if (b.encumbered().signum() <= 0) {
+                continue;
+            }
+            LocalDate due = Tree.date(b.attrs().get("dueDate"), null);
+            if (due == null || !due.isBefore(asOf)) {
+                out.merge("notDue", b.encumbered(), BigDecimal::add);
+                continue;
+            }
+            long days = java.time.temporal.ChronoUnit.DAYS.between(due, asOf);
+            String key = null;
+            int lower = 0;
+            for (int x : buckets) {
+                if (days <= x) {
+                    key = lower + "-" + x;
+                    break;
+                }
+                lower = x + 1;
+            }
+            out.merge(key == null ? ">" + buckets.get(buckets.size() - 1) : key, b.encumbered(), BigDecimal::add);
+        }
+        return out;
+    }
+
+    /**
+     * Cash forecast input (PFM-047): the cash still to go out per period from open commitments and encumbrances
+     * (an encumbrance's attribute {@code expectedPayment} moves it to that period). Feeds the cash plan.
+     */
+    public Map<String, BigDecimal> cashForecast(String tenant, String ledger) {
+        Map<String, BigDecimal> out = new java.util.TreeMap<>();
+        for (Balance b : store.find(tenant, ledger, null, null, null, null)) {
+            BigDecimal open = b.committed().add(b.encumbered());
+            if (open.signum() > 0) {
+                out.merge(Tree.str(b.attrs().get("expectedPayment"), b.key().period()), open, BigDecimal::add);
+            }
+        }
+        return out;
     }
 
     // ------------------------------------------------------------------------------------------------ freeze, conditions

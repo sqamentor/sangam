@@ -35,6 +35,20 @@ class SangamEngineH2SmokeTest {
             </definitions>
             """;
 
+    private static final String DMN = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="d" name="d" namespace="t">
+              <decision id="approve" name="approve">
+                <decisionTable id="dt">
+                  <input id="i1"><inputExpression id="ie1" typeRef="integer"><text>amount</text></inputExpression></input>
+                  <output id="o1" name="ok" typeRef="boolean"/>
+                  <rule id="r1"><inputEntry id="e1"><text>&lt; 100</text></inputEntry><outputEntry id="x1"><text>true</text></outputEntry></rule>
+                  <rule id="r2"><inputEntry id="e2"><text>&gt;= 100</text></inputEntry><outputEntry id="x2"><text>false</text></outputEntry></rule>
+                </decisionTable>
+              </decision>
+            </definitions>
+            """;
+
     @Test
     void endToEndOnH2() {
         JdbcDataSource ds = new JdbcDataSource();
@@ -56,6 +70,15 @@ class SangamEngineH2SmokeTest {
             assertEquals(1, tasks.size());
             a.completeTask(tasks.get(0).id(), Map.of());
             assertTrue(a.getInstance(pi).ended());
+            // R10: model versions are bound to the running FEEL engine at deploy; decisions pass the run-time check
+            a.deploy("t1", "dmn", Map.of("d.dmn", DMN.getBytes(StandardCharsets.UTF_8)));
+            Object out = a.processEngine().getDecisionService().evaluateDecisionTableByKey("approve")
+                    .decisionDefinitionTenantId("t1").variables(Map.of("amount", 10)).evaluate().getSingleResult()
+                    .getSingleEntry();
+            assertEquals(Boolean.TRUE, out);
+            long bound = a.inEngineTransaction(c -> org.sangam.core.layer.Jdbc.one(c,
+                    "SELECT COUNT(*) FROM SANGAM_FEEL_BINDING", rs -> rs.getLong(1)).orElse(0L));
+            assertTrue(bound >= 2, "process and decision definitions bound to the FEEL engine");
             assertThrows(RuntimeException.class, () -> a.deploy("t1", "x",
                     Map.of("x.bpmn", "<?xml version=\"1.0\"?><!DOCTYPE x [<!ENTITY e \"e\">]><x/>".getBytes())));
         }

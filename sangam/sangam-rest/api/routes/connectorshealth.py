@@ -17,3 +17,5 @@ op("post", "/hooks/fhir/{channel}", "receiveFhirNotification", "HealthHooks", "R
                                        "application/json": {"schema": {"type": "object"}}}},
    resp=(200, "HealthHookResult"), errors=("BadRequest", "Unauthorized", "NotFound", "Unprocessable"))
 public("/hooks/fhir/{channel}", "post")
+
+op("post", "/connectors-health/x12/835", "receiveRemittance835", TAGS[-1][0], "Hand over a received 835", "Routes each claim to its waiting case, else starts the later-remittance process once per trace number. An unreadable file becomes a poison item (422).", body={"required": True, "content": {"text/plain": {"schema": {"type": "string"}}, "application/edi-x12": {"schema": {"type": "string"}}}}, resp=(202, "object"), cmd="connectorshealth.remittance.receive", perm="ops.write")

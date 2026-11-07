@@ -16,7 +16,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li><b>saved</b>: types saved by the tenant's administrators in {@code REG_PARTY_CONFIG}. They survive restarts
  *       and win over the seed. A saved RETIRED key hides a seeded type for that tenant;</li>
  *   <li><b>seed</b>: the default from pack configuration, loaded by the integrator at start-up with
- *       {@link #define}. Types under tenant {@code *} apply to every tenant unless the tenant defines the same key.</li>
+ *       {@link #define}. Types under tenant {@code *} apply to every tenant unless the tenant defines the same key.
+ *       Types under {@link #jurisdictionScope} apply only to tenants whose profile resolves to that jurisdiction
+ *       (ADR-D-20: national identifiers are jurisdiction data).</li>
  * </ol>
  * The saved layer is refreshed from the table by {@link PartyService} whenever the table changes, which keeps
  * every node consistent. When {@code allowUnconfigured} is set, an unknown key is accepted as an open, non-unique,
@@ -32,6 +34,22 @@ public final class IdentifierTypeCatalogue {
     private final Map<String, Map<String, IdentifierType>> seed = new ConcurrentHashMap<>();
     private final Map<String, Saved> saved = new ConcurrentHashMap<>();
     private volatile boolean allowUnconfigured;
+    private volatile java.util.function.Function<String, String> jurisdictionOf = t -> null;
+
+    /** The seed key of a jurisdiction's types. */
+    public static String jurisdictionScope(String jurisdiction) {
+        return "jurisdiction:" + jurisdiction;
+    }
+
+    /** Sets how a tenant maps to its jurisdiction (null when it has none: jurisdiction seeds then do not apply). */
+    public void jurisdictionResolver(java.util.function.Function<String, String> resolver) {
+        this.jurisdictionOf = resolver == null ? t -> null : resolver;
+    }
+
+    private Map<String, IdentifierType> jurisdictionSeed(String tenant) {
+        String j = jurisdictionOf.apply(tenant);
+        return j == null ? null : seed.get(jurisdictionScope(j));
+    }
 
     /** Seeds (adds or replaces) the given pack types for the tenant; other seeded types are kept. */
     public List<IdentifierType> define(String tenant, List<Map<String, Object>> definitions) {
@@ -86,6 +104,10 @@ public final class IdentifierTypeCatalogue {
         Map<String, IdentifierType> m = seed.get(tenant);
         IdentifierType t = m == null ? null : m.get(typeKey);
         if (t == null) {
+            Map<String, IdentifierType> scoped = jurisdictionSeed(tenant);
+            t = scoped == null ? null : scoped.get(typeKey);
+        }
+        if (t == null) {
             Map<String, IdentifierType> all = seed.get(ALL_TENANTS);
             t = all == null ? null : all.get(typeKey);
         }
@@ -97,6 +119,10 @@ public final class IdentifierTypeCatalogue {
         Map<String, IdentifierType> all = seed.get(ALL_TENANTS);
         if (all != null) {
             out.putAll(all);
+        }
+        Map<String, IdentifierType> scoped = jurisdictionSeed(tenant);
+        if (scoped != null) {
+            out.putAll(scoped);
         }
         Map<String, IdentifierType> m = seed.get(tenant);
         if (m != null) {

@@ -187,14 +187,14 @@ export function normEngineStatistics(definitionId: string, rows: Any[]): T.Defin
 }
 
 /** History heatmap from GET /analytics/activities (ActivityStat). */
-export function normActivityStats(definitionId: string, rows: Any[]): T.DefinitionStatistics {
+export function normActivityStats(definitionId: string, rows: Any[], mode: 'runtime' | 'history' = 'history'): T.DefinitionStatistics {
   return {
     definitionId,
-    mode: 'history',
+    mode,
     activities: rows.map((r) => ({
       activityId: r.activityId,
       activityName: r.activityName,
-      count: Number(r.count ?? 0),
+      count: Number((mode === 'runtime' ? r.active : r.count) ?? 0),
       incidents: Number(r.incidents ?? 0),
       avgDurationMs: r.avgDurationMs,
       p95DurationMs: r.p95DurationMs ?? r.maxDurationMs,

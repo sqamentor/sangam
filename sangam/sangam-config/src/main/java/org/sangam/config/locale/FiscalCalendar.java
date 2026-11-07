@@ -17,8 +17,10 @@ import java.util.Map;
  * @param zone        the zone of every cut-off and closing instant
  * @param labelFormat {@code START-END2} (2026-27), {@code START} (2026), {@code END} (FY2027 written as 2027),
  *                    {@code START/END} (2026/2027)
+ * @param adjustmentPeriods extra closing periods after period 12 (13, 14 ...), e.g. supplementary March cuts or
+ *                    audit-adjustment periods (PFM-074); labelled {@code <year>/P13}
  */
-public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String labelFormat) {
+public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String labelFormat, int adjustmentPeriods) {
 
     public FiscalCalendar {
         if (startMonth < 1 || startMonth > 12 || startDay < 1 || startDay > 28) {
@@ -26,6 +28,13 @@ public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String l
         }
         zone = zone == null ? ZoneId.of("UTC") : zone;
         labelFormat = labelFormat == null ? "START-END2" : labelFormat;
+        if (adjustmentPeriods < 0 || adjustmentPeriods > 4) {
+            throw new IllegalArgumentException("adjustment periods must be 0..4");
+        }
+    }
+
+    public FiscalCalendar(int startMonth, int startDay, ZoneId zone, String labelFormat) {
+        this(startMonth, startDay, zone, labelFormat, 0);
     }
 
     public static FiscalCalendar calendarYear(ZoneId zone) {
@@ -41,7 +50,8 @@ public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String l
         return new FiscalCalendar(Integer.parseInt(String.valueOf(m.getOrDefault("startMonth", 1))),
                 Integer.parseInt(String.valueOf(m.getOrDefault("startDay", 1))),
                 z == null ? defaultZone : ZoneId.of(z.toString()),
-                m.get("label") == null ? null : m.get("label").toString());
+                m.get("label") == null ? null : m.get("label").toString(),
+                Integer.parseInt(String.valueOf(m.getOrDefault("adjustmentPeriods", 0))));
     }
 
     /** The fiscal year containing a date, identified by the calendar year in which it starts. */
@@ -103,6 +113,15 @@ public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String l
         /** The instant at wall time {@code at} on a day of this year (cut-offs). */
         public Instant at(LocalDate day, LocalTime at) {
             return LocalDateTime.of(day, at).atZone(calendar.zone).toInstant();
+        }
+
+        /** Period labels of the year: {@code <year>/P01} ... {@code <year>/P12} and the adjustment periods. */
+        public java.util.List<String> periodLabels() {
+            java.util.List<String> out = new java.util.ArrayList<>();
+            for (int i = 1; i <= 12 + calendar.adjustmentPeriods; i++) {
+                out.add(label() + "/P" + String.format("%02d", i));
+            }
+            return out;
         }
 
         public FiscalYear next() {

@@ -201,8 +201,26 @@ public class RegistryWiring {
 
     /** Party identifier-type and match-configuration seeds from the packs (registry README §6). */
     @Bean
-    public ApplicationRunner sangamRegistrySeeds(RegistryModule module, Environment env) {
+    public ApplicationRunner sangamRegistrySeeds(RegistryModule module, Environment env,
+            ObjectProvider<org.sangam.config.profile.ProfileResolver> profiles) {
         return args -> {
+            java.util.Map<String, String> jurisdictions = new java.util.concurrent.ConcurrentHashMap<>();
+            module.parties().identifierTypes().jurisdictionResolver(tenant -> {
+                String known = jurisdictions.get(tenant);
+                org.sangam.config.profile.ProfileResolver p = profiles.getIfAvailable();
+                if (known != null || p == null) {
+                    return known;
+                }
+                try {
+                    String j = p.resolve(tenant, java.time.LocalDate.now()).str("jurisdiction", null);
+                    if (j != null) {
+                        jurisdictions.put(tenant, j);
+                    }
+                    return j;
+                } catch (RuntimeException noProfile) {
+                    return null;
+                }
+            });
             if (env.getProperty("sangam.registry.seeds.enabled", Boolean.class, true)) {
                 RegistrySeedLoader.load(module.parties(), RegistryWiring.class.getClassLoader());
             }

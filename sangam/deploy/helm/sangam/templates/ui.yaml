@@ -45,7 +45,7 @@ spec:
               protocol: TCP
           env:
             - name: SANGAM_API_UPSTREAM
-              value: {{ printf "http://%s-server:%v" $fullname .Values.server.service.port | quote }}
+              value: {{ ternary (printf "http://%s-gateway:%v" $fullname .Values.scale.gateway.port) (printf "http://%s-server:%v" $fullname .Values.server.service.port) .Values.scale.gateway.enabled | quote }}
             - name: SANGAM_PUBLIC_API_BASE
               value: /api/v1
             - name: SANGAM_OIDC_ISSUER

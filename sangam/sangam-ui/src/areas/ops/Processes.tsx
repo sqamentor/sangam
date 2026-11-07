@@ -5,6 +5,9 @@
  * selection → R64 batch (retry, suspend, cancel, migrate, set variables, delete, restart) with server count preview.
  */
 import { useMemo, useState } from 'react';
+import { http } from '../../api/client';
+import { useAuth } from '../../auth/AuthProvider';
+import { PluginSlot, usePlugins } from '../../plugins/host';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
@@ -19,16 +22,28 @@ export function ProcessDefinitions() {
   const [q, setQ] = useState('');
   const [latest, setLatest] = useState(true);
   const list = usePaged((p) => api.processes.definitions({ ...p, q, latest }), [q, latest]);
+  const [thumbs, setThumbs] = useState(false);
   return (
     <>
       <PageHeader title={t('ops.processesTitle')} />
       <div className="filters">
         <SearchBox label={t('common.search')} value={q} onChange={setQ} />
         <Checkbox label={t('ops.latestOnly')} checked={latest} onChange={setLatest} />
+        <Checkbox label={t('ops.showPreviews')} checked={thumbs} onChange={setThumbs} />
       </div>
       <ProblemAlert error={list.error} onRetry={list.reload} />
       {list.loading && !list.data && <Loading />}
       {list.data?.items.length === 0 && <Empty message={t('common.emptyNone')} />}
+      {thumbs && (
+        <ul className="cards">
+          {list.data?.items.map((d) => (
+            <li key={d.id} className="card">
+              <Link to={`/ops/processes/${encodeURIComponent(d.id)}`}>{d.name ?? d.key}</Link>
+              <Thumb id={d.id} title={d.name ?? d.key} />
+            </li>
+          ))}
+        </ul>
+      )}
       {list.data && list.data.items.length > 0 && (
         <>
           <DataTable
@@ -53,6 +68,11 @@ export function ProcessDefinitions() {
   );
 }
 
+function Thumb({ id, title }: { id: string; title: string }) {
+  const x = useAsync(() => api.processes.xml(id), [id]);
+  return x.data ? <BpmnDiagram compact title={title} xml={x.data.bpmn20Xml} height={160} /> : null;
+}
+
 const STATES: InstanceState[] = ['ACTIVE', 'SUSPENDED', 'INCIDENT', 'COMPLETED', 'CANCELED', 'UNKNOWN_OUTCOME'];
 const BATCHES: BatchType[] = ['RETRY', 'SUSPEND', 'ACTIVATE', 'CANCEL', 'SET_VARIABLES', 'DELETE', 'RESTART', 'MIGRATE'];
 
@@ -62,6 +82,7 @@ export function DefinitionDetail() {
   const nav = useNavigate();
   const def = useAsync(() => api.processes.definition(id), [id]);
   const xml = useAsync(() => api.processes.xml(id), [id]);
+  const versions = useAsync(() => api.processes.definitions({ key: def.data!.key, latest: false, size: 100 }), [def.data?.key], !!def.data);
   const [mode, setMode] = useState<OverlayMode>('tokens');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -70,6 +91,20 @@ export function DefinitionDetail() {
     () => api.processes.statistics(id, history ? 'history' : 'runtime', history ? { from: from || undefined, to: to || undefined } : {}, def.data?.key),
     [id, history, from, to, def.data?.key],
   );
+  const { hasRole } = useAuth();
+  const platform = hasRole('PLATFORM_OPERATOR');
+  const overlays = useAsync(async () => {
+    const [jobs, called] = await Promise.all([
+      http.get<{ activityId: string; jobType: string; suspended: boolean }[]>('/engine-rest/job-definition', { processDefinitionId: id }),
+      http.get<{ id: string; key: string; calledFromActivityIds: string[] }[]>(`/engine-rest/process-definition/${encodeURIComponent(id)}/static-called-process-definitions`),
+    ]);
+    return [
+      ...jobs.map((j) => ({ activityId: j.activityId, text: `⚙ ${j.jobType}${j.suspended ? ' ⏸' : ''}` })),
+      ...called.flatMap((d) => d.calledFromActivityIds.map((a) => ({ activityId: a, text: `→ ${d.key}`, href: `/ops/processes/${encodeURIComponent(d.id)}` }))),
+    ];
+  }, [id], platform);
+  const overlayPlugins = usePlugins('diagram.overlay');
+  const pluginBadges = useAsync(async () => (await Promise.all(overlayPlugins.map((p) => p.contribution.badges?.({ language: '', api: http, processDefinitionId: id }) ?? []))).flat(), [id, overlayPlugins]);
   const [activity, setActivity] = useState<string>();
   const [state, setState] = useState<InstanceState | ''>(history ? '' : 'ACTIVE');
   const [bk, setBk] = useState('');
@@ -106,9 +141,13 @@ export function DefinitionDetail() {
         title={def.data ? `${def.data.name ?? def.data.key} v${def.data.version}` : t('ops.definition')}
         actions={
           def.data && (
+            <>
+            <SelectField label={t('ops.version')} value={id} onChange={(v) => nav(`/ops/processes/${encodeURIComponent(v)}`)} options={(versions.data?.items ?? []).map((x) => ({ value: x.id, label: `v${x.version}` }))} />
+            <Link to={`/ops/incidents?processDefinitionKey=${encodeURIComponent(def.data.key)}`}>{t('nav.incidents')}</Link>
             <button type="button" onClick={() => setSuspendOpen(true)}>
               {def.data.suspended ? t('ops.activateDefinition') : t('ops.suspendDefinition')}
             </button>
+            </>
           )
         }
       />
@@ -139,6 +178,7 @@ export function DefinitionDetail() {
           stats={stats.data?.activities}
           flows={stats.data?.flows}
           mode={mode}
+          badges={[...(overlays.data ?? []), ...(pluginBadges.data ?? [])]}
           selected={activity ? [activity] : []}
           onSelect={(a) => setActivity((cur) => (cur === a ? undefined : a))}
         />
@@ -174,6 +214,7 @@ export function DefinitionDetail() {
           </>
         )}
       </Section>
+      <PluginSlot point="process-definition.tab" ctx={{ processDefinitionId: id }} />
       <ReasonDialog
         open={batchType !== null}
         title={batchType ? t(`batch.type.${batchType}`) : ''}

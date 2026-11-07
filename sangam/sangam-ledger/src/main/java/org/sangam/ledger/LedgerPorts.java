@@ -48,6 +48,12 @@ public final class LedgerPorts {
         void accept(List<AccountingEntry> entries);
     }
 
+    /** Limit breach events (PFM-039). */
+    @FunctionalInterface
+    public interface BreachSink {
+        void breach(Balance account, LedgerRequest cause);
+    }
+
     /** Audit link: every applied posting is reported with its reference and audit reference (R42 chain). */
     @FunctionalInterface
     public interface AuditLink {

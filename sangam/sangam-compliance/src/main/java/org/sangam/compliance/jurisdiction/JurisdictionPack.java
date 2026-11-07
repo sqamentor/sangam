@@ -51,7 +51,8 @@ public final class JurisdictionPack {
     /** A lawful basis / ground. {@code kind} is {@code CONSENT} or {@code OTHER}. */
     public record LegalBasis(String code, String citation, String kind, boolean requiresLegalRef, List<String> subGrounds,
                              String subGroundRequiringRegisterRef, boolean requiresStandardsAttestation, boolean objectable,
-                             boolean impliesRetentionByLaw, String description) {
+                             boolean impliesRetentionByLaw, String description, boolean requiresMinimumNecessary,
+                             boolean excludedFromAccounting) {
         public boolean consent() {
             return "CONSENT".equals(kind);
         }
@@ -69,8 +70,38 @@ public final class JurisdictionPack {
     }
 
     /** A data-subject right. {@code category} is a neutral {@code RightCategory} name. */
+    /**
+     * A data-subject right. Periods are in days, or in calendar months when {@code defaultMonths > 0}; one extension of
+     * {@code extensionDays} / {@code extensionMonths} is allowed with a written notice to the requester.
+     */
     public record Right(String code, String category, String citation, String processKey, String slaKey, int defaultDays,
-                        int maxDays) {
+                        int maxDays, int defaultMonths, int extensionDays, int extensionMonths) {
+        public boolean extendable() {
+            return extensionDays > 0 || extensionMonths > 0;
+        }
+    }
+
+    /** An exception that justifies not (fully) fulfilling an access request (e.g. US information-blocking exceptions). */
+    public record AccessException(String code, String citation, int responseBusinessDays, String description) {
+    }
+
+    /**
+     * One breach notification duty, chosen by thresholds: to an authority, the data subjects, the media, a controller
+     * (processor duty) or an annual log. {@code deadlineMode}: {@code FROM_AWARENESS} (hours after awareness/discovery),
+     * {@code AFTER_YEAR_END} (hours after the end of the calendar year of discovery), {@code WITHOUT_DELAY}.
+     */
+    public record BreachNotificationRule(String code, String recipient, String authority, String deadlineMode, int deadlineHours,
+                                         int minAffected, int maxAffected, int minAffectedInRegion, boolean requiresHighRisk,
+                                         List<ReportItem> items, String citation, String whenAttribute) {
+    }
+
+    /** A country or organisation with an adequacy finding (transfer allowed), with an optional condition on the recipient. */
+    public record AdequateDestination(String country, String condition, String citation) {
+    }
+
+    /** A sub-jurisdiction (US state, EU member state ...) that overrides limits, defaults and authorities, and adds duties. */
+    public record Region(String code, String name, String citation, boolean verified, Map<String, Integer> limits,
+                         Map<String, String> defaults, List<Authority> authorities, List<BreachNotificationRule> breachRules) {
     }
 
     public record RetentionClass(String code, String citation, int periodDays, String floorFromPhase, String description) {
@@ -97,7 +128,7 @@ public final class JurisdictionPack {
     }
 
     public record ContactRole(String code, String citation, boolean mustBeResident, List<String> requiredFields, boolean published,
-                              String description) {
+                              String description, List<String> requiredForAttributes) {
     }
 
     public record EvidenceKind(String code, String citation, int months, boolean elevatedTierOnly, boolean requiresIndependent,
@@ -111,12 +142,12 @@ public final class JurisdictionPack {
     }
 
     public record LawfulRequestBasis(String code, String citation, int maxHours, boolean withheldFromAccess, String recipientKind,
-                                     boolean requiresRankAttestation, String rankRequirement) {
+                                     boolean requiresRankAttestation, String rankRequirement, boolean requiresAttestation) {
     }
 
     /** A security / good-practice checklist item, evaluated from deployment facts. */
     public record ChecklistItem(String id, String citation, String description, String fact, String expected, String activity,
-                                int maxAgeMonths) {
+                                int maxAgeMonths, boolean enforced) {
     }
 
     /** A limit that changes when an entity attribute applies, until a date. */
@@ -128,6 +159,22 @@ public final class JurisdictionPack {
     private final String code;
     private final String name;
     private final String homeCountry;
+    private final List<String> homeCountries;
+    private final List<VerificationMethod> specialCategoryConditions;
+    private final List<AccessException> accessExceptions;
+    private final List<BreachNotificationRule> breachRules;
+    private final List<ReportItem> breachRiskFactors;
+    private final String breachPresumption;
+    private final int lawEnforcementOralDelayDays;
+    private final String transferMode;
+    private final List<AdequateDestination> adequateDestinations;
+    private final List<VerificationMethod> transferSafeguards;
+    private final List<VerificationMethod> transferDerogations;
+    private final boolean transferImpactAssessmentRequired;
+    private final List<Region> regions;
+    private final boolean priorConsultationRequired;
+    private final String priorConsultationEvidence;
+    private final String priorConsultationCitation;
     private final ZoneId timeZone;
     private final Map<String, String> terminology;
     private final List<Instrument> instruments;
@@ -161,10 +208,38 @@ public final class JurisdictionPack {
     private final String noticeTemplatePath;
     private final String obligationsPath;
 
+    private final List<String> goLiveEvidence = new java.util.ArrayList<>();
+
+    /** Evidence items a tenant under this jurisdiction must record before go-live (data). */
+    public List<String> goLiveEvidence() {
+        return List.copyOf(goLiveEvidence);
+    }
+
     private JurisdictionPack(JsonNode n) {
+        n.path("goLiveEvidence").forEach(x -> goLiveEvidence.add(x.asText()));
         code = req(n, "code").toUpperCase(Locale.ROOT);
         name = req(n, "name");
         homeCountry = n.path("homeCountry").asText(code).toUpperCase(Locale.ROOT);
+        List<String> hc = texts(n.path("homeCountries")).stream().map(s -> s.toUpperCase(Locale.ROOT)).toList();
+        homeCountries = hc.isEmpty() ? List.of(homeCountry) : hc;
+        specialCategoryConditions = list(n.path("specialCategoryConditions"), JurisdictionPack::method);
+        accessExceptions = list(n.path("accessExceptions"), x -> new AccessException(x.path("code").asText(), x.path("citation").asText(""),
+                x.path("responseBusinessDays").asInt(0), x.path("description").asText("")));
+        breachRules = rules(n.path("breach").path("notifications"));
+        breachRiskFactors = items(n.path("breach").path("riskAssessment").path("factors"));
+        breachPresumption = n.path("breach").path("riskAssessment").path("presumption").asText("NOTIFY_IF_RISK");
+        lawEnforcementOralDelayDays = n.path("breach").path("lawEnforcementDelay").path("oralMaxDays").asInt(0);
+        JsonNode tr = n.path("transfer");
+        transferMode = tr.path("mode").asText("NEGATIVE_LIST");
+        adequateDestinations = list(tr.path("adequate"), x -> new AdequateDestination(x.path("country").asText().toUpperCase(Locale.ROOT),
+                x.path("condition").asText(null), x.path("citation").asText("")));
+        transferSafeguards = list(tr.path("safeguards"), JurisdictionPack::method);
+        transferDerogations = list(tr.path("derogations"), JurisdictionPack::method);
+        transferImpactAssessmentRequired = tr.path("impactAssessmentRequired").asBoolean(false);
+        JsonNode pc = n.path("accountability").path("priorConsultation");
+        priorConsultationRequired = pc.path("required").asBoolean(false);
+        priorConsultationEvidence = pc.path("evidenceKind").asText(null);
+        priorConsultationCitation = pc.path("citation").asText("");
         timeZone = ZoneId.of(n.path("timeZone").asText("UTC"));
         terminology = strings(n.path("terminology"));
         instruments = list(n.path("instruments"), x -> new Instrument(x.path("id").asText(), x.path("title").asText(),
@@ -189,7 +264,8 @@ public final class JurisdictionPack {
         legalBases = list(n.path("legalBases"), x -> new LegalBasis(x.path("code").asText(), x.path("citation").asText(),
                 x.path("kind").asText("OTHER"), x.path("requiresLegalRef").asBoolean(false), texts(x.path("subGrounds")),
                 x.path("subGroundRequiringRegisterRef").asText(null), x.path("requiresStandardsAttestation").asBoolean(false),
-                x.path("objectable").asBoolean(false), x.path("impliesRetentionByLaw").asBoolean(false), x.path("description").asText("")));
+                x.path("objectable").asBoolean(false), x.path("impliesRetentionByLaw").asBoolean(false), x.path("description").asText(""),
+                x.path("requiresMinimumNecessary").asBoolean(false), x.path("excludedFromAccounting").asBoolean(false)));
         exemptions = list(n.path("exemptions"), x -> new Exemption(x.path("code").asText(), x.path("citation").asText(),
                 x.path("disappliesNoticeAndConsent").asBoolean(false), x.path("disappliesErasure").asBoolean(false),
                 x.path("disappliesCorrectionWithoutDecision").asBoolean(false), x.path("requiresStandardsAttestation").asBoolean(false),
@@ -200,13 +276,18 @@ public final class JurisdictionPack {
         guardianVerification = list(n.path("verification").path("guardian"), JurisdictionPack::method);
         rights = list(n.path("rights"), x -> new Right(x.path("code").asText(), x.path("category").asText(), x.path("citation").asText(),
                 x.path("processKey").asText(), x.path("slaKey").asText(x.path("code").asText().toLowerCase(Locale.ROOT)),
-                x.path("defaultDays").asInt(30), x.path("maxDays").asInt(Integer.MAX_VALUE)));
+                x.path("defaultDays").asInt(30), x.path("maxDays").asInt(Integer.MAX_VALUE), x.path("defaultMonths").asInt(0),
+                x.path("extensionDays").asInt(0), x.path("extensionMonths").asInt(0)));
         retentionClasses = list(n.path("retentionClasses"), x -> new RetentionClass(x.path("code").asText(), x.path("citation").asText(),
                 x.path("periodDays").asInt(), x.path("floorFromPhase").asText(null), x.path("description").asText("")));
-        authorities = list(n.path("authorities"), x -> new Authority(x.path("code").asText(), x.path("role").asText(),
-                x.path("name").asText(), x.path("citation").asText(""), texts(x.path("recipients")), x.path("deadlineHours").asInt(0),
-                x.path("warnHours").asInt(0), list(x.path("catalogue"), t -> new IncidentType(t.path("code").asText(),
-                t.path("label").asText(), t.path("personalDataLikely").asBoolean(false))), items(x.path("formItems"))));
+        authorities = authorities(n.path("authorities"));
+        regions = list(n.path("regions"), x -> {
+            Map<String, Integer> lim = new LinkedHashMap<>();
+            x.path("limits").fields().forEachRemaining(e -> lim.put(e.getKey(), e.getValue().asInt()));
+            return new Region(x.path("code").asText().toUpperCase(Locale.ROOT), x.path("name").asText(), x.path("citation").asText(""),
+                    x.path("verified").asBoolean(false), Map.copyOf(lim), strings(x.path("defaults")), authorities(x.path("authorities")),
+                    rules(x.path("breachNotifications")));
+        });
         JsonNode b = n.path("breach");
         breach = new BreachRules(b.path("authority").asText(null), b.path("initialTiming").asText("WITHOUT_DELAY"),
                 items(b.path("initialItems")), b.path("detailedReportHours").asInt(0), items(b.path("detailedItems")),
@@ -214,7 +295,7 @@ public final class JurisdictionPack {
                 b.path("linkedIncidentAuthority").asText(null), b.path("linkedIncidentType").asText(null), b.path("citation").asText(""));
         contactRoles = list(n.path("contactRoles"), x -> new ContactRole(x.path("code").asText(), x.path("citation").asText(""),
                 x.path("mustBeResident").asBoolean(false), texts(x.path("requiredFields")), x.path("published").asBoolean(false),
-                x.path("description").asText("")));
+                x.path("description").asText(""), texts(x.path("requiredForAttributes"))));
         JsonNode acc = n.path("accountability");
         elevatedTierName = acc.path("elevatedTierName").asText("elevated tier");
         impactAssessmentMonths = acc.path("impactAssessmentMonths").asInt(12);
@@ -230,10 +311,10 @@ public final class JurisdictionPack {
         lawfulRequestBases = list(n.path("lawfulRequestBases"), x -> new LawfulRequestBasis(x.path("code").asText(),
                 x.path("citation").asText(""), x.path("maxHours").asInt(0), x.path("withheldFromAccess").asBoolean(false),
                 x.path("recipientKind").asText("STATE_AGENCY"), x.path("requiresRankAttestation").asBoolean(false),
-                x.path("rankRequirement").asText("")));
+                x.path("rankRequirement").asText(""), x.path("requiresAttestation").asBoolean(false)));
         checklist = list(n.path("securityChecklist"), x -> new ChecklistItem(x.path("id").asText(), x.path("citation").asText(""),
                 x.path("description").asText(""), x.path("fact").asText(null), x.path("expected").asText(null),
-                x.path("activity").asText(null), x.path("maxAgeMonths").asInt(0)));
+                x.path("activity").asText(null), x.path("maxAgeMonths").asInt(0), x.path("enforced").asBoolean(true)));
         noticeLint = texts(n.path("noticeLint"));
         noticeTemplatePath = n.path("noticeTemplates").asText("compliance/jurisdictions/" + code + "/notices");
         obligationsPath = n.path("obligations").asText(null);
@@ -252,6 +333,36 @@ public final class JurisdictionPack {
     public String code() { return code; }
     public String name() { return name; }
     public String homeCountry() { return homeCountry; }
+    public List<String> homeCountries() { return homeCountries; }
+    public List<VerificationMethod> specialCategoryConditions() { return specialCategoryConditions; }
+    public List<AccessException> accessExceptions() { return accessExceptions; }
+    public List<BreachNotificationRule> breachRules() { return breachRules; }
+    public List<ReportItem> breachRiskFactors() { return breachRiskFactors; }
+    /** {@code NOTIFIABLE_UNLESS_LOW_PROBABILITY} (presumed breach) or {@code NOTIFY_IF_RISK}. */
+    public String breachPresumption() { return breachPresumption; }
+    public int lawEnforcementOralDelayDays() { return lawEnforcementOralDelayDays; }
+    /** {@code NEGATIVE_LIST}, {@code ADEQUACY_OR_SAFEGUARD} or {@code NONE}. */
+    public String transferMode() { return transferMode; }
+    public List<AdequateDestination> adequateDestinations() { return adequateDestinations; }
+    public List<VerificationMethod> transferSafeguards() { return transferSafeguards; }
+    public List<VerificationMethod> transferDerogations() { return transferDerogations; }
+    public boolean transferImpactAssessmentRequired() { return transferImpactAssessmentRequired; }
+    public List<Region> regions() { return regions; }
+    public boolean priorConsultationRequired() { return priorConsultationRequired; }
+    public String priorConsultationEvidence() { return priorConsultationEvidence; }
+    public String priorConsultationCitation() { return priorConsultationCitation; }
+
+    public boolean isHome(String country) {
+        return country != null && homeCountries.contains(country.trim().toUpperCase(Locale.ROOT));
+    }
+
+    public Optional<Region> region(String code) {
+        return code == null ? Optional.empty() : regions.stream().filter(r -> r.code().equalsIgnoreCase(code.trim())).findFirst();
+    }
+
+    public Optional<AccessException> accessException(String code) {
+        return accessExceptions.stream().filter(r -> r.code().equals(code)).findFirst();
+    }
     public ZoneId timeZone() { return timeZone; }
     public List<Instrument> instruments() { return instruments; }
     public List<Phase> phases() { return phases; }
@@ -434,6 +545,21 @@ public final class JurisdictionPack {
 
     private static List<ReportItem> items(JsonNode arr) {
         return list(arr, x -> new ReportItem(x.path("key").asText(), x.path("citation").asText(""), x.path("label").asText(x.path("key").asText())));
+    }
+
+    private static List<Authority> authorities(JsonNode arr) {
+        return list(arr, x -> new Authority(x.path("code").asText(), x.path("role").asText(),
+                x.path("name").asText(), x.path("citation").asText(""), texts(x.path("recipients")), x.path("deadlineHours").asInt(0),
+                x.path("warnHours").asInt(0), list(x.path("catalogue"), t -> new IncidentType(t.path("code").asText(),
+                t.path("label").asText(), t.path("personalDataLikely").asBoolean(false))), items(x.path("formItems"))));
+    }
+
+    private static List<BreachNotificationRule> rules(JsonNode arr) {
+        return list(arr, x -> new BreachNotificationRule(x.path("code").asText(), x.path("recipient").asText(),
+                x.path("authority").asText(null), x.path("deadlineMode").asText("FROM_AWARENESS"), x.path("deadlineHours").asInt(0),
+                x.path("minAffected").asInt(0), x.path("maxAffected").asInt(Integer.MAX_VALUE), x.path("minAffectedInRegion").asInt(0),
+                x.path("requiresHighRisk").asBoolean(false), items(x.path("items")), x.path("citation").asText(""),
+                x.path("whenAttribute").asText(null)));
     }
 
     private static VerificationMethod method(JsonNode x) {

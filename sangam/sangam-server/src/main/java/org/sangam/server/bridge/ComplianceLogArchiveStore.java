@@ -13,7 +13,7 @@ import org.sangam.compliance.ports.CompliancePorts;
 
 /**
  * {@link CompliancePorts.LogArchiveStore} on a filesystem in the home country ({@code sangam.compliance.log-archive.root},
- * {@code .country}, default IN): sealed log segments are written once (atomic move) under
+ * {@code .country}, no default): sealed log segments are written once (atomic move) under
  * {@code <root>/<tenant>/<region>/<segmentId>.seg}. Mount a WORM / object-store volume located in the declared country
  * in production; the declared country is what {@code LogRetentionPolicy.requireResidency} checks.
  */
@@ -29,6 +29,10 @@ public final class ComplianceLogArchiveStore implements CompliancePorts.LogArchi
 
     @Override
     public URI store(String tenantId, String segmentId, byte[] content, String region) {
+        if (region == null && country.isBlank()) {
+            throw new org.sangam.compliance.ComplianceException(org.sangam.compliance.ComplianceException.Code.JURISDICTION_NOT_SET,
+                    "sangam.compliance.log-archive.country is not set");
+        }
         Path dir = root.resolve(safe(tenantId)).resolve(safe(region == null ? country : region));
         Path target = dir.resolve(safe(segmentId) + ".seg");
         try {

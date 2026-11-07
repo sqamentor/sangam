@@ -1,0 +1,196 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- /* SCALE components (SCALE-ARCHITECTURE.md): control plane, gateway, national roll-up. Same image recipe as the
+     server (deploy/docker/server.Dockerfile, APP_MODULE=<module>), each with its own port pair. */ -}}
+{{- $fullname := include "sangam.fullname" . -}}
+{{- $components := list
+      (dict "key" "controlPlane" "name" "control-plane" "prefix" "SANGAM_CP" "db" true)
+      (dict "key" "gateway" "name" "gateway" "prefix" "SANGAM_GW" "db" false)
+      (dict "key" "rollup" "name" "rollup" "prefix" "SANGAM_RU" "db" true) -}}
+{{- range $c := $components }}
+{{- $v := get $.Values.scale $c.key }}
+{{- if $v.enabled }}
+{{- $secret := required (printf "scale.%s.existingSecret is required" $c.key) $v.existingSecret }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-{{ $c.name }}
+  labels:
+    {{- include "sangam.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $c.name }}
+spec:
+  replicas: {{ $v.replicaCount }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" $ "component" $c.name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sangam.selectorLabels" (dict "ctx" $ "component" $c.name) | nindent 8 }}
+        {{- if $c.db }}
+        sangam.io/db-client: "true"
+        {{- end }}
+    spec:
+      {{- include "sangam.imagePullSecrets" $ | nindent 6 }}
+      serviceAccountName: {{ include "sangam.serviceAccountName" $ }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        {{- toYaml $.Values.server.podSecurityContext | nindent 8 }}
+      {{- if $c.db }}
+      {{- $init := include "sangam.drivers.initContainer" $ }}
+      {{- if $init }}
+      initContainers:
+        {{- $init | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ $c.name }}
+          image: {{ include "sangam.image" (dict "ctx" $ "image" $v.image) | quote }}
+          imagePullPolicy: {{ $v.image.pullPolicy }}
+          securityContext:
+            {{- toYaml $.Values.server.securityContext | nindent 12 }}
+          ports:
+            - { name: http, containerPort: {{ $v.port }}, protocol: TCP }
+            - { name: management, containerPort: {{ $v.managementPort }}, protocol: TCP }
+          env:
+            - { name: TZ, value: UTC }
+            - { name: JAVA_TOOL_OPTIONS, value: {{ printf "%s -Djava.io.tmpdir=/tmp" $.Values.server.javaToolOptions | quote }} }
+            - { name: {{ $c.prefix }}_PORT, value: {{ $v.port | quote }} }
+            - { name: {{ $c.prefix }}_MANAGEMENT_PORT, value: {{ $v.managementPort | quote }} }
+            {{- if $c.db }}
+            - name: {{ $c.prefix }}_DB_URL
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: url } }
+            - name: {{ $c.prefix }}_DB_USER
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: username } }
+            - name: {{ $c.prefix }}_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: password } }
+            - name: {{ $c.prefix }}_TOKENS
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: tokens } }
+            {{- end }}
+            {{- if eq $c.key "controlPlane" }}
+            - name: SANGAM_CP_CELL_ADMIN_TOKEN
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: cellAdminToken } }
+            {{- end }}
+            {{- if eq $c.key "gateway" }}
+            - { name: SANGAM_GW_CONTROL_PLANE_URL, value: {{ printf "http://%s-control-plane:%v" $fullname $.Values.scale.controlPlane.port | quote }} }
+            - name: SANGAM_GW_CONTROL_PLANE_TOKEN
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: controlPlaneToken } }
+            - { name: SANGAM_GW_TENANT_CLAIM, value: {{ $v.tenantClaim | quote }} }
+            {{- with $v.hostSuffix }}
+            - { name: SANGAM_GW_HOST_SUFFIX, value: {{ . | quote }} }
+            {{- end }}
+            {{- end }}
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: management }
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: management }
+            periodSeconds: 10
+            failureThreshold: 6
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: management }
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml $v.resources | nindent 12 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+            {{- if $c.db }}
+            - { name: drivers, mountPath: /opt/sangam/drivers, readOnly: true }
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: { sizeLimit: 512Mi }
+        {{- if $c.db }}
+        {{- include "sangam.drivers.volume" $ | nindent 8 }}
+        {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "sangam.selectorLabels" (dict "ctx" $ "component" $c.name) | nindent 14 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-{{ $c.name }}
+  labels:
+    {{- include "sangam.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $c.name }}
+    sangam.io/metrics: "true"
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "sangam.selectorLabels" (dict "ctx" $ "component" $c.name) | nindent 4 }}
+  ports:
+    - { name: http, port: {{ $v.port }}, targetPort: http, protocol: TCP }
+    - { name: management, port: {{ $v.managementPort }}, targetPort: management, protocol: TCP }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $fullname }}-{{ $c.name }}
+  labels:
+    {{- include "sangam.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $c.name }}
+spec:
+  minAvailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" $ "component" $c.name) | nindent 6 }}
+{{- if $.Values.networkPolicy.enabled }}
+---
+# {{ $c.name }}: from this release's pods, the ingress controller and monitoring; to DNS, the database, this
+# release's pods (cells / control plane) and networkPolicy.extraEgress.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-{{ $c.name }}
+  labels:
+    {{- include "sangam.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $c.name }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" $ "component" $c.name) | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $.Values.networkPolicy.ingressControllerNamespace }}
+      ports:
+        - { protocol: TCP, port: {{ $v.port }} }
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $.Values.networkPolicy.monitoringNamespace }}
+      ports:
+        - { protocol: TCP, port: {{ $v.managementPort }} }
+  egress:
+    {{- include "sangam.np.dnsEgress" $ | nindent 4 }}
+    {{- if $c.db }}
+    {{- include "sangam.np.dbEgress" $ | nindent 4 }}
+    {{- end }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- with $.Values.networkPolicy.extraEgress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

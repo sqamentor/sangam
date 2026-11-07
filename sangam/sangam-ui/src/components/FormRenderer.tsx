@@ -11,9 +11,25 @@
  */
 import { useMemo, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { http } from '../api/client';
+import { useAsync } from '../lib/hooks';
 import type { FieldChange, FormField, FormSchema } from '../api/types';
 
 export type FormValues = Record<string, unknown>;
+
+/** Native datalist: the user can search the known ids or still type one. */
+function LookupList({ id, path }: { id: string; path: string }) {
+  const list = useAsync(() => http.get<{ id: string; name?: string }[]>(path, { maxResults: 200 }), [path]);
+  return (
+    <datalist id={id}>
+      {(Array.isArray(list.data) ? list.data : []).map((x) => (
+        <option key={x.id} value={x.id}>
+          {x.name ?? x.id}
+        </option>
+      ))}
+    </datalist>
+  );
+}
 
 function labelOf(f: FormField, lang: string): string {
   return (lang === 'hi' ? f.i18n?.hi?.label : undefined) ?? f.label ?? f.key ?? '';
@@ -241,14 +257,18 @@ export function FormRenderer({
       case 'textfield':
       default:
         return wrap(
+          <>
+          {f.lookup && <LookupList id={`${id}-list`} path={f.lookup} />}
           <input
+            list={f.lookup ? `${id}-list` : undefined}
             {...common}
-            type="text"
+            type={f.sensitive ? 'password' : 'text'}
             autoComplete={f.sensitive ? 'off' : undefined}
             maxLength={f.validate?.maxLength}
             value={String(value ?? '')}
             onChange={(e) => set(f.key!, e.target.value)}
-          />,
+          />
+          </>,
         );
     }
   };

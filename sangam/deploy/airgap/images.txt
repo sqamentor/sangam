@@ -14,6 +14,10 @@
 #                  is likewise left to the customer (LIC-4 keeps MySQL code out of what Sangam ships).
 product        ${SANGAM_REGISTRY}/sangam-server:${SANGAM_VERSION}
 product        ${SANGAM_REGISTRY}/sangam-ui:${SANGAM_VERSION}
+product        ${SANGAM_REGISTRY}/sangam-control-plane:${SANGAM_VERSION}
+product        ${SANGAM_REGISTRY}/sangam-gateway:${SANGAM_VERSION}
+product        ${SANGAM_REGISTRY}/sangam-rollup:${SANGAM_VERSION}
+product        ${SANGAM_REGISTRY}/sangam-sdk-worker:${SANGAM_VERSION}
 product        ${SANGAM_REGISTRY}/sangam-simulators:${SANGAM_VERSION}
 runtime        quay.io/keycloak/keycloak:26.3.3
 runtime        otel/opentelemetry-collector-contrib:0.131.1

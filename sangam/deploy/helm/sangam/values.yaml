@@ -35,6 +35,12 @@ database:
     minimumIdle: 5
     connectionTimeoutMs: 10000
     maxLifetimeMs: 1500000
+  # IR-6 read replica for analytics, audit and history reads (empty = everything on the primary).
+  replica:
+    jdbcUrl: ""
+    # Secret with the replica user's credentials (same keys as above); empty = the primary's credentials.
+    existingSecret: ""
+    poolSize: 10
   sqlserver:
     # The server refuses SQL Server without READ_COMMITTED_SNAPSHOT ON (VI.1.6); TLS on by default.
     encrypt: true
@@ -104,9 +110,31 @@ server:
     digest: ""         # set in production / air-gapped installs (sha256:...)
     pullPolicy: IfNotPresent
   replicaCount: 2
-  springProfiles: ""   # extra profiles, appended after the database type
+  springProfiles: ""   # extra profiles, appended after "<database.type>,oidc" (e.g. prod)
   javaToolOptions: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -XX:+UseG1GC -Duser.timezone=UTC -Dfile.encoding=UTF-8"
   defaultTenant: ""
+  corsOrigins: ""      # SANGAM_CORS_ORIGINS; empty = same origin only (UI behind the same ingress host)
+  jobExecutor:
+    enabled: true      # false for API-only pods
+    corePoolSize: 16
+    maxPoolSize: 32
+    maxJobsPerAcquisition: 20
+  content:             # upload limits (sangam.content.max-bytes = multipart max-file-size)
+    maxBytes: "268435456"
+    maxFile: 256MB
+    maxRequest: 260MB
+  # In-process connector simulators (sangam-integration SimulatorProfile). Never true in production.
+  simulators: false
+  integrationTopics: ""     # <topic>=<connectorId>:<operation>,... (connector external-task worker)
+  outboxDestinations: ""    # default outbox destinations; "rollup:national" is added when scale.cell.id is set
+  # Writable state at /var/lib/sangam: compliance log archive (R51: >= 180 days, India-resident, CERT-In) and
+  # cell exports. Several replicas share it: use ReadWriteMany storage.
+  state:
+    existingClaim: ""
+    create: true
+    storageClass: ""
+    size: 50Gi
+    accessModes: [ReadWriteMany]
   # Key material (draft encryption keys, audit/package signing keys, connector client certificates). Mounted
   # read-only at /opt/sangam/secrets. Rotation: deploy/README.md "Key rotation".
   keys:
@@ -155,6 +183,71 @@ server:
   topologySpread: true
   podAnnotations: {}
   podLabels: {}
+
+# ------------------------------------------------------------------------------------------------ compliance
+# sangam-compliance: DPDP Act 2023 / Rules 2025, CERT-In Directions 2022 (jurisdiction pack IN).
+compliance:
+  enabled: true
+  jurisdictions: IN
+  organisation: ""          # the data fiduciary / department name printed on notices and reports
+  tenants: ""               # comma-separated tenants the scheduler covers; empty = the default tenant
+  schedule: true            # retention, log sealing, NTP check, integrity verification jobs
+  logArchive:
+    country: IN             # residency check of the archive location (R51)
+  connectors:
+    sms: sms-dlt
+    email: smtp
+    authorityEmail: smtp
+    authorityHttp: rest
+
+# ------------------------------------------------------------------------------------------------ SCALE (cells)
+# SCALE-ARCHITECTURE.md: the server as a cell + optional control plane, gateway and national roll-up.
+scale:
+  cell:
+    id: ""                  # setting it switches the cell on (SANGAM_CELL_ID); ids are immutable, never reused
+    region: ""
+    jurisdiction: IN
+    residency: ""           # defaults to jurisdiction
+    publicUrl: ""
+    adminUrl: ""
+    capacity: { startsPerSec: 500, tenants: 2000 }
+    # empty = this release's control-plane / rollup / gateway services
+    controlPlaneUrl: ""
+    rollupIngestUrl: ""
+    gatewayUrl: ""
+    # Secret with keys controlPlaneToken, rollupToken, serviceToken
+    existingSecret: ""
+  # Each component is a separate Spring Boot app built from deploy/docker/server.Dockerfile (APP_MODULE).
+  controlPlane:
+    enabled: false
+    image: { registry: ghcr.io, repository: sqamentor/sangam-control-plane, tag: "", digest: "", pullPolicy: IfNotPresent }
+    replicaCount: 2
+    port: 8090
+    managementPort: 8091
+    # Own database (never a cell database). Secret keys: url, username, password, tokens (comma-separated
+    # <token>:<ROLE> entries; ADMIN, CELL, GATEWAY, ROLLUP), cellAdminToken.
+    existingSecret: ""
+    resources: { requests: { cpu: 250m, memory: 768Mi }, limits: { memory: 1536Mi } }
+  gateway:
+    enabled: false
+    image: { registry: ghcr.io, repository: sqamentor/sangam-gateway, tag: "", digest: "", pullPolicy: IfNotPresent }
+    replicaCount: 2
+    port: 8000
+    managementPort: 8001
+    hostSuffix: ""
+    tenantClaim: tenant
+    # Secret key: controlPlaneToken (role GATEWAY)
+    existingSecret: ""
+    resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { memory: 1Gi } }
+  rollup:
+    enabled: false
+    image: { registry: ghcr.io, repository: sqamentor/sangam-rollup, tag: "", digest: "", pullPolicy: IfNotPresent }
+    replicaCount: 2
+    port: 8095
+    managementPort: 8096
+    # Own database. Secret keys: url, username, password, tokens (<token>:CELL,<token>:DASHBOARD)
+    existingSecret: ""
+    resources: { requests: { cpu: 250m, memory: 768Mi }, limits: { memory: 1536Mi } }
 
 # ------------------------------------------------------------------------------------------------ UI
 ui:

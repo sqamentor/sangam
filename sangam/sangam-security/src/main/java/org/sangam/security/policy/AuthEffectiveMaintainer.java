@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.security.policy;
 
+import org.sangam.core.layer.Hashes;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.security.dialect.SecurityDialect;
 import org.sangam.security.support.Sql;
@@ -62,6 +63,8 @@ public final class AuthEffectiveMaintainer {
         long version = bumpPolicyVersion(c, tenant);
         Set<Key> touched = new LinkedHashSet<>(sourceKeys(c, tenant, sourceId));
         Jdbc.update(c, "DELETE FROM AUTH_GRANT_SOURCE WHERE tenant_id=? AND source_id=?", tenant, sourceId);
+        // the primary key holds this fixed-width hash, not source_id: SQL Server (1,700 bytes) and MySQL (3,072 bytes) limits
+        String sourceKey = Hashes.hex(Hashes.sha256(sourceId));
         Map<Key, Long> merged = new LinkedHashMap<>();
         for (GrantRow r : rows) {
             if (r.perms() == 0) {
@@ -72,8 +75,8 @@ public final class AuthEffectiveMaintainer {
         for (Map.Entry<Key, Long> e : merged.entrySet()) {
             Key k = e.getKey();
             Jdbc.update(c, "INSERT INTO AUTH_GRANT_SOURCE(tenant_id, principal_id, resource_type, resource_id, deny_flag,"
-                            + " cond_key, source_id, perms) VALUES (?,?,?,?,?,?,?,?)",
-                    tenant, k.principalId(), k.resourceType(), k.resourceId(), k.deny(), k.condKey(), sourceId, e.getValue());
+                            + " cond_key, source_id, source_key, perms) VALUES (?,?,?,?,?,?,?,?,?)",
+                    tenant, k.principalId(), k.resourceType(), k.resourceId(), k.deny(), k.condKey(), sourceId, sourceKey, e.getValue());
             touched.add(k);
         }
         for (Key k : touched) {

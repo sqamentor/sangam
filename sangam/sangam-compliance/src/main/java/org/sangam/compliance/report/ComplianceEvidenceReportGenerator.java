@@ -165,7 +165,7 @@ public final class ComplianceEvidenceReportGenerator {
 
         List<SecurityPracticesChecklist.ItemResult> sec = s.checklist().evaluate(tenantId, now);
         r.put("securityChecklist", sec.stream().map(SecurityPracticesChecklist.ItemResult::asMap).toList());
-        sec.stream().filter(x -> x.result() != SecurityPracticesChecklist.Result.PASS)
+        sec.stream().filter(x -> x.result() != SecurityPracticesChecklist.Result.PASS && x.result() != SecurityPracticesChecklist.Result.ADVISORY)
                 .forEach(x -> add(findings, "security", List.of(x.id() + " " + x.result())));
 
         List<Map<String, Object>> obligations = new ArrayList<>();

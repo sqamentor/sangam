@@ -1,2 +1,4 @@
 # Sangam compliance jurisdiction packs (one pack.json path per line)
 compliance/jurisdictions/IN/pack.json
+compliance/jurisdictions/US-HIPAA/pack.json
+compliance/jurisdictions/EU-GDPR/pack.json

@@ -52,6 +52,8 @@ public final class ComplianceConfig {
     }
 
     public final JurisdictionPack pack;
+    /** Sub-jurisdiction (US state, EU member state ...) from {@code region}; null when not set. */
+    public final JurisdictionPack.Region region;
     public final String organisationName;
     public final String sector;
     public final Set<String> entityAttributes;
@@ -94,8 +96,15 @@ public final class ComplianceConfig {
 
     private ComplianceConfig(JurisdictionPack pack, Function<String, String> props) {
         this.pack = pack;
+        String regionCode = props.apply("region");
+        this.region = regionCode == null || regionCode.isBlank() ? null : pack.region(regionCode).orElseThrow(() ->
+                new IllegalArgumentException("region " + regionCode + " is not defined by pack " + pack.code()));
+        JurisdictionPack.Region reg = this.region;
         Function<String, String> p = k -> {
             String v = props.apply(k);
+            if (v == null && reg != null) {
+                v = reg.defaults().get(k);
+            }
             return v != null ? v : pack.defaults().get(k);
         };
         organisationName = str(p, "organisation-name", "");
@@ -120,19 +129,19 @@ public final class ComplianceConfig {
             sla.put(r.code(), integer(p, "sla." + r.slaKey() + "-days", r.defaultDays()));
         }
         rightSlaDays = Collections.unmodifiableMap(sla);
-        preErasureNoticeHours = integer(p, "retention.pre-erasure-notice-hours", pack.limit(PRE_ERASURE_MIN, 0));
-        minimumRetentionDays = integer(p, "retention.minimum-days", pack.limit(MIN_RETENTION, 0));
+        preErasureNoticeHours = integer(p, "retention.pre-erasure-notice-hours", limit(PRE_ERASURE_MIN, 0));
+        minimumRetentionDays = integer(p, "retention.minimum-days", limit(MIN_RETENTION, 0));
         legalHoldRecheckHours = integer(p, "retention.legal-hold-recheck-hours", 24);
-        logRetentionDays = integer(p, "logs.retention-days", Math.max(pack.limit(LOG_MIN, 0), pack.limit(INCIDENT_LOG_MIN, 0)));
+        logRetentionDays = integer(p, "logs.retention-days", Math.max(limit(LOG_MIN, 0), limit(INCIDENT_LOG_MIN, 0)));
         logRegion = str(p, "logs.region", pack.homeCountry()).toUpperCase(Locale.ROOT);
         breachReportHours = integer(p, "breach.authority-report-hours", pack.breach().detailedReportHours());
         Map<String, List<String>> rec = new LinkedHashMap<>();
         for (JurisdictionPack.Authority a : pack.authorities()) {
-            rec.put(a.code(), csvOr(p, "authority." + a.code() + ".recipients", a.recipients()));
+            rec.put(a.code(), csvOr(p, "authority." + a.code() + ".recipients", authority(a.code()).recipients()));
         }
         authorityRecipients = Collections.unmodifiableMap(rec);
         additionalIncidentRecipients = csvOr(p, "incident.additional-recipients", List.of());
-        lawfulRequestHours = integer(p, "lawful-request.response-hours", pack.limit(LAWFUL_REQUEST_MAX, 72));
+        lawfulRequestHours = integer(p, "lawful-request.response-hours", limit(LAWFUL_REQUEST_MAX, 72));
         ntpEnabled = bool(p, "ntp.enabled", false);
         ntpServers = csvOr(p, "ntp.servers", List.of());
         ntpMaxOffsetMs = Long.parseLong(str(p, "ntp.max-offset-ms", "1000"));
@@ -175,6 +184,42 @@ public final class ComplianceConfig {
         });
     }
 
+    /** A pack limit, overridden by the region when the region defines it. */
+    public int limit(String key, int fallback) {
+        if (region != null && region.limits().containsKey(key)) {
+            return region.limits().get(key);
+        }
+        return pack.limit(key, fallback);
+    }
+
+    public boolean hasLimit(String key) {
+        return region != null && region.limits().containsKey(key) || pack.hasLimit(key);
+    }
+
+    /** An authority of the pack, replaced by the region's authority of the same code (e.g. a state attorney general). */
+    public JurisdictionPack.Authority authority(String code) {
+        if (region != null) {
+            for (JurisdictionPack.Authority a : region.authorities()) {
+                if (a.code().equals(code)) {
+                    return a;
+                }
+            }
+        }
+        return pack.authority(code).orElseThrow(() -> new IllegalArgumentException("authority " + code + " is not defined by pack " + pack.code()));
+    }
+
+    /** Breach notification rules of the pack plus the region's additional rules. */
+    public List<JurisdictionPack.BreachNotificationRule> breachRules() {
+        List<JurisdictionPack.BreachNotificationRule> l = new ArrayList<>(pack.breachRules());
+        if (region != null) {
+            for (JurisdictionPack.BreachNotificationRule r : region.breachRules()) {
+                l.removeIf(x -> x.code().equals(r.code()));
+                l.add(r);
+            }
+        }
+        return l;
+    }
+
     public boolean has(String attribute) {
         return entityAttributes.contains(attribute);
     }
@@ -190,7 +235,9 @@ public final class ComplianceConfig {
     /** Maximum days for a right at {@code at}, after conditional limits. */
     public int rightMaxDays(String rightCode, Instant at) {
         JurisdictionPack.Right r = pack.right(rightCode).orElseThrow(() -> new IllegalArgumentException("unknown right " + rightCode));
-        return pack.effectiveLimit("right." + rightCode + ".maxDays", r.maxDays(), entityAttributes, at);
+        int max = pack.effectiveLimit("right." + rightCode + ".maxDays", r.maxDays(), entityAttributes, at);
+        return region != null && region.limits().containsKey("right." + rightCode + ".maxDays")
+                ? Math.min(max, region.limits().get("right." + rightCode + ".maxDays")) : max;
     }
 
     /** Configured SLA, never above the effective legal maximum. */
@@ -203,7 +250,7 @@ public final class ComplianceConfig {
     }
 
     public int effectiveLogRetentionDays() {
-        return Math.max(logRetentionDays, Math.max(pack.limit(LOG_MIN, 0), pack.limit(INCIDENT_LOG_MIN, 0)));
+        return Math.max(logRetentionDays, Math.max(limit(LOG_MIN, 0), limit(INCIDENT_LOG_MIN, 0)));
     }
 
     public List<String> recipients(String authorityCode) {
@@ -235,13 +282,13 @@ public final class ComplianceConfig {
                 v.add("authority." + a.code() + ".recipients must not be empty (" + a.citation() + ")");
             }
         }
-        if (pack.limit(LOG_MIN, 0) > 0 && !pack.homeCountry().equals(logRegion)) {
+        if (hasLimit(INCIDENT_LOG_MIN) && !pack.isHome(logRegion)) {
             v.add("logs.region must be " + pack.homeCountry() + " (" + pack.limitCitation(INCIDENT_LOG_MIN) + ")");
         }
         if (enabledLanguages.stream().noneMatch(l -> l.code().equals(defaultLanguage.code()))) {
             v.add("default-language must be one of the enabled languages");
         }
-        if (publicSector() && !pack.homeCountry().equals(hostingCountry)) {
+        if (publicSector() && !pack.isHome(hostingCountry)) {
             v.add("hosting.country must be " + pack.homeCountry() + " for a public-sector deployment");
         }
         if (!"NOT_DECLARED".equals(hostingCategory) && pack.hostingCategory(hostingCategory).isEmpty()) {
@@ -276,6 +323,7 @@ public final class ComplianceConfig {
     public Map<String, Object> summary() {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("jurisdiction", pack.code());
+        m.put("region", region == null ? null : region.code());
         m.put("organisationName", organisationName);
         m.put("sector", sector);
         m.put("entityAttributes", List.copyOf(entityAttributes));
@@ -307,8 +355,8 @@ public final class ComplianceConfig {
     }
 
     private void checkMin(List<String> v, String key, int value, String property) {
-        if (pack.hasLimit(key) && value < pack.limit(key, 0)) {
-            v.add(property + " must be >= " + pack.limit(key, 0) + " (" + pack.limitCitation(key) + ")");
+        if (hasLimit(key) && value < limit(key, 0)) {
+            v.add(property + " must be >= " + limit(key, 0) + " (" + pack.limitCitation(key) + ")");
         }
     }
 

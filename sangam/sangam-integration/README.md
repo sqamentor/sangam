@@ -288,6 +288,17 @@ Each message falls back to `operationId` when its first variable does not match.
 
 Pack connectors without a binding go to the fallback gateway (the packs' simulator in development) or fail with `CONNECTOR_NOT_CONFIGURED`. ReconciliationEngine gained `hooks(ResolutionGuard, ResolutionListener)`.
 
+### N11 pipelines (`pipeline/`) and N12 telemetry (`telemetry/`)
+
+Reference DDL to port to sangam-persistence: `PipelineStore.DDL`, `TelemetrySchema.DDL`.
+
+- Pipelines: build `PipelineRunner` and `PipelineScheduler`, then call `PipelineMessages.wire` and `PipelineDelegate.install`. `stageRoot` must be shared storage for a restart on another node.
+- Telemetry: call `TelemetryWiring.wire`, and ingest through `TelemetryHttpReceiver` or `MqttTelemetryConsumer`.
+
+### One operationId
+
+`ExternalWork.operationId` (T35) is the ledger key and the downstream key. The delegate mints the same identity, and pack calls use the pack's UUID. The 12-argument `Invocation` constructor derives an id and logs a warning.
+
 ### Hand-off to WS-PORTS (event registry)
 
 Wired in `ports/EventRegistryWiring.java`. This module depends on `sangam-flowable-ports` as an optional dependency. There is no cycle, because ports depends only on sangam-core. Call this once at start-up:
@@ -333,7 +344,7 @@ Operators resolve an item with `PoisonInbound.reprocess` (corrected payload, ori
 
 ### Requested change in sangam-core
 
-- Please add `POISON_INBOUND` to `ReconciliationQueue.Kind`. Until then, core `ReconciliationQueue.get/listOpen/resolve` throw `IllegalArgumentException` on such rows. The reconciliation engine only claims the two core kinds. WS-REST's list endpoint uses raw SQL and is unaffected, but its resolve endpoint (which calls the core queue) answers 422 for these items. Resolve them through `PoisonInbound` instead.
+- None open. `POISON_INBOUND` is now in `ReconciliationQueue.Kind`. Resolve these items through `PoisonInbound`, because the core queue's actions do not close the dead letter.
 
 `RootSeq` is package-private. Nothing here needs it today, because audit goes through `AuditChain.append`.
 

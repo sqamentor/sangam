@@ -45,6 +45,8 @@ Upstream PRs to offer: MySQL create/upgrade scripts with `datetime(3)` and `utf8
 | B-16 | Job metrics: acquisition counted after `AcquireJobsCmd`; the failed-job command factory is wrapped (delegates unchanged) | `job/JobMetricsInterceptor`, `job/CountingFailedJobCommandFactory` | D-39, R13 |
 | B-17 | (opt., IR-5) Operaton's default DB history handler replaced by `OutboxOnlyDbHistoryEventHandler` when `outboxOnlyHistoryKeys` is set; unlisted definitions unchanged | `history/OutboxOnlyDbHistoryEventHandler` (overrides `handleEvent`, `shouldWriteHistoricDetail`) | IR-5, FC-25 |
 | B-18 | (IR-7) a `DefaultJobExecutor` sized from the settings is installed when the configuration has none; acquisition by due date / priority / exclusive-over-hierarchies set from the settings | `SangamProcessEnginePlugin.preInit` | IR-7, FC-24 |
+| B-19 | (R2) acquisition commands (job acquisition, external-task fetch, lease sweep) are marked and never take L2; the lease sweep claims with per-dialect SKIP LOCKED / READPAST / Oracle two-step | `tx/RollbackGuardInterceptor`, `lock/RootLockFlushListener`, `lease/SangamLeaseTable` | R2, VI.1 rule 4 |
+| B-20 | (R10) custom post deployer binds definitions to the FEEL engine; a pre decision-evaluation listener on the DMN engine refuses a mismatch; business rule tasks may declare strict-null results | `feel/*`, `SangamProcessEnginePlugin.preInit` (sets a `DefaultDmnEngineConfiguration` when none is set) | R10 |
 | (opt.) | Per-definition history level (only when `historyLevelByProcessKey` is set; level id 21 stored in `ACT_GE_PROPERTY`) | `history/PerDefinitionHistoryLevel` | FC-26, D-49 |
 
 ## Internal (`impl`) classes used

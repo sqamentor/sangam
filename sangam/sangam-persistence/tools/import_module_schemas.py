@@ -22,11 +22,11 @@ MODULES = [  # (file, changeset prefix, label, token remap)
 RAW = {"NUMERIC(24,6)": "{num24_6}", "NUMERIC(12,6)": "{num12_6}", "DECIMAL(24,6)": "{num24_6}",
        "DECIMAL(12,6)": "{num12_6}"}
 
-# bytes per type in an index key
-MYSQL_B = {"{str}": 1022, "{str64}": 258, "{str32}": 130, "{str1k}": 4002, "{long}": 8, "{int}": 4, "{small}": 2,
-           "{bytes32}": 33, "{ts}": 8, "{date}": 3, "{dec}": 9, "{num24_6}": 11, "{num12_6}": 6, "{identity}": 8,
-           "{vc8}": 34, "{vc16}": 66, "{vc40}": 162, "{asciistr}": 257, "{text}": 99999, "{blob}": 99999}
-MSSQL_B = {"{str}": 510, "{str64}": 128, "{str32}": 64, "{str1k}": 2000, "{long}": 8, "{int}": 4, "{small}": 2,
+# bytes per type in an index key (InnoDB limit counts data bytes at the maximum character width, no length prefix)
+MYSQL_B = {"{str}": 1020, "{str64}": 256, "{str32}": 128, "{str1k}": 4000, "{long}": 8, "{int}": 4, "{small}": 2,
+           "{bytes32}": 32, "{ts}": 8, "{date}": 3, "{dec}": 9, "{num24_6}": 11, "{num12_6}": 6, "{identity}": 8,
+           "{vc8}": 32, "{vc16}": 64, "{vc40}": 160, "{vc80}": 320, "{asciistr}": 255, "{text}": 99999, "{blob}": 99999}
+MSSQL_B = {"{vc80}": 160, "{str}": 510, "{str64}": 128, "{str32}": 64, "{str1k}": 2000, "{long}": 8, "{int}": 4, "{small}": 2,
            "{bytes32}": 32, "{ts}": 10, "{date}": 3, "{dec}": 9, "{num24_6}": 13, "{num12_6}": 9, "{identity}": 8,
            "{vc8}": 16, "{vc16}": 32, "{vc40}": 80, "{asciistr}": 510, "{text}": 99999, "{blob}": 99999}
 

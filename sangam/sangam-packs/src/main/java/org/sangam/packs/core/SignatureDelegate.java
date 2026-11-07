@@ -40,7 +40,7 @@ public class SignatureDelegate implements JavaDelegate {
         String bk = ex.getProcessBusinessKey() == null ? ex.getProcessInstanceId() : ex.getProcessBusinessKey();
         int attempt = Vars.intVal(ex, "signatureAttempt", 0) + 1;
         ex.setVariable("signatureAttempt", attempt);
-        String opId = Vars.operationId(bk, "sign:" + Vars.field(purpose, ex, "approval") + ":" + hash + ":" + esp,
+        String opId = Vars.operationId(Vars.tenant(ex), bk, "sign:" + Vars.field(purpose, ex, "approval") + ":" + hash + ":" + esp,
                 attempt);
         Map<String, Object> payload = Vars.map("hash", hash, "purpose", Vars.field(purpose, ex, "approval"),
                 "signer", Vars.str(ex, "lastActorPerson"), "signerSeat", Vars.str(ex, "lastActorSeat"), "esp", esp,

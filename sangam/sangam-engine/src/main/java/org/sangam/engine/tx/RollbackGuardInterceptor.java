@@ -26,6 +26,10 @@ public class RollbackGuardInterceptor extends CommandInterceptor {
         CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
         if (cc != null) {
             CommandState.installRollbackGuard(cc);
+            if (command instanceof org.operaton.bpm.engine.impl.cmd.AcquireJobsCmd
+                    || command instanceof org.operaton.bpm.engine.impl.cmd.FetchExternalTasksCmd) {
+                CommandState.of(cc).markAcquisition(); // R2: acquisition never takes L2 (not even the backstop)
+            }
             if (closeListener != null && CommandState.of(cc).markCloseListenerRegistered()) {
                 cc.registerCommandContextListener(closeListener);
             }

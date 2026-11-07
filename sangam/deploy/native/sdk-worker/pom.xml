@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Native-light Java SDK worker (SANGAM.md R7): the ONLY Sangam component with a GraalVM native-image build.
+  The server, control plane, gateway and roll-up are JVM-only (no native promise).
+
+  Not a reactor module on purpose (it needs GraalVM, which the normal build does not). Build commands and the
+  smoke check are in deploy/SUPPORT-MATRIX.md section 5 and in the java-native job of sdks.yml. From sangam/, after
+  installing sdks/java: mvn -f deploy/native/sdk-worker/pom.xml package (JVM jar), and add -Pnative for the executable.
+
+  Container: deploy/docker/sdk-worker-native.Dockerfile. Supported APIs: deploy/SUPPORT-MATRIX.md section 5.
+  GraalVM CE (GPL-2.0 + Classpath Exception) is a build tool only; the produced executable contains the
+  SubstrateVM runtime under the Classpath Exception. GraalJS / polyglot are banned below (LIC-1, D-8).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath>../../../pom.xml</relativePath>
+  </parent>
+  <artifactId>sangam-sdk-worker-native</artifactId>
+  <name>Sangam native-light SDK worker (R7)</name>
+
+  <properties>
+    <worker.mainClass>org.sangam.sdk.nativeimage.NativeWorkerMain</worker.mainClass>
+    <worker.imageName>sangam-sdk-worker</worker.imageName>
+    <version.native-maven-plugin>1.1.18</version.native-maven-plugin>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-sdk-java</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <id>no-polyglot</id>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>org.graalvm.polyglot:*</exclude>
+                    <exclude>org.graalvm.js:*</exclude>
+                    <exclude>org.graalvm.truffle:*</exclude>
+                    <exclude>org.mozilla:rhino</exclude>
+                    <exclude>org.openjdk.nashorn:*</exclude>
+                  </excludes>
+                  <message>R7/LIC-1/D-8: the native-light worker must not contain GraalJS, polyglot or script engines</message>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>${worker.mainClass}</mainClass>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <!-- Self-contained JVM jar: the same entry point, for the smoke check on a plain JDK. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.7.1</version>
+        <configuration>
+          <descriptorRefs><descriptorRef>jar-with-dependencies</descriptorRef></descriptorRefs>
+          <archive>
+            <manifest>
+              <mainClass>${worker.mainClass}</mainClass>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <id>fat-jar</id>
+            <phase>package</phase>
+            <goals><goal>single</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>native</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+            <version>${version.native-maven-plugin}</version>
+            <extensions>true</extensions>
+            <executions>
+              <execution>
+                <id>build-native</id>
+                <phase>package</phase>
+                <goals><goal>compile-no-fork</goal></goals>
+              </execution>
+            </executions>
+            <configuration>
+              <mainClass>${worker.mainClass}</mainClass>
+              <imageName>${worker.imageName}</imageName>
+              <!-- Jackson's own reachability metadata from the GraalVM metadata repository (Oracle-hosted, UPL-1.0) -->
+              <metadataRepository>
+                <enabled>true</enabled>
+              </metadataRepository>
+              <buildArgs>
+                <buildArg>-Dsangam.sdk.version=${project.version}</buildArg>
+              </buildArgs>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

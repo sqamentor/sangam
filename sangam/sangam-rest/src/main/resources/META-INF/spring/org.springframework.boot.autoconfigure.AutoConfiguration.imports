@@ -9,3 +9,7 @@ org.sangam.rest.modules.programme.ProgrammeRestConfiguration
 org.sangam.rest.modules.geo.GeoRestConfiguration
 org.sangam.rest.modules.field.FieldRestConfiguration
 org.sangam.rest.modules.connectorshealth.ConnectorsHealthRestConfiguration
+org.sangam.rest.modules.channels.ChannelsRestConfiguration
+org.sangam.rest.modules.modeller.ModellerRestConfiguration
+org.sangam.rest.modules.ai.AiRestConfiguration
+org.sangam.rest.modules.ops.OpsRestConfiguration

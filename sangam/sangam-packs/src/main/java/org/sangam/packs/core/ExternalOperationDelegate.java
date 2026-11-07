@@ -122,7 +122,7 @@ public class ExternalOperationDelegate implements JavaDelegate {
         ex.setVariable(s + "Attempt", attempt);
         ex.setVariable(s + "LastStatus", "NEW");
         String c = conn(ex);
-        String id = Vars.operationId(bk(ex), s, attempt);
+        String id = Vars.operationId(Vars.tenant(ex), bk(ex), s, attempt);
         ex.setVariable(Vars.OPERATION_ID, id);
         ex.setVariable("openOperationId", id);
         ex.setVariable("opStep", s);

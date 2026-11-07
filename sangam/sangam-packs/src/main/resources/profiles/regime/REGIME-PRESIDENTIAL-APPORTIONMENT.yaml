@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: REGIME-PRESIDENTIAL-APPORTIONMENT
+  layer: regime
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL-PFM
+  name:
+    en: 'Regime preset: presidential apportionment (US-like)'
+  source: INTERNATIONAL-PFM 4.1, 5.8
+placeholders: []
+ledgers:
+- id: BUDGET
+  kind: LIMIT
+  mode: AUTHORITATIVE
+  stages:
+  - APPROPRIATION
+  - APPORTIONMENT
+  - ALLOTMENT
+  - SUB_ALLOTMENT
+  - COMMITMENT
+  checks:
+    APPROPRIATION: HARD
+    APPORTIONMENT: HARD
+    ALLOTMENT: HARD
+    SUB_ALLOTMENT: HARD
+    COMMITMENT: HARD
+  availability:
+    type: MULTI_YEAR
+    years: 1
+    carryForwardCommitments: true
+    cancelAfterYears: 5
+  holdQueue: true
+yearEnd:
+  policy: EXPIRE_THEN_CANCEL
+  ruleRef: 31 USC 1552 (P)
+breach:
+  statutory: true
+  chain: PFM-CH-7

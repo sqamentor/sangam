@@ -2,7 +2,7 @@
 import os, sys, copy
 import yaml
 sys.path.insert(0, os.path.dirname(__file__))
-from central import LAYERS, INTL, REGIME, IN, PRESETS, COFOG, U
+from central import FlowList, LAYERS, INTL, REGIME, IN, PRESETS, COFOG, U
 from goi import GOI, DEPTS
 from states import S, L
 import delta
@@ -10,6 +10,9 @@ import lmmh
 import skeletons
 
 # tools/profilegen -> sangam-packs/src/main/resources/profiles, so the generator runs from any checkout location
+yaml.SafeDumper.add_representer(
+    FlowList, lambda d, v: d.represent_sequence('tag:yaml.org,2002:seq', list(v), flow_style=True))
+
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src', 'main', 'resources', 'profiles')
 HEADER = ('# SPDX-License-Identifier: Apache-2.0\n'
           '# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:\n'
@@ -48,7 +51,7 @@ def csv(rel, header, rows):
         f.write('# SPDX-License-Identifier: Apache-2.0\n')
         f.write(','.join(header) + '\n')
         for r in rows:
-            f.write(','.join('"' + str(x).replace('"', '""') + '"' if (',' in str(x)) else str(x) for x in r) + '\n')
+            f.write(','.join('"' + str(x).replace('"', '""') + '"' if (',' in str(x) or '"' in str(x)) else str(x) for x in r) + '\n')
 
 
 dump('layers.yaml', LAYERS)
@@ -62,7 +65,16 @@ IN['classification']['objectHeadVersioning'] = delta.OBJECT_VERSIONING
 IN['crosswalks'].append({'id': 'OBJECT_2026_TO_2027', 'from': 'OBJECT', 'to': 'OBJECT', 'rows': [],
                          'note': 'old -> new object-head map for FY 2027-28 (DoE OM 09-06-2026); rows to load'})
 IN['placeholders'].append({'path': 'crosswalks.OBJECT_2026_TO_2027', 'reason': '[U] 61-head list and mapping not yet loaded'})
+IN['jurisdiction'] = 'IN'
 dump('in/IN.yaml', IN)
+dump('us/US.yaml', {
+    'profile': {'id': 'US', 'layer': 'jurisdiction', 'version': '2026.11.0', 'effectiveFrom': '2026-01-01', 'extends': ['INTL'],
+                'name': {'en': 'United States: health revenue-cycle reference'},
+                'source': 'spike/results/US-HEALTH-WORKFLOWS.md US-HLT-089, US-HLT-106'},
+    'placeholders': [{'path': 'ledgers', 'reason': U + ' (the claim balance rule used in posting was not read from a public source)'}],
+    'jurisdiction': 'US',
+    'ledgers': [{'id': 'RECEIVABLES', 'kind': 'RECEIVABLE', 'mode': 'AUTHORITATIVE', 'currency': 'USD', 'stages': ['DEMAND'],
+                 'availability': {'type': 'NO_YEAR'}}]})
 for k, v in delta.GOI_DELTA.items():
     deep_set(GOI, k, copy.deepcopy(v))
 for d in DEPTS:
@@ -141,70 +153,10 @@ for code, s in S.items():
     dump('in/states/' + code + '.yaml', doc)
 
 # ------------------------------------------------------------------------------------------------ seeds
-MAJORS = [
-    ('0005', 'Central Goods and Services Tax'), ('0006', 'State Goods and Services Tax'), ('0008', 'Integrated Goods and Services Tax'),
-    ('0020', 'Corporation Tax'), ('0021', 'Taxes on Income other than Corporation Tax'), ('0029', 'Land Revenue'),
-    ('0030', 'Stamps and Registration Fees'), ('0037', 'Customs'), ('0038', 'Union Excise Duties'), ('0039', 'State Excise'),
-    ('0040', 'Taxes on Sales, Trade etc.'), ('0041', 'Taxes on Vehicles'), ('0049', 'Interest Receipts'),
-    ('0050', 'Dividends and Profits'), ('0070', 'Other Administrative Services'), ('0071', 'Contributions and Recoveries towards Pension and other Retirement Benefits'),
-    ('0075', 'Miscellaneous General Services'), ('1275', 'Other Communication Services'), ('1601', 'Grants-in-aid from Central Government'),
-    ('2011', 'Parliament / State / Union Territory Legislatures'), ('2012', 'President, Vice-President / Governor / Administrator of UTs'),
-    ('2013', 'Council of Ministers'), ('2014', 'Administration of Justice'), ('2015', 'Elections'), ('2020', 'Collection of Taxes on Income and Expenditure'),
-    ('2029', 'Land Revenue'), ('2030', 'Stamps and Registration'), ('2039', 'State Excise'), ('2040', 'Taxes on Sales, Trade etc.'),
-    ('2047', 'Other Fiscal Services'), ('2048', 'Appropriation for Reduction or Avoidance of Debt'), ('2049', 'Interest Payments'),
-    ('2051', 'Public Service Commission'), ('2052', 'Secretariat - General Services'), ('2053', 'District Administration'),
-    ('2054', 'Treasury and Accounts Administration'), ('2055', 'Police'), ('2056', 'Jails'), ('2058', 'Stationery and Printing'),
-    ('2059', 'Public Works'), ('2062', 'Vigilance'), ('2070', 'Other Administrative Services'), ('2071', 'Pensions and other Retirement Benefits'),
-    ('2075', 'Miscellaneous General Services'), ('2076', 'Defence Services - Army'), ('2077', 'Defence Services - Navy'),
-    ('2078', 'Defence Services - Air Force'), ('2079', 'Defence Ordnance Factories'), ('2080', 'Defence Services - Research and Development'),
-    ('2202', 'General Education'), ('2203', 'Technical Education'), ('2204', 'Sports and Youth Services'), ('2205', 'Art and Culture'),
-    ('2210', 'Medical and Public Health'), ('2211', 'Family Welfare'), ('2215', 'Water Supply and Sanitation'), ('2216', 'Housing'),
-    ('2217', 'Urban Development'), ('2220', 'Information and Publicity'), ('2225', 'Welfare of SC, ST, OBC and Minorities'),
-    ('2230', 'Labour, Employment and Skill Development'), ('2235', 'Social Security and Welfare'), ('2236', 'Nutrition'),
-    ('2245', 'Relief on account of Natural Calamities'), ('2246', '[U] opened by CS 1128-1132 (16-10-2026); title to confirm'),
-    ('2250', 'Other Social Services'), ('2251', 'Secretariat - Social Services'), ('2401', 'Crop Husbandry'),
-    ('2402', 'Soil and Water Conservation'), ('2403', 'Animal Husbandry'), ('2404', 'Dairy Development'), ('2405', 'Fisheries'),
-    ('2406', 'Forestry and Wild Life'), ('2408', 'Food, Storage and Warehousing'), ('2415', 'Agricultural Research and Education'),
-    ('2425', 'Co-operation'), ('2435', 'Other Agricultural Programmes'), ('2501', 'Special Programmes for Rural Development'),
-    ('2505', 'Rural Employment'), ('2506', 'Land Reforms'), ('2515', 'Other Rural Development Programmes'), ('2551', 'Hill Areas'),
-    ('2552', 'North Eastern Areas'), ('2575', 'Other Special Areas Programmes'), ('2701', 'Major and Medium Irrigation'),
-    ('2702', 'Minor Irrigation'), ('2705', 'Command Area Development'), ('2711', 'Flood Control and Drainage'), ('2801', 'Power'),
-    ('2810', 'New and Renewable Energy'), ('2851', 'Village and Small Industries'), ('2852', 'Industries'),
-    ('3051', 'Ports and Light Houses'), ('3053', 'Civil Aviation'), ('3054', 'Roads and Bridges'), ('3055', 'Road Transport'),
-    ('3451', 'Secretariat - Economic Services'), ('3452', 'Tourism'), ('3454', 'Census, Surveys and Statistics'),
-    ('3475', 'Other General Economic Services'), ('3601', 'Transfers to State Governments'), ('3602', 'Transfers to Union Territories'),
-    ('3604', 'Compensation and Assignments to Local Bodies and Panchayati Raj Institutions'), ('4000', 'Miscellaneous Capital Receipts'),
-    ('4059', 'Capital Outlay on Public Works'), ('4202', 'Capital Outlay on Education, Sports, Art and Culture'),
-    ('4210', 'Capital Outlay on Medical and Public Health'), ('4215', 'Capital Outlay on Water Supply and Sanitation'),
-    ('4216', 'Capital Outlay on Housing'), ('4217', 'Capital Outlay on Urban Development'),
-    ('4225', 'Capital Outlay on Welfare of SC, ST, OBC and Minorities'), ('4245', '[U] opened by CS 1128-1132 (16-10-2026); title to confirm'),
-    ('4401', 'Capital Outlay on Crop Husbandry'), ('4552', 'Capital Outlay on North Eastern Areas'),
-    ('4701', 'Capital Outlay on Major and Medium Irrigation'), ('4801', 'Capital Outlay on Power Projects'),
-    ('5054', 'Capital Outlay on Roads and Bridges'), ('6003', 'Internal Debt of the State Government'),
-    ('6004', 'Loans and Advances from the Central Government'), ('6401', 'Loans for Crop Husbandry'), ('6552', 'Loans for North Eastern Areas'),
-    ('7601', 'Loans and Advances to State Governments'), ('7610', 'Loans to Government Servants etc.'), ('8000', 'Contingency Fund'),
-    ('8009', 'State Provident Funds'), ('8011', 'Insurance and Pension Funds'), ('8121', 'General and Other Reserve Funds'),
-    ('8336', 'Civil Deposits'), ('8342', 'Other Deposits'), ('8443', 'Civil Deposits'), ('8448', 'Deposits of Local Funds'),
-    ('8449', 'Other Deposits'), ('8454', '[U] Treasury Single Account head (title to confirm against LMMH)'), ('8658', 'Suspense Accounts'),
-    ('8670', 'Cheques and Bills'), ('8675', 'Deposits with Reserve Bank'), ('8680', 'Miscellaneous Government Accounts'),
-    ('8782', 'Cash Remittances and adjustments between officers rendering accounts to the same Accounts Officer'),
-    ('8793', 'Inter-State Suspense Account'), ('8999', 'Cash Balance')]
-csv('in/seeds/hoa-major-heads.csv', ['scheme', 'segment', 'parent', 'code', 'name_en', 'flags', 'validFrom', 'validTo', 'source', 'status'],
-    [('HOA', 'major', '', c, n, '', '', '', 'LMMH (sample seed)', 'U' if n.startswith('[U]') else 'V') for c, n in MAJORS]
-    + [('HOA', 'major', '', c, n, '', '', '', 'LMMH coding pattern (not yet checked against CGA LMMH CS-1132)', 'U')
-       for c, n in lmmh.rows({c for c, _ in MAJORS})])
-MINORS = [('001', 'Direction and Administration'), ('003', 'Training'), ('004', 'Research'), ('052', 'Machinery and Equipment'),
-          ('101', 'Programme minor head (101, varies by major)'), ('191', 'Assistance to Local Bodies, Corporations etc.'),
-          ('192', 'Assistance to Municipalities'), ('193', 'Assistance to Nagar Panchayats'), ('196', 'Assistance to Zilla Parishads'),
-          ('197', 'Assistance to Block Panchayats'), ('198', 'Assistance to Gram Panchayats'), ('500', 'Receipts awaiting transfer'),
-          ('502', 'Expenditure awaiting transfer'), ('503', '[U] new standard minor head (CS 1068 of 28-07-2025)'),
-          ('789', 'Special Component Plan for Scheduled Castes'), ('791', 'Loss / gain by exchange'), ('796', 'Tribal Area Sub-Plan'),
-          ('797', 'Transfer to / from Reserve Fund / Deposit Account'), ('799', 'Suspense'), ('800', 'Other Expenditure / Other Receipts'),
-          ('900', 'Deduct - Refunds'), ('902', 'Deduct - Amount met from funds'), ('911', 'Deduct - Recoveries of Overpayments')]
-csv('in/seeds/hoa-standard-minor-heads.csv', ['scheme', 'segment', 'parent', 'code', 'name_en', 'flags', 'validFrom', 'validTo', 'source', 'status'],
-    [('HOA', 'minor', '', c, n, 'standard=true', '', '', 'LMMH Standard Minor Heads (CS 1068)', 'U' if n.startswith('[U]') else 'P')
-     for c, n in MINORS] + [('HOA', 'subMajor', '', '00', 'No sub-major head', '', '', '', 'LMMH', 'V'),
-                            ('HOA', 'subMajor', '', '80', 'General', '', '', '', 'LMMH', 'V')])
+csv('in/seeds/hoa-major-heads.csv', lmmh.HEADER, lmmh.major_rows())
+csv('in/seeds/hoa-sub-major-heads.csv', lmmh.HEADER, lmmh.sub_major_rows())
+csv('in/seeds/hoa-minor-heads.csv', lmmh.HEADER, lmmh.minor_rows())
+csv('in/seeds/hoa-standard-minor-heads.csv', lmmh.HEADER, lmmh.standard_rows())
 OBJ = [('01', 'Salaries', 'OTHER_15CR', 1, 'salaries=true'), ('02', 'Wages', 'OTHER_15CR', 1, ''),
        ('03', 'Overtime Allowance', 'OTHER_15CR', 1, ''), ('04', 'Pensionary Charges', 'OTHER_15CR', 1, ''),
        ('05', 'Rewards', 'NONEST_5CR', 1, ''), ('06', 'Medical Treatment', 'OTHER_15CR', 1, ''),

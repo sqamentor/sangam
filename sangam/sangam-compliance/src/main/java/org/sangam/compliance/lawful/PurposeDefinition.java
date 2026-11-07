@@ -21,6 +21,8 @@ import java.util.Set;
  * @param descriptions language code → description of the goods, services or uses enabled
  * @param subGround    a sub-ground the basis requires (IN s.7(b): {@code i} or {@code ii})
  * @param standardsAttested the processing meets the standards the basis or exemption requires (IN: Second Schedule)
+ * @param specialCondition  condition for special-category (sensitive) data where the pack defines such conditions
+ *                          (EU: Art. 9(2)(a)-(j)); required when a data item is sensitive
  */
 public record PurposeDefinition(String code, Map<String, String> names, Map<String, String> descriptions,
                                 List<DataItem> dataItems, String basis, String legalRef, String subGround,
@@ -28,7 +30,7 @@ public record PurposeDefinition(String code, Map<String, String> names, Map<Stri
                                 Set<String> childExemptions, Set<ProcessingFlag> flags,
                                 RetentionSchedule.Trigger retentionTrigger, Duration retention, String retentionClass,
                                 String recordClass, Duration recordRetention, String recordRetentionRef, int version,
-                                boolean active) {
+                                boolean active, String specialCondition) {
 
     /** @param sensitive a special category under the pack (IN: SPDI r.3, Aadhaar): masked in summaries */
     public record DataItem(String code, Map<String, String> names, boolean sensitive) {

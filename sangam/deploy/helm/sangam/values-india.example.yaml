@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Example for an India deployment: the server has no default compliance jurisdiction.
+# Use with: helm upgrade --install sangam deploy/helm/sangam -f deploy/helm/sangam/values-india.example.yaml
+server:
+  config:
+    sangam:
+      compliance:
+        jurisdictions: IN
+        log-archive:
+          country: IN

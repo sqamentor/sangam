@@ -79,8 +79,8 @@ public final class VerifiableParentalConsentService {
         }
         AdultVerification v = adults.verifyAdult(tenantId, parentRef, method, evidence == null ? Map.of() : evidence);
         boolean ok = v != null && v.identifiable() && v.adult() && parentDeclaration;
-        LocalDate until = childDateOfBirth == null || !pack.hasLimit(ComplianceConfig.CHILD_AGE) ? null
-                : childDateOfBirth.plusYears(pack.limit(ComplianceConfig.CHILD_AGE, 0));
+        LocalDate until = childDateOfBirth == null || !config.forTenant(tenantId).hasLimit(ComplianceConfig.CHILD_AGE) ? null
+                : childDateOfBirth.plusYears(config.forTenant(tenantId).limit(ComplianceConfig.CHILD_AGE, 0));
         String reason = v == null ? "no verifier result" : !parentDeclaration ? "no parental declaration" : v.detail();
         return store(c, tenantId, childRef, parentRef, Kind.CHILD, method, v == null ? null : v.issuer(),
                 v == null ? null : v.tokenRef(), null, null, ok, until, reason, actor);

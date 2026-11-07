@@ -947,7 +947,7 @@ def util_billing():
                'date, payment by operationId, late payment surcharge, bill dispute with revision; non-payment '
                'hands over to disconnection.',
                ['SEC-UTIL-004', 'GP-08', 'GP-09', 'GP-30', 'GP-12'],
-               [('mdm.consumersDue', 'a', '', 'Consumers in the cycle'), ('mdm.read', 'a', '', 'Meter read'),
+               [('mdm.consumersDue', 'a', '', 'Consumers in the cycle: items with key and, for a new connection, connectionCaseKey'), ('mdm.read', 'a', '', 'Meter read'),
                 ('billing.generate', 'a', '', 'Bill'), ('billing.revise', 'a', '', 'Bill revision')],
                depends=('sangam.core', 'sec.util.disconnection'))
     p = pk.proc('sangam-sec-util-billing-cycle', 'Billing cycle', '', start={'materialFields': 'period'})
@@ -956,23 +956,27 @@ def util_billing():
     c = pk.proc('sangam-sec-util-bill', 'Bill of one consumer', '', start={'materialFields': 'key'})
     s = c.root
     a = s.start('bl_start', 'Consumer in the cycle', initiator=None)
-    d = s.setv('bl_defaults', 'Configuration', defaults='units=100;readStatus=NORMAL;tariffCategory=DOMESTIC;applicantRef=@key;'
-               'billingSeat=BILLING-CLERK;dueSpec=15D')
-    rd = s.conn('bl_read', 'Meter read', 'mdm.read', 'read', 'query', 'key', 'read')
+    d = s.setv('bl_defaults', 'Configuration', defaults='units=100;mdmReadStatus=NORMAL;tariffCategory=DOMESTIC;applicantRef=@key;'
+               'billingSeat=BILLING-CLERK;dueSpec=15D;consumer=@key;tariffId=DEFAULT;cycle=@batchId;connectionCaseKey=')
+    rd = s.conn('bl_read', 'Meter read', 'mdm.read', 'read', 'query', 'key', 'mdm')
     g = s.xgw('bl_readGw', 'Read valid?')
     s.seq(a, d, rd, g)
     vx = s.user('bl_exception', 'Resolve read exception (provisional bill if meter defective) | रीडिंग अपवाद का समाधान',
                 '${billingSeat}', form='sec-util-meter-to-cash/exception', decision=None, fields=['units*', 'remarks'])
     tr = s.rule('bl_tariff', 'Tariff (DMN)', 'sec-util-tariff')
-    s.flow(g, vx, "readStatus != 'NORMAL'", 'zero / abnormal / defective')
+    s.flow(g, vx, "mdmReadStatus != 'NORMAL'", 'zero / abnormal / defective')
     s.flow(g, tr, None, 'normal', default=True)
     s.flow(vx, tr)
     cp = s.expr('bl_compute', 'Bill amount', "${execution.setVariable('billAmount', fixedCharge + units * energyRate)}")
-    gb = s.conn('bl_bill', 'Generate and deliver bill', 'billing.generate', 'bill', 'submit', 'key,units,billAmount', 'bill',
+    gb = s.conn('bl_bill', 'Generate and deliver bill', 'billing.generate', 'bill', 'submit',
+                'key,consumer,units,billAmount,tariffId,cycle', 'bill',
                 step='bill')
     du = clock(s, 'bl_due', 'payment', '${dueSpec}')
     w = s.egw('bl_wait', 'Paid, disputed or due date')
-    s.seq(tr, cp, gb, du, w)
+    tb = s.svc('bl_tellConnection', 'First bill: release a held compensation credit', C['CORR'],
+               {'messageName': 'sangam.util.firstBill', 'targetBusinessKey': '${connectionCaseKey}', 'optional': 'true',
+                'variables': 'consumer,cycle,head'})
+    s.seq(tr, cp, gb, tb, du, w)
     pd = s.catch_msg('bl_paid', 'Payment received', 'sangam.util.paid')
     dp = s.catch_msg('bl_dispute', 'Bill disputed', 'sangam.util.billDispute')
     od = s.catch_timer('bl_overdue', 'Due date passed', date='${paymentDueAt}')
@@ -985,9 +989,16 @@ def util_billing():
     s.flow(dp, rv)
     rg = s.xgw('bl_revGw')
     s.flow(rv, rg)
-    rb = s.conn('bl_reviseBill', 'Issue revised bill', 'billing.revise', 'revise', 'submit', 'key,units', 'rev', step='revise')
-    s.flow(rg, rb, "disputeDecision == 'customer'", 'upheld')
-    s.flow(rb, du)
+    sp = s.setv('bl_superseded', 'Amount of the bill being replaced', values='supersededAmount=@billAmount')
+    rc = s.expr('bl_recompute', 'Revised bill amount', "${execution.setVariable('billAmount', fixedCharge + units * energyRate)}")
+    rb = s.conn('bl_reviseBill', 'Issue revised bill', 'billing.revise', 'revise', 'submit',
+                'key,consumer,units,tariffId,cycle,head,supersededAmount', 'rev', step='revise')
+    s.flow(rg, sp, "disputeDecision == 'customer'", 'upheld')
+    s.seq(sp, rc, rb)
+    rf = s.xgw('bl_revRes', 'Revised?')
+    s.flow(rf, rv, "revStatus == 'FAILED'", 'refused: re-examine')
+    s.flow(rb, rf)
+    s.flow(rf, du, None, 'revised', default=True)
     s.flow(rg, w, None, 'bill correct', default=True)
     dc = s.svc('bl_disconnect', 'Hand over to disconnection (notice case)', C['LINK'],
                {'processKey': 'sangam-sec-util-disconnection', 'linkType': 'non-payment', 'inherit': 'key,billAmount,applicantRef'})
@@ -995,9 +1006,10 @@ def util_billing():
     s.flow(dc, s.end('bl_endOverdue', 'Overdue: disconnection case opened', listeners=[c.item_listener('OVERDUE')]))
     pk.dmn('sec-util-tariff', 'Tariff (SYNTHETIC; SERC tariff order)', 'FIRST', [('Category', 'tariffCategory', 'string'),
                                                                                    ('Units', 'units', 'double')],
-           [('fixedCharge', 'Fixed charge', 'double'), ('energyRate', 'Energy rate per unit', 'double')],
-           [([q('DOMESTIC'), '<= 100'], ['50', '3.5'], ''), ([q('DOMESTIC'), '-'], ['50', '5.5'], ''),
-            (['-', '-'], ['200', '8'], 'commercial')])
+           [('fixedCharge', 'Fixed charge', 'double'), ('energyRate', 'Energy rate per unit', 'double'),
+            ('head', 'Bill head (must equal the tariff line head)', 'string')],
+           [([q('DOMESTIC'), '<= 100'], ['50', '3.5', q('ENERGY')], ''), ([q('DOMESTIC'), '-'], ['50', '5.5', q('ENERGY')], ''),
+            (['-', '-'], ['200', '8', q('ENERGY')], 'commercial')])
     simple_seeds(pk, 'BILLING', [('BILLING-CLERK', 'BILLING', None, 'Billing clerk', 'बिलिंग लिपिक')], 'ubl')
 
 

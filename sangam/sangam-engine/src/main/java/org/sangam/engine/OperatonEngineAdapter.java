@@ -490,8 +490,14 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         }
         try {
             return fetchRetrier.run("fetchAndLock", true, () -> {
-                Set<String> held = once((cc, conn) -> sweepExpired(conn));
-                return once((cc, conn) -> fetchOnce(cc, conn, held, workerId, topic, maxItems, lockDuration));
+                Set<String> held = once((cc, conn) -> {
+                    CommandState.of(cc).markAcquisition();
+                    return sweepExpired(conn);
+                });
+                return once((cc, conn) -> {
+                    CommandState.of(cc).markAcquisition();
+                    return fetchOnce(cc, conn, held, workerId, topic, maxItems, lockDuration);
+                });
             });
         } catch (ConflictRetryExhaustedException e) {
             fetchGiveUps.incrementAndGet();
@@ -972,7 +978,10 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
      */
     @Override
     public int executeDueJobs() {
-        command("sweepLeases", (cc, conn) -> sweepExpired(conn));
+        command("sweepLeases", (cc, conn) -> {
+            CommandState.of(cc).markAcquisition();
+            return sweepExpired(conn);
+        });
         int executed = 0;
         Map<String, Integer> perDefinition = new HashMap<>();
         Set<String> skipped = new HashSet<>();

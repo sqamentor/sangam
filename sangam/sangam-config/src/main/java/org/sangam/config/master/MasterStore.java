@@ -20,6 +20,12 @@ public interface MasterStore {
 
     List<MasterCode> list(String scope, String scheme, String segment);
 
+    /** Codes of a segment whose parent code starts with {@code parentPrefix}. */
+    default List<MasterCode> children(String scope, String scheme, String segment, String parentPrefix) {
+        return list(scope, scheme, segment).stream()
+                .filter(c -> c.parentCode() != null && c.parentCode().startsWith(parentPrefix)).toList();
+    }
+
     /** In-memory implementation. */
     final class InMemory implements MasterStore {
         private final Map<String, List<MasterCode>> rows = new ConcurrentHashMap<>();

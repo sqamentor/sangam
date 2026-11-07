@@ -21,5 +21,6 @@
   <include file="mssql/sangam-0001-baseline.sql" relativeToChangelogFile="true"/>
   <include file="mysql/sangam-0001-baseline.sql" relativeToChangelogFile="true"/>
   <include file="h2/sangam-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="sangam-0002-onboarding.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

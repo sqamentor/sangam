@@ -1,5 +1,6 @@
 {
   "code": "IN",
+  "goLiveEvidence": ["CERT_IN_AUDIT_CLEARANCE", "GIGW_CONFORMANCE_MATRIX"],
   "name": "India",
   "homeCountry": "IN",
   "timeZone": "Asia/Kolkata",

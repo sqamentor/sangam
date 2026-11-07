@@ -54,7 +54,7 @@ import org.springframework.core.env.Environment;
  * <ul>
  *   <li>{@link SangamCompliance} on the engine transaction ({@code Transactions.of(engineAdapter)}; Spring-joined
  *       transactions when sangam-engine is disabled) with {@link ComplianceConfigProvider} (jurisdiction packs from
- *       {@code sangam.compliance.jurisdictions}, default IN), then {@code ComplianceRuntime.install(...)};</li>
+ *       {@code sangam.compliance.jurisdictions}, no default), then {@code ComplianceRuntime.install(...)};</li>
  *   <li>ports: legal holds → integration {@code LegalHoldStore}; erasure → integration {@code ErasureService};
  *       principal messages → outbox + DLT SMS / e-mail connectors ({@link ComplianceNotifier}); supervisory and incident
  *       authorities → e-mail / HTTP connectors; workflow starts → the engine; log archive → a home-country filesystem
@@ -72,10 +72,24 @@ public class ComplianceWiring {
     private static final Logger LOG = LoggerFactory.getLogger(ComplianceWiring.class);
 
     @Bean
-    public ComplianceConfigProvider sangamComplianceConfig(Environment env) {
+    public ComplianceConfigProvider sangamComplianceConfig(Environment env,
+            ObjectProvider<org.sangam.server.plugins.PluginManager> plugins) {
         JurisdictionRegistry registry = JurisdictionRegistry.discover();
+        plugins.ifAvailable(m -> m.jurisdictions().forEach(registry::add));
         LOG.info("Compliance jurisdiction packs installed: {}", registry.all().size());
         return new ComplianceConfigProvider(registry, env);
+    }
+
+    /** One source of go-live evidence: effective jurisdictions and pack items (plugin packs included). */
+    @Bean
+    public org.springframework.beans.factory.InitializingBean sangamComplianceEvidence(ComplianceConfigProvider provider,
+            ObjectProvider<org.sangam.security.SangamSecurity> security) {
+        return () -> security.ifAvailable(s -> s.tenants().useJurisdictions(
+                code -> provider.registry().find(code).map(org.sangam.compliance.jurisdiction.JurisdictionPack::goLiveEvidence),
+                tenant -> {
+                    String code = provider.effectiveJurisdiction(tenant);
+                    return code == null ? java.util.List.<String>of() : java.util.List.of(code);
+                }));
     }
 
     @Bean
@@ -107,7 +121,7 @@ public class ComplianceWiring {
                 env.getProperty("sangam.compliance.authority.http-connector", "rest"));
         ComplianceLogArchiveStore archive = new ComplianceLogArchiveStore(
                 Path.of(env.getProperty("sangam.compliance.log-archive.root", "data/compliance-logs")),
-                env.getProperty("sangam.compliance.log-archive.country", "IN"));
+                env.getProperty("sangam.compliance.log-archive.country", ""));
 
         SangamCompliance.Ports ports = new SangamCompliance.Ports(holds, erasurePort, notifier,
                 null /* principals: owned by packs / sangam-security person directory */,
@@ -133,10 +147,10 @@ public class ComplianceWiring {
     @Bean
     @ConditionalOnProperty(name = "sangam.compliance.schedule.enabled", havingValue = "true", matchIfMissing = true)
     public ComplianceScheduler sangamComplianceScheduler(SangamCompliance compliance, TxSupport tx, DataSource ds,
-            RestProperties rest, Environment env, ObjectProvider<AdminPort> admin) {
+            RestProperties rest, Environment env, ObjectProvider<AdminPort> admin, ComplianceConfigProvider provider) {
         LeaderElection leader = new LeaderElection(tx.dialect(), Transactions.of(ds), rest.getNode(),
                 Duration.ofMinutes(3));
-        return new ComplianceScheduler(compliance, leader, () -> tenants(env, admin),
+        return new ComplianceScheduler(compliance, leader, () -> tenants(env, admin).stream().filter(t -> provider.effectiveJurisdiction(t) != null).toList(),
                 env.getProperty("sangam.compliance.schedule.retention-batch", Integer.class, 500),
                 env.getProperty("sangam.compliance.schedule.integrity-max-chains", Integer.class, 10_000));
     }

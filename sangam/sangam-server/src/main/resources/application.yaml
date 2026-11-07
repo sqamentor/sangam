@@ -79,12 +79,12 @@ sangam:
   # ComplianceConfig (organisation-name, sector, entity-attributes, sla.*, retention.*, logs.*, ntp.*, hosting.*,
   # transfer.*, links.*, authority.<code>.recipients ...). Per tenant: sangam.compliance.tenant.<tenant>.<key>.
   compliance:
-    jurisdictions: ${SANGAM_COMPLIANCE_JURISDICTIONS:IN}
+    jurisdictions: ${SANGAM_COMPLIANCE_JURISDICTIONS:}
     organisation-name: ${SANGAM_COMPLIANCE_ORGANISATION:}
     tenants: ${SANGAM_COMPLIANCE_TENANTS:${sangam.tenant.default:dev}}
     log-archive:
       root: ${SANGAM_COMPLIANCE_LOG_ARCHIVE:data/compliance-logs}
-      country: ${SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY:IN}
+      country: ${SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY:}
     notify:
       sms-connector: ${SANGAM_COMPLIANCE_SMS_CONNECTOR:sms-dlt-sim}
       email-connector: ${SANGAM_COMPLIANCE_EMAIL_CONNECTOR:smtp}

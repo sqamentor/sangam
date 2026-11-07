@@ -29,7 +29,7 @@ public final class LogRetentionPolicy {
     }
 
     public static boolean residencyRequired(ComplianceConfig cfg) {
-        return cfg.pack.hasLimit(ComplianceConfig.INCIDENT_LOG_MIN);
+        return cfg.hasLimit(ComplianceConfig.INCIDENT_LOG_MIN);
     }
 
     public static void requireResidency(ComplianceConfig cfg, String country, String what) {
@@ -37,15 +37,15 @@ public final class LogRetentionPolicy {
             return;
         }
         String cc = country == null ? "" : country.trim().toUpperCase(Locale.ROOT);
-        if (!cfg.pack.homeCountry().equals(cc)) {
+        if (!cfg.pack.isHome(cc)) {
             throw new ComplianceException(Code.LOCALISATION_VIOLATION, what + " must be located in " + cfg.pack.homeCountry() + " ("
                     + cfg.pack.limitCitation(ComplianceConfig.INCIDENT_LOG_MIN) + "); found '" + cc + "'");
         }
     }
 
     public static boolean compliant(ComplianceConfig cfg, int retentionDays, String country) {
-        int floor = Math.max(cfg.pack.limit(ComplianceConfig.LOG_MIN, 0), cfg.pack.limit(ComplianceConfig.INCIDENT_LOG_MIN, 0));
-        boolean residency = !residencyRequired(cfg) || cfg.pack.homeCountry().equalsIgnoreCase(country == null ? "" : country);
+        int floor = Math.max(cfg.limit(ComplianceConfig.LOG_MIN, 0), cfg.limit(ComplianceConfig.INCIDENT_LOG_MIN, 0));
+        boolean residency = !residencyRequired(cfg) || cfg.pack.isHome(country);
         return retentionDays >= floor && residency;
     }
 }

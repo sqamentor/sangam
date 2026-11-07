@@ -17,6 +17,13 @@ public interface HealthHooksPort {
     record CdsReply(int status, String json) {
     }
 
+    /** A received 835: inbox messages written, or the poison item recorded when the file is unreadable. */
+    record RemittanceResult(int messages, Long poisonItemId) {
+    }
+
+    /** Routes one 835 interchange for the caller's tenant. */
+    RemittanceResult remittance835(String tenantId, String principal, String x12);
+
     /** {@code POST /api/v1/hooks/fhir/{channel}}; {@code header} reads request headers (the channel secret). */
     HookResult fhirNotification(String channel, Function<String, String> header, byte[] body);
 

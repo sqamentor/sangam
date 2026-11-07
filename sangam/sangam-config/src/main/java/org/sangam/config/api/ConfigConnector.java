@@ -99,7 +99,8 @@ public final class ConfigConnector implements SangamConnector {
                     }
                     ClassificationScheme s = ClassificationScheme.from(sm);
                     ClassificationRegistry.Code c = registry.parse(s, r.str("code"));
-                    List<Finding> f = new ArrayList<>(registry.validate(r.tenantId(), s, c, asOf));
+                    List<Finding> f = new ArrayList<>(registry.validate(r.tenantId(), s, c, asOf, id -> p.list("classification.schemes").stream()
+                            .filter(m -> id.equals(m.get("id"))).findFirst().map(ClassificationScheme::from).orElse(null)));
                     f.addAll(Crosswalk.checkCombinations(p.list("classification.combinations"), c));
                     out.put("valid", !Finding.anyError(f));
                     out.put("findings", render(f));

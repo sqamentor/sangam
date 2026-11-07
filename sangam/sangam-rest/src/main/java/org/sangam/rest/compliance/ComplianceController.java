@@ -135,7 +135,8 @@ public class ComplianceController {
                 body.dataItems(), body.basis(), body.legalRef(), body.subGround(), body.registerRef(),
                 body.standardsAttested(), body.exemptions(), body.exemptionRef(), body.childExemptions(), body.flags(),
                 body.retentionTrigger(), body.retention(), body.retentionClass(), body.recordClass(),
-                body.recordRetention(), body.recordRetentionRef(), body.version(), body.active()) : body;
+                body.recordRetention(), body.recordRetentionRef(), body.version(), body.active(),
+                body.specialCondition()) : body;
         return api.definePurpose(id, p);
     }
 

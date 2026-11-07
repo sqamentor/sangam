@@ -41,6 +41,39 @@ jobs:
           if [ ! -f sdks/java/pom.xml ]; then exit 0; fi
           mvn -B -ntp -pl sdks/java -am -DskipITs verify
 
+  java-native:
+    # R7: native-light worker (GraalVM CE, no GraalJS). Offline smoke on the executable is the build evidence.
+    name: Java SDK native-light worker
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: "25"
+          distribution: graalvm-community
+          cache: maven
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Native metadata matches the SDK model
+        run: python3 -I sangam/deploy/native/sdk-worker/generate_native_config.py --check
+      - name: Build native executable
+        working-directory: sangam
+        run: |
+          mvn -B -ntp -DskipTests -pl sdks/java -am install
+          mvn -B -ntp -DskipTests -f deploy/native/sdk-worker/pom.xml -Pnative package
+      - name: Smoke
+        working-directory: sangam/deploy/native/sdk-worker/target
+        run: |
+          ./sangam-sdk-worker --smoke | tee native-smoke.txt
+          ls -l sangam-sdk-worker >> native-smoke.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-worker-evidence
+          path: sangam/deploy/native/sdk-worker/target/native-smoke.txt
+      - name: Image build (no push)
+        working-directory: sangam
+        run: docker buildx build -f deploy/docker/sdk-worker-native.Dockerfile --load -t sangam-sdk-worker:ci .
+
   dotnet:
     runs-on: ubuntu-24.04
     timeout-minutes: 30

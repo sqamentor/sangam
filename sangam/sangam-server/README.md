@@ -194,7 +194,7 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
 **Compliance (sangam-compliance; DPDP Act 2023 / Rules 2025, CERT-In).** Wired in `config/ComplianceWiring` (switch: `sangam.modules.compliance.enabled`).
 - **Facade.** `SangamCompliance` runs on `Transactions.of(engineAdapter)`, or on Spring-joined transactions when sangam-engine is disabled. `ComplianceRuntime.install(...)` is called at start-up.
 - **Configuration.** `bridge/ComplianceConfigProvider`:
-  - It installs the jurisdiction packs named in `sangam.compliance.jurisdictions` (default `IN`, from `META-INF/sangam/jurisdictions.idx`). A pack that is named but not installed fails start-up.
+  - It installs the jurisdiction packs named in `sangam.compliance.jurisdictions` (no default; with none set, a compliance feature refuses with 409 `JURISDICTION_NOT_SET` and only the raw-identifier start guard is skipped; from `META-INF/sangam/jurisdictions.idx`). A pack that is named but not installed fails start-up.
   - A tenant uses `sangam.compliance.tenant-jurisdictions.<tenant>`, else the first configured pack.
   - Every key under `sangam.compliance.*` is a `ComplianceConfig` property; `sangam.compliance.tenant.<tenant>.<key>` overrides it for one tenant.
 - **Ports bound:**
@@ -203,7 +203,7 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
   - principal messages → `bridge/ComplianceNotifier`: an outbox event to `compliance-notify` in the caller's transaction, delivered by a relay publisher through the DLT SMS (`sangam.compliance.notify.sms-connector`, which needs `mobile` + `templateId` attributes) and e-mail (`notify.email-connector`) connectors, exactly once per event and channel;
   - Data Protection Board and CERT-In → `bridge/ComplianceAuthorityGateway`, through the e-mail connector (or the HTTP connector for an `https://` recipient), one operation per case, kind and recipient;
   - workflow starts → the engine (`bridge/ComplianceWorkflowStarter`);
-  - log archive → `bridge/ComplianceLogArchiveStore`, a write-once filesystem store at `sangam.compliance.log-archive.root`, declared country `log-archive.country` (default IN).
+  - log archive → `bridge/ComplianceLogArchiveStore`, a write-once filesystem store at `sangam.compliance.log-archive.root`, declared country `log-archive.country` (no default).
 - **Ports left at the module's "not configured" defaults** (the evidence report lists them as gaps): principal directory, principal authenticator, personal-data port, adult-identity verifier (there is no DigiLocker identity-verification connector; only DigiLocker push exists), guardianship verifier, processor notifier, geo resolver, national-ID vault, security evidence. The SNTP client is the module's built-in one; it is used only when `ntp.enabled=true`.
 - **ERASE_DATA.** The `LifecyclePorts.Authorizer` in `IntegrationWiring` lets principal `system:retention` hold `ERASE_DATA`, and nothing more.
 - **Schedulers** (`bridge/ComplianceScheduler`, `sangam.compliance.schedule.enabled`). Leader-elected on `INTEGRATION_LEADER` (lease `sangam-compliance-scheduler`), ticking every minute:
@@ -334,3 +334,54 @@ Plugin order (`bridge/EngineConfigurationCustomizer`): Sangam → security → i
 **Module role templates.** New tenants get `security.defaults().install(c, admin, true)` at onboarding. `POST /api/v1/admin/security/module-defaults` (permission `tenant.admin`) runs it on demand.
 
 **Downloads stream.** `Download` carries a body supplier and is copied to the response with `StreamingResponseBody`. Document content from the ports content store is streamed and cut off above `sangam.content.max-bytes`.
+
+## Settings added in the latest rounds
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `sangam.modules.pipelines.enabled`, `sangam.modules.telemetry.enabled` | true | Module switches |
+| `sangam.pipelines.stage-root` | `data/pipeline-stage` | Stage files; must be shared storage for restart on another node |
+| `sangam.pipelines.max-concurrent` | 4 | Concurrent runs |
+| `sangam.pipelines.schedule.enabled`, `.every` | true, 30s | Leader-elected scheduler |
+| `sangam.integration.kafka.{enabled,config.*,channels[n].*}` | off | Channel: `source`, `tenant`, `principal`, `event-type`, `topics`, `group-id`, `concurrency` |
+| `sangam.integration.jms.{enabled,channels[n].*}` | off | Channel: as above, with `queue`, or `topic` and `subscription`; needs a `ConnectionFactory` bean |
+| `sangam.rest.idempotency-cleanup-minutes` | 60 | Leader-elected cleanup interval |
+| `sangam.packs.ledger-post.ledger` | `RECEIVABLES` | Ledger for `ledger.post` |
+| `sangam.security.first-admins.tenant`, `.subjects` | unset | Install-time first administrators: two `person:subject:name` entries |
+
+Pipeline definitions are read from `classpath:pipelines/<id>.json`. Pipelines start with no external data sources or HTTP egress.
+
+**Platform access.** `/engine-rest/**`, all methods, requires `sangam-admin` or `sangam-engine-admin`. **First administrator:** set `sangam.security.first-admins.*` at install, with subjects from the identity provider; no API creates a user without authentication. Verified UI plugins are served at `/api/v1/plugins/ui`.
+
+### Settings of the premium wave (ai, channels, modeller, ops, 835)
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `sangam.ai.llm.base-uri`, `.model`, `.embedding-model`, `.api-key-ref` | unset | LLM endpoint, models and secret ref of the key |
+| `sangam.ai.llm.timeout` | 60s | Per-call timeout |
+| `sangam.ai.llm.allow-private` | false | Allow a private-network LLM address |
+| `sangam.ai.expression.limit` | 2s | Expression-help evaluation limit |
+| `sangam.ai.kb.chunk-chars`, `.overlap-chars`, `.max-candidates` | 1200, 150, 2000 | Knowledge-base chunking and retrieval candidates |
+| `sangam.ai.agents-json`, `sangam.ai.tools-json`, `sangam.ai.a2a-json` | unset | Agents, connector tools (need sangam-integration) and inbound A2A agents |
+| `sangam.ai.mcp.rest-base-url` | `http://127.0.0.1:${server.port}` | Where MCP tools call back into this API |
+| `sangam.ai.mcp.write-tenants` | empty | Tenants whose MCP write tools are on |
+| `sangam.ai.http-allowed-origins` | empty | Browser Origins allowed on `/api/v1/ai/mcp` and `/api/v1/ai/a2a/**`; a request with an Origin not listed gets 403, a request with no Origin (non-browser) passes |
+| `sangam.ai.worker.tenants`, `.batch`, `.every`, `.lease`, `.external-retry` | unset, 20, 5s, 2m, 5m | Agent worker |
+| `sangam.channels.documents-dir` | `./data/channels` | Channel attachment storage |
+| `sangam.channels.allow-unscanned` | false | Accept attachments with no malware scanner |
+| `sangam.channels.poll-seconds`, `sangam.channels.poll.<type>.*` | 60 | Polling channel interval and per-type settings |
+| `sangam.channels.bot-process` | unset | Channel type to bot process key |
+| `sangam.channels.teams.jwks-uri` | `https://login.botframework.com/v1/.well-known/keys` | Teams (Bot Framework) token keys |
+| `sangam.channels.egress.<tenant>` | empty | Allowed outbound hosts per tenant |
+| `sangam.modeller.lease-seconds` | 120 | Model edit lease |
+| `sangam.modeller.mocks.file` | unset | Extra service-mock rules on top of the stored `MOD_SERVICE_MOCK` rules of the default tenant; ignored on a production profile |
+| `sangam.modeller.token-exchange.{token-endpoint,client-id,client-secret-ref,audience,connectors,egress}` | unset | Token exchange for listed connectors |
+| `sangam.ops.tenants` | unset | Tenants served by ops jobs |
+| `sangam.ops.vars.cache-millis` | 30000 | Scoped variable cache |
+| `sangam.ops.retention-json` | unset | Retention key to ISO duration |
+| `sangam.ops.retention.auto-execute`, `.batch` | false, 500 | Scheduled purge (plan and log only when false) |
+| `sangam.ops.task-listeners-json` | unset | Global task listener rules |
+| `sangam.ops.outliers.allowed-variables` | empty | Variables outlier analysis may read |
+| `sangam.ops.notification-destinations` | `notify*,email*,mail*,sms*,dlt*` | Connector ids treated as notifications |
+| `sangam.modules.connectors-health.enabled` | true | Enables `POST /api/v1/connectors-health/x12/835` (`application/edi-x12` or `text/plain`, needs `ops.write`; one inbox message per claim, deduplicated on trace and patient control number) |
+**Concurrent builds.** Each concurrent build of one checkout needs its own `-Dsangam.target=<folder>`.

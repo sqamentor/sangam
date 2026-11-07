@@ -106,7 +106,7 @@ public final class X12Connector implements SangamConnector {
                 case "serviceReview" -> realtime(r, "HI", "278", X12Builders.V278,
                         X12Builders.serviceReview278(r.input(), trace(r)), true);
                 case "submitClaim" -> submit(r);
-                case "parse" -> parse(r.required("x12"));
+                case "parse" -> parse(r);
                 case "acknowledge" -> acknowledge(r);
                 default -> ConnectorResult.BusinessFailure.of("UNSUPPORTED_OPERATION", r.operation());
             };
@@ -179,9 +179,41 @@ public final class X12Connector implements SangamConnector {
         return ConnectorResult.Success.of(out, r.operationId().toString());
     }
 
-    private ConnectorResult parse(String x12) {
-        Map<String, Object> out = decodeOutput(null, x12);
+    private ConnectorResult parse(ConnectorRequest r) {
+        Map<String, Object> out = parseFocused(r.required("x12"), r.str("eraTraceNumber"), r.str("patientControlNumber"));
         return ConnectorResult.Success.of(out, String.valueOf(out.getOrDefault("controlNumber", "")));
+    }
+
+    /**
+     * Decodes an X12 file. With a trace number, the top level describes the 835 transaction of that TRN02 (a file may
+     * hold several); with a patient control number, it is scoped to that claim ({@link X12Decoders#focusClaim}), so a
+     * process posts and routes only its own claim of a mixed 835.
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> parseFocused(String x12, String traceNumber, String patientControlNumber) {
+        Map<String, Object> out = decodeOutput(null, x12);
+        List<Map<String, Object>> decoded = (List<Map<String, Object>>) out.get("decoded");
+        Map<String, Object> pick = null;
+        for (Map<String, Object> d : decoded) {
+            if (traceNumber != null && traceNumber.equals(d.get("traceNumber"))) {
+                pick = d;
+            }
+        }
+        if (pick == null && !decoded.isEmpty()) {
+            pick = decoded.get(0);
+        }
+        if (pick == null) {
+            return out;
+        }
+        if (patientControlNumber != null && !patientControlNumber.isBlank() && "835".equals(pick.get("type"))) {
+            pick = X12Decoders.focusClaim(pick, patientControlNumber);
+        }
+        for (Map.Entry<String, Object> e : pick.entrySet()) {
+            if (!(e.getValue() instanceof List<?>) || e.getKey().equals("claims")) {
+                out.put(e.getKey(), e.getValue());
+            }
+        }
+        return HealthHttp.noNulls(out);
     }
 
     private ConnectorResult acknowledge(ConnectorRequest r) {

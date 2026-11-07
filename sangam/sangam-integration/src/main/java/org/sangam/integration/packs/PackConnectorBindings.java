@@ -29,6 +29,7 @@ public final class PackConnectorBindings {
     }
 
     private final Map<String, Binding> bindings = new ConcurrentHashMap<>();
+    private final Map<String, Binding> tenantBindings = new ConcurrentHashMap<>();
     private final Map<String, CapabilityClass> declared = new ConcurrentHashMap<>();
 
     public PackConnectorBindings bind(String packConnector, String connectorId, String operationOrNull) {
@@ -59,6 +60,18 @@ public final class PackConnectorBindings {
     public PackConnectorBindings declare(String packConnector, CapabilityClass cls) {
         declared.put(packConnector, cls);
         return this;
+    }
+
+    /** Binds a pack connector for one tenant only; other tenants keep the platform binding or the simulator fallback. */
+    public PackConnectorBindings bindForTenant(String tenantId, String packConnector, String connectorId, String operationOrNull) {
+        tenantBindings.put(tenantId + "|" + packConnector, new Binding(connectorId, operationOrNull, null));
+        return this;
+    }
+
+    /** The tenant's own binding, else the platform binding. */
+    public Optional<Binding> binding(String tenantId, String packConnector) {
+        Binding own = tenantId == null ? null : tenantBindings.get(tenantId + "|" + packConnector);
+        return own != null ? Optional.of(own) : binding(packConnector);
     }
 
     public Optional<Binding> binding(String packConnector) {

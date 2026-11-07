@@ -31,6 +31,7 @@ public final class PacksTenantDeployer {
     private final PackRegistry registry;
     private final AuditPort audit;
     private final Set<String> deployed = ConcurrentHashMap.newKeySet();
+    private final Map<String, Set<String>> selections = new ConcurrentHashMap<>();
 
     public PacksTenantDeployer(PackDeployer deployer, PackRegistry registry, AuditPort audit) {
         this.deployer = deployer;
@@ -38,14 +39,20 @@ public final class PacksTenantDeployer {
         this.audit = audit;
     }
 
-    /** Deploys every pack for {@code tenantId}; returns {@code packId@version → deploymentId}. */
+    /** The packs an onboarded tenant chose: later automatic provisioning deploys only these. */
+    public void select(String tenantId, Set<String> packIds) {
+        selections.put(tenantId, Set.copyOf(packIds));
+    }
+
+    /** Deploys the tenant's selection (every pack when it has none) for {@code tenantId}; returns {@code packId@version → deploymentId}. */
     public Map<String, String> deploy(String tenantId) {
         if (tenantId == null || tenantId.isBlank()) {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "tenant id is required");
         }
         List<PackDeployer.Result> results;
         try {
-            results = deployer.deployAll(tenantId);
+            Set<String> selection = selections.get(tenantId);
+            results = selection == null ? deployer.deployAll(tenantId) : deployer.deploy(selection, tenantId);
         } catch (PackDeployer.PackRejectedException e) {
             throw ApiProblem.unprocessable("PACK_REJECTED", e.getMessage()).with("violations", e.violations());
         }

@@ -141,7 +141,8 @@ public enum ResourcesDialect {
 
     /**
      * A row-locking select that skips rows locked by other transactions (queue call-next, hold sweeper).
-     * Oracle applies ROWNUM before skipping, so the caller fetches a generous {@code limit} and stops early.
+     * Oracle uses core's ordered candidate-window form (core {@code Dialect.skipLockedSelect}), so order and
+     * concurrent claimers are handled the same way as in the core relay and inbox.
      */
     public String skipLockedSelect(String columns, String table, String alias, String where, String orderBy, int limit) {
         if (limit <= 0) {
@@ -150,8 +151,7 @@ public enum ResourcesDialect {
         return switch (this) {
             case POSTGRESQL -> "SELECT " + columns + " FROM " + table + " " + alias + " WHERE " + where
                     + " ORDER BY " + orderBy + " LIMIT " + limit + " FOR UPDATE OF " + alias + " SKIP LOCKED";
-            case ORACLE -> "SELECT " + columns + " FROM " + table + " " + alias + " WHERE (" + where + ") AND ROWNUM <= "
-                    + limit + " FOR UPDATE SKIP LOCKED";
+            case ORACLE -> org.sangam.core.layer.Dialect.ORACLE.skipLockedSelect(columns, table, alias, where, orderBy, limit);
             case SQLSERVER -> "SELECT TOP (" + limit + ") " + columns + " FROM " + table + " " + alias
                     + " WITH (UPDLOCK, READPAST, ROWLOCK) WHERE " + where + " ORDER BY " + orderBy;
             case MYSQL -> "SELECT " + columns + " FROM " + table + " " + alias + " WHERE " + where

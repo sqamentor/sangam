@@ -104,6 +104,16 @@ public final class CommandState {
     }
 
     private boolean closeListenerRegistered;
+    private boolean acquisition;
+
+    /** R2 / VI.1 rule 4: this command is an acquisition (job or external-task fetch, lease sweep); it never takes L2. */
+    public synchronized void markAcquisition() {
+        acquisition = true;
+    }
+
+    public synchronized boolean isAcquisition() {
+        return acquisition;
+    }
 
     /** True the first time it is called for this command (the close listener is then registered once). */
     public synchronized boolean markCloseListenerRegistered() {

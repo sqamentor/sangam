@@ -65,6 +65,8 @@ public final class ModuleResourceTypes {
     public static final String REGISTRY_ASSET = "registry-asset";
     public static final String REGISTRY_WORK_ORDER = "registry-work-order";
     public static final String REGISTRY_INSTRUMENT_PUBLIC = "registry-instrument-public";
+    // ---- sangam-ai KnowledgeBaseService (policy resource type of a chunk's source document)
+    public static final String DOCUMENT = "document";
     // ---- virtual module types
     public static final String COMPLIANCE = "COMPLIANCE";
     public static final String CONFIG = "CONFIG";
@@ -96,6 +98,10 @@ public final class ModuleResourceTypes {
         programmes(r);
         registry(r);
         virtual(r);
+        // one document has many chunks, so the id is not unique; the object check only needs "some visible row". No default
+        // grant exists: access needs a policy on the document, its "kb:<key>" scope, '*', or the tenant-admin '*' type.
+        r.register(table(DOCUMENT, "AI_KB_CHUNK", "document_id", List.of(scope("kb:", "kb_key")),
+                Map.of("kbKey", "kb_key", "docVersion", "doc_version")), EnumSet.of(READ, MODIFY, ADMIN));
     }
 
     private static ResourceDescriptor.Scope scope(String prefix, String column) {

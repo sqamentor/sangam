@@ -328,8 +328,9 @@ CREATE TABLE AUTH_GRANT_SOURCE (
   deny_flag SMALLINT NOT NULL,
   cond_key VARCHAR(64) NOT NULL,
   source_id VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  source_key VARCHAR(64) NOT NULL,
   perms BIGINT NOT NULL,
-  CONSTRAINT PK_AUTH_GRANT_SOURCE PRIMARY KEY (tenant_id, principal_id, resource_type, resource_id, deny_flag, cond_key, source_id)
+  CONSTRAINT PK_AUTH_GRANT_SOURCE PRIMARY KEY (tenant_id, principal_id, resource_type, resource_id, deny_flag, cond_key, source_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 CREATE INDEX AUTH_GRANT_SOURCE_SRC ON AUTH_GRANT_SOURCE (tenant_id, source_id);
 CREATE INDEX AUTH_GRANT_SOURCE_PRIN ON AUTH_GRANT_SOURCE (tenant_id, principal_id, source_id);
@@ -4830,6 +4831,619 @@ CREATE TABLE PG_DASHBOARD_SNAPSHOT (
   CONSTRAINT PK_PG_DASHBOARD_SNAPSHOT PRIMARY KEY (tenant_id, programme_id, period_id, org_unit)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 --rollback DROP TABLE PG_DASHBOARD_SNAPSHOT;
+
+--changeset sangam:0027-01-sangam_feel_binding dbms:mysql
+--comment: R10: FEEL engine each decision/process/case definition was deployed with (refused on mismatch)
+CREATE TABLE SANGAM_FEEL_BINDING (
+  definition_id VARCHAR(64) NOT NULL,
+  definition_key VARCHAR(255),
+  definition_kind VARCHAR(32) NOT NULL,
+  deployment_id VARCHAR(64),
+  feel_engine VARCHAR(255) NOT NULL,
+  recorded_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_SANGAM_FEEL_BINDING PRIMARY KEY (definition_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX SANGAM_FEEL_BINDING_KEY ON SANGAM_FEEL_BINDING (definition_key, definition_kind);
+--rollback DROP TABLE SANGAM_FEEL_BINDING;
+
+--changeset sangam:0028-01-ai_agent_run dbms:mysql
+--comment: AiSchema.java
+CREATE TABLE AI_AGENT_RUN (
+  run_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  agent_key VARCHAR(255) NOT NULL,
+  agent_version INT NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  lock_version BIGINT NOT NULL,
+  lease_owner VARCHAR(255),
+  lease_expires_at DATETIME(6),
+  parent_run_id VARCHAR(64),
+  depth INT NOT NULL,
+  steps_used INT NOT NULL,
+  tokens_used BIGINT NOT NULL,
+  root_id VARCHAR(64) NOT NULL,
+  business_key VARCHAR(255),
+  principal_id VARCHAR(255) NOT NULL,
+  definition_json LONGTEXT NOT NULL,
+  input_text LONGTEXT NOT NULL,
+  result_text LONGTEXT,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_AI_AGENT_RUN PRIMARY KEY (run_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX AI_AGENT_RUN_STATE ON AI_AGENT_RUN (state, lease_expires_at);
+--rollback DROP TABLE AI_AGENT_RUN;
+
+--changeset sangam:0028-02-ai_agent_step dbms:mysql
+--comment: AiSchema.java
+CREATE TABLE AI_AGENT_STEP (
+  run_id VARCHAR(64) NOT NULL,
+  step_no INT NOT NULL,
+  kind VARCHAR(64) NOT NULL,
+  payload_json LONGTEXT NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_AI_AGENT_STEP PRIMARY KEY (run_id, step_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE AI_AGENT_STEP;
+
+--changeset sangam:0028-03-ai_agent_approval dbms:mysql
+--comment: AiSchema.java
+CREATE TABLE AI_AGENT_APPROVAL (
+  approval_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  run_id VARCHAR(64) NOT NULL,
+  tool_call_id VARCHAR(255) NOT NULL,
+  tool_name VARCHAR(255) NOT NULL,
+  args_json LONGTEXT NOT NULL,
+  args_hash VARCHAR(64) NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  requested_by VARCHAR(255) NOT NULL,
+  decided_by VARCHAR(255),
+  reason LONGTEXT,
+  created_at DATETIME(6) NOT NULL,
+  decided_at DATETIME(6),
+  CONSTRAINT PK_AI_AGENT_APPROVAL PRIMARY KEY (approval_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE UNIQUE INDEX AI_AGENT_APPROVAL_CALL ON AI_AGENT_APPROVAL (run_id, tool_call_id);
+--rollback DROP TABLE AI_AGENT_APPROVAL;
+
+--changeset sangam:0028-04-ai_kb_version dbms:mysql
+--comment: AiSchema.java
+CREATE TABLE AI_KB_VERSION (
+  tenant_id VARCHAR(64) NOT NULL,
+  kb_key VARCHAR(255) NOT NULL,
+  version INT NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  model VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  metadata_json LONGTEXT,
+  retire_reason LONGTEXT,
+  retired_by VARCHAR(255),
+  retired_at DATETIME(6),
+  CONSTRAINT PK_AI_KB_VERSION PRIMARY KEY (tenant_id, kb_key, version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE AI_KB_VERSION;
+
+--changeset sangam:0028-05-ai_kb_chunk dbms:mysql
+--comment: AiSchema.java
+CREATE TABLE AI_KB_CHUNK (
+  tenant_id VARCHAR(64) NOT NULL,
+  kb_key VARCHAR(255) NOT NULL,
+  version INT NOT NULL,
+  id VARCHAR(255) NOT NULL,
+  document_id VARCHAR(255) NOT NULL,
+  doc_version VARCHAR(64),
+  seq INT NOT NULL,
+  text_value LONGTEXT NOT NULL,
+  embedding LONGBLOB NOT NULL,
+  CONSTRAINT PK_AI_KB_CHUNK PRIMARY KEY (tenant_id, kb_key, version, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE AI_KB_CHUNK;
+
+--changeset sangam:0028-06-ai_draft dbms:mysql
+--comment: AiSchema.java
+CREATE TABLE AI_DRAFT (
+  draft_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  kind VARCHAR(64) NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  content LONGTEXT NOT NULL,
+  validation LONGTEXT NOT NULL,
+  prompt LONGTEXT NOT NULL,
+  prompt_hash VARCHAR(64) NOT NULL,
+  content_hash VARCHAR(64) NOT NULL,
+  model VARCHAR(255) NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  reviewed_by VARCHAR(255),
+  review_note LONGTEXT,
+  created_at DATETIME(6) NOT NULL,
+  reviewed_at DATETIME(6),
+  package_id VARCHAR(255),
+  CONSTRAINT PK_AI_DRAFT PRIMARY KEY (draft_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX AI_DRAFT_STATE ON AI_DRAFT (tenant_id, state);
+--rollback DROP TABLE AI_DRAFT;
+
+--changeset sangam:0028-07-ai_classification dbms:mysql
+--comment: AiSchema.java
+CREATE TABLE AI_CLASSIFICATION (
+  id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  template_key VARCHAR(255) NOT NULL,
+  template_version INT NOT NULL,
+  source_ref VARCHAR(255),
+  label VARCHAR(255),
+  confidence VARCHAR(64),
+  fields_json LONGTEXT NOT NULL,
+  route VARCHAR(64) NOT NULL,
+  model VARCHAR(255) NOT NULL,
+  corrected_label VARCHAR(255),
+  corrected_by VARCHAR(255),
+  created_at DATETIME(6) NOT NULL,
+  status VARCHAR(64) DEFAULT 'PENDING' NOT NULL,
+  reviewed_by VARCHAR(255),
+  reviewed_at DATETIME(6),
+  CONSTRAINT PK_AI_CLASSIFICATION PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX AI_CLASSIFICATION_TPL ON AI_CLASSIFICATION (tenant_id, template_key, template_version);
+--rollback DROP TABLE AI_CLASSIFICATION;
+
+--changeset sangam:0028-08-cmp_restriction dbms:mysql
+--comment: ComplianceSchema.java
+CREATE TABLE CMP_RESTRICTION (
+  tenant_id VARCHAR(64) NOT NULL,
+  restriction_id VARCHAR(64) NOT NULL,
+  principal_ref VARCHAR(255) NOT NULL,
+  recipient_pattern VARCHAR(255) NOT NULL,
+  purpose_code VARCHAR(64),
+  reason LONGTEXT,
+  legal_ref VARCHAR(255),
+  active SMALLINT NOT NULL,
+  created_by VARCHAR(255),
+  created_at DATETIME(6) NOT NULL,
+  lifted_at DATETIME(6),
+  CONSTRAINT PK_CMP_RESTRICTION PRIMARY KEY (tenant_id, restriction_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX CMP_RESTRICTION_P ON CMP_RESTRICTION (tenant_id, principal_ref, active);
+--rollback DROP TABLE CMP_RESTRICTION;
+
+--changeset sangam:0028-09-cmp_breach_plan dbms:mysql
+--comment: ComplianceSchema.java
+CREATE TABLE CMP_BREACH_PLAN (
+  tenant_id VARCHAR(64) NOT NULL,
+  breach_id VARCHAR(64) NOT NULL,
+  rule_code VARCHAR(64) NOT NULL,
+  recipient VARCHAR(64) NOT NULL,
+  authority VARCHAR(64),
+  due_at DATETIME(6),
+  status VARCHAR(64) NOT NULL,
+  sent_at DATETIME(6),
+  ref VARCHAR(255),
+  late SMALLINT NOT NULL,
+  citation VARCHAR(255),
+  CONSTRAINT PK_CMP_BREACH_PLAN PRIMARY KEY (tenant_id, breach_id, rule_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX CMP_BREACH_PLAN_DUE ON CMP_BREACH_PLAN (tenant_id, status, due_at);
+--rollback DROP TABLE CMP_BREACH_PLAN;
+
+--changeset sangam:0028-10-pipeline_run dbms:mysql
+--comment: PipelineStore.java
+CREATE TABLE PIPELINE_RUN (
+  run_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  pipeline_id VARCHAR(64) NOT NULL,
+  version VARCHAR(64),
+  definition_json LONGTEXT NOT NULL,
+  params_json LONGTEXT,
+  state VARCHAR(64) NOT NULL,
+  trigger_kind VARCHAR(64),
+  owner_node VARCHAR(64),
+  epoch BIGINT NOT NULL,
+  heartbeat_expires_at DATETIME(6),
+  records_in BIGINT NOT NULL,
+  records_out BIGINT NOT NULL,
+  rejected BIGINT NOT NULL,
+  error LONGTEXT,
+  created_at DATETIME(6) NOT NULL,
+  started_at DATETIME(6),
+  ended_at DATETIME(6),
+  CONSTRAINT PK_PIPELINE_RUN PRIMARY KEY (run_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX PIPELINE_RUN_STATE ON PIPELINE_RUN (state, created_at);
+CREATE INDEX PIPELINE_RUN_HISTORY ON PIPELINE_RUN (tenant_id, pipeline_id, created_at);
+--rollback DROP TABLE PIPELINE_RUN;
+
+--changeset sangam:0028-11-pipeline_step_run dbms:mysql
+--comment: PipelineStore.java
+CREATE TABLE PIPELINE_STEP_RUN (
+  run_id VARCHAR(64) NOT NULL,
+  step_id VARCHAR(64) NOT NULL,
+  step_index INT NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  records_in BIGINT NOT NULL,
+  records_out BIGINT NOT NULL,
+  rejected BIGINT NOT NULL,
+  output_ref VARCHAR(255),
+  checkpoint_no BIGINT NOT NULL,
+  error LONGTEXT,
+  started_at DATETIME(6),
+  ended_at DATETIME(6),
+  CONSTRAINT PK_PIPELINE_STEP_RUN PRIMARY KEY (run_id, step_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE PIPELINE_STEP_RUN;
+
+--changeset sangam:0028-12-pipeline_schedule dbms:mysql
+--comment: PipelineStore.java
+CREATE TABLE PIPELINE_SCHEDULE (
+  tenant_id VARCHAR(64) NOT NULL,
+  pipeline_id VARCHAR(64) NOT NULL,
+  cron VARCHAR(64) NOT NULL,
+  zone_id VARCHAR(64) NOT NULL,
+  params_json LONGTEXT,
+  next_run_at DATETIME(6) NOT NULL,
+  enabled SMALLINT NOT NULL,
+  CONSTRAINT PK_PIPELINE_SCHEDULE PRIMARY KEY (tenant_id, pipeline_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE PIPELINE_SCHEDULE;
+
+--changeset sangam:0028-13-telemetry_device dbms:mysql
+--comment: TelemetrySchema.java
+CREATE TABLE TELEMETRY_DEVICE (
+  tenant_id VARCHAR(64) NOT NULL,
+  device_id VARCHAR(64) NOT NULL,
+  asset_ref VARCHAR(255),
+  location_ref VARCHAR(255),
+  channel_key VARCHAR(64),
+  enabled SMALLINT NOT NULL,
+  last_seen_at DATETIME(6),
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_TELEMETRY_DEVICE PRIMARY KEY (tenant_id, device_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE TELEMETRY_DEVICE;
+
+--changeset sangam:0028-14-alarm_episode dbms:mysql
+--comment: TelemetrySchema.java
+CREATE TABLE ALARM_EPISODE (
+  episode_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  device_id VARCHAR(64) NOT NULL,
+  sensor VARCHAR(64) NOT NULL,
+  rule_id VARCHAR(64) NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  severity VARCHAR(64),
+  breach_count INT NOT NULL,
+  first_breach_at DATETIME(6),
+  opened_at DATETIME(6),
+  last_no VARCHAR(64),
+  peak_value VARCHAR(64),
+  last_reading_at DATETIME(6),
+  cleared_at DATETIME(6),
+  acked_by VARCHAR(255),
+  acked_at DATETIME(6),
+  ack_note LONGTEXT,
+  ack_due_at DATETIME(6),
+  overdue_notified_at DATETIME(6),
+  closed_at DATETIME(6),
+  close_reason VARCHAR(64),
+  reopen_count INT NOT NULL,
+  last_event VARCHAR(64),
+  last_event_outcome VARCHAR(64),
+  last_event_error LONGTEXT,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  version BIGINT NOT NULL,
+  CONSTRAINT PK_ALARM_EPISODE PRIMARY KEY (episode_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX ALARM_EPISODE_ACTIVE ON ALARM_EPISODE (tenant_id, device_id, sensor, rule_id, state);
+CREATE INDEX ALARM_EPISODE_TENANT_STATE ON ALARM_EPISODE (tenant_id, state);
+CREATE INDEX ALARM_EPISODE_ACK_DUE ON ALARM_EPISODE (state, ack_due_at);
+--rollback DROP TABLE ALARM_EPISODE;
+
+--changeset sangam:0029-01-ch_conversation dbms:mysql
+--comment: ChannelsSchema.java
+CREATE TABLE CH_CONVERSATION (
+  id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  title VARCHAR(255),
+  case_ref VARCHAR(255),
+  retention_class VARCHAR(64) NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_CH_CONVERSATION PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX CH_CONVERSATION_CASE ON CH_CONVERSATION (tenant_id, case_ref);
+--rollback DROP TABLE CH_CONVERSATION;
+
+--changeset sangam:0029-02-ch_participant dbms:mysql
+--comment: ChannelsSchema.java
+CREATE TABLE CH_PARTICIPANT (
+  conversation_id VARCHAR(64) NOT NULL,
+  principal_id VARCHAR(255) NOT NULL,
+  added_by VARCHAR(255) NOT NULL,
+  added_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_CH_PARTICIPANT PRIMARY KEY (conversation_id, principal_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE CH_PARTICIPANT;
+
+--changeset sangam:0029-03-ch_message dbms:mysql
+--comment: ChannelsSchema.java
+CREATE TABLE CH_MESSAGE (
+  id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  conversation_id VARCHAR(64) NOT NULL,
+  sender VARCHAR(255) NOT NULL,
+  body LONGTEXT NOT NULL,
+  attachments LONGTEXT NOT NULL,
+  client_key VARCHAR(255),
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_CH_MESSAGE PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX CH_MESSAGE_CONV ON CH_MESSAGE (conversation_id, created_at);
+CREATE UNIQUE INDEX CH_MESSAGE_CLIENT ON CH_MESSAGE (conversation_id, sender, client_key);
+--rollback DROP TABLE CH_MESSAGE;
+
+--changeset sangam:0029-04-ch_opt_in dbms:mysql
+--comment: ChannelsSchema.java
+CREATE TABLE CH_OPT_IN (
+  tenant_id VARCHAR(64) NOT NULL,
+  channel VARCHAR(64) NOT NULL,
+  external_id VARCHAR(255) NOT NULL,
+  principal_id VARCHAR(255) NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  evidence LONGTEXT,
+  updated_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_CH_OPT_IN PRIMARY KEY (tenant_id, channel, external_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE CH_OPT_IN;
+
+--changeset sangam:0029-05-ch_inbound_seen dbms:mysql
+--comment: ChannelsSchema.java
+CREATE TABLE CH_INBOUND_SEEN (
+  tenant_id VARCHAR(64) NOT NULL,
+  channel VARCHAR(255) NOT NULL,
+  message_id VARCHAR(255) NOT NULL,
+  seen_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_CH_INBOUND_SEEN PRIMARY KEY (tenant_id, channel, message_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE CH_INBOUND_SEEN;
+
+--changeset sangam:0029-06-ch_poll_cursor dbms:mysql
+--comment: ChannelsSchema.java
+CREATE TABLE CH_POLL_CURSOR (
+  tenant_id VARCHAR(64) NOT NULL,
+  channel VARCHAR(255) NOT NULL,
+  cursor_val VARCHAR(255) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_CH_POLL_CURSOR PRIMARY KEY (tenant_id, channel)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE CH_POLL_CURSOR;
+
+--changeset sangam:0029-07-mod_edit_lease dbms:mysql
+--comment: ModellerSchema.java
+CREATE TABLE MOD_EDIT_LEASE (
+  tenant_id VARCHAR(64) NOT NULL,
+  file_id VARCHAR(255) NOT NULL,
+  holder VARCHAR(255) NOT NULL,
+  fence BIGINT NOT NULL,
+  expires_at DATETIME(6) NOT NULL,
+  requested_by VARCHAR(255),
+  CONSTRAINT PK_MOD_EDIT_LEASE PRIMARY KEY (tenant_id, file_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE MOD_EDIT_LEASE;
+
+--changeset sangam:0029-08-mod_takeover_draft dbms:mysql
+--comment: ModellerSchema.java
+CREATE TABLE MOD_TAKEOVER_DRAFT (
+  id BIGINT AUTO_INCREMENT,
+  tenant_id VARCHAR(64) NOT NULL,
+  file_id VARCHAR(255) NOT NULL,
+  former VARCHAR(255) NOT NULL,
+  taken_by VARCHAR(255) NOT NULL,
+  content LONGTEXT,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_MOD_TAKEOVER_DRAFT PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE MOD_TAKEOVER_DRAFT;
+
+--changeset sangam:0029-09-mod_template dbms:mysql
+--comment: ModellerSchema.java
+CREATE TABLE MOD_TEMPLATE (
+  tenant_id VARCHAR(64) NOT NULL,
+  template_id VARCHAR(255) NOT NULL,
+  version INT NOT NULL,
+  kind VARCHAR(64) NOT NULL,
+  document LONGTEXT NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_MOD_TEMPLATE PRIMARY KEY (tenant_id, template_id, version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE MOD_TEMPLATE;
+
+--changeset sangam:0029-10-mod_action dbms:mysql
+--comment: ModellerSchema.java
+CREATE TABLE MOD_ACTION (
+  tenant_id VARCHAR(64) NOT NULL,
+  action_key VARCHAR(255) NOT NULL,
+  version INT NOT NULL,
+  document LONGTEXT NOT NULL,
+  active SMALLINT NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_MOD_ACTION PRIMARY KEY (tenant_id, action_key, version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE MOD_ACTION;
+
+--changeset sangam:0029-11-mod_action_run dbms:mysql
+--comment: ModellerSchema.java
+CREATE TABLE MOD_ACTION_RUN (
+  operation_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  action_key VARCHAR(255) NOT NULL,
+  version INT NOT NULL,
+  target_ref VARCHAR(255) NOT NULL,
+  actor VARCHAR(255) NOT NULL,
+  result_json LONGTEXT,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_MOD_ACTION_RUN PRIMARY KEY (operation_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE MOD_ACTION_RUN;
+
+--changeset sangam:0029-12-mod_test_run dbms:mysql
+--comment: ModellerSchema.java
+CREATE TABLE MOD_TEST_RUN (
+  run_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  package_id VARCHAR(255) NOT NULL,
+  report LONGTEXT NOT NULL,
+  passed INT NOT NULL,
+  failed INT NOT NULL,
+  not_judged INT NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_MOD_TEST_RUN PRIMARY KEY (run_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE MOD_TEST_RUN;
+
+--changeset sangam:0029-13-ops_mig_checkpoint dbms:mysql
+--comment: OpsSchema.java
+CREATE TABLE OPS_MIG_CHECKPOINT (
+  job_id VARCHAR(64) NOT NULL,
+  source_table VARCHAR(64) NOT NULL,
+  last_id VARCHAR(255),
+  copied BIGINT NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  failed BIGINT DEFAULT 0 NOT NULL,
+  mismatched BIGINT DEFAULT 0 NOT NULL,
+  status VARCHAR(64) DEFAULT 'RUNNING' NOT NULL,
+  CONSTRAINT PK_OPS_MIG_CHECKPOINT PRIMARY KEY (job_id, source_table)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE OPS_MIG_CHECKPOINT;
+
+--changeset sangam:0029-14-ops_mig_row dbms:mysql
+--comment: OpsSchema.java
+CREATE TABLE OPS_MIG_ROW (
+  job_id VARCHAR(64) NOT NULL,
+  source_table VARCHAR(64) NOT NULL,
+  source_id VARCHAR(255) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  payload LONGTEXT NOT NULL,
+  migrated_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_OPS_MIG_ROW PRIMARY KEY (job_id, source_table, source_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE OPS_MIG_ROW;
+
+--changeset sangam:0029-15-ops_usage_daily dbms:mysql
+--comment: OpsSchema.java
+CREATE TABLE OPS_USAGE_DAILY (
+  tenant_id VARCHAR(64) NOT NULL,
+  day_utc VARCHAR(64) NOT NULL,
+  metric VARCHAR(64) NOT NULL,
+  value_num BIGINT NOT NULL,
+  CONSTRAINT PK_OPS_USAGE_DAILY PRIMARY KEY (tenant_id, day_utc, metric)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE OPS_USAGE_DAILY;
+
+--changeset sangam:0029-16-ops_search_doc dbms:mysql
+--comment: OpsSchema.java
+CREATE TABLE OPS_SEARCH_DOC (
+  generation BIGINT NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  doc_type VARCHAR(64) NOT NULL,
+  id VARCHAR(255) NOT NULL,
+  title VARCHAR(255),
+  body LONGTEXT,
+  CONSTRAINT PK_OPS_SEARCH_DOC PRIMARY KEY (generation, tenant_id, doc_type, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE OPS_SEARCH_DOC;
+
+--changeset sangam:0029-17-ops_search_alias dbms:mysql
+--comment: OpsSchema.java
+CREATE TABLE OPS_SEARCH_ALIAS (
+  tenant_id VARCHAR(64) NOT NULL,
+  generation BIGINT NOT NULL,
+  switched_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_OPS_SEARCH_ALIAS PRIMARY KEY (tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE OPS_SEARCH_ALIAS;
+
+--changeset sangam:0029-18-ops_index_job dbms:mysql
+--comment: OpsSchema.java
+CREATE TABLE OPS_INDEX_JOB (
+  generation BIGINT NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  indexed BIGINT NOT NULL,
+  expected BIGINT NOT NULL,
+  message LONGTEXT,
+  updated_at DATETIME(6) NOT NULL,
+  reason LONGTEXT,
+  CONSTRAINT PK_OPS_INDEX_JOB PRIMARY KEY (generation)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE OPS_INDEX_JOB;
+
+--changeset sangam:0029-19-ops_variable dbms:mysql
+--comment: OpsSchema.java
+CREATE TABLE OPS_VARIABLE (
+  scope_id VARCHAR(64) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  value_json LONGTEXT NOT NULL,
+  updated_by VARCHAR(255) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  scope_type VARCHAR(64) DEFAULT 'TENANT' NOT NULL,
+  tenant_id VARCHAR(64),
+  version BIGINT DEFAULT 1 NOT NULL,
+  reason LONGTEXT,
+  CONSTRAINT PK_OPS_VARIABLE PRIMARY KEY (scope_id, name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE OPS_VARIABLE;
+
+--changeset sangam:0029-20-ops_secret dbms:mysql
+--comment: OpsSchema.java
+CREATE TABLE OPS_SECRET (
+  tenant_id VARCHAR(64) NOT NULL,
+  ref_name VARCHAR(255) NOT NULL,
+  envelope LONGTEXT NOT NULL,
+  version INT NOT NULL,
+  updated_by VARCHAR(255) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  reason LONGTEXT,
+  CONSTRAINT PK_OPS_SECRET PRIMARY KEY (tenant_id, ref_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE OPS_SECRET;
+
+--changeset sangam:0030-01-mod_service_mock dbms:mysql
+--comment: ModellerSchema.java
+CREATE TABLE MOD_SERVICE_MOCK (
+  tenant_id VARCHAR(64) NOT NULL,
+  service VARCHAR(255) NOT NULL,
+  operation VARCHAR(255) NOT NULL,
+  when_input_json LONGTEXT,
+  output_json LONGTEXT,
+  error_code VARCHAR(64),
+  delay_ms BIGINT,
+  enabled SMALLINT NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_MOD_SERVICE_MOCK PRIMARY KEY (tenant_id, service, operation)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE MOD_SERVICE_MOCK;
+
+--changeset sangam:0030-02-ops_retention_run dbms:mysql
+--comment: OpsSchema.java
+CREATE TABLE OPS_RETENTION_RUN (
+  run_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  plan_id VARCHAR(64) NOT NULL,
+  plan_hash VARCHAR(64) NOT NULL,
+  reason LONGTEXT NOT NULL,
+  purged INT NOT NULL,
+  executed_by VARCHAR(255) NOT NULL,
+  executed_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_OPS_RETENTION_RUN PRIMARY KEY (run_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX OPS_RETENTION_RUN_TENANT ON OPS_RETENTION_RUN (tenant_id, executed_at);
+--rollback DROP TABLE OPS_RETENTION_RUN;
 
 --changeset sangam:0016-03-form_draft-alter dbms:mysql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int

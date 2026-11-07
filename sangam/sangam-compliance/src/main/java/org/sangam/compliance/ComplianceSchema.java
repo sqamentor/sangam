@@ -24,7 +24,8 @@ public final class ComplianceSchema {
               data_items_json {text}, basis {str64} NOT NULL, legal_ref {str}, sub_ground {str64}, register_ref {str}, standards_attested {small} NOT NULL,
               exemptions_json {text}, exemption_ref {str}, child_exemptions_json {text}, flags_json {text}, retention_trigger {str64},
               retention_seconds {long}, retention_class {str64}, record_class {str64}, record_retention_seconds {long}, record_retention_ref {str},
-              version {int} NOT NULL, active {small} NOT NULL, defined_by {str}, defined_at {ts} NOT NULL, PRIMARY KEY (tenant_id, purpose_code))""",
+              version {int} NOT NULL, active {small} NOT NULL, special_condition {str64}, defined_by {str}, defined_at {ts} NOT NULL,
+              PRIMARY KEY (tenant_id, purpose_code))""",
             """
             CREATE TABLE CMP_OBJECTION (tenant_id {str64} NOT NULL, principal_ref {str} NOT NULL, purpose_code {str64} NOT NULL, channel {str},
               objected_at {ts} NOT NULL, PRIMARY KEY (tenant_id, principal_ref, purpose_code))""",
@@ -89,7 +90,16 @@ public final class ComplianceSchema {
             CREATE TABLE CMP_RIGHTS_REQUEST (tenant_id {str64} NOT NULL, request_id {str64} NOT NULL, principal_ref {str} NOT NULL, right_code {str64} NOT NULL,
               category {str64} NOT NULL, status {str64} NOT NULL, identifier_type {str64}, channel {str}, acting_nominee_ref {str}, received_at {ts} NOT NULL,
               due_at {ts} NOT NULL, closed_at {ts}, process_instance_id {str64}, details_json {text}, outcome {text}, outcome_hash {str64},
-              response_text {text}, escalated {small} NOT NULL, late {small} NOT NULL, PRIMARY KEY (tenant_id, request_id))""",
+              response_text {text}, escalated {small} NOT NULL, late {small} NOT NULL, extended {small} DEFAULT 0 NOT NULL,
+              extension_reason {text}, access_exception {str64}, PRIMARY KEY (tenant_id, request_id))""",
+            """
+            CREATE TABLE CMP_RESTRICTION (tenant_id {str64} NOT NULL, restriction_id {str64} NOT NULL, principal_ref {str} NOT NULL,
+              recipient_pattern {str} NOT NULL, purpose_code {str64}, reason {text}, legal_ref {str}, active {small} NOT NULL, created_by {str},
+              created_at {ts} NOT NULL, lifted_at {ts}, PRIMARY KEY (tenant_id, restriction_id))""",
+            """
+            CREATE TABLE CMP_BREACH_PLAN (tenant_id {str64} NOT NULL, breach_id {str64} NOT NULL, rule_code {str64} NOT NULL, recipient {str64} NOT NULL,
+              authority {str64}, due_at {ts}, status {str64} NOT NULL, sent_at {ts}, ref {str}, late {small} NOT NULL, citation {str},
+              PRIMARY KEY (tenant_id, breach_id, rule_code))""",
             """
             CREATE TABLE CMP_NOMINATION (tenant_id {str64} NOT NULL, nomination_id {str64} NOT NULL, principal_ref {str} NOT NULL, nominee_ref {str} NOT NULL,
               nominee_name {str}, relationship {str64}, contact_ref {str}, status {str64} NOT NULL, registered_at {ts} NOT NULL, revoked_at {ts},
@@ -105,6 +115,7 @@ public final class ComplianceSchema {
               status {str64} NOT NULL, authority_notified_at {ts}, authority_ref {str}, report_due_at {ts}, extension_until {ts}, extension_ref {str},
               reported_at {ts}, report_ref {str}, report_late {small} NOT NULL, subjects_affected {long} NOT NULL, subjects_notified {long} NOT NULL,
               incident_ids_json {text}, registered_by {str}, registered_at {ts} NOT NULL, closed_at {ts}, process_instance_id {str64},
+              risk_outcome {str64}, risk_json {text}, high_risk {small} DEFAULT 0 NOT NULL, delay_until {ts}, delay_ref {str},
               PRIMARY KEY (tenant_id, breach_id))""",
             """
             CREATE TABLE CMP_BREACH_NOTICE (tenant_id {str64} NOT NULL, breach_id {str64} NOT NULL, principal_ref {str} NOT NULL, delivery_ref {str},
@@ -147,7 +158,9 @@ public final class ComplianceSchema {
             "CREATE INDEX CMP_NOTICE_DELIVERY_P ON CMP_NOTICE_DELIVERY (tenant_id, principal_ref, kind)",
             "CREATE INDEX CMP_INCIDENT_DUE ON CMP_INCIDENT (tenant_id, status, due_at)",
             "CREATE INDEX CMP_LOG_SEGMENT_TO ON CMP_LOG_SEGMENT (tenant_id, to_ts)",
-            "CREATE INDEX CMP_AUDIT_EVIDENCE_K ON CMP_AUDIT_EVIDENCE (tenant_id, kind, completed_at)"
+            "CREATE INDEX CMP_AUDIT_EVIDENCE_K ON CMP_AUDIT_EVIDENCE (tenant_id, kind, completed_at)",
+            "CREATE INDEX CMP_RESTRICTION_P ON CMP_RESTRICTION (tenant_id, principal_ref, active)",
+            "CREATE INDEX CMP_BREACH_PLAN_DUE ON CMP_BREACH_PLAN (tenant_id, status, due_at)"
     };
 
     public static List<String> ddl(Dialect dialect) {

@@ -76,8 +76,9 @@ public class PacksWiring {
     private static final Logger LOG = LoggerFactory.getLogger(PacksWiring.class);
 
     @Bean
-    public PackRegistry sangamPackRegistry() {
+    public PackRegistry sangamPackRegistry(ObjectProvider<org.sangam.server.plugins.PluginManager> plugins) {
         PackRegistry r = PackRegistry.discover();
+        plugins.ifAvailable(m -> m.packs().forEach(r::add));
         LOG.info("Discovered {} packs", r.all().size());
         return r;
     }

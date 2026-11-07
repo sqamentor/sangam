@@ -31,6 +31,15 @@
         "en": "Prior authorization number",
         "es": "Número de autorización previa"
       }
+    },
+    {
+      "id": "totalCharge",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Total charge (USD)",
+        "es": "Cargo total (USD)"
+      }
     }
   ]
 }

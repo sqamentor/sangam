@@ -82,7 +82,7 @@ export function newIdempotencyKey(): string {
 }
 
 export function buildUrl(path: string, query?: Query, baseOverride?: string): string {
-  const base = (baseOverride ?? config().apiBase).replace(/\/$/, '');
+  const base = (baseOverride ?? (path.startsWith('/engine-rest') ? '' : config().apiBase)).replace(/\/$/, '');
   const url = new URL(base + path, window.location.origin);
   if (query) {
     for (const [k, v] of Object.entries(query)) {
@@ -102,7 +102,7 @@ export interface RequestOptions {
   headers?: Record<string, string>;
   signal?: AbortSignal;
   /** FormData bodies are sent as multipart. */
-  form?: FormData;
+  form?: FormData | Blob;
   /** Base path other than the Sangam API, e.g. '/engine-rest' (Operaton REST, unchanged, behind Sangam auth). */
   base?: string;
 }
