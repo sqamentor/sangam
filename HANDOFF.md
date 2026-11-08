@@ -84,7 +84,10 @@ It is the single source of truth for where the work stands. Nothing here is an a
   - `3cf7841`: owner key in `.githooks/allowed_signers`
   - `9c831d0`: `.gitattributes`, LF for governance files
 - **Remote main** is still `15e4135`.
-- **Uncommitted:** about 501 changed or untracked paths in the main tree. This is the whole of the 2026-11-08 testing-phase work. A backup patch is in §9.
+- **WIP snapshot commit:** all main-tree work (559 paths) is committed as **`2aaf44f`** on the local branch **`handoff/2026-11-08`**, on top of `9c831d0`. It is not pushed and is NOT verified: do not merge it as is. The working tree is checked out on that branch.
+  - The next push goes through §8: a verified commit on a branch, then the signed gate.
+  - The private-worktree work (§6b) is NOT in this commit; it is backed up under §9 `scratchpad\`.
+- A backup patch of the same content is in §9.
 - **GitHub ruleset:** `protect-main` (id 26789812) blocks non-fast-forward pushes and deletion, with no bypass and no PR rule. Adding required status checks or a PR rule needs the owner's decision, made after main CI is green.
 - **Main CI:** on `15e4135` it was red (build, sdks, security, ui). The fixes are in the uncommitted tree and are unproven until a CI run.
 
