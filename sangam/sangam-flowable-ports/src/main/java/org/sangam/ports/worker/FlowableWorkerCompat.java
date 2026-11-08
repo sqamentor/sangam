@@ -218,8 +218,8 @@ public final class FlowableWorkerCompat {
                 val = switch (type) {
                     case "integer", "short" -> none ? null : intValue(value, name);
                     case "long" -> none ? null : longValue(value, name);
-                    case "double" -> none ? null : value.asDouble();
-                    case "boolean" -> none ? null : value.asBoolean();
+                    case "double" -> none ? null : doubleValue(value, name);
+                    case "boolean" -> none ? null : booleanValue(value, name);
                     case "date" -> none ? null : java.util.Date.from(java.time.Instant.parse(value.asText()));
                     case "json" -> none ? null : Json.plain(value);
                     default -> none ? null : value.asText();
@@ -232,18 +232,76 @@ public final class FlowableWorkerCompat {
         return out;
     }
 
+    // Jackson's asInt/asLong/asDouble/asBoolean map anything unparseable to 0 / false; a typed value that is not of its
+    // type is refused instead, so a client bug never completes a job with silently corrupted business data.
+
     private static Object intValue(JsonNode value, String name) {
-        if (value.isNumber() && !value.canConvertToInt()) {
+        long v = integral(value, name, "integer");
+        if (v < Integer.MIN_VALUE || v > Integer.MAX_VALUE) {
             throw PortsProblem.invalid("variable " + name + " is out of the integer range");
         }
-        return value.asInt();
+        return (int) v;
     }
 
     private static Object longValue(JsonNode value, String name) {
-        if (value.isNumber() && !value.canConvertToLong()) {
-            throw PortsProblem.invalid("variable " + name + " is out of the long range");
+        return integral(value, name, "long");
+    }
+
+    private static long integral(JsonNode value, String name, String type) {
+        java.math.BigDecimal d;
+        if (value.isNumber()) {
+            d = value.decimalValue();
+        } else if (value.isTextual()) {
+            try {
+                d = new java.math.BigDecimal(value.asText().trim());
+            } catch (NumberFormatException e) {
+                throw PortsProblem.invalid("variable " + name + " is not a " + type + ": " + abbreviate(value.asText()));
+            }
+        } else {
+            throw PortsProblem.invalid("variable " + name + " is not a " + type);
         }
-        return value.asLong();
+        try {
+            if (d.precision() - d.scale() > 19) {   // more integer digits than a long has: refuse before expanding "1e999999"
+                throw new ArithmeticException("too large");
+            }
+            return d.stripTrailingZeros().toBigIntegerExact().longValueExact();
+        } catch (ArithmeticException e) {
+            throw PortsProblem.invalid("variable " + name + " is not a whole number in the " + type + " range");
+        }
+    }
+
+    private static Object doubleValue(JsonNode value, String name) {
+        if (value.isNumber()) {
+            return value.asDouble();
+        }
+        if (value.isTextual()) {
+            try {
+                double d = Double.parseDouble(value.asText().trim());
+                if (Double.isFinite(d)) {
+                    return d;
+                }
+            } catch (NumberFormatException e) {
+                // fall through
+            }
+        }
+        throw PortsProblem.invalid("variable " + name + " is not a double");
+    }
+
+    private static Object booleanValue(JsonNode value, String name) {
+        if (value.isBoolean()) {
+            return value.booleanValue();
+        }
+        if (value.isTextual()) {
+            String s = value.asText().trim();
+            if ("true".equalsIgnoreCase(s) || "false".equalsIgnoreCase(s)) {
+                return Boolean.parseBoolean(s.toLowerCase(java.util.Locale.ROOT));
+            }
+        }
+        throw PortsProblem.invalid("variable " + name + " is not a boolean");
+    }
+
+    private static String abbreviate(String s) {
+        return s.length() > 40 ? s.substring(0, 40) + "..." : s;
     }
 
     static String flowableType(Object v) {

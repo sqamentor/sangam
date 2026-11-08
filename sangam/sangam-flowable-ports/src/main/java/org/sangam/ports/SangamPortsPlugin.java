@@ -159,8 +159,10 @@ public class SangamPortsPlugin implements ProcessEnginePlugin {
     public void postInit(ProcessEngineConfigurationImpl cfg) {
         if (settings.isCmmnEventListeners() && cfg.getDeployers() != null) {
             for (Deployer d : cfg.getDeployers()) {
-                if (d instanceof CmmnDeployer cd && cd.getTransformer() != null) {
-                    cd.getTransformer().setCmmnElementHandlerRegistry(new SangamCmmnElementHandlerRegistry());
+                // In place on the configuration's shared registry: the deployment cache's CMMN deployer (a second
+                // instance, the one that deploys) uses the same registry object (SL-12).
+                if (d instanceof CmmnDeployer cd && cd.getTransformer() != null && cd.getTransformer().getCmmnElementHandlerRegistry() != null) {
+                    SangamCmmnElementHandlerRegistry.install(cd.getTransformer().getCmmnElementHandlerRegistry());
                 }
             }
         }
@@ -187,7 +189,8 @@ public class SangamPortsPlugin implements ProcessEnginePlugin {
         return new Transactions() {
             @Override
             public <T> T inTransaction(java.util.function.Function<java.sql.Connection, T> work) {
-                return cfg.getCommandExecutorTxRequired().execute(cc -> work.apply(cc.getDbSqlSession().getSqlSession().getConnection()));
+                // EngineTx.connection(): FW-23 rollback guard, product rows roll back with a failed command
+                return cfg.getCommandExecutorTxRequired().execute(cc -> work.apply(org.sangam.ports.support.EngineTx.connection()));
             }
         };
     }

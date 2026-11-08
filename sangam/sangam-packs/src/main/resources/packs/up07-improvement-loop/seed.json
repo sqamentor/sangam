@@ -10,6 +10,7 @@
       "id": "PROCESS-OWNER",
       "role": "OWNER",
       "office": "PMO",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PROCESS-BOARD",
       "name": {
         "en": "Process owner",
@@ -20,6 +21,7 @@
       "id": "PROCESS-BOARD",
       "role": "PROCESSBOARD",
       "office": "PMO",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Process board",

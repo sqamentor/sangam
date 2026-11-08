@@ -98,6 +98,25 @@ public class BpmnExtensionsParseListener implements BpmnParseListener {
     // ------------------------------------------------------------------ FLOWABLE-INTO-OPERATON FC-22
 
     @Override
+    public void parseIntermediateCatchEvent(Element e, ScopeImpl scope, ActivityImpl a) {
+        // FW-12: an imported Flowable variable listener waits for the change (see VariableChangeConditionalEventBehavior)
+        for (Element child : e.elements()) {
+            if ("conditionalEventDefinition".equals(localName(child))
+                    && "true".equalsIgnoreCase(SangamBpmn.attr(child, SangamBpmn.ON_VARIABLE_CHANGE))
+                    && a.getActivityBehavior() instanceof org.operaton.bpm.engine.impl.bpmn.behavior.IntermediateConditionalEventBehavior b
+                    && !(b instanceof VariableChangeConditionalEventBehavior)) {
+                a.setActivityBehavior(new VariableChangeConditionalEventBehavior(b.getConditionalEventDefinition()));
+            }
+        }
+    }
+
+    private static String localName(Element el) {
+        String n = el.getTagName();
+        int i = n.indexOf(':');
+        return i < 0 ? n : n.substring(i + 1);
+    }
+
+    @Override
     public void parseEndEvent(Element e, ScopeImpl scope, ActivityImpl a) {
         String mode = SangamBpmn.attr(e, SangamBpmn.TERMINATE);
         if (mode == null) {

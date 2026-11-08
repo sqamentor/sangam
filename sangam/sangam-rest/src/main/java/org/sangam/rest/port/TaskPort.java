@@ -76,11 +76,21 @@ public interface TaskPort {
     record AddCommentRequest(String message) {
     }
 
+    /**
+     * The task's form (SL-37). {@code kind}: EMBEDDED (HTML, {@code text/html}), FORM (Operaton form, form-js JSON),
+     * EXTERNAL (link in {@code formKey}), OTHER or NONE. {@code content} is the deployed form, null when not deployed.
+     */
+    record TaskForm(String taskId, String formKey, String kind, String contentType, String content) {
+    }
+
     Page<Task> list(RequestContext ctx, TaskFilter filter, Page.PageRequest page);
 
     TaskDetail get(RequestContext ctx, String taskId);
 
     Map<String, Object> variables(RequestContext ctx, String taskId);
+
+    /** The task's form, with the same visibility check as {@link #get}. */
+    TaskForm form(RequestContext ctx, String taskId);
 
     void claim(RequestContext ctx, String taskId);
 

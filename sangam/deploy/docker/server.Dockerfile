@@ -45,7 +45,7 @@ ARG APP_MODULE=sangam-server
 # ---------------------------------------------------------------------------------------------------------------
 FROM ${MAVEN_IMAGE} AS build
 ARG MAVEN_ARGS="-B -ntp"
-ARG MARIADB_VERSION=3.5.3
+ARG MARIADB_VERSION=3.5.11
 ARG APP_MODULE
 WORKDIR /src
 COPY . .
@@ -83,6 +83,7 @@ COPY deploy/docker/server/drivers-README.txt /layout/opt/sangam/drivers/README.t
 # The last command is the licence guard (LIC-1/2/3/4/5/10): the build fails if a forbidden driver or script runtime
 # ended up inside the fat jar.
 RUN mkdir -p /layout/opt/sangam/config /layout/var/lib/sangam/compliance-logs /layout/var/lib/sangam/cell-exports \
+             /layout/var/lib/sangam/content \
  && chown -R 10001:0 /layout/opt/sangam /layout/var/lib/sangam \
  && chmod -R g=u /layout/opt/sangam /layout/var/lib/sangam \
  && if jar tf /layout/opt/sangam/app.jar | grep -E -i 'BOOT-INF/lib/(ojdbc|ucp|db2jcc|jcc-|mysql-connector|mariadb-java-client|js-[0-9]|polyglot|rhino|nashorn|jython|jruby)'; then \
@@ -109,6 +110,7 @@ ENV TZ=UTC \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -XX:+UseG1GC -Duser.timezone=UTC -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/tmp" \
     SANGAM_COMPLIANCE_LOG_ARCHIVE=/var/lib/sangam/compliance-logs \
     SANGAM_CELL_EXPORT_DIR=/var/lib/sangam/cell-exports \
+    SANGAM_CONTENT_ROOT=/var/lib/sangam/content \
     SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/opt/sangam/config/
 WORKDIR /opt/sangam
 USER 10001:0
@@ -133,6 +135,7 @@ ENV TZ=UTC \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -XX:+UseG1GC -Duser.timezone=UTC -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/tmp" \
     SANGAM_COMPLIANCE_LOG_ARCHIVE=/var/lib/sangam/compliance-logs \
     SANGAM_CELL_EXPORT_DIR=/var/lib/sangam/cell-exports \
+    SANGAM_CONTENT_ROOT=/var/lib/sangam/content \
     SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/opt/sangam/config/
 WORKDIR /opt/sangam
 USER 65532:0

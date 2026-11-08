@@ -138,6 +138,7 @@ public final class TenantAdminService {
     public Tenant createTenant(Connection c, SecurityIdentity platformAdmin, String tenantId, String nameEn, String nameHi,
                                String nameLocal, String hostingProfile, Map<String, Object> quotas) {
         requirePlatformAdmin(platformAdmin);
+        validateQuotas(quotas);
         if (!tenantId.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,59}")) {
             throw new SangamSecurityException.AdminConflict("INVALID_TENANT_ID", "tenant id must be 1-60 safe characters");
         }
@@ -163,6 +164,7 @@ public final class TenantAdminService {
         if (config != null) {
             merged.putAll(config);
         }
+        validateQuotas(quotas);
         Map<String, Object> q = new LinkedHashMap<>(t.quotas());
         if (quotas != null) {
             q.putAll(quotas);
@@ -239,6 +241,15 @@ public final class TenantAdminService {
     public long quota(Connection c, String tenantId, String name, long defaultValue) {
         Object v = find(c, tenantId).map(t -> t.quotas().get(name)).orElse(null);
         return v == null ? defaultValue : Long.parseLong(v.toString());
+    }
+
+    /** SL-43: the quota entries the product enforces must be integers (negative = unlimited). */
+    private static void validateQuotas(Map<String, Object> quotas) {
+        try {
+            org.sangam.security.quota.JdbcTenantQuotas.validate(quotas);
+        } catch (IllegalArgumentException e) {
+            throw new SangamSecurityException.AdminConflict("INVALID_QUOTA", e.getMessage());
+        }
     }
 
     static void requirePlatformAdmin(SecurityIdentity who) {

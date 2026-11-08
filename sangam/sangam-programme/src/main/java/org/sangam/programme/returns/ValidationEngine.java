@@ -101,9 +101,18 @@ public final class ValidationEngine {
         for (Map<String, Object> rule : def.rules()) {
             String expr = Db.str(rule.get("expr"));
             Boolean ok = FormulaEvaluator.test(expr, scope::get);
+            Severity severity = Severity.valueOf(Db.str(rule, "severity", "ERROR"));
             if (Boolean.FALSE.equals(ok)) {
-                out.add(new Finding(Db.str(rule.get("indicator")), Severity.valueOf(Db.str(rule, "severity", "ERROR")),
+                out.add(new Finding(Db.str(rule.get("indicator")), severity,
                         Db.str(rule, "code", "RULE"), Db.str(rule, "message", "rule failed: " + expr)));
+            } else if (ok == null) {
+                // ADR-D-26 strictness: an undetermined rule (missing value, division by zero) is not a pass.
+                List<String> missing = FormulaEvaluator.references(expr).stream().filter(r -> scope.get(r) == null).toList();
+                if (!skipWhenMissing(rule, missing)) {
+                    out.add(new Finding(Db.str(rule.get("indicator")), severity, "RULE_UNDETERMINED",
+                            "rule could not be evaluated" + (missing.isEmpty() ? " (division by zero)"
+                                    : "; missing " + String.join(", ", missing)) + ": " + expr));
+                }
             }
         }
         if (withExternal && def.validationDmnKey() != null) {
@@ -118,6 +127,20 @@ public final class ValidationEngine {
             }
         }
         return out;
+    }
+
+    /**
+     * Rule option {@code whenMissing}: {@code fail} reports {@code RULE_UNDETERMINED}, {@code skip} passes. The default
+     * is {@code skip} only when every missing reference is history or plan ({@code prev.*}, {@code target.*}: a first
+     * period or an unapproved target is legitimate), and {@code fail} when a reported value of this period is missing
+     * or the rule divides by zero.
+     */
+    static boolean skipWhenMissing(Map<String, Object> rule, List<String> missing) {
+        String mode = Db.str(rule, "whenMissing", null);
+        if (mode != null) {
+            return "skip".equals(mode);
+        }
+        return !missing.isEmpty() && missing.stream().allMatch(r -> r.startsWith("prev.") || r.startsWith("target."));
     }
 
     public static boolean hasErrors(List<Finding> findings) {

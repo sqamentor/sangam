@@ -52,7 +52,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain sangamSecurityFilterChain(HttpSecurity http, SangamSecurityProperties props,
                                                          ObjectProvider<JwtDecoder> jwtDecoder, Environment env,
-                                                         ObjectProvider<org.sangam.server.bridge.SecurityChainContributions> module)
+                                                         ObjectProvider<org.sangam.server.bridge.SecurityChainContributions> module,
+                                                         ObjectProvider<org.operaton.bpm.engine.ProcessEngine> engine)
             throws Exception {
         ProblemResponses problems = new ProblemResponses();
         DevTokenFilter devToken = devTokenFilter(props, env);
@@ -87,7 +88,8 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/compliance/rights-requests",
                                 "/api/v1/compliance/consent-managers/*/artefacts").permitAll()
                         .requestMatchers("/engine-rest/**")
-                        .hasAnyAuthority("GROUP_sangam-admin", "GROUP_sangam-engine-admin")
+                        .hasAnyAuthority(org.sangam.rest.support.Permissions.ENGINE_REST_GROUPS.stream()
+                                .map(g -> "GROUP_" + g).sorted().toArray(String[]::new))
                         .requestMatchers("/actuator/**")
                         .hasAnyAuthority("GROUP_sangam-operator", "GROUP_sangam-admin")
                         // SCALE IR-4: the target cell pulls a tenant export with its one-time export token (checked
@@ -128,7 +130,19 @@ public class SecurityConfig {
             http.addFilterAfter(contributions.identityFilter(), PrincipalAttributeFilter.class);
             LOG.info("sangam-security filters added to the Sangam filter chain (API tokens, identity resolution)");
         }
+        // SL-45: /engine-rest runs with the caller's engine authentication, so Operaton's tenant check applies
+        http.addFilterAfter(new org.sangam.server.security.EngineRestTenantFilter(
+                () -> engine.getIfAvailable() == null ? null : engine.getIfAvailable().getIdentityService(),
+                () -> operatonAdminGroups(engine.getIfAvailable())), PrincipalAttributeFilter.class);
         return http.build();
+    }
+
+    private static java.util.Collection<String> operatonAdminGroups(org.operaton.bpm.engine.ProcessEngine engine) {
+        if (engine != null && engine.getProcessEngineConfiguration()
+                instanceof org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl c && c.getAdminGroups() != null) {
+            return c.getAdminGroups();
+        }
+        return List.of();
     }
 
     /** Returns the dev-token filter when enabled, after the safety checks; {@code null} otherwise. */

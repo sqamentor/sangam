@@ -10,6 +10,7 @@
       "id": "PAYROLL-MAKER",
       "role": "PAYROLL",
       "office": "PAYROLL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HR-HEAD",
       "name": {
         "en": "Payroll executive",
@@ -20,6 +21,7 @@
       "id": "HR-HEAD",
       "role": "HRHEAD",
       "office": "PAYROLL",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of HR",

@@ -22,12 +22,14 @@ import org.operaton.bpm.engine.externaltask.LockedExternalTask;
 import org.sangam.core.api.LeaseTable;
 import org.sangam.core.api.StaleLeaseException;
 import org.sangam.core.layer.AuditChain;
+import org.sangam.core.layer.OperationLedger;
 import org.sangam.core.layer.ReconciliationQueue;
 import org.sangam.core.layer.Tombstones;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.port.WorkPort;
+import org.sangam.rest.port.WorkPort.WorkOperation;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.rest.support.TypedVariables;
@@ -49,6 +51,7 @@ public class OperatonWorkAdapter implements WorkPort {
     private final ReconciliationQueue reconciliation;
     private final AtomicBoolean leaseTableReady = new AtomicBoolean();
     private final OperatonOperationIds operationIds;
+    private final WorkLedger ledger;
 
     public OperatonWorkAdapter(ExternalTaskService externalTasks, RuntimeService runtime, TxSupport tx, AuditPort audit,
                                RestProperties props, OperatonOperationIds operationIds) {
@@ -61,6 +64,7 @@ public class OperatonWorkAdapter implements WorkPort {
         AuditChain chain = new AuditChain(tx.dialect());
         this.reconciliation = new ReconciliationQueue(tx.dialect(), chain);
         this.tombstones = new Tombstones(tx.dialect(), reconciliation, chain);
+        this.ledger = new WorkLedger(tx.dialect(), reconciliation);
     }
 
     // ------------------------------------------------------------------ fetch
@@ -110,7 +114,8 @@ public class OperatonWorkAdapter implements WorkPort {
         ExternalTaskQueryBuilder builder = OperatonSupport.call(() ->
                 externalTasks.fetchAndLock(max, r.workerId(), Boolean.TRUE.equals(r.usePriority())));
         for (TopicRequest t : topics.values()) {
-            ExternalTaskQueryTopicBuilder tb = builder.topic(t.name(), lockDuration(t.lockDurationMs()).toMillis());
+            ExternalTaskQueryTopicBuilder tb = builder.topic(t.name(), lockDuration(t.lockDurationMs()).toMillis())
+                    .includeExtensionProperties();
             if (ctx.tenantId() != null) {
                 tb = tb.tenantIdIn(ctx.tenantId());
             }
@@ -134,11 +139,33 @@ public class OperatonWorkAdapter implements WorkPort {
         for (LockedExternalTask t : tasks) {
             Instant expires = OperatonSupport.instant(t.getLockExpirationTime());
             LeaseTable.Lease lease = LeaseTable.grant(c, t.getId(), r.workerId(), expires);
+            UUID op = operationIds.of(t.getId());
+            Map<String, String> ext = t.getExtensionProperties() == null ? Map.of() : t.getExtensionProperties();
+            String capability = ext.get("sangam:capabilityClass") != null ? ext.get("sangam:capabilityClass")
+                    : ext.get("sangam:effect");
+            // SL-16 / R37: the intent is recorded in the lease transaction, before the worker sees the work
+            WorkOperation operation;
+            String refusal;
+            try {
+                operation = ledger.onLease(c, new WorkLedger.Lease(op, t.getTenantId(), rootOf(t.getProcessInstanceId()),
+                        t.getActivityInstanceId(), capability, t.getId(), lease.attemptId(), lease.lockVersion()));
+                refusal = OperationLedger.State.UNKNOWN_OUTCOME.name().equals(operation.state())
+                        ? "OPERATION_UNKNOWN_OUTCOME: operation " + op + " awaits reconciliation" : null;
+            } catch (OperationLedger.StaleLeaseException | IllegalStateException | IllegalArgumentException e) {
+                operation = null;
+                refusal = "OPERATION_LEDGER_REFUSED: " + e.getMessage();
+            }
+            if (refusal != null) {
+                // awaiting reconciliation or refused by the ledger: park it (incident) instead of handing it out
+                String message = refusal;
+                OperatonSupport.run(() -> externalTasks.handleFailure(t.getId(), r.workerId(), message, null, 0, 0L));
+                LeaseTable.end(c, t.getId());
+                continue;
+            }
             out.add(new ExternalWork(t.getId(), t.getTopicName(), t.getTenantId(), t.getProcessInstanceId(),
                     t.getProcessDefinitionKey(), t.getActivityId(), t.getActivityInstanceId(), t.getBusinessKey(),
                     TypedVariables.toJson(t.getVariables()), lease.lockVersion(), lease.attemptId(),
-                    operationIds.of(t.getId()).toString(),
-                    expires, t.getRetries(), t.getPriority(), t.getErrorMessage()));
+                    op.toString(), expires, t.getRetries(), t.getPriority(), t.getErrorMessage(), operation));
         }
         return out;
     }
@@ -175,10 +202,16 @@ public class OperatonWorkAdapter implements WorkPort {
         tx.runInTx(() -> {
             Connection c = tx.connection();
             rejectIfTombstoned(c, ctx, workId, r.lockVersion(), Tombstones.ResultKind.COMPLETE, true, r.variables());
+            String outcome = WorkLedger.successJson(r.variables(), r.outcome());
+            if (task(workId) == null && ledger.isRepeatedCompletion(c, workId, r.lockVersion(), outcome)) {
+                return;   // the same completion again (a retried request): answered as the first one
+            }
             ExternalTask task = requireTask(ctx, workId);
             fence(c, workId, r.workerId(), r.lockVersion(), r.attemptId());
+            UUID op = operationIds.of(task);
             OperatonSupport.run(() -> externalTasks.complete(workId, r.workerId(),
                     TypedVariables.fromJson(r.variables()), TypedVariables.fromJson(r.localVariables())));
+            ledger.onComplete(c, op, r.lockVersion(), outcome);
             LeaseTable.remove(c, workId);
             audit.record(ctx, task.getProcessInstanceId(), "EXT_OP_ACKNOWLEDGED", payload(task, r.workerId(),
                     r.lockVersion(), r.attemptId(), Map.of("variables", names(r.variables()))));
@@ -205,8 +238,10 @@ public class OperatonWorkAdapter implements WorkPort {
             int retries = r.retries() == null ? Math.max(0, (task.getRetries() == null ? 1 : task.getRetries()) - 1)
                     : Math.max(0, r.retries());
             long timeout = r.retryTimeoutMs() == null ? 0 : Math.max(0, r.retryTimeoutMs());
+            UUID op = operationIds.of(task);
             OperatonSupport.run(() -> externalTasks.handleFailure(workId, r.workerId(), r.errorMessage(),
                     r.errorDetails(), retries, timeout));
+            ledger.onFail(c, op, r.lockVersion(), retries, r.errorMessage());
             LeaseTable.end(c, workId);
             Map<String, Object> extra = new LinkedHashMap<>();
             extra.put("errorMessage", r.errorMessage());
@@ -227,8 +262,10 @@ public class OperatonWorkAdapter implements WorkPort {
             rejectIfTombstoned(c, ctx, workId, r.lockVersion(), Tombstones.ResultKind.COMPLETE, false, r.variables());
             ExternalTask task = requireTask(ctx, workId);
             fence(c, workId, r.workerId(), r.lockVersion(), r.attemptId());
+            UUID op = operationIds.of(task);
             OperatonSupport.run(() -> externalTasks.handleBpmnError(workId, r.workerId(), r.errorCode(),
                     r.errorMessage(), TypedVariables.fromJson(r.variables())));
+            ledger.onBpmnError(c, op, r.lockVersion(), r.errorCode(), r.errorMessage(), r.variables());
             LeaseTable.remove(c, workId);
             Map<String, Object> extra = new LinkedHashMap<>();
             extra.put("errorCode", r.errorCode());
@@ -269,8 +306,10 @@ public class OperatonWorkAdapter implements WorkPort {
             details.put("topic", task.getTopicName());
             details.put("detail", r.detail());
             details.put("evidence", r.evidence() == null ? Map.of() : TypedVariables.toJson(r.evidence()));
-            long item = reconciliation.open(c, ctx.tenantId(), ReconciliationQueue.Kind.UNKNOWN_OUTCOME, op,
-                    task.getProcessInstanceId(), workId, PayloadHash.canonical(details));
+            Long recorded = ledger.onUnknown(c, op, r.lockVersion(), workId, details);
+            long item = recorded != null ? recorded : reconciliation.open(c, ctx.tenantId(),
+                    ReconciliationQueue.Kind.UNKNOWN_OUTCOME, op, task.getProcessInstanceId(), workId,
+                    PayloadHash.canonical(details));
             // Keep the Operaton task locked so it is never re-offered; reconciliation decides (CX-5).
             OperatonSupport.run(() -> externalTasks.extendLock(workId, r.workerId(),
                     props.getMaxLockDuration().toMillis()));
@@ -327,6 +366,12 @@ public class OperatonWorkAdapter implements WorkPort {
     private Duration lockDuration(Long ms) {
         Duration d = ms == null || ms <= 0 ? props.getDefaultLockDuration() : Duration.ofMillis(ms);
         return d.compareTo(props.getMaxLockDuration()) > 0 ? props.getMaxLockDuration() : d;
+    }
+
+    private String rootOf(String processInstanceId) {
+        org.operaton.bpm.engine.runtime.ProcessInstance pi = OperatonSupport.call(() ->
+                runtime.createProcessInstanceQuery().processInstanceId(processInstanceId).singleResult());
+        return pi != null && pi.getRootProcessInstanceId() != null ? pi.getRootProcessInstanceId() : processInstanceId;
     }
 
     private ExternalTask task(String workId) {

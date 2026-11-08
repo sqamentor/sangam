@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # The 28 States and 8 UTs (IFMS-STATES section 1, 4). Unverified values are placeholders.
-from central import U
+from central import U, FlowList
 
 L = {'hi': ('hi', 'Deva'), 'en': ('en', 'Latn'), 'gu': ('gu', 'Gujr'), 'mr': ('mr', 'Deva'), 'kok': ('kok', 'Deva'),
      'pa': ('pa', 'Guru'), 'kn': ('kn', 'Knda'), 'ta': ('ta', 'Taml'), 'ml': ('ml', 'Mlym'), 'te': ('te', 'Telu'),
@@ -15,10 +15,10 @@ S = {}
 
 
 def st(code, en, hi, preset, ifms, directorate, units, ddos, rules, rail, ss, langs, v8, src, hoa=None,
-       specials=None, ph=None, lang_u=False, docs=None, adopt=None):
+       specials=None, ph=None, lang_u=False, docs=None, adopt=None, reports=None):
     S[code] = dict(en=en, hi=hi, preset=preset, ifms=ifms, directorate=directorate, units=units, ddos=ddos, rules=rules,
                    rail=rail, ss=ss, langs=langs, v8=v8, src=src, hoa=hoa, specials=specials or {}, ph=list(ph or []),
-                   lang_u=lang_u, docs=docs or [], adopt=adopt)
+                   lang_u=lang_u, docs=docs or [], adopt=adopt, reports=reports or [])
 
 
 G, NE, UL, UN = 'GENERAL', 'NE-HIMALAYAN', 'UT-LEG', 'UT-NOLEG'
@@ -37,7 +37,22 @@ st('RJ', 'Rajasthan', 'राजस्थान', G, ['IFMS 3.0', 'Pay Manager',
              'security': {'aadhaarVault': True, 'sso': 'RAJ_SSO_OTP'}, 'outputs': {'auditReports': ['hi']}},
    docs=[('SALARY', 'ESTABLISHMENT_PAY', 'PAY_MANAGER'), ('GIA', 'GRANT', None), ('FVC', 'CONTINGENT', None),
          ('GST_TDS', 'DEDUCTION', None), ('SD_REFUND', 'REFUND', None), ('WORKS', 'WORKS', 'WAM'), ('PENSION', 'PENSION', None)],
-   ph=[('documentTypes.GA-55', U + ' (form GA-55)'), ('rulebooks.own.PWFAR', U)])
+   reports=[{
+       # Employee-wise periodic report of the State IFMS (not a classification, not a bill form).
+       'id': 'GA_55', 'formNumber': 'GA-55', 'kind': 'REPORT', 'family': 'EMPLOYEE_REPORT', 'sanction': 'NONE',
+       'report': {'parameters': FlowList(['employee', 'year', 'month']), 'output': 'PDF',
+                  'menu': 'Employee Management > GA-55', 'selfService': 'mobile app, next to the salary slip and Form 16'},
+       'template': {'ownerConfigurable': True, 'fields': [],
+                    'note': 'field layout not yet transcribed (official form text needs OCR); the owner configures it'},
+       'evidence': {
+           'report': {'status': 'V', 'value': 'per-employee, per-period (year, month) official form / report',
+                      'sources': ['IFMS 3.0 Employee Module user manual 8.2.2', 'IFMS 3.0 mobile app user manual',
+                                  'SIPF form SI-GA-55, https://sipf.rajasthan.gov.in/FORMS/SI-GA-55.pdf',
+                                  'SNA SOP: GA-55 Report Generation in SNA (MIS Report Agency)']},
+           'purpose': {'status': 'I', 'value': 'annual pay-and-allowances statement of the employee (inferred, not verified)'},
+           'fieldLayout': {'status': 'U', 'value': None,
+                           'note': 'official form PDF text layer is a legacy Hindi font; layout unverified until OCR by owner / IFMS'}}}],
+   ph=[('rulebooks.own.PWFAR', U)])
 st('GJ', 'Gujarat', 'गुजरात', G, ['IFMS (2009-10, 18 modules)', 'Cyber Treasury', 'IFMS-III (in development)'],
    'Directorate of Accounts & Treasuries', {'DISTRICT_TREASURY': 34, 'SUB_TREASURY': 111, 'PAO': 2, 'PENSION_TREASURY': 5,
                                            'GST_TREASURY': 1}, 5042,

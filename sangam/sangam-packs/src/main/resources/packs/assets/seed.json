@@ -10,6 +10,7 @@
       "id": "ASSET-OFFICER",
       "role": "ASSETOFFICER",
       "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOO-A",
       "name": {
         "en": "Asset / transport officer",
@@ -20,6 +21,7 @@
       "id": "BOARD-1",
       "role": "BOARD",
       "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOO-A",
       "name": {
         "en": "Survey board member 1",
@@ -30,6 +32,7 @@
       "id": "BOARD-2",
       "role": "BOARD",
       "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOO-A",
       "name": {
         "en": "Survey board member 2",
@@ -40,6 +43,7 @@
       "id": "BOARD-3",
       "role": "BOARD",
       "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOO-A",
       "name": {
         "en": "Survey board member 3",
@@ -50,6 +54,7 @@
       "id": "HOO-A",
       "role": "HOO",
       "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOD-A",
       "name": {
         "en": "Head of office",
@@ -60,6 +65,7 @@
       "id": "HOD-A",
       "role": "HOD",
       "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of department",

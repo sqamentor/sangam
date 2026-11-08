@@ -10,6 +10,7 @@
       "id": "SURGEON",
       "role": "SURGEON",
       "office": "OT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "OT-IN-CHARGE",
       "name": {
         "en": "Surgeon",
@@ -20,6 +21,7 @@
       "id": "ANAESTHETIST",
       "role": "ANAES",
       "office": "OT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "OT-IN-CHARGE",
       "name": {
         "en": "Anaesthetist",
@@ -30,6 +32,7 @@
       "id": "OT-NURSE",
       "role": "NURSE",
       "office": "OT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "OT-IN-CHARGE",
       "name": {
         "en": "OT nurse",
@@ -40,6 +43,7 @@
       "id": "RECOVERY-NURSE",
       "role": "NURSE",
       "office": "OT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "OT-IN-CHARGE",
       "name": {
         "en": "Recovery nurse",
@@ -50,6 +54,7 @@
       "id": "OT-IN-CHARGE",
       "role": "OTIC",
       "office": "OT",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "OT in-charge",

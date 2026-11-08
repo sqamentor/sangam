@@ -123,7 +123,10 @@
       "when": "the official records reschedule, then pass",
       "then": "a second V-CIP task; account opened",
       "startVariables": {},
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: the V-CIP official records reschedule"
+      }
     },
     {
       "id": "SEC-BANK-AO-2",
@@ -137,7 +140,27 @@
       "startVariables": {
         "sim_sanctions_screen": "hit=true"
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "answers": {
+          "ao_compliance": {
+            "vars": {
+              "screenDecision": "reject"
+            }
+          }
+        },
+        "expect": {
+          "tasks": [
+            "ao_compliance"
+          ],
+          "audit": [
+            "CASE_REJECTED"
+          ],
+          "notAudit": [
+            "CASE_APPROVED"
+          ]
+        }
+      }
     }
   ],
   "dependsOn": [

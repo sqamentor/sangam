@@ -10,6 +10,7 @@
       "id": "REVIEWER",
       "role": "REVIEWER",
       "office": "IAM",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Access reviewer",

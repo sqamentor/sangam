@@ -10,6 +10,7 @@
       "id": "BUDGET-SO",
       "role": "BUDGET-SO",
       "office": "DEPT-FIN",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOD-B",
       "name": {
         "en": "Budget section officer",
@@ -20,6 +21,7 @@
       "id": "HOD-B",
       "role": "HOD",
       "office": "DEPT-FIN",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECY-B",
       "name": {
         "en": "Head of department",
@@ -30,6 +32,7 @@
       "id": "SECY-B",
       "role": "SECRETARY",
       "office": "DEPT-FIN",
+      "level": "HEAD_OFFICE",
       "reportsTo": "FINSECY",
       "name": {
         "en": "Administrative secretary",
@@ -40,6 +43,7 @@
       "id": "FINSECY",
       "role": "FIN-SECY",
       "office": "DEPT-FIN",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Finance secretary",

@@ -5447,6 +5447,43 @@ CREATE TABLE OPS_RETENTION_RUN (
 CREATE INDEX OPS_RETENTION_RUN_TENANT ON OPS_RETENTION_RUN (tenant_id, executed_at);
 --rollback DROP TABLE OPS_RETENTION_RUN;
 
+--changeset sangam:0030-03-evt_definition_seq dbms:mysql
+--comment: event registry version high-water mark (FC-02/FC-03)
+CREATE TABLE EVT_DEFINITION_SEQ (
+  tenant_id VARCHAR(64) NOT NULL,
+  def_kind VARCHAR(64) NOT NULL,
+  def_key VARCHAR(255) NOT NULL,
+  last_version INT NOT NULL,
+  CONSTRAINT PK_EVT_DEFINITION_SEQ PRIMARY KEY (tenant_id, def_kind, def_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE EVT_DEFINITION_SEQ;
+
+--changeset sangam:0031-01-sec_tenant_quota_window dbms:mysql
+--comment: per-tenant quota counting windows shared by all nodes (SL-43, R28; sangam-security JdbcTenantQuotas)
+CREATE TABLE SEC_TENANT_QUOTA_WINDOW (
+  tenant_id VARCHAR(64) NOT NULL,
+  quota_name VARCHAR(64) NOT NULL,
+  window_start BIGINT NOT NULL,
+  used BIGINT NOT NULL,
+  refused SMALLINT NOT NULL,
+  CONSTRAINT PK_SEC_TENANT_QUOTA_WINDOW PRIMARY KEY (tenant_id, quota_name, window_start)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE SEC_TENANT_QUOTA_WINDOW;
+
+--changeset sangam:0031-02-integration_webhook_state dbms:mysql
+--comment: outbound webhook destination health: auto-disable and re-enable (SL-39; sangam-integration WebhookHealth)
+CREATE TABLE INTEGRATION_WEBHOOK_STATE (
+  destination VARCHAR(255) NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  consecutive_failures INT NOT NULL,
+  last_error LONGTEXT,
+  disabled_at DATETIME(6),
+  changed_by VARCHAR(255),
+  updated_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_INTEGRATION_WEBHOOK_STATE PRIMARY KEY (destination)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE INTEGRATION_WEBHOOK_STATE;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mysql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD COLUMN form_version_hash VARCHAR(64);

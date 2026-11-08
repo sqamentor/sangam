@@ -25,12 +25,24 @@ import java.util.Map;
  * @param dependsOn      ids of packs that must be deployed first (all government packs depend on {@code sangam.core})
  * @param tenantOverrides tenant id to DMN paths deployed only for that tenant (GP-37 department-specific rules and
  *                        pack configuration, for example {@code works-config})
+ * @param placeholders   values shipped in the pack's DMN that are not from a verified source; the readiness check
+ *                        blocks go-live of a tenant that enables the pack until it overrides the named decision
  */
 public record PackDescriptor(String id, String version, Map<String, String> name, String domain, String description,
                              List<String> mainProcesses, List<PackResource> resources, List<SeedRole> roles,
                              List<SeedSeat> seats, List<ConnectorUse> connectors, List<String> covers,
                              List<AcceptanceScenario> acceptance, List<String> dependsOn,
-                             Map<String, List<String>> tenantOverrides) {
+                             Map<String, List<String>> tenantOverrides, List<Placeholder> placeholders) {
+
+    /** Descriptor without placeholders. */
+    public PackDescriptor(String id, String version, Map<String, String> name, String domain, String description,
+                          List<String> mainProcesses, List<PackResource> resources, List<SeedRole> roles,
+                          List<SeedSeat> seats, List<ConnectorUse> connectors, List<String> covers,
+                          List<AcceptanceScenario> acceptance, List<String> dependsOn,
+                          Map<String, List<String>> tenantOverrides) {
+        this(id, version, name, domain, description, mainProcesses, resources, roles, seats, connectors, covers,
+                acceptance, dependsOn, tenantOverrides, List.of());
+    }
 
     public PackDescriptor {
         name = name == null ? Map.of() : java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(name));
@@ -43,6 +55,17 @@ public record PackDescriptor(String id, String version, Map<String, String> name
         acceptance = acceptance == null ? List.of() : List.copyOf(acceptance);
         dependsOn = dependsOn == null ? List.of() : List.copyOf(dependsOn);
         tenantOverrides = tenantOverrides == null ? Map.of() : Map.copyOf(tenantOverrides);
+        placeholders = placeholders == null ? List.of() : List.copyOf(placeholders);
+    }
+
+    /**
+     * A pack DMN value that needs owner confirmation (never an invented amount presented as verified).
+     *
+     * @param decision decision key a tenant overrides with the confirmed value
+     * @param rule     which rule / value is unconfirmed
+     * @param reason   why, and from which source the value must be confirmed
+     */
+    public record Placeholder(String decision, String rule, String reason) {
     }
 
     /** {@code id@version}, the value bound to every case as {@code packVersion}. */
@@ -73,8 +96,13 @@ public record PackDescriptor(String id, String version, Map<String, String> name
     public record SeedRole(String code, Map<String, String> name) {
     }
 
-    /** A post in the synthetic pilot hierarchy (IX.5). */
-    public record SeedSeat(String id, String role, String office, String reportsTo, Map<String, String> name) {
+    /**
+     * A post in the synthetic pilot hierarchy (IX.5).
+     *
+     * @param level the org level type of the seat's office; one of the tenant's org levels (onboarding defines the
+     *              levels from the request or the profile default {@code security.orgLevels} before seeding seats)
+     */
+    public record SeedSeat(String id, String role, String office, String level, String reportsTo, Map<String, String> name) {
     }
 
     /**

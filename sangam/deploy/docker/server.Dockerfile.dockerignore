@@ -1,6 +1,9 @@
 # BuildKit per-Dockerfile ignore file (context = sangam/)
 **/target/**
+# per-build output folders (-Dsangam.target=target-<name>, root pom) are build output too
+**/target-*/**
 !sangam-*/target/sangam-*.jar
+!sangam-*/target-*/sangam-*.jar
 **/node_modules/**
 sangam-ui/**
 sdks/dotnet/**/bin/**

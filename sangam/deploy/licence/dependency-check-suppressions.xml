@@ -10,4 +10,19 @@
     <cve>CVE-XXXX-YYYY</cve>
   </suppress>
   -->
+  <!-- CPE false positives (reviewed 2026-11-08 against OSV/GHSA; the advisories name a different artifact). -->
+  <suppress until="2027-05-31Z">
+    <notes>CVE-2026-53914 (GHSA-r937-wjx7-w2jp) is unsafe deserialization in the Kotlin Gradle plugin build cache
+      (affected package org.jetbrains.kotlin:kotlin-gradle-plugin, fixed 2.4.20-Beta1). kotlin-stdlib only matches the
+      broad cpe:jetbrains:kotlin; Sangam does not ship or run the Gradle plugin. Reviewed 2026-11-08.</notes>
+    <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@.*$</packageUrl>
+    <cve>CVE-2026-53914</cve>
+  </suppress>
+  <suppress until="2027-05-31Z">
+    <notes>CVE-2026-0994 (GHSA-7gcm-g887-7qv7) is a JSON recursion-depth bypass in the Python protobuf package
+      (PyPI protobuf, fixed 5.29.6 / 6.33.5); protobuf-java only matches the generic cpe:google:protobuf. Reviewed
+      2026-11-08.</notes>
+    <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf-java@.*$</packageUrl>
+    <cve>CVE-2026-0994</cve>
+  </suppress>
 </suppressions>

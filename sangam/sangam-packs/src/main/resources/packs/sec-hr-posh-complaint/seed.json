@@ -10,6 +10,7 @@
       "id": "IC-PRESIDING",
       "role": "PRESIDING",
       "office": "IC",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Presiding officer (IC)",
@@ -20,6 +21,7 @@
       "id": "IC-MEMBER",
       "role": "MEMBER",
       "office": "IC",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "IC member",
@@ -30,6 +32,7 @@
       "id": "IC-EXTERNAL",
       "role": "EXTERNAL",
       "office": "IC",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "External member (NGO)",
@@ -40,6 +43,7 @@
       "id": "EMPLOYER",
       "role": "EMPLOYER",
       "office": "IC",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Employer",

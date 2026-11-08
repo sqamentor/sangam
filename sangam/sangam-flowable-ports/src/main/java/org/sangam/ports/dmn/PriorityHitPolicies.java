@@ -7,6 +7,8 @@ import org.operaton.bpm.dmn.engine.delegate.DmnDecisionTableEvaluationEvent;
 import org.operaton.bpm.dmn.engine.delegate.DmnEvaluatedDecisionRule;
 import org.operaton.bpm.dmn.engine.delegate.DmnEvaluatedOutput;
 import org.operaton.bpm.dmn.engine.impl.DefaultDmnEngineConfiguration;
+import org.operaton.bpm.dmn.engine.impl.DmnDecisionImpl;
+import org.operaton.bpm.dmn.engine.impl.DmnDecisionTableImpl;
 import org.operaton.bpm.dmn.engine.impl.DmnDecisionTableInputImpl;
 import org.operaton.bpm.dmn.engine.impl.DmnDecisionTableOutputImpl;
 import org.operaton.bpm.dmn.engine.impl.DmnDecisionTableRuleImpl;
@@ -24,13 +26,13 @@ import org.operaton.bpm.model.dmn.instance.Definitions;
 import org.operaton.bpm.model.dmn.instance.Input;
 import org.operaton.bpm.model.dmn.instance.Output;
 import org.operaton.bpm.model.dmn.instance.Rule;
-import org.operaton.bpm.model.xml.instance.ModelElementInstance;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.WeakHashMap;
 
 /**
  * DMN hit policies PRIORITY and OUTPUT ORDER (FLOWABLE-INTO-OPERATON FC-54). Logic ported from Flowable's {@code HitPolicyPriority},
@@ -46,8 +48,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class PriorityHitPolicies {
 
-    /** decisionKey|outputId → allowed values in priority order. */
-    private static final Map<String, List<String>> PRIORITIES = new ConcurrentHashMap<>();
+    /**
+     * Transformed output clause → allowed values in priority order. Keyed by the transformed output object itself (not
+     * by decision key): two tenants, or two versions, of the same decision key can rank values differently. Weak keys,
+     * so decisions evicted from the deployment cache do not stay reachable.
+     */
+    private static final Map<DmnDecisionTableOutputImpl, List<String>> PRIORITIES = Collections.synchronizedMap(new WeakHashMap<>());
 
     private PriorityHitPolicies() {
     }
@@ -81,8 +87,7 @@ public final class PriorityHitPolicies {
         public DmnDecisionTableEvaluationEvent apply(DmnDecisionTableEvaluationEvent event) {
             List<DmnEvaluatedDecisionRule> rules = new ArrayList<>(event.getMatchingRules());
             if (rules.size() > 1) {
-                String key = event.getDecisionTable().getKey();
-                rules.sort(comparator(key));
+                rules.sort(comparator(outputPriorities(event.getDecisionTable())));
                 if (policy == HitPolicy.PRIORITY) {
                     rules = List.of(rules.get(0));
                 }
@@ -97,11 +102,25 @@ public final class PriorityHitPolicies {
         }
     }
 
-    static Comparator<DmnEvaluatedDecisionRule> comparator(String decisionKey) {
+    /** Output id → priority order, for the evaluated decision table's own output clauses. */
+    static Map<String, List<String>> outputPriorities(DmnDecision decision) {
+        Map<String, List<String>> out = new java.util.HashMap<>();
+        if (decision instanceof DmnDecisionImpl d && d.getDecisionLogic() instanceof DmnDecisionTableImpl table) {
+            for (DmnDecisionTableOutputImpl o : table.getOutputs()) {
+                List<String> order = PRIORITIES.get(o);
+                if (order != null) {
+                    out.put(o.getId(), order);
+                }
+            }
+        }
+        return out;
+    }
+
+    static Comparator<DmnEvaluatedDecisionRule> comparator(Map<String, List<String>> priorities) {
         return (a, b) -> {
             for (Map.Entry<String, DmnEvaluatedOutput> e : a.getOutputEntries().entrySet()) {
                 DmnEvaluatedOutput bo = b.getOutputEntries().get(e.getKey());
-                List<String> order = PRIORITIES.get(decisionKey + "|" + e.getValue().getId());
+                List<String> order = priorities.get(e.getValue().getId());
                 if (order == null || bo == null) {
                     continue;
                 }
@@ -150,13 +169,7 @@ public final class PriorityHitPolicies {
             if (output.getOutputValues() == null) {
                 return;
             }
-            ModelElementInstance p = output.getParentElement();
-            while (p != null && !(p instanceof Decision)) {
-                p = p.getParentElement();
-            }
-            if (p instanceof Decision d) {
-                PRIORITIES.put(d.getId() + "|" + dmnOutput.getId(), parseValues(output.getOutputValues().getTextContent()));
-            }
+            PRIORITIES.put(dmnOutput, parseValues(output.getOutputValues().getTextContent()));
         }
 
         @Override

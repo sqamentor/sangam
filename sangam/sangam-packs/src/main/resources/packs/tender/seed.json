@@ -10,6 +10,7 @@
       "id": "BOC-1",
       "role": "BOC",
       "office": "DIV-T",
+      "level": "HEAD_OFFICE",
       "reportsTo": "EE-T",
       "name": {
         "en": "Bid opening member 1",
@@ -20,6 +21,7 @@
       "id": "BOC-2",
       "role": "BOC",
       "office": "DIV-T",
+      "level": "HEAD_OFFICE",
       "reportsTo": "EE-T",
       "name": {
         "en": "Bid opening member 2",
@@ -30,6 +32,7 @@
       "id": "TEC-1",
       "role": "TEC",
       "office": "DIV-T",
+      "level": "HEAD_OFFICE",
       "reportsTo": "EE-T",
       "name": {
         "en": "Technical committee chair",
@@ -40,6 +43,7 @@
       "id": "TEC-2",
       "role": "TEC",
       "office": "DIV-T",
+      "level": "HEAD_OFFICE",
       "reportsTo": "EE-T",
       "name": {
         "en": "Technical committee member",
@@ -50,6 +54,7 @@
       "id": "TEC-3",
       "role": "TEC",
       "office": "DIV-T",
+      "level": "HEAD_OFFICE",
       "reportsTo": "EE-T",
       "name": {
         "en": "Technical committee member (finance)",
@@ -60,6 +65,7 @@
       "id": "TPC-CHAIR",
       "role": "TPC",
       "office": "DIV-T",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SE-T",
       "name": {
         "en": "Tender purchase committee chair",
@@ -70,6 +76,7 @@
       "id": "EE-T",
       "role": "EE",
       "office": "DIV-T",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SE-T",
       "name": {
         "en": "Executive Engineer",
@@ -80,6 +87,7 @@
       "id": "SE-T",
       "role": "SE",
       "office": "DIV-T",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CE-T",
       "name": {
         "en": "Superintending Engineer",
@@ -90,6 +98,7 @@
       "id": "CE-T",
       "role": "CE",
       "office": "DIV-T",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Chief Engineer",

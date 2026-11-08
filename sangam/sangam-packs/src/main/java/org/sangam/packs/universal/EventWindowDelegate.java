@@ -77,7 +77,7 @@ public class EventWindowDelegate implements JavaDelegate {
         while (next.size() > max) {
             next.remove(0);
         }
-        ex.setVariable("windowEvents", Vars.toJson(next));
+        Vars.setJsonDocument(ex, "windowEvents", next);
         ex.setVariable("eventCount", next.size());
     }
 }

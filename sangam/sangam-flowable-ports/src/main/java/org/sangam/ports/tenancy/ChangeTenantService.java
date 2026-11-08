@@ -62,8 +62,9 @@ public class ChangeTenantService {
         if (targetTenant.equals(src.getTenantId())) {
             return src.getId();
         }
-        DeploymentBuilder db = engine.getRepositoryService().createDeployment().name(src.getKey() + "@" + targetTenant)
-                .source("sangam-change-tenant").tenantId(targetTenant).enableDuplicateFiltering(false);
+        String name = src.getKey() + "@" + targetTenant;
+        DeploymentBuilder db = engine.getRepositoryService().createDeployment().name(name)
+                .source(COPY_SOURCE).tenantId(targetTenant).enableDuplicateFiltering(false);
         for (String res : engine.getRepositoryService().getDeploymentResourceNames(src.getDeploymentId())) {
             try (InputStream in = engine.getRepositoryService().getResourceAsStream(src.getDeploymentId(), res)) {
                 db.addInputStream(res, new java.io.ByteArrayInputStream(in.readAllBytes()));
@@ -72,13 +73,29 @@ public class ChangeTenantService {
             }
         }
         Deployment d = db.deploy();
-        ProcessDefinition copy = engine.getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(src.getKey())
-                .tenantIdIn(targetTenant).latestVersion().singleResult();
+        // The copy is the definition of *this* copy deployment, never simply "the latest version in the target tenant":
+        // the target tenant may have a newer model of the same key of its own, and an unchanged re-copy is filtered as
+        // a duplicate (then the copy is the newest earlier copy deployment of this name).
+        var repo = engine.getRepositoryService();
+        ProcessDefinition copy = repo.createProcessDefinitionQuery().processDefinitionKey(src.getKey()).tenantIdIn(targetTenant)
+                .deploymentId(d.getId()).singleResult();
+        if (copy == null) {
+            for (ProcessDefinition pd : repo.createProcessDefinitionQuery().processDefinitionKey(src.getKey()).tenantIdIn(targetTenant)
+                    .orderByProcessDefinitionVersion().desc().list()) {
+                Deployment dep = repo.createDeploymentQuery().deploymentId(pd.getDeploymentId()).singleResult();
+                if (dep != null && name.equals(dep.getName()) && COPY_SOURCE.equals(dep.getSource())) {
+                    copy = pd;
+                    break;
+                }
+            }
+        }
         if (copy == null) {
             throw new ProcessEngineException("definition " + src.getKey() + " not found in tenant " + targetTenant + " after deployment " + d.getId());
         }
         return copy.getId();
     }
+
+    private static final String COPY_SOURCE = "sangam-change-tenant";
 
     /** Cuts one running instance over to {@code targetTenant}; returns the new process instance id. */
     public String moveInstance(String processInstanceId, String targetTenant, String user) {

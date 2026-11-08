@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-8: Checker -> inclusive fork (technical / legal; neither = configured default) -> inclusive join ->
+     called sub-process (calledElement plus the pinned version as a OneIFMS reference) -> wait for the correlated
+     treasury acknowledgement racing a timer (event-based gateway) -> Approver; on acknowledgement timeout the
+     sub-process work is compensated (compensation handler, then recalled end) (C-12..C-15). Synthetic. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             id="E46-WF8-DEFS" targetNamespace="urn:oneifms:e46:wf8">
+  <message id="msgAck" name="TREASURY_ACK">
+    <extensionElements>
+      <oneifms:correlation key="caseId" expression="${caseId}"/>
+    </extensionElements>
+  </message>
+  <process id="E46-WF8" name="Inclusive review, sub-process, compensation, message wait" isExecutable="true">
+    <startEvent id="start"/>
+    <userTask id="CHECK" name="Check" oneifms:capability="bill.check"/>
+    <inclusiveGateway id="incFork" name="Reviews needed" default="fNone"/>
+    <userTask id="TECH" name="Technical review" oneifms:capability="works.review"/>
+    <userTask id="LEGAL" name="Legal review" oneifms:capability="legal.review"/>
+    <inclusiveGateway id="incJoin" name="Reviews done"/>
+    <callActivity id="SUB" name="Sanction verification" calledElement="E46-WF8-CHILD"
+                  oneifms:calledElementVersion="1"/>
+    <boundaryEvent id="SUB_COMP" attachedToRef="SUB" cancelActivity="true">
+      <compensateEventDefinition/>
+    </boundaryEvent>
+    <userTask id="UNDO_SANCTION_CHECK" name="Compensate sanction check" isForCompensation="true"
+              oneifms:domainCommand="sanction.reverseVerification"/>
+    <eventBasedGateway id="waitAck" name="Acknowledgement or timeout"/>
+    <intermediateCatchEvent id="ACK" name="Treasury acknowledgement">
+      <messageEventDefinition messageRef="msgAck"/>
+    </intermediateCatchEvent>
+    <intermediateCatchEvent id="ACK_TIMEOUT" name="Acknowledgement timeout">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${ackDue}</timeDate></timerEventDefinition>
+    </intermediateCatchEvent>
+    <intermediateThrowEvent id="COMPENSATE" name="Compensate">
+      <compensateEventDefinition/>
+    </intermediateThrowEvent>
+    <userTask id="APPROVE" name="Approve" oneifms:capability="bill.submit"/>
+    <endEvent id="END_APPROVED"/>
+    <endEvent id="END_RECALLED" name="Recalled"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="CHECK"/>
+    <sequenceFlow id="f2" sourceRef="CHECK" targetRef="incFork"/>
+    <sequenceFlow id="fTech" sourceRef="incFork" targetRef="TECH">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${needsTech}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fLegal" sourceRef="incFork" targetRef="LEGAL">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${needsLegal}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fNone" sourceRef="incFork" targetRef="incJoin"/>
+    <sequenceFlow id="f3" sourceRef="TECH" targetRef="incJoin"/>
+    <sequenceFlow id="f4" sourceRef="LEGAL" targetRef="incJoin"/>
+    <sequenceFlow id="f5" sourceRef="incJoin" targetRef="SUB"/>
+    <sequenceFlow id="f6" sourceRef="SUB" targetRef="waitAck"/>
+    <sequenceFlow id="f7" sourceRef="waitAck" targetRef="ACK"/>
+    <sequenceFlow id="f8" sourceRef="waitAck" targetRef="ACK_TIMEOUT"/>
+    <sequenceFlow id="f9" sourceRef="ACK" targetRef="APPROVE"/>
+    <sequenceFlow id="f10" sourceRef="APPROVE" targetRef="END_APPROVED"/>
+    <sequenceFlow id="f11" sourceRef="ACK_TIMEOUT" targetRef="COMPENSATE"/>
+    <sequenceFlow id="f12" sourceRef="COMPENSATE" targetRef="END_RECALLED"/>
+    <association id="aComp" sourceRef="SUB_COMP" targetRef="UNDO_SANCTION_CHECK" associationDirection="One"/>
+  </process>
+</definitions>

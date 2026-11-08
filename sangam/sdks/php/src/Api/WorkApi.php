@@ -63,11 +63,17 @@ final class WorkApi extends ApiSupport
      * @param array<string, mixed>|null $localVariables
      */
     public function complete(string $workId, string $workerId, int $lockVersion, ?string $attemptId,
-                             ?array $variables, ?string $idempotencyKey, ?array $localVariables = null): void
+                             ?array $variables, ?string $idempotencyKey, ?array $localVariables = null,
+                             ?string $outcomeReference = null): void
     {
+        $body = ['workerId' => $workerId, 'lockVersion' => $lockVersion, 'attemptId' => $attemptId,
+            'variables' => Json::obj($variables), 'localVariables' => Json::obj($localVariables)];
+        if ($outcomeReference !== null) {
+            // SL-16: the downstream reference is recorded as the ledger outcome
+            $body['outcome'] = ['reference' => $outcomeReference];
+        }
         $this->call(ApiRequest::post('/work/' . self::seg($workId) . '/complete')
-            ->body(['workerId' => $workerId, 'lockVersion' => $lockVersion, 'attemptId' => $attemptId,
-                'variables' => Json::obj($variables), 'localVariables' => Json::obj($localVariables)])
+            ->body($body)
             ->idempotencyKey($idempotencyKey));
     }
 

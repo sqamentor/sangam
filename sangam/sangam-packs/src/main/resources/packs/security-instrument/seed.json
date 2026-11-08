@@ -10,6 +10,7 @@
       "id": "EE-SI",
       "role": "EE",
       "office": "DIV-SI",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Executive Engineer (custodian)",

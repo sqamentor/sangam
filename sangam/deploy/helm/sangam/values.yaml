@@ -47,7 +47,8 @@ database:
     trustServerCertificate: false
 
 # Bring-your-own JDBC driver (LIC-2/3/4): Oracle (ojdbc11/ojdbc17) and Db2 drivers are never shipped.
-# Exactly one source; jars land in /opt/sangam/drivers.
+# Exactly one source; jars land in /opt/sangam/drivers (on loader.path). Steps: deploy/README.md §1.5.
+# initImage must contain /bin/sh and cp (e.g. FROM busybox) because the init container runs `cp`.
 drivers:
   # A PVC (ReadOnlyMany or ReadWriteOnce) holding the jar(s).
   existingClaim: ""
@@ -103,6 +104,12 @@ metrics:
 
 # ------------------------------------------------------------------------------------------------ server
 server:
+  # SL-18: production posture. Refuses dev tokens/bootstrap and loopback/unset externally used URLs at start-up.
+  production: true
+  # CIDRs of the ingress controller / edge proxies whose X-Forwarded-*/Forwarded headers are trusted. Empty = none.
+  trustedProxies: []
+  # Client-IP headers in priority order (read only from trustedProxies), e.g. [CF-Connecting-IP, X-Forwarded-For].
+  clientIpHeaders: [X-Forwarded-For]
   image:
     registry: ghcr.io
     repository: sqamentor/sangam-server

@@ -657,6 +657,38 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /tasks/{id}/form:
+    get:
+      operationId: getTaskForm
+      tags:
+      - Tasks
+      summary: Task form
+      description: The task's embedded or deployed form, read with the same task-level check as getTask (tenant; assignee, candidate user/group/seat
+        or supervisor). Task users need no /engine-rest access.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: task.read
+      x-sangam-requirements:
+      - SL-37
+      - R47
+      - VI.4
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskForm'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /tasks/{id}/claim:
     post:
       operationId: claimTask
@@ -48139,6 +48171,7 @@ components:
             - GONE_INSTANCE_DELETED
             - CONFLICT_RETRY_EXHAUSTED
             - BACKPRESSURE
+            - API_SUNSET
             - ACTION_NOT_PERMITTED
             - FORM_VERSION_STALE
             - FORM_VERSION_OUTDATED
@@ -48386,6 +48419,48 @@ components:
           format: int64
         errorMessage:
           type: string
+        operation:
+          allOf:
+          - $ref: '#/components/schemas/WorkOperation'
+          description: 'Ledger state of operationId, recorded by the server when it leased the work (intent before dispatch, R37). mayDispatch=false
+            with state SUCCEEDED: complete from storedOutcome without calling the downstream again (SL-16).'
+    WorkOperation:
+      type: object
+      description: 'Operation-ledger entry of a leased work item (VI.3 rules 4-5, R37, A-8). attempts > 1 is a repeat attempt (class B: look the
+        outcome up first).'
+      properties:
+        state:
+          type: string
+          enum:
+          - INTENT
+          - SUCCEEDED
+          - FAILED
+          - UNKNOWN_OUTCOME
+        attempts:
+          type: integer
+          format: int32
+        capabilityClass:
+          type: string
+          enum:
+          - A_IDEMPOTENT_WITH_LOOKUP
+          - B_LOOKUP_ONLY
+          - C_NEITHER
+        mayDispatch:
+          type: boolean
+        storedOutcome:
+          type: object
+          additionalProperties: true
+          description: 'Recorded outcome when settled: {output, providerRef, duplicate}; null while INTENT.'
+    WorkOutcome:
+      type: object
+      description: The downstream result of the work, recorded as the ledger outcome (SL-16).
+      properties:
+        reference:
+          type: string
+          description: Downstream reference, e.g. the payment reference (stored as providerRef).
+        details:
+          type: object
+          additionalProperties: true
     ExtendLockRequest:
       type: object
       description: Heartbeat at lease/3 (VI.3 rule 3).
@@ -48420,7 +48495,8 @@ components:
           type: boolean
     WorkCompleteRequest:
       type: object
-      description: Complete locked work (fenced).
+      description: Complete locked work (fenced). The ledger outcome SUCCEEDED (providerRef = outcome.reference, output = variables) commits with
+        the engine completion; an identical repeat for the same lease is an idempotent 204.
       properties:
         workerId:
           type: string
@@ -48433,12 +48509,15 @@ components:
           $ref: '#/components/schemas/VariableMap'
         localVariables:
           $ref: '#/components/schemas/VariableMap'
+        outcome:
+          $ref: '#/components/schemas/WorkOutcome'
       required:
       - workerId
       - lockVersion
     WorkFailRequest:
       type: object
-      description: Report a failure; retries=0 raises an incident (VI.3).
+      description: Report a failure; retries=0 raises an incident and records the ledger operation FAILED; with retries left the ledger stays
+        INTENT and the next attempt reuses the operationId (VI.3).
       properties:
         workerId:
           type: string
@@ -48515,7 +48594,7 @@ components:
       - lockVersion
     OutcomeUnknownResult:
       type: object
-      description: The work moved to UNKNOWN_OUTCOME and a reconciliation item was opened.
+      description: The work and its ledger operation (operationId, always set) moved to UNKNOWN_OUTCOME and a reconciliation item was opened.
       properties:
         workId:
           type: string
@@ -48650,6 +48729,32 @@ components:
             $ref: '#/components/schemas/RuleEvidence'
         delegatedFrom:
           type: string
+    TaskForm:
+      type: object
+      description: 'The task''s form for the task UI (SL-37): deployed embedded HTML or Operaton form (form-js JSON), or the key of an external
+        form.'
+      properties:
+        taskId:
+          type: string
+        formKey:
+          type: string
+        kind:
+          type: string
+          enum:
+          - EMBEDDED
+          - FORM
+          - EXTERNAL
+          - OTHER
+          - NONE
+        contentType:
+          type: string
+          description: text/html or application/json
+        content:
+          type: string
+          description: Deployed form content (HTML for EMBEDDED, JSON for FORM); absent when the form is not deployed with the process.
+      required:
+      - taskId
+      - kind
     CompleteTaskRequest:
       type: object
       description: Decision on a task, bound to the payload hash and case version shown (K4, K9).
@@ -56462,6 +56567,30 @@ components:
           type: string
         message:
           type: string
+    OnboardingSecurity:
+      type: object
+      description: 'Security set-up. orgLevels: the tenant''s org level types, top first; when empty the resolved profile''s default security.orgLevels
+        is used. They are defined before pack seats are seeded (levels are fixed once the first org unit exists); the dry run refuses a seat whose
+        level is missing or not among them.'
+      properties:
+        moduleDefaults:
+          type: boolean
+        selfService:
+          type: boolean
+        roles:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        tenantAdmins:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        orgLevels:
+          type: array
+          items:
+            type: string
     OnboardingRequest:
       type: object
       description: Everything a new tenant needs, as data. See org.sangam.onboarding.api.OnboardingRequest.
@@ -56481,8 +56610,7 @@ components:
             type: object
             additionalProperties: true
         security:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/OnboardingSecurity'
         seeds:
           type: object
           additionalProperties: true

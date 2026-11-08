@@ -339,7 +339,7 @@ def ins_death_claim():
                         'amount=@sumAssured;caseType=DEATH_CLAIM;routingDecisionKey=sec-ins-death-authority;'
                         'powersDecisionKey=sec-ins-death-powers;executionConnector=claims.pay;executionStep=death-claim;'
                         'reconcileRequired=true;executionPayloadFields=policyNo,claimantName,amount;'
-                        'appellateSeat=CLAIMS-REVIEW-COMMITTEE;handlerSeat=LIFE-CLAIMS')
+                        'appellateSeat=CLAIMS-REVIEW-COMMITTEE;handlerSeat=LIFE-CLAIMS;investigatorSeat=INVESTIGATOR')
     cv = s.conn('dc_cover', 'Policy status', 'policy.coverCheck', 'check', 'query', 'policyNo', 'cover')
     r = s.rule('dc_rule', 'Early claim and timeline (DMN)', 'sec-ins-death-rules')
     s.seq(st, d, cv, r)
@@ -348,7 +348,7 @@ def ins_death_claim():
     s.flow(cg, reject_with(p, s, 'dc_rjLapse', 'POLICY_LAPSED'), '!coverActive', 'lapsed')
     ig = s.xgw('dc_invGw', 'Investigation warranted?')
     s.flow(cg, ig, None, 'yes', default=True)
-    ie, idn = s.sla_task('dc_investigate', 'Claim investigation | दावा अन्वेषण', 'INVESTIGATOR',
+    ie, idn = s.sla_task('dc_investigate', 'Claim investigation | दावा अन्वेषण', 'investigatorSeat',
                          form='sec-ins-death-claim/investigate', decision=('invDecision', ['genuine', 'fraud']),
                          fields=['findings*'], spec='${investigationSpec}')
     s.flow(ig, ie, 'investigationAllowed', 'early claim')

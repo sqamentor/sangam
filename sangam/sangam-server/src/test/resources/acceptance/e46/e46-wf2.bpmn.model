@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-2: treasury pass with objection Auditor -> Checker -> Approver; amount-band gateway with a configured
+     default flow; RJ-T6-style deemed timer (interrupting) that routes to a human deemed-review task - a timer never
+     approves (SD-364) - and a non-interrupting reminder (C-1..C-8). Synthetic. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             id="E46-WF2-DEFS" targetNamespace="urn:oneifms:e46:wf2">
+  <process id="E46-WF2" name="Treasury pass with objection" isExecutable="true">
+    <extensionElements>
+      <oneifms:settingsPack packId="E46-FIXTURES" packVersion="1.0.0" calendarId="E46-CAL" timeZone="Asia/Kolkata"/>
+    </extensionElements>
+    <startEvent id="start" name="Token generated"/>
+    <userTask id="AUDIT" name="Audit" oneifms:capability="bill.check" oneifms:reasonCodeList="RC-TRY-OBJECTION"/>
+    <boundaryEvent id="DEEMED" name="Deemed period over" attachedToRef="AUDIT" cancelActivity="true">
+      <extensionElements>
+        <oneifms:timer calendarId="E46-CAL" timeZone="Asia/Kolkata" ruleRef="RJ-T6" workingDays="2"/>
+      </extensionElements>
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${deemedDue}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <boundaryEvent id="REMIND" name="Reminder" attachedToRef="AUDIT" cancelActivity="false">
+      <timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT4H</timeDuration></timerEventDefinition>
+    </boundaryEvent>
+    <endEvent id="REMINDED" name="Reminder sent"/>
+    <userTask id="DEEMED_REVIEW" name="Deemed-period review" oneifms:capability="bill.check"/>
+    <userTask id="CHECK" name="Check" oneifms:capability="bill.check"/>
+    <exclusiveGateway id="gwCheck" name="Check outcome"/>
+    <exclusiveGateway id="gwBand" name="Amount band" default="fBandDefault"/>
+    <userTask id="APPROVE" name="Approve up to 1,00,000" oneifms:capability="bill.submit"/>
+    <userTask id="APPROVE_SENIOR" name="Approve above 1,00,000" oneifms:capability="bill.submit"/>
+    <endEvent id="END_APPROVED" name="Passed"/>
+    <endEvent id="END_REJECTED" name="Objected"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="AUDIT"/>
+    <sequenceFlow id="f2" sourceRef="AUDIT" targetRef="CHECK"/>
+    <sequenceFlow id="f3" sourceRef="DEEMED" targetRef="DEEMED_REVIEW"/>
+    <sequenceFlow id="f4" sourceRef="REMIND" targetRef="REMINDED"/>
+    <sequenceFlow id="f5" sourceRef="DEEMED_REVIEW" targetRef="CHECK"/>
+    <sequenceFlow id="f6" sourceRef="CHECK" targetRef="gwCheck"/>
+    <sequenceFlow id="f7" sourceRef="gwCheck" targetRef="gwBand">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${outcome == 'APPROVE'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f8" sourceRef="gwCheck" targetRef="END_REJECTED">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${outcome == 'REJECT'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fBandLow" sourceRef="gwBand" targetRef="APPROVE">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${amount &lt;= 100000}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fBandDefault" sourceRef="gwBand" targetRef="APPROVE_SENIOR"/>
+    <sequenceFlow id="f9" sourceRef="APPROVE" targetRef="END_APPROVED"/>
+    <sequenceFlow id="f10" sourceRef="APPROVE_SENIOR" targetRef="END_APPROVED"/>
+  </process>
+</definitions>

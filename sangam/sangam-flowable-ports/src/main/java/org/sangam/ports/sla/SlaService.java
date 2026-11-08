@@ -103,11 +103,28 @@ public class SlaService {
         });
     }
 
-    /** Stops the clock: MET when before the deadline, else stays BREACHED. */
+    /**
+     * Stops the clock: MET when before the deadline, else BREACHED. A running clock whose deadline has passed but that
+     * no sweep has reached yet is a breach too (recorded and reported here, once). Stopping a paused clock closes the
+     * open pause, so its time counts as paused, not elapsed.
+     */
     public void stop(Connection c, String tenant, String slaKey, String scopeType, String scopeId) {
-        Jdbc.update(c, "UPDATE SLA_INSTANCE SET state = CASE WHEN state = 'BREACHED' THEN 'BREACHED' ELSE 'MET' END, stopped_at = "
-                + dialect.now() + " WHERE tenant_id = ? AND sla_key = ? AND scope_type = ? AND scope_id = ? AND state IN ('RUNNING','PAUSED','BREACHED')"
-                + " AND stopped_at IS NULL", t(tenant), slaKey, scopeType, scopeId);
+        Instant now = Jdbc.dbNow(c, dialect);
+        List<SlaClock> open = Jdbc.query(c, "SELECT " + COLS + " FROM SLA_INSTANCE s WHERE s.tenant_id = ? AND s.sla_key = ? AND s.scope_type = ?"
+                + " AND s.scope_id = ? AND s.state IN ('RUNNING','PAUSED','BREACHED') AND s.stopped_at IS NULL", SlaService::map,
+                t(tenant), slaKey, scopeType, scopeId);
+        for (SlaClock s : open) {
+            boolean late = s.state() == State.RUNNING && !s.dueAt().isAfter(now);
+            long openPause = s.state() == State.PAUSED && s.pausedAt() != null ? Math.max(0, Duration.between(s.pausedAt(), now).toMillis()) : 0;
+            State end = s.state() == State.BREACHED || late ? State.BREACHED : State.MET;
+            int n = Jdbc.update(c, "UPDATE SLA_INSTANCE SET state = ?, stopped_at = ?, paused_at = NULL, paused_ms = paused_ms + ?"
+                    + (late ? ", breached_at = ?" : "") + " WHERE id = ? AND state = ? AND stopped_at IS NULL",
+                    late ? new Object[]{end.name(), now, openPause, now, s.id(), s.state().name()}
+                            : new Object[]{end.name(), now, openPause, s.id(), s.state().name()});
+            if (late && n == 1) {
+                emit(c, s, "sangam.sla.breached");
+            }
+        }
     }
 
     /** Raises due warnings and breaches; returns how many events were written. */

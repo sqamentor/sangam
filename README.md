@@ -31,6 +31,12 @@ cd spike
 
 See [spike/README.md](spike/README.md) and [spike/RUN-QUEUE.md](spike/RUN-QUEUE.md).
 
+## Security
+
+To report a vulnerability, use GitHub private vulnerability reporting; see [SECURITY.md](SECURITY.md)
+for the supported versions, response targets, scope and how fixes are released. Dependency alert
+triage: [sangam/deploy/licence/VULNERABILITY-TRIAGE.md](sangam/deploy/licence/VULNERABILITY-TRIAGE.md).
+
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

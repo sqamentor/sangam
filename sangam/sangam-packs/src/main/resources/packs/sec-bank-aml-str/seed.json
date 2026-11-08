@@ -10,6 +10,7 @@
       "id": "AML-L1",
       "role": "L1",
       "office": "AML-CELL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "AML-L2",
       "name": {
         "en": "AML analyst L1",
@@ -20,6 +21,7 @@
       "id": "AML-L2",
       "role": "L2",
       "office": "AML-CELL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PRINCIPAL-OFFICER",
       "name": {
         "en": "AML investigator L2",
@@ -30,6 +32,7 @@
       "id": "PRINCIPAL-OFFICER",
       "role": "PO",
       "office": "AML-CELL",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Principal Officer (PMLA)",

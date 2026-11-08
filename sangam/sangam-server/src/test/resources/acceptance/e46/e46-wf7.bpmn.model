@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-7: committee approval - configured list of synthetic members, parallel multi-instance member task over
+     the member collection (standard loopDataInputRef / inputDataItem), completion when all members responded; the
+     CP-3 demo policy itself is evaluated by OneIFMS, not by the engine (CP-2) (C-1..C-5, C-8, C-11). Synthetic. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             id="E46-WF7-DEFS" targetNamespace="urn:oneifms:e46:wf7">
+  <process id="E46-WF7" name="Committee approval" isExecutable="true">
+    <property id="members" name="members"/>
+    <startEvent id="start"/>
+    <userTask id="CHECK" name="Check" oneifms:capability="bill.check"/>
+    <userTask id="COMMITTEE" name="Committee member response" oneifms:capability="committee.respond"
+              oneifms:policy="DEMO_POLICY_ALL_REQUIRED_APPROVE">
+      <multiInstanceLoopCharacteristics isSequential="false">
+        <loopDataInputRef>members</loopDataInputRef>
+        <inputDataItem id="member" name="member"/>
+        <completionCondition xsi:type="tFormalExpression" language="juel">${nrOfCompletedInstances == nrOfInstances}</completionCondition>
+      </multiInstanceLoopCharacteristics>
+    </userTask>
+    <userTask id="APPROVE" name="Approve" oneifms:capability="bill.submit"/>
+    <endEvent id="END_APPROVED"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="CHECK"/>
+    <sequenceFlow id="f2" sourceRef="CHECK" targetRef="COMMITTEE"/>
+    <sequenceFlow id="f3" sourceRef="COMMITTEE" targetRef="APPROVE"/>
+    <sequenceFlow id="f4" sourceRef="APPROVE" targetRef="END_APPROVED"/>
+  </process>
+</definitions>

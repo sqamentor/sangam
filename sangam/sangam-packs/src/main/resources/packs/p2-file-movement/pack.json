@@ -129,7 +129,19 @@
         "initiator": "p2.da",
         "officeId": "SEC-B2"
       },
-      "expectState": "CLOSED"
+      "expectState": "CLOSED",
+      "run": {
+        "expect": {
+          "tasks": [
+            "sn_sanction",
+            "p2_dispatch"
+          ],
+          "audit": [
+            "APPROVAL_RECORDED",
+            "CASE_CLOSED"
+          ]
+        }
+      }
     },
     {
       "id": "J-P2-E04",
@@ -150,7 +162,10 @@
         "initiator": "p2.da",
         "officeId": "SEC-B2"
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: one person acts on two levels of the same file"
+      }
     }
   ],
   "dependsOn": [

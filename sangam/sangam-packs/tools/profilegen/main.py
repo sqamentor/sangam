@@ -2,7 +2,7 @@
 import os, sys, copy
 import yaml
 sys.path.insert(0, os.path.dirname(__file__))
-from central import FlowList, LAYERS, INTL, REGIME, IN, PRESETS, COFOG, U
+from central import FlowList, LAYERS, INTL, REGIME, IN, PRESETS, COFOG_FULL, COFOG_SOURCE, U
 from goi import GOI, DEPTS
 from states import S, L
 import delta
@@ -136,6 +136,9 @@ for code, s in S.items():
                                                                   {'role': 'TREASURY_OFFICER', 'sign': True}],
                                   'returnBy': ['TREASURY_OFFICER'], 'mayEdit': False,
                                   'queue': {'token': True, 'tokenSeries': 'TOKEN', 'fifo': True}}]
+    if s['reports']:
+        doc.setdefault('documentTypes', []).extend(
+            dict(copy.deepcopy(r), id=code + '_' + r['id']) for r in s['reports'])
     for k, v in s['specials'].items():
         deep_set(doc, k, copy.deepcopy(v))
     extra = delta.apply(code, doc, IN['classification']['schemes'][0]['derive'])
@@ -183,8 +186,10 @@ OBJ = [('01', 'Salaries', 'OTHER_15CR', 1, 'salaries=true'), ('02', 'Wages', 'OT
 csv('in/seeds/object-heads.csv', ['scheme', 'segment', 'parent', 'code', 'name_en', 'flags', 'validFrom', 'validTo', 'source', 'status'],
     [('OBJECT', 'object', '', c, n, ';'.join(x for x in ['reappGroup=' + g, 'objectClass=' + str(k), f] if x), '', '2027-04-01',
       'DFPR 2024 Annexure I (pre-2027 list; names/codes to verify)', 'U') for c, n, g, k, f in OBJ])
-csv('intl/seeds/cofog-divisions.csv', ['scheme', 'segment', 'parent', 'code', 'name_en', 'flags', 'validFrom', 'validTo', 'source', 'status'],
-    [('COFOG', 'division', '', c, n, '', '', '', 'UN COFOG 1999', 'V') for c, n in COFOG])
+SEG = {1: 'division', 2: 'group', 3: 'class'}
+csv('intl/seeds/cofog.csv', ['scheme', 'segment', 'parent', 'code', 'name_en', 'flags', 'validFrom', 'validTo', 'source', 'status'],
+    [('COFOG', SEG[len(c.split('.'))], '.'.join(c.split('.')[:-1]), c.split('.')[-1], n, 'service=' + s if s else '',
+      '', '', COFOG_SOURCE, 'V') for c, n, s in COFOG_FULL])
 
 with open(os.path.join(ROOT, 'profiles.idx'), 'w', encoding='utf-8', newline='\n') as f:
     f.write('# Sangam configuration profiles (one resource path per line, relative to this index). Generated list.\n')

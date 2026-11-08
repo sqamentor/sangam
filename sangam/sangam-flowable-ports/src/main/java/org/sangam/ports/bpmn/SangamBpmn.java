@@ -30,6 +30,9 @@ public final class SangamBpmn {
     /** Multi-instance aggregation: comma-separated variable names collected per item. FLOWABLE-INTO-OPERATON FC-21. */
     public static final String AGGREGATE_VARIABLES = "aggregateVariables";
 
+    /** On a conditionalEventDefinition: trigger only on a variable change, never on entry (imported Flowable variable listener, FW-12). */
+    public static final String ON_VARIABLE_CHANGE = "onVariableChange";
+
     private SangamBpmn() {
     }
 

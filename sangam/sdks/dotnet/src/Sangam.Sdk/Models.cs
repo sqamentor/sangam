@@ -75,7 +75,19 @@ public sealed record ExternalWork(
 {
     /// <summary>Not in contract 0.1.0; read if a server sends it. Irreversibility comes from <c>TopicSubscription.Irreversible</c>.</summary>
     public string? Effect { get; init; }
+
+    /// <summary>SL-16: server-recorded ledger entry of <c>OperationId</c>; null from older servers.</summary>
+    public WorkOperation? Operation { get; init; }
 }
+
+/// <summary>
+/// Operation-ledger entry of a leased work item (SL-16, R37). <c>MayDispatch</c> false with state SUCCEEDED: complete
+/// from <c>StoredOutcome</c> ({output, providerRef, duplicate}) without calling the downstream again.
+/// </summary>
+public sealed record WorkOperation(string State, int Attempts, string? CapabilityClass, bool MayDispatch, Vars? StoredOutcome);
+
+/// <summary>Downstream result recorded as the ledger outcome (<c>Reference</c> = providerRef).</summary>
+public sealed record WorkOutcome(string? Reference, Vars? Details = null);
 
 /// <summary>TopicRequest: one topic in fetch-and-lock (lease default 5 min, max 24 h).</summary>
 public sealed record FetchTopic(string Name, long LockDurationMs, IReadOnlyList<string>? Variables = null,
@@ -90,7 +102,7 @@ public sealed record ExtendLockRequest(string WorkerId, long LockVersion, string
 /// <summary>LockState: heartbeat answer; <c>cancelRequested</c> tells the worker to stop and acknowledge (VI.3).</summary>
 public sealed record LockState(string? Id, long? LockVersion, DateTimeOffset? LockExpiresAt, bool CancelRequested);
 
-public sealed record CompleteWorkRequest(string WorkerId, long LockVersion, string? AttemptId, Vars? Variables, Vars? LocalVariables = null);
+public sealed record CompleteWorkRequest(string WorkerId, long LockVersion, string? AttemptId, Vars? Variables, Vars? LocalVariables = null, WorkOutcome? Outcome = null);
 
 /// <summary><c>Retries</c> left after this failure; 0 raises an incident.</summary>
 public sealed record FailWorkRequest(string WorkerId, long LockVersion, string? AttemptId, string ErrorMessage, string? ErrorDetails, int Retries, long RetryTimeoutMs);

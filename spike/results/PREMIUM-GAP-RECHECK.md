@@ -25,6 +25,8 @@ Date: 2026-11-08. Status: **research input**. Nothing here is adopted, implement
 
 **Status values:** MISSING; PARTIAL (some code, stated gap); PRESENT (found in code, not in the old lists); X (not software, or outside the self-hosted scope).
 
+**Re-baseline 2026-11-08 (SL-36).** The original "Sangam file or MISSING" mapping was stale: code for most MISSING items was added afterwards (`sangam-ai`, `sangam-channels`, `sangam-modeller`, `sangam-ops`, `sangam/tools/sangam-cli`). The Findings mapping column is replaced by a mapping verified by reading the code, the module READMEs and the test sources. Status vocabulary is now the register's: implemented / partial (gap stated) / missing / not-replicated-by-decision / owner-side. "partial" is used whenever the module README states a gap or missing wiring, including a missing screen. A test named here was found and exercises the capability; run evidence is the local surefire reports dated 2026-11-08 (all named NG test classes: 0 failures). The vendor columns (Feature, Vendor, Source, Confidence) are unchanged. The same statement is in `TRACEABILITY-REGISTER.md` §6a and `.csv`.
+
 **Confidence** covers both whether the vendor feature exists and the Sangam mapping.
 
 ## Source key
@@ -51,67 +53,67 @@ Date: 2026-11-08. Status: **research input**. Nothing here is adopted, implement
 
 ## Findings
 
-| ID | Feature | Vendor | Source | Sangam file or MISSING | Confidence |
+| ID | Feature | Vendor | Source | Verified 2026-11-08: status; evidence file; test (class#method or "no test") | Confidence |
 |---|---|---|---|---|---|
-| NG-01 | Generate and edit models from natural language, including full apps | Camunda, Flowable | S11, S2, S1 | MISSING | High |
-| NG-02 | Expression assistant and expression playground | Camunda | S12, S9 | MISSING | High for the playground; Medium for the assistant (alpha) |
-| NG-03 | Knowledge bases and RAG for agents | Flowable | S2 | MISSING | High |
-| NG-04 | Agent-to-agent (A2A) interoperability | Flowable, Camunda (alpha) | S2, S8 | MISSING | High |
-| NG-05 | MCP client: agent tools from remote MCP servers | Camunda, Flowable | S7, S8, S1 | MISSING (no MCP in code; R14 is requirement text) | High |
-| NG-06 | Platform MCP server exposing cluster or design data | Camunda, Flowable | S7, S1 | MISSING | High |
-| NG-07 | Orchestrator and external-platform agent types | Flowable | S2 | MISSING | High |
-| NG-08 | Document classification and AI triage of inbound email and attachments | Camunda, Flowable | S8, S1 | MISSING (extends PF-31/R75) | High |
-| NG-09 | AI-generated dashboards, translations and agent prompts | Flowable | S2, S1 | MISSING | Medium |
-| NG-10 | Agent test assertions judged by an LLM | Camunda | S8 | MISSING | Medium |
-| NG-11 | Microsoft Teams task app with live updates | Camunda | S8, S10 | MISSING (`TEAMS` is only a config value: `sangam-rest/.../adapter/jdbc/JdbcRegistryAdapter.java:40`) | High |
-| NG-12 | Real-time in-app conversations with multimedia, search and audit | Flowable Engage | S4 | MISSING | High |
-| NG-13 | Chatbot framework driven by case and process models | Flowable Engage | S4 | MISSING | High |
-| NG-14 | Live third-party messenger integration (WhatsApp, WeChat) | Flowable Engage | S4, S6 | MISSING (`WHATSAPP` config value only; no WeChat) | High |
-| NG-15 | SAP integration | Camunda | S10 | MISSING (only text mentions in `sangam-packs` profiles) | Medium: scope and tier unread |
-| NG-16 | ServiceNow integration | Camunda | S10 | MISSING | Medium: scope and tier unread |
-| NG-17 | Marketplace for connectors and extensions **[U]** | Camunda | S14 (listing types not visible) | MISSING | Low |
-| NG-18 | Token flow simulation on the diagram | Camunda, Flowable | S10, S1 | MISSING (no equivalent found; Play runs against a sandbox instead) | High |
-| NG-19 | Reusable element templates, custom palette, composite form components | Camunda, Flowable | S9, S7, S1 | MISSING | High |
-| NG-20 | Process landscape: generated map of call-activity dependencies | Camunda | S13 | MISSING | High |
-| NG-21 | Canvas locking and takeover | Camunda | S8 | MISSING | High |
-| NG-22 | Service mocks for model tests, with global and per-service toggles | Flowable | S1 | MISSING | High |
-| NG-23 | Command-line tool for the platform | Camunda (c8ctl) | S8 | MISSING (SDKs exist, no CLI found) | High |
-| NG-24 | Per-tenant usage metrics | Camunda | S8, S9 | MISSING (R70 is requirement text) | High |
-| NG-25 | Camunda 7 history and identity data migrators | Camunda | S7, S8 | MISSING (`sangam-flowable-ports/.../FlowableModelImporter.java` handles Flowable models only) | Medium: need depends on Sangam's users |
-| NG-26 | OAuth on-behalf-of token exchange for service calls | Flowable | S1 | MISSING | High |
-| NG-27 | Inbound email channel storing mail and attachments as content | Flowable | S1 | MISSING (no mail-store reader found) | High |
-| NG-28 | Action models: named, reusable user-triggered behaviour | Flowable | S1 | MISSING | Medium: full semantics unread |
-| NG-29 | Index maintenance and batch reindexing | Flowable | S3, S1 | MISSING | Medium: relevant only once R65 has an index |
-| NG-30 | Global search across sections, instances, tasks and definitions | Flowable Hub | S3 | MISSING | High |
-| NG-31 | Outlier analysis with significant variables | Camunda Optimize | S15, S16 | MISSING (variants and bottlenecks exist in `sangam-ui/src/areas/analytics/Analytics.tsx`) | Medium: current docs not fetched |
-| NG-32 | Bulk model-test runs with reports; test export from design to runtime | Flowable, Camunda | S1, S8, S9 | PARTIAL: `sangam-ui/src/api/endpoints.ts:313` runs tests, marked proposed endpoint [P]; no export or bulk report | Medium |
-| NG-33 | Mobile app: camera upload, document versions, connect to another server | Flowable | S5, S4 | PARTIAL: responsive shell and FieldVisits per `sangam-ui/README.md`; no native app. Camera upload **[U]** | Medium |
-| NG-34 | Cluster and tenant variables with merged scopes | Camunda, Flowable | S7, S3 | PARTIAL: `sangam-config/.../profile/ProfileResolver.java` layers config; availability in BPMN expressions and an edit UI **[U]** | Medium |
-| NG-35 | Global user task listeners set by configuration | Camunda | S7 | PARTIAL: `sangam-flowable-ports/.../task/TaskEventDispatcher.java` attaches to every user task; no per-deployment configuration found | Medium |
-| NG-36 | Hierarchy-aware retention | Camunda | S8 | PARTIAL **[U]**: cleanup view exists per `sangam-ui/README.md`; hierarchy behaviour not confirmed | Low |
-| NG-37 | Continuous database backup and restore | Camunda | S8 | PARTIAL: `deploy/helm/sangam/templates/backup-cronjobs.yaml` has WAL streaming for PostgreSQL; other databases not checked here | Medium |
-| NG-38 | Secret management UI, bulk import and cluster-to-cluster export | Camunda, Flowable | S8, S3 | PARTIAL: `sangam-integration/.../connector/SecretResolver.java` resolves references; no bulk or copy tool found | Medium |
-| NG-39 | Dual-region deployment reference architecture | Camunda | S7, S8 | PARTIAL: `deploy/README.md` §4.1 failover runbook, `sangam-cell` cell descriptors; no active dual-region architecture found | Medium |
-| NG-40 | Inbound channels for file, SFTP, SQL and Azure Service Bus | Flowable | S1 | PARTIAL: Kafka, Rabbit, JMS and webhook in `sangam-flowable-ports/.../events/channel/`; `SftpTransport.java` exists, inbound use **[U]**; no file, SQL or Service Bus channel found | Medium |
-| NG-41 | Sequence values managed by administrators | Flowable Hub | S3 | PARTIAL: `sangam-resources/.../support/Sequences.java`; module-local, no admin view found | Low |
-| NG-42 | Business ID uniqueness on start | Camunda | S8 | PRESENT: `sangam-integration/.../inbox/UniqueStartGuard.java` | Medium: vendor semantics unread |
-| NG-43 | Scheduled backups | Camunda | S8, S10 | PRESENT: `deploy/helm/sangam/templates/backup-cronjobs.yaml` | High |
-| NG-44 | Revision diff view | Flowable | S1 | PRESENT: `sangam-ui/src/api/endpoints.ts:305` (`/packages/{id}/diff`) | Medium: visual comparison not checked |
-| NG-45 | Deep links that resume after login | Flowable | S1 | PRESENT: `sangam-ui/src/auth/AuthProvider.tsx:177` | High |
-| NG-46 | Vendor SaaS items: PrivateLink, SaaS regions, SaaS metrics endpoint | Camunda | S8 | X: Sangam is self-hosted (R56) | High |
-| NG-47 | Customer success, personal training and consulting | Camunda | S10 | X: services, not software. Optional; relates to R68 | High |
+| NG-01 | Generate and edit models from natural language, including full apps | Camunda, Flowable | S11, S2, S1 | **implemented**; sangam-ai:draft/DraftService.java, draft/DraftValidators.java; AiRuntimeTest#draftNeedsValidationAndAnotherReviewerAndNeverDeploys; back end only; drafts never deploy; REST package validator is a further gate via Sink | High |
+| NG-02 | Expression assistant and expression playground | Camunda | S12, S9 | **implemented**; sangam-ai:expr/ExpressionPlayground.java; AiRuntimeTest#playgroundEvaluatesFeel; FEEL only (JUEL refused by design); runaway evaluation abandoned on timeout | High for the playground; Medium for the assistant (alpha) |
+| NG-03 | Knowledge bases and RAG for agents | Flowable | S2 | **partial**; sangam-ai:rag/KnowledgeBaseService.java; AiRuntimeTest#retrievalFiltersBeforeRankingWithThePolicyCompiler; AiRuntimeTest#typeWildcardDenyBlocksRetrieval; gap: brute-force cosine in the JVM, no pgvector index; text input only (no PDF/image extraction) | High |
+| NG-04 | Agent-to-agent (A2A) interoperability | Flowable, Camunda (alpha) | S2, S8 | **partial**; sangam-ai:a2a/A2a.java; ProtocolLoopbackTest#a2aClientTalksToOurServerAndUnknownOutcomeParks; ProtocolLoopbackTest#a2aFallsBackTo03WhenThePeerRefuses10; gap: no streaming or push; protocol revision not conformance-tested | High |
+| NG-05 | MCP client: agent tools from remote MCP servers | Camunda, Flowable | S7, S8, S1 | **partial**; sangam-ai:mcp/McpClient.java; ProtocolLoopbackTest#mcpClientTalksToOurServerAndFiltersTools; ProtocolLoopbackTest#mcpClientFallsBackToLegacyAndReadsSseWithNotifications; gap: no server-initiated requests | High |
+| NG-06 | Platform MCP server exposing cluster or design data | Camunda, Flowable | S7, S1 | **partial**; sangam-ai:mcp/McpServer.java; AiRuntimeTest#mcpServerHidesWritesUntilEnabledAndUsesCallerToken; ProtocolLoopbackTest#mcpServerAnswersEachEra; gap: transport-neutral only; no HTTP endpoint / RestGateway wiring in the server | High |
+| NG-07 | Orchestrator and external-platform agent types | Flowable | S2 | **implemented**; sangam-ai:agent/AgentDefinition.java, agent/AgentRuntime.java, agent/AgentTools.java (subAgent); no test; sub-agents run as tools inside the run (not a BPMN ad-hoc sub-process); no test exercises the orchestrator/external types | High |
+| NG-08 | Document classification and AI triage of inbound email and attachments | Camunda, Flowable | S8, S1 | **partial**; sangam-ai:classify/DocumentClassifier.java; AiRuntimeTest#lowConfidenceGoesToHuman; gap: text only, no OCR | High |
+| NG-09 | AI-generated dashboards, translations and agent prompts | Flowable | S2, S1 | **implemented**; sangam-ai:draft/DraftService.java (kinds DASHBOARD, TRANSLATION, AGENT_PROMPT); AiRuntimeTest#translationKeepsPlaceholders; only the translation kind has a test; nothing activates without approval | Medium |
+| NG-10 | Agent test assertions judged by an LLM | Camunda | S8 | **implemented**; sangam-ai:judge/LlmJudge.java; AiRuntimeTest#judgeNeverPassesWhenDisabled; verdict marked non-deterministic | Medium |
+| NG-11 | Microsoft Teams task app with live updates | Camunda | S8, S10 | **partial**; sangam-channels:messenger/MessengerConnectors.java (teams), WebhookVerifiers.java (botFramework), InboundMessageParsers.java; ChannelsTest#messengersNeedOptInAndMapResults; ChannelsTest#webhookSignatures; gap: no Teams app package/manifest, no tab task app, no live task-list updates, no IdP token acquisition | High |
+| NG-12 | Real-time in-app conversations with multimedia, search and audit | Flowable Engage | S4 | **partial**; sangam-channels:conversation/ConversationService.java; ChannelsTest#conversationAccessIdempotencySearchAndLiveDelivery; gap: no WebSocket endpoint or UI; search is a substring scan; retention on request only | High |
+| NG-13 | Chatbot framework driven by case and process models | Flowable Engage | S4 | **partial**; sangam-channels:bot/BotBridge.java, resources/bots/sample-bot.bpmn; ChannelsTest#sampleBotParses; gap: ProcessGateway adapter and bot.prompt worker not written; dialogue never run on the engine | High |
+| NG-14 | Live third-party messenger integration (WhatsApp, WeChat) | Flowable Engage | S4, S6 | **partial**; sangam-channels:messenger/MessengerConnectors.java (whatsApp, weChat), WebhookVerifiers.java, OptInRegistry.java; ChannelsTest#messengersNeedOptInAndMapResults; ChannelsTest#webhookSignatures; gap: WeChat encrypted mode, media download, provider token refresh, template approval rules | High |
+| NG-15 | SAP integration | Camunda | S10 | **partial**; sangam-channels:enterprise/EnterpriseConnectors.java (sapOData); ChannelsTest#odataRetriesOnceWhenTheTokenExpired; ChannelsTest#serviceNowAndSapThroughSimulator; gap: no RFC, no update/delete, licence review not done | Medium: scope and tier unread |
+| NG-16 | ServiceNow integration | Camunda | S10 | **implemented**; sangam-channels:enterprise/EnterpriseConnectors.java (serviceNow, serviceNowWebhookValid); ChannelsTest#serviceNowAndSapThroughSimulator; simulator only; webhook HMAC is a Sangam convention | Medium: scope and tier unread |
+| NG-17 | Marketplace for connectors and extensions **[U]** | Camunda | S14 (listing types not visible) | **partial**; sangam-modeller:catalogue/ExtensionCatalogue.java; ModellerTest#catalogueNeedsSignatureLicenceAndChecksum; gap: no hosted catalogue, publishing flow or install step; vendor feature [U] | Low |
+| NG-18 | Token flow simulation on the diagram | Camunda, Flowable | S10, S1 | **partial**; sangam-modeller:simulation/TokenWalk.java; ModellerTest#tokenWalkAsksForChoiceForksAndJoins; gap: no diagram animation in the UI; boundary events, event sub-processes and compensation not walked | High |
+| NG-19 | Reusable element templates, custom palette, composite form components | Camunda, Flowable | S9, S7, S1 | **partial**; sangam-modeller:template/ElementTemplates.java; ModellerTest#templatesVersionAndValidate; gap: no properties panel, palette or form-editor integration | High |
+| NG-20 | Process landscape: generated map of call-activity dependencies | Camunda | S13 | **partial**; sangam-modeller:landscape/ProcessLandscape.java; ModellerTest#landscapeFindsMissingDynamicAndCycles; gap: no graph screen | High |
+| NG-21 | Canvas locking and takeover | Camunda | S8 | **partial**; sangam-modeller:lease/EditLeases.java; ModellerTest#leaseGivesOneEditorAndFencesLateSave; gap: package save must call checkFence; no read-only mode or takeover dialog | High |
+| NG-22 | Service mocks for model tests, with global and per-service toggles | Flowable | S1 | **partial**; sangam-modeller:mock/ServiceMocks.java, mock/ServiceMockStore.java; ModellerTest#mocksNeverOnProductionAndNeverFallThrough; ModellerTest#mockRulesPersistWithToggle; gap: no mock editor | High |
+| NG-23 | Command-line tool for the platform | Camunda (c8ctl) | S8 | **partial**; sangam/tools/sangam-cli:src/main/java/org/sangam/cli/Main.java (module in sangam/pom.xml); MainTest#exitCodesAreStable; MainTest#testRunFailsOnFailedCases; MainTest#startSendsIdempotencyKey; MainTest#deployIsMultipart; MainTest#servicePrincipalLoginStoresTokenAndRefusesPlainHttp; CLI exists (the recheck's MISSING was wrong); fake HTTP layer only; gap: no token refresh or OS keychain; device-flow polling untested | High |
+| NG-24 | Per-tenant usage metrics | Camunda | S8, S9 | **partial**; sangam-ops:metrics/UsageMetrics.java; OpsTest#usageRollupReplacesTheDay; gap: no daily schedule wired | High |
+| NG-25 | Camunda 7 history and identity data migrators | Camunda | S7, S8 | **partial**; sangam-ops:migrate/LegacyHistoryMigrator.java; OpsTest#migratorResumesNeverCopiesPasswordsAndReconciles; gap: rows copied as JSON to OPS_MIG_ROW; no mapping into the audit chain or product views | Medium: need depends on Sangam's users |
+| NG-26 | OAuth on-behalf-of token exchange for service calls | Flowable | S1 | **partial**; sangam-modeller:auth/TokenExchange.java; ModellerTest#tokenExchangeRefusesNoUserAndCachesPerUser; gap: no call site in the connector auth layer; loopback endpoint only | High |
+| NG-27 | Inbound email channel storing mail and attachments as content | Flowable | S1 | **partial**; sangam-channels:mail/InboundMail.java; ChannelsTest#mailIsIdempotentAndPoisonIsRecorded; gap: Simulated source only, no Microsoft Graph source; Poison port not bound to PoisonInbound | High |
+| NG-28 | Action models: named, reusable user-triggered behaviour | Flowable | S1 | **partial**; sangam-modeller:action/ActionModels.java; ModellerTest#actionsCheckPermissionOnServerAndAreIdempotent; gap: Dispatcher binding not written; no action menu in the UI | Medium: full semantics unread |
+| NG-29 | Index maintenance and batch reindexing | Flowable | S3, S1 | **implemented**; sangam-ops:search/SearchIndexMaintenance.java; OpsTest#reindexSwitchesAliasAndDetectsDrift; index is a relational table (R65 has no external index) | Medium: relevant only once R65 has an index |
+| NG-30 | Global search across sections, instances, tasks and definitions | Flowable Hub | S3 | **partial**; sangam-ops:search/GlobalSearch.java; OpsTest#searchCapsAndHiddenRowsDoNotCount; OpsTest#typeWildcardDenyBlocksSearchAndOutliersThroughThePolicyCompiler; gap: no Ctrl+K dialog; substring scan | High |
+| NG-31 | Outlier analysis with significant variables | Camunda Optimize | S15, S16 | **partial**; sangam-ops:outlier/OutlierAnalysis.java; OpsTest#outliersRespectMinSampleAndFindValue; gap: no screen; no multiple-comparison correction; readSamples untested | Medium: current docs not fetched |
+| NG-32 | Bulk model-test runs with reports; test export from design to runtime | Flowable, Camunda | S1, S8, S9 | **partial**; sangam-modeller:test/BulkModelTests.java; ModellerTest#bulkRunContinuesAfterErrorsAndBundleIsSealed; gap: Executor not bound to the REST test endpoint; no report screen | Medium |
+| NG-33 | Mobile app: camera upload, document versions, connect to another server | Flowable | S5, S4 | **partial**; sangam-ui:src/app/App.tsx, src/areas/tasklist/MyWork.tsx (responsive shell, FieldVisits); no test; gap: no native app, no camera upload, no connect-to-another-server | Medium |
+| NG-34 | Cluster and tenant variables with merged scopes | Camunda, Flowable | S7, S3 | **partial**; sangam-ops:vars/ScopedVariables.java; OpsTest#variablesMergeTenantOverCluster; gap: no edit UI; expressions need the bean registered | Medium |
+| NG-35 | Global user task listeners set by configuration | Camunda | S7 | **implemented**; sangam-ops:listener/GlobalTaskListeners.java; OpsTest#globalListenerAttachesOnlyToMatchingKeysAndValidatesHandler; test covers configuration; attachment to a running engine not run | Medium |
+| NG-36 | Hierarchy-aware retention | Camunda | S8 | **partial**; sangam-ops:retention/HierarchyRetention.java; OpsTest#retentionTreatsTreeAsOneUnit; gap: Purger not bound to the engine history service; no legal-hold check | Low |
+| NG-37 | Continuous database backup and restore | Camunda | S8 | **partial**; sangam/deploy/helm/sangam/templates/backup-cronjobs.yaml; no test; continuous WAL receiver for PostgreSQL only; Oracle archivelog and MySQL binlog are scheduled jobs, not continuous; design/Helm only, not run | Medium |
+| NG-38 | Secret management UI, bulk import and cluster-to-cluster export | Camunda, Flowable | S8, S3 | **partial**; sangam-ops:secrets/SecretAdmin.java; OpsTest#secretsRoundTripThroughBundleAndListingHasNoValues; gap: no UI; tests use a fake encryptor | Medium |
+| NG-39 | Dual-region deployment reference architecture | Camunda | S7, S8 | **partial**; sangam/deploy/DUAL-REGION.md; no test; design only (file says nothing deployed or tested); active-passive per cell | Medium |
+| NG-40 | Inbound channels for file, SFTP, SQL and Azure Service Bus | Flowable | S1 | **partial**; sangam-channels:inbound/PolledChannels.java; ChannelsTest#fileChannelMovesAfterHandover; ChannelsTest#sqlChannelResumesFromCursor; ChannelsTest#serviceBusCompletesOnlyAfterHandover; gap: not wired into InboundChannelManager; SFTP tested with local transport only | Medium |
+| NG-41 | Sequence values managed by administrators | Flowable Hub | S3 | **partial**; sangam-ops:sequence/SequenceAdmin.java; OpsTest#sequenceMovesForwardOnly; gap: no admin screen | Low |
+| NG-42 | Business ID uniqueness on start | Camunda | S8 | **implemented**; sangam-integration:inbox/UniqueStartGuard.java; no test; no direct test of UniqueStartGuard found (used in MixedRemittanceTest set-up only) | Medium: vendor semantics unread |
+| NG-43 | Scheduled backups | Camunda | S8, S10 | **implemented**; sangam/deploy/helm/sangam/templates/backup-cronjobs.yaml; no test; Helm templates; not run in a cluster | High |
+| NG-44 | Revision diff view | Flowable | S1 | **implemented**; sangam-ui:src/api/endpoints.ts:312 (/packages/{id}/diff); no test; visual comparison not checked | Medium: visual comparison not checked |
+| NG-45 | Deep links that resume after login | Flowable | S1 | **implemented**; sangam-ui:src/auth/AuthProvider.tsx:177 (signinRedirect state = path+query); no test | High |
+| NG-46 | Vendor SaaS items: PrivateLink, SaaS regions, SaaS metrics endpoint | Camunda | S8 | **not-replicated-by-decision**; -; no test; vendor SaaS items; Sangam is self-hosted (R56) | High |
+| NG-47 | Customer success, personal training and consulting | Camunda | S10 | **owner-side**; -; no test; services, not software (R68) | High |
 
 ## Corrections to the earlier picture
 
 These change how existing rows should be read. They are not new features.
 
-1. **PF-28/46 (agents) and PF-47/EC-15 (Engage) have no runtime.** `JdbcRegistryAdapter` stores agent and channel definitions as documents. A case-insensitive search found no LLM client and no Teams, Slack, Matrix or WhatsApp adapter class. "UI ready; server [P]" therefore understates the remaining work: the execution side is unbuilt.
+1. **PF-28/46 (agents) and PF-47/EC-15 (Engage) have no runtime.** `JdbcRegistryAdapter` stores agent and channel definitions as documents. A case-insensitive search found no LLM client and no Teams, Slack, Matrix or WhatsApp adapter class. "UI ready; server [P]" therefore understates the remaining work: the execution side is unbuilt. *(Superseded 2026-11-08: `sangam-ai` now has `agent/AgentRuntime.java` and an LLM client `llm/OpenAiCompatibleLlm.java`; `sangam-channels` has Teams and WhatsApp/WeChat connectors (NG-11, NG-14, partial). Whether PF-28/46/47 and EC-15 are now closed was not re-checked here.)*
 2. **PF-25/26:** `sangam-ui/README.md` lists backups as a gap. That is true for the UI, but Helm backup jobs exist (NG-43), so the gap is narrower than it reads.
 3. **Many "C" rows in the UI README depend on [P] endpoints.** That table describes screens, not end-to-end function. It should not be counted as parity.
 
 ## Design sketches for MISSING items
 
-These are generic designs. All inherit the common rules: R19 authorization, R36 operation identity, R42 audit, R43 governed deployment, no feature gating. All AI features need a self-hosted model option (R56).
+As of 2026-11-08 none of NG-01…31 is missing; the sketches are kept as the design record the implementations follow. These are generic designs. All inherit the common rules: R19 authorization, R36 operation identity, R42 audit, R43 governed deployment, no feature gating. All AI features need a self-hosted model option (R56).
 
 | ID | Sketch |
 |---|---|
@@ -149,15 +151,18 @@ These are generic designs. All inherit the common rules: R19 authorization, R36 
 
 ## Counts
 
+Verified 2026-11-08 (SL-36). Same counts as `TRACEABILITY-REGISTER.md` §2.
+
 | Status | Count | IDs |
 |---|---|---|
-| MISSING | **31** | NG-01…31 |
-| PARTIAL | **10** | NG-32…41 |
-| PRESENT | **4** | NG-42…45 |
-| X | **2** | NG-46, 47 |
+| implemented | **12** | NG-01, 02, 07, 09, 10, 16, 29, 35, 42, 43, 44, 45 |
+| partial | **33** | NG-03, 04, 05, 06, 08, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41 |
+| missing | **0** | |
+| not-replicated-by-decision | **1** | NG-46 |
+| owner-side | **1** | NG-47 |
 | **Total** | **47** | |
 
-Items with an open **[U]**: NG-17, 33, 34, 36, 40.
+No test: NG-07 (sub-agent / external types), 33, 37, 39, 42, 43, 44, 45, 46, 47. Vendor-side **[U]** still open: NG-17. Superseded original counts (MISSING 31, PARTIAL 10, PRESENT 4, X 2) are in git history.
 
 ## Open verification items
 
@@ -166,4 +171,4 @@ Items with an open **[U]**: NG-17, 33, 34, 36, 40.
 3. Fetch the listing types for the Camunda Marketplace (NG-17) and the current Optimize outlier page (NG-31).
 4. Run a fuller Camunda 7 EE walk of the Cockpit manual.
 5. Search Flowable docs specifically for policies, query models, variable extractors and business calendars.
-6. Confirm NG-34, 36, 37, 40 by reading the code, not just by search.
+6. ~~Confirm NG-34, 36, 37, 40 by reading the code, not just by search.~~ Done 2026-11-08 (SL-36); see the Findings table.

@@ -64,12 +64,21 @@ public class OperatonTaskAdapter implements TaskPort {
     private final TaskService tasks;
     private final RuntimeService runtime;
     private final HistoryService history;
+    private final org.operaton.bpm.engine.FormService forms;
     private final TxSupport tx;
     private final AuditPort audit;
     private final RestProperties props;
 
     public OperatonTaskAdapter(TaskService tasks, RuntimeService runtime, HistoryService history, TxSupport tx,
                                AuditPort audit, RestProperties props) {
+        this(tasks, runtime, history, null, tx, audit, props);
+    }
+
+    /** @param forms the engine's form service; without it {@link #form} returns the form key only. */
+    public OperatonTaskAdapter(TaskService tasks, RuntimeService runtime, HistoryService history,
+                               org.operaton.bpm.engine.FormService forms, TxSupport tx, AuditPort audit,
+                               RestProperties props) {
+        this.forms = forms;
         this.tasks = tasks;
         this.runtime = runtime;
         this.history = history;
@@ -407,9 +416,60 @@ public class OperatonTaskAdapter implements TaskPort {
         }
     }
 
+    /**
+     * The task's form for the task UI (SL-37): the deployed embedded HTML or Operaton form (form-js JSON) read from the
+     * task's deployment, or just the key for external forms. Same visibility rule as {@link #get}: tenant first, then
+     * assignee, owner or candidate (user, group or seat), or a tenant supervisor (admin/operator); otherwise not found.
+     */
     @Override
-    public Map<String, Object> variables(RequestContext ctx, String taskId) {
-        requireVisible(ctx, taskId);
+    public TaskForm form(RequestContext ctx, String taskId) {
+        org.operaton.bpm.engine.task.Task t = requireVisible(ctx, taskId);
+        String key = safeFormKey(t);
+        org.operaton.bpm.engine.form.OperatonFormRef ref = safeFormRef(t);
+        String kind = formKind(key, ref);
+        String content = null;
+        String contentType = null;
+        boolean deployed = ref != null || (key != null && key.contains("deployment:"));
+        if (forms != null && deployed && ("EMBEDDED".equals(kind) || "FORM".equals(kind))) {
+            content = OperatonSupport.call(() -> {
+                try (java.io.InputStream in = forms.getDeployedTaskForm(taskId)) {
+                    return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                } catch (java.io.IOException e) {
+                    throw new java.io.UncheckedIOException(e);
+                }
+            });
+            contentType = "EMBEDDED".equals(kind) ? "text/html" : "application/json";
+        }
+        return new TaskForm(taskId, key, kind, contentType, content);
+    }
+
+    /** EMBEDDED (HTML), FORM (Operaton form, form-js JSON), EXTERNAL (link), OTHER (unknown key) or NONE. */
+    static String formKind(String key, org.operaton.bpm.engine.form.OperatonFormRef ref) {
+        if (ref != null || (key != null && key.startsWith("operaton-forms:"))) {
+            return "FORM";
+        }
+        if (key == null || key.isBlank()) {
+            return "NONE";
+        }
+        if (key.startsWith("embedded:")) {
+            return "EMBEDDED";
+        }
+        if (key.startsWith("app:") || key.startsWith("http:") || key.startsWith("https:") || key.startsWith("/")) {
+            return "EXTERNAL";
+        }
+        return "OTHER";
+    }
+
+    private static org.operaton.bpm.engine.form.OperatonFormRef safeFormRef(org.operaton.bpm.engine.task.Task t) {
+        try {
+            return t.getOperatonFormRef();
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public Map<String, Object> variables(RequestContext ctx, String taskId) {        requireVisible(ctx, taskId);
         return TypedVariables.toJson(OperatonSupport.call(() -> tasks.getVariables(taskId)));
     }
 

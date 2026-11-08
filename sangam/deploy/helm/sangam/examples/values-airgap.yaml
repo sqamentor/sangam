@@ -1,4 +1,5 @@
 # Air-gapped install: images loaded into the internal registry with deploy/airgap/load-images.sh.
+# An overlay: use it together with a database example, e.g. -f examples/values-postgres.yaml -f examples/values-airgap.yaml.
 global:
   imageRegistry: registry.sdc.local
   imagePullSecrets: [sdc-registry]

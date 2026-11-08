@@ -30,7 +30,7 @@ public class ActorRecorderListener implements TaskListener {
         log.add(Vars.map("step", TaskActor.stepId(t, Vars.field(stepSuffixVar, t)), "person", a.person(), "seat", a.seat(),
                 "actedFor", a.actedFor(), "decision", decision == null ? null : decision.toString(),
                 "at", Vars.now().toString()));
-        t.getExecution().setVariable(Vars.ACTOR_LOG, Vars.toJson(log));
+        Vars.setJsonDocument(t.getExecution(), Vars.ACTOR_LOG, log);
         t.getExecution().setVariable("lastActorPerson", a.person());
         t.getExecution().setVariable("lastActorSeat", a.seat());
         t.getExecution().setVariable("lastActedForSeat", a.actedFor() ? a.seat() : null);

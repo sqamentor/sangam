@@ -171,6 +171,44 @@ public class DebuggerService {
             }
 
             @Override
+            public void parseScriptTask(Element e, ScopeImpl s, ActivityImpl a) {
+                apply(a);
+            }
+
+            @Override
+            public void parseManualTask(Element e, ScopeImpl s, ActivityImpl a) {
+                apply(a);
+            }
+
+            @Override
+            public void parseParallelGateway(Element e, ScopeImpl s, ActivityImpl a) {
+                apply(a);
+            }
+
+            @Override
+            public void parseInclusiveGateway(Element e, ScopeImpl s, ActivityImpl a) {
+                apply(a);
+            }
+
+            @Override
+            public void parseEventBasedGateway(Element e, ScopeImpl s, ActivityImpl a) {
+                apply(a);
+            }
+
+            @Override
+            public void parseIntermediateCatchEvent(Element e, ScopeImpl s, ActivityImpl a) {
+                // a catch event after an event-based gateway is armed by the gateway and cannot wait as a job
+                if (a.getActivityStartBehavior() != org.operaton.bpm.engine.impl.pvm.process.ActivityStartBehavior.CANCEL_EVENT_SCOPE) {
+                    apply(a);
+                }
+            }
+
+            @Override
+            public void parseTransaction(Element e, ScopeImpl s, ActivityImpl a) {
+                apply(a);
+            }
+
+            @Override
             public void parseSubProcess(Element e, ScopeImpl s, ActivityImpl a) {
                 apply(a);
             }

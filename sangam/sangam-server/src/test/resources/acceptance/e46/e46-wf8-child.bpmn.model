@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-8 child: the reusable sub-process called by WF-8 (C-13). Synthetic. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             id="E46-WF8-CHILD-DEFS" targetNamespace="urn:oneifms:e46:wf8child">
+  <process id="E46-WF8-CHILD" name="Sanction verification" isExecutable="true" oneifms:definitionVersion="1">
+    <startEvent id="childStart"/>
+    <userTask id="VERIFY_SANCTION" name="Verify sanction" oneifms:capability="sanction.verify"/>
+    <endEvent id="childEnd"/>
+    <sequenceFlow id="c1" sourceRef="childStart" targetRef="VERIFY_SANCTION"/>
+    <sequenceFlow id="c2" sourceRef="VERIFY_SANCTION" targetRef="childEnd"/>
+  </process>
+</definitions>

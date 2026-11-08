@@ -10,6 +10,7 @@
       "id": "COLL-AGENT-1",
       "role": "AGENT",
       "office": "COLLECTIONS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "COLL-SUPERVISOR",
       "name": {
         "en": "Collection agent 1",
@@ -20,6 +21,7 @@
       "id": "COLL-AGENT-2",
       "role": "AGENT",
       "office": "COLLECTIONS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "COLL-SUPERVISOR",
       "name": {
         "en": "Collection agent 2",
@@ -30,6 +32,7 @@
       "id": "COLL-SUPERVISOR",
       "role": "SUPERVISOR",
       "office": "COLLECTIONS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BRANCH-MGR",
       "name": {
         "en": "Collections supervisor",
@@ -40,6 +43,7 @@
       "id": "AUTHORISED-OFFICER",
       "role": "AO",
       "office": "COLLECTIONS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BRANCH-MGR",
       "name": {
         "en": "Authorised officer (SARFAESI)",
@@ -50,6 +54,7 @@
       "id": "BRANCH-MGR",
       "role": "BRANCHMGR",
       "office": "COLLECTIONS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "ZONAL-CREDIT",
       "name": {
         "en": "Branch manager",
@@ -60,6 +65,7 @@
       "id": "ZONAL-CREDIT",
       "role": "ZONALCREDIT",
       "office": "COLLECTIONS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CREDIT-HEAD",
       "name": {
         "en": "Zonal credit head",
@@ -70,6 +76,7 @@
       "id": "CREDIT-HEAD",
       "role": "CREDITHEAD",
       "office": "COLLECTIONS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Chief credit officer",

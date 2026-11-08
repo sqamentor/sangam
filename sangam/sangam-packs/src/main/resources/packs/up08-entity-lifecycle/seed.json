@@ -10,6 +10,7 @@
       "id": "SERVICE-DESK",
       "role": "SERVICE",
       "office": "SVC",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Service desk",

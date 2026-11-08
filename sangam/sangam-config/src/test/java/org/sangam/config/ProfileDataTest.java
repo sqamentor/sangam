@@ -135,6 +135,55 @@ class ProfileDataTest {
         assertFalse(Finding.anyError(reg.validate("KA", kas, reg.parse(kas, "2054-00-095-0-03-240"), d, lookup)));
     }
 
+    /** SL-15: the full official UN COFOG 1999 (UNSD) is loaded, verified, and class to group to division is consistent. */
+    @Test
+    void cofogSeedIsCompleteVerifiedAndHierarchical() throws Exception {
+        List<ProfileDocument> docs = ProfileLoader.loadDirectory(DIR);
+        ProfileResolver r = new ProfileResolver(InMemoryProfileRepository.active(docs), LayerModel.open());
+        LocalDate d = LocalDate.of(2026, 11, 5);
+        for (String id : List.of("INTL", "GOI", "RJ")) {
+            assertFalse(r.resolve(id, d).placeholders().containsKey("classification.schemes.COFOG"), id);
+        }
+        // GA-55 is an employee-wise yearly report template, not a code-list placeholder; its official form stays [U]
+        ResolvedProfile rj = r.resolve("RJ", d);
+        assertTrue(rj.placeholders().keySet().stream().noneMatch(k -> k.contains("GA-55")), rj.placeholders().toString());
+        var ga55 = DocumentTypeCatalogue.of(rj).all().stream().filter(t -> "GA-55".equals(t.formNumber())).findFirst().orElseThrow();
+        assertEquals("REPORT", ga55.raw().get("kind"));
+        assertEquals("U", ((java.util.Map<?, ?>) ((java.util.Map<?, ?>) ga55.raw().get("evidence")).get("fieldLayout")).get("status"));
+        assertEquals(List.of("employee", "year", "month"), ((java.util.Map<?, ?>) ga55.raw().get("report")).get("parameters"));
+        ResolvedProfile intl = r.resolve("INTL", d);
+        List<org.sangam.config.master.MasterCode> rows =
+                SeedLoader.csv("INTL", Files.readString(DIR.resolve("intl/seeds/cofog.csv")));
+        java.util.Map<String, Long> bySeg = rows.stream().collect(java.util.stream.Collectors.groupingBy(
+                org.sangam.config.master.MasterCode::segment, java.util.stream.Collectors.counting()));
+        assertEquals(java.util.Map.of("division", 10L, "group", 69L, "class", 109L), bySeg);
+        java.util.Set<String> full = new java.util.HashSet<>();
+        for (var m : rows) {
+            assertEquals("V", m.flags().get("evidence"), m.code());
+            assertTrue(m.sourceRef().contains("5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5"), m.code());
+            assertFalse(m.name().containsKey("hi"), "no Hindi without an official source");
+            full.add(m.parentCode() == null ? m.code() : m.parentCode() + "." + m.code());
+        }
+        for (var m : rows) {
+            if (m.parentCode() != null) {
+                assertTrue(full.contains(m.parentCode()), "parent of " + m.parentCode() + "." + m.code());
+                assertEquals(m.segment().equals("group") ? 1 : 2, m.parentCode().split("\\.").length, m.code());
+            }
+        }
+        assertTrue(full.containsAll(List.of("01", "07.3.1", "10.9.0", "04.7.4")));
+        MasterStore store = new MasterStore.InMemory();
+        SeedLoader.load(store, rows);
+        ClassificationRegistry reg = new ClassificationRegistry(store);
+        ClassificationScheme cofog = ClassificationScheme.from(intl.map("classification.schemes.COFOG"));
+        for (String ok : List.of("01", "07.3", "07.3.1", "10.9.0", "0731")) {
+            List<Finding> f = reg.validate("INTL", cofog, reg.parse(cofog, ok), d);
+            assertTrue(f.isEmpty(), ok + ": " + f);
+        }
+        assertTrue(hasCode(reg.validate("INTL", cofog, reg.parse(cofog, "11"), d), "CODE_UNKNOWN"), "no division 11");
+        assertTrue(hasCode(reg.validate("INTL", cofog, reg.parse(cofog, "02.6"), d), "CODE_NOT_UNDER_PARENT"), "defence has 5 groups");
+        assertTrue(hasCode(reg.validate("INTL", cofog, reg.parse(cofog, "07.3.5"), d), "CODE_NOT_UNDER_PARENT"), "class under wrong group");
+    }
+
     private static boolean hasCode(List<Finding> f, String code) {
         return f.stream().anyMatch(x -> code.equals(x.code()));
     }

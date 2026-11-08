@@ -55,7 +55,7 @@ public final class FlowableModelImporter {
             Map.entry("assignee", "assignee"), Map.entry("candidateUsers", "candidateUsers"), Map.entry("candidateGroups", "candidateGroups"),
             Map.entry("formKey", "formKey"), Map.entry("dueDate", "dueDate"), Map.entry("priority", "priority"),
             Map.entry("category", "category"), Map.entry("exclusive", "exclusive"), Map.entry("initiator", "initiator"),
-            Map.entry("calledElementType", "calledElementBinding"), Map.entry("processInstanceName", "processInstanceName"),
+            Map.entry("processInstanceName", "processInstanceName"),
             Map.entry("collection", "collection"), Map.entry("elementVariable", "elementVariable"),
             Map.entry("decisionTableReferenceKey", "decisionRef"), Map.entry("historyTimeToLive", "historyTimeToLive"),
             Map.entry("asyncAfter", "asyncAfter"));
@@ -201,6 +201,18 @@ public final class FlowableModelImporter {
                     }
                     out.add(new Finding(Classification.MAPPED, id, "flowable:sameDeployment", "D-12", "calledElementBinding=deployment"));
                 }
+                // Flowable calledElementType is key|id (how calledElement is read), not a version binding: copying
+                // "key" into operaton:calledElementBinding made the model undeployable. "key" is Operaton's only mode
+                // (latest version by key, its default); "id" has no equivalent.
+                case "calledElementType" -> {
+                    if ("key".equals(value)) {
+                        out.add(new Finding(Classification.MAPPED, id, "flowable:calledElementType=key", "A-1",
+                                "calledElement is a key on Operaton (default binding latest)"));
+                    } else {
+                        out.add(new Finding(Classification.UNSUPPORTED, id, "flowable:calledElementType=" + value, "-",
+                                "Operaton calls a process by key only; replace the definition id by its key"));
+                    }
+                }
                 case "fallbackToDefaultTenant" -> out.add(new Finding(Classification.PORTED, id, "flowable:fallbackToDefaultTenant", "FC-33",
                         "use TenantDefinitionResolver in operaton:calledElementTenantId"));
                 default -> {
@@ -311,6 +323,9 @@ public final class FlowableModelImporter {
             cond.setAttributeNS(OPERATON_NS, "operaton:variableName", vl.getAttribute("variableName"));
             String types = vl.getAttribute("variableChangeType");
             cond.setAttributeNS(OPERATON_NS, "operaton:variableEvents", types.isEmpty() || "all".equals(types) ? "create, update" : types);
+            // FW-12: Flowable's listener fires on a variable CHANGE; with condition ${true} Operaton would leave the catch
+            // event right on entry. The marker makes BpmnExtensionsParseListener wait for the change.
+            cond.setAttributeNS(SangamBpmn.NS_URI, "sangam:" + SangamBpmn.ON_VARIABLE_CHANGE, "true");
             Element c = doc.createElementNS(BPMN_NS, prefix(event) + "condition");
             c.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:type", prefix(event) + "tFormalExpression");
             c.setTextContent("${true}");

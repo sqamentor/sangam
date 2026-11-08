@@ -29,6 +29,7 @@ import org.sangam.onboarding.api.StepId;
 import org.sangam.onboarding.deps.PackDependencyResolver;
 import org.sangam.onboarding.port.OnboardingPorts;
 import org.sangam.onboarding.profile.ProfilePlanner;
+import org.sangam.onboarding.readiness.OrgLevels;
 import org.sangam.onboarding.readiness.ReadinessChecker;
 import org.sangam.onboarding.support.OnboardingJson;
 import org.sangam.packs.spi.SangamPack;
@@ -127,6 +128,9 @@ public final class OnboardingService {
         Map<String, Object> se = new LinkedHashMap<>();
         se.put("moduleDefaults", req.security().defaults());
         se.put("roles", req.security().roles().stream().map(OnboardingRequest.RoleSpec::id).toList());
+        OrgLevels levels = OrgLevels.resolve(req, profile.resolved());
+        se.put("orgLevels", levels.levels());
+        se.put("orgLevelsSource", levels.source());
         plan.put(StepId.SECURITY, se);
 
         problems.addAll(checkSeeds(req));
@@ -471,6 +475,19 @@ public final class OnboardingService {
         List<org.sangam.packs.spi.PackDescriptor> packs = new ArrayList<>();
         enabled(resolver.resolve(run.request().packs().ids(), run.request().packs().versions(), Map.of(), true))
                 .forEach(p -> packs.add(p.descriptor()));
+        // SL-14: the org levels are fixed once the first unit exists (A02), so they are defined before any seat
+        OrgLevels levels = OrgLevels.resolve(run.request(), planOf(run).resolved());
+        List<Problem> levelProblems = levels.check(packs, ports.security().orgLevels(run.tenantId()),
+                ports.security().orgUnitsExist(run.tenantId()));
+        if (Problem.anyError(levelProblems)) {
+            problems.addAll(levelProblems);
+            return;
+        }
+        if (!levels.levels().isEmpty()) {
+            ports.security().defineOrgLevels(run.tenantId(), levels.levels(), run.maker());
+        }
+        out.put("orgLevels", levels.levels());
+        out.put("orgLevelsSource", levels.source());
         out.put("packSeats", ports.security().installPackSeeds(run.tenantId(), packs, run.maker()));
         if (!s.tenantAdmins().isEmpty()) {
             ports.security().bootstrapAdmins(run.tenantId(), s.tenantAdmins(), run.maker());

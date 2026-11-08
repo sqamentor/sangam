@@ -2,9 +2,10 @@
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              targetNamespace="http://sangam.gov.in/e17b" id="ref_defs">
-  <!-- D-REFERRAL: the administrative department (tenant dept-works) refers a file at the same time to Finance
-       (tenant dept-fin) and Law (tenant dept-law). Each department runs its own 'concurrence' process in its own
-       tenant (own officers, own inbox). If either does not concur, the file is revised and referred again. -->
+  <!-- D-REFERRAL: the administrative department (tenant dept-works) refers a file at the same time for Finance
+       concurrence and Law vetting. Both 'concurrence' instances run in the caller's tenant (SL-13: no call activity
+       into another tenant; cross-tenant referral is a message to the other tenant's inbox, J-P2-E09). If either does
+       not concur, the file is revised and referred again. -->
   <process id="interDeptReferral" name="Inter-department referral" isExecutable="true">
     <startEvent id="ref_start"/>
     <sequenceFlow id="ref_f1" sourceRef="ref_start" targetRef="ref_prepare"/>
@@ -15,10 +16,10 @@
     <parallelGateway id="ref_fork"/>
     <sequenceFlow id="ref_f3" sourceRef="ref_fork" targetRef="ref_finance"/>
     <sequenceFlow id="ref_f4" sourceRef="ref_fork" targetRef="ref_law"/>
-    <callActivity id="ref_finance" name="Finance concurrence" {{CALLED concurrence|dept-fin|finConcurrenceDefId}}>
+    <callActivity id="ref_finance" name="Finance concurrence" {{CALLED concurrence}}>
       {{CALLIO in=fileNo>fileNo,subject>subject,amount>amount;out=concurred>finConcurred,remarks>finRemarks}}
     </callActivity>
-    <callActivity id="ref_law" name="Law vetting" {{CALLED concurrence|dept-law|lawConcurrenceDefId}}>
+    <callActivity id="ref_law" name="Law vetting" {{CALLED concurrence}}>
       {{CALLIO in=fileNo>fileNo,subject>subject;out=concurred>lawConcurred,remarks>lawRemarks}}
     </callActivity>
     <sequenceFlow id="ref_f5" sourceRef="ref_finance" targetRef="ref_join"/>

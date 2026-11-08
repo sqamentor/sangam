@@ -47,6 +47,7 @@ import org.sangam.onboarding.api.OnboardingRequest.TenantSpec;
 import org.sangam.onboarding.deps.SemVer;
 import org.sangam.onboarding.flow.OnboardingException;
 import org.sangam.onboarding.port.OnboardingPorts;
+import org.sangam.onboarding.readiness.OrgLevels;
 import org.sangam.onboarding.support.OnboardingJson;
 import org.sangam.packs.spi.PackDeployer;
 import org.sangam.packs.spi.PackDescriptor;
@@ -397,6 +398,27 @@ public final class OnboardingBridges {
         }
 
         @Override
+        public List<String> orgLevels(String tenant) {
+            return tx.inTransaction(c -> security.orgUnits().levels(c, tenant));
+        }
+
+        @Override
+        public boolean orgUnitsExist(String tenant) {
+            return tx.inTransaction(c -> security.orgUnits().hasUnits(c, tenant));
+        }
+
+        @Override
+        public void defineOrgLevels(String tenant, List<String> levelTypes, String actor) {
+            tx.inTransaction(c -> {
+                // idempotent for a re-run step; different levels after units exist are refused by defineLevels
+                if (!security.orgUnits().levels(c, tenant).equals(levelTypes)) {
+                    security.orgUnits().defineLevels(c, platformAdmin(tenant), levelTypes);
+                }
+                return null;
+            });
+        }
+
+        @Override
         public int installPackSeeds(String tenant, List<PackDescriptor> packs, String actor) {
             SecurityIdentity admin = platformAdmin(tenant);
             Instant now = Instant.now();
@@ -422,9 +444,11 @@ public final class OnboardingBridges {
                             .filter(s -> s.reportsTo() == null || s.reportsTo().isBlank() || known.contains(s.reportsTo())
                                     || !pending.containsKey(s.reportsTo()))
                             .findFirst().orElse(pending.values().iterator().next());
-                    String office = next.office() == null || next.office().isBlank() ? "HQ" : next.office();
+                    String office = OrgLevels.office(next);
                     if (security.orgUnits().unitAt(c, tenant, office, now).isEmpty()) {
-                        security.orgUnits().createUnit(c, admin, office, "OFFICE", null, office, null, now);
+                        // the unit's level is the one its seats name (SL-14); the onboarding SECURITY step defined the
+                        // tenant's levels first and the dry run refused seats whose level is missing or unknown
+                        security.orgUnits().createUnit(c, admin, office, next.level(), null, office, null, now);
                     }
                     String escalation = known.contains(next.reportsTo()) ? next.reportsTo() : null;
                     security.seats().createSeat(c, admin, next.id(), next.role(), office, 1, false, escalation, now);

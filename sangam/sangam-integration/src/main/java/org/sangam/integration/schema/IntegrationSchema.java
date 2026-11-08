@@ -65,6 +65,17 @@ public final class IntegrationSchema {
               epoch       {long} NOT NULL,
               expires_at  {ts} NOT NULL
             )""",
+            // SL-39 outbound webhook destination health (WebhookHealth)
+            """
+            CREATE TABLE INTEGRATION_WEBHOOK_STATE (
+              destination           {str} NOT NULL PRIMARY KEY,
+              state                 {str64} NOT NULL,
+              consecutive_failures  {int} NOT NULL,
+              last_error            {text},
+              disabled_at           {ts},
+              changed_by            {str},
+              updated_at            {ts} NOT NULL
+            )""",
             // VI.2.6 rule 4 uniqueStart
             """
             CREATE TABLE UNIQUE_START (

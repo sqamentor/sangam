@@ -10,6 +10,7 @@
       "id": "SECURITY-OFFICER",
       "role": "SECURITY",
       "office": "HR-IT",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Security officer",

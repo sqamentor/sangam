@@ -24,6 +24,10 @@
       "path": "packs/ifms-gpf/ifms-gpf-authority.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/ifms-gpf/ifms-gpf-powers.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/ifms-gpf/forms/application.form.json"
     },
@@ -79,5 +83,12 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-ifms-bill"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-gpf-powers",
+      "rule": "HOO GPF no monetary limit",
+      "reason": "the GPF (CS) Rules 1960 sanctioning authority is not read (corpus IFC-171 [U: department order]); confirm and deploy it as a tenant DMN override"
+    }
   ]
 }

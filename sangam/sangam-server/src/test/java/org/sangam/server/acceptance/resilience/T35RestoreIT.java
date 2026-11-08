@@ -12,10 +12,6 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -161,10 +157,21 @@ class T35RestoreIT {
 
     private void startServer() throws Exception {
         port = freePort();
+        // actuator runs on its own management port (management.server.port, SANGAM_MANAGEMENT_PORT in the deploy docs)
+        int managementPort = freePort();
+        while (managementPort == port) {
+            managementPort = freePort();
+        }
         String javaBin = Path.of(System.getProperty("java.home"), "bin", "java").toString();
-        List<String> cmd = new ArrayList<>(List.of(javaBin, "-jar", bootJar().toString(),
+        // the documented production launch options (deploy/README.md "JAVA_TOOL_OPTIONS"): both temp folders on a
+        // folder the process owns (the JDK's Windows selector opens an AF_UNIX socket there), UTC, UTF-8
+        Path owned = bootJar().getParent();
+        String unixTmp = System.getProperty("jdk.net.unixdomain.tmpdir", owned.toString());
+        List<String> cmd = new ArrayList<>(List.of(javaBin, "-Duser.timezone=UTC", "-Dfile.encoding=UTF-8",
+                "-Djava.io.tmpdir=" + owned, "-Djdk.net.unixdomain.tmpdir=" + unixTmp, "-jar", bootJar().toString(),
                 "--spring.profiles.active=postgres",
                 "--server.port=" + port,
+                "--management.server.port=" + managementPort,
                 "--spring.datasource.url=" + jdbcUrl(),
                 "--spring.datasource.username=" + AcceptanceDatabase.username(),
                 "--spring.datasource.password=" + AcceptanceDatabase.password(),
@@ -194,7 +201,7 @@ class T35RestoreIT {
                 throw new IllegalStateException("server process exited " + server.exitValue() + "; log " + serverLog);
             }
             try {
-                HttpResponse<String> r = probe.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port
+                HttpResponse<String> r = probe.send(HttpRequest.newBuilder(URI.create("http://localhost:" + managementPort
                         + "/actuator/health")).timeout(Duration.ofSeconds(5)).build(), HttpResponse.BodyHandlers.ofString());
                 if (r.statusCode() == 200) {
                     return;
@@ -242,6 +249,23 @@ class T35RestoreIT {
 
     private void psql(String sql) throws Exception {
         exec("psql", "-U", AcceptanceDatabase.username(), "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", sql);
+    }
+
+    /**
+     * Observation only: (operation_id, state, outcome) of the ledger rows of one root, read with psql inside the
+     * container (ids are generated UUIDs and the tenant is ours, so the literals are safe).
+     */
+    private List<String[]> ledgerRows(String rootId) throws Exception {
+        String out = exec("psql", "-U", AcceptanceDatabase.username(), "-d", db, "-v", "ON_ERROR_STOP=1", "-t", "-A",
+                "-F", "\u001f", "-c", "SELECT operation_id, state, COALESCE(outcome,'') FROM OPERATION_LEDGER WHERE tenant_id='"
+                        + tenant + "' AND root_id='" + rootId.replace("'", "") + "'").getStdout();
+        List<String[]> rows = new ArrayList<>();
+        for (String line : out.split("\\R")) {
+            if (!line.isBlank()) {
+                rows.add(line.split("\u001f", -1));
+            }
+        }
+        return rows;
     }
 
     private void snapshot() throws Exception {
@@ -388,10 +412,7 @@ class T35RestoreIT {
     @Test
     void restoreWithNewerBrokerMessages() throws Exception {
         assumeTrue("postgres".equals(AcceptanceDatabase.name()), "T35 snapshot/restore tooling is PostgreSQL only");
-        try (Connection c = DriverManager.getConnection(AcceptanceDatabase.jdbcUrl(), AcceptanceDatabase.username(),
-                AcceptanceDatabase.password()); Statement s = c.createStatement()) {
-            s.execute("CREATE DATABASE " + db);
-        }
+        psql("CREATE DATABASE " + db);
         startServer();
         deploy();
         defineInbound();
@@ -462,22 +483,12 @@ class T35RestoreIT {
         JsonNode open = http.call("GET", "/api/v1/ops/reconciliation?state=OPEN", null);
         assertThat(open.size()).as("no open reconciliation item: " + open).isZero();
         // observation only: the operation ledger must hold one SUCCEEDED operation per bill with the downstream's ref
-        try (Connection c = DriverManager.getConnection(jdbcUrl(), AcceptanceDatabase.username(), AcceptanceDatabase.password());
-             var ps = c.prepareStatement("SELECT operation_id, state, outcome FROM OPERATION_LEDGER WHERE tenant_id=? AND root_id=?")) {
-            for (Map.Entry<String, String> e : pidByBill.entrySet()) {
-                ps.setString(1, tenant);
-                ps.setString(2, e.getValue());
-                List<String[]> ops = new ArrayList<>();
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        ops.add(new String[] {rs.getString(1), rs.getString(2), rs.getString(3)});
-                    }
-                }
-                assertThat(ops).as("one ledger operation for " + e.getKey()).hasSize(1);
-                assertThat(ops.get(0)[1]).as(e.getKey() + " ledger state").isEqualTo("SUCCEEDED");
-                assertThat(ops.get(0)[2]).as(e.getKey() + " ledger outcome carries the downstream paymentRef")
-                        .contains(downstream.refByOp.get(ops.get(0)[0]));
-            }
+        for (Map.Entry<String, String> e : pidByBill.entrySet()) {
+            List<String[]> ops = ledgerRows(e.getValue());
+            assertThat(ops).as("one ledger operation for " + e.getKey()).hasSize(1);
+            assertThat(ops.get(0)[1]).as(e.getKey() + " ledger state").isEqualTo("SUCCEEDED");
+            assertThat(ops.get(0)[2]).as(e.getKey() + " ledger outcome carries the downstream paymentRef")
+                    .contains(downstream.refByOp.get(ops.get(0)[0]));
         }
     }
 }

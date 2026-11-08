@@ -36,7 +36,7 @@
   <properties>
     <!-- Same driver versions as simulators/pom.xml -->
     <version.ojdbc>23.8.0.25.04</version.ojdbc>
-    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <version.mssql-jdbc>12.10.2.jre11</version.mssql-jdbc>
     <results.dir>${project.basedir}/../results</results.dir>
 
     <e6.skip>true</e6.skip>

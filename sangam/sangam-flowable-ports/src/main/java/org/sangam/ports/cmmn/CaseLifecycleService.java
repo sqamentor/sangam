@@ -64,6 +64,7 @@ public class CaseLifecycleService {
             vars.putAll(extraVariables);
         }
         String defId = targetDefinitionIdOrNull != null ? targetDefinitionIdOrNull : h.getCaseDefinitionId();
+        requireSameTenant(defId, h.getTenantId(), historicCaseInstanceId);
         return EngineTx.execute(engine, cc -> {
             CaseInstance ci = engine.getCaseService().withCaseDefinition(defId).businessKey(h.getBusinessKey()).setVariables(vars).create();
             links.link(EngineTx.connection(), h.getTenantId(), "reactivation", null, "case", historicCaseInstanceId, "case",
@@ -92,6 +93,7 @@ public class CaseLifecycleService {
         if (target.equals(old.getCaseDefinitionId())) {
             throw new ProcessEngineException("case " + caseInstanceId + " already runs on " + target);
         }
+        requireSameTenant(target, old.getTenantId(), caseInstanceId);
         String targetId = target;
         Map<String, Object> vars = engine.getCaseService().getVariables(caseInstanceId);
         return EngineTx.execute(engine, cc -> {
@@ -101,5 +103,19 @@ public class CaseLifecycleService {
             engine.getCaseService().withCaseExecution(caseInstanceId).terminate();
             return ci.getId();
         });
+    }
+
+    /**
+     * The new case must run in the source case's tenant: a target definition of another tenant (or a shared one for a
+     * tenant case) would move the case's variables across the tenant boundary.
+     */
+    private void requireSameTenant(String definitionId, String tenantId, String caseId) {
+        CaseDefinition target = engine.getRepositoryService().createCaseDefinitionQuery().caseDefinitionId(definitionId).singleResult();
+        if (target == null) {
+            throw new ProcessEngineException("case definition " + definitionId + " not found");
+        }
+        if (!java.util.Objects.equals(target.getTenantId(), tenantId)) {
+            throw new ProcessEngineException("case " + caseId + " cannot move to definition " + definitionId + " of another tenant");
+        }
     }
 }

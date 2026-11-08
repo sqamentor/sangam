@@ -52,7 +52,9 @@ public final class ReadinessChecker {
         section(checks, "earlier-steps", out, earlier.stream().filter(Problem::isError).toList());
         section(checks, "profile-keys", out, profileKeys(profile, packs));
         section(checks, "placeholders", out, placeholders(profile, packs));
+        section(checks, "pack-placeholders", out, packPlaceholders(req.dmnOverrides(), enabled));
         section(checks, "connectors", out, connectorChecks(req, packs));
+        section(checks, "org-levels", out, orgLevelChecks(req, profile, enabled));
         section(checks, "keys", out, keys());
         section(checks, "dmn-overrides", out, dmn.validate(req.dmnOverrides(), enabled));
         section(checks, "languages", out, languageChecks(req, profile));
@@ -84,6 +86,21 @@ public final class ReadinessChecker {
                         + " but absent from the resolved profile; add it to profile.overrides"));
             }
         });
+        return out;
+    }
+
+    /** Unconfirmed pack DMN values: an error until the tenant overrides the decision with the confirmed table. */
+    static List<Problem> packPlaceholders(Map<String, String> dmnOverrides, List<SangamPack> enabled) {
+        List<Problem> out = new ArrayList<>();
+        for (SangamPack pack : enabled) {
+            for (var ph : pack.descriptor().placeholders()) {
+                if (dmnOverrides == null || !dmnOverrides.containsKey(ph.decision())) {
+                    out.add(Problem.error(StepId.READINESS, "PACK_PLACEHOLDER_UNCONFIRMED", pack.descriptor().id() + "/"
+                            + ph.decision(), ph.rule() + ": " + ph.reason()
+                            + "; supply the confirmed table in dmnOverrides[" + ph.decision() + "]"));
+                }
+            }
+        }
         return out;
     }
 
@@ -127,6 +144,13 @@ public final class ReadinessChecker {
             }
         });
         return out;
+    }
+
+    /** SL-14: the hierarchy onboarding will define, and every pack seat's level within it. */
+    private List<Problem> orgLevelChecks(OnboardingRequest req, ResolvedProfile profile, List<SangamPack> enabled) {
+        List<org.sangam.packs.spi.PackDescriptor> descriptors = enabled.stream().map(SangamPack::descriptor).toList();
+        String tenant = req.tenantId();
+        return OrgLevels.resolve(req, profile).check(descriptors, security.orgLevels(tenant), security.orgUnitsExist(tenant));
     }
 
     private List<Problem> keys() {

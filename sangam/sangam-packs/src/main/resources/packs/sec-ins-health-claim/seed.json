@@ -10,6 +10,7 @@
       "id": "TPA-DOCTOR",
       "role": "TPADOCTOR",
       "office": "TPA",
+      "level": "HEAD_OFFICE",
       "reportsTo": "TPA-HEAD",
       "name": {
         "en": "TPA medical officer",
@@ -20,6 +21,7 @@
       "id": "TPA-HEAD",
       "role": "TPAHEAD",
       "office": "TPA",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of health claims",
@@ -30,6 +32,7 @@
       "id": "CLAIMS-REVIEW-COMMITTEE",
       "role": "CRC",
       "office": "TPA",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Claims review committee",

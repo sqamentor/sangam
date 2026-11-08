@@ -21,7 +21,8 @@ import java.util.zip.ZipInputStream;
  * App definition bundle (FLOWABLE-INTO-OPERATON FC-41, Flowable app engine {@code .bar}/{@code .zip} with an {@code .app} model): one archive
  * with a manifest {@code sangam-app.json} (Flowable {@code *.app} JSON is accepted too) and the BPMN, CMMN, DMN,
  * form, event and channel models that ship together. The bundle is the R43 executable package unit: every resource is
- * hashed and the bundle hash is the SHA-256 over the sorted {@code name=hash} lines, which is what approval signs.
+ * hashed and the bundle hash is the SHA-256 over the {@code name=hash} lines of the manifest and then every resource in
+ * name order, which is what approval signs.
  *
  * <p>Reading is defensive: zip-slip names, nested archives, more than {@link #MAX_ENTRIES} entries and more than
  * {@link #MAX_BYTES} uncompressed bytes are rejected (zip-bomb guard).
@@ -109,10 +110,12 @@ public record AppBundle(Manifest manifest, Map<String, byte[]> resources, Map<St
     /** Builds a bundle from resources (directory deploys, packs). */
     public static AppBundle of(Map<String, byte[]> files) {
         Map<String, byte[]> resources = new TreeMap<>(files);
-        byte[] manifestBytes = resources.remove("sangam-app.json");
+        String manifestName = "sangam-app.json";
+        byte[] manifestBytes = resources.remove(manifestName);
         if (manifestBytes == null) {
             String appFile = resources.keySet().stream().filter(k -> k.toLowerCase(Locale.ROOT).endsWith(".app")).findFirst().orElse(null);
             if (appFile != null) {
+                manifestName = appFile;
                 manifestBytes = resources.remove(appFile);
             }
         }
@@ -124,7 +127,10 @@ public record AppBundle(Manifest manifest, Map<String, byte[]> resources, Map<St
             throw new IllegalArgumentException("app manifest needs a key of [A-Za-z0-9_.-]{1,128}");
         }
         Map<String, String> hashes = new TreeMap<>();
+        // R43: the approver signs this hash, so it covers the manifest too (usersAccess / groupsAccess decide who may
+        // use the app): an access change is a new bundle that needs a new approval, not a no-op redeploy
         StringBuilder lines = new StringBuilder();
+        lines.append(manifestName).append('=').append(Hashes.hex(Hashes.sha256(manifestBytes))).append('\n');
         for (Map.Entry<String, byte[]> r : resources.entrySet()) {
             String h = Hashes.hex(Hashes.sha256(r.getValue()));
             hashes.put(r.getKey(), h);

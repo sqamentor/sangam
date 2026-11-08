@@ -46,7 +46,7 @@ public class DecisionDelegate implements JavaDelegate {
         Object output;
         if (Vars.fieldBool(collect, ex, false)) {
             List<Map<String, Object>> rows = ev.all();
-            ex.setVariable(prefix + "Rows", Vars.toJson(rows));
+            Vars.setJsonDocument(ex, prefix + "Rows", rows);
             ex.setVariable(prefix + "RowCount", rows.size());
             output = rows.size();
         } else {

@@ -10,6 +10,7 @@
       "id": "DISPUTE-DESK",
       "role": "DISPUTE",
       "office": "DISPUTES",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Disputes desk",

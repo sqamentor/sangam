@@ -21,14 +21,23 @@ import java.util.UUID;
  *   <li><b>Mark</b> {@code DONE} fenced by {@code claim_epoch} and {@code state='CLAIMED'}; zero rows means this node lost
  *       its claim, and the publish may be duplicated (allowed).</li>
  *   <li><b>Sweep</b>: expired {@code CLAIMED} rows return to {@code PENDING}; consumers dedup on {@code event_id}.</li>
- *   <li><b>Failures</b> back off exponentially; after {@code maxAttempts} an ordered delivery is {@code PARKED} (it blocks
- *       later events of that root for that destination only) and an unordered one is {@code SKIPPED} with a gap record
+ *   <li><b>Failures</b> back off exponentially with full jitter ({@link #backoffMillis}); after {@code maxAttempts}
+ *       an ordered delivery is {@code PARKED} (it blocks later events of that root for that destination only) and an unordered one is {@code SKIPPED} with a gap record
  *       in {@code last_error}. Repairs ({@link #requeue}, {@link #skip}) are audited.</li>
  * </ol>
  * Throughput note: one claim cycle advances each ordered line by one event; later events of the line are claimed on
  * the following cycles.
  */
-public final class Relay {
+public final class Relay implements OutboxRepair {
+
+    /**
+     * Runs inside the repair transaction after a PARKED delivery was moved to {@code target} (PENDING or SKIPPED), so
+     * state a deployment keeps next to the delivery (e.g. its dead letter) commits or rolls back with the repair.
+     */
+    @FunctionalInterface
+    public interface RepairHook {
+        void repaired(Connection c, Outbox.OutboxEvent event, String destination, String target, String actor, String reason);
+    }
 
     public record Config(String node, int batchSize, Duration leaseTtl, int maxAttempts, Duration backoffBase, Duration backoffCap) {
         public static Config defaults(String node) {
@@ -48,12 +57,20 @@ public final class Relay {
     private final Config config;
     private final AuditChain audit;
 
+    private final RepairHook repairHook;
+
     public Relay(Dialect dialect, Transactions tx, Publisher publisher, Config config, AuditChain auditOrNull) {
+        this(dialect, tx, publisher, config, auditOrNull, null);
+    }
+
+    public Relay(Dialect dialect, Transactions tx, Publisher publisher, Config config, AuditChain auditOrNull,
+                 RepairHook repairHookOrNull) {
         this.dialect = dialect;
         this.tx = tx;
         this.publisher = publisher;
         this.config = config;
         this.audit = auditOrNull;
+        this.repairHook = repairHookOrNull;
     }
 
     /** Claim, publish, mark. */
@@ -129,8 +146,7 @@ public final class Relay {
         String lastError = exhausted && !cl.ordered()
                 ? "GAP: skipped after " + attempts + " attempts: " + error
                 : error;
-        long backoff = Math.min(config.backoffCap().toMillis(),
-                config.backoffBase().toMillis() * (1L << Math.min(attempts - 1, 20)));
+        long backoff = backoffMillis(config, attempts, java.util.concurrent.ThreadLocalRandom.current().nextDouble());
         return tx.inTransaction(c -> {
             if (exhausted && audit != null) {
                 RootSeq.lock(c, dialect, cl.event().tenantId(), cl.event().rootId());
@@ -147,6 +163,23 @@ public final class Relay {
         });
     }
 
+    /**
+     * Delay before the next attempt after {@code attempts} failures: exponential ({@code base * 2^(attempts-1)}, capped
+     * at {@code backoffCap}) with <b>full jitter</b> ({@code random in [0, ceiling]}; AWS Architecture Blog,
+     * "Exponential Backoff And Jitter"). Without jitter, every delivery that failed in the same outage retries in the
+     * same instant and hits the recovering destination as one synchronised wave.
+     *
+     * @param random a uniform value in [0, 1)
+     */
+    public static long backoffMillis(Config config, int attempts, double random) {
+        long base = config.backoffBase().toMillis();
+        long cap = config.backoffCap().toMillis();
+        int shift = Math.min(Math.max(attempts, 1) - 1, 20);
+        long ceiling = base <= 0 ? 0 : Math.min(cap, base > (Long.MAX_VALUE >> shift) ? cap : base << shift);
+        double r = random < 0 ? 0 : Math.min(random, 1.0);
+        return Math.min(ceiling, (long) Math.floor(r * (ceiling + 1)));
+    }
+
     /** Crash recovery: expired CLAIMED rows go back to PENDING (the event will be published again). */
     public int sweep() {
         return tx.inTransaction(c -> Jdbc.update(c,
@@ -155,11 +188,13 @@ public final class Relay {
     }
 
     /** Repair API: a PARKED delivery goes back to PENDING with a fresh attempt budget. Audited. */
+    @Override
     public boolean requeue(long outboxId, String destination, String actor, String reason) {
         return repair(outboxId, destination, "PENDING", "OUTBOX_REQUEUE", actor, reason);
     }
 
     /** Repair API: a PARKED delivery is SKIPPED with a reason, unblocking its line. Audited. */
+    @Override
     public boolean skip(long outboxId, String destination, String actor, String reason) {
         return repair(outboxId, destination, "SKIPPED", "OUTBOX_SKIP", actor, reason);
     }
@@ -177,6 +212,9 @@ public final class Relay {
                     target, "REPAIR " + auditType + " by " + actor + ": " + reason, outboxId, destination);
             if (n == 1 && audit != null) {
                 audit.append(c, ev.tenantId(), ev.rootId(), auditType, repairPayload(ev, destination, actor, reason));
+            }
+            if (n == 1 && repairHook != null) {
+                repairHook.repaired(c, ev, destination, target, actor, reason);
             }
             return n == 1;
         });

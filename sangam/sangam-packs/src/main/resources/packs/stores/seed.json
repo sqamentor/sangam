@@ -10,6 +10,7 @@
       "id": "VERIFY-BOARD",
       "role": "BOARD",
       "office": "STORES",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOO-S",
       "name": {
         "en": "Verification board",
@@ -20,6 +21,7 @@
       "id": "STORE-OFFICER",
       "role": "STOREOFFICER",
       "office": "STORES",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOO-S",
       "name": {
         "en": "Store officer",
@@ -30,6 +32,7 @@
       "id": "HOO-S",
       "role": "HOO",
       "office": "STORES",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOD-S",
       "name": {
         "en": "Head of office",
@@ -40,6 +43,7 @@
       "id": "HOD-S",
       "role": "HOD",
       "office": "STORES",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of department",

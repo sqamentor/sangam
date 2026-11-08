@@ -139,6 +139,10 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
                 Map.entry(Permissions.GROUP_CITIZEN, List.of("CITIZEN")));
         for (String g : ctx.groups()) {
             roles.addAll(byGroup.getOrDefault(g, List.of()));
+            if (Permissions.ENGINE_REST_GROUPS.contains(g)) {
+                // the UI engine (/engine-rest) screens are guarded by PLATFORM_OPERATOR: same groups as the server gate
+                roles.add("PLATFORM_OPERATOR");
+            }
         }
         if (perms.contains(Permissions.ANALYTICS_READ) || perms.contains("*")) {
             roles.add("ANALYST");

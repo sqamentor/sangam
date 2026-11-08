@@ -10,6 +10,7 @@
       "id": "CONTROLLER",
       "role": "COE",
       "office": "EXAMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Controller of examinations",
@@ -20,6 +21,7 @@
       "id": "EVALUATOR",
       "role": "EVALUATOR",
       "office": "EXAMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CONTROLLER",
       "name": {
         "en": "Evaluator",
@@ -30,6 +32,7 @@
       "id": "EVALUATOR-2",
       "role": "EVALUATOR",
       "office": "EXAMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CONTROLLER",
       "name": {
         "en": "Second evaluator",
@@ -40,6 +43,7 @@
       "id": "RESULT-COMM-1",
       "role": "COMMITTEE",
       "office": "EXAMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Result committee member 1",
@@ -50,6 +54,7 @@
       "id": "RESULT-COMM-2",
       "role": "COMMITTEE",
       "office": "EXAMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Result committee member 2",
@@ -60,6 +65,7 @@
       "id": "RESULT-COMM-3",
       "role": "COMMITTEE",
       "office": "EXAMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Result committee member 3",

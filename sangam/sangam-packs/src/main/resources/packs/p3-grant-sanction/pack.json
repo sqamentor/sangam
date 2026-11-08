@@ -144,7 +144,18 @@
         "initiator": "p3.deo-a1",
         "instalmentInterval": "PT1S"
       },
-      "expectState": "CLOSED"
+      "expectState": "CLOSED",
+      "run": {
+        "expect": {
+          "tasks": [
+            "sc_scrutiny",
+            "sn_sanction"
+          ],
+          "audit": [
+            "CASE_CLOSED"
+          ]
+        }
+      }
     },
     {
       "id": "J-P3-E01",
@@ -172,7 +183,17 @@
         "initiator": "p3.deo-a1",
         "instalmentInterval": "PT1S"
       },
-      "expectState": "REJECTED"
+      "expectState": "REJECTED",
+      "run": {
+        "expect": {
+          "audit": [
+            "CASE_REJECTED"
+          ],
+          "notAudit": [
+            "CASE_IN_SANCTION"
+          ]
+        }
+      }
     }
   ],
   "dependsOn": [

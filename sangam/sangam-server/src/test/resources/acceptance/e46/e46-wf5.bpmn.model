@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-5 (negative): WF-2 plus one element outside C-1..C-15 (complexGateway CX_PLANTED) and one unknown
+     extension (namespace urn:acme:unknown on CHECK). The unsupported-element report must name both (s2.5); a run that
+     loses either without reporting it is FAIL (EXTENSION_SILENTLY_DROPPED). -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             xmlns:acme="urn:acme:unknown"
+             id="E46-WF5-DEFS" targetNamespace="urn:oneifms:e46:wf5">
+  <process id="E46-WF5" name="Treasury pass with planted unsupported items" isExecutable="true">
+    <startEvent id="start"/>
+    <userTask id="AUDIT" name="Audit" oneifms:capability="bill.check"/>
+    <boundaryEvent id="REMIND" attachedToRef="AUDIT" cancelActivity="false">
+      <timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT4H</timeDuration></timerEventDefinition>
+    </boundaryEvent>
+    <complexGateway id="CX_PLANTED" name="Planted complex gateway"/>
+    <endEvent id="REMINDED"/>
+    <userTask id="CHECK" name="Check" oneifms:capability="bill.check" acme:routingHint="fast-lane">
+      <extensionElements>
+        <acme:unknownThing level="3"/>
+      </extensionElements>
+    </userTask>
+    <exclusiveGateway id="gwBand" default="fHigh"/>
+    <userTask id="APPROVE" name="Approve" oneifms:capability="bill.submit"/>
+    <userTask id="APPROVE_SENIOR" name="Approve senior" oneifms:capability="bill.submit"/>
+    <endEvent id="END_APPROVED"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="AUDIT"/>
+    <sequenceFlow id="f2" sourceRef="AUDIT" targetRef="CHECK"/>
+    <sequenceFlow id="f3" sourceRef="REMIND" targetRef="CX_PLANTED"/>
+    <sequenceFlow id="f4" sourceRef="CX_PLANTED" targetRef="REMINDED"/>
+    <sequenceFlow id="f5" sourceRef="CHECK" targetRef="gwBand"/>
+    <sequenceFlow id="fLow" sourceRef="gwBand" targetRef="APPROVE">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${amount &lt;= 100000}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fHigh" sourceRef="gwBand" targetRef="APPROVE_SENIOR"/>
+    <sequenceFlow id="f6" sourceRef="APPROVE" targetRef="END_APPROVED"/>
+    <sequenceFlow id="f7" sourceRef="APPROVE_SENIOR" targetRef="END_APPROVED"/>
+  </process>
+</definitions>

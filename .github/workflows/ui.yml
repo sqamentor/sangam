@@ -52,7 +52,8 @@ jobs:
         run: npm run --if-present typecheck
       - name: Unit tests
         if: steps.detect.outputs.present == 'true'
-        run: npm run --if-present test -- --run
+        # The "test" script is already "vitest --run"; vitest 4 rejects a repeated --run flag.
+        run: npm run --if-present test
         env:
           CI: "true"
       - name: Build

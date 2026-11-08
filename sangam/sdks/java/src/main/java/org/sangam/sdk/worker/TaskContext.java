@@ -29,6 +29,7 @@ public final class TaskContext {
     volatile boolean cancelRequested;
     volatile boolean leaseLost;
     volatile boolean shuttingDown;
+    volatile String outcomeReference;
 
     TaskContext(ExternalWork work, String workerId, SangamClient client, ObjectMapper json, SangamLogger logger) {
         this.work = work;
@@ -110,6 +111,17 @@ public final class TaskContext {
     }
 
     /** Logger whose lines always carry workerId, workId, topic, operationId, attemptId, lockVersion, businessKey. */
+    /**
+     * Downstream reference of this work's effect (e.g. a payment reference), sent as {@code outcome.reference} on
+     * complete and recorded in the operation ledger (SL-16).
+     */
+    public void outcomeReference(String reference) { this.outcomeReference = reference; }
+
+    public String outcomeReference() { return outcomeReference; }
+
+    /** The server-recorded ledger entry of {@link #operationId()}; null from servers that do not send it. */
+    public org.sangam.sdk.model.WorkOperation operation() { return work.operation(); }
+
     public SangamLogger logger() { return logger; }
 
     public Map<String, Object> logFields() { return logFields; }

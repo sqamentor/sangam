@@ -24,6 +24,10 @@
       "path": "packs/ifms-scheme-appraisal/ifms-scheme-approval.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/ifms-scheme-appraisal/ifms-scheme-powers.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/ifms-scheme-appraisal/forms/proposal.form.json"
     },
@@ -88,5 +92,12 @@
     "sangam-core-committee",
     "sangam-core-rejection",
     "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-scheme-powers",
+      "rule": "CAA SCHEME up to 1000000000",
+      "reason": "the corpus verifies the appraisal forum by outlay (IFC-080) but not the approval thresholds (Secretary / Minister / FM / Cabinet are not modelled, IFMS-CENTRAL gap 7); confirm from DFPR App. III and deploy it as a tenant DMN override"
+    }
   ]
 }

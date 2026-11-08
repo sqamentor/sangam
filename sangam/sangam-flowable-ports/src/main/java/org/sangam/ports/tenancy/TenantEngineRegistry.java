@@ -82,7 +82,11 @@ public class TenantEngineRegistry implements AutoCloseable {
         cfg.setJobExecutor(sharedJobExecutor);
         cfg.setJobExecutorActivate(false);
         ProcessEngine engine = cfg.buildProcessEngine();
-        sharedJobExecutor.registerProcessEngine((ProcessEngineImpl) engine);
+        // the engine registers itself with its job executor while it is built; registering it a second time would make
+        // the shared acquisition visit it twice and leave a stale (closed) entry behind after unregister
+        if (!sharedJobExecutor.getProcessEngines().contains(engine)) {
+            sharedJobExecutor.registerProcessEngine((ProcessEngineImpl) engine);
+        }
         if (!sharedJobExecutor.isActive()) {
             sharedJobExecutor.start();
         }

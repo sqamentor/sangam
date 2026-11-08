@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { http, request } from '../api/client';
 import { announce, useAction, useAsync } from '../lib/hooks';
 import { DataTable, Dialog, Empty, Notice, ProblemAlert, Section, SelectField, TextField, Checkbox } from '../components/ui';
-import { cell, type Row } from './engine';
+import { cell, engineDate, type Row } from './engine';
 
 const E = '/engine-rest';
 const CRITERIA = ['assignee', 'assigneeLike', 'owner', 'candidateGroup', 'candidateUser', 'involvedUser', 'unassigned', 'name', 'nameLike', 'description', 'descriptionLike', 'priority', 'minPriority', 'maxPriority', 'dueBefore', 'dueAfter', 'followUpBefore', 'followUpAfter', 'createdBefore', 'createdAfter', 'processDefinitionKey', 'processInstanceBusinessKey', 'taskDefinitionKey', 'tenantIdIn'];
@@ -59,7 +59,10 @@ function FilterEditor({ filter, onClose, onDone }: { filter: FilterRow; onClose:
   const [refresh, setRefresh] = useState(Boolean(p.refresh ?? true));
   const [crit, setCrit] = useState<Crit[]>(Object.entries(filter.query ?? {}).map(([key, v]) => ({ key, value: Array.isArray(v) ? v.join(',') : String(v) })));
   const [vars, setVars] = useState(((p.variables ?? []) as { name: string; label: string }[]).map((x) => `${x.name}:${x.label}`).join(', '));
-  const [everyone, setEveryone] = useState(false);
+  // "Visible to everyone" is the filter's GLOBAL (type 0) READ authorization: show it as it is, create it once, revoke it on untick.
+  const global = useAsync(() => http.get<Row[]>(`${E}/authorization`, { type: 0, resourceType: 5, resourceId: filter.id }), [filter.id], !!filter.id);
+  const [everyoneEdit, setEveryone] = useState<boolean | null>(null);
+  const everyone = everyoneEdit ?? (global.data?.length ?? 0) > 0;
   const act = useAction();
   const save = () =>
     void act
@@ -74,7 +77,9 @@ function FilterEditor({ filter, onClose, onDone }: { filter: FilterRow; onClose:
         let id = filter.id;
         if (id) await http.put(`${E}/filter/${encodeURIComponent(id)}`, body, k);
         else id = (await http.post<{ id: string }>(`${E}/filter/create`, body, k)).id;
-        if (everyone) await http.post(`${E}/authorization/create`, { type: 0, resourceType: 5, resourceId: id, userId: '*', permissions: ['READ'] });
+        const existing = global.data ?? [];
+        if (everyone && existing.length === 0) await http.post(`${E}/authorization/create`, { type: 0, resourceType: 5, resourceId: id, userId: '*', permissions: ['READ'] });
+        if (!everyone) for (const a of existing) await http.del(`${E}/authorization/${encodeURIComponent(String(a.id))}`);
         return true;
       })
       .then((ok) => ok && onDone());
@@ -88,7 +93,7 @@ function FilterEditor({ filter, onClose, onDone }: { filter: FilterRow; onClose:
       <CriteriaRows rows={crit} onChange={setCrit} />
       <TextField label={t('mod.op3.cardVariables')} hint={t('mod.op3.cardVariablesHint')} value={vars} onChange={setVars} />
       <Checkbox label={t('mod.op3.everyone')} checked={everyone} onChange={setEveryone} />
-      <ProblemAlert error={act.error} />
+      <ProblemAlert error={act.error ?? global.error} />
     </Dialog>
   );
 }
@@ -187,7 +192,7 @@ export function TaskDates({ taskId }: { taskId: string }) {
   const [due, setDue] = useState('');
   const [follow, setFollow] = useState('');
   const act = useAction();
-  const iso = (v: string) => (v ? new Date(v).toISOString().replace('Z', '+0000') : undefined);
+  const iso = (v: string) => (v ? engineDate(v) : undefined);
   return (
     <Section title={t('mod.op3.dates')}>
       <ProblemAlert error={task.error ?? act.error} />

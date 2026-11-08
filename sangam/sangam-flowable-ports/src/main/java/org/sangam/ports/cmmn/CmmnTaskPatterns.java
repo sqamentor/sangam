@@ -107,13 +107,24 @@ public final class CmmnTaskPatterns {
     }
 
     private static void ensureVariableMapping(Document doc, Element pt) {
+        // CMMN element order: documentation*, extensionElements?, then the task's own children. Only the process task's
+        // own extensionElements count (not one of a nested defaultControl).
         Element ext = null;
-        NodeList kids = pt.getElementsByTagNameNS(CMMN_NS, "extensionElements");
-        if (kids.getLength() > 0) {
-            ext = (Element) kids.item(0);
-        } else {
+        org.w3c.dom.Node afterDocs = pt.getFirstChild();
+        for (org.w3c.dom.Node n = pt.getFirstChild(); n != null; n = n.getNextSibling()) {
+            if (n instanceof Element e && CMMN_NS.equals(e.getNamespaceURI())) {
+                if ("extensionElements".equals(e.getLocalName())) {
+                    ext = e;
+                    break;
+                }
+                if ("documentation".equals(e.getLocalName())) {
+                    afterDocs = e.getNextSibling();
+                }
+            }
+        }
+        if (ext == null) {
             ext = doc.createElementNS(CMMN_NS, "cmmn:extensionElements");
-            pt.insertBefore(ext, pt.getFirstChild());
+            pt.insertBefore(ext, afterDocs);
         }
         if (ext.getElementsByTagNameNS(OPERATON_NS, "in").getLength() == 0) {
             Element in = doc.createElementNS(OPERATON_NS, "operaton:in");

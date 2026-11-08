@@ -27,21 +27,33 @@ public final class AcceptanceDatabase {
     private AcceptanceDatabase() {
     }
 
-    /** {@code postgres}, {@code oracle}, {@code sqlserver} or {@code mysql}; also the Spring profile name. */
+    /**
+     * {@code postgres}, {@code oracle}, {@code sqlserver} or {@code mysql}; also the Spring profile name. The lane
+     * {@code sqlserver2025} is the SQL Server dialect and profile on the SQL Server 2025 image (see {@link #lane()}).
+     */
     public static String name() {
+        String lane = lane();
+        return "sqlserver2025".equals(lane) ? "sqlserver" : lane;
+    }
+
+    /** The raw lane: {@link #name()} values plus {@code sqlserver2025}; selects the container image. */
+    public static String lane() {
         String v = System.getProperty("sangam.db");
         if (v == null || v.isBlank()) {
             v = System.getenv("SANGAM_IT_DB");
         }
         if (v == null || v.isBlank()) {
-            throw new IllegalStateException("acceptance tests need -Dsangam.db=<postgres|oracle|sqlserver|mysql>");
+            throw new IllegalStateException("acceptance tests need -Dsangam.db=<postgres|oracle|sqlserver|sqlserver2025|mysql>");
         }
         return v.trim().toLowerCase(Locale.ROOT);
     }
 
     public static synchronized JdbcDatabaseContainer<?> container() {
         if (container == null) {
-            container = create(name());
+            container = create(lane());
+            // a loaded shared machine can take minutes to boot a database; the per-image 60 s default wait is not
+            // a product signal (PostgreSQL timed out at "database system is ready" under load)
+            container.withStartupTimeout(Duration.ofMinutes(5));
             container.start();
             if ("sqlserver".equals(name())) {
                 createSqlServerDatabase(container);
@@ -79,6 +91,9 @@ public final class AcceptanceDatabase {
                     .withUsername("sangam").withPassword("sangam").withStartupTimeout(Duration.ofMinutes(5));
             case "sqlserver" -> new MSSQLServerContainer<>(
                     DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest")).acceptLicense();
+            case "sqlserver2025" -> new MSSQLServerContainer<>(
+                    DockerImageName.parse("mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04")
+                            .asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server")).acceptLicense();
             case "mysql" -> new MariaDbDriverMySqlContainer()
                     .withDatabaseName("sangam").withUsername("sangam").withPassword("sangam")
                     .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_bin",

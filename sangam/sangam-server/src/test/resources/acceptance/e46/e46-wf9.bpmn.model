@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-9: committee ANY and QUORUM variants of WF-7 (CP-8, CP-9). K is a variable from the settings pack,
+     never a literal in the model; the policy (veto, impossibility exit) is OneIFMS's, the engine only counts
+     responses (C-11). Synthetic. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             id="E46-WF9-DEFS" targetNamespace="urn:oneifms:e46:wf9">
+  <process id="E46-WF9" name="Committee ANY and QUORUM" isExecutable="true">
+    <property id="members" name="members"/>
+    <startEvent id="start"/>
+    <exclusiveGateway id="gwPolicy" name="Policy"/>
+    <userTask id="ANY_ONE" name="Committee (any one)" oneifms:policy="DEMO_POLICY_ANY_ONE" oneifms:vetoOnReject="false">
+      <multiInstanceLoopCharacteristics isSequential="false">
+        <loopDataInputRef>members</loopDataInputRef>
+        <inputDataItem id="memberAny" name="member"/>
+        <completionCondition xsi:type="tFormalExpression" language="juel">${nrOfCompletedInstances &gt;= 1}</completionCondition>
+      </multiInstanceLoopCharacteristics>
+    </userTask>
+    <userTask id="QUORUM" name="Committee (K of N)" oneifms:policy="DEMO_POLICY_QUORUM_K_OF_N" oneifms:kRef="quorumK">
+      <multiInstanceLoopCharacteristics isSequential="false">
+        <loopDataInputRef>members</loopDataInputRef>
+        <inputDataItem id="memberQ" name="member"/>
+        <completionCondition xsi:type="tFormalExpression" language="juel">${nrOfCompletedInstances &gt;= quorumK}</completionCondition>
+      </multiInstanceLoopCharacteristics>
+    </userTask>
+    <userTask id="APPROVE" name="Approve" oneifms:capability="bill.submit"/>
+    <endEvent id="END_APPROVED"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="gwPolicy"/>
+    <sequenceFlow id="fAny" sourceRef="gwPolicy" targetRef="ANY_ONE">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${policy == 'ANY'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fQuorum" sourceRef="gwPolicy" targetRef="QUORUM">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${policy == 'QUORUM'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f2" sourceRef="ANY_ONE" targetRef="APPROVE"/>
+    <sequenceFlow id="f3" sourceRef="QUORUM" targetRef="APPROVE"/>
+    <sequenceFlow id="f4" sourceRef="APPROVE" targetRef="END_APPROVED"/>
+  </process>
+</definitions>

@@ -92,5 +92,11 @@ public abstract class AbstractAcceptanceIT {
         r.add("sangam.security.bootstrap.enabled", () -> "true");
         r.add("sangam.security.bootstrap.admin-groups", () -> "sangam-admin");
         r.add("sangam.integration.simulators.enabled", () -> "true");
+        // SL-43: the suite drives load the production defaults would throttle; quotas are tested per tenant by
+        // TenantQuotaIT through tenant overrides, read without caching so a test's override applies at once
+        for (org.sangam.core.quota.QuotaLimit l : org.sangam.core.quota.QuotaLimit.values()) {
+            r.add("sangam.quotas.defaults." + l.key(), () -> "-1");
+        }
+        r.add("sangam.quotas.override-ttl", () -> "0s");
     }
 }

@@ -39,11 +39,32 @@ def at_date(s, id, clk, date_var, lead='PT0S'):
 
 def powers(pk, key, rows, doc='K6 / IX.5 rule 3. SYNTHETIC limits: replace with the board-approved delegation of '
                               'financial powers of the regulated entity.'):
-    pk.dmn(key, 'Delegated powers by role', 'FIRST',
-           [('Seat role', 'seatRole', 'string'), ('Case type', 'caseType', 'string')],
-           [('powerLimit', 'Power limit (INR)', 'double'), ('allowed', 'Allowed', 'boolean')],
-           [([q(r), '-'], [str(lim), 'true'], n) for r, lim, n in rows] + [(['-', '-'], ['0', 'false'],
-                                                                             'no delegated power')], doc=doc)
+    """rows: (role, limit, note) or (role, limit, note, levelsTest). A levels test (for example '> 1') adds the input
+    authLevels (the number of authorisation levels the case needs), so a role can hold a concurrence power at the first
+    of several levels that differs from its power to approve alone. Rows without a test match any level count.
+    A role may also be a (role, case type) pair, for a table shared by several case types. A limit of None is a power
+    the rule confers without a money ceiling: the table then gains the output noMonetaryLimit (true on that row only,
+    false on every other row, so a ceiling applies unless a row says otherwise)."""
+    levels = any(len(r) > 3 for r in rows)
+    unlimited = any(r[1] is None for r in rows)
+    ins = [('Seat role', 'seatRole', 'string'), ('Case type', 'caseType', 'string')]
+    if levels:
+        ins.append(('Authorisation levels', 'authLevels', 'integer'))
+
+    def tests(r):
+        role, case = r[0] if isinstance(r[0], tuple) else (r[0], None)
+        t = [q(role), q(case) if case else '-']
+        return t + [r[3] if len(r) > 3 else '-'] if levels else t
+
+    def outs(limit, allowed):
+        o = ['null' if limit is None else str(limit), allowed]
+        return o + (['true' if limit is None else 'false'] if unlimited else [])
+    out_cols = [('powerLimit', 'Power limit (INR)', 'double'), ('allowed', 'Allowed', 'boolean')]
+    if unlimited:
+        out_cols.append(('noMonetaryLimit', 'No monetary limit', 'boolean'))
+    pk.dmn(key, 'Delegated powers by role', 'FIRST', ins, out_cols,
+           [(tests(r), outs(r[1], 'true'), r[2]) for r in rows]
+           + [(['-'] * len(ins), outs(0, 'false'), 'no delegated power')], doc=doc)
 
 
 def authority(pk, key, name, rows, var='amount', label='Amount (INR)', typ='double', doc=''):

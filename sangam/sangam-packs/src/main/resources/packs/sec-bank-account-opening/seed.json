@@ -10,6 +10,7 @@
       "id": "OPS-MAKER",
       "role": "OPSMAKER",
       "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
       "reportsTo": "OPS-CHECKER",
       "name": {
         "en": "Operations maker",
@@ -20,6 +21,7 @@
       "id": "OPS-CHECKER",
       "role": "OPSCHECKER",
       "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BRANCH-HEAD",
       "name": {
         "en": "Operations checker",
@@ -30,6 +32,7 @@
       "id": "VCIP-OFFICIAL",
       "role": "VCIP",
       "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BRANCH-HEAD",
       "name": {
         "en": "V-CIP official",
@@ -40,6 +43,7 @@
       "id": "AML-COMPLIANCE",
       "role": "COMPLIANCE",
       "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "AML compliance officer",
@@ -50,6 +54,7 @@
       "id": "BRANCH-HEAD",
       "role": "BRANCHHEAD",
       "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Branch head",

@@ -10,6 +10,7 @@
       "id": "TREATING-DOCTOR",
       "role": "DOCTOR",
       "office": "HIU",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PRIVACY-OFFICER",
       "name": {
         "en": "Treating doctor",
@@ -20,6 +21,7 @@
       "id": "PRIVACY-OFFICER",
       "role": "PRIVACY",
       "office": "HIU",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Privacy officer",

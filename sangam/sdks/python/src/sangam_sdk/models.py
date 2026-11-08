@@ -87,6 +87,10 @@ class ExternalWork(_Model):
     priority: Optional[int] = None
     error_message: Optional[str] = None
     effect: Optional[str] = None
+    #: WorkOperation (SL-16): server-recorded ledger entry of ``operation_id`` as sent (camelCase keys: ``state``,
+    #: ``attempts``, ``capabilityClass``, ``mayDispatch``, ``storedOutcome``). ``mayDispatch`` False with state
+    #: SUCCEEDED: complete from ``storedOutcome`` ({output, providerRef, duplicate}) without calling the downstream.
+    operation: Optional[dict[str, Any]] = None
     _times = ("lock_expires_at",)
 
 
@@ -106,7 +110,7 @@ ExtendLockResult = LockState  # pre-contract name
 
 @dataclass
 class OutcomeUnknownResult(_Model):
-    """The work moved to UNKNOWN_OUTCOME and a reconciliation item was opened (202)."""
+    """The work and its ledger operation (``operation_id``, always set) moved to UNKNOWN_OUTCOME (202)."""
 
     work_id: Optional[str] = None
     operation_id: Optional[str] = None

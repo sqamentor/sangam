@@ -186,7 +186,7 @@ def p1():
     pk.accept('AC-03', 'Payment success with lost response reconciles without a duplicate', ['T02', 'T27', 'J-P1-E04'],
               'sim_pfms_payment = UNKNOWN_THEN_COMPLETED', 'the payment response is lost',
               'UNKNOWN_OUTCOME item; no automatic retry (class c); operator confirms success with the UTR',
-              dict(bill, sim_pfms_payment='UNKNOWN'), 'UNKNOWN_OUTCOME')
+              dict(bill, sim_pfms_payment='UNKNOWN'))  # the UNKNOWN_OUTCOME is the item's, not caseState (SL-32)
     pk.accept('J-P1-E11', 'Budget insufficient', ['T19'], 'sim_ifms_budget = available=310000', 'submit',
               'returned to the initiator with the shortfall', dict(bill, sim_ifms_budget='available=310000'), None)
     pk.accept('J-P1-E09', 'Joint approval for high-value bills', ['T16', 'T17'], 'amount above jointApprovalThreshold',

@@ -14,6 +14,7 @@
       "id": "GRO-1",
       "role": "GRO",
       "office": "MIN-G",
+      "level": "HEAD_OFFICE",
       "reportsTo": "NODAL-GRV",
       "name": {
         "en": "Grievance officer",
@@ -24,6 +25,7 @@
       "id": "GRO-F",
       "role": "GRO",
       "office": "FIELD-G",
+      "level": "REGIONAL_OFFICE",
       "reportsTo": "GRO-1",
       "name": {
         "en": "Grievance officer (field)",
@@ -34,6 +36,7 @@
       "id": "GRO-PEN",
       "role": "GRO-PENSION",
       "office": "MIN-G",
+      "level": "HEAD_OFFICE",
       "reportsTo": "NODAL-GRV",
       "name": {
         "en": "Pension grievance officer",
@@ -44,6 +47,7 @@
       "id": "CVO-1",
       "role": "CVO",
       "office": "MIN-G",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECY-G",
       "name": {
         "en": "Chief vigilance officer",
@@ -54,6 +58,7 @@
       "id": "NODAL-GRV",
       "role": "NODAL",
       "office": "MIN-G",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECY-G",
       "name": {
         "en": "Nodal grievance officer",
@@ -64,6 +69,7 @@
       "id": "APPELLATE-GRO",
       "role": "APPELLATE",
       "office": "MIN-G",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECY-G",
       "name": {
         "en": "Appellate authority (grievances)",
@@ -74,6 +80,7 @@
       "id": "SECY-G",
       "role": "SECRETARY",
       "office": "MIN-G",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Secretary",
         "hi": "सचिव"

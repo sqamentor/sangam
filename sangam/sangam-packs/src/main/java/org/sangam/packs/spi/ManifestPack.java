@@ -71,7 +71,8 @@ public final class ManifestPack implements SangamPack {
                         }
                         for (JsonNode st : sd.path("seats")) {
                             seats.add(new SeedSeat(st.path("id").asText(), st.path("role").asText(),
-                                    st.path("office").asText(), st.path("reportsTo").asText(null),
+                                    st.path("office").asText(), st.path("level").asText(null),
+                                    st.path("reportsTo").asText(null),
                                     texts(st.path("name"))));
                         }
                     }
@@ -93,11 +94,20 @@ public final class ManifestPack implements SangamPack {
             PackDescriptor d = new PackDescriptor(m.path("id").asText(), m.path("version").asText(),
                     texts(m.path("name")), m.path("domain").asText(""), m.path("description").asText(""),
                     strings(m.path("mainProcesses")), res, roles, seats, conns, strings(m.path("covers")), acc,
-                    strings(m.path("dependsOn")), overrides(m.path("tenantOverrides")));
+                    strings(m.path("dependsOn")), overrides(m.path("tenantOverrides")), placeholders(m.path("placeholders")));
             return new ManifestPack(d, loader);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static List<PackDescriptor.Placeholder> placeholders(JsonNode n) {
+        List<PackDescriptor.Placeholder> out = new ArrayList<>();
+        for (JsonNode p : n) {
+            out.add(new PackDescriptor.Placeholder(p.path("decision").asText(), p.path("rule").asText(""),
+                    p.path("reason").asText("")));
+        }
+        return out;
     }
 
     private static Map<String, List<String>> overrides(JsonNode n) {

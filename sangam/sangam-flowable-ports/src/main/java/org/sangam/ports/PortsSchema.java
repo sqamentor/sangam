@@ -56,6 +56,15 @@ public final class PortsSchema {
               created_at  {ts} NOT NULL,
               PRIMARY KEY (tenant_id, event_key, version)
             )""",
+            // version high-water mark per (tenant, kind, key): numbers are never reused, also after delete-all
+            """
+            CREATE TABLE EVT_DEFINITION_SEQ (
+              tenant_id    {str64} NOT NULL,
+              def_kind     {str64} NOT NULL,
+              def_key      {str} NOT NULL,
+              last_version {int} NOT NULL,
+              PRIMARY KEY (tenant_id, def_kind, def_key)
+            )""",
             """
             CREATE TABLE EVT_LOG (
               id              {identity} PRIMARY KEY,

@@ -554,8 +554,10 @@ def bank_payment():
     lg = s.xgw('py_limGw', 'Rail allowed?')
     s.flow(lim, lg)
     s.flow(lg, rv, '!railAllowed', 'rail not permitted for this amount: correct')
+    a1 = s.setv('py_auth1', 'Checker routing', values='routingDecisionKey=sec-bank-pay-checker')
     chk = core(s, 'py_checker', 'Checker (core sanction)', 'sanction')
-    s.flow(lg, chk, None, 'allowed', default=True)
+    s.flow(lg, a1, None, 'allowed', default=True)
+    s.flow(a1, chk)
     rej = rejection(p, s, 'py_rj')
     lvl = s.xgw('py_levelGw', 'Second authoriser?')
     outcome(s, 'py_chkGw', 'sanctionOutcome', {'SANCTIONED': lvl, 'RETURNED': rv}, rej)
@@ -569,7 +571,7 @@ def bank_payment():
     outcome(s, 'py_authGw', 'sanctionOutcome', {'SANCTIONED': ex, 'RETURNED': rv}, rej)
     s.flow(auth, 'py_authGw')
     inv = s.boundary('py_inv', ex, 'Changed after approval', error='APPROVAL_INVALIDATED')
-    s.flow(inv, chk)
+    s.flow(inv, a1)  # a changed payload is checked again from the checker level
     cl = core(s, 'py_close', 'Advice and closure (core)', 'closure')
     fail = s.notify('py_failed', 'Payment rejected by the rail', 'payment-failed', 'inapp', 'initiatorSeat')
     outcome(s, 'py_exGw', 'executionOutcome', {'DONE': cl}, fail)
@@ -583,19 +585,40 @@ def bank_payment():
     r3 = ret.notify('py_retNotify', 'Tell the maker', 'payment-returned', 'inapp,email', 'initiatorSeat')
     ret.seq(r1, r2, r3, ret.end('py_retEnd', 'Credited back'))
     s.side_exits('py')
+    # SL-50, owner decision 2026-11-08 ("हाँ, रखो"): above the checker's own band the checker only concurs, and the
+    # concurrence is capped at the band of the authoriser that covers this payment. One list feeds the limits table
+    # (authBandMax), the authoriser routing and the powers table, so the three cannot drift apart.
+    checker_alone = 2500000
+    auth_bands = [('PAYAUTH', 100000000), ('TREASURYHEAD', 10000000000)]  # (role, band ceiling), ascending
+    lows = [checker_alone] + [hi for _, hi in auth_bands[:-1]]
     pk.dmn('sec-bank-pay-limits', 'Rail limits and authorisation levels (SYNTHETIC bands)', 'FIRST',
            [('Rail', 'paymentRail', 'string'), ('Amount', 'amount', 'double')],
-           [('railAllowed', 'Rail allowed', 'boolean'), ('authLevels', 'Authorisation levels', 'integer')],
-           [([q('RTGS'), '< 200000'], ['false', '1'], 'RTGS minimum 2 lakh'),
-            ([q('IMPS'), '> 500000'], ['false', '1'], 'IMPS per-transaction cap 5 lakh'),
-            (['-', '> 2500000'], ['true', '2'], 'above 25 lakh: checker and authoriser'),
-            (['-', '-'], ['true', '1'], '')])
+           [('railAllowed', 'Rail allowed', 'boolean'), ('authLevels', 'Authorisation levels', 'integer'),
+            ('authBandMax', 'Ceiling of the authoriser band covering the amount (INR)', 'double')],
+           [([q('RTGS'), '< 200000'], ['false', '1', '0'], 'RTGS minimum 2 lakh'),
+            ([q('IMPS'), '> 500000'], ['false', '1', '0'], 'IMPS per-transaction cap 5 lakh'),
+            (['-', '> %d' % auth_bands[-1][1]], ['true', '2', '0'],
+             'above every authoriser band: no concurrence possible (SL-50)')]
+           + [(['-', '> %d' % lo], ['true', '2', str(hi)], 'checker and authoriser; band of %s' % role)
+              for (role, hi), lo in reversed(list(zip(auth_bands, lows)))]
+           + [(['-', '-'], ['true', '1', '0'], 'checker alone')])
     authority(pk, 'sec-bank-pay-checker', 'Payment checker', [('-', 'PAYCHECKER', '')])
-    authority(pk, 'sec-bank-pay-authoriser', 'Payment authoriser', [('<= 100000000', 'PAYAUTH', ''),
-                                                                     ('-', 'TREASURYHEAD', '')])
-    powers(pk, 'sec-bank-pay-powers', [('PAYCHECKER', 2500000, 'checker up to 25 lakh alone'),
-                                       ('PAYAUTH', 100000000, ''), ('TREASURYHEAD', 10000000000, '')],
-           doc='K6: checker power covers single-level payments; above it a second authoriser approves.')
+    authority(pk, 'sec-bank-pay-authoriser', 'Payment authoriser',
+              [('<= %d' % hi, role, '') for role, hi in auth_bands[:-1]] + [('-', auth_bands[-1][0], '')])
+    powers(pk, 'sec-bank-pay-powers', [
+        ('PAYCHECKER', 'authBandMax', 'checker as first of two levels: concurrence capped at the band of the authoriser '
+                                      'covering the amount (authBandMax, sec-bank-pay-limits; owner decision SL-50, '
+                                      '2026-11-08); the own power of that authoriser is checked again at the second level',
+         '> 1'),
+        ('PAYCHECKER', checker_alone, 'checker up to 25 lakh alone')] + [(r, hi, '') for r, hi in auth_bands],
+           doc='K6: checker power covers single-level payments; above it the checker concurs up to the band of the '
+               'authoriser covering the amount and that authoriser approves (SEC-BANK-PY-1, SL-50).')
+    for d in ('sec-bank-pay-limits', 'sec-bank-pay-powers'):
+        pk.placeholder(d, 'SYNTHETIC band amounts (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000)',
+                       'tenant-specific band amounts: the concurrence rule itself is decided (owner, SL-50, 2026-11-08: '
+                       'checker concurrence capped at the band of the authoriser covering the amount); the band amounts '
+                       'are SYNTHETIC; confirm them from the board-approved delegation of financial powers and deploy '
+                       'sec-bank-pay-limits and sec-bank-pay-powers together as tenant DMN overrides')
     simple_seeds(pk, 'TREASURY', [
         ('PAY-MAKER', 'PAYMAKER', 'PAY-CHECKER', 'Payment maker', 'भुगतान निर्माता'),
         ('PAY-CHECKER', 'PAYCHECKER', 'PAY-AUTH', 'Payment checker', 'भुगतान जाँचकर्ता'),

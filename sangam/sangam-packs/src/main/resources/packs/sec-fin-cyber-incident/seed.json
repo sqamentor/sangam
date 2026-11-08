@@ -10,6 +10,7 @@
       "id": "SOC-LEAD",
       "role": "SOC",
       "office": "SECOPS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CISO",
       "name": {
         "en": "SOC lead",
@@ -20,6 +21,7 @@
       "id": "CISO",
       "role": "CISO",
       "office": "SECOPS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Chief information security officer",
@@ -30,6 +32,7 @@
       "id": "DPO",
       "role": "DPO",
       "office": "SECOPS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Data protection officer",

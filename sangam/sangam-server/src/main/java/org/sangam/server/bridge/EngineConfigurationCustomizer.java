@@ -90,10 +90,11 @@ public final class EngineConfigurationCustomizer implements BeanPostProcessor, B
         DataSource raw = beans.getBean(DataSource.class);
         SangamEngineConfigurer configurer = new SangamEngineConfigurer(settings);
         DataSource prepared = configurer.prepare(raw);
+        // the holder owns the engine slot from here on and releases it when the context closes
+        beans.getBean(EngineConfigurerHolder.class).set(configurer, prepared, jdbcUrl(raw));
         configurer.configure(cfg, raw, List.of());
         cfg.setProcessEnginePlugins(order(cfg.getProcessEnginePlugins(), configurer.plugin(),
                 configurer.findings().operatonDatabaseType()));
-        beans.getBean(EngineConfigurerHolder.class).set(configurer, prepared, jdbcUrl(raw));
         LOG.info("sangam-engine applied to the Operaton starter engine (dialect {}, plugins {})",
                 configurer.findings().dialect(), cfg.getProcessEnginePlugins());
         return bean;

@@ -208,8 +208,8 @@ public final class JdbcEventAdapter implements EventPort {
                 }
                 String sha = org.sangam.core.layer.Hashes.hex(org.sangam.core.layer.Hashes.sha256(json));
                 tx.withConnection(c -> {
-                    int version = Jdbc.one(c, "SELECT MAX(version) FROM " + table + " WHERE tenant_id=? AND " + keyCol
-                            + "=?", rs -> rs.getInt(1), tenant, key).orElse(0) + 1;
+                    // never reuse a version number, also after delete (= retire + purge) of every version
+                    int version = org.sangam.core.layer.DefinitionVersions.next(c, tx.dialect(), table, keyCol, tenant, key);
                     return Jdbc.update(c, "INSERT INTO " + table + "(tenant_id, " + keyCol + ", version, definition, sha256,"
                                     + " state, created_at) VALUES (?,?,?,?,?,'ACTIVE'," + tx.dialect().now() + ")",
                             tenant, key, version, json, sha);

@@ -494,13 +494,13 @@ public class PortsWiring {
      */
     @Bean
     public org.sangam.ports.batch.ProductBatchService sangamProductBatchService(ProcessEngine engine, TxSupport tx,
-            RestProperties props, Environment env) {
+            RestProperties props, Environment env, ObjectProvider<UniqueStartPort> uniqueStart) {
         var fourEyes = org.sangam.ports.batch.ProductBatchService.FourEyesPolicy.of(
                 Set.of("ops:DELETE", "ops:MIGRATE", "ops:RESTART", "REST:DELETE", "REST:MIGRATE", "REST:RESTART"),
                 (int) Math.min(Integer.MAX_VALUE, props.getBatchFourEyesThreshold()));
         var service = new org.sangam.ports.batch.ProductBatchService(tx.dialect(), tx.newTransactions(),
                 env.getProperty("sangam.ports.batch.max-attempts", Integer.class, 3), fourEyes);
-        org.sangam.ports.batch.StandardBatchHandlers.registerAll(service, engine);
+        org.sangam.ports.batch.StandardBatchHandlers.registerAll(service, engine, uniqueStart.getIfAvailable());
         return service;
     }
 
@@ -508,10 +508,11 @@ public class PortsWiring {
     @Bean(destroyMethod = "close")
     public org.sangam.rest.port.OpsPort sangamPortsOpsPort(org.sangam.ports.batch.ProductBatchService batches,
             ProcessEngine engine, ProcessPort processes, TxSupport tx, AuditPort audit, RestProperties props,
-            ObjectProvider<org.sangam.core.layer.ReconciliationResolver> resolver) {
+            ObjectProvider<org.sangam.core.layer.ReconciliationResolver> resolver,
+            ObjectProvider<org.sangam.core.layer.OutboxRepair> outboxRepair) {
         var defaults = new org.sangam.rest.adapter.operaton.OperatonOpsAdapter(engine.getRuntimeService(),
                 engine.getManagementService(), engine.getHistoryService(), engine.getRepositoryService(),
-                engine.getExternalTaskService(), tx, audit, props);
+                engine.getExternalTaskService(), tx, audit, props, outboxRepair::getIfUnique);
         defaults.setProcessPort(processes);
         defaults.setReconciliationResolver(resolver::getIfAvailable);   // release held work on every resolve
         return new org.sangam.server.bridge.PortsOpsBridge(batches, defaults, engine, processes, audit, props);

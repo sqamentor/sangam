@@ -10,6 +10,7 @@
       "id": "LINEMAN",
       "role": "LINEMAN",
       "office": "O-AND-M",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Lineman",

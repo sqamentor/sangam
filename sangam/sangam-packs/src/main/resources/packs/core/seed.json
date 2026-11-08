@@ -10,6 +10,7 @@
       "id": "scrutiny-pool",
       "role": "SCRUTINY",
       "office": "HQ",
+      "level": "HEAD_OFFICE",
       "reportsTo": "appellate-authority",
       "name": {
         "en": "Scrutiny pool",
@@ -20,6 +21,7 @@
       "id": "appellate-authority",
       "role": "APPELLATE",
       "office": "HQ",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Appellate authority",
         "hi": "अपीलीय प्राधिकारी"
@@ -29,6 +31,7 @@
       "id": "reconciliation-desk",
       "role": "RECON",
       "office": "HQ",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Reconciliation desk",
         "hi": "मिलान डेस्क"
@@ -38,6 +41,7 @@
       "id": "referral-desk",
       "role": "REFERRAL",
       "office": "HQ",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Referral desk",
         "hi": "संदर्भ डेस्क"

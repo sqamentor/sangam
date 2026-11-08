@@ -10,6 +10,7 @@
       "id": "PRIVACY-OFFICE",
       "role": "PRIVACY",
       "office": "COVERED-ENTITY",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Privacy officer",
@@ -20,6 +21,7 @@
       "id": "SECURITY-OFFICE",
       "role": "SECURITY",
       "office": "COVERED-ENTITY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PRIVACY-OFFICE",
       "name": {
         "en": "Security officer",
@@ -30,6 +32,7 @@
       "id": "COUNSEL",
       "role": "COUNSEL",
       "office": "COVERED-ENTITY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PRIVACY-OFFICE",
       "name": {
         "en": "Legal counsel",

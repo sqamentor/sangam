@@ -91,11 +91,11 @@ public class MeritListDelegate implements JavaDelegate {
                         batchId + ":carry-forward:" + k, true);
             }
         });
-        ex.setVariable("meritList", Vars.toJson(merit));
-        ex.setVariable("waitlist", Vars.toJson(waitlist));
+        Vars.setJsonDocument(ex, "meritList", merit);
+        Vars.setJsonDocument(ex, "waitlist", waitlist);
         ex.setVariable("selectedKeys", Vars.joinCsv(selected));
         ex.setVariable("selectedCount", selected.size());
-        ex.setVariable("carryForward", Vars.toJson(carry));
+        Vars.setJsonDocument(ex, "carryForward", carry);
         Vars.audit(ex, "MERIT_LIST_PREPARED", Vars.map("candidates", cands.size(), "selected", selected.size(),
                 "waitlisted", waitlist.size(), "carryForward", carry));
     }

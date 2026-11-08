@@ -52,7 +52,11 @@ public final class LedgerExpiryPolicy implements ExpiryPolicy {
             op = ledgerService.intentOfActivity(c, work.activityInstanceId(), null);
         }
         if (op.isEmpty()) {
-            return Decision.REOFFER;
+            // A worker reported outcome-unknown (the lease was kept for reconciliation): never re-offer it on expiry.
+            boolean awaitingReconciliation = !Jdbc.query(c,"SELECT 1 FROM OPERATION_LEDGER WHERE (activity_instance_id=? OR"
+                    + " activity_instance_id LIKE ?) AND state='UNKNOWN_OUTCOME'", rs -> 1, work.activityInstanceId(),
+                    work.activityInstanceId().replace("%", "").replace("_", "\\_") + "#%").isEmpty();
+            return awaitingReconciliation ? Decision.HOLD : Decision.REOFFER;
         }
         OperationLedger ledger = ledgerService.ledger();
         CapabilityClass.LeaseExpiryAction action;

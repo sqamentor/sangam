@@ -20,20 +20,24 @@ LAYERS = {
             'layer of the donor document. The regime-preset layer is approved by the integrator (INTERNATIONAL-PFM 4.1).',
 }
 
-COFOG = [('01', 'General public services'), ('02', 'Defence'), ('03', 'Public order and safety'),
-         ('04', 'Economic affairs'), ('05', 'Environmental protection'), ('06', 'Housing and community amenities'),
-         ('07', 'Health'), ('08', 'Recreation, culture and religion'), ('09', 'Education'), ('10', 'Social protection')]
+from cofog_data import COFOG_FULL, SOURCE as COFOG_SOURCE  # noqa: E402  (official UNSD transcription)
+
+COFOG = [(c, n) for c, n, _ in COFOG_FULL if '.' not in c]  # the 10 divisions
 
 INTL = {
     'profile': {'id': 'INTL', 'layer': 'international', 'version': '2026.11.0', 'effectiveFrom': '2000-01-01',
                 'name': {'en': 'International public-finance reference'},
-                'source': 'IMF GFSM 2014; UN COFOG 1999 (divisions); ISO 4217'},
-    'placeholders': [{'path': 'classification.schemes.COFOG', 'reason': 'COFOG groups/classes not loaded; divisions only (G3 [U])'}],
+                'source': 'IMF GFSM 2014; UN COFOG 1999 (divisions, groups, classes: ' + COFOG_SOURCE + '); ISO 4217'},
     'locked': ['classification.schemes.COFOG'],
-    'classification': {'schemes': [{'id': 'COFOG', 'separator': '.', 'segments': [
-        {'id': 'division', 'width': 2, 'master': True}, {'id': 'group', 'width': 1, 'optional': True},
-        {'id': 'class', 'width': 1, 'optional': True}]}]},
-    'seeds': [{'scheme': 'COFOG', 'file': 'intl/seeds/cofog-divisions.csv'}],
+    'classification': {'seedStatus': 'OFFICIAL_UNSD_COFOG_1999', 'schemes': [{'id': 'COFOG', 'separator': '.', 'segments': [
+        {'id': 'division', 'width': 2, 'master': True}, {'id': 'group', 'width': 1, 'optional': True, 'master': True, 'parent': 'division',
+         'hierarchy': {'path': FlowList(['division']), 'separator': '.'}},
+        {'id': 'class', 'width': 1, 'optional': True, 'master': True, 'parent': 'group',
+         'hierarchy': {'path': FlowList(['division', 'group']), 'separator': '.'}}]}]},
+    'seeds': [{'scheme': 'COFOG', 'file': 'intl/seeds/cofog.csv'}],
+    # Default org hierarchy (level types, top first) that onboarding defines for a tenant whose request names none
+    # (security.orgLevels). Pack seat seeds name one of these levels (tools/packgen ORG_LEVELS must match).
+    'security': {'orgLevels': ['HEAD_OFFICE', 'REGIONAL_OFFICE', 'FIELD_OFFICE']},
 }
 
 REGIME = {

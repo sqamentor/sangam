@@ -4,6 +4,7 @@ security instruments and contract management."""
 from lib import C, q
 from packs import Pack
 from common import core, outcome, end_ok, rejection, reject_with, withdraw, revise, batch_loop
+from sector import powers
 
 SIDE = ['GP-14', 'VI.5']
 
@@ -165,15 +166,16 @@ def pension():
                         fields=['employeeId*', 'employeeName*', 'retirementDate*', 'qualifyingService*', 'lastPay*',
                                 'bankAccount*', 'ifsc*', 'documents'], doc=None))
     d = s.setv('ps_defaults', 'Configuration', defaults='caseType=PENSION;scrutinySeat=PENSION-CLERK;'
-               'routingDecisionKey=pension-sanction-authority;executionConnector=ag.pensionCase;executionStep=ag;'
+               'routingDecisionKey=pension-sanction-authority;powersDecisionKey=pension-powers;'
+               'executionConnector=ag.pensionCase;executionStep=ag;'
                'executionOperation=submitPensionCase;reconcileRequired=false;ackWindow=P7D;outputTemplate=ppo;'
-               'appealAllowed=true;appellateSeat=HOD-P;amount=0;averageEmoluments=0;ageNextBirthday=61')
+               'appealAllowed=true;appellateSeat=HOD-P;verifySeat=HOO-P;amount=0;averageEmoluments=0;ageNextBirthday=61')
     comp = s.rule('ps_compute', 'Pension computation (DMN)', 'pension-computation')
     amt = s.setv('ps_amount', 'Amount for power check', values='amount=@pensionAmount')
     scr = core(s, 'ps_scrutiny', 'Pension section scrutiny (core)', 'scrutiny')
     s.seq(st, d, comp, amt, scr)
     rej = rejection(p, s, 'ps_rj', reopen=scr)
-    ve, vd = s.sla_task('ps_verify', 'Verify service record | सेवा अभिलेख का सत्यापन', 'HOO-P',
+    ve, vd = s.sla_task('ps_verify', 'Verify service record | सेवा अभिलेख का सत्यापन', 'verifySeat',
                         form='pension/verify-service', decision=('serviceVerdict', ['verified', 'failed']),
                         fields=['qualifyingService*', 'remarks'], default_spec='10WD', sod=True)
     outcome(s, 'ps_scrGw', 'scrutinyOutcome', {'ACCEPTED': ve}, rej)
@@ -262,6 +264,16 @@ def pension():
             (['-'], ['8.194', '"[U] load the full commutation table; default row is a placeholder"'], 'placeholder')])
     pk.dmn('pension-sanction-authority', 'Pension sanction authority', 'FIRST', [('Amount', 'amount', 'double')],
            [('competentRole', 'Competent role', 'string')], [(['-'], [q('HOO')], 'Head of Office')])
+    # SL-30: the pension is the Head of Office's to process under the rules, not a delegated money power. CCS (Pension)
+    # Rules 2021 (G.S.R. 868(E), corpus S45, verified pass 2: IFMS-CENTRAL IFC-174 r.56-60, IFC-179 r.44): the HoO
+    # assesses the pension and completes Form 7 (r.59); the amount is fixed by r.44(1) (50 % of emoluments or of the
+    # 10-month average, minimum 9,000, maximum 1,25,000 a month). The power check therefore admits any monthly pension
+    # up to the r.44(1) maximum; a value above it is not a pension the rules allow and is refused.
+    powers(pk, 'pension-powers', [(('HOO', 'PENSION'), 125000,
+                                   'Head of Office: monthly pension up to the r.44(1) maximum (CCS (Pension) Rules 2021 '
+                                   'r.59, r.44(1))')],
+           doc='Pension sanction power (SL-30). CCS (Pension) Rules 2021 r.59 (HoO completes Form 7 and assesses the '
+               'pension) and r.44(1) (maximum 1,25,000 a month); corpus S45, IFMS-CENTRAL IFC-174 / IFC-179 (verified).')
     simple_seeds(pk, 'OFFICE-P', [('PENSION-CLERK', 'PENSION-CLERK', 'HOO-P', 'Pension clerk', 'पेंशन लिपिक'),
                                   ('HOO-P', 'HOO', 'HOD-P', 'Head of Office', 'कार्यालय प्रमुख'),
                                   ('HOD-P', 'HOD', None, 'Head of Department', 'विभागाध्यक्ष'),

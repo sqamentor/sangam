@@ -108,11 +108,11 @@ public abstract class GovBSupport extends EngineScenarioSupport {
                             + "\"" + BINDING + " operaton:mapDecisionResult=\"collectEntries\" operaton:resultVariable=\"" + a[2] + "\"/>";
                 }
                 case "CALLED" -> {
-                    String[] a = args.split("\\|");
                     // Sangam D-12 (FLOWABLE-INTO-OPERATON): an unbound call activity binds to its own deployment; the
-                    // callee here lives in another tenant's deployment, so the binding is declared explicitly
-                    yield "calledElement=\"" + a[0] + "\" operaton:calledElementBinding=\"latest\""
-                            + " operaton:calledElementTenantId=\"" + tn(a[1]) + "\"";
+                    // callee is a separate deployment of the CALLER's tenant, so the binding is declared explicitly.
+                    // No calledElementTenantId: SL-13 tenant isolation refuses a definition of another tenant
+                    // (SANGAM.md section 10, J-P2-E09; proven by sangam-engine CrossTenantCallH2Test).
+                    yield "calledElement=\"" + args.trim() + "\" operaton:calledElementBinding=\"latest\"";
                 }
                 case "CALLIO" -> {
                     StringBuilder io = new StringBuilder("<extensionElements>");

@@ -10,6 +10,7 @@
       "id": "DA-WK",
       "role": "DA",
       "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
       "reportsTo": "AE-WK",
       "name": {
         "en": "Divisional accountant",
@@ -20,6 +21,7 @@
       "id": "AE-WK",
       "role": "AE",
       "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
       "reportsTo": "EE-WK",
       "name": {
         "en": "Assistant Engineer",
@@ -30,6 +32,7 @@
       "id": "EE-WK",
       "role": "EE",
       "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SE-WK",
       "name": {
         "en": "Executive Engineer",
@@ -40,6 +43,7 @@
       "id": "SE-WK",
       "role": "SE",
       "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CE-WK",
       "name": {
         "en": "Superintending Engineer",
@@ -50,6 +54,7 @@
       "id": "CE-WK",
       "role": "CE",
       "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOD-WK",
       "name": {
         "en": "Chief Engineer",
@@ -60,6 +65,7 @@
       "id": "HOD-WK",
       "role": "HOD",
       "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECY-WK",
       "name": {
         "en": "Engineer-in-Chief (HoD)",
@@ -70,6 +76,7 @@
       "id": "SECY-WK",
       "role": "SECRETARY",
       "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Secretary, PWD",

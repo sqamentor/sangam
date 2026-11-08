@@ -10,6 +10,7 @@
       "id": "CONTROLLING-1",
       "role": "CONTROLLING",
       "office": "OFFICE-L",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOD-L",
       "name": {
         "en": "Controlling officer",
@@ -20,6 +21,7 @@
       "id": "HOD-L",
       "role": "HOD",
       "office": "OFFICE-L",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of department",

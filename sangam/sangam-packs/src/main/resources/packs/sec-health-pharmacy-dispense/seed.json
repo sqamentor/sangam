@@ -10,6 +10,7 @@
       "id": "PHARMACIST",
       "role": "PHARMACIST",
       "office": "PHARMACY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CHIEF-PHARMACIST",
       "name": {
         "en": "Registered pharmacist",
@@ -20,6 +21,7 @@
       "id": "PHARMACIST-2",
       "role": "PHARMACIST",
       "office": "PHARMACY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CHIEF-PHARMACIST",
       "name": {
         "en": "Second pharmacist",
@@ -30,6 +32,7 @@
       "id": "CHIEF-PHARMACIST",
       "role": "CHIEF",
       "office": "PHARMACY",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Chief pharmacist",

@@ -6,7 +6,6 @@ import org.operaton.bpm.engine.RuntimeService;
 import org.operaton.bpm.engine.repository.ProcessDefinition;
 import org.operaton.bpm.engine.runtime.CaseInstance;
 import org.operaton.bpm.engine.runtime.MessageCorrelationBuilder;
-import org.operaton.bpm.engine.runtime.MessageCorrelationResult;
 import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.sangam.core.layer.Inbox;
 import org.sangam.core.ports.UniqueStartPort;
@@ -99,31 +98,41 @@ public class EventDispatcher implements Inbox.Handler {
         if (ev.payload() != null) {
             ev.payload().forEach((k, v) -> {
                 if (!PortsProblem.isReservedVariable(k)) {      // FW-30
-                    vars.put(k, v);
+                    vars.put(k, retype(v, field(def.payload(), k)));
                 }
             });
         }
 
         // 1. correlation to waiting executions
-        Map<String, Object> corr = ev.correlation() == null ? Map.of() : ev.correlation();
+        Map<String, Object> corr = new LinkedHashMap<>();
+        if (ev.correlation() != null) {
+            ev.correlation().forEach((k, v) -> corr.put(k, retype(v, field(def.correlationParameters(), k))));
+        }
         int matchers = ev.businessKey() != null ? 1 : 0;
         for (EventDefinition.Field f : def.correlationParameters()) {
             if (corr.get(f.name()) != null) {
                 matchers++;
             }
         }
-        List<MessageCorrelationResult> results = List.of();
+        List<String> correlatedInstances = new ArrayList<>();
         // FW-31: Flowable correlates an event without any correlation value to every subscription. Here an event of a
         // definition that declares correlation parameters, but carries none of them and no business key, is not
         // broadcast: it stays buffered (and expires) instead of advancing every waiting instance of the tenant.
         boolean broadcastGuard = matchers == 0 && !def.correlationParameters().isEmpty();
         if (!broadcastGuard) {
-            MessageCorrelationBuilder b = rs.createMessageCorrelation(ev.eventKey());
-            tenant(b, tenantId);
+            // Waiting executions only. Operaton's correlateAll also fires matching message start events; the start is
+            // step 2's decision (unique-start claim first, one instance), so correlateAll here started a second
+            // instance for every message-start event and bypassed UNIQUE_START.
+            var q = rs.createExecutionQuery().messageEventSubscriptionName(ev.eventKey());
+            if (tenantId == null) {
+                q.withoutTenantId();
+            } else {
+                q.tenantIdIn(tenantId);
+            }
             if (ev.businessKey() != null) {
-                // FW-03: Operaton matches the process-instance business key for executions at any depth (Flowable's
-                // one-argument form compared the child execution's own key and missed parallel branches)
-                b.processInstanceBusinessKey(ev.businessKey());
+                // FW-03: the process-instance business key, for executions at any depth (Flowable's one-argument form
+                // compared the child execution's own key and missed parallel branches)
+                q.processInstanceBusinessKey(ev.businessKey());
             }
             for (EventDefinition.Field f : def.correlationParameters()) {
                 Object v = corr.get(f.name());
@@ -131,15 +140,17 @@ public class EventDispatcher implements Inbox.Handler {
                     continue;
                 }
                 if (f.local()) {
-                    b.localVariableEquals(f.name(), v);
+                    q.variableValueEquals(f.name(), v);
                 } else {
-                    b.processInstanceVariableEquals(f.name(), v);
+                    q.processVariableValueEquals(f.name(), v);
                 }
             }
-            b.setVariables(vars);
-            results = b.correlateAllWithResult();
+            for (var execution : q.list()) {
+                rs.messageEventReceived(ev.eventKey(), execution.getId(), vars);
+                correlatedInstances.add(execution.getProcessInstanceId());
+            }
         }
-        int correlated = results.size();
+        int correlated = correlatedInstances.size();
 
         // 2. start
         String startedPi = null;
@@ -199,17 +210,45 @@ public class EventDispatcher implements Inbox.Handler {
             }
         }
         if (links != null) {
-            List<String> targets = new ArrayList<>();
-            for (MessageCorrelationResult r : results) {
-                if (r.getExecution() != null) {
-                    targets.add(r.getExecution().getProcessInstanceId());
-                }
-            }
-            for (String t : targets) {
+            for (String t : correlatedInstances) {
                 links.link(c, ev.tenantId(), "event-delivery", null, "event", ev.messageId(), "process", t, null);
             }
         }
         return new Delivery(correlated, startedPi, startedCase, duplicate);
+    }
+
+    private static EventDefinition.Field field(List<EventDefinition.Field> fields, String name) {
+        for (EventDefinition.Field f : fields) {
+            if (name.equals(f.name())) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Restores the declared type of a payload/correlation value. The pipeline coerces values at intake, but the event
+     * then travels through the inbox as JSON, which loses Java types: a {@code long} below 2^31 came back as
+     * {@code Integer} and a {@code date} as epoch millis. The process variable type then depended on the magnitude,
+     * and variable-equality matching compares typed values, so a {@code long} correlation parameter never matched a
+     * {@code Long} process variable. Undeclared fields keep their JSON type.
+     */
+    static Object retype(Object v, EventDefinition.Field f) {
+        if (v == null || f == null || f.type() == null) {
+            return v;
+        }
+        if ("json".equalsIgnoreCase(f.type()) && v instanceof String) {
+            return v;                                        // already JSON text; re-writing it would double-encode
+        }
+        if ("date".equalsIgnoreCase(f.type())) {
+            if (v instanceof java.util.Date) {
+                return v;
+            }
+            if (v instanceof Number n) {
+                return new java.util.Date(n.longValue());
+            }
+        }
+        return org.sangam.ports.events.pipeline.InboundEventPipeline.coerce(Json.MAPPER.valueToTree(v), f.type(), f.name());
     }
 
     /** Process definition key whose latest version has a message start event named after the event key. */

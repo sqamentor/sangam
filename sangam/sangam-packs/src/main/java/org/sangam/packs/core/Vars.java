@@ -165,6 +165,24 @@ public final class Vars {
         return String.join(",", parts);
     }
 
+    /**
+     * Sets the case state on this scope and on every calling process instance of the same case (same business key),
+     * so the case shows its state while a core block is still running (a rejection waiting out its appeal window was
+     * still SCRUTINY on the case: SL-32, J-P3-E01). A called instance of another case (a batch item) stops the walk.
+     */
+    public static void setCaseState(org.operaton.bpm.engine.delegate.DelegateExecution ex, String state) {
+        ex.setVariable(CASE_STATE, state);
+        String bk = ex.getProcessBusinessKey();
+        org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity pi =
+                ((org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity) ex).getProcessInstance();
+        for (var sup = pi.getSuperExecution(); sup != null; sup = sup.getProcessInstance().getSuperExecution()) {
+            if (bk == null || !bk.equals(sup.getProcessBusinessKey())) {
+                break;
+            }
+            sup.setVariable(CASE_STATE, state);
+        }
+    }
+
     // ---- JSON values stored as strings -------------------------------------------------------------------------
 
     public static String toJson(Object v) {
@@ -173,6 +191,15 @@ public final class Vars {
         } catch (Exception e) {
             throw new ProcessEngineException("cannot write JSON", e);
         }
+    }
+
+    /**
+     * Stores a JSON document that grows with the case (the actor log) as UTF-8 bytes: an engine string variable is
+     * limited to 4000 characters (ACT_RU_VARIABLE.TEXT_), which a long case exceeds. {@link #jsonList} reads both.
+     */
+    public static void setJsonDocument(VariableScope s, String name, Object value) {
+        s.setVariable(name, org.operaton.bpm.engine.variable.Variables.byteArrayValue(
+                toJson(value).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
 
     public static List<Map<String, Object>> jsonList(VariableScope s, String name) {
@@ -194,7 +221,8 @@ public final class Vars {
             return new LinkedHashMap<>();
         }
         try {
-            return JSON.readValue(v.toString(), new TypeReference<Map<String, Object>>() { });
+            return JSON.readValue(v instanceof byte[] b ? new String(b, java.nio.charset.StandardCharsets.UTF_8)
+                    : v.toString(), new TypeReference<Map<String, Object>>() { });
         } catch (Exception e) {
             throw new ProcessEngineException("variable " + name + " is not a JSON object", e);
         }
@@ -228,6 +256,9 @@ public final class Vars {
         }
         if (v instanceof Date d) {
             return d.toInstant().toString();
+        }
+        if (v instanceof byte[] b) {
+            return "sha256:" + Hashes.hex(Hashes.sha256(b)); // deterministic, not the array identity
         }
         return v.toString();
     }

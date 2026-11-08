@@ -37,11 +37,13 @@ import java.util.concurrent.atomic.AtomicLong;
  *       at once with an audit entry and a dead letter; ordinary failures back off exponentially and are parked/skipped
  *       after {@code maxAttempts} (default 10), also dead-lettered.</li>
  *   <li><b>Destination back-pressure.</b> A per-destination {@link CircuitBreaker}: while a destination is open its
- *       deliveries are deferred without consuming attempts.</li>
+ *       deliveries are deferred without consuming attempts. A publisher can ask for the same with
+ *       {@link DeferPublishException} (e.g. a webhook's {@code Retry-After}, or a disabled webhook in its hold
+ *       period).</li>
  *   <li><b>Wake-up.</b> One payload-free {@link WakeupNotifier} call per cycle that published (R1).</li>
  * </ul>
  */
-public final class OutboxRelayService implements AutoCloseable {
+public final class OutboxRelayService implements AutoCloseable, org.sangam.core.layer.OutboxRepair {
 
     private static final Logger LOG = LoggerFactory.getLogger(OutboxRelayService.class);
 
@@ -82,8 +84,12 @@ public final class OutboxRelayService implements AutoCloseable {
         this.tx = tx;
         this.publishers = publishers;
         this.settings = settings;
-        this.relay = new Relay(dialect, tx, publishers, settings.relay(), auditOrNull);
         this.deadLetters = deadLetters;
+        // the dead letter of a repaired delivery is closed in the repair's own transaction (atomic with the state change)
+        this.relay = new Relay(dialect, tx, publishers, settings.relay(), auditOrNull,
+                deadLetters == null ? null : (c, ev, destination, target, actor, reason) -> closeDeadLetter(c,
+                        ev.outboxId(), destination, "PENDING".equals(target) ? DeadLetterStore.State.REQUEUED
+                                : DeadLetterStore.State.DISCARDED, actor, reason));
         this.breaker = breaker == null ? CircuitBreaker.defaults() : breaker;
         this.wakeup = wakeup == null ? WakeupNotifier.NONE : wakeup;
         this.loop = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -178,6 +184,10 @@ public final class OutboxRelayService implements AutoCloseable {
         }
         try {
             publishers.publish(dest, cl.event());
+        } catch (DeferPublishException e) {
+            // the publisher asked to wait (Retry-After, disabled destination in its hold period): no attempt consumed
+            defer(cl, Math.max(1000, e.delay().toMillis()));
+            return false;
         } catch (PermanentPublishException e) {
             breaker.success(dest);   // the destination answered; the event is the problem
             poison(cl, "POISON: " + e.getMessage());
@@ -239,30 +249,22 @@ public final class OutboxRelayService implements AutoCloseable {
         }
     }
 
-    /** Operator repair: requeue a PARKED delivery (audited by the core relay) and close its dead letter. */
+    /** Operator repair: requeue a PARKED delivery (audited) and close its dead letter as REQUEUED, atomically. */
+    @Override
     public boolean requeue(long outboxId, String destination, String actor, String reason) {
-        boolean ok = relay.requeue(outboxId, destination, actor, reason);
-        closeDeadLetter(outboxId, destination, DeadLetterStore.State.REQUEUED, actor, reason, ok);
-        return ok;
+        return relay.requeue(outboxId, destination, actor, reason);
     }
 
-    /** Operator repair: skip a PARKED delivery with a reason (audited), unblocking its line. */
+    /** Operator repair: skip a PARKED delivery (audited) and close its dead letter as DISCARDED, atomically. */
+    @Override
     public boolean skip(long outboxId, String destination, String actor, String reason) {
-        boolean ok = relay.skip(outboxId, destination, actor, reason);
-        closeDeadLetter(outboxId, destination, DeadLetterStore.State.DISCARDED, actor, reason, ok);
-        return ok;
+        return relay.skip(outboxId, destination, actor, reason);
     }
 
-    private void closeDeadLetter(long outboxId, String destination, DeadLetterStore.State state, String actor, String reason,
-                                 boolean ok) {
-        if (!ok || deadLetters == null) {
-            return;
-        }
-        tx.inTransaction(c -> {
-            Jdbc.query(c, "SELECT id FROM INTEGRATION_DEAD_LETTER WHERE kind='OUTBOX' AND ref_id=? AND state='OPEN'",
-                    rs -> rs.getLong(1), outboxId + ":" + destination).forEach(id -> deadLetters.resolve(c, id, state, actor, reason));
-            return null;
-        });
+    private void closeDeadLetter(java.sql.Connection c, long outboxId, String destination, DeadLetterStore.State state,
+                                 String actor, String reason) {
+        Jdbc.query(c, "SELECT id FROM INTEGRATION_DEAD_LETTER WHERE kind='OUTBOX' AND ref_id=? AND state='OPEN'",
+                rs -> rs.getLong(1), outboxId + ":" + destination).forEach(id -> deadLetters.resolve(c, id, state, actor, reason));
     }
 
     public Stats stats() {

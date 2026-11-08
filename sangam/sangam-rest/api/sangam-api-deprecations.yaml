@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam API deprecation registry (SL-38). Policy: sangam-rest/API-LIFECYCLE-POLICY.md.
+#
+# One entry per deprecated operation. Read by gen_openapi.py (marks the operation `deprecated: true` and adds
+# x-sangam-sunset) and by the server's DeprecationHeadersFilter (RFC 9745 Deprecation, RFC 8594 Sunset, Link headers;
+# 410 API_SUNSET once the sunset date has passed). The registry is validated at load: the sunset date must be at
+# least `minimumSupportDays` after the deprecation date, and every entry needs a changelog link.
+#
+# Entry fields:
+#   method      GET | POST | PUT | PATCH | DELETE
+#   path        path template as in sangam-api.yaml, with or without the /api/v1 prefix, e.g. /cases/{caseId}
+#   deprecated  ISO date the deprecation was announced (header Deprecation)
+#   sunset      ISO date from which the operation answers 410 API_SUNSET (header Sunset)
+#   link        changelog or migration note (header Link rel="deprecation")
+#   successor   optional replacement operation path (header Link rel="successor-version")
+policy:
+  minimumSupportDays: 365
+deprecations: []

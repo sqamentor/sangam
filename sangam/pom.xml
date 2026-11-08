@@ -82,9 +82,9 @@
     <!-- must match Spring Boot 4.1.2's managed junit-jupiter.version (Spring Framework 7 needs JUnit 6) -->
     <version.junit>6.0.3</version.junit>
     <version.testcontainers>1.21.4</version.testcontainers>
-    <version.postgresql>42.7.7</version.postgresql>
-    <version.mariadb>3.5.3</version.mariadb>
-    <version.mssql>12.10.1.jre11</version.mssql>
+    <version.postgresql>42.7.12</version.postgresql>
+    <version.mariadb>3.5.11</version.mariadb>
+    <version.mssql>12.10.2.jre11</version.mssql>
     <version.hikari>6.3.0</version.hikari>
     <version.slf4j>2.0.17</version.slf4j>
     <version.h2>2.3.232</version.h2>

@@ -24,6 +24,10 @@
       "path": "packs/ifms-surrender-lapse/ifms-surrender-authority.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/ifms-surrender-lapse/ifms-surrender-powers.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/ifms-surrender-lapse/forms/surrender.form.json"
     },
@@ -96,5 +100,12 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-surrender-powers",
+      "rule": "CAA SURRENDER no monetary limit",
+      "reason": "GFR 62(1)-(2) (corpus IFC-069) requires the surrender but does not name the CAA as the approving authority; confirm from the delegation order and deploy it as a tenant DMN override"
+    }
   ]
 }

@@ -83,15 +83,21 @@ jobs:
         run: if [ -d sangam/sdks/dotnet ] && find sangam/sdks/dotnet -name "*.csproj" | grep -q .; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "::notice::sdks/dotnet not present"; fi
         shell: bash
       - uses: actions/setup-dotnet@v4
+        id: sdk
         if: steps.d.outputs.present == 'true'
         with: { dotnet-version: "8.0.x" }
       - if: steps.d.outputs.present == 'true'
         working-directory: sangam/sdks/dotnet
         run: |
+          # Use the SDK installed above: without a global.json the runner's preinstalled, newer SDK (10.x) is picked,
+          # and its "dotnet pack -o <relative dir>" fails with MSB1009 (reproduced with mcr.microsoft.com/dotnet/sdk:10.0).
+          dotnet new globaljson --force --sdk-version "${{ steps.sdk.outputs.dotnet-version }}" --roll-forward latestPatch
+          dotnet --version
           dotnet restore
           dotnet build --no-restore -c Release
           dotnet test --no-build -c Release --logger trx
-          dotnet pack --no-build -c Release -o ../../../out/dotnet
+          # Pack the one packable project: pack on the .sln (examples are IsPackable=false) with -o fails, MSB1009.
+          dotnet pack src/Sangam.Sdk/Sangam.Sdk.csproj --no-build -c Release -o ../../../out/dotnet
       - uses: actions/upload-artifact@v4
         if: steps.d.outputs.present == 'true'
         with: { name: sdk-dotnet, path: out/dotnet, if-no-files-found: ignore }
@@ -114,7 +120,7 @@ jobs:
         working-directory: sangam/sdks/python
         run: |
           python -m pip install --upgrade pip build
-          python -m pip install -e ".[test]" || python -m pip install -e .
+          python -m pip install -e ".[test]"
           python -m pytest -q
           python -m build -o ../../../out/python
 
@@ -136,6 +142,7 @@ jobs:
           npm run --if-present lint
           npm run build
           npm test --if-present
+          mkdir -p ../../../out/ts
           npm pack --pack-destination ../../../out/ts
 
   php:

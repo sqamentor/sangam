@@ -10,6 +10,7 @@
       "id": "AGENCY-ADMIN",
       "role": "AGENCY",
       "office": "AGENCY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PRINCIPAL-OFFICER",
       "name": {
         "en": "Agency administration",
@@ -20,6 +21,7 @@
       "id": "PRINCIPAL-OFFICER",
       "role": "PO",
       "office": "AGENCY",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Designated person (agency)",

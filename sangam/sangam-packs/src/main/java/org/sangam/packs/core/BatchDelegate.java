@@ -97,7 +97,7 @@ public class BatchDelegate implements JavaDelegate {
                 ex.setVariable("batchFailed", s.done() - s.succeeded());
                 ex.setVariable("batchDone", s.done());
                 ex.setVariable("batchOutcomes", Vars.toJson(s.byOutcome()));
-                ex.setVariable("batchFailures", Vars.toJson(ledger.failures(tenant, batchId, r)));
+                Vars.setJsonDocument(ex, "batchFailures", ledger.failures(tenant, batchId, r));
                 if (s.complete()) {
                     Vars.audit(ex, "BATCH_ROUND_COMPLETE", Vars.map("batchId", batchId, "round", r,
                             "total", s.total(), "succeeded", s.succeeded(), "byOutcome", s.byOutcome()));
@@ -117,7 +117,7 @@ public class BatchDelegate implements JavaDelegate {
                 Vars.withDirective(ex, c, p), Vars.hash(p)));
         Object items = r.data().get("items");
         if (items instanceof List<?> l) {
-            ex.setVariable(iv, Vars.toJson(l));
+            Vars.setJsonDocument(ex, iv, l);
             return;
         }
         int n = Vars.fieldInt(sampleSize, ex, 3);
@@ -125,7 +125,7 @@ public class BatchDelegate implements JavaDelegate {
         for (int i = 1; i <= n; i++) {
             synth.add(Vars.map("key", String.format("ITEM-%05d", i), "amount", 1000 * i));
         }
-        ex.setVariable(iv, Vars.toJson(synth));
+        Vars.setJsonDocument(ex, iv, synth);
     }
 
     private void fanOut(DelegateExecution ex, String tenant, String batchId, int round, String iv) {
@@ -230,7 +230,7 @@ public class BatchDelegate implements JavaDelegate {
                 next.add(item);
             }
         }
-        ex.setVariable(iv, Vars.toJson(next));
+        Vars.setJsonDocument(ex, iv, next);
         ex.setVariable("retryCount", next.size());
         ex.setVariable("batchRound", round + 1);
         if (!next.isEmpty()) {

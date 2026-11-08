@@ -61,9 +61,9 @@ public class PackStartListener implements ExecutionListener {
         ex.setVariable("lastActorPerson", Vars.str(ex, Vars.INITIATOR_PERSON));
         ex.setVariable("lastActorSeat", Vars.str(ex, Vars.INITIATOR_SEAT));
         ex.setVariable(Vars.CASE_VERSION, 1);
-        ex.setVariable(Vars.ACTOR_LOG, Vars.toJson(java.util.List.of(Vars.map("step", "initiate",
+        Vars.setJsonDocument(ex, Vars.ACTOR_LOG, java.util.List.of(Vars.map("step", "initiate",
                 "person", Vars.str(ex, Vars.INITIATOR_PERSON), "seat", Vars.str(ex, Vars.INITIATOR_SEAT),
-                "at", Vars.now().toString()))));
+                "at", Vars.now().toString())));
         ex.setVariable("submittedPayloadHash", Vars.materialHash(ex));
         String sla = Vars.field(caseSla, ex);
         if (sla == null) {

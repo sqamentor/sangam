@@ -24,6 +24,10 @@ classifiers = [
 # Zero runtime dependencies: HTTP is urllib.request from the standard library.
 dependencies = []
 
+[project.optional-dependencies]
+# Unit / contract tests (sdks.yml installs ".[test]").
+test = ["pytest>=8"]
+
 [project.urls]
 Homepage = "https://github.com/sqamentor/sangam"
 
@@ -32,6 +36,9 @@ package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.setuptools.package-data]
 sangam_sdk = ["py.typed"]

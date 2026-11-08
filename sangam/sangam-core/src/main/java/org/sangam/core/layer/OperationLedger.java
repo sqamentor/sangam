@@ -160,6 +160,56 @@ public final class OperationLedger {
     }
 
     /**
+     * As {@link #markUnknown(Connection, UUID, long, String)} for a worker report on engine work {@code taskId}: the
+     * reconciliation item carries the task and the worker's {@code details} (detail, evidence, worker identity).
+     */
+    public long markUnknown(Connection c, UUID operationId, long lockVersion, String taskId, java.util.Map<String, ?> details) {
+        Entry e = lock(c, operationId).orElseThrow(() -> new IllegalStateException("unknown operation " + operationId));
+        if (e.lockVersion() != lockVersion || (e.state() != State.INTENT && e.state() != State.UNKNOWN_OUTCOME)) {
+            throw new StaleLeaseException("operation " + operationId + " is " + e.state() + " at lockVersion " + e.lockVersion());
+        }
+        Jdbc.update(c, "UPDATE OPERATION_LEDGER SET state='UNKNOWN_OUTCOME', updated_at=" + dialect.now() + " WHERE operation_id=?",
+                e.operationId());
+        java.util.Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        if (details != null) {
+            payload.putAll(details);
+        }
+        payload.put("capabilityClass", e.capabilityClass().name());
+        return reconciliation.open(c, e.tenantId(), ReconciliationQueue.Kind.UNKNOWN_OUTCOME, e.operationId(), e.rootId(), taskId,
+                CanonicalJson.write(payload));
+    }
+
+    /**
+     * A new attempt of an operation whose last attempt was a reported definite technical failure (no effect): back to
+     * INTENT with the new attempt and lock version (fenced: the version must not go backwards). Only FAILED rows move.
+     */
+    public Intent reopenFailed(Connection c, UUID operationId, String attemptId, long lockVersion) {
+        Entry e = lock(c, operationId).orElseThrow(() -> new IllegalStateException("unknown operation " + operationId));
+        if (e.state() != State.FAILED) {
+            return new Intent(operationId, false, e.state(), e.attempts(), e.outcome());
+        }
+        if (lockVersion < e.lockVersion()) {
+            throw new StaleLeaseException("lockVersion " + lockVersion + " < " + e.lockVersion());
+        }
+        Jdbc.update(c, "UPDATE OPERATION_LEDGER SET state='INTENT', outcome=NULL, attempt_id=?, lock_version=?, attempts=attempts+1,"
+                + " updated_at=" + dialect.now() + " WHERE operation_id=? AND state='FAILED'", attemptId, lockVersion, operationId);
+        return new Intent(operationId, false, State.INTENT, e.attempts() + 1, null);
+    }
+
+    /** The operation recorded for engine work {@code workId} (A-14), if any. */
+    public Optional<Entry> findByEngineWork(Connection c, String workId) {
+        java.util.List<Entry> rows = Jdbc.query(c, "SELECT * FROM OPERATION_LEDGER WHERE engine_work_id=? ORDER BY updated_at DESC",
+                OperationLedger::map, workId);
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
+    }
+
+    /** Binds the operation to the engine work that carries it (A-14). */
+    public void bindEngineWork(Connection c, UUID operationId, String workId) {
+        Jdbc.update(c, "UPDATE OPERATION_LEDGER SET engine_work_id = ? WHERE operation_id = ? "
+                + "AND (engine_work_id IS NULL OR engine_work_id <> ?)", workId, operationId, workId);
+    }
+
+    /**
      * Lease expiry for the task carrying this operation (VI.3.1, A-8). Fences the expired attempt by moving the ledger to
      * {@code newLockVersion}, then applies the capability class.
      */

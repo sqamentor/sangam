@@ -3,6 +3,9 @@
 server:
   port: ${SANGAM_PORT:8080}
   shutdown: graceful
+  # SL-18: Spring's own X-Forwarded-*/Forwarded handling is off; TrustedProxyFilter honours those headers only from
+  # sangam.http.trusted-proxies.
+  forward-headers-strategy: none
   error:
     include-stacktrace: never
 
@@ -37,6 +40,12 @@ spring:
 
 operaton:
   bpm:
+    # Every model is deployed by its owner (packs and jurisdiction profiles per tenant by PacksTenantDeployer, the
+    # onboarding flow, module processes). The starter's class-path scan would put every model it finds into ONE
+    # tenant-less deployment: with modules as class folders (spring-boot:run from the reactor, an IDE, `-am test`)
+    # that deploys all jurisdiction profiles together and fails on their shared decision keys; with jars it finds
+    # nothing. It has no legitimate target, so it is off on every profile.
+    auto-deployment-enabled: false
     # VI.4: Operaton's built-in authorization has no deny-wins; Sangam's product authorization is used instead
     authorization:
       enabled: false
@@ -65,6 +74,11 @@ operaton:
     # Operaton REST API stays at /engine-rest, behind Sangam authentication (SecurityConfig)
 
 sangam:
+  http:
+    # SL-18: CIDRs of the reverse proxies / edge in front of the server (comma list). Empty = trust no forwarding header.
+    trusted-proxies: ${SANGAM_TRUSTED_PROXIES:}
+    # Client-IP headers in priority order, read only from a trusted proxy (an edge's connecting-IP header may be added).
+    client-ip-headers: ${SANGAM_CLIENT_IP_HEADERS:X-Forwarded-For}
   # Module wiring (config/*Wiring); false = the sangam-rest defaults stay active for that module.
   modules:
     engine:
@@ -113,6 +127,23 @@ sangam:
     default-destinations: ${SANGAM_OUTBOX_DESTINATIONS:}
     outbox:
       retention: 7d
+    # SL-39 outbound webhooks (WebhooksProperties): subscriptions.<name>.url / .secret-ref, destination webhook:<name>
+    webhooks:
+      disable-after: ${SANGAM_WEBHOOKS_DISABLE_AFTER:50}
+      hold-while-disabled: ${SANGAM_WEBHOOKS_HOLD_WHILE_DISABLED:72h}
+  # SL-43 per-tenant quotas (QuotaWiring). Over a rate limit: 429 TENANT_QUOTA_EXCEEDED + Retry-After; over a size
+  # limit: 413 TENANT_QUOTA_EXCEEDED. Per-tenant overrides: the same keys in the tenant's quotas (onboarding
+  # tenant.quotas). Negative = unlimited.
+  quotas:
+    enabled: ${SANGAM_QUOTAS_ENABLED:true}
+    override-ttl: 30s
+    defaults:
+      startsPerSecond: ${SANGAM_QUOTA_STARTS_PER_SECOND:50}
+      apiCallsPerMinute: ${SANGAM_QUOTA_API_CALLS_PER_MINUTE:6000}
+      maxBatchSize: ${SANGAM_QUOTA_MAX_BATCH_SIZE:10000}
+      maxVariableBytes: ${SANGAM_QUOTA_MAX_VARIABLE_BYTES:4194304}
+      maxDocumentBytes: ${SANGAM_QUOTA_MAX_DOCUMENT_BYTES:268435456}
+      maxStorageBytes: ${SANGAM_QUOTA_MAX_STORAGE_BYTES:53687091200}
   outbound:
     # Air-gapped by default (ARCHITECTURE 1.9): no outbound calls from admin tooling (IdP discovery test)
     enabled: false

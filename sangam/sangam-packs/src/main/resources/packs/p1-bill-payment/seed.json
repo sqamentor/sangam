@@ -18,6 +18,7 @@
       "id": "CLERK-DDO",
       "role": "CLERK",
       "office": "DPW-X",
+      "level": "FIELD_OFFICE",
       "reportsTo": "ACCTS-HEAD",
       "name": {
         "en": "Accounts clerk, DDO office",
@@ -28,6 +29,7 @@
       "id": "AO-1",
       "role": "AO",
       "office": "DPW-X",
+      "level": "FIELD_OFFICE",
       "reportsTo": "ACCTS-HEAD",
       "name": {
         "en": "Accounts officer 1",
@@ -38,6 +40,7 @@
       "id": "AO-2",
       "role": "AO",
       "office": "DPW-X",
+      "level": "FIELD_OFFICE",
       "reportsTo": "ACCTS-HEAD",
       "name": {
         "en": "Accounts officer 2",
@@ -48,6 +51,7 @@
       "id": "AO-3",
       "role": "AO",
       "office": "DPW-X",
+      "level": "FIELD_OFFICE",
       "reportsTo": "ACCTS-HEAD",
       "name": {
         "en": "Accounts officer 3",
@@ -58,6 +62,7 @@
       "id": "ACCTS-HEAD",
       "role": "AO-HEAD",
       "office": "DPW-X",
+      "level": "FIELD_OFFICE",
       "reportsTo": "EE-DIV1",
       "name": {
         "en": "Head of accounts section",
@@ -68,6 +73,7 @@
       "id": "DDO-X",
       "role": "DDO",
       "office": "DPW-X",
+      "level": "FIELD_OFFICE",
       "reportsTo": "EE-DIV1",
       "name": {
         "en": "Drawing and disbursing officer",
@@ -78,6 +84,7 @@
       "id": "EE-DIV1",
       "role": "EE",
       "office": "DPW-X",
+      "level": "FIELD_OFFICE",
       "reportsTo": "SE-CIRCLE",
       "name": {
         "en": "Executive Engineer",
@@ -88,6 +95,7 @@
       "id": "SE-CIRCLE",
       "role": "SE",
       "office": "DPW-CIRCLE",
+      "level": "REGIONAL_OFFICE",
       "reportsTo": "CE-ZONE",
       "name": {
         "en": "Superintending Engineer",
@@ -98,6 +106,7 @@
       "id": "CE-ZONE",
       "role": "CE",
       "office": "DPW-ZONE",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Chief Engineer",
         "hi": "मुख्य अभियंता"

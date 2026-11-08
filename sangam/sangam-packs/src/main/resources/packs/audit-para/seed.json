@@ -10,6 +10,7 @@
       "id": "DDO-AUDIT",
       "role": "DDO",
       "office": "DEPT-AU",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOD-AU",
       "name": {
         "en": "Para owner (DDO)",
@@ -20,6 +21,7 @@
       "id": "AUDIT-CELL",
       "role": "AUDITCELL",
       "office": "DEPT-AU",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOD-AU",
       "name": {
         "en": "Internal audit cell",
@@ -30,6 +32,7 @@
       "id": "HOD-AU",
       "role": "HOD",
       "office": "DEPT-AU",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of department",

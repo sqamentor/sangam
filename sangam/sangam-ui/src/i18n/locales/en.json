@@ -1830,7 +1830,8 @@
     "resetPassword": "Reset password",
     "unlock": "Unlock",
     "errorDetails": "Error details",
-    "batchModification": "Batch modification"
+    "batchModification": "Batch modification",
+    "setRemovalTime": "Set removal time"
   },
   "fld": {
     "account": "Account",
@@ -2389,7 +2390,11 @@
     "conversationId": "Conversation id",
     "detail": "Detail",
     "evidence": "Evidence",
-    "principalId": "Principal id"
+    "principalId": "Principal id",
+    "calculatedRemovalTime": "Recalculate from history time to live",
+    "absoluteRemovalTime": "Fixed removal time",
+    "clearedRemovalTime": "Clear removal time",
+    "hierarchical": "Include called instances"
   },
   "opt": {
     "ACCEPT": "Accept",
@@ -3134,6 +3139,11 @@
       "preview": "Preview plan",
       "execute": "Execute plan",
       "search": "Search (Ctrl+K)"
+    },
+    "op4": {
+      "removalHint": "Starts a batch over the historic instances of this definition. Choose one: recalculate, a fixed time, or clear.",
+      "permissionsHint": "Permissions are names for the chosen resource type, for example [\"READ\",\"UPDATE\"], [\"ALL\"] or [\"NONE\"].",
+      "varValueHint": "Value is JSON: \"text\" for a String, 5 for a number, true or false, null. For Object, Xml or Json put objectTypeName and serializationDataFormat in value info."
     }
   },
   "plugin": {

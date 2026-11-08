@@ -168,7 +168,7 @@ public class SangamRestAutoConfiguration {
     @ConditionalOnMissingBean
     public TaskPort sangamTaskPort(ProcessEngine engine, TxSupport tx, AuditPort audit, RestProperties props) {
         return new OperatonTaskAdapter(engine.getTaskService(), engine.getRuntimeService(), engine.getHistoryService(),
-                tx, audit, props);
+                engine.getFormService(), tx, audit, props);
     }
 
     @Bean
@@ -233,10 +233,11 @@ public class SangamRestAutoConfiguration {
     @ConditionalOnMissingBean
     public OpsPort sangamOpsPort(ProcessEngine engine, TxSupport tx, AuditPort audit, RestProperties props,
                                  ProcessPort processes,
-                                 ObjectProvider<org.sangam.core.layer.ReconciliationResolver> resolver) {
+                                 ObjectProvider<org.sangam.core.layer.ReconciliationResolver> resolver,
+                                 ObjectProvider<org.sangam.core.layer.OutboxRepair> outboxRepair) {
         OperatonOpsAdapter ops = new OperatonOpsAdapter(engine.getRuntimeService(), engine.getManagementService(),
                 engine.getHistoryService(), engine.getRepositoryService(), engine.getExternalTaskService(), tx, audit,
-                props);
+                props, outboxRepair::getIfUnique);   // lazily resolved: the relay service may be created after this port
         ops.setProcessPort(processes);
         ops.setReconciliationResolver(resolver::getIfAvailable);
         return ops;
@@ -245,9 +246,13 @@ public class SangamRestAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public FormPort sangamFormPort(ProcessEngine engine, AuditPort audit, RestProperties props, TxSupport tx,
-                                   ObjectProvider<org.sangam.core.security.FieldEncryptor> encryptor) {
+                                   ObjectProvider<org.sangam.core.security.FieldEncryptor> encryptor,
+                                   ObjectProvider<org.sangam.rest.extension.TenantCustomFieldRegistry> customFields,
+                                   ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
         OperatonFormAdapter forms = new OperatonFormAdapter(engine.getRepositoryService(), engine.getTaskService(),
                 audit, props, tx);
+        forms.setCustomFields(customFields.getIfAvailable(),
+                new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable)); // SL-40: tenant custom fields, when configured
         forms.setEncryptor(encryptor.getIfAvailable()); // X.2.5.8 rule 1: drafts encrypted per tenant
         return forms;
     }
@@ -440,6 +445,25 @@ public class SangamRestAutoConfiguration {
         reg.addUrlPatterns("/api/v1/*");
         reg.setOrder(IDEMPOTENCY_FILTER_ORDER);
         reg.setName("sangamIdempotencyFilter");
+        return reg;
+    }
+
+    /** SL-38: the packaged deprecation registry (api/sangam-api-deprecations.yaml), validated at start-up. */
+    @Bean
+    @ConditionalOnMissingBean
+    public org.sangam.rest.lifecycle.ApiDeprecationRegistry sangamApiDeprecationRegistry() {
+        return org.sangam.rest.lifecycle.ApiDeprecationRegistry.fromClasspath();
+    }
+
+    /** SL-38: Deprecation / Sunset / Link headers and 410 API_SUNSET; runs before idempotency so retired calls never claim a key. */
+    @Bean
+    public FilterRegistrationBean<org.sangam.rest.lifecycle.DeprecationHeadersFilter> sangamDeprecationHeadersFilter(
+            org.sangam.rest.lifecycle.ApiDeprecationRegistry registry) {
+        FilterRegistrationBean<org.sangam.rest.lifecycle.DeprecationHeadersFilter> reg = new FilterRegistrationBean<>(
+                new org.sangam.rest.lifecycle.DeprecationHeadersFilter(registry, java.time.Clock.systemUTC()));
+        reg.addUrlPatterns("/api/v1/*");
+        reg.setOrder(IDEMPOTENCY_FILTER_ORDER - 10);
+        reg.setName("sangamDeprecationHeadersFilter");
         return reg;
     }
 

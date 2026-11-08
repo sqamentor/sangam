@@ -284,12 +284,12 @@ public class EventRegistry {
 
     private int deploy(Connection c, String table, String keyCol, String tenant, String key, String json, String appDeploymentId) {
         String sha = Hashes.hex(Hashes.sha256(json.getBytes(StandardCharsets.UTF_8)));
+        org.sangam.core.layer.DefinitionVersions.lock(c, dialect, table, tenant, key);   // serialises deployers of one key before the same-content check
         Optional<Row> latest = latest(c, table, keyCol, tenant, key);
         if (latest.isPresent() && latest.get().sha.equals(sha)) {
             return latest.get().version;
         }
-        int next = Jdbc.one(c, "SELECT MAX(version) FROM " + table + " WHERE tenant_id = ? AND " + keyCol + " = ?",
-                rs -> rs.getInt(1), tenant, key).orElse(0) + 1;
+        int next = org.sangam.core.layer.DefinitionVersions.next(c, dialect, table, keyCol, tenant, key); // never reused
         Jdbc.update(c, "INSERT INTO " + table + "(tenant_id, " + keyCol + ", version, definition, sha256, app_deployment_id, state, created_at)"
                 + " VALUES (?,?,?,?,?,?,'ACTIVE'," + dialect.now() + ")", tenant, key, next, json, sha, appDeploymentId);
         return next;
@@ -358,6 +358,32 @@ public class EventRegistry {
         if (def.payloadTenantAllowed() && def.property("allowedTenants", "").isBlank()) {
             throw new IllegalArgumentException("channel " + def.key() + ": allowPayloadTenant=true needs properties.allowedTenants"
                     + " (comma list of tenants, or * as an explicit choice) (FW-29, R38)");
+        }
+        // FW-42: only JSON is deserialised (XML / expression deserializers are not ported). Refuse at deploy: at
+        // receive time the channel would fail every message, and a broker adapter would redeliver it for ever.
+        String d = def.deserializerType();
+        if (def.direction() == ChannelDefinition.Direction.INBOUND && d != null && !"json".equalsIgnoreCase(d)) {
+            throw new IllegalArgumentException("channel " + def.key() + ": deserializerType '" + d
+                    + "' is not supported (json only; XML and expression deserializers are not ported, FW-42)");
+        }
+        // Same rule outbound: an unknown serializerType deployed fine and then failed every publish, which the relay
+        // retried for ever. OutboundEventSerializer.of is the single list of supported types.
+        if (def.direction() == ChannelDefinition.Direction.OUTBOUND) {
+            try {
+                org.sangam.ports.events.pipeline.OutboundEventSerializer.of(def.serializerType());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("channel " + def.key() + ": " + e.getMessage(), e);
+            }
+        }
+        // FW-41 (reconstructed by fork C after an accidental overwrite of the parsing fork's edit): a malformed
+        // outbound timeout is a deploy error, not a surprise at the first send
+        String timeoutMs = def.properties().get("timeoutMs");
+        if (timeoutMs != null) {
+            try {
+                Long.parseLong(timeoutMs.trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("channel " + def.key() + ": timeoutMs is not a number: " + timeoutMs);
+            }
         }
         String t = def.adapterType();
         if (!List.of("http", "webhook", "jms", "kafka", "rabbitmq").contains(t)) {

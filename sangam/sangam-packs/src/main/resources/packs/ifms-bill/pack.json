@@ -371,7 +371,18 @@
       "startVariables": {
         "docValid": false
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "expect": {
+          "audit": [
+            "CASE_REJECTED"
+          ],
+          "notAudit": [
+            "CASE_APPROVED"
+          ],
+          "ended": true
+        }
+      }
     }
   ],
   "dependsOn": [

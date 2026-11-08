@@ -170,6 +170,10 @@ def sanction():
                              fields=['remarks', 'rejectionReasonCodes', 'rejectionRemarks', 'returnReason',
                                      'signMethod', 'presentedPayloadHash', 'sodExceptionId'],
                              spec='${sanctionSla}', on_breach='${sanctionOnBreach}', sod=True,
+                             # each sanction level of a case has its own routing table, so the SoD step id carries
+                             # it: a checker and the authoriser of the same case are two steps, never the same role
+                             # (SL-50); a repeat of one level after a return keeps the same id
+                             step_suffix='routingDecisionKey',
                              power={'decisionKey': '${powersDecisionKey}', 'approveValues': 'approve'},
                              bind='approve')
     s.seq(st, d, lc, rt, seat, entry)

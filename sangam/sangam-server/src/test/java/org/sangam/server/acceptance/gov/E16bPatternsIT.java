@@ -483,7 +483,9 @@ class E16bPatternsIT extends GovBSupport {
     @Test
     void gp32_interDepartmentCall() {
         scenario("GP-32", ctx -> {
+            // SL-13: the callee is deployed in the caller's tenant; the same key in Finance's tenant is never reached
             deploy("dept-fin", "concurrence.bpmn");
+            deploy("dept-works", "concurrence.bpmn");
             deploy("dept-works", "gp32-works.bpmn");
             Map<String, Object> vars = m("fileNo", "WORKS/2026/311", "amount", 4_500_000L);
             String probe = start("dept-works", "gp32WorksProposal", "PROBE/1", new LinkedHashMap<>(vars));
@@ -494,16 +496,16 @@ class E16bPatternsIT extends GovBSupport {
             completeTask(p, "gp32_prepare", m());
             List<String> children = subProcessInstances(p);
             eq(ctx, 1, children.size(), "one called instance");
-            eq(ctx, tn("dept-fin"), instanceTenant(children.get(0)), "callee runs in Finance's tenant");
-            eq(ctx, 1, forGroups("dept-fin", "concurrence-officer").size(), "visible in Finance inbox");
-            eq(ctx, 0, forGroups("dept-works", "concurrence-officer").size(), "not in Works inbox");
-            TaskView ft = forGroups("dept-fin", "concurrence-officer").get(0);
+            eq(ctx, tn("dept-works"), instanceTenant(children.get(0)), "callee runs in the caller's tenant (SL-13)");
+            eq(ctx, 1, forGroups("dept-works", "concurrence-officer").size(), "visible to the concurring group");
+            eq(ctx, 0, forGroups("dept-fin", "concurrence-officer").size(), "nothing in another tenant (SL-13)");
+            TaskView ft = forGroups("dept-works", "concurrence-officer").get(0);
             eq(ctx, "WORKS/2026/311", ft.variables().get("fileNo"), "in-mapping");
-            eq(ctx, tn("dept-fin"), ft.tenantId(), "task tenant");
+            eq(ctx, tn("dept-works"), ft.tenantId(), "task tenant");
             adapter.completeTask(ft.id(), m("concurred", false, "remarks", "Rates not as per SOR 2025"));
             eq(ctx, "Rates not as per SOR 2025", var(p, "finRemarks"), "out-mapping");
             completeTask(p, "gp32_prepare", m());
-            TaskView ft2 = forGroups("dept-fin", "concurrence-officer").get(0);
+            TaskView ft2 = forGroups("dept-works", "concurrence-officer").get(0);
             adapter.completeTask(ft2.id(), m("concurred", true, "remarks", "Concurred"));
             completeTask(p, "gp32_sanction", m());
             yes(ctx, ended(p), "proposal ended");

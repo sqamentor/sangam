@@ -10,6 +10,7 @@
       "id": "INSTITUTE-NODAL",
       "role": "INO",
       "office": "NSP",
+      "level": "HEAD_OFFICE",
       "reportsTo": "DISTRICT-NODAL",
       "name": {
         "en": "Institute nodal officer",
@@ -20,6 +21,7 @@
       "id": "DISTRICT-NODAL",
       "role": "DNO",
       "office": "NSP",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "District nodal officer",

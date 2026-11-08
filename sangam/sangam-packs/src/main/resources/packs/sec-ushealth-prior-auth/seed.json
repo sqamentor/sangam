@@ -10,6 +10,7 @@
       "id": "ORDERING-CLINICIAN",
       "role": "CLINICIAN",
       "office": "PROVIDER",
+      "level": "HEAD_OFFICE",
       "reportsTo": "UM-LEAD",
       "name": {
         "en": "Ordering clinician",
@@ -20,6 +21,7 @@
       "id": "AUTH-SPECIALIST",
       "role": "AUTHSPEC",
       "office": "PROVIDER",
+      "level": "HEAD_OFFICE",
       "reportsTo": "UM-LEAD",
       "name": {
         "en": "Prior authorization specialist",
@@ -30,6 +32,7 @@
       "id": "UM-LEAD",
       "role": "UMLEAD",
       "office": "PROVIDER",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Utilization management lead",

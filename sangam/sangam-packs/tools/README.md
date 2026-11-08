@@ -45,6 +45,7 @@ mvnw.cmd -q -B -pl sangam-packs -am install
 | `lib.py` | BPMN writer with auto-layout DI, DMN writer, element helpers and macros (`sla_task`, `side_exits`, `conn`, ...) |
 | `forms.py` | bilingual (English / Hindi) labels for form fields and decision options |
 | `packs.py` | `Pack` container; writes models, forms, seeds, manifests and `packs.idx` |
+| `acceptance_runs.py` | how `PackAcceptanceTest` executes each pack acceptance scenario (`acceptance[].run`: answers, expectations, or the reason it is not driven); a scenario without one fails the build (SL-32) |
 | `common.py` | composition helpers (core calls, rejection, withdrawal, revise, per-item batch loop, broadcast) |
 | `core.py` | `sangam.core`: the government approval core blocks and core DMN |
 | `gov1.py` | P1-P4 and the DBT batch |

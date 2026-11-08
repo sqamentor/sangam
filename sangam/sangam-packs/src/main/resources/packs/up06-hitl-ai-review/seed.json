@@ -10,6 +10,7 @@
       "id": "REVIEWER-AI",
       "role": "REVIEWER",
       "office": "OPS-U6",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Human reviewer",

@@ -10,6 +10,7 @@
       "id": "OPS-CHECKER",
       "role": "OPSCHECKER",
       "office": "BRANCH-DEA",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Operations checker",

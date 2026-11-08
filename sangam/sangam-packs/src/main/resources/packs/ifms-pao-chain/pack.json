@@ -106,7 +106,16 @@
         "amount": 1200000,
         "chainSignatures": 2
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "expect": {
+          "tasks": [
+            "pc_pao",
+            "pc_second"
+          ],
+          "ended": true
+        }
+      }
     }
   ],
   "dependsOn": [

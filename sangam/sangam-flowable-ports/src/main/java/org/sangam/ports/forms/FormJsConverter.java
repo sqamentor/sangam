@@ -23,11 +23,15 @@ public final class FormJsConverter {
         List<FormDefinition.Field> fields = new ArrayList<>();
         if (root.has("components")) {
             collectFormJs(root.get("components"), fields);
-        } else if (root.has("fields")) {
+        } else if (root.has("fields") && isFlowableFields(root.get("fields"))) {
             for (JsonNode f : root.get("fields")) {
                 fields.add(flowableField(f));
             }
         } else {
+            if (root.isObject() && !root.hasNonNull("key")) {
+                ((com.fasterxml.jackson.databind.node.ObjectNode) root).put("key", key);
+                return Json.read(root.toString(), FormDefinition.class);
+            }
             return Json.read(json, FormDefinition.class);
         }
         List<FormDefinition.Outcome> outcomes = new ArrayList<>();
@@ -38,6 +42,27 @@ public final class FormJsConverter {
         }
         String name = root.path("name").asText(root.path("id").asText(key));
         return new FormDefinition(key, name, fields, outcomes);
+    }
+
+    /** Flowable-only field types; a field of one of these types (or with Flowable's name/params/value) marks Flowable JSON. */
+    private static final java.util.Set<String> FLOWABLE_TYPES = java.util.Set.of("multi-line-text", "dropdown", "radio-buttons",
+            "upload", "people", "functional-group", "hyperlink", "password", "readonly-text", "readonly", "container");
+
+    /**
+     * Native Sangam definitions also carry {@code fields[]}; they must be read as {@link FormDefinition} so their
+     * constraints (min/max, pattern, options, variable, scope, conditions) are kept. Flowable fields are recognised by
+     * Flowable's own properties or types.
+     */
+    private static boolean isFlowableFields(JsonNode fields) {
+        if (fields == null || !fields.isArray()) {
+            return false;
+        }
+        for (JsonNode f : fields) {
+            if (f.has("name") || f.has("params") || f.has("value") || FLOWABLE_TYPES.contains(f.path("type").asText())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void collectFormJs(JsonNode components, List<FormDefinition.Field> out) {

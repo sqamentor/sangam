@@ -117,7 +117,22 @@ public final class OnboardingPorts {
 
         void bootstrapAdmins(String tenantId, List<AdminSpec> admins, String actor);
 
-        /** Installs the seed roles, offices and seats of the packs; existing seats stay. Returns the seats created. */
+        /** The tenant's org level types, top first (empty when none are defined). */
+        List<String> orgLevels(String tenantId);
+
+        /** The tenant has at least one org unit (its levels are then fixed, A02). */
+        boolean orgUnitsExist(String tenantId);
+
+        /**
+         * Defines the tenant's org level types (top first) unless exactly these are already defined; refused
+         * ({@code LEVELS_IN_USE}) when different levels are fixed by existing units.
+         */
+        void defineOrgLevels(String tenantId, List<String> levelTypes, String actor);
+
+        /**
+         * Installs the seed roles, offices and seats of the packs; existing seats stay. Each office unit gets the
+         * level its seats name ({@code SeedSeat.level}). Returns the seats created.
+         */
         int installPackSeeds(String tenantId, List<org.sangam.packs.spi.PackDescriptor> packs, String actor);
 
         /** A key-encryption (master) key is configured for field encryption (not the development key). */

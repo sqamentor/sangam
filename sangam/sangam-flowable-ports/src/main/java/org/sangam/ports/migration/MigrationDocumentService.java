@@ -68,8 +68,8 @@ public class MigrationDocumentService {
         List<String> errors = new ArrayList<>();
         try {
             plan(doc, src, tgt);
-        } catch (ProcessEngineException e) {
-            errors.add(e.getMessage());
+        } catch (ProcessEngineException | IllegalArgumentException e) {
+            errors.add(e.getMessage());   // invalid mappings (N:M, empty from/to) are a report finding, not a crash
         }
         Map<String, Long> perActivity = new LinkedHashMap<>();
         for (MigrationDocument.Mapping m : doc.mappings()) {

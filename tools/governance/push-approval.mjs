@@ -1,60 +1,89 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Sangam's own push-approval gate (owner decision SD-432 "Gate Sangam like IFMS", 2026-11-08).
+ * Sangam's own push-approval gate (owner decision SD-432 "Gate Sangam like IFMS", 2026-11-08; hardened SG-34).
  * Sangam-owned on purpose: no other project's governance code or ledger is used (project boundaries).
  *
- *   record  --sha <full sha> --remote <url> --ref <refs/heads/x> --words "<the human's verbatim approval>"
- *           --conversation "<session ref>"      → appends one APPROVAL record
+ *   text    --sha <full sha> --remote <url> --ref <refs/heads/x> --words "<owner's words>" [--ttl-minutes N<=30]
+ *           → prints the canonical v2 approval text (binds sha, remote, ref and an absolute expiry)
+ *   record  --signed <text file> --sig <text file>.sig --conversation "<session ref>"
+ *           → appends one APPROVAL record that STORES the signed text and the signature
  *   check   (called by .githooks/pre-push with git's pre-push stdin)
- *           → every ref update must have an unconsumed APPROVAL for exactly that sha, remote and ref,
- *             recorded within the TTL; the update must be a fast-forward (no force) unless deleting is
- *             refused outright; each approval is consumed (single use) by appending a CONSUMED record.
- *   verify  → checks the whole chain
+ *   verify  → checks the whole chain and the off-repo mirror
  *
- * Ledger: <git-dir>/sangam-push-approvals.jsonl (per clone, never committed). Each record carries
- * index, prevSha256 and recordSha256 (SHA-256 over the canonical JSON of the record without its hash).
- * Every append runs under an exclusive lock (atomic mkdir <ledger>.lock, retry with exponential backoff
- * and jitter, stale lock broken only when its owner pid is dead AND it is older than 60 s), re-reads and
- * verifies the chain inside the lock, computes index/prev from the fresh tail, writes the full line in one
- * write + fsync, re-verifies, then releases. A broken chain is never appended to and never auto-healed.
+ * TRUST MODEL (SG-34). The ledger is only a single-use / audit log; it is never trusted on its own.
+ *  1. At push time `check` re-verifies every candidate approval: the stored signed text is re-parsed, must bind
+ *     exactly the sha, remote URL and ref being pushed and be unexpired, and its stored signature is re-verified
+ *     with `ssh-keygen -Y verify` (namespace sangam-push). A record without a valid signature never authorises
+ *     a push, whatever flags it carries; a forged record with recomputed chain hashes therefore authorises nothing.
+ *  2. Trust root (allowed signers), strictest first, never taken from the environment or the working tree:
+ *       a. the owner-held file <user profile>/.ssh/sangam_allowed_signers (profile from the OS account record,
+ *          not from %USERPROFILE%/$HOME) — preferred whenever it exists;
+ *       b. otherwise `.githooks/allowed_signers` as committed in the REMOTE's current commit of the ref being
+ *          updated (the remote sha git reports on pre-push stdin), so a push can never introduce its own signer.
+ *     New refs (remote sha all zeros) and remotes whose commit carries no signer need (a).
+ *  3. The working-tree `.githooks/allowed_signers` must list exactly the trusted signers; a difference is reported
+ *     and the push refused (an edited working tree is never a way to add a key).
+ *
+ * Ledger: <git-dir>/sangam-push-approvals.jsonl (per clone, never committed), hash-chained; every append runs
+ * under an exclusive lock (atomic mkdir, backoff+jitter, stale lock broken only when its pid is dead AND it is
+ * older than 60 s), re-verifies inside the lock, one write + fsync, re-verifies, mirrors, then releases.
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, rmSync, statSync,
+import { closeSync, existsSync, fsyncSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, statSync,
          writeFileSync, writeSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { homedir } from 'node:os';
+import { homedir, tmpdir, userInfo } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
-const TTL_MS = 30 * 60 * 1000;
-
-function gitDir() {
-  if (process.env.SANGAM_PUSH_LEDGER_DIR) return resolve(process.env.SANGAM_PUSH_LEDGER_DIR); // tests only
-  return resolve(execFileSync('git', ['rev-parse', '--git-dir'], { encoding: 'utf8' }).trim());
-}
-const LEDGER = join(gitDir(), 'sangam-push-approvals.jsonl');
-const LOCK = LEDGER + '.lock';
-// Off-repo mirror (SD-428 review point 1): a clone or a deleted .git must not lose the audit trail.
-// One mirror per repository, keyed by the repository's absolute path, outside the working tree.
-function mirrorPath() {
-  if (process.env.SANGAM_PUSH_MIRROR_DIR) return join(resolve(process.env.SANGAM_PUSH_MIRROR_DIR), 'mirror.jsonl');
-  const top = resolve(execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim());
-  const base = process.env.LOCALAPPDATA || join(homedir(), '.local', 'share');
-  return join(base, 'sangam-governance', sha256(top.toLowerCase()).slice(0, 16), 'push-approvals.mirror.jsonl');
-}
+const NAMESPACE = 'sangam-push';
+const MAX_TTL_MS = 30 * 60 * 1000;
+const ZERO = /^0{40}$/;
 
 const canon = (o) => JSON.stringify(o, Object.keys(o).sort());
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 const hashOf = (rec) => { const { recordSha256, ...rest } = rec; return sha256(canon(rest)); };
+const git = (args, opts = {}) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...opts });
 
-function readChain() {
-  if (!existsSync(LEDGER)) return [];
-  return readFileSync(LEDGER, 'utf8').split('\n').filter(Boolean).map((l, i) => {
+/**
+ * ssh-keygen resolution. On Windows the fixed system path of Windows OpenSSH comes first: Git Bash's MSYS
+ * ssh-keygen (first on PATH inside Git Bash, i.e. inside the pre-push hook) dies with 0xC0000142 when spawned
+ * from node. Elsewhere, or when Windows OpenSSH is absent, the PATH one.
+ */
+export function sshKeygen() {
+  if (process.platform === 'win32') {
+    const sys = 'C:\\Windows\\System32\\OpenSSH\\ssh-keygen.exe';
+    if (existsSync(sys)) return sys;
+  }
+  return 'ssh-keygen';
+}
+
+/** Owner-held trust root: profile directory from the OS account record, not from environment variables. */
+export function defaultOwnerSignersPath() {
+  let home;
+  try { home = userInfo().homedir; } catch { home = homedir(); }
+  return join(home, '.ssh', 'sangam_allowed_signers');
+}
+
+function context(opts = {}) {
+  const top = resolve(git(['rev-parse', '--show-toplevel']).trim());
+  const ledger = join(resolve(git(['rev-parse', '--git-dir']).trim()), 'sangam-push-approvals.jsonl');
+  const mirror = opts.mirrorPath
+      || join(process.env.LOCALAPPDATA || join(homedir(), '.local', 'share'), 'sangam-governance',
+              sha256(top.toLowerCase()).slice(0, 16), 'push-approvals.mirror.jsonl');
+  return { top, ledger, lock: ledger + '.lock', mirror,
+           ownerSigners: opts.ownerSignersPath || defaultOwnerSignersPath() };
+}
+
+function readChain(ctx) {
+  if (!existsSync(ctx.ledger)) return [];
+  return readFileSync(ctx.ledger, 'utf8').split('\n').filter(Boolean).map((l, i) => {
     try { return JSON.parse(l); } catch { return { __malformed: true, __line: i + 1 }; }
   });
 }
 
-export function verifyChain(chain = readChain()) {
+export function verifyChain(chain) {
   const issues = [];
   let prev = null;
   chain.forEach((r, i) => {
@@ -66,67 +95,177 @@ export function verifyChain(chain = readChain()) {
   });
   return { ok: issues.length === 0, issues, length: chain.length };
 }
+export { hashOf };
 
 function pidAlive(pid) {
   try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; }
 }
-
 function sleep(ms) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); }
 
-function withLock(fn) {
+function withLock(ctx, fn) {
   const deadline = Date.now() + 30_000;
   let wait = 10;
   for (;;) {
     try {
-      mkdirSync(LOCK);
-      writeFileSync(join(LOCK, 'owner.json'), JSON.stringify({ pid: process.pid, at: new Date().toISOString() }));
+      mkdirSync(ctx.lock);
+      writeFileSync(join(ctx.lock, 'owner.json'), JSON.stringify({ pid: process.pid, at: new Date().toISOString() }));
       break;
     } catch (e) {
       if (e.code !== 'EEXIST') throw e;
       try {
-        const o = JSON.parse(readFileSync(join(LOCK, 'owner.json'), 'utf8'));
-        const age = Date.now() - statSync(LOCK).mtimeMs;
+        const o = JSON.parse(readFileSync(join(ctx.lock, 'owner.json'), 'utf8'));
+        const age = Date.now() - statSync(ctx.lock).mtimeMs;
         if (!pidAlive(o.pid) && age > 60_000) {
           console.error(`  breaking stale push-ledger lock (pid ${o.pid} dead, ${Math.round(age / 1000)} s old)`);
-          rmSync(LOCK, { recursive: true, force: true });
+          rmSync(ctx.lock, { recursive: true, force: true });
           continue;
         }
       } catch { /* owner file not written yet: treat as live */ }
-      if (Date.now() > deadline) throw new Error(`push-ledger lock ${LOCK} still held after 30 s; refusing`);
+      if (Date.now() > deadline) throw new Error(`push-ledger lock ${ctx.lock} still held after 30 s; refusing`);
       sleep(wait + Math.floor(Math.random() * wait));
       wait = Math.min(wait * 2, 1000);
     }
   }
-  try { return fn(); } finally { rmSync(LOCK, { recursive: true, force: true }); }
+  try { return fn(); } finally { rmSync(ctx.lock, { recursive: true, force: true }); }
 }
 
-export function append(entry) {
-  return withLock(() => {
-    const chain = readChain();
+function append(ctx, entry) {
+  return withLock(ctx, () => {
+    const chain = readChain(ctx);
     const v = verifyChain(chain);
     if (!v.ok) throw new Error('push-approval ledger does not verify; refusing to append:\n  ' + v.issues.join('\n  '));
     const prev = chain.length ? chain[chain.length - 1].recordSha256 : null;
     const rec = { ...entry, index: chain.length, prevSha256: prev, at: new Date().toISOString() };
     rec.recordSha256 = hashOf(rec);
     const line = JSON.stringify(rec) + '\n';
-    const fd = openSync(LEDGER, 'a');
+    const fd = openSync(ctx.ledger, 'a');
     try { writeSync(fd, line); fsyncSync(fd); } finally { closeSync(fd); }
-    const after = verifyChain();
+    const after = verifyChain(readChain(ctx));
     if (!after.ok || after.length !== chain.length + 1) {
       throw new Error('push-approval ledger failed verification right after append: ' + after.issues.join('; '));
     }
-    // mirror inside the same lock, so ledger and mirror can never interleave differently
-    const m = mirrorPath();
-    mkdirSync(dirname(m), { recursive: true });
-    const mfd = openSync(m, 'a');
+    mkdirSync(dirname(ctx.mirror), { recursive: true });
+    const mfd = openSync(ctx.mirror, 'a');
     try { writeSync(mfd, line); fsyncSync(mfd); } finally { closeSync(mfd); }
     return rec;
   });
 }
 
-function arg(name) {
-  const i = process.argv.indexOf('--' + name);
-  return i > 0 ? process.argv[i + 1] : undefined;
+// ── canonical approval text (v2 binds an absolute expiry) ──
+export function approvalText({ sha, remote, ref, expires, words }) {
+  return `sangam-push-approval v2\nsha=${sha}\nremote=${remote}\nref=${ref}\nexpires=${expires}\n`
+      + `words=${String(words).replace(/[\r\n]+/g, ' ')}\n`;
+}
+export function parseApprovalText(text) {
+  const m = /^sangam-push-approval v2\nsha=([0-9a-f]{40})\nremote=([^\n]+)\nref=([^\n]+)\nexpires=(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)\nwords=([^\n]*)\n$/
+      .exec(text);
+  if (!m) throw new Error('signed text is not a canonical sangam-push-approval v2 text');
+  return { sha: m[1], remote: m[2], ref: m[3], expires: m[4], words: m[5] };
+}
+
+// ── trust root ──
+const signerLines = (text) => text.replace(/\r/g, '').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+const sameSigners = (a, b) => canon([...signerLines(a)].sort()) === canon([...signerLines(b)].sort());
+
+/** Returns { text, source } of the trusted allowed_signers for updating `remoteSha`, or throws. */
+function trustRoot(ctx, remoteSha) {
+  if (existsSync(ctx.ownerSigners)) {
+    const text = readFileSync(ctx.ownerSigners, 'utf8');
+    if (!signerLines(text).length) throw new Error(`owner-held ${ctx.ownerSigners} lists no signer`);
+    return { text, source: `owner-held ${ctx.ownerSigners}` };
+  }
+  const how = `create the owner-held trust root ${ctx.ownerSigners} (see .githooks/allowed_signers)`;
+  if (!remoteSha || ZERO.test(remoteSha)) {
+    throw new Error(`no owner-held trust root and the remote ref does not exist yet; ${how}`);
+  }
+  let text;
+  try { text = git(['show', `${remoteSha}:.githooks/allowed_signers`]); }
+  catch { throw new Error(`remote commit ${remoteSha.slice(0, 12)} carries no .githooks/allowed_signers (or is not fetched); ${how}`); }
+  if (!signerLines(text).length) throw new Error(`remote commit ${remoteSha.slice(0, 12)} lists no signer; ${how}`);
+  return { text, source: `.githooks/allowed_signers @ remote ${remoteSha.slice(0, 12)}` };
+}
+
+function assertWorkingTreeMatches(ctx, trust) {
+  const f = join(ctx.top, '.githooks', 'allowed_signers');
+  const wt = existsSync(f) ? readFileSync(f, 'utf8') : '';
+  if (!sameSigners(wt, trust.text)) {
+    throw new Error(`working-tree .githooks/allowed_signers differs from the trusted signers (${trust.source}); `
+        + 'a key is only trusted through the owner-held file or a commit already on the remote');
+  }
+}
+
+/** Verifies `signature` over `text` against the trusted signers text; returns the principal or null. */
+export function verifySignature(text, signature, signersText) {
+  const dir = mkdtempSync(join(tmpdir(), 'sangam-verify-'));
+  try {
+    const sf = join(dir, 'allowed_signers'), sig = join(dir, 'approval.sig');
+    writeFileSync(sf, signerLines(signersText).join('\n') + '\n');
+    writeFileSync(sig, String(signature).replace(/\r/g, ''));
+    for (const id of new Set(signerLines(signersText).map((l) => l.split(/\s+/)[0]))) {
+      try {
+        execFileSync(sshKeygen(), ['-Y', 'verify', '-f', sf, '-I', id, '-n', NAMESPACE, '-s', sig],
+            { input: Buffer.from(text, 'utf8'), stdio: ['pipe', 'ignore', 'ignore'] });
+        return id;
+      } catch { /* next principal */ }
+    }
+    return null;
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+}
+
+// ── commands ──
+function makeArg(argv) {
+  return (name) => { const i = argv.indexOf('--' + name); return i >= 0 ? argv[i + 1] : undefined; };
+}
+
+function cmdText(arg) {
+  const sha = arg('sha'), remote = arg('remote'), ref = arg('ref'), words = arg('words');
+  const ttl = Number(arg('ttl-minutes') ?? 30);
+  if (!/^[0-9a-f]{40}$/.test(sha || '') || !remote || !ref || !words) {
+    throw new Error('text needs --sha (40 hex) --remote --ref --words');
+  }
+  if (!(ttl > 0 && ttl * 60000 <= MAX_TTL_MS)) throw new Error(`--ttl-minutes must be 1..${MAX_TTL_MS / 60000}`);
+  process.stdout.write(approvalText({ sha, remote, ref, words,
+      expires: new Date(Date.now() + ttl * 60000).toISOString() }));
+}
+
+function cmdRecord(ctx, arg) {
+  const signedFile = arg('signed'), sigFile = arg('sig'), conv = arg('conversation');
+  if (!signedFile || !sigFile || !conv) {
+    throw new Error('record needs --signed <text> --sig <text>.sig --conversation <id>; '
+        + 'unsigned approvals never authorise a push and are not recorded');
+  }
+  const text = readFileSync(signedFile, 'utf8').replace(/\r\n/g, '\n');
+  const signature = readFileSync(sigFile, 'utf8');
+  const a = parseApprovalText(text);
+  if (Date.parse(a.expires) <= Date.now()) throw new Error(`approval expired at ${a.expires}`);
+  // Early feedback only (the authoritative verification happens again in `check`): the remote's current sha
+  // is not known yet, so the local tracking ref of the target stands in for it here.
+  let remoteSha = null;
+  try {
+    const name = git(['remote']).split('\n').map((s) => s.trim()).filter(Boolean)
+        .find((n) => git(['remote', 'get-url', n]).trim() === a.remote);
+    if (name) remoteSha = git(['rev-parse', '--verify', '-q', `refs/remotes/${name}/${a.ref.replace(/^refs\/heads\//, '')}`]).trim();
+  } catch { /* unknown: owner-held root required */ }
+  const trust = trustRoot(ctx, remoteSha);
+  const signer = verifySignature(text, signature, trust.text);
+  if (!signer) throw new Error(`signature ${sigFile} does not verify against ${trust.source} (namespace ${NAMESPACE})`);
+  const rec = append(ctx, { kind: 'APPROVAL', ...a, conversation: conv, source: 'ssh-signature', signer,
+      signedText: text, signature, approvalTextSha256: sha256(text) });
+  console.log(`  SIGNED APPROVAL recorded #${rec.index} by ${signer} for ${a.sha.slice(0, 12)} → ${a.ref} on ${a.remote} `
+      + `(expires ${a.expires}; re-verified at push time)`);
+}
+
+function cmdVerify(ctx) {
+  const v = verifyChain(readChain(ctx));
+  if (!v.ok) { console.log('  BROKEN:\n  ' + v.issues.join('\n  ')); return 1; }
+  const ledger = existsSync(ctx.ledger) ? readFileSync(ctx.ledger, 'utf8') : '';
+  const mirror = existsSync(ctx.mirror) ? readFileSync(ctx.mirror, 'utf8') : '';
+  if (!mirror.startsWith(ledger)) {
+    console.log(`  MIRROR MISMATCH: ${ctx.mirror} does not contain the ledger as a prefix (ledger rewritten or mirror lost)`);
+    return 1;
+  }
+  console.log(`  push-approval ledger OK (${v.length} records); mirror OK (${ctx.mirror})`);
+  return 0;
 }
 
 function isAncestor(a, b) {
@@ -134,158 +273,63 @@ function isAncestor(a, b) {
   catch { return false; }
 }
 
-/**
- * Who said the words (SD-428 review point 2). The tool cannot prove on its own that text passed by an
- * agent was typed by the human, so it records the channel honestly instead of claiming more:
- *   --tty            the human types the approval at an interactive terminal; ttyVerified=true.
- *   --words ...      conversation channel: an agent records the human's own chat message VERBATIM with the
- *                    conversation id; ttyVerified=false. Policy (documented in the hook and README): only
- *                    the human's own message in the conversation, never an agent's paraphrase and never a
- *                    message relayed from another session; the record is auditable against the transcript.
- * A relayed or agent-written approval is refused by policy and by the --source check below.
- */
-async function readTtyWords() {
-  const { createInterface } = await import('node:readline');
-  if (!process.stdin.isTTY) throw new Error('--tty needs an interactive terminal (stdin is not a TTY)');
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const answer = await new Promise((res) => rl.question('  Type your approval in your own words: ', res));
-  rl.close();
-  return answer.trim();
-}
-
-/**
- * Owner-signed approvals (owner decision 2026-11-08, SG-32). The approval text is canonical and binds the exact
- * push; the owner signs it with their own SSH key (passphrase known only to them):
- *     node tools/governance/push-approval.mjs text --sha <sha> --remote <url> --ref <ref> --words "<words>" > a.txt
- *     ssh-keygen -Y sign -f ~/.ssh/<owner key> -n sangam-push a.txt          (writes a.txt.sig)
- *     node tools/governance/push-approval.mjs record --signed a.txt --sig a.txt.sig --conversation <id>
- * The gate verifies the signature against .githooks/allowed_signers (namespace sangam-push). When that file
- * lists at least one signer, every approval MUST be signed; unsigned approvals are refused.
- */
-const NAMESPACE = 'sangam-push';
-function allowedSigners() {
-  const top = resolve(execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim());
-  const f = process.env.SANGAM_ALLOWED_SIGNERS || join(top, '.githooks', 'allowed_signers');
-  if (!existsSync(f)) return null;
-  const has = readFileSync(f, 'utf8').split('\n').some((l) => l.trim() && !l.trim().startsWith('#'));
-  return has ? f : null;
-}
-export function approvalText({ sha, remote, ref, words }) {
-  return `sangam-push-approval v1\nsha=${sha}\nremote=${remote}\nref=${ref}\nwords=${words.replace(/\n/g, ' ')}\n`;
-}
-function parseApprovalText(text) {
-  const m = /^sangam-push-approval v1\nsha=([0-9a-f]{40})\nremote=(.+)\nref=(.+)\nwords=(.*)\n$/.exec(text);
-  if (!m) throw new Error('signed file is not a canonical sangam-push-approval v1 text');
-  return { sha: m[1], remote: m[2], ref: m[3], words: m[4] };
-}
-function verifySignature(textFile, sigFile, signersFile) {
-  const principals = readFileSync(signersFile, 'utf8').split('\n').map((l) => l.trim())
-      .filter((l) => l && !l.startsWith('#')).map((l) => l.split(/\s+/)[0]);
-  for (const id of principals) {
-    try {
-      execFileSync('ssh-keygen', ['-Y', 'verify', '-f', signersFile, '-I', id, '-n', NAMESPACE, '-s', sigFile],
-          { input: readFileSync(textFile), stdio: ['pipe', 'ignore', 'ignore'] });
-      return id;
-    } catch { /* try next principal */ }
-  }
-  throw new Error(`signature ${sigFile} does not verify for any principal in ${signersFile} (namespace ${NAMESPACE})`);
-}
-
-function cmdText() {
-  const sha = arg('sha'), remote = arg('remote'), ref = arg('ref'), words = arg('words');
-  if (!/^[0-9a-f]{40}$/.test(sha || '') || !remote || !ref || !words) {
-    throw new Error('text needs --sha (40 hex) --remote --ref --words');
-  }
-  process.stdout.write(approvalText({ sha, remote, ref, words }));
-}
-
-async function cmdRecord() {
-  const signedFile = arg('signed');
-  if (signedFile) {
-    const sigFile = arg('sig'), conv = arg('conversation');
-    if (!sigFile || !conv) throw new Error('--signed needs --sig <file> and --conversation <id>');
-    const signers = allowedSigners();
-    if (!signers) throw new Error('no .githooks/allowed_signers with at least one signer; cannot verify a signature');
-    const text = readFileSync(signedFile, 'utf8');
-    const a = parseApprovalText(text);
-    const signer = verifySignature(signedFile, sigFile, signers);
-    const rec = append({ kind: 'APPROVAL', ...a, conversation: conv, source: 'ssh-signature', signer,
-        ttyVerified: false, signatureVerified: true, approvalTextSha256: sha256(text),
-        signature: readFileSync(sigFile, 'utf8') });
-    console.log(`  SIGNED APPROVAL recorded #${rec.index} by ${signer} for ${a.sha.slice(0, 12)} → ${a.ref} on ${a.remote}`);
-    return;
-  }
-  if (allowedSigners()) {
-    throw new Error('owner-signed approvals are required (.githooks/allowed_signers lists a signer); use --signed/--sig');
-  }
-  const sha = arg('sha'), remote = arg('remote'), ref = arg('ref'), conv = arg('conversation');
-  const tty = process.argv.includes('--tty');
-  const source = tty ? 'tty' : arg('source');
-  if (!/^[0-9a-f]{40}$/.test(sha || '')) throw new Error('--sha must be a full 40-hex commit id');
-  if (!remote || !ref || !conv) throw new Error('--remote, --ref and --conversation are required');
-  if (!tty && source !== 'user-message') {
-    throw new Error('--source user-message is required for --words (the human\'s own message, verbatim); '
-        + 'agent paraphrases and messages relayed from other sessions are not approvals');
-  }
-  const words = tty ? await readTtyWords() : arg('words');
-  if (!words) throw new Error('approval words are empty');
-  const rec = append({ kind: 'APPROVAL', sha, remote, ref, words, conversation: conv, source,
-      ttyVerified: tty });
-  console.log(`  APPROVAL recorded #${rec.index} for ${sha.slice(0, 12)} → ${ref} on ${remote} `
-      + `(source=${source}, ttyVerified=${tty}; single use, ${TTL_MS / 60000} min)`);
-}
-
-function cmdVerify() {
-  const v = verifyChain();
-  if (!v.ok) { console.log('  BROKEN:\n  ' + v.issues.join('\n  ')); return 1; }
-  const m = mirrorPath();
-  const ledger = existsSync(LEDGER) ? readFileSync(LEDGER, 'utf8') : '';
-  const mirror = existsSync(m) ? readFileSync(m, 'utf8') : '';
-  if (!mirror.startsWith(ledger)) {
-    console.log(`  MIRROR MISMATCH: ${m} does not contain the ledger as a prefix (ledger rewritten or mirror lost)`);
-    return 1;
-  }
-  console.log(`  push-approval ledger OK (${v.length} records); mirror OK (${m})`);
-  return 0;
-}
-
-function cmdCheck(remoteUrl) {
-  const input = readFileSync(0, 'utf8').split('\n').filter(Boolean);
-  const ZERO = /^0{40}$/;
-  for (const line of input) {
-    const [, localSha, remoteRef, remoteSha] = line.trim().split(/\s+/);
+function cmdCheck(ctx, remoteUrl, stdinText) {
+  if (!remoteUrl) throw new Error('check needs the remote URL (pre-push $2)');
+  for (const line of stdinText.split('\n').map((l) => l.trim()).filter(Boolean)) {
+    const [, localSha, remoteRef, remoteSha] = line.split(/\s+/);
     if (ZERO.test(localSha)) throw new Error(`deleting ${remoteRef} is not allowed through this gate`);
     if (!ZERO.test(remoteSha) && !isAncestor(remoteSha, localSha)) {
       throw new Error(`${remoteRef}: not a fast-forward (${remoteSha.slice(0, 12)} is not an ancestor of ${localSha.slice(0, 12)}); force pushes are refused`);
     }
-    const chain = readChain();
+    const trust = trustRoot(ctx, remoteSha);
+    assertWorkingTreeMatches(ctx, trust);
+    const chain = readChain(ctx);
     const v = verifyChain(chain);
     if (!v.ok) throw new Error('push-approval ledger does not verify:\n  ' + v.issues.join('\n  '));
     const consumed = new Set(chain.filter((r) => r.kind === 'CONSUMED').map((r) => r.approvalIndex));
     const now = Date.now();
-    const mustBeSigned = !!allowedSigners();
-    const ok = chain.filter((r) => r.kind === 'APPROVAL' && r.sha === localSha && r.ref === remoteRef
-        && (!mustBeSigned || r.signatureVerified === true)
-        && r.remote === remoteUrl && !consumed.has(r.index) && now - Date.parse(r.at) <= TTL_MS).pop();
-    if (!ok) {
-      throw new Error(`no unconsumed approval for ${localSha} → ${remoteRef} on ${remoteUrl} within ${TTL_MS / 60000} min.\n`
-          + '  Record the human\'s own words first: node tools/governance/push-approval.mjs record --sha <sha> '
-          + '--remote <url> --ref <ref> --words "<verbatim>" --conversation "<session>"');
+    let ok = null, signer = null;
+    for (const r of [...chain].reverse()) {
+      if (r.kind !== 'APPROVAL' || consumed.has(r.index) || typeof r.signedText !== 'string' || !r.signature) continue;
+      let a;
+      try { a = parseApprovalText(r.signedText); } catch { continue; }
+      if (a.sha !== localSha || a.ref !== remoteRef || a.remote !== remoteUrl) continue;
+      if (!(Date.parse(a.expires) > now)) continue;
+      if (r.sha !== a.sha || r.ref !== a.ref || r.remote !== a.remote) continue; // record must not misstate its text
+      signer = verifySignature(r.signedText, r.signature, trust.text);
+      if (signer) { ok = { r, a }; break; }
     }
-    append({ kind: 'CONSUMED', approvalIndex: ok.index, sha: localSha, ref: remoteRef, remote: remoteUrl });
-    console.log(`  push approved by record #${ok.index}: "${ok.words.slice(0, 80)}${ok.words.length > 80 ? '…' : ''}"`);
+    if (!ok) {
+      throw new Error(`no unconsumed, unexpired approval with a valid owner signature (${trust.source}) for `
+          + `${localSha} → ${remoteRef} on ${remoteUrl}.\n  Owner: push-approval.mjs text … | ssh-keygen -Y sign -n ${NAMESPACE}; `
+          + 'then push-approval.mjs record --signed <txt> --sig <txt>.sig --conversation <id>');
+    }
+    append(ctx, { kind: 'CONSUMED', approvalIndex: ok.r.index, approvalTextSha256: sha256(ok.r.signedText),
+        sha: localSha, ref: remoteRef, remote: remoteUrl, signer, trust: trust.source });
+    console.log(`  push approved by record #${ok.r.index}, signed by ${signer} (${trust.source}): `
+        + `"${ok.a.words.slice(0, 80)}${ok.a.words.length > 80 ? '…' : ''}"`);
   }
 }
 
-const cmd = process.argv[2];
-try {
-  if (cmd === 'text') cmdText();
-  else if (cmd === 'record') await cmdRecord();
-  else if (cmd === 'check') cmdCheck(process.argv[4] || process.argv[3]);
-  else if (cmd === 'verify') process.exit(cmdVerify());
-  else if (cmd === '--selftest-append') { append({ kind: 'TEST', n: Number(arg('n')) }); }
-  else { console.error('usage: push-approval.mjs record|check|verify'); process.exit(2); }
-} catch (e) {
-  console.error(`\nBLOCKED (Sangam push gate): ${e.message}\n`);
-  process.exit(1);
+/** Entry point. `opts` exists for the hermetic self-test only; nothing here reads trust from the environment. */
+export function main(argv, opts = {}) {
+  const arg = makeArg(argv);
+  const cmd = argv[0];
+  try {
+    if (cmd === 'text') { cmdText(arg); return 0; }
+    const ctx = context(opts);
+    if (cmd === 'record') { cmdRecord(ctx, arg); return 0; }
+    if (cmd === 'check') { cmdCheck(ctx, argv[2] || argv[1], opts.stdin ?? readFileSync(0, 'utf8')); return 0; }
+    if (cmd === 'verify') return cmdVerify(ctx);
+    if (cmd === '--selftest-append') { append(ctx, { kind: 'TEST', n: Number(arg('n')) }); return 0; }
+    console.error('usage: push-approval.mjs text|record|check|verify');
+    return 2;
+  } catch (e) {
+    console.error(`\nBLOCKED (Sangam push gate): ${e.message}\n`);
+    return 1;
+  }
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exit(main(process.argv.slice(2)));
 }

@@ -10,6 +10,7 @@
       "id": "SELLER-ONBOARDING",
       "role": "ONBOARDING",
       "office": "SELLER-OPS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SELLER-APPROVER",
       "name": {
         "en": "Seller onboarding desk",
@@ -20,6 +21,7 @@
       "id": "SELLER-APPROVER",
       "role": "APPROVER",
       "office": "SELLER-OPS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Seller approver",

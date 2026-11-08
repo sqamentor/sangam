@@ -22,6 +22,7 @@
       "id": "DA-B2",
       "role": "DA",
       "office": "SEC-B2",
+      "level": "FIELD_OFFICE",
       "reportsTo": "SO-B2",
       "name": {
         "en": "Dealing assistant, Section B-2",
@@ -32,6 +33,7 @@
       "id": "SO-B2",
       "role": "SO",
       "office": "SEC-B2",
+      "level": "FIELD_OFFICE",
       "reportsTo": "US-B",
       "name": {
         "en": "Section officer B-2",
@@ -42,6 +44,7 @@
       "id": "SO-C2",
       "role": "SO",
       "office": "SEC-C2",
+      "level": "FIELD_OFFICE",
       "reportsTo": "US-B",
       "name": {
         "en": "Section officer C-2",
@@ -52,6 +55,7 @@
       "id": "US-B",
       "role": "US",
       "office": "DIV-B",
+      "level": "REGIONAL_OFFICE",
       "reportsTo": "DS-B",
       "name": {
         "en": "Under Secretary",
@@ -62,6 +66,7 @@
       "id": "DS-B",
       "role": "DS",
       "office": "DIV-B",
+      "level": "REGIONAL_OFFICE",
       "reportsTo": "JS-1",
       "name": {
         "en": "Deputy Secretary",
@@ -72,6 +77,7 @@
       "id": "JS-1",
       "role": "JS",
       "office": "MIN",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECY",
       "name": {
         "en": "Joint Secretary",
@@ -82,6 +88,7 @@
       "id": "SECY",
       "role": "SECRETARY",
       "office": "MIN",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Secretary",
         "hi": "सचिव"

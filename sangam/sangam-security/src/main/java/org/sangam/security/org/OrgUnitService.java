@@ -55,6 +55,17 @@ public final class OrgUnitService {
         audit.security(c, actor, SecurityEventType.TENANT_CONFIGURED, Map.of("org_levels", levelTypes));
     }
 
+    /** The tenant's level types in order (1 = top); empty when none are defined. */
+    public List<String> levels(Connection c, String tenant) {
+        return Jdbc.query(c, "SELECT level_type FROM SEC_ORG_LEVEL WHERE tenant_id=? ORDER BY level_no", rs -> rs.getString(1),
+                tenant);
+    }
+
+    /** Whether the tenant has any org unit (its level types are then fixed). */
+    public boolean hasUnits(Connection c, String tenant) {
+        return Jdbc.one(c, "SELECT COUNT(*) FROM SEC_ORG_UNIT WHERE tenant_id=?", rs -> rs.getLong(1), tenant).orElse(0L) > 0;
+    }
+
     public OrgModel.OrgUnit createUnit(Connection c, SecurityIdentity actor, String unitId, String levelType, String parentId,
                                        String nameEn, String nameHi, Instant validFrom) {
         authz.require(c, actor, ResourceRegistry.ORG_UNIT, Permission.ADMIN, parentId == null ? ResourceRegistry.ANY_ID : parentId);

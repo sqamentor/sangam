@@ -10,8 +10,12 @@ RUN = pp("id", "onboarding run id")
 
 schema("OnboardingProblem", "One finding.", "severity code step subject message",
        enums={"severity": ["ERROR", "WARNING", "INFO"]})
+schema("OnboardingSecurity", "Security set-up. orgLevels: the tenant's org level types, top first; when empty the "
+       "resolved profile's default security.orgLevels is used. They are defined before pack seats are seeded (levels are "
+       "fixed once the first org unit exists); the dry run refuses a seat whose level is missing or not among them.",
+       "moduleDefaults:bool selfService:bool roles:list:obj tenantAdmins:list:obj orgLevels:list:s")
 schema("OnboardingRequest", "Everything a new tenant needs, as data. See org.sangam.onboarding.api.OnboardingRequest.",
-       "tenant:obj profile:obj packs:obj connectors:list:obj security:obj seeds:obj compliance:obj dmnOverrides:smap "
+       "tenant:obj profile:obj packs:obj connectors:list:obj security:OnboardingSecurity seeds:obj compliance:obj dmnOverrides:smap "
        "goLive:obj", ["tenant"])
 schema("OnboardingReadiness", "The go-live checklist; the checker approves `hash`.",
        "ready:bool problems:list:OnboardingProblem checks:smap hash checkedAt:dt revision:int")

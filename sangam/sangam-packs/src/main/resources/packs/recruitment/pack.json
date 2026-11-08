@@ -114,7 +114,10 @@
         "postName": "Junior Assistant",
         "vacancies": "{\"UR\":3,\"OBC\":1,\"SC\":1}"
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: challenges accepted by the expert panel (round 2 scores)"
+      }
     },
     {
       "id": "GP-28",
@@ -127,7 +130,10 @@
       "when": "a selected OBC candidate declines the offer",
       "then": "the next waitlisted OBC candidate receives the offer",
       "startVariables": {},
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: a selected candidate declines the offer"
+      }
     }
   ],
   "dependsOn": [

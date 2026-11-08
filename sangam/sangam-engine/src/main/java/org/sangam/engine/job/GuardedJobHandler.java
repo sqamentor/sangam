@@ -145,10 +145,15 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
                                      TimerPolicies policies, SangamClock clock, EngineMetrics metrics,
                                      java.time.Duration lockTimeout, java.time.Duration statementTimeout,
                                      String defaultTenant, JobIdentitySupport identity) {
-        if (handler instanceof GuardedJobHandler) {
+        if (handler instanceof GuardedJobHandler || handler instanceof GuardedBatchJobHandler) {
             return handler;
         }
-        return new GuardedJobHandler((JobHandler) handler, dialect, rootLock, guard, policies, clock, metrics,
-                lockTimeout, statementTimeout, defaultTenant, identity);
+        GuardedJobHandler guarded = new GuardedJobHandler((JobHandler) handler, dialect, rootLock, guard, policies, clock,
+                metrics, lockTimeout, statementTimeout, defaultTenant, identity);
+        // Operaton's BatchBuilder casts the job-handler map entry to BatchJobHandler: a batch handler must stay one.
+        if (handler instanceof org.operaton.bpm.engine.impl.batch.BatchJobHandler<?> batch) {
+            return new GuardedBatchJobHandler(batch, guarded);
+        }
+        return guarded;
     }
 }

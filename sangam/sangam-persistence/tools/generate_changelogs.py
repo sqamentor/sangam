@@ -981,6 +981,23 @@ TABLES = [
     ("0029-20", "OpsSchema.java", "OPS_SECRET", [("tenant_id", "{str64}", "NOT NULL"), ("ref_name", "{str}", "NOT NULL"), ("envelope", "{text}", "NOT NULL"), ("version", "{int}", "NOT NULL"), ("updated_by", "{str}", "NOT NULL"), ("updated_at", "{ts}", "NOT NULL"), ("reason", "{text}", "")], ['tenant_id', 'ref_name'], []),
     ("0030-01", "ModellerSchema.java", "MOD_SERVICE_MOCK", [("tenant_id", "{str64}", "NOT NULL"), ("service", "{str}", "NOT NULL"), ("operation", "{str}", "NOT NULL"), ("when_input_json", "{text}", ""), ("output_json", "{text}", ""), ("error_code", "{str64}", ""), ("delay_ms", "{long}", ""), ("enabled", "{small}", "NOT NULL"), ("created_by", "{str}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL")], ['tenant_id', 'service', 'operation'], []),
     ("0030-02", "OpsSchema.java", "OPS_RETENTION_RUN", [("run_id", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", "NOT NULL"), ("plan_id", "{str64}", "NOT NULL"), ("plan_hash", "{str64}", "NOT NULL"), ("reason", "{text}", "NOT NULL"), ("purged", "{int}", "NOT NULL"), ("executed_by", "{str}", "NOT NULL"), ("executed_at", "{ts}", "NOT NULL")], ['run_id'], [('OPS_RETENTION_RUN_TENANT', False, ['tenant_id', 'executed_at'])]),
+    # FC-02/FC-03 version high-water mark: a definition version number is never reused, also after every version
+    # of a key was deleted (PortsSchema.java EVT_DEFINITION_SEQ; def_kind = event | channel)
+    ("0030-03", "event registry version high-water mark (FC-02/FC-03)", "EVT_DEFINITION_SEQ", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("def_kind", "{str64}", "NOT NULL"), ("def_key", "{str}", "NOT NULL"),
+        ("last_version", "{int}", "NOT NULL"),
+    ], ["tenant_id", "def_kind", "def_key"], []),
+    # ------------------------------------------------------------------ SL-43 per-tenant quotas, SL-39 webhook health
+    ("0031-01", "per-tenant quota counting windows shared by all nodes (SL-43, R28; sangam-security JdbcTenantQuotas)",
+     "SEC_TENANT_QUOTA_WINDOW", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("quota_name", "{str64}", "NOT NULL"), ("window_start", "{long}", "NOT NULL"),
+        ("used", "{long}", "NOT NULL"), ("refused", "{small}", "NOT NULL"),
+    ], ["tenant_id", "quota_name", "window_start"], []),
+    ("0031-02", "outbound webhook destination health: auto-disable and re-enable (SL-39; sangam-integration WebhookHealth)",
+     "INTEGRATION_WEBHOOK_STATE", [
+        ("destination", "{str}", "NOT NULL"), ("state", "{str64}", "NOT NULL"), ("consecutive_failures", "{int}", "NOT NULL"),
+        ("last_error", "{text}", ""), ("disabled_at", "{ts}", ""), ("changed_by", "{str}", ""), ("updated_at", "{ts}", "NOT NULL"),
+    ], ["destination"], []),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).

@@ -14,8 +14,6 @@ profile:
     hi: राजस्थान
   source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources RJ1-RJ4, accessed 2026-11-04)
 placeholders:
-- path: documentTypes.GA-55
-  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (form GA-55)'
 - path: rulebooks.own.PWFAR
   reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live'
 - path: locale.documentLanguages
@@ -123,6 +121,36 @@ documentTypes:
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+- id: RJ_GA_55
+  formNumber: GA-55
+  kind: REPORT
+  family: EMPLOYEE_REPORT
+  sanction: NONE
+  report:
+    parameters: [employee, year, month]
+    output: PDF
+    menu: Employee Management > GA-55
+    selfService: mobile app, next to the salary slip and Form 16
+  template:
+    ownerConfigurable: true
+    fields: []
+    note: field layout not yet transcribed (official form text needs OCR); the owner configures it
+  evidence:
+    report:
+      status: V
+      value: per-employee, per-period (year, month) official form / report
+      sources:
+      - IFMS 3.0 Employee Module user manual 8.2.2
+      - IFMS 3.0 mobile app user manual
+      - SIPF form SI-GA-55, https://sipf.rajasthan.gov.in/FORMS/SI-GA-55.pdf
+      - 'SNA SOP: GA-55 Report Generation in SNA (MIS Report Agency)'
+    purpose:
+      status: I
+      value: annual pay-and-allowances statement of the employee (inferred, not verified)
+    fieldLayout:
+      status: U
+      value: null
+      note: official form PDF text layer is a legacy Hindi font; layout unverified until OCR by owner / IFMS
 approvalChains:
 - id: TREASURY_STD
   steps:

@@ -45,6 +45,7 @@ public class SangamCmmnTransformListener implements CmmnTransformListener {
 
     @Override
     public void transformProcessTask(PlanItem planItem, ProcessTask processTask, CmmnActivity activity) {
+        guardTenant(activity, "processTask " + planItem.getId());
         CaseExecutionListener cancelCalled = SangamCmmnTransformListener::cancelCalledProcess;
         activity.addBuiltInListener(CaseExecutionListener.EXIT, cancelCalled);
         activity.addBuiltInListener(CaseExecutionListener.TERMINATE, cancelCalled);
@@ -55,7 +56,22 @@ public class SangamCmmnTransformListener implements CmmnTransformListener {
     @Override
     public void transformCaseTask(PlanItem planItem, org.operaton.bpm.model.cmmn.instance.CaseTask caseTask,
                                   CmmnActivity activity) {
+        guardTenant(activity, "caseTask " + planItem.getId());
         recordCompletion(activity);
+    }
+
+    @Override
+    public void transformDecisionTask(PlanItem planItem, org.operaton.bpm.model.cmmn.instance.DecisionTask decisionTask,
+                                      CmmnActivity activity) {
+        guardTenant(activity, "decisionTask " + planItem.getId());
+    }
+
+    /** SL-13: a CMMN task resolves only the caller's tenant or shared definitions ({@link TenantIsolationGuard}). */
+    private static void guardTenant(CmmnActivity activity, String element) {
+        if (activity.getActivityBehavior() instanceof org.operaton.bpm.engine.impl.cmmn.behavior.CallingTaskActivityBehavior b) {
+            TenantIsolationGuard.guard(b.getCallableElement(), element, activity.getCaseDefinition()
+                    instanceof org.operaton.bpm.engine.impl.cmmn.entity.repository.CaseDefinitionEntity d ? d.getTenantId() : null);
+        }
     }
 
     @Override

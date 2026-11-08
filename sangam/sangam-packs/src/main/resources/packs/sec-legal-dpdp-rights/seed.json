@@ -10,6 +10,7 @@
       "id": "DPO",
       "role": "DPO",
       "office": "PRIVACY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "GRO-PRIVACY",
       "name": {
         "en": "Data protection officer",
@@ -20,6 +21,7 @@
       "id": "GRO-PRIVACY",
       "role": "GRO",
       "office": "PRIVACY",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Grievance officer (privacy)",

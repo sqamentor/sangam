@@ -74,18 +74,28 @@ public class TaskLifecycleService {
     public void setBusinessStatus(String instanceId, String tenant, String status, String user) {
         tx.inTransaction(c -> {
             int n = Jdbc.update(c, "UPDATE INSTANCE_BUSINESS_STATUS SET business_status = ?, updated_by = ?, updated_at = " + dialect.now()
-                    + " WHERE instance_id = ?", status, user, instanceId);
+                    + " WHERE instance_id = ? AND tenant_id = ?", status, user, instanceId, t(tenant));
             if (n == 0) {
+                // the row of an instance of another tenant is never overwritten (tenant isolation, VI.4)
+                if (Jdbc.one(c, "SELECT tenant_id FROM INSTANCE_BUSINESS_STATUS WHERE instance_id = ?", rs -> rs.getString(1),
+                        instanceId).isPresent()) {
+                    throw new IllegalArgumentException("instance " + instanceId + " is not in tenant " + t(tenant));
+                }
                 Jdbc.update(c, "INSERT INTO INSTANCE_BUSINESS_STATUS(instance_id, tenant_id, business_status, updated_by, updated_at)"
-                        + " VALUES (?,?,?,?," + dialect.now() + ")", instanceId, tenant, status, user);
+                        + " VALUES (?,?,?,?," + dialect.now() + ")", instanceId, t(tenant), status, user);
             }
             return null;
         });
     }
 
-    public Optional<String> businessStatus(String instanceId) {
-        return tx.inTransaction(c -> Jdbc.one(c, "SELECT business_status FROM INSTANCE_BUSINESS_STATUS WHERE instance_id = ?",
-                rs -> rs.getString(1), instanceId));
+    /** The business status of an instance of {@code tenant}; empty for an instance of another tenant (VI.4). */
+    public Optional<String> businessStatus(String instanceId, String tenant) {
+        return tx.inTransaction(c -> Jdbc.one(c, "SELECT business_status FROM INSTANCE_BUSINESS_STATUS WHERE instance_id = ? AND tenant_id = ?",
+                rs -> rs.getString(1), instanceId, t(tenant)));
+    }
+
+    private static String t(String tenant) {
+        return tenant == null ? "" : tenant;
     }
 
     private void ensure(Connection c, String taskId, String tenant) {

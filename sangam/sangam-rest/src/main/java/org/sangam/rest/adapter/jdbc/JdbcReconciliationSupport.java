@@ -37,13 +37,25 @@ public class JdbcReconciliationSupport {
     private final RestProperties props;
     private final ReconciliationQueue queue;
     private final Relay relayRepair;
+    /**
+     * The deployment's repair implementation (the production relay service, VI.2.3 rule 5); it yields null only when
+     * the deployment has none (no sangam-integration, hence no dead letters), and then the plain relay repairs.
+     */
+    private final java.util.function.Supplier<org.sangam.core.layer.OutboxRepair> outboxRepair;
 
-    public JdbcReconciliationSupport(TxSupport tx, RestProperties props) {
+    private org.sangam.core.layer.OutboxRepair repairer() {
+        org.sangam.core.layer.OutboxRepair wired = outboxRepair.get();
+        return wired != null ? wired : relayRepair;
+    }
+
+    public JdbcReconciliationSupport(TxSupport tx, RestProperties props,
+                                     java.util.function.Supplier<org.sangam.core.layer.OutboxRepair> outboxRepair) {
         this.tx = tx;
         this.props = props;
+        this.outboxRepair = java.util.Objects.requireNonNull(outboxRepair, "outboxRepair supplier");
         AuditChain audit = new AuditChain(tx.dialect());
         this.queue = new ReconciliationQueue(tx.dialect(), audit);
-        // Used only for its repair API; publishing is the relay service's job (sangam-integration).
+        // Fallback repair only, when no OutboxRepair is wired; publishing is the relay service's job (sangam-integration).
         this.relayRepair = new Relay(tx.dialect(), tx.newTransactions(), (destination, event) -> {
             throw new IllegalStateException("the operator view does not publish");
         }, Relay.Config.defaults(props.getNode()), audit);
@@ -171,8 +183,9 @@ public class JdbcReconciliationSupport {
         if (deliveries.stream().noneMatch(d -> d.destination().equals(target))) {
             throw ApiProblem.notFound("outbox delivery", outboxId + "/" + target);
         }
-        boolean done = requeue ? relayRepair.requeue(id, target, ctx.principalId(), reason)
-                : relayRepair.skip(id, target, ctx.principalId(), reason);
+        org.sangam.core.layer.OutboxRepair repair = repairer();
+        boolean done = requeue ? repair.requeue(id, target, ctx.principalId(), reason)
+                : repair.skip(id, target, ctx.principalId(), reason);
         if (!done) {
             throw ApiProblem.conflict("NOT_PARKED", "Only a PARKED delivery can be " + (requeue ? "requeued" : "skipped"));
         }

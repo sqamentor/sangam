@@ -10,6 +10,7 @@
       "id": "RECORD-OFFICER",
       "role": "RECORDOFFICER",
       "office": "RECORDS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Departmental record officer",
@@ -20,6 +21,7 @@
       "id": "NAI-APPRAISER",
       "role": "APPRAISER",
       "office": "RECORDS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Appraisal (National Archives)",

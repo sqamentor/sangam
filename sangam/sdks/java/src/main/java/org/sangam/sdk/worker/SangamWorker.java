@@ -309,7 +309,18 @@ public final class SangamWorker implements AutoCloseable {
 
     private record Outcome(String kind, Map<String, Object> variables, Throwable error) { }
 
+    @SuppressWarnings("unchecked")
     private Outcome invoke(TaskContext ctx, TopicSubscription sub) {
+        org.sangam.sdk.model.WorkOperation op = ctx.work().operation();
+        if (op != null && !op.mayDispatch() && op.succeeded()) {
+            // SL-16: the operation already succeeded downstream; complete from the stored outcome, never call it again.
+            Map<String, Object> stored = op.storedOutcome() == null ? Map.of() : op.storedOutcome();
+            Object out = stored.get("output");
+            Object ref = stored.get("providerRef");
+            ctx.outcomeReference(ref == null ? null : String.valueOf(ref));
+            ctx.logger().info("work.replayed", "operation already succeeded; completing from the stored outcome", null);
+            return new Outcome("complete", out instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of(), null);
+        }
         try {
             Map<String, Object> vars = sub.handler().handle(ctx);
             return new Outcome("complete", vars, null);
@@ -381,7 +392,8 @@ public final class SangamWorker implements AutoCloseable {
         String action = o.kind;
         Runnable call = switch (action) {
             case "complete" -> () -> client.work().complete(ctx.workId(),
-                    new CompleteWorkRequest(workerId, ctx.lockVersion(), ctx.attemptId(), o.variables, null), key(ctx, action));
+                    new CompleteWorkRequest(workerId, ctx.lockVersion(), ctx.attemptId(), o.variables, null,
+                            ctx.outcomeReference() == null ? null : new org.sangam.sdk.model.WorkOutcome(ctx.outcomeReference(), null)), key(ctx, action));
             case "bpmn-error" -> {
                 BpmnError be = (BpmnError) o.error;
                 yield () -> client.work().bpmnError(ctx.workId(), new BpmnErrorRequest(workerId, ctx.lockVersion(),

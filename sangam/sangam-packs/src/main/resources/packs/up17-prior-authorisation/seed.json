@@ -10,6 +10,7 @@
       "id": "CLINICAL-REVIEWER",
       "role": "REVIEWER",
       "office": "PAYER",
+      "level": "HEAD_OFFICE",
       "reportsTo": "MEDICAL-DIRECTOR",
       "name": {
         "en": "Clinical reviewer",
@@ -20,6 +21,7 @@
       "id": "PEER-REVIEWER",
       "role": "PEER",
       "office": "PAYER",
+      "level": "HEAD_OFFICE",
       "reportsTo": "MEDICAL-DIRECTOR",
       "name": {
         "en": "Peer reviewer",
@@ -30,6 +32,7 @@
       "id": "MEDICAL-DIRECTOR",
       "role": "DIRECTOR",
       "office": "PAYER",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Medical director (appeals)",

@@ -352,8 +352,8 @@ Totals: n/a 13, avoided 14, fixed 20. Every FWT-001 … FWT-057 is referenced ab
 | `org.operaton.bpm:operaton-engine` 2.2.0 (BOM) | compile | Apache-2.0 |
 | `com.fasterxml.jackson.core:jackson-databind` (BOM 2.22.3) | compile | Apache-2.0 |
 | `org.slf4j:slf4j-api` 2.0.17 | compile | MIT |
-| `org.apache.kafka:kafka-clients` 3.9.1 | optional | Apache-2.0 |
+| `org.apache.kafka:kafka-clients` 3.9.2 | optional | Apache-2.0 |
 | `jakarta.jms:jakarta.jms-api` 3.1.0 | optional | EPL-2.0 OR GPL-2.0 with Classpath exception |
-| `com.rabbitmq:amqp-client` 5.25.0 | optional | Apache-2.0 / MPL-2.0 / GPL-2.0 (used under Apache-2.0) |
+| `com.rabbitmq:amqp-client` 5.37.1 | optional | Apache-2.0 / MPL-2.0 / GPL-2.0 (used under Apache-2.0) |
 
 Flowable logic attribution: [NOTICE](NOTICE).

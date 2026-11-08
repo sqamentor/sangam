@@ -10,6 +10,9 @@
         "ext-curl": "*",
         "ext-json": "*"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
     "suggest": {
         "ext-pcntl": "Fork mode: run up to maxConcurrency handlers in child processes with parent-side heartbeats (Linux/macOS)",
         "ext-posix": "Fork mode: signal delivery to child processes"
@@ -17,6 +20,11 @@
     "autoload": {
         "psr-4": {
             "Sangam\\Sdk\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sangam\\Sdk\\Tests\\": "tests/"
         }
     },
     "config": {

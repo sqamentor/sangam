@@ -5,12 +5,17 @@ import os
 
 from lib import Proc, dmn as dmn_xml
 from forms import L, OPT
+from acceptance_runs import RUNS
 
 ALL = []
 MISSING = set()
 # Second locale other than Hindi: code -> (field labels {id: text}, option labels {value: text}, case-summary label).
 # A pack with second='<code>' writes {'en', '<code>'} labels; its name_hi and the '|' halves are in that language.
 LOCALES = {}
+# The platform default org hierarchy (top first). It must equal `security.orgLevels` of the INTL profile
+# (tools/profilegen/central.py), which every shipped profile extends; a tenant may define its own levels in the
+# onboarding request (security.orgLevels), and readiness then refuses seats whose level is not among them.
+ORG_LEVELS = ['HEAD_OFFICE', 'REGIONAL_OFFICE', 'FIELD_OFFICE']
 
 
 class Pack:
@@ -26,6 +31,7 @@ class Pack:
         self.procs, self.dmns, self.cmmns, self.acceptance, self.overrides = [], [], [], [], []
         self.seed = None
         self.identifier_types = None
+        self.placeholders = []
         ALL.append(self)
 
     def proc(self, pid, name, doc='', start=None, ttl=3650):
@@ -46,12 +52,41 @@ class Pack:
     def cmmn(self, cid, xml):
         self.cmmns.append((cid, xml))
 
+    def placeholder(self, decision, rule, reason):
+        """A value shipped in a pack DMN that is not from a verified source. The readiness check reports it as an
+        error for every tenant that enables the pack until the tenant deploys a confirmed override of `decision`."""
+        self.placeholders.append(dict(decision=decision, rule=rule, reason=reason))
+
     def accept(self, id, title, refs, given, when, then, vars=None, state=None):
         self.acceptance.append(dict(id=id, title=title, refs=refs, given=given, when=when, then=then,
                                     startVariables=vars or {}, expectState=state))
 
     def seeds(self, offices, seats, holdings, roles):
-        self.seed = dict(offices=offices, seats=seats, holdings=holdings, roles=roles)
+        """Each seat names the org level of its office (seat['level']): an explicit value is kept, otherwise it is
+        the office's depth in `offices` mapped onto ORG_LEVELS (the platform default hierarchy)."""
+        parents = {o['id']: o.get('parent') or '' for o in offices}
+
+        def depth(office, seen=()):
+            if office not in parents:
+                raise ValueError(f'pack {self.id}: seat office {office!r} is not declared in offices')
+            if office in seen:
+                raise ValueError(f'pack {self.id}: office cycle at {office!r}')
+            p = parents[office]
+            return 0 if not p else depth(p, seen + (office,)) + 1
+
+        out = []
+        for s in seats:
+            if not s.get('level'):
+                d = depth(s['office'])
+                if d >= len(ORG_LEVELS):
+                    raise ValueError(f'pack {self.id}: office {s["office"]!r} is deeper than ORG_LEVELS {ORG_LEVELS}')
+                s = {k: v for k, v in s.items()}
+                level = ORG_LEVELS[d]
+                # keep key order stable: id, role, office, level, then the rest
+                s = dict([(k, s[k]) for k in ('id', 'role', 'office') if k in s] + [('level', level)]
+                         + [(k, v) for k, v in s.items() if k not in ('id', 'role', 'office')])
+            out.append(s)
+        self.seed = dict(offices=offices, seats=out, holdings=holdings, roles=roles)
 
 
 def split_name(n):
@@ -189,6 +224,11 @@ def write_all(root):
             'acceptance': pk.acceptance, 'dependsOn': pk.depends, 'tenantOverrides': overrides,
             'calls': sorted({c for p in pk.procs for c in p.calls}),
         }
+        if pk.placeholders:
+            manifest['placeholders'] = pk.placeholders
+        for a in pk.acceptance:
+            if (pk.id, a['id']) in RUNS:
+                a['run'] = RUNS[(pk.id, a['id'])]
         mpath = f'packs/{pk.dir}/pack.json'
         write(os.path.join(root, mpath), json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
         idx.append(mpath)

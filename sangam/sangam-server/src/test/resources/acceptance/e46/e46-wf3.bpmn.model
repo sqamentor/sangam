@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-3: pension forward chain ZPO Auditor -> AAO -> AD with an auto-forward timer per level (routing to the
+     next level, never an approval) and an escalation rule reference (C-1..C-4, C-7, C-8). Synthetic. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             id="E46-WF3-DEFS" targetNamespace="urn:oneifms:e46:wf3">
+  <process id="E46-WF3" name="Pension forward chain" isExecutable="true">
+    <startEvent id="start"/>
+    <userTask id="ZPO_AUDITOR" name="ZPO auditor" oneifms:capability="pension.audit"/>
+    <boundaryEvent id="FWD1" name="Auto-forward to AAO" attachedToRef="ZPO_AUDITOR" cancelActivity="true">
+      <extensionElements>
+        <oneifms:escalation ruleId="RJ-T1" target="AAO" calendarId="E46-CAL" timeZone="Asia/Kolkata"/>
+      </extensionElements>
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${fwd1Due}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <userTask id="AAO" name="AAO" oneifms:capability="pension.check"/>
+    <boundaryEvent id="FWD2" name="Auto-forward to AD" attachedToRef="AAO" cancelActivity="true">
+      <extensionElements>
+        <oneifms:escalation ruleId="RJ-T2" target="AD" calendarId="E46-CAL" timeZone="Asia/Kolkata"/>
+      </extensionElements>
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${fwd2Due}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <userTask id="AD" name="AD" oneifms:capability="pension.approve"/>
+    <endEvent id="END_APPROVED" name="Sanctioned"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="ZPO_AUDITOR"/>
+    <sequenceFlow id="f2" sourceRef="ZPO_AUDITOR" targetRef="AAO"/>
+    <sequenceFlow id="f3" sourceRef="FWD1" targetRef="AAO"/>
+    <sequenceFlow id="f4" sourceRef="AAO" targetRef="AD"/>
+    <sequenceFlow id="f5" sourceRef="FWD2" targetRef="AD"/>
+    <sequenceFlow id="f6" sourceRef="AD" targetRef="END_APPROVED"/>
+  </process>
+</definitions>

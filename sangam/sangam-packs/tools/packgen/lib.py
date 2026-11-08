@@ -5,6 +5,7 @@ import os
 import sys
 from collections import defaultdict
 from xml.sax.saxutils import escape
+import re
 
 sys.setrecursionlimit(10000)
 
@@ -26,6 +27,25 @@ C = dict(
 
 SIZES = {'task': (100, 80), 'gateway': (50, 50), 'event': (36, 36)}
 COLW, ROWH = 165, 125
+
+
+VAR_NAME = re.compile(r'^[a-z][A-Za-z0-9_]*$')
+SEAT_ID_EXPR = re.compile(r'[A-Z0-9][A-Z0-9_-]*')
+
+
+def check_seat_var(task_id, seat_var):
+    """seatVar names the process variable that holds the seat id (lowerCamel), never the seat id itself: a seat id such
+    as HOO-P inside ${...} is read by EL as a subtraction, and INVESTIGATOR is not a variable at all. Put the seat id in
+    the pack defaults (for example verifySeat=HOO-P) and pass the variable name."""
+    if not seat_var or not VAR_NAME.match(seat_var):
+        raise ValueError(f'{task_id}: seat_var {seat_var!r} must be a lowerCamel variable name, not a seat id')
+
+
+def check_group_expression(task_id, group):
+    """candidateGroups expressions may only reference variables; a literal seat id inside ${...} is rejected."""
+    for expr in re.findall(r'[$#]\{([^}]*)\}', group or ''):
+        if SEAT_ID_EXPR.fullmatch(expr.strip()):
+            raise ValueError(f'{task_id}: candidateGroups expression ${{{expr}}} is a seat id, not a variable')
 
 
 def a(v):
@@ -155,6 +175,7 @@ class Scope:
              priority=None, sod=False, sod_steps=None, sod_exclude=None, power=None, bind=None, step_suffix=None,
              doc=None, joint=False):
         """decision = (var, [values]); power = dict(decisionKey=.., approveValues=..); bind = approve values."""
+        check_group_expression(id, group)
         attrs = {'operaton:candidateGroups': group}
         if form:
             attrs['operaton:formKey'] = 'sangam:' + form
@@ -311,6 +332,7 @@ class Scope:
                  doc=None, bound_by_case=None):
         """SLA-guarded human task (R31, GP-06): plan, task, 75% warning, breach with escalation or deemed outcome.
         Returns (entry, exit) ids."""
+        check_seat_var(id, seat_var)
         plan = self.svc(id + '_slaPlan', 'Start SLA clock', C['SLA'],
                         {'op': 'PLAN', 'clock': id, 'spec': spec, 'defaultSpec': default_spec,
                          'boundByCase': bound_by_case})

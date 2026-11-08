@@ -16,7 +16,7 @@ import org.sangam.packs.port.PackRuntime;
  * Delegated-power check at the moment of sanction (K6, IX.5 rule 3, J-P3-E05). The seat's power is read from the
  * delegation-of-powers DMN table that is current on the action date (the latest deployed version for the tenant) with
  * inputs {@code seatRole}, {@code caseType} and {@code amount}; the table returns {@code powerLimit} (and optionally
- * {@code allowed}). When the case value exceeds the power the completion is refused with
+ * {@code allowed}, and {@code noMonetaryLimit} for a power the rule confers without a money ceiling). When the case value exceeds the power the completion is refused with
  * {@code 422 POWER_LIMIT_EXCEEDED}, and the officer forwards instead.
  *
  * <p>Fields: {@code decisionKey} (default {@code sangam-core-powers}), {@code decisionVar}, {@code approveValues}
@@ -51,11 +51,14 @@ public class PowerLimitGuardListener implements TaskListener {
         Map<String, Object> row = ev.single();
         BigDecimal limit = Vars.decimal(row.get("powerLimit"));
         Object allowed = row.get("allowed");
+        // A rule may confer a power without a money ceiling (for example "full powers" subject to the scheme rules):
+        // the table says so explicitly with noMonetaryLimit = true. Absent or false, the ceiling applies (fail closed).
+        boolean unlimited = Boolean.TRUE.equals(row.get("noMonetaryLimit"));
         boolean ok = (allowed == null || Boolean.TRUE.equals(allowed))
-                && (amount == null || (limit != null && amount.compareTo(limit) <= 0));
+                && (amount == null || unlimited || (limit != null && amount.compareTo(limit) <= 0));
         Vars.auditTask(t, "RULE_EVALUATED", a.person(), a.seat(), null, a.authorityBasis(),
                 Vars.map("decision", key, "version", ev.version(), "seatRole", role, "powerLimit",
-                        limit == null ? null : limit.toPlainString(), "amount",
+                        unlimited ? "NO_MONETARY_LIMIT" : limit == null ? null : limit.toPlainString(), "amount",
                         amount == null ? null : amount.toPlainString(), "result", ok));
         t.getExecution().setVariable("approvalRuleVersion", key + ":" + ev.version());
         if (!ok) {

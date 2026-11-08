@@ -10,6 +10,7 @@
       "id": "TEHSILDAR-1",
       "role": "TEHSILDAR",
       "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SDM-1",
       "name": {
         "en": "Tehsildar",
@@ -20,6 +21,7 @@
       "id": "REGISTRAR-1",
       "role": "REGISTRAR",
       "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SDM-1",
       "name": {
         "en": "Registrar of births and deaths",
@@ -30,6 +32,7 @@
       "id": "JE-1",
       "role": "JE",
       "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "EE-1",
       "name": {
         "en": "Junior Engineer",
@@ -40,6 +43,7 @@
       "id": "EE-1",
       "role": "EE",
       "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECOND-APPELLATE",
       "name": {
         "en": "Executive Engineer",
@@ -50,6 +54,7 @@
       "id": "SDM-1",
       "role": "SDM",
       "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECOND-APPELLATE",
       "name": {
         "en": "Sub-divisional magistrate",
@@ -60,6 +65,7 @@
       "id": "SECOND-APPELLATE",
       "role": "COLLECTOR",
       "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Second appellate authority (Collector)",

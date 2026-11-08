@@ -28,6 +28,12 @@ final class RabbitAdapters {
     private RabbitAdapters() {
     }
 
+    /** Opens the broker connection of a channel (production: {@link #connect}; tests pass an in-memory stub). */
+    @FunctionalInterface
+    interface Connector {
+        Connection connect(ChannelDefinition ch, ChannelAdapters.Environment env);
+    }
+
     static Connection connect(ChannelDefinition ch, ChannelAdapters.Environment env) {
         String ref = ch.properties().get("uriRef");
         if (ref == null) {
@@ -50,8 +56,12 @@ final class RabbitAdapters {
         private final Channel channel;
 
         Outbound(ChannelDefinition ch, ChannelAdapters.Environment env) {
+            this(ch, env, RabbitAdapters::connect);
+        }
+
+        Outbound(ChannelDefinition ch, ChannelAdapters.Environment env, Connector connector) {
             this.ch = ch;
-            this.connection = connect(ch, env);
+            this.connection = connector.connect(ch, env);
             try {
                 this.channel = connection.createChannel();
                 channel.confirmSelect();
@@ -90,9 +100,15 @@ final class RabbitAdapters {
         private final String tenant;
         private final InboundEventProcessor processor;
         private final ChannelAdapters.Environment env;
+        private final Connector connector;
         private Connection connection;
 
         Inbound(ChannelDefinition ch, String tenant, InboundEventProcessor processor, ChannelAdapters.Environment env) {
+            this(ch, tenant, processor, env, RabbitAdapters::connect);
+        }
+
+        Inbound(ChannelDefinition ch, String tenant, InboundEventProcessor processor, ChannelAdapters.Environment env, Connector connector) {
+            this.connector = connector;
             this.ch = ch;
             this.tenant = tenant;
             this.processor = processor;
@@ -104,13 +120,15 @@ final class RabbitAdapters {
 
         @Override
         public synchronized void start() {
-            connection = connect(ch, env);
+            connection = connector.connect(ch, env);
             try {
                 Channel channel = connection.createChannel();
                 channel.basicQos(Integer.parseInt(ch.property("prefetch", "50")));
                 String queue = ch.queue() != null ? ch.queue() : ch.destination();
                 channel.basicConsume(queue, false, (tag, d) -> onDelivery(channel, d), tag -> { });
             } catch (Exception e) {
+                // the caller discards a consumer that failed to start: release its connection now, or every retry leaks one
+                close();
                 throw new IllegalStateException("rabbitmq channel " + ch.key() + " cannot consume", e);
             }
         }

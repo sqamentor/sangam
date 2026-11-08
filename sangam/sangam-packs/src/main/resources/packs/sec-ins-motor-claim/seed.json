@@ -10,6 +10,7 @@
       "id": "CLAIMS-HANDLER",
       "role": "HANDLER",
       "office": "CLAIMS-MOTOR",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CLAIMS-MGR",
       "name": {
         "en": "Claims handler",
@@ -20,6 +21,7 @@
       "id": "SIU",
       "role": "SIU",
       "office": "CLAIMS-MOTOR",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CLAIMS-HEAD",
       "name": {
         "en": "Special investigation unit",
@@ -30,6 +32,7 @@
       "id": "TP-LEGAL",
       "role": "LEGAL",
       "office": "CLAIMS-MOTOR",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CLAIMS-HEAD",
       "name": {
         "en": "Third-party legal desk",
@@ -40,6 +43,7 @@
       "id": "CLAIMS-MGR",
       "role": "CLAIMSMGR",
       "office": "CLAIMS-MOTOR",
+      "level": "HEAD_OFFICE",
       "reportsTo": "ZONAL-CLAIMS",
       "name": {
         "en": "Claims manager",
@@ -50,6 +54,7 @@
       "id": "ZONAL-CLAIMS",
       "role": "ZONALCLAIMS",
       "office": "CLAIMS-MOTOR",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CLAIMS-HEAD",
       "name": {
         "en": "Zonal claims head",
@@ -60,6 +65,7 @@
       "id": "CLAIMS-HEAD",
       "role": "CLAIMSHEAD",
       "office": "CLAIMS-MOTOR",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of claims",
@@ -70,6 +76,7 @@
       "id": "GRIEVANCE-CELL",
       "role": "GRIEVANCE",
       "office": "CLAIMS-MOTOR",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Grievance cell (review)",

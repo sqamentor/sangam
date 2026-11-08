@@ -466,29 +466,35 @@ class E17bDomainIT extends GovBSupport {
     @Test
     void d6_interDepartmentReferral() {
         scenario("D-REFERRAL", ctx -> {
+            // SL-13: the callee is deployed in the caller's tenant; the same key in other tenants is never reached
             deploy("dept-fin", "concurrence.bpmn");
             deploy("dept-law", "concurrence.bpmn");
+            deploy("dept-works", "concurrence.bpmn");
             deploy("dept-works", "referral.bpmn");
             String p = start("dept-works", "interDeptReferral", "PWD/BLDG/2026/45", m("fileNo", "PWD/BLDG/2026/45",
                     "subject", "New district court complex", "amount", 182_000_000L));
             completeTask(p, "ref_prepare", m());
             List<String> children = subProcessInstances(p);
             eq(ctx, 2, children.size(), "two called instances");
-            eq(ctx, Set.of(tn("dept-fin"), tn("dept-law")), new HashSet<>(children.stream().map(this::instanceTenant).toList()),
-                    "callees run in their own tenants");
-            TaskView fin = forGroups("dept-fin", "concurrence-officer").get(0);
-            TaskView law = forGroups("dept-law", "concurrence-officer").get(0);
-            eq(ctx, 0, forGroups("dept-works", "concurrence-officer").size(), "not in Works inbox");
+            eq(ctx, Set.of(tn("dept-works")), new HashSet<>(children.stream().map(this::instanceTenant).toList()),
+                    "callees run in the caller's tenant (SL-13)");
+            eq(ctx, 0, forGroups("dept-fin", "concurrence-officer").size() + forGroups("dept-law", "concurrence-officer").size(),
+                    "nothing in another tenant (SL-13)");
+            List<TaskView> referred = forGroups("dept-works", "concurrence-officer");
+            eq(ctx, 2, referred.size(), "both referrals visible to the concurring group");
+            // Finance receives the amount (in-mapping), Law does not
+            TaskView fin = referred.stream().filter(t -> t.variables().containsKey("amount")).findFirst().orElseThrow();
+            TaskView law = referred.stream().filter(t -> !t.variables().containsKey("amount")).findFirst().orElseThrow();
             eq(ctx, "New district court complex", law.variables().get("subject"), "in-mapping");
             adapter.completeTask(fin.id(), m("concurred", true, "remarks", "Within budget head 4059"));
             adapter.completeTask(law.id(), m("concurred", false, "remarks", "Land title to be verified"));
             eq(ctx, "Land title to be verified", var(p, "lawRemarks"), "out-mapping with renaming");
             eq(ctx, 1, tasksIn(p, "ref_prepare").size(), "returned for revision");
             completeTask(p, "ref_prepare", m("revision", 1));
-            adapter.completeTask(forGroups("dept-fin", "concurrence-officer").get(0).id(),
-                    m("concurred", true, "remarks", "Concurred"));
-            adapter.completeTask(forGroups("dept-law", "concurrence-officer").get(0).id(),
-                    m("concurred", true, "remarks", "Vetted"));
+            for (TaskView t : forGroups("dept-works", "concurrence-officer")) {
+                adapter.completeTask(t.id(), t.variables().containsKey("amount") ? m("concurred", true, "remarks", "Concurred")
+                        : m("concurred", true, "remarks", "Vetted"));
+            }
             completeTask(p, "ref_approve", m("approvedBy", "Secretary PWD"));
             yes(ctx, ended(p), "referral ended");
             eq(ctx, 4, subProcessInstances(p).size(), "two referral rounds x two departments");

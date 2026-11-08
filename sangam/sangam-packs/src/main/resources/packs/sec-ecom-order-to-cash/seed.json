@@ -10,6 +10,7 @@
       "id": "SELLER-DESK",
       "role": "SELLER",
       "office": "MARKETPLACE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Seller panel (external)",
@@ -20,6 +21,7 @@
       "id": "RISK-DESK",
       "role": "RISK",
       "office": "MARKETPLACE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Risk desk",
@@ -30,6 +32,7 @@
       "id": "LOGISTICS-DESK",
       "role": "LOGISTICS",
       "office": "MARKETPLACE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Logistics desk",

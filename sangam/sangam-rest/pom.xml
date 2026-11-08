@@ -23,6 +23,8 @@
         <directory>api</directory>
         <includes>
           <include>sangam-api.yaml</include>
+          <!-- SL-38: deprecation registry, read by DeprecationHeadersFilter and gen_openapi.py -->
+          <include>sangam-api-deprecations.yaml</include>
         </includes>
       </resource>
     </resources>

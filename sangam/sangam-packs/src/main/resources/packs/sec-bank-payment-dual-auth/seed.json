@@ -10,6 +10,7 @@
       "id": "PAY-MAKER",
       "role": "PAYMAKER",
       "office": "TREASURY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PAY-CHECKER",
       "name": {
         "en": "Payment maker",
@@ -20,6 +21,7 @@
       "id": "PAY-CHECKER",
       "role": "PAYCHECKER",
       "office": "TREASURY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PAY-AUTH",
       "name": {
         "en": "Payment checker",
@@ -30,6 +32,7 @@
       "id": "PAY-AUTH",
       "role": "PAYAUTH",
       "office": "TREASURY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "TREASURY-HEAD",
       "name": {
         "en": "Payment authoriser",
@@ -40,6 +43,7 @@
       "id": "TREASURY-HEAD",
       "role": "TREASURYHEAD",
       "office": "TREASURY",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of treasury operations",
@@ -50,6 +54,7 @@
       "id": "AML-COMPLIANCE",
       "role": "COMPLIANCE",
       "office": "TREASURY",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "AML compliance officer",

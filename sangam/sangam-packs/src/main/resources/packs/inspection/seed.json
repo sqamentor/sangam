@@ -10,6 +10,7 @@
       "id": "INSP-1",
       "role": "INSPECTOR",
       "office": "DIST-I",
+      "level": "HEAD_OFFICE",
       "reportsTo": "DC-I",
       "name": {
         "en": "Inspector 1",
@@ -20,6 +21,7 @@
       "id": "INSP-2",
       "role": "INSPECTOR",
       "office": "DIST-I",
+      "level": "HEAD_OFFICE",
       "reportsTo": "DC-I",
       "name": {
         "en": "Inspector 2",
@@ -30,6 +32,7 @@
       "id": "INSP-3",
       "role": "INSPECTOR",
       "office": "DIST-I",
+      "level": "HEAD_OFFICE",
       "reportsTo": "DC-I",
       "name": {
         "en": "Inspector 3",
@@ -40,6 +43,7 @@
       "id": "DC-I",
       "role": "DC",
       "office": "DIST-I",
+      "level": "HEAD_OFFICE",
       "reportsTo": "APPELLATE-INSP",
       "name": {
         "en": "Deputy Commissioner",
@@ -50,6 +54,7 @@
       "id": "APPELLATE-INSP",
       "role": "APPELLATE",
       "office": "DIST-I",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Appellate authority",

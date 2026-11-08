@@ -39,7 +39,7 @@
 | First release path | Reference pilot: a shared government approval core + four packs, on synthetic data and simulators (IX.2–IX.5, ADR-D-13) |
 | Delivery | Stages A–E (ADR-D-2, VIII.9). **Stage A is complete**: scope, criteria and government research |
 | Standards | BPMN 2.0.2, DMN 1.6 (1.7 tracked), CMMN 1.1 isolated and retire-safe; AI agentTask (A2A) + read-only MCP; CloudEvents, AsyncAPI 3, Arazzo; XES/OCEL 2.0 (Part I §3.3a, VI.7, R44) |
-| Engine | One engine, chosen by the Stage B spike between Flowable and Operaton (ADR-D-1, PROVISIONAL) |
+| Engine | **Operaton 2.2.x** (ADR-D-1 **FINAL**, X.0d / XI.10). Flowable strengths are carried over as product-layer features or ports |
 | API / SDKs | REST first (ADR-D-5). Tier-1 SDKs: Java, .NET, PHP, Python, TypeScript/Node; Tier 2: Go, Rust, Kotlin; others via REST/OpenAPI (ADR-D-4) |
 | Databases | Tier 1: PostgreSQL, Oracle, SQL Server; Tier 2: MySQL/MariaDB, DB2; drivers for Oracle/DB2/MySQL are customer-supplied (R17, CF-11, LIC-2…5) |
 | JDK / migrations / scripts | JDK 25 LTS (R5); Liquibase 4.33.0 pinned (ADR-D-7); no in-engine scripts in release 1, an out-of-process script worker instead (ADR-D-8) |
@@ -162,10 +162,14 @@ Final end-to-end check, 2026-11-05:
 
 **Note on old file names:** `DESIGN.md` and `ANALYSIS.md` were retired on 2026-11-04, after a second completeness check (0 missing lines) moved them to the Recycle Bin. Inside Parts I–III, any reference to `DESIGN.md` now means **Part I**, and any reference to `ANALYSIS.md` means **Part II**. Section numbers such as "DESIGN §4.3" or "ANALYSIS §9" still apply within those parts.
 
+**ADR-D-1 rule (SG-17):** ADR-D-1 is **FINAL: Operaton 2.2.x is the base**. Every statement in Parts I–IX that names **Flowable as the base/core to fork**, or calls D-1 PROVISIONAL, is **HISTORY** (the pre-spike plan) and is superseded; such lines are labelled `[HISTORY, superseded by ADR-D-1 FINAL]`.
+
 **Precedence rule:** Part V wins over Parts I–IV where it marks a correction **ACCEPTED** or **VERIFIED**. DESIGN.md §16 still wins over earlier DESIGN sections. Parts I–IV are kept word for word for traceability.
 
 ---
 # Part I — Architecture Design (from DESIGN.md)
+
+> **HISTORY.** Part I is the pre-spike design that assumed a Flowable base. ADR-D-1 FINAL (Part X X.0d, Part XI XI.10) chose **Operaton 2.2.x**; read every "Flowable base/core/fork" below as superseded.
 
 ## Universal Workflow Engine — Architecture Design
 
@@ -188,7 +192,7 @@ Final end-to-end check, 2026-11-05:
 
 इसलिए सही रास्ता यह है:
 
-1. **एक core चुनो, दूसरे की खूबियाँ उसमें port करो।** Core के लिए **Flowable का agenda model और shared-services architecture** लेंगे। यह architecture के हिसाब से ज़्यादा साफ है, CMMN और events में आगे है, और इसमें legacy tree-compaction की जटिलता नहीं है।
+1. **एक core चुनो, दूसरे की खूबियाँ उसमें port करो।** Core के लिए **Flowable का agenda model और shared-services architecture** लेंगे। `[HISTORY, superseded by ADR-D-1 FINAL: base is Operaton]` यह architecture के हिसाब से ज़्यादा साफ है, CMMN और events में आगे है, और इसमें legacy tree-compaction की जटिलता नहीं है।
 2. **Operaton से ये लेंगे:**
    - Fine-grained authorization
    - पूरा FEEL (DMN)
@@ -282,7 +286,7 @@ Final end-to-end check, 2026-11-05:
 | Decision | Choice | Why |
 |---|---|---|
 | **Engine language** | **Java, JDK 25 LTS baseline** for the core (raised from 21 after the evidence review, ANALYSIS R5) | Lets us **reuse** proven Apache-2.0 code from both projects (parsers, FEEL, CMMN, DMN, migration). A Rust/Go rewrite would take years before reaching parity. Any-stack support comes from the **protocol**, not the core language. |
-| **Base to fork** | **Flowable engine core** (agenda, model, shared services, CMMN, event registry) | Cleaner execution model; Operaton's best parts are features that can be layered on top |
+| **Base to fork** | ~~Flowable engine core~~ **Operaton 2.2.x** (ADR-D-1 FINAL) `[HISTORY, superseded by ADR-D-1 FINAL: base is Operaton]` | Original pre-spike reasoning (history): cleaner execution model; Operaton's best parts layered on top. The spike inverted this (XI.10) |
 | **Ported from Operaton** | Authorization, DMN engine integration and history (with Drools DMN as the default engine, §3.4), migration/modification/restart, batch framework, history pipeline + removal time, SKIP LOCKED, priorities, Liquibase, webapps-neo, AssertJ assertions, Testcontainers setup, ArchUnit rules | Operaton is clearly stronger in each of these |
 | **Expression language** | **FEEL** as default everywhere (conditions, I/O mapping, DMN); JUEL only as a compatibility option | FEEL is a standard and language-neutral. JUEL ties expressions to Java beans |
 | **Variables** | Typed JSON (string, number, boolean, date, json, file, reference) | Every language can read and write them |
@@ -671,7 +675,7 @@ Built on **Operaton webapps-neo** (Preact, Vite, bpmn-js, dmn-js, form-js, i18ne
 
 | Phase | Scope | Exit criteria |
 |---|---|---|
-| **0. Foundation** | Fork Flowable core; remove `flowable5-*` and other legacy code; rename packages; new immutable config; Liquibase; CI on all DBs; OTel | Existing Flowable BPMN/CMMN test suites pass on Postgres + Oracle + MSSQL + MySQL |
+| **0. Foundation** | Fork Flowable core; `[HISTORY, superseded by ADR-D-1 FINAL: base is Operaton]` remove `flowable5-*` and other legacy code; rename packages; new immutable config; Liquibase; CI on all DBs; OTel | Existing Flowable BPMN/CMMN test suites pass on Postgres + Oracle + MSSQL + MySQL |
 | **1. MVP** | BPMN + DMN (DecisionEngine SPI; TCK run against Drools DMN, jDMN and feel-scala to confirm the default) + job executor (SKIP LOCKED, hand-off, priorities) + pull workers (REST + gRPC) + JSON variables + REST/gRPC API + SDKs for Java, .NET, Go, Node, Python, PHP (with test engine) + API calls by OpenAPI/gRPC reference + Docker image | A PHP worker and a .NET worker complete tasks in one process; 1,000 instances/s benchmark on Postgres |
 | **2. Enterprise core** | Authorization port + OIDC; multi-tenancy; history pipeline + outbox + cleanup; per-instance event log + replay testing; query/update handlers; continue-as-new; BPMN semantic diff tool; incidents; batch framework; migration/modification/restart; UI cockpit + tasklist + admin | Feature parity with Operaton for operations teams |
 | **3. Universal** | CMMN hardening; event gateway (Kafka, NATS, RabbitMQ, SQS, webhooks, CloudEvents); push and serverless connectors; Rust SDK; WASM scripts; AI agent tasks (A2A) with durable step journal + MCP server; XES/OCEL export; Temporal interop connector; web modeler; Helm + operator | Same process can be started from Kafka, run steps on Lambda and in Go, and be modified from the UI |
@@ -931,6 +935,8 @@ Summary by area:
 
 # Part II — Pre-Development Analysis (from ANALYSIS.md)
 
+> **HISTORY.** References to "the Flowable base" in Part II predate ADR-D-1 FINAL (Operaton 2.2.x); gap lists remain useful as a Flowable-vs-Operaton comparison only.
+
 ## Sangam — Pre-Development Analysis
 
 > Companion to [DESIGN.md](DESIGN.md). Purpose: to check, **before development starts**, whether the design holds together, where it can fail, and how each failure is prevented.
@@ -1062,7 +1068,7 @@ Further rules:
 
 | Element | What | Why (evidence) | Who uses / owns | When (phase) | Where | How |
 |---|---|---|---|---|---|---|
-| **Flowable core as base** | Agenda engine, shared services, CMMN, event registry | Simpler core with no tree compaction [F §1.1]; CMMN event listeners exist only in Flowable [F §3.3] | Core team | 0 | `sangam-core`, runtimes | Fork, strip `flowable5-*` (83k lines [F §15]), rename |
+| **Flowable core as base** | `[HISTORY, superseded by ADR-D-1 FINAL: base is Operaton]` Agenda engine, shared services, CMMN, event registry | Simpler core with no tree compaction [F §1.1]; CMMN event listeners exist only in Flowable [F §3.3] | Core team | 0 | `sangam-core`, runtimes | Fork, strip `flowable5-*` (83k lines [F §15]), rename |
 | **Operaton ports** | Authorization, migration, modification, restart, batch, history pipeline, cleanup, SKIP LOCKED | Operaton is stronger in each [F §1.1]; ~27k lines + tests [F §15] | Core team | 1–2 | `sangam-services`, `sangam-security` | Re-implement against the Flowable model, using the Operaton code and tests as specification |
 | **DMN engine SPI** | Drools DMN default, jDMN and feel-scala optional | TCK: Drools 3388/3391, DMN-Scala 1.9 2850/3391 [F]; Flowable DMN has no FEEL [F]; Operaton does not recognise DMN 1.6 namespaces [F §3.2] | Modellers | 1 | `sangam-dmn` | Adapter per engine; TCK run in CI |
 | **Job executor** | SKIP LOCKED, post-commit hand-off, priorities, fencing | Flowable deadlock reports on all DBs [F]; SKIP LOCKED proven in River, pg-boss, Hatchet [F/V] | Ops | 1 | `sangam-executor` | Two-step acquisition, fixed lock order (§7 C2) |
@@ -4192,7 +4198,7 @@ No login, CAPTCHA or other protection was bypassed. When a search engine showed 
 
 | ADR | Status |
 |---|---|
-| D-1 base engine | **PROVISIONAL** until the Stage B spike |
+| D-1 base engine | **PROVISIONAL** until the Stage B spike | `[HISTORY, superseded by ADR-D-1 FINAL: base is Operaton]`
 | D-2 delivery sequence | DECIDED (VIII.9) |
 | D-3 first market | DECIDED (VI.7) |
 | D-4 SDKs | DECIDED (IX.6) |
@@ -10597,3 +10603,8 @@ Each original line also appears below as a plain line, unescaped, so it can be m
 | Acceptance criteria approved (IX.8) | **Open**: owner approval |
 | G1: named first department/integrator + accountable person | **Open**: buyer outreach |
 ~~~~
+
+
+## E.SG-17 (2026-11-08) ADR-D-1 consistency edits
+
+Originals (verbatim): line 42 `| Engine | One engine, chosen by the Stage B spike between Flowable and Operaton (ADR-D-1, PROVISIONAL) |`; Part I §2 `| **Base to fork** | **Flowable engine core** (agenda, model, shared services, CMMN, event registry) | Cleaner execution model; Operaton's best parts are features that can be layered on top |`. Other edited lines only gained the suffix `[HISTORY, superseded by ADR-D-1 FINAL: base is Operaton]` (Part I summary item 1, Part I roadmap Phase 0, Part II feature table "Flowable core as base", Part X status row D-1), plus HISTORY banners under the Part I and Part II headings.

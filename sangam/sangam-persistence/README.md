@@ -61,6 +61,7 @@ from the owner's reference DDL (integrator decision: the consuming code wins).
 | `AUTH_MEMBERSHIP` **(ref)** | tenant, member, principal, source | member → principal, effective-dated (>200 groups, D-55) | security |
 | `SEC_POLICY`, `SEC_POLICY_CHANGE`, `SEC_ROLE`, `SEC_ROLE_BINDING`, `SEC_GROUP`, `SEC_GROUP_MEMBER`, `SEC_PRIVILEGE`, `SEC_PRIVILEGE_MAPPING`, `SEC_API_TOKEN`, `SEC_WORKER_BINDING`, `SEC_BULK_PLAN`, `SEC_FIELD_RULE` **(ref)** | see DDL | policies (four-eyes changes), roles, groups, FC-42 privileges and tokens, R26 worker binding and bulk plans, field rules | security |
 | `SEC_TENANT`, `SEC_TENANT_CHECKLIST` **(ref)** | tenant | tenants, onboarding (AJ-01) | security |
+| `SEC_TENANT_QUOTA_WINDOW` | tenant, quota, window start | per-tenant quota counting windows shared by all nodes (SL-43, R28) | security |
 | `SEC_PERSON` **(ref)** | tenant, person | persons; unique subject per tenant (filtered on SQL Server, function-based on Oracle, so persons without a subject never collide) | security |
 | `SEC_ORG_LEVEL`, `SEC_ORG_UNIT`, `SEC_ORG_UNIT_PARENT` **(ref)** | | hierarchy with effective-dated parents (IX.5 rule 2) | security |
 | `SEC_SEAT`, `SEC_SEAT_PLACEMENT` **(ref)** | | seats/posts, effective-dated placement (IX.5 rule 1) | security |
@@ -84,6 +85,7 @@ from the owner's reference DDL (integrator decision: the consuming code wins).
 | `CONNECTOR_CALL` **(ref)** | operation_id | R37 durable call intent, provider handles | integration |
 | `INTEGRATION_DEAD_LETTER` **(ref)** | id | dead letters (VI.2.3 rule 5, VI.2.6 rule 3) | integration |
 | `INTEGRATION_LEADER` **(ref)** | name | leader election (R29) | integration |
+| `INTEGRATION_WEBHOOK_STATE` **(ref)** | destination | outbound webhook health: auto-disable / re-enable (SL-39) | integration |
 | `UNIQUE_START` **(ref)** | tenant, definition_key, business_key | VI.2.6 rule 4 uniqueStart (FC-04, D-06) | integration |
 | `RECONCILIATION_ATTEMPT` **(ref)** | item_id | reconciliation engine bookkeeping | integration |
 | `LEGAL_HOLD` **(ref)** | tenant, root, hold | VI.5.1 / R61 legal holds | integration |

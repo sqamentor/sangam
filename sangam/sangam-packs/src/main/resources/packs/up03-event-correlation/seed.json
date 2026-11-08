@@ -10,6 +10,7 @@
       "id": "ANALYST",
       "role": "ANALYST",
       "office": "OPS-U3",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Fraud / signal analyst",

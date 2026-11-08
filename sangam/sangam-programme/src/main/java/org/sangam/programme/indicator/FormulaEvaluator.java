@@ -27,11 +27,13 @@ import java.util.function.Function;
  * </pre>
  * Identifiers are indicator keys ({@code [A-Za-z_][A-Za-z0-9_.]*}). A missing value makes the result {@code null}
  * (unknown) except inside {@code coalesce}. Division by zero yields {@code null} ({@code div(a,b,d)} returns {@code d}).
- * Comparisons and logic return 1 or 0. Expressions are limited to 2,000 characters and 64 nesting levels.
+ * Addition, subtraction and multiplication are exact {@link BigDecimal} arithmetic (money never rounds); a quotient is\n * exact when it terminates and otherwise carries 34 significant digits. Comparisons and logic return 1 or 0. Expressions are limited to 2,000 characters and 64 nesting levels.
  */
 public final class FormulaEvaluator {
 
-    public static final MathContext MC = MathContext.DECIMAL64;
+    /** Precision of a quotient that has no exact decimal form (1/3); +, -, * are always exact. */
+    public static final MathContext MC = MathContext.DECIMAL128;
+    private static final int MAX_ROUND_DECIMALS = 34;
     private static final int MAX_LEN = 2000;
     private static final int MAX_DEPTH = 64;
 
@@ -134,11 +136,11 @@ public final class FormulaEvaluator {
             while (true) {
                 if (eat("+")) {
                     BigDecimal r = term();
-                    l = l == null || r == null ? null : l.add(r, MC);
+                    l = l == null || r == null ? null : l.add(r);
                 } else if (peekMinus()) {
                     pos++;
                     BigDecimal r = term();
-                    l = l == null || r == null ? null : l.subtract(r, MC);
+                    l = l == null || r == null ? null : l.subtract(r);
                 } else {
                     return l;
                 }
@@ -150,10 +152,10 @@ public final class FormulaEvaluator {
             while (true) {
                 if (eat("*")) {
                     BigDecimal r = unary();
-                    l = l == null || r == null ? null : l.multiply(r, MC);
+                    l = l == null || r == null ? null : l.multiply(r);
                 } else if (eat("/")) {
                     BigDecimal r = unary();
-                    l = l == null || r == null || r.signum() == 0 ? null : l.divide(r, MC);
+                    l = l == null || r == null || r.signum() == 0 ? null : divide(l, r);
                 } else {
                     return l;
                 }
@@ -250,8 +252,14 @@ public final class FormulaEvaluator {
                     if (a.size() < 1 || a.size() > 2) {
                         throw bad("round(x[,decimals])");
                     }
-                    int d = a.size() == 2 && a.get(1) != null ? a.get(1).intValue() : 0;
-                    return a.get(0) == null ? null : a.get(0).setScale(d, RoundingMode.HALF_UP);
+                    if (a.get(0) == null || a.size() == 2 && a.get(1) == null) {
+                        return null; // a missing decimals argument is unknown, not "0 decimals"
+                    }
+                    BigDecimal dec = a.size() == 2 ? a.get(1) : BigDecimal.ZERO;
+                    if (dec.stripTrailingZeros().scale() > 0 || dec.abs().compareTo(BigDecimal.valueOf(MAX_ROUND_DECIMALS)) > 0) {
+                        throw bad("round decimals must be a whole number in -" + MAX_ROUND_DECIMALS + ".." + MAX_ROUND_DECIMALS);
+                    }
+                    return a.get(0).setScale(dec.intValueExact(), RoundingMode.HALF_UP);
                 }
                 case "div" -> {
                     if (a.size() < 2 || a.size() > 3) {
@@ -261,7 +269,7 @@ public final class FormulaEvaluator {
                     if (a.get(0) == null || a.get(1) == null || a.get(1).signum() == 0) {
                         return dflt;
                     }
-                    return a.get(0).divide(a.get(1), MC);
+                    return divide(a.get(0), a.get(1));
                 }
                 case "coalesce" -> {
                     for (BigDecimal v : a) {
@@ -330,6 +338,15 @@ public final class FormulaEvaluator {
 
         private static BigDecimal bool(boolean b) {
             return b ? BigDecimal.ONE : BigDecimal.ZERO;
+        }
+    }
+
+    /** Exact when the quotient terminates (10/4 = 2.5), otherwise rounded to {@link #MC} (HALF_EVEN). */
+    static BigDecimal divide(BigDecimal a, BigDecimal b) {
+        try {
+            return a.divide(b);
+        } catch (ArithmeticException nonTerminating) {
+            return a.divide(b, MC);
         }
     }
 

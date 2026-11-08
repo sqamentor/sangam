@@ -50,6 +50,11 @@
       <dependency><groupId>org.sangam</groupId><artifactId>sangam-ops</artifactId><version>${project.version}</version></dependency>
       <dependency><groupId>org.sangam</groupId><artifactId>sangam-modeller</artifactId><version>${project.version}</version></dependency>
       <dependency><groupId>org.sangam</groupId><artifactId>sangam-onboarding</artifactId><version>${project.version}</version></dependency>
+      <!-- SG-33: the whole Jackson 2.x line at the version the FEEL closure (jackson-module-scala 2.22.3 below) accepts.
+           A consumer's INHERITED dependencyManagement still wins over this import, so a parent pom that manages another
+           jackson-databind must also set jackson.version / import jackson-bom 2.22.3; JacksonCompatibilityGuard (called by
+           SangamFeel.install) fails fast with that fix when it does not. -->
+      <dependency><groupId>com.fasterxml.jackson</groupId><artifactId>jackson-bom</artifactId><version>2.22.3</version><type>pom</type><scope>import</scope></dependency>
       <!-- LIC-7 / D-7: Liquibase 4.x only (5.x is FSL) -->
       <dependency><groupId>org.liquibase</groupId><artifactId>liquibase-core</artifactId><version>4.33.0</version></dependency>
       <!-- SG-28: Operaton's StrongUuidGenerator needs it at run time (operaton-engine declares it provided) -->

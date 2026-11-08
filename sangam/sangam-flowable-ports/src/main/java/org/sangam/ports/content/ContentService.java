@@ -5,6 +5,8 @@ import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Transactions;
 import org.sangam.core.ports.DocumentStore;
+import org.sangam.core.quota.QuotaLimit;
+import org.sangam.core.quota.TenantQuotas;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -196,17 +198,42 @@ public class ContentService {
         if (content == null) {
             throw new IllegalArgumentException("content stream is required");
         }
+        // SL-43: the tenant's maxDocumentBytes quota, when lower than the deployment-wide guard
+        TenantQuotas quotas = TenantQuotas.current();
+        long tenantMax = quotas.limit(tenant, QuotaLimit.DOCUMENT_BYTES);
+        boolean quotaBound = tenantMax >= 0 && tenantMax < maxBytes;
+        long limit = quotaBound ? tenantMax : maxBytes;
+        DocumentStore.StoredObject obj;
         try {
-            return store.put(key, new LimitedInputStream(content, maxBytes), mime);
+            obj = store.put(key, new LimitedInputStream(content, limit), mime);
         } catch (LimitExceeded e) {
-            try {
-                store.delete(key);      // the partial object (if the store kept one) must not stay behind
-            } catch (IOException ignored) {
-                // the orphan sweeper removes it
+            deleteQuietly(key);      // the partial object (if the store kept one) must not stay behind
+            if (quotaBound) {
+                quotas.checkSize(tenant, QuotaLimit.DOCUMENT_BYTES, e.read);   // throws TENANT_QUOTA_EXCEEDED, audited
             }
-            throw org.sangam.ports.support.PortsProblem.tooLarge("PAYLOAD_TOO_LARGE", "document", e.read, maxBytes);
+            throw org.sangam.ports.support.PortsProblem.tooLarge("PAYLOAD_TOO_LARGE", "document", e.read, limit);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+        // SL-43: the tenant's total stored bytes (maxStorageBytes); checked after the write because the size of a
+        // stream is known only then. Concurrent uploads of one tenant can each pass the check (bounded overshoot).
+        long storageMax = quotas.limit(tenant, QuotaLimit.STORAGE_BYTES);
+        if (storageMax >= 0 && tenant != null && !tenant.isBlank()) {
+            long used = tx.inTransaction(c -> Jdbc.one(c, "SELECT COALESCE(SUM(v.size_bytes), 0) FROM CONTENT_VERSION v"
+                    + " JOIN CONTENT_ITEM i ON i.id = v.item_id WHERE i.tenant_id = ?", rs -> rs.getLong(1), tenant).orElse(0L));
+            if (!TenantQuotas.within(storageMax, used + obj.sizeBytes())) {
+                deleteQuietly(key);
+                quotas.checkSize(tenant, QuotaLimit.STORAGE_BYTES, used + obj.sizeBytes());
+            }
+        }
+        return obj;
+    }
+
+    private void deleteQuietly(String key) {
+        try {
+            store.delete(key);
+        } catch (IOException ignored) {
+            // the orphan sweeper removes it
         }
     }
 

@@ -84,15 +84,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data
-          key: nvd-${{ github.run_id }}
-          restore-keys: nvd-
+          # Keyed by plugin version: 12.2.2 widened the reference URL column (DependencyCheck #8467), so an H2
+          # database built by an older plugin must not be restored.
+          key: nvd-13.0.0-${{ github.run_id }}
+          restore-keys: nvd-13.0.0-
       - name: dependency-check aggregate
         working-directory: sangam
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           mvn -B -ntp -DskipTests install
-          mvn -B -ntp org.owasp:dependency-check-maven:12.1.3:aggregate \
+          mvn -B -ntp org.owasp:dependency-check-maven:13.0.0:aggregate \
             -DfailBuildOnCVSS=7 -Dformats=HTML,SARIF,JSON -DskipTestScope=true -DskipProvidedScope=true \
             -DassemblyAnalyzerEnabled=false -DossindexAnalyzerEnabled=false \
             -DsuppressionFile=deploy/licence/dependency-check-suppressions.xml \

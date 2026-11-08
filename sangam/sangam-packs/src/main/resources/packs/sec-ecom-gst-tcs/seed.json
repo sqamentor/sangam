@@ -10,6 +10,7 @@
       "id": "TAX-TEAM",
       "role": "TAX",
       "office": "TAX",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Indirect tax team",

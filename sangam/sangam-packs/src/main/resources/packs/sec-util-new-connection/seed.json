@@ -10,6 +10,7 @@
       "id": "SUBDIV-CLERK",
       "role": "CLERK",
       "office": "SUBDIVISION",
+      "level": "HEAD_OFFICE",
       "reportsTo": "AE-SUBDIV",
       "name": {
         "en": "Sub-division clerk",
@@ -20,6 +21,7 @@
       "id": "JE-FIELD",
       "role": "JE",
       "office": "SUBDIVISION",
+      "level": "HEAD_OFFICE",
       "reportsTo": "AE-SUBDIV",
       "name": {
         "en": "Junior engineer",
@@ -30,6 +32,7 @@
       "id": "AE-SUBDIV",
       "role": "AE",
       "office": "SUBDIVISION",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Assistant engineer",

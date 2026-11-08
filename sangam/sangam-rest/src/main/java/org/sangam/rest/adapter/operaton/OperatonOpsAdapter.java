@@ -95,7 +95,8 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
     public OperatonOpsAdapter(RuntimeService runtimeService, ManagementService managementService,
                               HistoryService historyService, RepositoryService repositoryService,
                               ExternalTaskService externalTaskService, TxSupport tx, AuditPort audit,
-                              RestProperties props) {
+                              RestProperties props,
+                              java.util.function.Supplier<org.sangam.core.layer.OutboxRepair> outboxRepair) {
         this.runtimeService = runtimeService;
         this.managementService = managementService;
         this.historyService = historyService;
@@ -104,7 +105,9 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
         this.tx = tx;
         this.audit = audit;
         this.props = props;
-        this.product = new JdbcReconciliationSupport(tx, props);
+        // required, so no construction site can forget it: repairs go through the deployment's OutboxRepair
+        this.product = new JdbcReconciliationSupport(tx, props,
+                java.util.Objects.requireNonNull(outboxRepair, "outboxRepair supplier"));
     }
 
     /** Optional: route batch CANCEL/DELETE through the process port (VI.5 cancel/delete semantics). */

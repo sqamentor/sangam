@@ -14,6 +14,7 @@ from lib import C, q
 from packs import Pack
 from common import core, outcome, end_ok, rejection, reject_with, withdraw
 import forms
+from sector import powers
 
 SIDE = ['GP-14', 'VI.5']
 
@@ -127,6 +128,20 @@ def ledger_conn(op, purpose):
 def authority(pk, key, rows, doc):
     pk.dmn(key, 'Competent authority', 'FIRST', [('Amount (INR)', 'amount', 'double')],
            [('competentRole', 'Competent role', 'string')], [([t], [q(r)], n) for t, r, n in rows], doc=doc)
+
+
+def ifms_powers(pk, key, case, rows, unverified=None):
+    """Delegated-power table of one IFMS case type (SL-31): rows (role, limit, citation); limit None = the rule confers
+    the power without a money ceiling. `unverified` (reason) marks the table as a pack placeholder: the value is the
+    pack's working default, not read from the rule text, and readiness reports PACK_PLACEHOLDER_UNCONFIRMED until the
+    tenant deploys a confirmed override of `key`."""
+    powers(pk, key, [((role, case), limit, note) for role, limit, note in rows],
+           doc='Delegated powers for ' + case + ' (SL-31). ' + ('UNVERIFIED: ' + unverified if unverified
+                                                               else 'Values cited from the rule text in the corpus.'))
+    if unverified:
+        for role, limit, _ in rows:
+            pk.placeholder(key, f'{role} {case} ' + ('no monetary limit' if limit is None else f'up to {limit}'),
+                           unverified)
 
 
 def task(s, id, name, seat, form, decision, fields, spec='5WD', sod=False):
@@ -429,7 +444,7 @@ def reappropriation():
                'chargedToVoted=false;capitalRevenue=false;betweenGrants=false;newService=false;fromSupplementary=false;'
                'fromCfAdvance=false;worksWithoutAaTs=false;secretServicePercent=0;mofCase=false;percentOfBe=0;'
                'afterLastBatch=false;nerTechnical=false;fundsAvailable=999999999999.0;faSeat=FA-1;'
-               'caseType=REAPPROPRIATION;routingDecisionKey=ifms-reapp-authority;scrutinySeat=PRAO-1;'
+               'caseType=REAPPROPRIATION;routingDecisionKey=ifms-reapp-authority;powersDecisionKey=ifms-reapp-powers;scrutinySeat=PRAO-1;'
                'referToTenant=finance;referralQuestion=Concurrence for re-appropriation;executionConnector=ledger.transfer;'
                'executionStep=transfer;reconcileRequired=false;outputTemplate=reappropriation-order;appealAllowed=false')
     sav = s.conn('ra_savings', 'Savings in the source line', 'ledger.available', 'available', 'query', 'ledgerId,fromHead', 'funds')
@@ -494,6 +509,11 @@ def reappropriation():
                'table as a tenant override.')
     authority(pk, 'ifms-reapp-authority', [('-', 'CAA', 'Secretary as Chief Accounting Authority (DFPR r.10(9)); non-delegable (r.12(2))')],
               'Re-appropriation power is not re-delegable (IFC-007).')
+    # DFPR 2024 r.10(9) (corpus S03, IFC-062, P): the CAA re-appropriates within the grant; the cases that need the
+    # Finance Ministry, the C&AG or a report to Parliament are decided by ifms-reapp-rules, not by a money ceiling.
+    ifms_powers(pk, 'ifms-reapp-powers', 'REAPPROPRIATION',
+                [('CAA', None, 'CAA re-appropriation power, DFPR 2024 r.10(9); non-delegable r.12(2); '
+                               'Finance Ministry cases by ifms-reapp-rules (r.10(10))')])
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'ra')
 
 
@@ -513,7 +533,7 @@ def formulation():
     p.forms.append(dict(key='ifms-budget-formulation/estimates', name='Budget estimates | बजट अनुमान', decision=None,
                         fields=['fiscalYear*', 'headOfAccount*', 'beAmount*', 'reAmount*', 'actuals', 'justification*'], doc=None))
     d = s.setv('bf_defaults', 'Configuration', defaults='beAmount=0;reAmount=0;amount=0;faSeat=FA-1;caaSeat=SECY-1;'
-               'caseType=BUDGET_ESTIMATE;routingDecisionKey=ifms-formulation-authority;scrutinySeat=PRAO-1;'
+               'caseType=BUDGET_ESTIMATE;routingDecisionKey=ifms-formulation-authority;powersDecisionKey=ifms-formulation-powers;scrutinySeat=PRAO-1;'
                'executionConnector=budget.submit;executionStep=submit;reconcileRequired=false;outputTemplate=budget-statement;'
                'appealAllowed=false;ledgerId=BUDGET')
     e1, x1 = task(s, 'bf_fa', 'FA scrutiny of estimates | अनुमानों की वित्तीय सलाहकार द्वारा जाँच', 'faSeat',
@@ -539,6 +559,11 @@ def formulation():
     s.seq(load, al, cl, end_ok(p, s, 'bf_end'))
     s.side_exits('bf')
     authority(pk, 'ifms-formulation-authority', [('-', 'CAA', 'Secretary approves the department estimates')], '')
+    ifms_powers(pk, 'ifms-formulation-powers', 'BUDGET_ESTIMATE',
+                [('CAA', None, 'Secretary approves the department estimates (pack default)')],
+                unverified='the approving authority of the estimates and the absence of a money ceiling are not read '
+                           'from the rule text (corpus IFC-043 to IFC-053 are not verified for powers); confirm from the '
+                           'budget circular / delegation order and deploy it as a tenant DMN override')
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'bf')
 
 
@@ -557,7 +582,7 @@ def supplementary():
                         fields=['fiscalYear*', 'headOfAccount*', 'amount*', 'supplementaryKind*', 'newServiceFlag', 'justification*'],
                         doc=None))
     d = s.setv('sd_defaults', 'Configuration', defaults='amount=0;supplementaryKind=CASH;newServiceFlag=false;faSeat=FA-1;'
-               'ledgerId=BUDGET;caseType=SUPPLEMENTARY;routingDecisionKey=ifms-supplementary-authority;scrutinySeat=PRAO-1;'
+               'ledgerId=BUDGET;caseType=SUPPLEMENTARY;routingDecisionKey=ifms-supplementary-authority;powersDecisionKey=ifms-supplementary-powers;scrutinySeat=PRAO-1;'
                'referToTenant=finance;referralQuestion=Supplementary demand;executionConnector=ledger.adjust;'
                'executionStep=adjust;reconcileRequired=false;outputTemplate=supplementary-order;appealAllowed=false')
     ns = s.rule('sd_newService', 'New service / instrument (DMN)', 'ifms-new-service')
@@ -594,6 +619,10 @@ def supplementary():
            [(['true', '-'], [q('PRIOR_PARLIAMENT'), q('DEA OM F.1(22)-B(AC)/2022 of 23-02-2024 [U limits]')], 'NS/NIS: limits are placeholders'),
             (['false', '-'], [q('BATCH'), q('ordinary supplementary')], '')])
     authority(pk, 'ifms-supplementary-authority', [('-', 'CAA', 'Secretary forwards to the budget division')], '')
+    ifms_powers(pk, 'ifms-supplementary-powers', 'SUPPLEMENTARY',
+                [('CAA', None, 'Secretary approves the proposal for the budget division batch (pack default)')],
+                unverified='the approving authority of a supplementary proposal is not read from the rule text; '
+                           'confirm from the delegation order and deploy it as a tenant DMN override')
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'sd')
 
 
@@ -612,7 +641,7 @@ def surrender():
     p.forms.append(dict(key='ifms-surrender-lapse/surrender', name='Surrender of savings | बचत का समर्पण', decision=None,
                         fields=['fiscalYear*', 'headOfAccount*', 'surrenderAmount*', 'holder*', 'remarks'], doc=None))
     d = s.setv('su_defaults', 'Configuration', defaults='surrenderAmount=0;amount=0;faSeat=FA-1;ledgerId=BUDGET;'
-               'caseType=SURRENDER;routingDecisionKey=ifms-surrender-authority;scrutinySeat=PRAO-1;'
+               'caseType=SURRENDER;routingDecisionKey=ifms-surrender-authority;powersDecisionKey=ifms-surrender-powers;scrutinySeat=PRAO-1;'
                'executionConnector=ledger.withdraw;executionStep=withdraw;reconcileRequired=false;outputTemplate=surrender-order;'
                'appealAllowed=false')
     amt = s.setv('su_amount', 'Amount', values='amount=@surrenderAmount')
@@ -646,6 +675,10 @@ def surrender():
     rep = s.svc('yl_report', 'Lapse statement', C['DOC'], {'template': 'lapse-statement'})
     s.seq(j, dd, cp, rep, s.end('yl_end', 'Closed'))
     authority(pk, 'ifms-surrender-authority', [('-', 'CAA', 'surrender approved by the CAA, sent to MoF (GFR 62)')], '')
+    ifms_powers(pk, 'ifms-surrender-powers', 'SURRENDER',
+                [('CAA', None, 'surrender of savings to the Finance Ministry, GFR 2017 r.62(1)-(2) (pack default)')],
+                unverified='GFR 62(1)-(2) (corpus IFC-069) requires the surrender but does not name the CAA as the '
+                           'approving authority; confirm from the delegation order and deploy it as a tenant DMN override')
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'su')
 
 
@@ -670,7 +703,7 @@ def gia_uc():
                                 'unspentBalance', 'headOfAccount*', 'sanctionRef'], doc=None))
     d = s.setv('gr_defaults', 'Configuration', defaults='amount=0;releasePercent=0;recurringGrant=false;ucStatus=SUBMITTED;'
                'unspentBalance=0;granteeType=INSTITUTION;faSeat=FA-1;billType=GIA;caseType=GIA;'
-               'routingDecisionKey=ifms-gia-authority;scrutinySeat=PRAO-1;outputTemplate=grant-sanction;appealAllowed=false')
+               'routingDecisionKey=ifms-gia-authority;powersDecisionKey=ifms-gia-powers;scrutinySeat=PRAO-1;outputTemplate=grant-sanction;appealAllowed=false')
     chk = s.rule('gr_rules', 'Release rules (GFR 230(7), 238)', 'ifms-gia-release')
     s.seq(st, d, chk)
     g = s.xgw('gr_okGw', 'Release allowed?')
@@ -726,6 +759,11 @@ def gia_uc():
             (['-', '-', '-', '-', '-'], ['true', q('GFR 2017 r.230')], '')],
            doc='Thresholds from the GOI profile grants.seventyFivePercentRule; States override by tenant DMN.')
     authority(pk, 'ifms-gia-authority', [('-', 'CAA', 'department has full powers where scheme rules have MoF consent (DFPR r.17)')], '')
+    # DFPR 2024 r.17 (corpus S03, IFC-085, P): full powers to departments for grants-in-aid where the scheme rules were
+    # framed with Finance Ministry consent and the sanction carries a certificate to that effect.
+    ifms_powers(pk, 'ifms-gia-powers', 'GIA',
+                [('CAA', None, 'full powers for grants-in-aid under scheme rules framed with Finance Ministry consent, '
+                               'DFPR 2024 r.17')])
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'gr')
 
 
@@ -857,7 +895,7 @@ def gpf_advances():
     p.forms.append(dict(key='ifms-gpf/application', name='GPF application | जीपीएफ आवेदन', decision=None,
                         fields=['gpfAccount*', 'gpfPurpose*', 'amount*', 'gpfBalance', 'qualifyingService', 'documents'], doc=None))
     d = s.setv('gp_defaults', 'Configuration', defaults='amount=0;gpfBalance=0;qualifyingService=0;gpfPurpose=OTHER;'
-               'billType=GPF_WITHDRAWAL;caseType=GPF;routingDecisionKey=ifms-gpf-authority;scrutinySeat=DDO-1;'
+               'billType=GPF_WITHDRAWAL;caseType=GPF;routingDecisionKey=ifms-gpf-authority;powersDecisionKey=ifms-gpf-powers;scrutinySeat=DDO-1;'
                'sanctionSla=15D;appealAllowed=false;outputTemplate=gpf-sanction')
     r = s.rule('gp_rules', 'GPF eligibility (DMN)', 'gpf-withdrawal')
     s.seq(st, d, r)
@@ -880,6 +918,10 @@ def gpf_advances():
             (['-', '> gpfBalance', '-', '-'], ['false', q('GPF (CS) Rules 1960: not above the balance')], ''),
             (['-', '-', '-', '-'], ['true', q('GPF (CS) Rules 1960 [U: purpose-wise limits to load]')], 'placeholder limits')])
     authority(pk, 'ifms-gpf-authority', [('-', 'HOO', 'Head of Office sanctions GPF withdrawals [U: department order]')], '')
+    ifms_powers(pk, 'ifms-gpf-powers', 'GPF',
+                [('HOO', None, 'Head of Office sanctions GPF advances / withdrawals within gpf-withdrawal (pack default)')],
+                unverified='the GPF (CS) Rules 1960 sanctioning authority is not read (corpus IFC-171 [U: department '
+                           'order]); confirm and deploy it as a tenant DMN override')
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'gp')
 
     pk2 = Pack('gov.ifms.loans-advances', 'ifms-loans-advances', 'Loans and advances to employees', 'कर्मचारियों को ऋण और अग्रिम',
@@ -894,7 +936,7 @@ def gpf_advances():
     p.forms.append(dict(key='ifms-loans-advances/application', name='Advance application | अग्रिम आवेदन', decision=None,
                         fields=['advanceKind*', 'amount*', 'instalments*', 'documents'], doc=None))
     d = s.setv('av_defaults', 'Configuration', defaults='amount=0;instalments=1;advanceKind=COMPUTER;basicPay=0;'
-               'billType=HBA;caseType=ADVANCE;routingDecisionKey=ifms-advance-authority;scrutinySeat=DDO-1;'
+               'billType=HBA;caseType=ADVANCE;routingDecisionKey=ifms-advance-authority;powersDecisionKey=ifms-advance-powers;scrutinySeat=DDO-1;'
                'appealAllowed=false;outputTemplate=advance-sanction;ledgerId=RECOVERY')
     r = s.rule('av_rules', 'Advance limits (DMN)', 'ifms-advance-limits')
     san = core(s, 'av_sanction', 'Sanction (core)', 'sanction')
@@ -917,6 +959,10 @@ def gpf_advances():
              ([q('HBA'), '> 2500000'], ['false', q('[U] HBA ceiling (34 x basic pay, max 25 lakh) to confirm')], 'placeholder'),
              (['-', '-'], ['true', q('Compendium of Rules on Advances [U]')], '')])
     authority(pk2, 'ifms-advance-authority', [('-', 'HOO', 'Head of Office [U]')], '')
+    ifms_powers(pk2, 'ifms-advance-powers', 'ADVANCE',
+                [('HOO', None, 'Head of Office sanctions advances within ifms-advance-limits (pack default)')],
+                unverified='the Compendium of Rules on Advances is not read (corpus IFC-025 / IFC-180 [U]); confirm the '
+                           'sanctioning authority and its limit and deploy it as a tenant DMN override')
     seeds(pk2, 'PAO-OFFICE', PAO_SEATS, 'av')
 
 
@@ -1001,7 +1047,7 @@ def appraisal():
     p.forms.append(dict(key='ifms-scheme-appraisal/proposal', name='Scheme proposal | योजना प्रस्ताव', decision=None,
                         fields=['schemeName*', 'totalOutlay*', 'justification*', 'documents'], doc=None))
     d = s.setv('sa_defaults', 'Configuration', defaults='totalOutlay=0;amount=0;faSeat=FA-1;committeeSeats=FA-1,SECY-1;'
-               'quorumRule=MAJORITY;committeeWindow=P10D;caseType=SCHEME;routingDecisionKey=ifms-scheme-approval;'
+               'quorumRule=MAJORITY;committeeWindow=P10D;caseType=SCHEME;routingDecisionKey=ifms-scheme-approval;powersDecisionKey=ifms-scheme-powers;'
                'scrutinySeat=FA-1;outputTemplate=scheme-approval;appealAllowed=false;appraisalForum=FA')
     r = s.rule('sa_ladder', 'Appraisal forum and approval authority (DMN)', 'ifms-scheme-appraisal')
     amt = s.setv('sa_amount', 'Amount', values='amount=@totalOutlay')
@@ -1032,6 +1078,11 @@ def appraisal():
             (['-'], [q('EFC'), q('CABINET'), q('OM 05-08-2016: above 1000 cr')], '')],
            doc='Thresholds mirror the GOI profile appraisal.ladder; a State loads its own ladder as a tenant override.')
     authority(pk, 'ifms-scheme-approval', [('<= 1000000000', 'CAA', 'Secretary'), ('-', 'FA', 'routed to the authority of the ladder')], '')
+    ifms_powers(pk, 'ifms-scheme-powers', 'SCHEME',
+                [('CAA', 1000000000, 'Secretary approves schemes up to 100 cr (ladder ifms-scheme-appraisal)')],
+                unverified='the corpus verifies the appraisal forum by outlay (IFC-080) but not the approval thresholds '
+                           '(Secretary / Minister / FM / Cabinet are not modelled, IFMS-CENTRAL gap 7); confirm from DFPR '
+                           'App. III and deploy it as a tenant DMN override')
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'sa')
 
 

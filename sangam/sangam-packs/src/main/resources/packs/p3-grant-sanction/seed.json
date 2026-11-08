@@ -18,6 +18,7 @@
       "id": "DEO-A1",
       "role": "DEO",
       "office": "BLOCK-A1",
+      "level": "FIELD_OFFICE",
       "reportsTo": "DOCVERIFIER-A1",
       "name": {
         "en": "Data-entry operator, Block A1",
@@ -28,6 +29,7 @@
       "id": "DOCVERIFIER-A1",
       "role": "DOCVERIFIER",
       "office": "BLOCK-A1",
+      "level": "FIELD_OFFICE",
       "reportsTo": "DWO-A",
       "name": {
         "en": "Document verifier, Block A1",
@@ -38,6 +40,7 @@
       "id": "DOCVERIFIER-A2",
       "role": "DOCVERIFIER",
       "office": "DIST-A",
+      "level": "REGIONAL_OFFICE",
       "reportsTo": "DWO-A",
       "name": {
         "en": "Document verifier (district pool)",
@@ -48,6 +51,7 @@
       "id": "FIELD-A1",
       "role": "FIELDVERIFIER",
       "office": "BLOCK-A1",
+      "level": "FIELD_OFFICE",
       "reportsTo": "DWO-A",
       "name": {
         "en": "Field verifier, Block A1",
@@ -58,6 +62,7 @@
       "id": "DWO-A",
       "role": "DWO",
       "office": "DIST-A",
+      "level": "REGIONAL_OFFICE",
       "reportsTo": "JD-WEL",
       "name": {
         "en": "District Welfare Officer",
@@ -68,6 +73,7 @@
       "id": "JD-WEL",
       "role": "JD",
       "office": "DIR-WEL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "DIR-W",
       "name": {
         "en": "Joint Director",
@@ -78,6 +84,7 @@
       "id": "DIR-W",
       "role": "DIRECTOR",
       "office": "DIR-WEL",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Director",
         "hi": "निदेशक"
@@ -87,6 +94,7 @@
       "id": "APPELLATE-DIR",
       "role": "APPELLATE",
       "office": "DIR-WEL",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Appellate authority (Additional Director)",
         "hi": "अपीलीय प्राधिकारी (अपर निदेशक)"

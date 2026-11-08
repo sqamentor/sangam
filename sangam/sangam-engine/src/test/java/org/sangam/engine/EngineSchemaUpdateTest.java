@@ -16,9 +16,16 @@ import org.operaton.bpm.engine.impl.cfg.StandaloneProcessEngineConfiguration;
  */
 class EngineSchemaUpdateTest {
 
+    private final java.util.List<SangamEngineConfigurer> configurers = new java.util.ArrayList<>();
+
     @AfterEach
     void clock() {
-        org.sangam.engine.clock.OperatonClock.unregister();
+        configurers.forEach(SangamEngineConfigurer::releaseEngineSlot);
+    }
+
+    private SangamEngineConfigurer track(SangamEngineConfigurer c) {
+        configurers.add(c);
+        return c;
     }
 
     private static JdbcDataSource h2(String name) {
@@ -35,7 +42,7 @@ class EngineSchemaUpdateTest {
 
     @Test
     void keepsTheConfiguredFalse() {
-        SangamEngineConfigurer c = new SangamEngineConfigurer(settings());
+        SangamEngineConfigurer c = track(new SangamEngineConfigurer(settings()));
         var ds = c.prepare(h2("sg19a"));
         StandaloneProcessEngineConfiguration cfg = new StandaloneProcessEngineConfiguration();
         cfg.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_FALSE);
@@ -47,7 +54,7 @@ class EngineSchemaUpdateTest {
     void appliesAnExplicitSetting() {
         SangamEngineSettings s = settings();
         s.setEngineSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_CREATE_DROP);
-        SangamEngineConfigurer c = new SangamEngineConfigurer(s);
+        SangamEngineConfigurer c = track(new SangamEngineConfigurer(s));
         var ds = c.prepare(h2("sg19b"));
         StandaloneProcessEngineConfiguration cfg = new StandaloneProcessEngineConfiguration();
         cfg.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_FALSE);

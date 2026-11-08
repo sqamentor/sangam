@@ -10,6 +10,7 @@
       "id": "UCC-DESK",
       "role": "UCC",
       "office": "TELCO-UCC",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "UCC complaint desk",

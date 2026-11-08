@@ -30,6 +30,7 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @SpringBootTest
 @ActiveProfiles("h2")
+@org.springframework.test.annotation.DirtiesContext // D-10: one live engine per JVM, so no cached context outlives the class
 @ExtendWith(OutputCaptureExtension.class)
 class RollbackGuardSpringTxTest {
 

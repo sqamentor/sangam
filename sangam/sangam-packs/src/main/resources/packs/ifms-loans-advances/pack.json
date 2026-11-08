@@ -24,6 +24,10 @@
       "path": "packs/ifms-loans-advances/ifms-advance-authority.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/ifms-loans-advances/ifms-advance-powers.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/ifms-loans-advances/forms/application.form.json"
     },
@@ -85,5 +89,12 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-ifms-bill"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-advance-powers",
+      "rule": "HOO ADVANCE no monetary limit",
+      "reason": "the Compendium of Rules on Advances is not read (corpus IFC-025 / IFC-180 [U]); confirm the sanctioning authority and its limit and deploy it as a tenant DMN override"
+    }
   ]
 }

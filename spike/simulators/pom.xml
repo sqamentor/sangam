@@ -19,7 +19,7 @@
   -->
   <properties>
     <version.ojdbc>23.8.0.25.04</version.ojdbc>
-    <version.mssql-jdbc>12.10.1.jre11</version.mssql-jdbc>
+    <version.mssql-jdbc>12.10.2.jre11</version.mssql-jdbc>
     <!--
       Module-local override of the parent's Testcontainers 1.21.3: that version uses docker-java's
       old default API version, which Docker Engine 29 rejects (empty /info, HTTP 400, "Could not

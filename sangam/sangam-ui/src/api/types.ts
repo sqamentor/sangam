@@ -236,6 +236,15 @@ export interface BulkResult {
 
 // ---------------------------------------------------------------- forms (R47)
 
+/** GET /tasks/{id}/form (SL-37): the task's deployed form, read with the task-level check. */
+export interface TaskForm {
+  taskId: string;
+  formKey?: string;
+  kind: 'EMBEDDED' | 'FORM' | 'EXTERNAL' | 'OTHER' | 'NONE';
+  contentType?: string;
+  content?: string;
+}
+
 export type FormFieldType =
   | 'textfield'
   | 'textarea'
@@ -273,6 +282,8 @@ export interface FormField {
   lookup?: string;
   /** Generic module screens: send the value as a query parameter instead of in the body. */
   inQuery?: boolean;
+  /** Generic module screens: the value only fills a {placeholder} of the action path; it is not sent. */
+  inPath?: boolean;
 }
 
 export interface FormSchema {

@@ -141,6 +141,14 @@ public record ProgrammeConfig(Month fiscalYearStartMonth, Set<String> units, Map
             }
             for (Map<String, Object> rule : r.rules()) {
                 String expr = Db.requireText(Db.str(rule.get("expr")), "rule expr of " + r.key());
+                String sev = Db.str(rule, "severity", "ERROR");
+                if (!"ERROR".equals(sev) && !"WARNING".equals(sev)) {
+                    throw cfg("rule of " + r.key() + " has severity " + sev + " (ERROR or WARNING)");
+                }
+                String whenMissing = Db.str(rule, "whenMissing", "fail");
+                if (!"fail".equals(whenMissing) && !"skip".equals(whenMissing)) {
+                    throw cfg("rule of " + r.key() + " has whenMissing " + whenMissing + " (fail or skip)");
+                }
                 for (String ref : FormulaEvaluator.references(expr)) {
                     String base = ref.startsWith("prev.") ? ref.substring(5) : ref.startsWith("target.") ? ref.substring(7) : ref;
                     if (!indicators.containsKey(base)) {

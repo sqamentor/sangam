@@ -20,6 +20,6 @@ The local Flowable checkout ships a LICENSE but no NOTICE file.
 Flowable's ProcessDiagramLayoutFactory is NOT used (XXE CVE-2026-91197).
 
 Optional third-party clients (not bundled unless the deployment adds them):
-  - org.apache.kafka:kafka-clients 3.9.1      Apache-2.0
+  - org.apache.kafka:kafka-clients 3.9.2      Apache-2.0
   - jakarta.jms:jakarta.jms-api 3.1.0         EPL-2.0 OR GPL-2.0-with-Classpath-exception
-  - com.rabbitmq:amqp-client 5.25.0           Apache-2.0 / MPL-2.0 / GPL-2.0 (used under Apache-2.0)
+  - com.rabbitmq:amqp-client 5.37.1           Apache-2.0 / MPL-2.0 / GPL-2.0 (used under Apache-2.0)

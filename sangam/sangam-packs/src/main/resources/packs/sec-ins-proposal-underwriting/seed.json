@@ -10,6 +10,7 @@
       "id": "UNDERWRITER",
       "role": "UNDERWRITER",
       "office": "UW",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CHIEF-UW",
       "name": {
         "en": "Underwriter",
@@ -20,6 +21,7 @@
       "id": "CHIEF-UW",
       "role": "CHIEFUW",
       "office": "UW",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Chief underwriter",

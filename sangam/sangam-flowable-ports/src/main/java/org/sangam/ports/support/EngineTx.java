@@ -32,7 +32,31 @@ public final class EngineTx {
         if (cc == null) {
             throw new IllegalStateException("not inside an engine command");
         }
-        return cc.getDbSqlSession().getSqlSession().getConnection();
+        Connection c = cc.getDbSqlSession().getSqlSession().getConnection();
+        guardRollback(cc, c);
+        return c;
+    }
+
+    private static final java.util.Set<CommandContext> GUARDED =
+            java.util.Collections.synchronizedSet(java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>()));
+
+    /**
+     * FW-23 (Q1): a standalone engine rolls back through MyBatis, which skips the JDBC rollback when the engine itself
+     * wrote nothing; the connection is then reset to auto-commit and product rows written here would commit. In a
+     * standalone transaction context the connection is therefore rolled back explicitly when the command rolls back.
+     * (Spring/JTA contexts roll back the connection themselves; WS-ENGINE's adapter adds its own listener.)
+     */
+    private static void guardRollback(CommandContext cc, Connection c) {
+        if (cc.getTransactionContext() instanceof org.operaton.bpm.engine.impl.cfg.standalone.StandaloneTransactionContext tc
+                && GUARDED.add(cc)) {
+            tc.addTransactionListener(org.operaton.bpm.engine.impl.cfg.TransactionState.ROLLINGBACK, ctx -> {
+                try {
+                    c.rollback();
+                } catch (java.sql.SQLException e) {
+                    throw new IllegalStateException("cannot roll back the product writes of a failed engine command", e);
+                }
+            });
+        }
     }
 
     public static ProcessEngineConfigurationImpl config(ProcessEngine engine) {
@@ -49,7 +73,8 @@ public final class EngineTx {
         return new Transactions() {
             @Override
             public <T> T inTransaction(Function<Connection, T> work) {
-                return execute(engine, cc -> work.apply(cc.getDbSqlSession().getSqlSession().getConnection()));
+                // connection(): installs the FW-23 rollback guard, so product rows written here roll back with the command
+                return execute(engine, cc -> work.apply(connection()));
             }
         };
     }

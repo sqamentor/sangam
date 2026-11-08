@@ -55,7 +55,12 @@ public class AsyncJobHandOffInterceptor extends CommandInterceptor {
         }
         List<String> ids = new ArrayList<>();
         Date expiry = Date.from(SangamClockHolder.now().plusMillis(je.getLockTimeInMillis()));
-        for (MessageEntity m : cc.getDbEntityManager().getDbEntityCache().getEntitiesByType(MessageEntity.class)) {
+        // Jobs are cached under AcquirableJobEntity; getEntitiesByType(MessageEntity.class) compares the subtype with the
+        // cache wrapper's class and always returns nothing (Operaton 2.1), so scan the cached entities and filter here.
+        for (var cached : cc.getDbEntityManager().getDbEntityCache().getCachedEntities()) {
+            if (!(cached.getEntity() instanceof MessageEntity m)) {
+                continue;
+            }
             if (!cc.getDbEntityManager().getDbEntityCache().isTransient(m) || m.getDuedate() != null || m.isSuspended()
                     || m.getLockOwner() != null || (m.isExclusive() && !handOffExclusive)) {
                 continue;

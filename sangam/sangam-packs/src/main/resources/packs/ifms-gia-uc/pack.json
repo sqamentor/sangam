@@ -28,6 +28,10 @@
       "path": "packs/ifms-gia-uc/ifms-gia-authority.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/ifms-gia-uc/ifms-gia-powers.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/ifms-gia-uc/forms/release.form.json"
     },

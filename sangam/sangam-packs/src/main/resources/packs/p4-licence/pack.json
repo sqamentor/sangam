@@ -146,7 +146,10 @@
         "initiator": "citizen.ramesh",
         "sim_paygov_fee": "UNKNOWN_THEN_COMPLETED"
       },
-      "expectState": "CLOSED"
+      "expectState": "CLOSED",
+      "run": {
+        "manual": "needs a clock driver: the payment status lookup and the overdue approval stage"
+      }
     },
     {
       "id": "J-P4-E08",
@@ -169,7 +172,16 @@
         "initiator": "citizen.ramesh",
         "sim_digilocker_push": "FAILED:ISSUER_DOWN"
       },
-      "expectState": "CLOSED"
+      "expectState": "CLOSED",
+      "run": {
+        "expect": {
+          "audit": [
+            "EXT_OP_FAILED",
+            "DOCUMENT_ISSUED",
+            "CASE_CLOSED"
+          ]
+        }
+      }
     }
   ],
   "dependsOn": [

@@ -10,6 +10,7 @@
       "id": "LEGAL-NODAL",
       "role": "LEGALNODAL",
       "office": "LEGAL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "JS-L",
       "name": {
         "en": "Nodal officer (litigation)",
@@ -20,6 +21,7 @@
       "id": "DEPT-OFFICER",
       "role": "DEPTOFFICER",
       "office": "LEGAL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "LEGAL-NODAL",
       "name": {
         "en": "Dealing officer",
@@ -30,6 +32,7 @@
       "id": "JS-L",
       "role": "JS",
       "office": "LEGAL",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Joint Secretary",

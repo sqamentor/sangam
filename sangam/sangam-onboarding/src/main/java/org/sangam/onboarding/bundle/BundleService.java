@@ -40,6 +40,14 @@ public final class BundleService {
 
     /** Builds and signs the bundle of a tenant from its last request and its stored documents. */
     public Map<String, Object> export(OnboardingRequest request, Map<String, String> packVersions) {
+        return export(request, packVersions, null);
+    }
+
+    /**
+     * As {@link #export(OnboardingRequest, Map)}, labelled with the source environment ({@code sandbox}, {@code uat},
+     * ...). The label is inside the signed body, so promotion ({@link PromotionService}) can trust it.
+     */
+    public Map<String, Object> export(OnboardingRequest request, Map<String, String> packVersions, String environment) {
         String tenant = request.tenantId();
         List<Map<String, Object>> documents = new ArrayList<>();
         for (String id : profiles.ids()) {
@@ -65,6 +73,9 @@ public final class BundleService {
         body.put("request", OnboardingJson.tree(clean));
         body.put("documents", documents);
         body.put("packVersions", new LinkedHashMap<>(packVersions));
+        if (environment != null) {
+            body.put("environment", environment);
+        }
         Map<String, Object> bundle = new LinkedHashMap<>();
         bundle.put("format", FORMAT);
         bundle.put("body", body);

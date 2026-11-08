@@ -68,7 +68,7 @@ public class CaseRecordDelegate implements JavaDelegate {
         if (reasons.isEmpty()) {
             ex.setVariable("rejectionReasonCodes", "DEEMED_REFUSAL");
         }
-        ex.setVariable(Vars.CASE_STATE, CaseState.REJECTED.name());
+        Vars.setCaseState(ex, CaseState.REJECTED.name());
         Vars.audit(ex, "CASE_REJECTED", Vars.map("reasons", Vars.str(ex, "rejectionReasonCodes"),
                 "remarks", Vars.str(ex, "rejectionRemarks"), "deemed", Vars.bool(ex, "deemedDecision")));
     }
@@ -81,7 +81,7 @@ public class CaseRecordDelegate implements JavaDelegate {
             hist.add(Vars.map("version", v, "hash", Vars.str(ex, "submittedPayloadHash")));
         }
         hist.add(Vars.map("version", v + 1, "hash", hash, "at", Vars.now().toString()));
-        ex.setVariable("versionHistory", Vars.toJson(hist));
+        Vars.setJsonDocument(ex, "versionHistory", hist);
         ex.setVariable(Vars.CASE_VERSION, v + 1);
         String approved = Vars.str(ex, Vars.APPROVED_HASH);
         if (approved != null && !approved.equals(hash)) {

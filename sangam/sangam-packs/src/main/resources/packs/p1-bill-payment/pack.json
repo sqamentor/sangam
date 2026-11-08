@@ -154,7 +154,20 @@
         "officeId": "DPW-X",
         "selectedSeat": "AO-2"
       },
-      "expectState": "CLOSED"
+      "expectState": "CLOSED",
+      "run": {
+        "expect": {
+          "tasks": [
+            "sc_scrutiny",
+            "sn_sanction"
+          ],
+          "audit": [
+            "RULE_EVALUATED",
+            "APPROVAL_RECORDED",
+            "CASE_RECONCILED"
+          ]
+        }
+      }
     },
     {
       "id": "AC-02",
@@ -180,7 +193,10 @@
         "officeId": "DPW-X",
         "selectedSeat": "AO-2"
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: the amount is changed between approval and payment"
+      }
     },
     {
       "id": "AC-03",
@@ -207,7 +223,20 @@
         "selectedSeat": "AO-2",
         "sim_pfms_payment": "UNKNOWN"
       },
-      "expectState": "UNKNOWN_OUTCOME"
+      "expectState": null,
+      "run": {
+        "expect": {
+          "audit": [
+            "EXT_OP_UNKNOWN",
+            "RECON_ITEM_OPENED"
+          ],
+          "notAudit": [
+            "CASE_CLOSED",
+            "EXT_OP_ACKNOWLEDGED"
+          ],
+          "ended": false
+        }
+      }
     },
     {
       "id": "J-P1-E11",
@@ -232,7 +261,16 @@
         "selectedSeat": "AO-2",
         "sim_ifms_budget": "available=310000"
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "stopAt": "p1_revise",
+        "expect": {
+          "openTask": "p1_revise",
+          "notAudit": [
+            "CASE_IN_SANCTION"
+          ]
+        }
+      }
     },
     {
       "id": "J-P1-E09",
@@ -257,7 +295,10 @@
         "officeId": "DPW-X",
         "selectedSeat": "AO-2"
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: two joint approvers act on the same payload"
+      }
     }
   ],
   "dependsOn": [

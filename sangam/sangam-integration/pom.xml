@@ -13,7 +13,7 @@
 
   <properties>
     <!-- Versions owned by this module (not in the parent dependencyManagement). Licences: see README. -->
-    <version.kafka>3.9.1</version.kafka>
+    <version.kafka>3.9.2</version.kafka>
     <version.jms>3.1.0</version.jms>
     <version.sshd>2.15.0</version.sshd>
     <version.angus-mail>2.0.4</version.angus-mail>

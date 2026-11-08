@@ -10,6 +10,7 @@
       "id": "CREDIT-ANALYST",
       "role": "ANALYST",
       "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BRANCH-MGR",
       "name": {
         "en": "Credit analyst",
@@ -20,6 +21,7 @@
       "id": "LEGAL-OFFICER",
       "role": "LEGAL",
       "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BRANCH-MGR",
       "name": {
         "en": "Legal officer",
@@ -30,6 +32,7 @@
       "id": "VALUER",
       "role": "VALUER",
       "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BRANCH-MGR",
       "name": {
         "en": "Empanelled valuer",
@@ -40,6 +43,7 @@
       "id": "BRANCH-MGR",
       "role": "BRANCHMGR",
       "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
       "reportsTo": "ZONAL-CREDIT",
       "name": {
         "en": "Branch manager",
@@ -50,6 +54,7 @@
       "id": "ZONAL-CREDIT",
       "role": "ZONALCREDIT",
       "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CREDIT-HEAD",
       "name": {
         "en": "Zonal credit head",
@@ -60,6 +65,7 @@
       "id": "CREDIT-HEAD",
       "role": "CREDITHEAD",
       "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Chief credit officer",
@@ -70,6 +76,7 @@
       "id": "CREDIT-COMM-1",
       "role": "COMMITTEE",
       "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Credit committee member 1",
@@ -80,6 +87,7 @@
       "id": "CREDIT-COMM-2",
       "role": "COMMITTEE",
       "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Credit committee member 2",
@@ -90,6 +98,7 @@
       "id": "CREDIT-COMM-3",
       "role": "COMMITTEE",
       "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Credit committee member 3",

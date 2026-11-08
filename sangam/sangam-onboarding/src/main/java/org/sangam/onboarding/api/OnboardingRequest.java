@@ -33,7 +33,7 @@ public record OnboardingRequest(TenantSpec tenant, ProfileSpec profile, PackSpec
         profile = profile == null ? new ProfileSpec(null, null, null, null, null, null, null, null, null, null) : profile;
         packs = packs == null ? new PackSpec(null, null, null) : packs;
         connectors = connectors == null ? List.of() : List.copyOf(connectors);
-        security = security == null ? new SecuritySpec(null, null, null, null) : security;
+        security = security == null ? new SecuritySpec(null, null, null, null, null) : security;
         seeds = seeds == null ? new SeedSpec(null, null, null) : seeds;
         compliance = compliance == null ? new ComplianceSpec(null, null) : compliance;
         dmnOverrides = dmnOverrides == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(dmnOverrides));
@@ -192,12 +192,17 @@ public record OnboardingRequest(TenantSpec tenant, ProfileSpec profile, PackSpec
      * @param selfService    also install the person-conditioned self-service grants (default true)
      * @param roles          tenant roles to define
      * @param tenantAdmins   tenant administrators to bootstrap
+     * @param orgLevels      the tenant's org level types, top first (SEC_ORG_LEVEL); empty means the default
+     *                       hierarchy of the resolved profile ({@code security.orgLevels}). Levels are fixed once the
+     *                       first org unit exists (A02), so they are defined before pack seats are seeded.
      */
     public record SecuritySpec(Boolean moduleDefaults, Boolean selfService, List<RoleSpec> roles,
-                               List<AdminSpec> tenantAdmins) {
+                               List<AdminSpec> tenantAdmins, List<String> orgLevels) {
         public SecuritySpec {
             roles = roles == null ? List.of() : List.copyOf(roles);
             tenantAdmins = tenantAdmins == null ? List.of() : List.copyOf(tenantAdmins);
+            // blanks and nulls are kept so that the dry run reports them (ORG_LEVELS_INVALID) instead of failing to parse
+            orgLevels = orgLevels == null ? List.of() : java.util.Collections.unmodifiableList(new java.util.ArrayList<>(orgLevels));
         }
 
         public boolean defaults() {

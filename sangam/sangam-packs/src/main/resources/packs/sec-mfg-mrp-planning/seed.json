@@ -10,6 +10,7 @@
       "id": "PLANNER",
       "role": "PLANNER",
       "office": "PLANNING",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Material planner",

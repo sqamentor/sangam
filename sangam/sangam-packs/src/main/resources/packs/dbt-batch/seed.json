@@ -10,6 +10,7 @@
       "id": "DBT-CELL",
       "role": "DBTCELL",
       "office": "DIR-WEL",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "DBT cell",
         "hi": "डीबीटी प्रकोष्ठ"
@@ -19,6 +20,7 @@
       "id": "BANK-DESK",
       "role": "BANKDESK",
       "office": "DIR-WEL",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Bank coordination desk",
         "hi": "बैंक समन्वय डेस्क"
@@ -28,6 +30,7 @@
       "id": "DDO-DBT",
       "role": "DDO",
       "office": "DIR-WEL",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "DDO (DBT)",
         "hi": "आहरण एवं संवितरण अधिकारी (डीबीटी)"

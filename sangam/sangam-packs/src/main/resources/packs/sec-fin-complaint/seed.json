@@ -10,6 +10,7 @@
       "id": "GRO",
       "role": "GRO",
       "office": "GRIEVANCE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "NODAL-OFFICER",
       "name": {
         "en": "Grievance redressal officer",
@@ -20,6 +21,7 @@
       "id": "NODAL-OFFICER",
       "role": "NODAL",
       "office": "GRIEVANCE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Principal nodal officer",
@@ -30,6 +32,7 @@
       "id": "INTERNAL-OMBUDSMAN",
       "role": "IO",
       "office": "GRIEVANCE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Internal ombudsman",

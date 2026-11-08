@@ -10,6 +10,7 @@
       "id": "BUYER",
       "role": "BUYER",
       "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PROC-HEAD",
       "name": {
         "en": "Buyer",
@@ -20,6 +21,7 @@
       "id": "QC-INSPECTOR",
       "role": "QC",
       "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PROC-HEAD",
       "name": {
         "en": "Quality inspector",
@@ -30,6 +32,7 @@
       "id": "AP-TREASURY",
       "role": "TREASURY",
       "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CFO",
       "name": {
         "en": "Accounts payable / treasury",
@@ -40,6 +43,7 @@
       "id": "DEPT-HEAD",
       "role": "DEPTHEAD",
       "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PROC-HEAD",
       "name": {
         "en": "Department head",
@@ -50,6 +54,7 @@
       "id": "PROC-HEAD",
       "role": "PROCHEAD",
       "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CFO",
       "name": {
         "en": "Head of procurement",
@@ -60,6 +65,7 @@
       "id": "CFO",
       "role": "CFO",
       "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Chief financial officer",

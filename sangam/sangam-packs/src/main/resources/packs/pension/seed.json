@@ -10,6 +10,7 @@
       "id": "PENSION-CLERK",
       "role": "PENSION-CLERK",
       "office": "OFFICE-P",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOO-P",
       "name": {
         "en": "Pension clerk",
@@ -20,6 +21,7 @@
       "id": "HOO-P",
       "role": "HOO",
       "office": "OFFICE-P",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOD-P",
       "name": {
         "en": "Head of Office",
@@ -30,6 +32,7 @@
       "id": "HOD-P",
       "role": "HOD",
       "office": "OFFICE-P",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of Department",
@@ -40,6 +43,7 @@
       "id": "PAO-P",
       "role": "PAO",
       "office": "OFFICE-P",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Pay and accounts officer",

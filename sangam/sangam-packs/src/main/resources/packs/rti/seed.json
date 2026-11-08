@@ -10,6 +10,7 @@
       "id": "PIO-1",
       "role": "PIO",
       "office": "PA",
+      "level": "HEAD_OFFICE",
       "reportsTo": "FAA-1",
       "name": {
         "en": "Public information officer",
@@ -20,6 +21,7 @@
       "id": "FAA-1",
       "role": "FAA",
       "office": "PA",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "First appellate authority",

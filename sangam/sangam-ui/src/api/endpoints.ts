@@ -68,6 +68,8 @@ export const api = {
     },
     counts: () => http.get<Record<T.TaskSection, number | string>>('/tasks/counts'),
     get: async (id: string) => A.normTaskDetail(await http.get<Record<string, unknown>>(`/tasks/${enc(id)}`)),
+    /** SL-37: the task's embedded/deployed form through the Sangam API (task users have no /engine-rest access). */
+    form: (id: string) => http.get<T.TaskForm>(`/tasks/${enc(id)}/form`),
     claim: (id: string, key?: string) => http.post<void>(`/tasks/${enc(id)}/claim`, {}, key),
     unclaim: (id: string, key?: string) => http.post<void>(`/tasks/${enc(id)}/unclaim`, {}, key),
     bulkClaim: (ids: string[], key?: string) => http.post<T.BulkResult>('/tasks/bulk-claim', { ids }, key),

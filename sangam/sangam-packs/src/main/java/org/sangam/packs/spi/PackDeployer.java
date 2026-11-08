@@ -8,6 +8,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.repository.DeploymentWithDefinitions;
@@ -139,6 +140,193 @@ public final class PackDeployer {
         LOG.info("deployed pack {} (tenant {}): deployment {}, {} resources", d.coordinates(), tenantId, dep.getId(),
                 d.resources().size());
         return new Result(d.id(), d.version(), tenantId, dep.getId(), d.resources().size(), fresh);
+    }
+
+    // ------------------------------------------------------------------ lifecycle: installed, uninstall, rollback (SL-41)
+
+    /** Deployment name prefix of every pack deployment. */
+    static final String NAME_PREFIX = "pack:";
+    static final String SOURCE = "sangam-packs";
+
+    /** One engine deployment of a pack version for a tenant scope (null = shared definitions). */
+    public record Installed(String packId, String version, String tenantId, String deploymentId,
+                            java.util.Date deployedAt) {
+    }
+
+    /** Result of an uninstall: the deployments removed (definitions retired; history kept). */
+    public record Uninstalled(String packId, String tenantId, List<String> deploymentIds) {
+    }
+
+    /** A refused lifecycle operation with a stable code and the blocking items. */
+    public static final class PackLifecycleException extends RuntimeException {
+        private final String code;
+        private final List<String> blockers;
+
+        public PackLifecycleException(String code, String message, List<String> blockers) {
+            super(code + ": " + message + (blockers.isEmpty() ? "" : " " + blockers));
+            this.code = code;
+            this.blockers = List.copyOf(blockers);
+        }
+
+        public String code() {
+            return code;
+        }
+
+        public List<String> blockers() {
+            return blockers;
+        }
+    }
+
+    /** Pack deployments in this tenant scope, oldest first. */
+    public List<Installed> installed(String tenantId) {
+        var q = engine.getRepositoryService().createDeploymentQuery().deploymentSource(SOURCE);
+        q = tenantId == null ? q.withoutTenantId() : q.tenantIdIn(tenantId);
+        List<Installed> out = new ArrayList<>();
+        for (var d : q.orderByDeploymentTime().asc().list()) {
+            String name = d.getName();
+            int at = name == null ? -1 : name.lastIndexOf('@');
+            if (name == null || !name.startsWith(NAME_PREFIX) || at <= NAME_PREFIX.length()) {
+                continue;
+            }
+            out.add(new Installed(name.substring(NAME_PREFIX.length(), at), name.substring(at + 1), d.getTenantId(),
+                    d.getId(), d.getDeploymentTime()));
+        }
+        return out;
+    }
+
+    /**
+     * Uninstalls every version of a pack from one tenant scope. Refused with {@code PACK_HAS_DEPENDANTS} while another
+     * installed pack of the scope depends on it, and with {@code PACK_HAS_LIVE_INSTANCES} while any process or case
+     * instance of any of its versions is running. Otherwise the definitions are retired: every process definition is
+     * suspended first (no new instance can start while the uninstall runs), then each deployment is removed without
+     * cascade, so the engine itself refuses if an instance appeared meanwhile and history stays for audit.
+     */
+    public Uninstalled uninstall(String packId, String tenantId) {
+        List<Installed> all = installed(tenantId);
+        List<Installed> mine = all.stream().filter(i -> i.packId().equals(packId)).toList();
+        if (mine.isEmpty()) {
+            throw new PackLifecycleException("PACK_NOT_INSTALLED", "pack " + packId + " is not installed for "
+                    + scope(tenantId), List.of());
+        }
+        java.util.Set<String> dependants = new java.util.TreeSet<>();
+        for (Installed other : all) {
+            if (!other.packId().equals(packId) && registry.find(other.packId())
+                    .map(p -> p.descriptor().dependsOn().contains(packId)).orElse(false)) {
+                dependants.add(other.packId());
+            }
+        }
+        if (!dependants.isEmpty()) {
+            throw new PackLifecycleException("PACK_HAS_DEPENDANTS", "uninstall " + packId + " from " + scope(tenantId)
+                    + " after its dependants", List.copyOf(dependants));
+        }
+        List<String> live = liveInstances(mine);
+        if (!live.isEmpty()) {
+            throw new PackLifecycleException("PACK_HAS_LIVE_INSTANCES", "pack " + packId + " has running instances in "
+                    + scope(tenantId) + "; complete or migrate them first", live);
+        }
+        var repo = engine.getRepositoryService();
+        Map<String, List<String>> suspendedByUs = new java.util.HashMap<>();
+        for (Installed i : mine) {
+            for (var pd : repo.createProcessDefinitionQuery().deploymentId(i.deploymentId()).active().list()) {
+                repo.suspendProcessDefinitionById(pd.getId(), false, null);
+                suspendedByUs.computeIfAbsent(i.deploymentId(), k -> new ArrayList<>()).add(pd.getId());
+            }
+        }
+        List<String> removed = new ArrayList<>();
+        try {
+            for (Installed i : mine) {
+                repo.deleteDeployment(i.deploymentId(), false); // no cascade: refuses running instances, keeps history
+                removed.add(i.deploymentId());
+            }
+        } catch (RuntimeException e) {
+            // an instance started in between: put the remaining versions back in service, then report
+            for (Installed i : mine) {
+                if (!removed.contains(i.deploymentId())) {
+                    for (String pd : suspendedByUs.getOrDefault(i.deploymentId(), List.of())) {
+                        repo.activateProcessDefinitionById(pd, false, null);
+                    }
+                }
+            }
+            throw new PackLifecycleException("PACK_HAS_LIVE_INSTANCES", "pack " + packId + " got a running instance during"
+                    + " uninstall; " + removed.size() + " of " + mine.size() + " versions removed", List.of(e.getMessage()));
+        }
+        LOG.info("uninstalled pack {} from {}: deployments {}", packId, scope(tenantId), removed);
+        return new Uninstalled(packId, tenantId, removed);
+    }
+
+    /**
+     * Rolls a pack back to its previous version in one tenant scope: the resources of the most recent deployment of a
+     * different version are read back from the engine (not from the class path, which only has the current version) and
+     * deployed again as {@code pack:<id>@<previous>}. New instances then start on the previous models; running
+     * instances keep the definitions they started on (deployment binding). Refused with {@code PACK_NO_PREVIOUS_VERSION}.
+     */
+    public Result rollback(String packId, String tenantId) {
+        List<Installed> mine = installed(tenantId).stream().filter(i -> i.packId().equals(packId)).toList();
+        if (mine.isEmpty()) {
+            throw new PackLifecycleException("PACK_NOT_INSTALLED", "pack " + packId + " is not installed for "
+                    + scope(tenantId), List.of());
+        }
+        Installed current = mine.get(mine.size() - 1);
+        Installed previous = null;
+        for (int i = mine.size() - 2; i >= 0 && previous == null; i--) {
+            if (!mine.get(i).version().equals(current.version())) {
+                previous = mine.get(i);
+            }
+        }
+        if (previous == null) {
+            throw new PackLifecycleException("PACK_NO_PREVIOUS_VERSION", "pack " + packId + " has only version "
+                    + current.version() + " in " + scope(tenantId), List.of());
+        }
+        var repo = engine.getRepositoryService();
+        DeploymentBuilder b = repo.createDeployment().name(NAME_PREFIX + packId + "@" + previous.version())
+                .source(SOURCE); // no duplicate filtering: enableDuplicateFiltering(x) always filters (x = changed only), and the
+        // last deployment of this name is the previous version itself, so a filtered rollback would deploy nothing
+        if (tenantId != null) {
+            b = b.tenantId(tenantId);
+        }
+        List<String> names = repo.getDeploymentResourceNames(previous.deploymentId());
+        List<String> violations = new ArrayList<>();
+        for (String n : names) {
+            byte[] bytes;
+            try (InputStream in = repo.getResourceAsStream(previous.deploymentId(), n)) {
+                bytes = in.readAllBytes();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            if (n.endsWith(".bpmn") || n.endsWith(".bpmn20.xml")) {
+                violations.addAll(ModelGuard.check(n, bytes)); // the guard may be stricter now than at first deploy
+            }
+            b = b.addInputStream(n, new ByteArrayInputStream(bytes));
+        }
+        if (!violations.isEmpty()) {
+            throw new PackRejectedException(packId, violations);
+        }
+        DeploymentWithDefinitions dep = b.deployWithResult();
+        LOG.info("rolled back pack {} in {} from {} to {}: deployment {}", packId, scope(tenantId), current.version(),
+                previous.version(), dep.getId());
+        return new Result(packId, previous.version(), tenantId, dep.getId(), names.size(), true);
+    }
+
+    private List<String> liveInstances(List<Installed> deployments) {
+        List<String> out = new ArrayList<>();
+        for (Installed i : deployments) {
+            long processes = engine.getRuntimeService().createProcessInstanceQuery().deploymentId(i.deploymentId()).count();
+            if (processes > 0) {
+                out.add(i.packId() + "@" + i.version() + ": " + processes + " process instance(s)");
+            }
+            long cases = 0;
+            for (var cd : engine.getRepositoryService().createCaseDefinitionQuery().deploymentId(i.deploymentId()).list()) {
+                cases += engine.getCaseService().createCaseInstanceQuery().caseDefinitionId(cd.getId()).count();
+            }
+            if (cases > 0) {
+                out.add(i.packId() + "@" + i.version() + ": " + cases + " case instance(s)");
+            }
+        }
+        return out;
+    }
+
+    private static String scope(String tenantId) {
+        return tenantId == null ? "the shared scope" : "tenant " + tenantId;
     }
 
     private static boolean notEmpty(List<?> l) {

@@ -5,6 +5,9 @@
 # 2. SD-432 "Gate Sangam like IFMS": every ref update needs a recorded, unconsumed approval in the
 #    human's own words for exactly that commit, remote and ref; fast-forward only; hash-chained ledger
 #    under an exclusive lock (tools/governance/push-approval.mjs).
+# 3. SG-34: at push time the stored owner signature is re-verified (ssh-keygen -Y verify; Windows OpenSSH
+#    preferred, so this works when git runs the hook through Git Bash) against the owner-held
+#    ~/.ssh/sangam_allowed_signers, else the allowed_signers committed in the remote's current commit.
 set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 bash "$root/tools/check-ignored-sources.sh"

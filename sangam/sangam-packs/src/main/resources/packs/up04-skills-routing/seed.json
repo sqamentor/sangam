@@ -10,6 +10,7 @@
       "id": "TEAM-A",
       "role": "AGENT",
       "office": "SUPPORT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "TEAM-LEAD",
       "name": {
         "en": "Team A",
@@ -20,6 +21,7 @@
       "id": "TEAM-B",
       "role": "AGENT",
       "office": "SUPPORT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "TEAM-LEAD",
       "name": {
         "en": "Team B",
@@ -30,6 +32,7 @@
       "id": "TEAM-C",
       "role": "AGENT",
       "office": "SUPPORT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "TEAM-LEAD",
       "name": {
         "en": "Team C (senior)",
@@ -40,6 +43,7 @@
       "id": "TEAM-LEAD",
       "role": "LEAD",
       "office": "SUPPORT",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Team lead",

@@ -44,10 +44,59 @@ public final class HttpRestConnector implements SangamConnector {
     /** Static configuration of one REST endpoint. */
     public record Config(String id, URI baseUri, CapabilityClass capabilityClass, String idempotencyHeader,
                          String lookupPath, String authorization, Map<String, String> defaultHeaders, Duration timeout,
-                         ConnectorProfile profile) {
+                         ConnectorProfile profile, Authorizer authorizer, ResponseMapping mapping, String defaultMethod) {
         public Config {
             idempotencyHeader = idempotencyHeader == null ? "Idempotency-Key" : idempotencyHeader;
             defaultHeaders = defaultHeaders == null ? Map.of() : Map.copyOf(defaultHeaders);
+            mapping = mapping == null ? ResponseMapping.NONE : mapping;
+            defaultMethod = defaultMethod == null || defaultMethod.isBlank() ? "POST" : defaultMethod.toUpperCase(java.util.Locale.ROOT);
+        }
+
+        /** Static {@code authorization} secret reference only, no response mapping. */
+        public Config(String id, URI baseUri, CapabilityClass capabilityClass, String idempotencyHeader, String lookupPath,
+                      String authorization, Map<String, String> defaultHeaders, Duration timeout, ConnectorProfile profile) {
+            this(id, baseUri, capabilityClass, idempotencyHeader, lookupPath, authorization, defaultHeaders, timeout, profile,
+                    null, null, null);
+        }
+    }
+
+    /**
+     * Dynamic {@code Authorization} header (for example an OAuth2 client-credentials token). Returns the header value,
+     * or null for none. Throwing {@link AuthUnavailableException} means the request was not sent (no effect).
+     */
+    @FunctionalInterface
+    public interface Authorizer {
+        String authorization(String tenantId);
+    }
+
+    /** The credential for a call could not be obtained; the call is not sent. */
+    public static final class AuthUnavailableException extends RuntimeException {
+        public AuthUnavailableException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Mapping of a 2xx JSON body: {@code output} name → JSON pointer (added to the success output under {@code mapped});
+     * {@code providerRefPointer} names the downstream reference (else the {@code Location} header).
+     */
+    public record ResponseMapping(Map<String, String> output, String providerRefPointer) {
+        public static final ResponseMapping NONE = new ResponseMapping(Map.of(), null);
+
+        public ResponseMapping {
+            output = output == null ? Map.of() : Map.copyOf(output);
+            for (String p : output.values()) {
+                requirePointer(p);
+            }
+            if (providerRefPointer != null) {
+                requirePointer(providerRefPointer);
+            }
+        }
+
+        private static void requirePointer(String p) {
+            if (p == null || !(p.isEmpty() || p.startsWith("/"))) {
+                throw new IllegalArgumentException("response mapping needs a JSON pointer (/a/b): " + p);
+            }
         }
     }
 
@@ -79,14 +128,19 @@ public final class HttpRestConnector implements SangamConnector {
 
     @Override
     public ConnectorResult invoke(ConnectorRequest r) {
-        String method = r.str("method", "POST").toUpperCase(java.util.Locale.ROOT);
+        String method = r.str("method", config.defaultMethod()).toUpperCase(java.util.Locale.ROOT);
         URI uri;
         try {
             uri = resolve(r.str("path", "/"), r, r.map("query"));
         } catch (IllegalArgumentException e) {
             return ConnectorResult.BusinessFailure.of("INVALID_REQUEST", e.getMessage());
         }
-        Map<String, String> headers = headers(r);
+        Map<String, String> headers;
+        try {
+            headers = headers(r);
+        } catch (AuthUnavailableException e) {
+            return ConnectorResult.TransientFailure.noEffect("credential unavailable, request not sent: " + e.getMessage());
+        }
         byte[] body = bodyOf(r.input().get("body"));
         if (body.length > 0) {
             headers.putIfAbsent("Content-Type", "application/json");
@@ -95,7 +149,36 @@ public final class HttpRestConnector implements SangamConnector {
                 || config.capabilityClass() == CapabilityClass.A_IDEMPOTENT_WITH_LOOKUP;
         HttpTransport.Call call = new HttpTransport.Call(method, uri, headers, body, config.timeout(), idempotent);
         HttpTransport.Outcome o = transport.execute(r.tenantId(), call, deadline(r));
-        return map(o, idempotent);
+        return applyMapping(map(o, idempotent));
+    }
+
+    /** Applies {@link ResponseMapping} to a success: mapped fields under {@code mapped}, providerRef from the body. */
+    private ConnectorResult applyMapping(ConnectorResult result) {
+        ResponseMapping m = config.mapping();
+        if (!(result instanceof ConnectorResult.Success s) || (m.output().isEmpty() && m.providerRefPointer() == null)) {
+            return result;
+        }
+        Object body = s.output() == null ? null : s.output().get("body");
+        com.fasterxml.jackson.databind.JsonNode tree = body == null || body instanceof String ? null
+                : Json.MAPPER.valueToTree(body);
+        Map<String, Object> out = new LinkedHashMap<>(s.output());
+        Map<String, Object> mapped = new LinkedHashMap<>();
+        for (Map.Entry<String, String> e : m.output().entrySet()) {
+            com.fasterxml.jackson.databind.JsonNode n = tree == null ? null : tree.at(e.getValue());
+            mapped.put(e.getKey(), n == null || n.isMissingNode() || n.isNull() ? null
+                    : Json.MAPPER.convertValue(n, Object.class));
+        }
+        if (!mapped.isEmpty()) {
+            out.put("mapped", mapped);
+        }
+        String ref = s.providerRef();
+        if (m.providerRefPointer() != null && tree != null) {
+            com.fasterxml.jackson.databind.JsonNode n = tree.at(m.providerRefPointer());
+            if (!n.isMissingNode() && !n.isNull()) {
+                ref = n.isValueNode() ? n.asText() : n.toString();
+            }
+        }
+        return new ConnectorResult.Success(out, ref, s.duplicate());
     }
 
     @Override
@@ -104,7 +187,13 @@ public final class HttpRestConnector implements SangamConnector {
             return new LookupResult.NotSupported();
         }
         URI uri = resolve(config.lookupPath(), r, Map.of());
-        HttpTransport.Outcome o = transport.execute(r.tenantId(), HttpTransport.Call.get(uri, headers(r)), deadline(r));
+        Map<String, String> lookupHeaders;
+        try {
+            lookupHeaders = headers(r);
+        } catch (AuthUnavailableException e) {
+            return new LookupResult.Unavailable("credential unavailable: " + e.getMessage());
+        }
+        HttpTransport.Outcome o = transport.execute(r.tenantId(), HttpTransport.Call.get(uri, lookupHeaders), deadline(r));
         return switch (o) {
             case HttpTransport.Outcome.Response resp when resp.status() == 404 -> new LookupResult.NotFound();
             case HttpTransport.Outcome.Response resp when resp.is2xx() -> {
@@ -161,7 +250,13 @@ public final class HttpRestConnector implements SangamConnector {
     }
 
     private Map<String, String> headers(ConnectorRequest r) {
-        Map<String, String> h = new LinkedHashMap<>(config.defaultHeaders());
+        Map<String, String> h = new LinkedHashMap<>();
+        // SL-18: a default header value that is a secret reference (secret://...) is read from the secret port at call time, so static service
+        // tokens for an edge access gate (for example a client-id / client-secret header pair) never sit in config.
+        for (Map.Entry<String, String> e : config.defaultHeaders().entrySet()) {
+            String v = e.getValue();
+            h.put(e.getKey(), secrets.require(v));
+        }
         for (Map.Entry<String, Object> e : r.map("headers").entrySet()) {
             h.put(e.getKey(), String.valueOf(e.getValue()));
         }
@@ -176,6 +271,12 @@ public final class HttpRestConnector implements SangamConnector {
                 a = "Basic " + Base64.getEncoder().encodeToString(a.substring(6).getBytes(StandardCharsets.UTF_8));
             }
             h.put("Authorization", a);
+        }
+        if (config.authorizer() != null) {
+            String a = config.authorizer().authorization(r.tenantId());
+            if (a != null) {
+                h.put("Authorization", a);
+            }
         }
         return h;
     }

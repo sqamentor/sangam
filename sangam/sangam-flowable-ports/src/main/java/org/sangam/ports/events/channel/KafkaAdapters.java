@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.ports.events.channel;
 
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -100,9 +101,17 @@ final class KafkaAdapters {
         private final AtomicBoolean running = new AtomicBoolean();
         private final Properties props;
         private Thread thread;
-        private volatile KafkaConsumer<String, String> consumer;
+        private final java.util.function.Function<Properties, Consumer<String, String>> consumerFactory;
+        private volatile Consumer<String, String> consumer;
 
         Inbound(ChannelDefinition ch, String tenant, InboundEventProcessor processor, ChannelAdapters.Environment env) {
+            this(ch, tenant, processor, env, KafkaConsumer::new);
+        }
+
+        /** {@code consumerFactory}: the Kafka client to use (a real {@link KafkaConsumer} in production). */
+        Inbound(ChannelDefinition ch, String tenant, InboundEventProcessor processor, ChannelAdapters.Environment env,
+                java.util.function.Function<Properties, Consumer<String, String>> consumerFactory) {
+            this.consumerFactory = consumerFactory;
             this.ch = ch;
             this.tenant = tenant;
             this.processor = processor;
@@ -127,7 +136,7 @@ final class KafkaAdapters {
 
         @Override
         public void run() {
-            try (KafkaConsumer<String, String> c = new KafkaConsumer<>(props)) {
+            try (Consumer<String, String> c = consumerFactory.apply(props)) {
                 consumer = c;
                 c.subscribe(ch.topics());
                 while (running.get()) {
@@ -163,7 +172,7 @@ final class KafkaAdapters {
         @Override
         public void close() {
             running.set(false);
-            KafkaConsumer<String, String> c = consumer;
+            Consumer<String, String> c = consumer;
             if (c != null) {
                 c.wakeup();
             }

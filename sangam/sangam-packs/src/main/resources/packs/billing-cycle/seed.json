@@ -10,6 +10,7 @@
       "id": "BILL-OFFICER",
       "role": "BILLING_OFFICER",
       "office": "BILLING",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BILL-CHECKER",
       "name": {
         "en": "Billing officer",
@@ -20,6 +21,7 @@
       "id": "BILL-CHECKER",
       "role": "BILLING_CHECKER",
       "office": "BILLING",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Billing checker",

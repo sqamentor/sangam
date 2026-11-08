@@ -9,3 +9,5 @@ Every jar in this directory is added to the server class path at start-up (Sprin
 
 Docker / compose : mount a host directory on /opt/sangam/drivers (read-only).
 Kubernetes (Helm): drivers.existingClaim, or drivers.initImage (an image you build that holds the jar).
+Exact install steps (tested version com.oracle.database.jdbc:ojdbc11:23.8.0.25.04, compose, docker run,
+plain JVM, Helm PVC/init image): sangam/deploy/README.md section 1.5.

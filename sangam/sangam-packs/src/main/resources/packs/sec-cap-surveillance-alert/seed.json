@@ -10,6 +10,7 @@
       "id": "SURV-ANALYST",
       "role": "ANALYST",
       "office": "BROKER-SURV",
+      "level": "HEAD_OFFICE",
       "reportsTo": "COMPLIANCE-OFFICER",
       "name": {
         "en": "Surveillance analyst",
@@ -20,6 +21,7 @@
       "id": "COMPLIANCE-OFFICER",
       "role": "COMPLIANCE",
       "office": "BROKER-SURV",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Compliance officer",

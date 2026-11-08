@@ -115,6 +115,9 @@ public class ProductBatchService {
         if (items.isEmpty()) {
             throw new IllegalArgumentException("batch without items");
         }
+        // SL-43: the tenant's maxBatchSize quota (TENANT_QUOTA_EXCEEDED, audited)
+        org.sangam.core.quota.TenantQuotas.current().checkSize(tenant, org.sangam.core.quota.QuotaLimit.BATCH_SIZE,
+                items.size());
         boolean four = fourEyes.required(tenant, type, items.size());
         String id = UUID.randomUUID().toString();
         tx.inTransaction(c -> {
@@ -270,11 +273,19 @@ public class ProductBatchService {
     /** Puts failed items (below the attempt limit) back to PENDING. */
     public int retryFailed(String batchId) {
         return tx.inTransaction(c -> {
+            // Locked and state-checked first, so the item rows and the batch counters always change together: a
+            // retry of a paused batch keeps it paused (it resumes later) but still moves its failures back to
+            // pending; a cancelled, rejected or unapproved batch is refused instead of leaving PENDING items that
+            // no run would ever pick up, with failed_items still counting them.
+            Batch b = lock(c, batchId);
+            if (b.state() != State.RUNNING && b.state() != State.PAUSED && b.state() != State.COMPLETED_WITH_FAILURES) {
+                throw new BatchStateException("batch " + batchId + " is " + b.state() + "; failed items cannot be retried");
+            }
             int n = Jdbc.update(c, "UPDATE PORT_BATCH_ITEM SET state = 'PENDING' WHERE batch_id = ? AND state = 'FAILED' AND attempts < ?",
                     batchId, maxAttempts);
             if (n > 0) {
-                Jdbc.update(c, "UPDATE PORT_BATCH SET state = 'RUNNING', failed_items = failed_items - ?, completed_at = NULL WHERE id = ?"
-                        + " AND state IN ('COMPLETED_WITH_FAILURES','RUNNING')", n, batchId);
+                Jdbc.update(c, "UPDATE PORT_BATCH SET state = ?, failed_items = failed_items - ?, completed_at = NULL, updated_at = "
+                        + dialect.now() + " WHERE id = ?", b.state() == State.PAUSED ? State.PAUSED.name() : State.RUNNING.name(), n, batchId);
             }
             return n;
         });

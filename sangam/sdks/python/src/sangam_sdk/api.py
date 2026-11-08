@@ -93,10 +93,14 @@ class WorkApi(_Api):
             "newDurationMs": new_duration_ms}, idempotency_key).body)
 
     def complete(self, work_id: str, worker_id: str, lock_version: int, attempt_id: str | None,
-                 variables: Vars = None, local_variables: Vars = None, idempotency_key: str | None = None) -> None:
-        self._post(work_id, "complete", {"workerId": worker_id, "lockVersion": lock_version, "attemptId": attempt_id,
-                                         "variables": encode_variables(variables),
-                                         "localVariables": encode_variables(local_variables)}, idempotency_key)
+                 variables: Vars = None, local_variables: Vars = None, idempotency_key: str | None = None,
+                 outcome_reference: str | None = None, outcome_details: dict[str, Any] | None = None) -> None:
+        """``outcome_reference`` (downstream reference) is recorded as the ledger outcome (SL-16)."""
+        body = {"workerId": worker_id, "lockVersion": lock_version, "attemptId": attempt_id,
+                "variables": encode_variables(variables), "localVariables": encode_variables(local_variables)}
+        if outcome_reference is not None or outcome_details is not None:
+            body["outcome"] = {"reference": outcome_reference, "details": outcome_details}
+        self._post(work_id, "complete", body, idempotency_key)
 
     def fail(self, work_id: str, worker_id: str, lock_version: int, attempt_id: str | None, error_message: str,
              error_details: str | None, retries: int, retry_timeout_ms: int, idempotency_key: str | None = None) -> None:

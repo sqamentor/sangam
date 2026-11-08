@@ -64,6 +64,13 @@ public class TaskController {
         return tasks.variables(ctx, id);
     }
 
+    /** SL-37: embedded/deployed form for the task UI; task users cannot (and need not) reach /engine-rest. */
+    @GetMapping("/{id}/form")
+    public TaskPort.TaskForm form(RequestContext ctx, @PathVariable String id) {
+        permissions.require(ctx, Permissions.TASK_READ);
+        return tasks.form(ctx, id);
+    }
+
     @PostMapping("/{id}/claim")
     public ResponseEntity<Void> claim(RequestContext ctx, @PathVariable String id) {
         permissions.require(ctx, Permissions.TASK_WRITE);

@@ -161,6 +161,8 @@ All five modules are wired. The wiring classes live in `config/`:
 - **Start order.** Everything starts in the `IntegrationServices` `SmartLifecycle` (phase `MAX_VALUE-100`), after `EventRegistryWiring.wire(...)` (PortsWiring) has run.
 - **History handlers.** `sangam.history.outbox-handler=integration|engine|none` (default `integration`) and `sangam.history.read-model-projection` (default `true`) make integration's `OutboxHistoryEventHandler` the only outbox writer. Ports' `PortsHistoryEventHandler` only projects the read model.
 - **Back-pressure.** `IntegrationBackpressureFilter` (filter order 50) returns 503 `BACKPRESSURE` for starts and inbound events.
+- **Per-tenant quotas (SL-43, `QuotaWiring`).** `sangam.quotas.defaults.*` plus per-tenant overrides in the tenant's `quotas` (onboarding `tenant.quotas`): `startsPerSecond`, `apiCallsPerMinute`, `maxBatchSize`, `maxVariableBytes`, `maxDocumentBytes`, `maxStorageBytes` (negative = unlimited). Counted in fixed windows in `SEC_TENANT_QUOTA_WINDOW` (one conditional UPDATE per counted call, so all nodes share one count). `TenantQuotaFilter` (order 45) counts API calls and refuses oversized bodies; `TenantQuotaEnginePlugin` counts process/case starts and checks written variable sizes before the command flushes; `ProductBatchService` and `ContentService` check batch size, document size and stored bytes. Rate limits answer 429 `TENANT_QUOTA_EXCEEDED` with `Retry-After`, size limits 413 `TENANT_QUOTA_EXCEEDED`; the problem names `limit`, `allowed`, `requested`; the first refusal per window is audited (`TENANT_QUOTA_EXCEEDED`, chain `quota:<tenant>`).
+- **Outbound webhooks (SL-39, `WebhooksWiring`).** `sangam.integration.webhooks.subscriptions.<name>.url/secret-ref` publish outbox destination `webhook:<name>` (signed, idempotency key = event id, egress allow-list per URL, no redirects, one attempt per relay try). `disable-after` consecutive failures disable the destination (audited); deliveries are held for `hold-while-disabled` and then dead-lettered; `WebhookHealth.enable` re-enables.
 - **Idempotency.** Integration's `IdempotencyServletFilter` is not registered: sangam-rest's `IdempotencyFilter` owns R41.
 - **Packs.** `PacksIntegration.wire(...)` (`sangamPacksIntegration`) installs the `IntegrationConnectorGateway` into `PackRuntime`, with the dispatch publisher, inbox handlers and reconciliation hooks.
   - Site bindings come from `sangam.packs.bindings.<packConnector>.{connector,operation,mapping.*,constants.*,pass-through}`; see `config/PackBindingsProperties`.
@@ -303,9 +305,9 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
 | HikariCP 6.3.0 | Apache-2.0 |
 | Liquibase core 4.33.0 | Apache-2.0 (FSL applies to 5.x only, LIC-7) |
 | H2 2.3.232 (runtime, development) | MPL-2.0 / EPL-1.0 |
-| PostgreSQL JDBC 42.7.7 | BSD-2-Clause |
-| Microsoft mssql-jdbc 12.10.1 | MIT |
-| MariaDB Connector/J 3.5.3 | LGPL-2.1 (runtime class path only, **not** in the fat jar; LIC-4/LIC-5) |
+| PostgreSQL JDBC 42.7.12 | BSD-2-Clause |
+| Microsoft mssql-jdbc 12.10.2 | MIT |
+| MariaDB Connector/J 3.5.11 | LGPL-2.1 (runtime class path only, **not** in the fat jar; LIC-4/LIC-5) |
 
 ## Generic modules (final integration wave)
 

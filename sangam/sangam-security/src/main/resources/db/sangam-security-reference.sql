@@ -138,6 +138,11 @@ CREATE TABLE SEC_TENANT_CHECKLIST (
   tenant_id VARCHAR(64) NOT NULL, item VARCHAR(64) NOT NULL, evidence_ref VARCHAR(1000), recorded_by VARCHAR(255),
   recorded_at TIMESTAMP WITH TIME ZONE, PRIMARY KEY (tenant_id, item)
 );
+-- SL-43 per-tenant quota counting windows (JdbcTenantQuotas; shared by all nodes)
+CREATE TABLE SEC_TENANT_QUOTA_WINDOW (
+  tenant_id VARCHAR(64) NOT NULL, quota_name VARCHAR(64) NOT NULL, window_start BIGINT NOT NULL, used BIGINT NOT NULL,
+  refused SMALLINT NOT NULL, PRIMARY KEY (tenant_id, quota_name, window_start)
+);
 
 -- ---------------------------------------------------------------- organisation (IX.5)
 CREATE TABLE SEC_PERSON (

@@ -10,6 +10,7 @@
       "id": "POS-AGENT",
       "role": "POS",
       "office": "TELCO-POS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Point of sale",

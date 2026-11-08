@@ -101,7 +101,18 @@
       "startVariables": {
         "amount": 3000000
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "expect": {
+          "tasks": [
+            "sn_sanction",
+            "sn_sanction"
+          ],
+          "audit": [
+            "CASE_CLOSED"
+          ]
+        }
+      }
     }
   ],
   "dependsOn": [
@@ -114,5 +125,17 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "sec-bank-pay-limits",
+      "rule": "SYNTHETIC band amounts (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000)",
+      "reason": "tenant-specific band amounts: the concurrence rule itself is decided (owner, SL-50, 2026-11-08: checker concurrence capped at the band of the authoriser covering the amount); the band amounts are SYNTHETIC; confirm them from the board-approved delegation of financial powers and deploy sec-bank-pay-limits and sec-bank-pay-powers together as tenant DMN overrides"
+    },
+    {
+      "decision": "sec-bank-pay-powers",
+      "rule": "SYNTHETIC band amounts (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000)",
+      "reason": "tenant-specific band amounts: the concurrence rule itself is decided (owner, SL-50, 2026-11-08: checker concurrence capped at the band of the authoriser covering the amount); the band amounts are SYNTHETIC; confirm them from the board-approved delegation of financial powers and deploy sec-bank-pay-limits and sec-bank-pay-powers together as tenant DMN overrides"
+    }
   ]
 }

@@ -20,6 +20,10 @@
       "path": "packs/ifms-budget-formulation/ifms-formulation-authority.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/ifms-budget-formulation/ifms-formulation-powers.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/ifms-budget-formulation/forms/estimates.form.json"
     },
@@ -100,5 +104,12 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-formulation-powers",
+      "rule": "CAA BUDGET_ESTIMATE no monetary limit",
+      "reason": "the approving authority of the estimates and the absence of a money ceiling are not read from the rule text (corpus IFC-043 to IFC-053 are not verified for powers); confirm from the budget circular / delegation order and deploy it as a tenant DMN override"
+    }
   ]
 }

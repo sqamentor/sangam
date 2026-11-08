@@ -106,7 +106,9 @@ Paths are under `src/main/java/org/sangam/integration/` unless marked *core*.
 | File | Requirements |
 |---|---|
 | `CloudEvents.java` | VI.2.3 rule 2: CloudEvents `id` = event_id; per-root order extension |
-| `HttpWebhookPublisher.java` | R71 webhook; HMAC signature (R27); 4xx poison classification |
+| `HttpWebhookPublisher.java` | R71 webhook (SL-39): HMAC-SHA256 over `t.body` with the subscription secret from `SecretResolver` (rotation: several `v1`), `Idempotency-Key` = event id, egress/SSRF guard, 410 disables, 429/503 `Retry-After` defers without an attempt, auto-disable hold then dead letter |
+| `WebhookSignature.java` | shared sender/receiver signature scheme; constant-time compare, timestamp tolerance (default 5 min) |
+| `WebhookHealth.java` | SL-39 destination health in `INTEGRATION_WEBHOOK_STATE`: consecutive failures, auto-disable (audited `WEBHOOK_DISABLED`), re-enable (`WEBHOOK_ENABLED`) |
 | `KafkaPublisher.java` | R71 Kafka; **FC-03**; idempotent producer; key tenant:root for per-root order (optional dependency) |
 | `JmsPublisher.java` | R71 JMS/AMQP; **FC-03**; transacted persistent send; JMSXGroupID per root (optional dependency) |
 
@@ -198,7 +200,7 @@ Not here: **FC-08** (Camel task, stage E) is a gap. **D-17, D-18 and D-19** are 
 |---|---|---|---|
 | org.eclipse.angus:angus-mail (+ jakarta.mail-api, jakarta.activation) | 2.0.4 | EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 | compile |
 | org.apache.sshd:sshd-sftp (+ sshd-core, sshd-common) | 2.15.0 | Apache-2.0 | compile |
-| org.apache.kafka:kafka-clients | 3.9.1 | Apache-2.0 | optional |
+| org.apache.kafka:kafka-clients | 3.9.2 | Apache-2.0 | optional |
 | jakarta.jms:jakarta.jms-api | 3.1.0 | EPL-2.0 OR GPL-2.0 WITH CPE | optional |
 | jakarta.servlet:jakarta.servlet-api | 6.0.0 | EPL-2.0 OR GPL-2.0 WITH CPE | provided |
 | org.operaton.bpm:operaton-engine | 2.2.0 (BOM) | Apache-2.0 | optional (provided by sangam-engine) |
@@ -213,6 +215,7 @@ New tables:
 - `CONNECTOR_CALL`
 - `INTEGRATION_DEAD_LETTER`
 - `INTEGRATION_LEADER`
+- `INTEGRATION_WEBHOOK_STATE` (SL-39 webhook destination health)
 - `UNIQUE_START`
 - `RECONCILIATION_ATTEMPT`
 - `LEGAL_HOLD`

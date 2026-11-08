@@ -14,7 +14,7 @@ import { BpmnDiagram } from '../components/BpmnDiagram';
 import { LineChart } from '../components/Charts';
 import { DmnView } from '../components/DmnView';
 import { DataTable, JsonView, Notice, PageHeader, ProblemAlert, Section, TextField } from '../components/ui';
-import { ModulePage, c, f, type ScreenDef } from './engine';
+import { ModulePage, c, engineDate, f, type ScreenDef } from './engine';
 import type { Row } from './engine';
 
 const E = '/engine-rest';
@@ -40,6 +40,9 @@ export const jobsEngine: ScreenDef = {
   ],
 };
 
+/** Engine value types a user can type (Bytes and File go through the binary upload). */
+const VAR_TYPES = ['String', 'Integer', 'Long', 'Double', 'Short', 'Boolean', 'Date', 'Null', 'Json', 'Xml', 'Object'];
+
 export const variablesEngine: ScreenDef = {
   id: 'variables',
   title: 'mod.op2.variables',
@@ -50,8 +53,10 @@ export const variablesEngine: ScreenDef = {
   requireFilters: ['processInstanceIdIn'],
   columns: [c('name'), c('type'), c('value', 'fld.value'), c('valueInfo'), c('activityInstanceId'), c('executionId')],
   rowKey: ['id'],
+  // Operaton's "add variable" dialog: name, type, value on the instance chosen in the filter.
+  toolbar: [{ id: 'add', label: 'ops.addVariable', method: 'PUT', path: `${E}/process-instance/{processInstanceIdIn}/variables/{name}`, fields: [f.path(f.text('name', undefined, true)), f.select('type', VAR_TYPES, undefined, true), f.json('value', 'fld.value', true), f.json('valueInfo')], noJson: true, hint: 'mod.op4.varValueHint', defaults: () => ({ type: 'String' }) }],
   actions: [
-    { id: 'set', label: 'act.update', method: 'PUT', path: `${E}/process-instance/{processInstanceId}/variables/{name}`, fields: [f.select('type', ['String', 'Integer', 'Long', 'Double', 'Short', 'Boolean', 'Date', 'Null', 'Json', 'Xml', 'Object'], undefined, true), f.json('value', 'fld.value', true), f.json('valueInfo')], noJson: true },
+    { id: 'set', label: 'act.update', method: 'PUT', path: `${E}/process-instance/{processInstanceId}/variables/{name}`, fields: [f.select('type', VAR_TYPES, undefined, true), f.json('value', 'fld.value', true), f.json('valueInfo')], noJson: true, hint: 'mod.op4.varValueHint', defaults: (r) => ({ type: r?.type === undefined ? undefined : String(r.type), value: r?.value === undefined ? undefined : JSON.stringify(r.value), valueInfo: r?.valueInfo && Object.keys(r.valueInfo as Row).length ? JSON.stringify(r.valueInfo) : undefined }) },
     { id: 'local', label: 'act.setLocal', path: `${E}/execution/{executionId}/localVariables`, fields: [f.json('modifications', undefined, true)], noJson: true },
     { id: 'delete', label: 'common.delete', method: 'DELETE', path: `${E}/process-instance/{processInstanceId}/variables/{name}`, noJson: true, danger: true },
   ],
@@ -157,7 +162,7 @@ export function BulkRetry() {
   const [when, setWhen] = useState('');
   const [res, setRes] = useState<{ ok: number; failed: string[] }>();
   const act = useAction();
-  const dueValue = () => (due === 'now' ? new Date() : new Date(when)).toISOString().replace('Z', '+0000');
+  const dueValue = () => engineDate(due === 'now' ? new Date() : when);
   const run = () =>
     void act
       .run(async () => {

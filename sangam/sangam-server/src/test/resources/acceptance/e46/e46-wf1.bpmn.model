@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-1: office bill approval Maker -> Checker -> Approver with RETURN loop and REJECT end (C-1..C-6, C-8).
+     Synthetic fixture (R-76 l.24 chain (a)); standard BPMN 2.0, OneIFMS references as foreign attributes and extensions. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             id="E46-WF1-DEFS" targetNamespace="urn:oneifms:e46:wf1">
+  <process id="E46-WF1" name="Office bill approval" isExecutable="true">
+    <documentation>E-46 WF-1 synthetic office bill route; not a State rule.</documentation>
+    <extensionElements>
+      <oneifms:settingsPack packId="E46-FIXTURES" packVersion="1.0.0" calendarId="E46-CAL" timeZone="Asia/Kolkata"/>
+    </extensionElements>
+    <startEvent id="start" name="Bill submitted"/>
+    <userTask id="PREPARE" name="Prepare" oneifms:capability="bill.prepare" oneifms:reasonCodeList="RC-BILL-PREPARE">
+      <documentation>Maker prepares the bill.</documentation>
+    </userTask>
+    <userTask id="CHECK" name="Check" oneifms:capability="bill.check" oneifms:reasonCodeList="RC-BILL-CHECK"/>
+    <exclusiveGateway id="gwCheck" name="Check outcome"/>
+    <userTask id="APPROVE" name="Approve" oneifms:capability="bill.submit" oneifms:reasonCodeList="RC-BILL-APPROVE"/>
+    <exclusiveGateway id="gwApprove" name="Approve outcome"/>
+    <endEvent id="END_APPROVED" name="Approved"/>
+    <endEvent id="END_REJECTED" name="Rejected"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="PREPARE"/>
+    <sequenceFlow id="f2" sourceRef="PREPARE" targetRef="CHECK"/>
+    <sequenceFlow id="f3" sourceRef="CHECK" targetRef="gwCheck"/>
+    <sequenceFlow id="f4" sourceRef="gwCheck" targetRef="APPROVE">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${outcome == 'APPROVE'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f5" name="return to maker" sourceRef="gwCheck" targetRef="PREPARE">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${outcome == 'RETURN'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f6" sourceRef="gwCheck" targetRef="END_REJECTED">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${outcome == 'REJECT'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f7" sourceRef="APPROVE" targetRef="gwApprove"/>
+    <sequenceFlow id="f8" sourceRef="gwApprove" targetRef="END_APPROVED">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${outcome == 'APPROVE'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f9" name="return to checker" sourceRef="gwApprove" targetRef="CHECK">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${outcome == 'RETURN'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f10" sourceRef="gwApprove" targetRef="END_REJECTED">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${outcome == 'REJECT'}</conditionExpression>
+    </sequenceFlow>
+  </process>
+</definitions>

@@ -24,6 +24,10 @@
       "path": "packs/ifms-reappropriation/ifms-reapp-authority.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/ifms-reappropriation/ifms-reapp-powers.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/ifms-reappropriation/forms/proposal.form.json"
     },

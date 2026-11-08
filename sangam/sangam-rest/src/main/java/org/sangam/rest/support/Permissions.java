@@ -88,6 +88,15 @@ public final class Permissions {
     public static final String GROUP_MODEL_DEPLOYER = "sangam-model-deployer";
     public static final String GROUP_INTEGRATION = "sangam-integration";
     public static final String GROUP_SYSTEM = "sangam-system";
+    /** Engine administrators: the unchanged Operaton REST API ({@code /engine-rest/**}) and nothing else extra. */
+    public static final String GROUP_ENGINE_ADMIN = "sangam-engine-admin";
+
+    /**
+     * The only groups admitted to {@code /engine-rest/**} (server gate, {@code SecurityConfig}). The workspace
+     * {@code /me} roles derive the UI platform role from the same set, so a UI engine screen is shown exactly to the
+     * callers the server lets through (SL-37).
+     */
+    public static final Set<String> ENGINE_REST_GROUPS = Set.of(GROUP_ADMIN, GROUP_ENGINE_ADMIN);
 
     private static final Set<String> USER_BASE = Set.of(TASK_READ, TASK_WRITE, PROCESS_READ, PROCESS_START, PROCESS_WRITE,
             PROCESS_CANCEL, CASE_READ, CASE_WRITE, DECISION_EVALUATE, MESSAGE_SEND, DOCUMENT_READ, DOCUMENT_WRITE,

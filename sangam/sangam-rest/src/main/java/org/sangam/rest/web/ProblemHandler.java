@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.sangam.core.api.StaleLeaseException;
 import org.sangam.core.layer.IdempotencyStore;
 import org.sangam.core.layer.OperationLedger;
+import org.sangam.core.quota.TenantQuotaExceededException;
+import org.sangam.engine.deploy.TenantIsolationException;
 import org.sangam.rest.port.ApiProblem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,8 +95,51 @@ public class ProblemHandler {
         return respond(new ApiProblem(404, "NOT_FOUND", "No such endpoint"), req);
     }
 
+    /** SL-43: 429 (rate, with Retry-After) or 413 (size) {@code TENANT_QUOTA_EXCEEDED}, naming the limit. */
+    @ExceptionHandler(TenantQuotaExceededException.class)
+    public ResponseEntity<Map<String, Object>> quota(TenantQuotaExceededException e, HttpServletRequest req) {
+        return respond(quotaProblem(e), req);
+    }
+
+    public static ApiProblem quotaProblem(TenantQuotaExceededException e) {
+        String detail = e.limit().isRate()
+                ? "Tenant " + e.tenantId() + " is over its " + e.limit().key() + " quota (" + e.allowed() + "); retry after "
+                + e.retryAfterSeconds() + " s"
+                : "Tenant " + e.tenantId() + " is over its " + e.limit().key() + " quota (" + e.allowed() + " allowed, "
+                + e.requested() + " requested)";
+        return new ApiProblem(e.httpStatus(), TenantQuotaExceededException.CODE, null, detail, e.details(),
+                e.retryAfterSeconds());
+    }
+
+    /** SL-13 / SL-45: 403 {@code TENANT_ISOLATION_VIOLATION}, naming the element and both tenants. */
+    public static ApiProblem isolationProblem(TenantIsolationException e) {
+        Map<String, Object> ext = new java.util.LinkedHashMap<>();
+        ext.put("element", e.element());
+        ext.put("tenant", e.callerTenant());
+        ext.put("targetTenant", e.targetTenant());
+        return new ApiProblem(TenantIsolationException.HTTP_STATUS, TenantIsolationException.CODE, null, e.getMessage(),
+                ext, null);
+    }
+
+    /**
+     * The Sangam problem for a refusal anywhere in a cause chain (engines, proxies and JAX-RS wrap exceptions), or null.
+     * One source for {@code /api} and the {@code /engine-rest} JAX-RS mappers, so both answer identically.
+     */
+    public static ApiProblem tenantRefusal(Throwable t) {
+        TenantQuotaExceededException quota = TenantQuotaExceededException.find(t);
+        if (quota != null) {
+            return quotaProblem(quota);
+        }
+        TenantIsolationException isolation = TenantIsolationException.find(t);
+        return isolation == null ? null : isolationProblem(isolation);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> unexpected(Exception e, HttpServletRequest req) {
+        ApiProblem refusal = tenantRefusal(e);
+        if (refusal != null) {
+            return respond(refusal, req);   // wrapped by the engine or an adapter
+        }
         LOG.error("Unhandled error on {} {}", req.getMethod(), req.getRequestURI(), e);
         return respond(new ApiProblem(500, "INTERNAL_ERROR", "An unexpected error occurred; see the server log for the trace id"), req);
     }

@@ -107,7 +107,9 @@ final class JmsAdapters {
                         : session.createConsumer(d);
                 consumer.setMessageListener(m -> onMessage(session, m));
                 connection.start();
-            } catch (JMSException e) {
+            } catch (JMSException | RuntimeException e) {
+                // the caller discards a consumer that failed to start: release its connection now, or every retry leaks one
+                close();
                 throw new IllegalStateException("jms channel " + ch.key() + " cannot start", e);
             }
         }

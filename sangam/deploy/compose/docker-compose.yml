@@ -63,10 +63,9 @@ x-server-common: &server-common
     SANGAM_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
     MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://otel-collector:4318/v1/metrics
     # sangam-compliance (DPDP / CERT-In). The log archive is the server-state volume (image default path).
-    SANGAM_COMPLIANCE_JURISDICTIONS: ${SANGAM_COMPLIANCE_JURISDICTIONS:-IN}
+    # (SANGAM_COMPLIANCE_JURISDICTIONS and _LOG_ARCHIVE_COUNTRY are set once, above: duplicate keys are a YAML error)
     SANGAM_COMPLIANCE_ORGANISATION: ${SANGAM_COMPLIANCE_ORGANISATION:-Sangam development}
     SANGAM_COMPLIANCE_TENANTS: ${SANGAM_COMPLIANCE_TENANTS:-dept-finance,dept-social-welfare,dept-industries}
-    SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY: IN
     # In-process simulators of sangam-integration (SimulatorProfile); the sim-* containers are the standalone variant.
     SANGAM_INTEGRATION_SIMULATORS_ENABLED: ${SANGAM_SIMULATORS_ENABLED:-false}
     SANGAM_CONNECTORS_IFMS_BASE_URL: http://sim-ifms:9000

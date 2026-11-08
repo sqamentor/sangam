@@ -83,7 +83,10 @@
       "startVariables": {
         "schemeId": "PM-KISAN-LIKE"
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: the bank desk corrects items and the cell resends round 2"
+      }
     }
   ],
   "dependsOn": [

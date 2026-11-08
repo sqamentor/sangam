@@ -94,7 +94,7 @@ public class ReconciliationMatchDelegate implements JavaDelegate {
         }
         ex.setVariable("matchedCount", matched);
         ex.setVariable("discrepancyCount", disc.size());
-        ex.setVariable("items", Vars.toJson(disc));
+        Vars.setJsonDocument(ex, "items", disc);
         Vars.audit(ex, "RECONCILIATION_RUN", Vars.map("matched", matched, "discrepancies", disc.size()));
     }
 }

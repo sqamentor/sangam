@@ -10,6 +10,7 @@
       "id": "SIA-UNIT",
       "role": "SIA",
       "office": "DIST-LA",
+      "level": "HEAD_OFFICE",
       "reportsTo": "COLLECTOR",
       "name": {
         "en": "Social impact assessment unit",
@@ -20,6 +21,7 @@
       "id": "EXPERT-1",
       "role": "EXPERT",
       "office": "DIST-LA",
+      "level": "HEAD_OFFICE",
       "reportsTo": "COLLECTOR",
       "name": {
         "en": "Expert group member 1",
@@ -30,6 +32,7 @@
       "id": "EXPERT-2",
       "role": "EXPERT",
       "office": "DIST-LA",
+      "level": "HEAD_OFFICE",
       "reportsTo": "COLLECTOR",
       "name": {
         "en": "Expert group member 2",
@@ -40,6 +43,7 @@
       "id": "EXPERT-3",
       "role": "EXPERT",
       "office": "DIST-LA",
+      "level": "HEAD_OFFICE",
       "reportsTo": "COLLECTOR",
       "name": {
         "en": "Expert group member 3",
@@ -50,6 +54,7 @@
       "id": "COLLECTOR",
       "role": "COLLECTOR",
       "office": "DIST-LA",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECY-LA",
       "name": {
         "en": "Collector",
@@ -60,6 +65,7 @@
       "id": "SECY-LA",
       "role": "SECRETARY",
       "office": "DIST-LA",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Secretary, Revenue",

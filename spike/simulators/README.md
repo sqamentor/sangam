@@ -180,7 +180,7 @@ try (Databases.Running db = Databases.start("postgres")) {   // or "oracle", "sq
 | slf4j-api / slf4j-simple | MIT | compile / test |
 | PostgreSQL JDBC (`org.postgresql:postgresql`) | BSD-2-Clause (permissive) | compile; it is the default database |
 | **Oracle JDBC** `com.oracle.database.jdbc:ojdbc11` 23.8.0.25.04 | Oracle Free Use Terms | **`provided`** |
-| SQL Server JDBC `com.microsoft.sqlserver:mssql-jdbc` 12.10.1.jre11 | MIT | **`provided`** (XI.5: fetched at build time, not shipped) |
+| SQL Server JDBC `com.microsoft.sqlserver:mssql-jdbc` 12.10.2.jre11 | MIT | **`provided`** (XI.5: fetched at build time, not shipped) |
 | JUnit 5 | EPL-2.0 | test |
 
 **How the drivers are kept out of every build (LIC-2):**

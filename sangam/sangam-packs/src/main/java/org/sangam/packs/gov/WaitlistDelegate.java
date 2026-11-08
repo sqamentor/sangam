@@ -54,8 +54,8 @@ public class WaitlistDelegate implements JavaDelegate {
             Vars.audit(ex, "WAITLIST_PROMOTED", Vars.map("vacated", vacated, "promoted", promoted.get("key"),
                     "category", allotted));
         }
-        ex.setVariable("meritList", Vars.toJson(keep));
-        ex.setVariable("waitlist", Vars.toJson(wait));
+        Vars.setJsonDocument(ex, "meritList", keep);
+        Vars.setJsonDocument(ex, "waitlist", wait);
         ex.setVariable("selectedKeys", Vars.joinCsv(keep.stream().map(m -> m.get("key").toString()).toList()));
     }
 }

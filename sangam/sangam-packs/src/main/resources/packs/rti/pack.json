@@ -84,7 +84,10 @@
         "applicantRef": "mobile:9XXXXXXX01",
         "information": "copy of file notings"
       },
-      "expectState": null
+      "expectState": null,
+      "run": {
+        "manual": "needs a clock driver: the PIO decision deadline lapses (deemed refusal)"
+      }
     }
   ],
   "dependsOn": [

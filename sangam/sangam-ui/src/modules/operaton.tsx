@@ -66,6 +66,8 @@ const defTtl: ScreenDef = {
   rowKey: ['id'],
   actions: [
     { id: 'ttl', label: 'act.setTtl', method: 'PUT', path: `${E}/process-definition/{id}/history-time-to-live`, fields: [f.num('historyTimeToLive')], noJson: true, hint: 'mod.op2.ttlClear', sendNulls: ['historyTimeToLive'] },
+    // Operaton's TTL dialog follow-up: re-date the removal time of this definition's historic instances (async batch).
+    { id: 'removal', label: 'act.setRemovalTime', path: `${E}/history/process-instance/set-removal-time`, fields: [f.text('historicProcessInstanceQuery.processDefinitionId', 'fld.processDefinitionId', true), f.bool('calculatedRemovalTime'), f.dt('absoluteRemovalTime'), f.bool('clearedRemovalTime'), f.bool('hierarchical')], noJson: true, hint: 'mod.op4.removalHint', showResult: true, defaults: (r) => ({ 'historicProcessInstanceQuery.processDefinitionId': r?.id, calculatedRemovalTime: true, hierarchical: true }) },
     { id: 'suspend', label: 'act.setSuspension', method: 'PUT', path: `${E}/process-definition/{id}/suspended`, fields: [f.bool('suspended'), f.bool('includeProcessInstances'), f.dt('executionDate')], noJson: true },
     { id: 'delete', label: 'common.delete', method: 'DELETE', path: `${E}/process-definition/{id}`, fields: [f.q(f.bool('cascade')), f.q(f.bool('skipCustomListeners'))], noJson: true, danger: true },
   ],
@@ -292,7 +294,8 @@ const authorizations: ScreenDef = {
   rowKey: ['id'],
   create: { id: 'create', label: 'act.create', path: `${E}/authorization/create`, fields: [f.num('type', 'fld.authType', true), { key: 'resourceType', label: 'fld.resourceType', type: 'select', values: resOpts, validate: { required: true } }, f.text('resourceId', undefined, true), f.text('userId'), f.text('groupId'), f.json('permissions', undefined, true)], noJson: true, hint: 'mod.op.authTypeHint', defaults: () => ({ type: 1, resourceId: '*', permissions: '["ALL"]' }) },
   actions: [
-    { id: 'edit', label: 'act.update', method: 'PUT', path: `${E}/authorization/{id}`, fields: [f.text('resourceId', undefined, true), f.text('userId'), f.text('groupId'), f.json('permissions', undefined, true)], noJson: true, defaults: (r) => ({ resourceId: r?.resourceId, userId: r?.userId, groupId: r?.groupId, permissions: JSON.stringify(r?.permissions ?? []) }) },
+    // The engine converts permission names against the body's resourceType (AuthorizationDto.update): without it the PUT fails.
+    { id: 'edit', label: 'act.update', method: 'PUT', path: `${E}/authorization/{id}`, fields: [{ key: 'resourceType', label: 'fld.resourceType', type: 'select', values: resOpts, validate: { required: true } }, f.text('resourceId', undefined, true), f.text('userId'), f.text('groupId'), f.json('permissions', undefined, true)], noJson: true, hint: 'mod.op4.permissionsHint', defaults: (r) => ({ resourceType: r?.resourceType === undefined || r?.resourceType === null ? undefined : String(r.resourceType), resourceId: r?.resourceId, userId: r?.userId, groupId: r?.groupId, permissions: JSON.stringify(r?.permissions ?? []) }) },
     { id: 'delete', label: 'common.delete', method: 'DELETE', path: `${E}/authorization/{id}`, noJson: true, danger: true },
   ],
 };

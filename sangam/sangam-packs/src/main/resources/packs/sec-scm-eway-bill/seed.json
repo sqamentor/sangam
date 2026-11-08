@@ -10,6 +10,7 @@
       "id": "DISPATCH",
       "role": "DISPATCH",
       "office": "LOGISTICS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Dispatch desk",

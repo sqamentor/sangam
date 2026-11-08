@@ -28,7 +28,21 @@ public interface WorkPort {
     record ExternalWork(String id, String topic, String tenantId, String processInstanceId, String processDefinitionKey,
                         String activityId, String activityInstanceId, String businessKey,
                         Map<String, Object> variables, long lockVersion, String attemptId, String operationId,
-                        Instant lockExpiresAt, Integer retries, Long priority, String errorMessage) {
+                        Instant lockExpiresAt, Integer retries, Long priority, String errorMessage,
+                        WorkOperation operation) {
+    }
+
+    /**
+     * The operation-ledger state of {@code operationId} recorded by the server when it leased the work (R37: intent
+     * before dispatch). {@code mayDispatch=false} with {@code SUCCEEDED}: the downstream effect already happened, complete
+     * from {@code storedOutcome} ({@code {output, providerRef, duplicate}}) without calling the downstream again.
+     * {@code attempts > 1}: a repeat attempt (class B: look the outcome up first).
+     */
+    record WorkOperation(String state, int attempts, String capabilityClass, boolean mayDispatch, Object storedOutcome) {
+    }
+
+    /** The downstream's answer reported with a completion: its reference (for example a payment reference) and details. */
+    record WorkOutcome(String reference, Map<String, Object> details) {
     }
 
     record ExtendLockRequest(String workerId, long lockVersion, String attemptId, long newDurationMs) {
@@ -39,7 +53,7 @@ public interface WorkPort {
     }
 
     record CompleteRequest(String workerId, long lockVersion, String attemptId, Map<String, Object> variables,
-                           Map<String, Object> localVariables) {
+                           Map<String, Object> localVariables, WorkOutcome outcome) {
     }
 
     record FailRequest(String workerId, long lockVersion, String attemptId, String errorMessage, String errorDetails,

@@ -37,6 +37,7 @@ public final class SangamEngineConfigurer {
     private DatabaseGuard.Findings findings;
     private SangamEngineComponents components;
     private SangamProcessEnginePlugin plugin;
+    private OperatonClock.Registration engineSlot;
 
     public SangamEngineConfigurer(SangamEngineSettings settings) {
         this.settings = settings == null ? new SangamEngineSettings() : settings;
@@ -80,7 +81,11 @@ public final class SangamEngineConfigurer {
         if (plugin == null) {
             throw new IllegalStateException("call prepare(DataSource) first");
         }
-        OperatonClock.register(settings.isAllowMultipleEnginesPerJvm());
+        synchronized (this) {
+            if (engineSlot == null || engineSlot.released()) {
+                engineSlot = OperatonClock.register(settings.isAllowMultipleEnginesPerJvm());
+            }
+        }
         cfg.setProcessEngineName(settings.getProcessEngineName());
         cfg.setDataSource(preparedDataSource);
         // SG-19: never force engine DDL; keep the configuration's own value unless the settings say otherwise
@@ -127,7 +132,31 @@ public final class SangamEngineConfigurer {
                 SangamSchema.applyHistoryPartitioning(preparedDataSource);
             }
         }
-        return new OperatonEngineAdapter(engine, components, jdbcUrl, onClose);
+        Runnable closed = () -> {
+            try {
+                if (onClose != null) {
+                    onClose.run();
+                }
+            } finally {
+                releaseEngineSlot();
+            }
+        };
+        return new OperatonEngineAdapter(engine, components, jdbcUrl, closed);
+    }
+
+    /**
+     * Frees this configurer's engine slot (D-10 one-engine-per-JVM guard). Idempotent and thread-safe. Called when the
+     * adapter closes the engine, when a build fails, and by containers that own the engine (the server releases it
+     * when its Spring context closes).
+     */
+    public void releaseEngineSlot() {
+        OperatonClock.Registration slot;
+        synchronized (this) {
+            slot = engineSlot;
+        }
+        if (slot != null) {
+            slot.release();
+        }
     }
 
     public SangamEngineComponents components() {

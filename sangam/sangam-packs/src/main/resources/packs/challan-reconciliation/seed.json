@@ -10,6 +10,7 @@
       "id": "TREASURY-RECON",
       "role": "RECON",
       "office": "TREASURY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "TO",
       "name": {
         "en": "Reconciliation desk",
@@ -20,6 +21,7 @@
       "id": "TO",
       "role": "TO",
       "office": "TREASURY",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Treasury officer",

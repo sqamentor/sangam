@@ -10,6 +10,7 @@
       "id": "LEGAL-COUNSEL",
       "role": "COUNSEL",
       "office": "LEGAL-U",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Contract counsel",
@@ -20,6 +21,7 @@
       "id": "COUNTERPARTY",
       "role": "EXTERNAL",
       "office": "LEGAL-U",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Counterparty (portal)",
@@ -30,6 +32,7 @@
       "id": "LEGAL-REVIEW",
       "role": "LEGAL",
       "office": "LEGAL-U",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Legal reviewer",
@@ -40,6 +43,7 @@
       "id": "FINANCE-REVIEW",
       "role": "FINANCE",
       "office": "LEGAL-U",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Finance reviewer",

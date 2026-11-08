@@ -33,6 +33,7 @@ public final class SangamFeel {
     }
 
     public static DefaultDmnEngineConfiguration install(DefaultDmnEngineConfiguration dmn) {
+        JacksonCompatibilityGuard.check(); // SG-33: fail fast before the FEEL engine (jackson-module-scala) is built
         if (!(dmn.getFeelEngineFactory() instanceof SangamFeelEngineFactory)) {
             dmn.setFeelEngineFactory(new SangamFeelEngineFactory(dmn));
         }

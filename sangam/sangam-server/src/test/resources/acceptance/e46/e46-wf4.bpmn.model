@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-4: works bill amount-band routing JEN -> AEN / XEN / SEN / ACEN; three bands plus a configured default
+     (C-5; SD-367: inclusive upper bounds stated in the pack; no-match/overlap is an incident, never an arbitrary branch).
+     Synthetic. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             id="E46-WF4-DEFS" targetNamespace="urn:oneifms:e46:wf4">
+  <process id="E46-WF4" name="Works bill bands" isExecutable="true">
+    <startEvent id="start"/>
+    <userTask id="JEN" name="Junior engineer" oneifms:capability="works.prepare"/>
+    <exclusiveGateway id="gwBand" name="Amount band" default="fDefault" oneifms:bandBounds="UPPER_INCLUSIVE"/>
+    <userTask id="AEN" name="AEN up to 1,00,000" oneifms:capability="works.approve"/>
+    <userTask id="XEN" name="XEN up to 10,00,000" oneifms:capability="works.approve"/>
+    <userTask id="SEN" name="SEN up to 50,00,000" oneifms:capability="works.approve"/>
+    <userTask id="ACEN" name="ACEN above 50,00,000" oneifms:capability="works.approve"/>
+    <endEvent id="END_APPROVED"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="JEN"/>
+    <sequenceFlow id="f2" sourceRef="JEN" targetRef="gwBand"/>
+    <sequenceFlow id="fAen" sourceRef="gwBand" targetRef="AEN">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${amount &lt;= 100000}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fXen" sourceRef="gwBand" targetRef="XEN">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${amount &gt; 100000 &amp;&amp; amount &lt;= 1000000}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fSen" sourceRef="gwBand" targetRef="SEN">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${amount &gt; 1000000 &amp;&amp; amount &lt;= 5000000}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="fDefault" sourceRef="gwBand" targetRef="ACEN"/>
+    <sequenceFlow id="f3" sourceRef="AEN" targetRef="END_APPROVED"/>
+    <sequenceFlow id="f4" sourceRef="XEN" targetRef="END_APPROVED"/>
+    <sequenceFlow id="f5" sourceRef="SEN" targetRef="END_APPROVED"/>
+    <sequenceFlow id="f6" sourceRef="ACEN" targetRef="END_APPROVED"/>
+  </process>
+</definitions>

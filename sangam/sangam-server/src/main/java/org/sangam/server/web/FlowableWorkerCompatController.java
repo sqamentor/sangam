@@ -87,7 +87,7 @@ public class FlowableWorkerCompatController {
         permissions.require(ctx, Permissions.WORK_EXECUTE);
         Map<String, Object> m = translate(() -> FlowableWorkerCompat.toComplete(body, FlowableWorkerCompat.UNFENCED));
         fenced(ctx, jobId, m, "complete", lv -> {
-            work.complete(ctx, jobId, new WorkPort.CompleteRequest(worker(m), lv, attempt(m), vars(m), null));
+            work.complete(ctx, jobId, new WorkPort.CompleteRequest(worker(m), lv, attempt(m), vars(m), null, null));
             return null;
         });
         return ResponseEntity.noContent().build();
@@ -113,7 +113,7 @@ public class FlowableWorkerCompatController {
         permissions.require(ctx, Permissions.WORK_EXECUTE);
         Map<String, Object> m = translate(() -> FlowableWorkerCompat.toCmmnTerminate(body, FlowableWorkerCompat.UNFENCED));
         fenced(ctx, jobId, m, "cmmnTerminate", lv -> {
-            work.complete(ctx, jobId, new WorkPort.CompleteRequest(worker(m), lv, attempt(m), vars(m), null));
+            work.complete(ctx, jobId, new WorkPort.CompleteRequest(worker(m), lv, attempt(m), vars(m), null, null));
             return null;
         });
         return ResponseEntity.noContent().build();

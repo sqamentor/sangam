@@ -10,6 +10,7 @@
       "id": "PHLEBOTOMY",
       "role": "PHLEBO",
       "office": "LAB",
+      "level": "HEAD_OFFICE",
       "reportsTo": "LAB-TECH",
       "name": {
         "en": "Phlebotomist",
@@ -20,6 +21,7 @@
       "id": "LAB-TECH",
       "role": "TECH",
       "office": "LAB",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PATHOLOGIST",
       "name": {
         "en": "Laboratory technologist",
@@ -30,6 +32,7 @@
       "id": "PATHOLOGIST",
       "role": "PATH",
       "office": "LAB",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Pathologist",

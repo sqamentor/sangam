@@ -10,6 +10,7 @@
       "id": "BB-TECH",
       "role": "TECH",
       "office": "BLOOD-CENTRE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BB-MO",
       "name": {
         "en": "Blood centre technician",
@@ -20,6 +21,7 @@
       "id": "BB-MO",
       "role": "MO",
       "office": "BLOOD-CENTRE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Blood centre medical officer",
@@ -30,6 +32,7 @@
       "id": "WARD-NURSE",
       "role": "NURSE",
       "office": "BLOOD-CENTRE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BB-MO",
       "name": {
         "en": "Ward nurse",

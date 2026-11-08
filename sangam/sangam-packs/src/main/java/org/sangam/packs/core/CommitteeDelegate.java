@@ -56,7 +56,7 @@ public class CommitteeDelegate implements JavaDelegate, TaskListener {
         };
         ex.setVariable("committeeSize", seats.size());
         ex.setVariable("quorum", quorum);
-        ex.setVariable("committeeVotes", "[]");
+        Vars.setJsonDocument(ex, "committeeVotes", java.util.List.of());
         ex.setVariable("committeeApprovals", 0);
     }
 
@@ -67,7 +67,7 @@ public class CommitteeDelegate implements JavaDelegate, TaskListener {
         Object vote = t.getVariable("vote");
         votes.add(Vars.map("seat", a.seat(), "person", a.person(), "vote", vote == null ? "abstain" : vote.toString(),
                 "remarks", Vars.str(t, "voteRemarks"), "at", Vars.now().toString()));
-        t.getExecution().getProcessInstance().setVariable("committeeVotes", Vars.toJson(votes));
+        Vars.setJsonDocument(t.getExecution().getProcessInstance(), "committeeVotes", votes);
         long approvals = votes.stream().filter(v -> "approve".equals(v.get("vote"))).count();
         t.getExecution().getProcessInstance().setVariable("committeeApprovals", (int) approvals);
         Vars.auditTask(t, "COMMITTEE_VOTE", a.person(), a.seat(), a.actedFor() ? a.seat() : null, a.authorityBasis(),

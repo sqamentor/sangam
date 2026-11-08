@@ -14,6 +14,7 @@
       "id": "CLERK-W7",
       "role": "SCRUTINY-CLERK",
       "office": "WARD-7",
+      "level": "REGIONAL_OFFICE",
       "reportsTo": "LO-MC",
       "name": {
         "en": "Scrutiny clerk, Ward 7",
@@ -24,6 +25,7 @@
       "id": "INSP-W7",
       "role": "INSPECTOR",
       "office": "WARD-7",
+      "level": "REGIONAL_OFFICE",
       "reportsTo": "LO-MC",
       "name": {
         "en": "Inspector, Ward 7",
@@ -34,6 +36,7 @@
       "id": "LO-MC",
       "role": "LO",
       "office": "MC",
+      "level": "HEAD_OFFICE",
       "reportsTo": "DC-MC",
       "name": {
         "en": "Licensing officer",
@@ -44,6 +47,7 @@
       "id": "DC-MC",
       "role": "DC",
       "office": "MC",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Deputy Commissioner (escalation)",
         "hi": "उपायुक्त (वृद्धि)"
@@ -53,6 +57,7 @@
       "id": "APPELLATE-LIC",
       "role": "APPELLATE",
       "office": "MC",
+      "level": "HEAD_OFFICE",
       "name": {
         "en": "Appellate authority (Commissioner)",
         "hi": "अपीलीय प्राधिकारी (आयुक्त)"

@@ -125,7 +125,7 @@ public class DynamicInjectionService {
             if (spec.dueDate() != null) {
                 ut.setAttributeNS(OPERATON_NS, "operaton:dueDate", spec.dueDate());
             }
-            process.appendChild(ut);
+            appendFlowElement(process, ut);
         });
     }
 
@@ -157,7 +157,7 @@ public class DynamicInjectionService {
                     sp.appendChild(copy);
                 }
             }
-            process.appendChild(sp);
+            appendFlowElement(process, sp);
         });
     }
 
@@ -209,8 +209,10 @@ public class DynamicInjectionService {
             if (pi.getTenantId() != null) {
                 db.tenantId(pi.getTenantId());
             }
-            Deployment dep = db.deploy();
-            ProcessDefinition derived = engine.getRepositoryService().createProcessDefinitionQuery().deploymentId(dep.getId()).singleResult();
+            // the deployment is not flushed yet (one engine command): take the definition from the deploy result,
+            // a repository query here would not see it
+            org.operaton.bpm.engine.repository.DeploymentWithDefinitions dep = db.deployWithResult();
+            ProcessDefinition derived = dep.getDeployedProcessDefinitions().get(0);
             MigrationPlan plan = engine.getRuntimeService().createMigrationPlan(src.getId(), derived.getId()).mapEqualActivities().build();
             engine.getRuntimeService().newMigration(plan).processInstanceIds(processInstanceId).execute();
             engine.getRuntimeService().createProcessInstanceModification(processInstanceId).startBeforeActivity(newId).execute();
@@ -281,6 +283,19 @@ public class DynamicInjectionService {
         if (value != null && value.length() > 4000) {
             throw PortsProblem.invalid(field + " is longer than 4000 characters");
         }
+    }
+
+    /** BPMN artifacts must follow every flow element of a process (XSD order); new elements go before the first one. */
+    private static final Set<String> ARTIFACTS = Set.of("association", "textAnnotation", "group");
+
+    static void appendFlowElement(Element process, Element el) {
+        for (Node n = process.getFirstChild(); n != null; n = n.getNextSibling()) {
+            if (n instanceof Element e && BPMN_NS.equals(e.getNamespaceURI()) && ARTIFACTS.contains(e.getLocalName())) {
+                process.insertBefore(el, e);
+                return;
+            }
+        }
+        process.appendChild(el);
     }
 
     private static Element findProcess(Document doc, String key) {

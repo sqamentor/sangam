@@ -1,0 +1,190 @@
+# SPDX-License-Identifier: Apache-2.0
+scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
+COFOG,division,,01,General public services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,01,1,"Executive and legislative organs, financial and fiscal affairs, external affairs",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.1,1,Executive and legislative organs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.1,2,Financial and fiscal affairs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.1,3,External affairs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,01,2,Foreign economic aid,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.2,1,Economic aid to developing countries and countries in transition,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.2,2,Economic aid routed through international organizations,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,01,3,General services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.3,1,General personnel services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.3,2,Overall planning and statistical services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.3,3,Other general services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,01,4,Basic research,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.4,0,Basic research,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,01,5,R&D General public services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.5,0,R&D General public services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,01,6,General public services n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.6,0,General public services n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,01,7,Public debt transactions,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.7,0,Public debt transactions,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,01,8,Transfers of a general character between different levels of government,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,01.8,0,Transfers of a general character between different levels of government,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,division,,02,Defence,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,02,1,Military defence,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,02.1,0,Military defence,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,02,2,Civil defence,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,02.2,0,Civil defence,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,02,3,Foreign military aid,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,02.3,0,Foreign military aid,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,02,4,R&D Defence,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,02.4,0,R&D Defence,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,02,5,Defence n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,02.5,0,Defence n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,division,,03,Public order and safety,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,03,1,Police services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,03.1,0,Police services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,03,2,Fire-protection services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,03.2,0,Fire-protection services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,03,3,Law courts,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,03.3,0,Law courts,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,03,4,Prisons,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,03.4,0,Prisons,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,03,5,R&D Public order and safety,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,03.5,0,R&D Public order and safety,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,03,6,Public order and safety n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,03.6,0,Public order and safety n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,division,,04,Economic affairs,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,04,1,"General economic, commercial and labour affairs",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.1,1,General economic and commercial affairs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.1,2,General labour affairs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,04,2,"Agriculture, forestry, fishing and hunting",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.2,1,Agriculture,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.2,2,Forestry,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.2,3,Fishing and hunting,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,04,3,Fuel and energy,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.3,1,Coal and other solid mineral fuels,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.3,2,Petroleum and natural gas,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.3,3,Nuclear fuel,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.3,4,Other fuels,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.3,5,Electricity,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.3,6,Non-electric energy,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,04,4,"Mining, manufacturing and construction",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.4,1,Mining of mineral resources other than mineral fuels,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.4,2,Manufacturing,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.4,3,Construction,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,04,5,Transport,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.5,1,Road transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.5,2,Water transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.5,3,Railway transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.5,4,Air transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.5,5,Pipeline and other transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,04,6,Communication,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.6,0,Communication,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,04,7,Other industries,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.7,1,"Distributive trades, storage and warehousing",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.7,2,Hotels and restaurants,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.7,3,Tourism,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.7,4,Multi-purpose development projects,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,04,8,R&D Economic affairs,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.8,1,"R&D General economic, commercial and labour affairs",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.8,2,"R&D Agriculture, forestry, fishing and hunting",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.8,3,R&D Fuel and energy,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.8,4,"R&D Mining, manufacturing and construction",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.8,5,R&D Transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.8,6,R&D Communication,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.8,7,R&D Other industries,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,04,9,Economic affairs n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,04.9,0,Economic affairs n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,division,,05,Environmental protection,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,05,1,Waste management,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,05.1,0,Waste management,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,05,2,Waste water management,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,05.2,0,Waste water management,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,05,3,Pollution abatement,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,05.3,0,Pollution abatement,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,05,4,Protection of biodiversity and landscape,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,05.4,0,Protection of biodiversity and landscape,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,05,5,R&D Environmental protection,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,05.5,0,R&D Environmental protection,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,05,6,Environmental protection n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,05.6,0,Environmental protection n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,division,,06,Housing and community amenities,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,06,1,Housing development,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,06.1,0,Housing development,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,06,2,Community development,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,06.2,0,Community development,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,06,3,Water supply,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,06.3,0,Water supply,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,06,4,Street lighting,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,06.4,0,Street lighting,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,06,5,R&D Housing and community amenities,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,06.5,0,R&D Housing and community amenities,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,06,6,Housing and community amenities n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,06.6,0,Housing and community amenities n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,division,,07,Health,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,07,1,"Medical products, appliances and equipment",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.1,1,Pharmaceutical products,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.1,2,Other medical products,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.1,3,Therapeutic appliances and equipment,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,07,2,Outpatient services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.2,1,General medical services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.2,2,Specialized medical services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.2,3,Dental services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.2,4,Paramedical services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,07,3,Hospital services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.3,1,General hospital services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.3,2,Specialized hospital services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.3,3,Medical and maternity centre services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.3,4,Nursing and convalescent home services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,07,4,Public health services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.4,0,Public health services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,07,5,R&D Health,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.5,0,R&D Health,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,07,6,Health n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,07.6,0,Health n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,division,,08,"Recreation, culture and religion",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,08,1,Recreational and sporting services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,08.1,0,Recreational and sporting services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,08,2,Cultural services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,08.2,0,Cultural services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,08,3,Broadcasting and publishing services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,08.3,0,Broadcasting and publishing services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,08,4,Religious and other community services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,08.4,0,Religious and other community services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,08,5,"R&D Recreation, culture and religion",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,08.5,0,"R&D Recreation, culture and religion",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,08,6,"Recreation, culture and religion n.e.c.",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,08.6,0,"Recreation, culture and religion n.e.c.",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,division,,09,Education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,09,1,Pre-primary and primary education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.1,1,Pre-primary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.1,2,Primary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,09,2,Secondary education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.2,1,Lower-secondary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.2,2,Upper-secondary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,09,3,Post-secondary non-tertiary education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.3,0,Post-secondary non-tertiary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,09,4,Tertiary education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.4,1,First stage of tertiary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.4,2,Second stage of tertiary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,09,5,Education not definable by level,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.5,0,Education not definable by level,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,09,6,Subsidiary services to education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.6,0,Subsidiary services to education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,09,7,R&D Education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.7,0,R&D Education,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,09,8,Education n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,09.8,0,Education n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,division,,10,Social protection,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,10,1,Sickness and disability,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.1,1,Sickness,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.1,2,Disability,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,10,2,Old age,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.2,0,Old age,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,10,3,Survivors,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.3,0,Survivors,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,10,4,Family and children,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.4,0,Family and children,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,10,5,Unemployment,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.5,0,Unemployment,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,10,6,Housing,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.6,0,Housing,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,10,7,Social exclusion n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.7,0,Social exclusion n.e.c.,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,10,8,R&D Social protection,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.8,0,R&D Social protection,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,group,10,9,Social protection n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+COFOG,class,10.9,0,Social protection n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V

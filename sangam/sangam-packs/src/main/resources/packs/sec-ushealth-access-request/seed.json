@@ -10,6 +10,7 @@
       "id": "PRIVACY-OFFICE",
       "role": "PRIVACY",
       "office": "COVERED-ENTITY",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Privacy officer",
@@ -20,6 +21,7 @@
       "id": "HIM-SPECIALIST",
       "role": "HIM",
       "office": "COVERED-ENTITY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PRIVACY-OFFICE",
       "name": {
         "en": "Health information management",
@@ -30,6 +32,7 @@
       "id": "REVIEWING-PROFESSIONAL",
       "role": "REVIEWER",
       "office": "COVERED-ENTITY",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PRIVACY-OFFICE",
       "name": {
         "en": "Reviewing licensed professional",

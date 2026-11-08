@@ -10,6 +10,7 @@
       "id": "FIELD-CREW",
       "role": "CREW",
       "office": "FIELD",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Field crew",

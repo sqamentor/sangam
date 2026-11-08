@@ -93,6 +93,10 @@ public class AppDeploymentService {
         });
         Map<String, byte[]> expanded = CmmnTaskPatterns.enrich(engineResources);
         AppDeployment result = EngineTx.execute(engine, cc -> {
+            // Take the command's connection through EngineTx.connection() before any product write: it installs the
+            // FW-23 rollback guard. Without it a failure after the forms/events/channels writes (which go through
+            // plain command Transactions) left those rows committed while the engine deployment rolled back.
+            EngineTx.connection();
             String id = UUID.randomUUID().toString();
             String engineDeploymentId = null;
             if (!expanded.isEmpty()) {

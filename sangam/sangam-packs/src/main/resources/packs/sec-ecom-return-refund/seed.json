@@ -10,6 +10,7 @@
       "id": "RETURNS-QC",
       "role": "QC",
       "office": "RETURNS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "MARKETPLACE-ARB",
       "name": {
         "en": "Returns quality check",
@@ -20,6 +21,7 @@
       "id": "MARKETPLACE-ARB",
       "role": "ARBITER",
       "office": "RETURNS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Marketplace dispute desk",

@@ -10,6 +10,7 @@
       "id": "DDO-1",
       "role": "DDO",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "HOO-1",
       "name": {
         "en": "Drawing and disbursing officer",
@@ -20,6 +21,7 @@
       "id": "HOO-1",
       "role": "HOO",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of Office",
@@ -30,6 +32,7 @@
       "id": "BD-1",
       "role": "BILL_DISTRIBUTOR",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "AAO-1",
       "name": {
         "en": "Bill distributor",
@@ -40,6 +43,7 @@
       "id": "DH-1",
       "role": "DEALING_HAND",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "AAO-1",
       "name": {
         "en": "Dealing hand",
@@ -50,6 +54,7 @@
       "id": "AAO-1",
       "role": "AAO",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PAO-1",
       "name": {
         "en": "Assistant accounts officer",
@@ -60,6 +65,7 @@
       "id": "PAO-1",
       "role": "PAO",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PRAO-1",
       "name": {
         "en": "Pay and accounts officer",
@@ -70,6 +76,7 @@
       "id": "SS-1",
       "role": "SECOND_SIGNATORY",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "PRAO-1",
       "name": {
         "en": "Second signatory",
@@ -80,6 +87,7 @@
       "id": "PRAO-1",
       "role": "PR_AO",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "FA-1",
       "name": {
         "en": "Principal accounts officer",
@@ -90,6 +98,7 @@
       "id": "FA-1",
       "role": "FA",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "SECY-1",
       "name": {
         "en": "Financial adviser",
@@ -100,6 +109,7 @@
       "id": "SECY-1",
       "role": "CAA",
       "office": "PAO-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Secretary (Chief Accounting Authority)",

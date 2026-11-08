@@ -10,6 +10,7 @@
       "id": "FINANCIAL-COUNSELOR",
       "role": "FINCOUNSEL",
       "office": "PROVIDER",
+      "level": "HEAD_OFFICE",
       "reportsTo": "COMPLIANCE",
       "name": {
         "en": "Financial counselor",
@@ -20,6 +21,7 @@
       "id": "PATIENT-BILLING",
       "role": "PATBILL",
       "office": "PROVIDER",
+      "level": "HEAD_OFFICE",
       "reportsTo": "COMPLIANCE",
       "name": {
         "en": "Patient billing",
@@ -30,6 +32,7 @@
       "id": "COMPLIANCE",
       "role": "COMPLIANCE",
       "office": "PROVIDER",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Compliance officer",

@@ -1830,7 +1830,8 @@
     "resetPassword": "पासवर्ड रीसेट करें",
     "unlock": "अनलॉक करें",
     "errorDetails": "त्रुटि विवरण",
-    "batchModification": "बैच संशोधन"
+    "batchModification": "बैच संशोधन",
+    "setRemovalTime": "हटाने का समय तय करें"
   },
   "fld": {
     "account": "खाता",
@@ -2389,7 +2390,11 @@
     "conversationId": "वार्तालाप आईडी",
     "detail": "विवरण",
     "evidence": "साक्ष्य",
-    "principalId": "प्रिंसिपल आईडी"
+    "principalId": "प्रिंसिपल आईडी",
+    "calculatedRemovalTime": "इतिहास अवधि से फिर गणना करें",
+    "absoluteRemovalTime": "निश्चित हटाने का समय",
+    "clearedRemovalTime": "हटाने का समय हटाएँ",
+    "hierarchical": "बुलाए गए इंस्टेंस भी शामिल करें"
   },
   "opt": {
     "ACCEPT": "स्वीकार करें",
@@ -3134,6 +3139,11 @@
       "preview": "योजना का पूर्वावलोकन",
       "execute": "योजना निष्पादित करें",
       "search": "खोज (Ctrl+K)"
+    },
+    "op4": {
+      "removalHint": "इस परिभाषा के ऐतिहासिक इंस्टेंस पर एक बैच शुरू होता है। एक चुनें: फिर गणना, निश्चित समय, या हटाना।",
+      "permissionsHint": "अनुमतियाँ चुने गए संसाधन प्रकार के नाम हैं, जैसे [\"READ\",\"UPDATE\"], [\"ALL\"] या [\"NONE\"]।",
+      "varValueHint": "मान JSON में है: String के लिए \"पाठ\", संख्या के लिए 5, true या false, null। Object, Xml या Json के लिए value info में objectTypeName और serializationDataFormat दें।"
     }
   },
   "plugin": {

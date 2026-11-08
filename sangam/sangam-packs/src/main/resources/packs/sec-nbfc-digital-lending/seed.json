@@ -10,6 +10,7 @@
       "id": "CREDIT-OFFICER",
       "role": "CREDITOFFICER",
       "office": "NBFC-CREDIT",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CREDIT-HEAD",
       "name": {
         "en": "Credit officer (RE)",
@@ -20,6 +21,7 @@
       "id": "CREDIT-HEAD",
       "role": "CREDITHEAD",
       "office": "NBFC-CREDIT",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of credit (RE)",

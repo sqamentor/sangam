@@ -10,6 +10,7 @@
       "id": "CLAIMS-HANDLER",
       "role": "HANDLER",
       "office": "CLAIMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CLAIMS-MANAGER",
       "name": {
         "en": "Claims handler",
@@ -20,6 +21,7 @@
       "id": "INVESTIGATOR",
       "role": "INVESTIGATOR",
       "office": "CLAIMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": "CLAIMS-MANAGER",
       "name": {
         "en": "Investigator",
@@ -30,6 +32,7 @@
       "id": "EXTERNAL-EXPERT",
       "role": "EXTERNAL",
       "office": "CLAIMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "External expert (portal)",
@@ -40,6 +43,7 @@
       "id": "CLAIMS-MANAGER",
       "role": "MANAGER",
       "office": "CLAIMS",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Claims manager",

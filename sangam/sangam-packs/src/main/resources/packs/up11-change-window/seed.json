@@ -10,6 +10,7 @@
       "id": "CAB-1",
       "role": "CAB",
       "office": "CAB",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "CAB member 1",
@@ -20,6 +21,7 @@
       "id": "CAB-2",
       "role": "CAB",
       "office": "CAB",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "CAB member 2",
@@ -30,6 +32,7 @@
       "id": "CAB-3",
       "role": "CAB",
       "office": "CAB",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "CAB member 3",
@@ -40,6 +43,7 @@
       "id": "IMPLEMENTER",
       "role": "IMPL",
       "office": "CAB",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Implementer",

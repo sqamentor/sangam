@@ -16,8 +16,7 @@ import type { CompleteTaskResult, FieldChange, TaskAction, TaskDetail as TD } fr
 import { announce, useAction, useAsync } from '../../lib/hooks';
 import { fmtDate, fmtMoney, fmtNumber } from '../../i18n';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
-import { http } from '../../api/client';
-import { classifyFormKey, embeddedHtmlToSchema, externalFormUrl } from '../../components/embeddedForm';
+import { classifyFormKey, externalFormUrl, taskFormToSchema } from '../../components/embeddedForm';
 import { PluginSlot } from '../../plugins/host';
 import { AddVariables, TaskDates } from '../../modules/operaton3';
 import { FormRenderer, schemaFromVariables, validateForm, type FormValues } from '../../components/FormRenderer';
@@ -67,8 +66,8 @@ export function TaskDetail() {
 
   const d = task.data;
   const formKind = d?.form ? 'other' : classifyFormKey(d?.formKey);
-  // Deployed HTML is read as data and parsed inertly; its scripts never run.
-  const embedded = useAsync(async () => embeddedHtmlToSchema(await http.get<string>(`/engine-rest/task/${encodeURIComponent(id)}/deployed-form`)), [id, d?.formKey], formKind === 'embedded');
+  // Deployed HTML is read as data (Sangam API, task-level check, SL-37) and parsed inertly; its scripts never run.
+  const embedded = useAsync(async () => taskFormToSchema(await api.tasks.form(id)), [id, d?.formKey], formKind === 'embedded');
   const schema = useMemo(() => d?.form ?? embedded.data?.schema ?? (d ? schemaFromVariables(d.variables) : { components: [] }), [d, embedded.data]);
   const externalUrl = d?.formKey && formKind === 'external' ? externalFormUrl(d.formKey, id) : null;
   const isMine = !!d && (d.assignee === me?.userId || d.section === 'MY_SEAT' || d.section === 'ACTING_FOR' || d.section === 'RETURNED');

@@ -10,6 +10,7 @@
       "id": "VENDOR-DESK",
       "role": "VENDOR",
       "office": "PROC",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Vendor management desk",

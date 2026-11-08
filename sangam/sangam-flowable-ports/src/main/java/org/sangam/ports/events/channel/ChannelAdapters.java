@@ -54,7 +54,9 @@ public final class ChannelAdapters {
         }
 
         default boolean egressAllowed(URI uri) {
-            return uri.getHost() != null && egressHosts().contains(uri.getHost().toLowerCase(java.util.Locale.ROOT));
+            // host names are case-insensitive (RFC 4343): compare both sides case-folded, whatever the configured spelling
+            String host = uri.getHost();
+            return host != null && egressHosts().stream().anyMatch(h -> h != null && h.equalsIgnoreCase(host));
         }
 
         static Environment of(Map<String, String> secrets, Set<String> egressHosts) {

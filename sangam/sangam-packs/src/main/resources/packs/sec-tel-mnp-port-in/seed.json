@@ -10,6 +10,7 @@
       "id": "MNP-DESK",
       "role": "MNP",
       "office": "TELCO",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "MNP operations desk",

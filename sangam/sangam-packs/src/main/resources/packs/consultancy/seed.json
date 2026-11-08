@@ -10,6 +10,7 @@
       "id": "CEC-1",
       "role": "CEC",
       "office": "DEPT-C",
+      "level": "HEAD_OFFICE",
       "reportsTo": "JS-C",
       "name": {
         "en": "Consultancy committee chair",
@@ -20,6 +21,7 @@
       "id": "CEC-2",
       "role": "CEC",
       "office": "DEPT-C",
+      "level": "HEAD_OFFICE",
       "reportsTo": "JS-C",
       "name": {
         "en": "Consultancy committee member",
@@ -30,6 +32,7 @@
       "id": "CEC-3",
       "role": "CEC",
       "office": "DEPT-C",
+      "level": "HEAD_OFFICE",
       "reportsTo": "JS-C",
       "name": {
         "en": "Consultancy committee member (finance)",
@@ -40,6 +43,7 @@
       "id": "JS-C",
       "role": "JS",
       "office": "DEPT-C",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Joint Secretary",

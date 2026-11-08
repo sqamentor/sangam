@@ -12,6 +12,10 @@ metadata:
     app.kubernetes.io/component: server
 data:
   TZ: UTC
+  # SL-18: production posture (no dev tokens/bootstrap, no loopback URL defaults, keys required)
+  SANGAM_SECURITY_PRODUCTION: {{ .Values.server.production | quote }}
+  SANGAM_TRUSTED_PROXIES: {{ join "," .Values.server.trustedProxies | quote }}
+  SANGAM_CLIENT_IP_HEADERS: {{ join "," .Values.server.clientIpHeaders | quote }}
   SANGAM_PORT: {{ .Values.server.service.port | quote }}
   SANGAM_MANAGEMENT_PORT: {{ .Values.server.service.managementPort | quote }}
   SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: {{ printf "%ds" (int (sub .Values.server.terminationGracePeriodSeconds 20)) | quote }}
@@ -86,6 +90,8 @@ data:
   SANGAM_COMPLIANCE_AUTHORITY_EMAIL_CONNECTOR: {{ $c.connectors.authorityEmail | quote }}
   SANGAM_COMPLIANCE_AUTHORITY_HTTP_CONNECTOR: {{ $c.connectors.authorityHttp | quote }}
   SANGAM_CELL_EXPORT_DIR: /var/lib/sangam/cell-exports
+  # Document content store (ContentService); on the shared state volume, never the read-only root filesystem
+  SANGAM_CONTENT_ROOT: /var/lib/sangam/content
   {{- if $cell.id }}
   # SCALE cell (sangam-cell IR-1..IR-4). SANGAM_CELL_ID switches the cell on, so it is only rendered when set.
   SANGAM_CELL_ID: {{ $cell.id | quote }}

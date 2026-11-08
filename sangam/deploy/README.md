@@ -145,7 +145,7 @@ Chart behaviour worth knowing:
 
 - **Secrets.** Every secret comes in through `existingSecret`. The chart never creates credentials.
 - **Database choice.** `database.type` is one of `postgres | oracle | sqlserver | mysql`. The chart builds the JDBC URL for that type, with the mandatory session settings. You can also set `database.jdbcUrl` yourself.
-- **Oracle driver.** Oracle needs a customer-supplied driver: `drivers.existingClaim`, or `drivers.initImage` (an image you build with `/drivers/ojdbc11.jar`). The chart refuses to render without one (LIC-2).
+- **Oracle driver.** Oracle needs a customer-supplied driver: `drivers.existingClaim`, or `drivers.initImage` (an image you build with `/drivers/ojdbc11.jar`). The chart refuses to render without one (LIC-2). Exact steps: [§1.5](#15-adding-the-oracle-jdbc-driver-customer-supplied-lic-2).
 - **Liquibase run mode** (`liquibase.mode`):
   - `job` (default, R12): a single pre-install/pre-upgrade hook Job. It runs `SANGAM_LIQUIBASE_MODE=migrate-only`, which applies the Liquibase session lock, the product changelogs and the Operaton schema, and then exits. Server pods only `validate`.
   - `startup`: every pod migrates under the Liquibase lock. Use it for dev or a single node.
@@ -162,6 +162,26 @@ Chart behaviour worth knowing:
 - **NetworkPolicy** (on by default):
   - The server accepts traffic from the UI, the ingress controller, pods labelled `sangam.io/api-client=true` (workers), and monitoring on 8081.
   - Egress goes only to DNS, the database, the OIDC issuer CIDRs, and the OTel collector (when enabled). Anything else goes in `networkPolicy.extraEgress`, for example connector endpoints. With the defaults there is no internet egress (R56).
+- **Hosting behind an edge / reverse proxy (SL-18).** The server owns no browser-facing host name; every externally
+  visible URL comes from configuration. `server.production: true` (default) sets `sangam.security.production`, and
+  start-up then **fails** if an externally used URL (`spring.datasource.url`, OIDC issuer/JWKS, `sangam.*-url`) is
+  unset or points at `localhost`/`127.0.0.1`/`::1`. Forwarding headers (`Forwarded`, `X-Forwarded-*`, and any header
+  listed in `server.clientIpHeaders`, e.g. an edge's connecting-IP header) are honoured **only** when the direct peer
+  is in `server.trustedProxies` (CIDR list, empty = trust nobody; env `SANGAM_TRUSTED_PROXIES`,
+  `SANGAM_CLIENT_IP_HEADERS`); from any other peer they are stripped. Spring's own handling is off
+  (`server.forward-headers-strategy=none`).
+- **Key material required on a non-dev profile.** The server refuses to start without: a key-encryption key
+  (`sangam.security.kek.keys.<id>` + `sangam.security.kek.current-id`, or `sangam.security.kek.pkcs12.*`), the registry
+  signer (`sangam.registry.signer.private-key` PKCS#8 + `.public-key` X.509, Ed25519, base64) and the identifier-vault
+  pepper (`sangam.registry.vault.hmac-pepper`, base64). Supply them as env from a Secret (`server.envFrom`), never in
+  values.
+- **Private exposure.** `ingress.enabled` is `false` by default (no public inbound). For a private ingress set
+  `ingress.className` to an internal controller and its internal-load-balancer annotations in `ingress.annotations`.
+  Management (8081) is a separate ClusterIP Service and is never routed by the ingress; NetworkPolicy admits it only
+  from `networkPolicy.monitoringNamespace`. Egress is an allow-list (`networkPolicy.extraEgress`).
+- **Service tokens to an edge.** An outbound HTTP connector's default header whose value is a secret reference
+  (`secret://...`) is resolved from the secret port at call time, so edge service-token header pairs never sit in
+  configuration.
 - **Pod security.** Pods run as non-root with a read-only root filesystem, all capabilities dropped and seccomp `RuntimeDefault`.
 
 ### 1.3 VMs without Kubernetes
@@ -197,8 +217,11 @@ property for its test JVMs (root `pom.xml`, surefire and failsafe).
 On VMs, run the database migrations **once** before starting the nodes:
 
 ```bash
-SANGAM_LIQUIBASE_MODE=migrate-only SPRING_MAIN_WEB_APPLICATION_TYPE=none java ... (same command)
+SANGAM_LIQUIBASE_MODE=migrate-only java ... (same command)
 ```
+
+Do not add `SPRING_MAIN_WEB_APPLICATION_TYPE=none`: the Operaton REST (Jersey) starter needs the servlet context and
+the run fails without it. The one-shot modes already bind both ports to 0 (random, nothing exposed) and exit 0 when done.
 
 Then start every node with `SANGAM_LIQUIBASE_MODE=validate`.
 
@@ -212,6 +235,51 @@ Then start every node with `SANGAM_LIQUIBASE_MODE=validate`.
 | MySQL 8.4 | `transaction_isolation=READ-COMMITTED`, `utf8mb4` / `utf8mb4_bin`, `default_time_zone='+00:00'`, `binlog_format=ROW` | GTID on, `sync_binlog=1`, `innodb_flush_log_at_trx_commit=1`, async replica at DR |
 
 For SQL Server and MySQL, the scripts in `compose/db/` are the reference.
+
+### 1.5 Adding the Oracle JDBC driver (customer-supplied, LIC-2)
+
+Sangam never ships the Oracle driver. The server starts through Spring Boot's `PropertiesLauncher` with
+`-Dloader.path=/opt/sangam/lib-ext,/opt/sangam/drivers,/opt/sangam/config`, so **every `*.jar` in
+`/opt/sangam/drivers` is on the class path**; nothing else has to be configured. Only one Oracle driver jar may be
+present (do not mix `ojdbc11` and `ojdbc17`).
+
+**1. Obtain the jar** (Oracle Free Use Terms and Conditions; the customer accepts them). Version tested by Sangam
+CI: `com.oracle.database.jdbc:ojdbc11:23.8.0.25.04` (JDK 11+ driver; `ojdbc17` of the same release also works).
+
+```bash
+# Internet-connected staging host; copy the file to the air-gapped side with the bundle if needed.
+mvn dependency:copy -Dartifact=com.oracle.database.jdbc:ojdbc11:23.8.0.25.04 -DoutputDirectory=./drivers
+# or download https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/23.8.0.25.04/ojdbc11-23.8.0.25.04.jar
+sha1sum ./drivers/ojdbc11-*.jar     # compare with the .sha1 file published next to it on Maven Central
+```
+
+**2. Put it where the server reads it**
+
+| Install | Exact step |
+|---|---|
+| Compose (`--profile oracle`) | copy the jar into `sangam/deploy/compose/drivers/` (mounted read-only on `/opt/sangam/drivers`), then `docker compose --profile oracle up -d` |
+| Docker / Podman on a VM | `docker run ... -v /srv/sangam/drivers:/opt/sangam/drivers:ro sangam/server:<v>` |
+| JVM without containers | copy the jar to `/opt/sangam/drivers/` and start with the `loader.path` command in §1.3 |
+| Helm, PVC | create a PVC, copy the jar into it, set `drivers.existingClaim=<pvc>` |
+| Helm, init image (air-gap friendly) | build a tiny image (below), push it to your registry, set `drivers.initImage=<registry>/sangam/ojdbc:23`; the init container runs `cp <initImageDir>/*.jar /opt/sangam/drivers/`, so the image **needs `/bin/sh` and `cp`** |
+
+```dockerfile
+# ojdbc.Dockerfile (customer-built, never pushed to a public registry)
+FROM busybox:1.36
+COPY drivers/ojdbc11-23.8.0.25.04.jar /drivers/
+```
+
+```bash
+docker build -f ojdbc.Dockerfile -t registry.local/sangam/ojdbc:23 . && docker push registry.local/sangam/ojdbc:23
+helm upgrade --install sangam deploy/helm/sangam -n sangam -f deploy/helm/sangam/examples/values-oracle.yaml
+```
+
+The chart refuses to render `database.type=oracle` without one of the two driver sources. The migrate Job and every
+server pod get the same `drivers` volume.
+
+**3. Verify.** The migrate Job (or the first server) fails fast at start-up with a
+driver error for `oracle.jdbc.OracleDriver` / `jdbc:oracle:thin` (no suitable driver) if the jar is missing. With the jar present the log shows the Liquibase run against
+Oracle. To check a running container: `docker exec <c> ls -l /opt/sangam/drivers`.
 
 ---
 

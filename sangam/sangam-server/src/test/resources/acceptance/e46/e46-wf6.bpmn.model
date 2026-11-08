@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- E-46 v0.5 WF-6: parallel review - technical and finance branches after Checker, joined before Approver; a REJECT in
+     either branch ends the case (terminate end, the other branch's task is cancelled) (C-1..C-5, C-8, C-10). Synthetic. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:oneifms="urn:oneifms:bpmn:ext:1"
+             id="E46-WF6-DEFS" targetNamespace="urn:oneifms:e46:wf6">
+  <process id="E46-WF6" name="Parallel review" isExecutable="true">
+    <startEvent id="start"/>
+    <userTask id="CHECK" name="Check" oneifms:capability="bill.check"/>
+    <parallelGateway id="fork" name="Review fork"/>
+    <userTask id="TECH_REVIEW" name="Technical review" oneifms:capability="works.review"/>
+    <userTask id="FIN_REVIEW" name="Finance review" oneifms:capability="bill.check"/>
+    <exclusiveGateway id="gwTech"/>
+    <exclusiveGateway id="gwFin"/>
+    <parallelGateway id="join" name="Review join"/>
+    <userTask id="APPROVE" name="Approve" oneifms:capability="bill.submit"/>
+    <endEvent id="END_APPROVED"/>
+    <endEvent id="END_REJECTED"><terminateEventDefinition/></endEvent>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="CHECK"/>
+    <sequenceFlow id="f2" sourceRef="CHECK" targetRef="fork"/>
+    <sequenceFlow id="f3" sourceRef="fork" targetRef="TECH_REVIEW"/>
+    <sequenceFlow id="f4" sourceRef="fork" targetRef="FIN_REVIEW"/>
+    <sequenceFlow id="f5" sourceRef="TECH_REVIEW" targetRef="gwTech"/>
+    <sequenceFlow id="f6" sourceRef="FIN_REVIEW" targetRef="gwFin"/>
+    <sequenceFlow id="f7" sourceRef="gwTech" targetRef="join">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${techOutcome == 'APPROVE'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f8" sourceRef="gwTech" targetRef="END_REJECTED">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${techOutcome == 'REJECT'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f9" sourceRef="gwFin" targetRef="join">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${finOutcome == 'APPROVE'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f10" sourceRef="gwFin" targetRef="END_REJECTED">
+      <conditionExpression xsi:type="tFormalExpression" language="juel">${finOutcome == 'REJECT'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f11" sourceRef="join" targetRef="APPROVE"/>
+    <sequenceFlow id="f12" sourceRef="APPROVE" targetRef="END_APPROVED"/>
+  </process>
+</definitions>

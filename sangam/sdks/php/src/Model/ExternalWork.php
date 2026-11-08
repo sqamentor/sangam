@@ -35,6 +35,13 @@ final class ExternalWork
         public readonly ?string $effect,
         public readonly ?int $priority,
         public readonly ?string $errorMessage = null,
+        /**
+         * SL-16 WorkOperation: server-recorded ledger entry of operationId (state, attempts, capabilityClass,
+         * mayDispatch, storedOutcome). mayDispatch false with state SUCCEEDED: complete from storedOutcome without
+         * calling the downstream again. Null from older servers.
+         * @var array<string, mixed>|null
+         */
+        public readonly ?array $operation = null,
     ) {
     }
 
@@ -61,6 +68,7 @@ final class ExternalWork
             $s('effect'),
             $i('priority'),
             $s('errorMessage'),
+            isset($d['operation']) && is_array($d['operation']) ? $d['operation'] : null,
         );
     }
 

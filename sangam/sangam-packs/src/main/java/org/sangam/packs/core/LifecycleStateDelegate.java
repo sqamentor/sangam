@@ -30,7 +30,7 @@ public class LifecycleStateDelegate implements JavaDelegate, ExecutionListener {
     private void apply(DelegateExecution ex) {
         CaseState s = CaseState.valueOf(Vars.field(state, ex).trim());
         String previous = Vars.str(ex, Vars.CASE_STATE);
-        ex.setVariable(Vars.CASE_STATE, s.name());
+        Vars.setCaseState(ex, s.name());
         String ov = Vars.field(outcomeVar, ex);
         if (ov != null) {
             ex.setVariable(ov, Vars.field(outcome, ex, s.name()));

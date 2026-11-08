@@ -36,6 +36,10 @@
       "path": "packs/pension/pension-sanction-authority.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/pension/pension-powers.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/pension/forms/papers.form.json"
     },

@@ -10,6 +10,7 @@
       "id": "RTA",
       "role": "RTA",
       "office": "ISSUE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "LEAD-MANAGER",
       "name": {
         "en": "Registrar to the issue",
@@ -20,6 +21,7 @@
       "id": "LEAD-MANAGER",
       "role": "BRLM",
       "office": "ISSUE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Book running lead manager",

@@ -14,9 +14,9 @@
 
   <properties>
     <!-- optional broker clients for the event-registry channel adapters (FC-03); see README "Dependencies" -->
-    <version.kafka>3.9.1</version.kafka>
+    <version.kafka>3.9.2</version.kafka>
     <version.jakarta.jms>3.1.0</version.jakarta.jms>
-    <version.amqp>5.25.0</version.amqp>
+    <version.amqp>5.37.1</version.amqp>
   </properties>
 
   <dependencies>

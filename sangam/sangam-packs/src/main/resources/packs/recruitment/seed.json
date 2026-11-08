@@ -10,6 +10,7 @@
       "id": "EXAM-CTRL",
       "role": "EXAMCTRL",
       "office": "COMMISSION",
+      "level": "HEAD_OFFICE",
       "reportsTo": "JS-R",
       "name": {
         "en": "Controller of examinations",
@@ -20,6 +21,7 @@
       "id": "EXPERT-PANEL",
       "role": "EXPERT",
       "office": "COMMISSION",
+      "level": "HEAD_OFFICE",
       "reportsTo": "EXAM-CTRL",
       "name": {
         "en": "Subject expert panel",
@@ -30,6 +32,7 @@
       "id": "DV-BOARD",
       "role": "DV",
       "office": "COMMISSION",
+      "level": "HEAD_OFFICE",
       "reportsTo": "EXAM-CTRL",
       "name": {
         "en": "Document verification board",
@@ -40,6 +43,7 @@
       "id": "JS-R",
       "role": "JS",
       "office": "COMMISSION",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Joint Secretary (recruitment)",

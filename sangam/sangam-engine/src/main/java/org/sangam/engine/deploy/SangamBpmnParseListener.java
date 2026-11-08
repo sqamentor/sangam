@@ -8,6 +8,7 @@ import java.util.Map;
 import org.operaton.bpm.engine.ProcessEngineException;
 import org.operaton.bpm.engine.delegate.ExecutionListener;
 import org.operaton.bpm.engine.impl.bpmn.behavior.CallableElementActivityBehavior;
+import org.operaton.bpm.engine.impl.bpmn.behavior.DmnBusinessRuleTaskActivityBehavior;
 import org.operaton.bpm.engine.impl.bpmn.parser.BpmnParseListener;
 import org.operaton.bpm.engine.impl.core.model.BaseCallableElement.CallableElementBinding;
 import org.operaton.bpm.engine.impl.core.model.CallableElement;
@@ -36,6 +37,8 @@ import org.sangam.engine.timer.TimerPolicies;
  *   <li><b>FLOWABLE-INTO-OPERATON D-13 / R29 / R61</b>: a process without {@code historyTimeToLive} gets the TTL of its retention class
  *       (extension property {@code sangam:retentionClass}); a class mapped to no TTL is never cleaned up, which is
  *       the default for government records (R61 overrides generic TTL cleanup).</li>
+ *   <li><b>SL-13</b>: call activities and business rule tasks resolve only the caller's tenant or shared definitions
+ *       ({@link TenantIsolationGuard}).</li>
  *   <li><b>R31</b>: a timer event's {@code sangam:catchUp} property (FIRE_ONCE | FIRE_ALL | SKIP_MISSED) is
  *       registered for the DST guard.</li>
  * </ul>
@@ -213,21 +216,30 @@ public class SangamBpmnParseListener implements BpmnParseListener {
         activity.setActivityBehavior(new SequentialCompensation.ThrowBehavior(def));
     }
 
+    /** Tenant of the definition being parsed (BpmnParse sets it from the deployment before it parses the scope). */
+    private static String ownerTenant(ActivityImpl activity) {
+        return activity.getProcessDefinition()
+                instanceof org.operaton.bpm.engine.impl.persistence.entity.ProcessDefinitionEntity d ? d.getTenantId() : null;
+    }
+
     @Override
     public void parseCallActivity(Element callActivityElement, ScopeImpl scope, ActivityImpl activity) {
-        if (!settings.isDefaultBindingDeployment() || hasAttribute(callActivityElement, "calledElementBinding")) {
+        if (!(activity.getActivityBehavior() instanceof CallableElementActivityBehavior b) || b.getCallableElement() == null) {
             return;
         }
-        if (activity.getActivityBehavior() instanceof CallableElementActivityBehavior b) {
-            CallableElement ce = b.getCallableElement();
-            if (ce != null) {
-                ce.setBinding(CallableElementBinding.DEPLOYMENT);
-            }
+        CallableElement ce = b.getCallableElement();
+        TenantIsolationGuard.guard(ce, "callActivity " + activity.getId(), ownerTenant(activity));
+        if (settings.isDefaultBindingDeployment() && !hasAttribute(callActivityElement, "calledElementBinding")) {
+            ce.setBinding(CallableElementBinding.DEPLOYMENT);
         }
     }
 
     @Override
     public void parseBusinessRuleTask(Element businessRuleTaskElement, ScopeImpl scope, ActivityImpl activity) {
+        if (activity.getActivityBehavior() instanceof DmnBusinessRuleTaskActivityBehavior dmn) {
+            TenantIsolationGuard.guard(callableElementOf(dmn), "businessRuleTask " + activity.getId(),
+                    ownerTenant(activity));
+        }
         // R10 strict null only where declared: sangam:routing=true, sangam:requiredOutputs=a,b
         Map<String, String> props = properties(businessRuleTaskElement);
         boolean routing = "true".equalsIgnoreCase(props.get("sangam:routing"));
@@ -284,6 +296,23 @@ public class SangamBpmnParseListener implements BpmnParseListener {
             if (activity.getProcessDefinition() instanceof ProcessDefinitionEntity pd) {
                 timerPolicies.declare(pd.getKey(), activity.getId(), policy);
             }
+        }
+    }
+
+    /**
+     * The decision reference of a DMN business rule task. Operaton 2.2 keeps it in a protected field without an accessor
+     * (unlike call activities and CMMN tasks), so it is read reflectively; a renamed field fails every deployment of a
+     * business rule task loudly instead of silently skipping the tenant-isolation guard.
+     */
+    private static org.operaton.bpm.engine.impl.core.model.BaseCallableElement callableElementOf(
+            DmnBusinessRuleTaskActivityBehavior b) {
+        try {
+            java.lang.reflect.Field f = DmnBusinessRuleTaskActivityBehavior.class.getDeclaredField("callableElement");
+            f.setAccessible(true);
+            return (org.operaton.bpm.engine.impl.core.model.BaseCallableElement) f.get(b);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            throw new ProcessEngineException("SL-13: cannot read the decision reference of a business rule task"
+                    + " (Operaton internals changed): " + e, e);
         }
     }
 

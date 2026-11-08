@@ -5447,6 +5447,43 @@ CREATE TABLE OPS_RETENTION_RUN (
 CREATE INDEX OPS_RETENTION_RUN_TENANT ON OPS_RETENTION_RUN (tenant_id, executed_at);
 --rollback DROP TABLE OPS_RETENTION_RUN;
 
+--changeset sangam:0030-03-evt_definition_seq dbms:oracle
+--comment: event registry version high-water mark (FC-02/FC-03)
+CREATE TABLE EVT_DEFINITION_SEQ (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  def_kind VARCHAR2(64 CHAR) NOT NULL,
+  def_key VARCHAR2(255 CHAR) NOT NULL,
+  last_version NUMBER(10) NOT NULL,
+  CONSTRAINT PK_EVT_DEFINITION_SEQ PRIMARY KEY (tenant_id, def_kind, def_key)
+);
+--rollback DROP TABLE EVT_DEFINITION_SEQ;
+
+--changeset sangam:0031-01-sec_tenant_quota_window dbms:oracle
+--comment: per-tenant quota counting windows shared by all nodes (SL-43, R28; sangam-security JdbcTenantQuotas)
+CREATE TABLE SEC_TENANT_QUOTA_WINDOW (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  quota_name VARCHAR2(64 CHAR) NOT NULL,
+  window_start NUMBER(19) NOT NULL,
+  used NUMBER(19) NOT NULL,
+  refused NUMBER(5) NOT NULL,
+  CONSTRAINT PK_SEC_TENANT_QUOTA_WINDOW PRIMARY KEY (tenant_id, quota_name, window_start)
+);
+--rollback DROP TABLE SEC_TENANT_QUOTA_WINDOW;
+
+--changeset sangam:0031-02-integration_webhook_state dbms:oracle
+--comment: outbound webhook destination health: auto-disable and re-enable (SL-39; sangam-integration WebhookHealth)
+CREATE TABLE INTEGRATION_WEBHOOK_STATE (
+  destination VARCHAR2(255 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
+  consecutive_failures NUMBER(10) NOT NULL,
+  last_error CLOB,
+  disabled_at TIMESTAMP WITH TIME ZONE,
+  changed_by VARCHAR2(255 CHAR),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_INTEGRATION_WEBHOOK_STATE PRIMARY KEY (destination)
+);
+--rollback DROP TABLE INTEGRATION_WEBHOOK_STATE;
+
 --changeset sangam:0016-03-form_draft-alter dbms:oracle
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD (form_version_hash VARCHAR2(64 CHAR));

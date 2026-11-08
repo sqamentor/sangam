@@ -10,6 +10,7 @@
       "id": "CASE-MANAGER",
       "role": "CM",
       "office": "HOSPITAL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "DIR-CARE-MGMT",
       "name": {
         "en": "Case manager",
@@ -20,6 +21,7 @@
       "id": "CHARGE-NURSE",
       "role": "RN",
       "office": "HOSPITAL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "DIR-CARE-MGMT",
       "name": {
         "en": "Charge nurse",
@@ -30,6 +32,7 @@
       "id": "SOCIAL-WORKER",
       "role": "SW",
       "office": "HOSPITAL",
+      "level": "HEAD_OFFICE",
       "reportsTo": "DIR-CARE-MGMT",
       "name": {
         "en": "Social worker",
@@ -40,6 +43,7 @@
       "id": "DIR-CARE-MGMT",
       "role": "DCM",
       "office": "HOSPITAL",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Director of care management",

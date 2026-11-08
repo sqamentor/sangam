@@ -8,13 +8,12 @@ profile:
   effectiveFrom: '2000-01-01'
   name:
     en: International public-finance reference
-  source: IMF GFSM 2014; UN COFOG 1999 (divisions); ISO 4217
-placeholders:
-- path: classification.schemes.COFOG
-  reason: COFOG groups/classes not loaded; divisions only (G3 [U])
+  source: 'IMF GFSM 2014; UN COFOG 1999 (divisions, groups, classes: UNSD COFOG 1999 COFOG_english_structure.txt (retrieved
+    2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5)); ISO 4217'
 locked:
 - classification.schemes.COFOG
 classification:
+  seedStatus: OFFICIAL_UNSD_COFOG_1999
   schemes:
   - id: COFOG
     separator: .
@@ -25,9 +24,24 @@ classification:
     - id: group
       width: 1
       optional: true
+      master: true
+      parent: division
+      hierarchy:
+        path: [division]
+        separator: .
     - id: class
       width: 1
       optional: true
+      master: true
+      parent: group
+      hierarchy:
+        path: [division, group]
+        separator: .
 seeds:
 - scheme: COFOG
-  file: intl/seeds/cofog-divisions.csv
+  file: intl/seeds/cofog.csv
+security:
+  orgLevels:
+  - HEAD_OFFICE
+  - REGIONAL_OFFICE
+  - FIELD_OFFICE

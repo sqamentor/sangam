@@ -133,11 +133,30 @@ function setPath(o: Row, key: string, v: unknown) {
   cur[parts[parts.length - 1]] = v;
 }
 
-export function buildRequest(fields: FormField[], values: FormValues, extraJson: string): { body: Row; query: Query; error?: string } {
+/**
+ * Operaton REST reads dates as yyyy-MM-dd'T'HH:mm:ss.SSSZ (JacksonConfigurator, DateConverter): an RFC 822 offset such
+ * as +0000. The UI sends that, from the user's local date-time input converted to an instant, instead of the bare
+ * datetime-local value, which the server would read in its own time zone (EngineRestUiParityTest p00).
+ */
+export function engineDate(v: string | Date): string {
+  return new Date(v).toISOString().replace('Z', '+0000');
+}
+
+export const isEnginePath = (p: string): boolean => p === '/engine-rest' || p.startsWith('/engine-rest/') || p.startsWith('/engine-rest?');
+
+const isoDate = (v: string): string => new Date(v).toISOString();
+
+/** Filter values to list query; date-time filters of an engine list are sent in the engine date format. */
+export function filterQuery(fields: FormField[], values: FormValues, enginePath: boolean): Query {
+  const dt = new Set(flat(fields).filter((x) => x.type === 'datetime' && x.subtype === 'datetime').map((x) => x.key));
+  return Object.fromEntries(Object.entries(values).map(([k, v]) => [k, enginePath && dt.has(k) && typeof v === 'string' && v ? engineDate(v) : (v as string)]));
+}
+
+export function buildRequest(fields: FormField[], values: FormValues, extraJson: string, dateOut: (v: string) => string = isoDate): { body: Row; query: Query; error?: string } {
   const body: Row = {};
   const query: Query = {};
   for (const f of flat(fields)) {
-    if (!f.key) continue;
+    if (!f.key || f.inPath) continue;
     let v = values[f.key];
     if (v === undefined || v === '' || (Array.isArray(v) && v.length === 0)) continue;
     if (f.json && typeof v === 'string') {
@@ -147,7 +166,7 @@ export function buildRequest(fields: FormField[], values: FormValues, extraJson:
         return { body, query, error: f.key };
       }
     }
-    if (f.type === 'datetime' && f.subtype === 'datetime' && typeof v === 'string') v = new Date(v).toISOString();
+    if (f.type === 'datetime' && f.subtype === 'datetime' && typeof v === 'string') v = dateOut(v);
     if (f.inQuery) query[f.key] = String(v);
     else setPath(body, f.key, v);
   }
@@ -177,7 +196,7 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
     const errs = validateForm(schema, values, t);
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    const req = buildRequest(fields, values, json);
+    const req = buildRequest(fields, values, json, isEnginePath(act.path) ? engineDate : undefined);
     if (req.error) {
       setJsonErr(req.error === 'json' ? t('mod.common.invalidJson') : t('mod.common.invalidJsonField', { field: req.error }));
       return;
@@ -320,7 +339,7 @@ export function ModuleScreen({ def, embedded }: { def: ScreenDef; embedded?: boo
   const [tab, setTab] = useState('detail');
   const ready = (def.requireFilters ?? []).every((k) => filters[k] !== undefined && filters[k] !== '');
   const listPath = fill(def.list, filters);
-  const q: Query = { ...def.listQuery, ...Object.fromEntries(Object.entries(filters).filter(([k]) => !def.list.includes(`{${k}}`)).map(([k, v]) => [k, v as string])) };
+  const q: Query = { ...def.listQuery, ...filterQuery(def.filters ?? [], Object.fromEntries(Object.entries(filters).filter(([k]) => !def.list.includes(`{${k}}`))), isEnginePath(def.list)) };
   const paged = usePaged(
     (p) => (ready && !def.unpaged ? http.page<Row>(listPath, { ...q, ...p }) : Promise.resolve({ items: [], page: 0, size: p.size, total: 0, capped: false })),
     [listPath, JSON.stringify(q), ready],
@@ -516,6 +535,8 @@ export const f = {
     validate: required ? { required } : undefined,
   }),
   q: (field: FormField): FormField => ({ ...field, inQuery: true }),
+  /** Fills a {placeholder} of the action path only (e.g. a new variable's name); not sent in body or query. */
+  path: (field: FormField): FormField => ({ ...field, inPath: true }),
 };
 
 export const c = (key: string, label = `fld.${key}`, render?: (r: Row) => ReactNode): Col => ({ key, label, render });

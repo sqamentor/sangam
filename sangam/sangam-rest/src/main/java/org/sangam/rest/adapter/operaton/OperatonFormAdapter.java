@@ -70,6 +70,19 @@ public final class OperatonFormAdapter implements FormPort {
     public void setEncryptor(org.sangam.core.security.FieldEncryptor encryptor) {
         this.encryptor = encryptor;
     }
+    private volatile org.sangam.rest.extension.TenantCustomFieldRegistry customFields =
+            org.sangam.rest.extension.TenantCustomFieldRegistry.empty();
+    /** Business dates in the tenant zone (BusinessClock); never the JVM zone. */
+    private volatile org.sangam.rest.support.BusinessDates dates = org.sangam.rest.support.BusinessDates.utc();
+
+    /** SL-40: tenant custom fields in force on the tenant's business date are validated with the form's data schema. */
+    public void setCustomFields(org.sangam.rest.extension.TenantCustomFieldRegistry registry,
+                                org.sangam.rest.support.BusinessDates dates) {
+        this.customFields = registry == null ? org.sangam.rest.extension.TenantCustomFieldRegistry.empty() : registry;
+        if (dates != null) {
+            this.dates = dates;
+        }
+    }
     private static final Duration DRAFT_TTL = Duration.ofDays(30);
     private static final String NONE = "-";
 
@@ -138,20 +151,32 @@ public final class OperatonFormAdapter implements FormPort {
             errors.add(FormSchemaValidator.error("", "FORM_VERSION_STALE"));
         }
         JsonNode data = JSON.valueToTree(request.data() == null ? Map.of() : request.data());
-        JsonNode schema = JSON.valueToTree(form.dataSchema());
-        if (form.dataSchema() != null) {
+        List<org.sangam.rest.extension.TenantCustomFieldRegistry.FieldDefinition> custom = customFields.isEmpty()
+                ? List.of() : customFields.inForce(ctx.tenantId(),
+                        org.sangam.rest.extension.TenantCustomFieldRegistry.FORM_PREFIX + formKey, dates.today(ctx.tenantId()));
+        java.util.Set<String> customEditable = new java.util.HashSet<>();
+        custom.stream().filter(f -> !f.readOnly()).forEach(f -> customEditable.add(f.key()));
+        if (form.dataSchema() != null || !custom.isEmpty()) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> base = form.dataSchema() instanceof Map<?, ?> m ? (Map<String, Object>) m
+                    : form.dataSchema() == null ? null : JSON.convertValue(form.dataSchema(), Map.class);
+            JsonNode schema = JSON.valueToTree(org.sangam.rest.extension.TenantCustomFieldRegistry.extendSchema(base, custom));
             errors.addAll(validator.validate(schema, data));
+            if (form.dataSchema() == null && form.layout() != null) {
+                errors.addAll(validator.validateLayoutRequired(JSON.valueToTree(form.layout()), data));
+            }
         } else if (form.layout() != null) {
             errors.addAll(validator.validateLayoutRequired(JSON.valueToTree(form.layout()), data));
         }
         if (form.fieldPolicy() != null) {
-            errors.addAll(applyPolicy(JSON.valueToTree(form.fieldPolicy()), taskDefinitionKey, data));
+            errors.addAll(applyPolicy(JSON.valueToTree(form.fieldPolicy()), taskDefinitionKey, data, customEditable));
         }
         return new ValidationResult(errors.isEmpty(), form.versionHash(), List.copyOf(errors));
     }
 
     /** Default deny (X.2.5.1): a submitted top-level field must be listed as editable for this task / start form. */
-    private static List<FieldError> applyPolicy(JsonNode policy, String taskDefinitionKey, JsonNode data) {
+    static List<FieldError> applyPolicy(JsonNode policy, String taskDefinitionKey, JsonNode data,
+                                        java.util.Set<String> customEditable) {
         JsonNode rules = null;
         if (taskDefinitionKey != null) {
             rules = policy.path("tasks").get(taskDefinitionKey);
@@ -170,7 +195,8 @@ public final class OperatonFormAdapter implements FormPort {
             String field = it.next();
             String pointer = "/" + FormSchemaValidator.escape(field);
             JsonNode rule = rules == null ? null : (rules.has(field) ? rules.get(field) : rules.get(pointer));
-            String access = rule == null ? "hidden" : rule.isTextual() ? rule.asText() : rule.path("access").asText("hidden");
+            String access = rule == null ? (customEditable.contains(field) ? "editable" : "hidden")
+                    : rule.isTextual() ? rule.asText() : rule.path("access").asText("hidden");
             if (!"editable".equals(access)) {
                 errors.add(FormSchemaValidator.error(pointer, "FIELD_NOT_EDITABLE"));
             }

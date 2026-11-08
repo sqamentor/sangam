@@ -44,7 +44,7 @@ public final class SangamEngineFactory {
         try {
             engine = cfg.buildProcessEngine();
         } catch (RuntimeException e) {
-            org.sangam.engine.clock.OperatonClock.unregister();
+            configurer.releaseEngineSlot();
             throw e;
         }
         return configurer.afterBuild(engine, ds, jdbcUrl, null);

@@ -1186,7 +1186,6 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             engine.close();
         } finally {
             clock.reset();
-            OperatonClock.unregister();
             org.sangam.core.engine.SangamClockHolder.reset();
             if (onClose != null) {
                 onClose.run();

@@ -10,6 +10,7 @@
       "id": "CODER",
       "role": "CODER",
       "office": "BILLING-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "REV-CYCLE-MGR",
       "name": {
         "en": "Medical coder",
@@ -20,6 +21,7 @@
       "id": "BILLER",
       "role": "BILLER",
       "office": "BILLING-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "REV-CYCLE-MGR",
       "name": {
         "en": "Biller",
@@ -30,6 +32,7 @@
       "id": "DENIAL-ANALYST",
       "role": "DENIALS",
       "office": "BILLING-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": "REV-CYCLE-MGR",
       "name": {
         "en": "Denial analyst",
@@ -40,6 +43,7 @@
       "id": "REV-CYCLE-MGR",
       "role": "RCM",
       "office": "BILLING-OFFICE",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Revenue cycle manager",

@@ -10,6 +10,7 @@
       "id": "QA-LEAD",
       "role": "QA",
       "office": "QA",
+      "level": "HEAD_OFFICE",
       "reportsTo": "QA-HEAD",
       "name": {
         "en": "Quality engineer",
@@ -20,6 +21,7 @@
       "id": "QA-HEAD",
       "role": "QAHEAD",
       "office": "QA",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Head of quality",

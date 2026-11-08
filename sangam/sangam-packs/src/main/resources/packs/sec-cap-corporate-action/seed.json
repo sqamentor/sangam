@@ -10,6 +10,7 @@
       "id": "COMPANY-SECRETARY",
       "role": "CS",
       "office": "ISSUER",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Company secretary",

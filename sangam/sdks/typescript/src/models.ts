@@ -41,6 +41,27 @@ export interface ExternalWork {
    * from the subscription's `irreversible` flag.
    */
   effect?: string;
+  /** Server-recorded ledger entry of `operationId` (SL-16); absent from older servers. */
+  operation?: WorkOperation;
+}
+
+/**
+ * Operation-ledger entry of a leased work item (SL-16, R37). `mayDispatch === false` with state SUCCEEDED: complete
+ * from `storedOutcome` ({output, providerRef, duplicate}) without calling the downstream again. `attempts > 1` is a
+ * repeat attempt (class B: look the outcome up first).
+ */
+export interface WorkOperation {
+  state: "INTENT" | "SUCCEEDED" | "FAILED" | "UNKNOWN_OUTCOME";
+  attempts: number;
+  capabilityClass?: "A_IDEMPOTENT_WITH_LOOKUP" | "B_LOOKUP_ONLY" | "C_NEITHER";
+  mayDispatch: boolean;
+  storedOutcome?: Record<string, unknown> | null;
+}
+
+/** Downstream result of the work, recorded as the ledger outcome (`reference` = providerRef). */
+export interface WorkOutcome {
+  reference?: string;
+  details?: Record<string, unknown>;
 }
 
 /** Topic subscription for fetch-and-lock (lease default 5 min, maximum 24 h). */
@@ -88,6 +109,8 @@ export interface CompleteWorkRequest {
   attemptId?: string;
   variables?: Variables;
   localVariables?: Variables;
+  /** Downstream reference recorded in the operation ledger with the completion (SL-16). */
+  outcome?: WorkOutcome;
 }
 
 /** `retries` left after this failure; 0 raises an incident. */

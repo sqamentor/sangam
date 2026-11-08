@@ -4,7 +4,7 @@
  * executed: it is parsed inertly with DOMParser, its cam-variable-name inputs become a Sangam form schema, and its
  * scripts are reported as ignored. External form keys are links only, restricted to http(s) or same-origin paths.
  */
-import type { FormField, FormSchema } from '../api/types';
+import type { FormField, FormSchema, TaskForm } from '../api/types';
 
 export type FormKeyKind = 'embedded' | 'external' | 'other';
 
@@ -29,6 +29,20 @@ export function externalFormUrl(key: string, taskId: string): string | null {
 }
 
 const TYPE: Record<string, FormField['type']> = { Boolean: 'checkbox', Long: 'number', Integer: 'number', Short: 'number', Double: 'number', Date: 'datetime' };
+
+/**
+ * The schema of a form served by GET /tasks/{id}/form (SL-37): embedded HTML is parsed inertly, an Operaton form
+ * (form-js JSON) is used as is; anything else (external, none, not deployed) yields no schema.
+ */
+export function taskFormToSchema(f: TaskForm | null | undefined, parseHtml: (html: string) => { schema: FormSchema; scriptsIgnored: boolean } = embeddedHtmlToSchema): { schema: FormSchema; scriptsIgnored: boolean } | null {
+  if (!f?.content) return null;
+  if (f.kind === 'EMBEDDED') return parseHtml(f.content);
+  if (f.kind === 'FORM') {
+    const parsed = JSON.parse(f.content) as FormSchema;
+    return { schema: { ...parsed, components: parsed.components ?? [] }, scriptsIgnored: false };
+  }
+  return null;
+}
 
 export function embeddedHtmlToSchema(html: string): { schema: FormSchema; scriptsIgnored: boolean } {
   const doc = new DOMParser().parseFromString(html, 'text/html');

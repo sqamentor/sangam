@@ -2,7 +2,7 @@
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              targetNamespace="http://sangam.gov.in/e16b" id="conc_defs">
-  <!-- GP-32 / D-REFERRAL: the concurrence process of the CONSULTED department (deployed to that department's tenant).
+  <!-- GP-32 / D-REFERRAL: the concurrence process, deployed in the calling department's tenant (SL-13).
        The concurring officer returns concurred (boolean) and remarks. -->
   <process id="concurrence" name="Concurrence on referred file" isExecutable="true">
     <startEvent id="conc_start"/>

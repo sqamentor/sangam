@@ -10,6 +10,7 @@
       "id": "MANDATE-MAKER",
       "role": "MAKER",
       "office": "MANDATES",
+      "level": "HEAD_OFFICE",
       "reportsTo": "MANDATE-CHECKER",
       "name": {
         "en": "Mandate maker",
@@ -20,6 +21,7 @@
       "id": "MANDATE-CHECKER",
       "role": "CHECKER",
       "office": "MANDATES",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Mandate checker",

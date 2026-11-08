@@ -24,6 +24,10 @@
       "path": "packs/ifms-supplementary/ifms-supplementary-authority.dmn"
     },
     {
+      "kind": "DMN",
+      "path": "packs/ifms-supplementary/ifms-supplementary-powers.dmn"
+    },
+    {
       "kind": "FORM",
       "path": "packs/ifms-supplementary/forms/proposal.form.json"
     },
@@ -91,5 +95,12 @@
     "sangam-core-referral",
     "sangam-core-rejection",
     "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-supplementary-powers",
+      "rule": "CAA SUPPLEMENTARY no monetary limit",
+      "reason": "the approving authority of a supplementary proposal is not read from the rule text; confirm from the delegation order and deploy it as a tenant DMN override"
+    }
   ]
 }

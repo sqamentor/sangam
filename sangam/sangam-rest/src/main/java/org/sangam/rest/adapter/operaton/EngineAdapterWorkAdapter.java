@@ -15,12 +15,14 @@ import org.sangam.core.api.EngineAdapter;
 import org.sangam.core.api.StaleLeaseException;
 import org.sangam.core.engine.SangamEngineAdapter;
 import org.sangam.core.layer.AuditChain;
+import org.sangam.core.layer.OperationLedger;
 import org.sangam.core.layer.ReconciliationQueue;
 import org.sangam.core.layer.Tombstones;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.port.WorkPort;
+import org.sangam.rest.port.WorkPort.WorkOperation;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.rest.support.TypedVariables;
@@ -40,6 +42,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
     private final RestProperties props;
     private final Tombstones tombstones;
     private final ReconciliationQueue reconciliation;
+    private final WorkLedger ledger;
 
     public EngineAdapterWorkAdapter(EngineAdapter engine, TxSupport tx, AuditPort audit, RestProperties props) {
         this.engine = engine;
@@ -49,6 +52,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         AuditChain chain = new AuditChain(tx.dialect());
         this.reconciliation = new ReconciliationQueue(tx.dialect(), chain);
         this.tombstones = new Tombstones(tx.dialect(), reconciliation, chain);
+        this.ledger = new WorkLedger(tx.dialect(), reconciliation);
     }
 
     @Override
@@ -70,10 +74,22 @@ public class EngineAdapterWorkAdapter implements WorkPort {
                 if (out.size() >= max) {
                     break;
                 }
-                List<EngineAdapter.ExternalWork> got = fenced("fetch", () ->
-                        engine.fetchAndLock(r.workerId(), t.name(), max - out.size(), lockDuration(t.lockDurationMs())));
-                for (EngineAdapter.ExternalWork w : got) {
-                    out.add(map(ctx, w));
+                int room = max - out.size();
+                if (engine instanceof SangamEngineAdapter s) {
+                    List<SangamEngineAdapter.LeasedWork> got = fenced("fetch", () ->
+                            s.fetchAndLockWork(r.workerId(), t.name(), room, lockDuration(t.lockDurationMs())));
+                    for (SangamEngineAdapter.LeasedWork lw : got) {
+                        WorkOperation operation = recordIntent(r.workerId(), lw);
+                        if (operation != null) {
+                            out.add(map(ctx, lw.work(), lw.businessKey(), operation));
+                        }
+                    }
+                } else {
+                    List<EngineAdapter.ExternalWork> got = fenced("fetch", () ->
+                            engine.fetchAndLock(r.workerId(), t.name(), room, lockDuration(t.lockDurationMs())));
+                    for (EngineAdapter.ExternalWork w : got) {
+                        out.add(map(ctx, w, null, null));
+                    }
                 }
             }
             if (!out.isEmpty() || System.currentTimeMillis() >= deadline) {
@@ -89,13 +105,47 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         }
     }
 
-    private ExternalWork map(RequestContext ctx, EngineAdapter.ExternalWork w) {
-        String businessKey = null;
+    /**
+     * SL-16 / R37: the server records the intent of the leased operation before the worker sees the work (own engine
+     * transaction right after the lease; a crash in between leaves a lease without an intent, which the expiry policy
+     * re-offers: nothing was dispatched). Work whose operation awaits reconciliation, or that the ledger refuses, is
+     * parked (retries 0, incident) instead of being handed out; returns null then.
+     */
+    private WorkOperation recordIntent(String workerId, SangamEngineAdapter.LeasedWork lw) {
+        EngineAdapter.ExternalWork w = lw.work();
+        WorkLedger.Lease lease = new WorkLedger.Lease(lw.operationId(), lw.tenantId(), lw.rootId(), w.activityInstanceId(),
+                lw.capabilityClass(), w.id(), w.attemptId(), w.lockVersion());
+        String refusal;
         try {
-            EngineAdapter.InstanceView view = engine.getInstance(w.processInstanceId());
-            businessKey = view == null ? null : view.businessKey();
-        } catch (RuntimeException ignored) {
-            // the instance view is informational only
+            WorkOperation op = engine.inEngineTransaction(c -> ledger.onLease(c, lease));
+            if (!OperationLedger.State.UNKNOWN_OUTCOME.name().equals(op.state())) {
+                return op;
+            }
+            refusal = "OPERATION_UNKNOWN_OUTCOME: operation " + lw.operationId() + " awaits reconciliation";
+        } catch (OperationLedger.StaleLeaseException | IllegalStateException | IllegalArgumentException e) {
+            refusal = "OPERATION_LEDGER_REFUSED: " + e.getMessage();
+        } catch (RuntimeException e) {
+            try {
+                engine.unlockExternal(w.id(), workerId, w.lockVersion());
+            } catch (RuntimeException suppressed) {
+                e.addSuppressed(suppressed);
+            }
+            throw e;
+        }
+        engine.failExternal(w.id(), workerId, w.lockVersion(), refusal, 0, Duration.ZERO);
+        return null;
+    }
+
+    private ExternalWork map(RequestContext ctx, EngineAdapter.ExternalWork w, String leasedBusinessKey,
+                             WorkOperation operation) {
+        String businessKey = leasedBusinessKey;
+        if (businessKey == null) {
+            try {
+                EngineAdapter.InstanceView view = engine.getInstance(w.processInstanceId());
+                businessKey = view == null ? null : view.businessKey();
+            } catch (RuntimeException ignored) {
+                // the instance view is informational only
+            }
         }
         // T35: the operation id is the one the engine adapter granted with the lease; never re-derived here.
         String op = w.operationId();
@@ -105,7 +155,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         }
         return new ExternalWork(w.id(), w.topic(), ctx.tenantId(), w.processInstanceId(), null, w.activityId(),
                 w.activityInstanceId(), businessKey, TypedVariables.toJson(w.variables()), w.lockVersion(),
-                w.attemptId(), op, w.lockExpiresAt(), w.retries(), null, null);
+                w.attemptId(), op, w.lockExpiresAt(), w.retries(), null, null, operation);
     }
 
     @Override
@@ -127,10 +177,21 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         if (r.localVariables() != null) {
             vars.putAll(TypedVariables.fromJson(r.localVariables()));
         }
-        fenced(workId, () -> {
-            engine.completeExternal(workId, r.workerId(), r.lockVersion(), vars);
-            return null;
-        });
+        UUID op = operationIdOf(workId);
+        String outcome = WorkLedger.successJson(r.variables(), r.outcome());
+        try {
+            // SL-16: the ledger outcome commits with the engine completion (one engine transaction)
+            engine.inEngineTransaction(c -> {
+                engine.completeExternal(workId, r.workerId(), r.lockVersion(), vars);
+                ledger.onComplete(c, op, r.lockVersion(), outcome);
+                return null;
+            });
+        } catch (StaleLeaseException | OperationLedger.StaleLeaseException e) {
+            if (engine.inEngineTransaction(c -> ledger.isRepeatedCompletion(c, workId, r.lockVersion(), outcome))) {
+                return;   // the same completion again (a retried request): answered as the first one
+            }
+            throw fenceProblem(workId, e);
+        }
         auditAfter(ctx, workId, "EXT_OP_ACKNOWLEDGED", r.workerId(), r.lockVersion(), r.attemptId(), Map.of());
     }
 
@@ -139,10 +200,12 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         rejectIfTombstoned(ctx, workId, r.lockVersion(), Tombstones.ResultKind.FAIL, false, null);
         int retries = r.retries() == null ? 0 : Math.max(0, r.retries());
         Duration backoff = Duration.ofMillis(r.retryTimeoutMs() == null ? 0 : Math.max(0, r.retryTimeoutMs()));
-        fenced(workId, () -> {
+        UUID op = operationIdOf(workId);
+        fenced(workId, () -> engine.inEngineTransaction(c -> {
             engine.failExternal(workId, r.workerId(), r.lockVersion(), r.errorMessage(), retries, backoff);
+            ledger.onFail(c, op, r.lockVersion(), retries, r.errorMessage());
             return null;
-        });
+        }));
         auditAfter(ctx, workId, "EXT_OP_FAILED", r.workerId(), r.lockVersion(), r.attemptId(),
                 Map.of("errorMessage", r.errorMessage() == null ? "" : r.errorMessage(), "retriesLeft", retries));
     }
@@ -153,11 +216,13 @@ public class EngineAdapterWorkAdapter implements WorkPort {
             throw ApiProblem.badRequest("ERROR_CODE_REQUIRED", "errorCode is required");
         }
         rejectIfTombstoned(ctx, workId, r.lockVersion(), Tombstones.ResultKind.COMPLETE, false, r.variables());
-        fenced(workId, () -> {
+        UUID op = operationIdOf(workId);
+        fenced(workId, () -> engine.inEngineTransaction(c -> {
             engine.bpmnErrorExternal(workId, r.workerId(), r.lockVersion(), r.errorCode(),
                     TypedVariables.fromJson(r.variables()));
+            ledger.onBpmnError(c, op, r.lockVersion(), r.errorCode(), r.errorMessage(), r.variables());
             return null;
-        });
+        }));
         auditAfter(ctx, workId, "EXT_OP_BPMN_ERROR", r.workerId(), r.lockVersion(), r.attemptId(),
                 Map.of("errorCode", r.errorCode()));
     }
@@ -174,22 +239,24 @@ public class EngineAdapterWorkAdapter implements WorkPort {
     @Override
     public OutcomeUnknownResult outcomeUnknown(RequestContext ctx, String workId, OutcomeUnknownRequest r) {
         rejectIfTombstoned(ctx, workId, r.lockVersion(), Tombstones.ResultKind.OUTCOME_UNKNOWN, true, r.evidence());
-        // Fencing first: extend the lease to the maximum so the work is held (never re-offered) while it is reconciled.
-        fenced(workId, () -> {
-            engine.extendLock(workId, r.workerId(), r.lockVersion(), props.getMaxLockDuration());
-            return null;
-        });
+        UUID op = operationIdOf(workId);
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("workerId", r.workerId());
         details.put("lockVersion", r.lockVersion());
         details.put("attemptId", r.attemptId());
         details.put("detail", r.detail());
         details.put("evidence", r.evidence() == null ? Map.of() : TypedVariables.toJson(r.evidence()));
-        long item = engine.inEngineTransaction(c -> reconciliation.open(c, ctx.tenantId(),
-                ReconciliationQueue.Kind.UNKNOWN_OUTCOME, null, null, workId, PayloadHash.canonical(details)));
+        // Fencing first: extend the lease to the maximum so the work is held (never re-offered) while it is reconciled;
+        // the ledger operation goes to UNKNOWN_OUTCOME with its reconciliation item in the same engine transaction.
+        long item = fenced(workId, () -> engine.inEngineTransaction(c -> {
+            engine.extendLock(workId, r.workerId(), r.lockVersion(), props.getMaxLockDuration());
+            Long recorded = ledger.onUnknown(c, op, r.lockVersion(), workId, details);
+            return recorded != null ? recorded : reconciliation.open(c, ctx.tenantId(),
+                    ReconciliationQueue.Kind.UNKNOWN_OUTCOME, null, null, workId, PayloadHash.canonical(details));
+        }));
         auditAfter(ctx, workId, "EXT_OP_UNKNOWN", r.workerId(), r.lockVersion(), r.attemptId(),
                 Map.of("reconciliationItemId", String.valueOf(item)));
-        return new OutcomeUnknownResult(workId, null, String.valueOf(item), "UNKNOWN_OUTCOME");
+        return new OutcomeUnknownResult(workId, op == null ? null : op.toString(), String.valueOf(item), "UNKNOWN_OUTCOME");
     }
 
     @Override
@@ -225,11 +292,19 @@ public class EngineAdapterWorkAdapter implements WorkPort {
     private <T> T fenced(String workId, Supplier<T> call) {
         try {
             return call.get();
-        } catch (StaleLeaseException e) {
-            throw ApiProblem.staleLease(workId, e.reason().name(), e.getMessage());
-        } catch (org.sangam.core.layer.OperationLedger.StaleLeaseException e) {
-            throw ApiProblem.staleLease(workId, "STALE_VERSION", e.getMessage());
+        } catch (StaleLeaseException | OperationLedger.StaleLeaseException e) {
+            throw fenceProblem(workId, e);
         }
+    }
+
+    private static ApiProblem fenceProblem(String workId, RuntimeException e) {
+        return e instanceof StaleLeaseException s ? ApiProblem.staleLease(workId, s.reason().name(), s.getMessage())
+                : ApiProblem.staleLease(workId, "STALE_VERSION", e.getMessage());
+    }
+
+    /** The engine operationId of open work (the one stored with its lease); null without a Sangam adapter. */
+    private UUID operationIdOf(String workId) {
+        return engine instanceof SangamEngineAdapter s ? s.operationIdOf(workId) : null;
     }
 
     private void rejectIfTombstoned(RequestContext ctx, String workId, long lockVersion, Tombstones.ResultKind kind,

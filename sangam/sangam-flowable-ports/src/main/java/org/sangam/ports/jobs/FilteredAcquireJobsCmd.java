@@ -77,7 +77,8 @@ public class FilteredAcquireJobsCmd extends AcquireJobsCmd {
         List<String> ids = Jdbc.query(c, sql, rs -> rs.getString(1), now, now, now);
         Map<String, List<String>> exclusive = new LinkedHashMap<>();
         for (String id : ids) {
-            AcquirableJobEntity job = cc.getDbEntityManager().selectById(AcquirableJobEntity.class, id);
+            // Operaton maps no "selectAcquirableJob" statement; JobEntity ("selectJob") is an AcquirableJobEntity
+            AcquirableJobEntity job = cc.getDbEntityManager().selectById(org.operaton.bpm.engine.impl.persistence.entity.JobEntity.class, id);
             if (job == null) {
                 continue;
             }

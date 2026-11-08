@@ -58,7 +58,7 @@ SCHEMAS["Problem"] = {
         "instance": {"type": "string", "format": "uri-reference"},
         "code": {"description": "Stable machine code (X.4.0.4, X.2.2.6). Clients must accept unknown codes.",
                  "anyOf": [{"type": "string", "enum": [
-                     "STALE_LEASE", "GONE_INSTANCE_DELETED", "CONFLICT_RETRY_EXHAUSTED", "BACKPRESSURE",
+                     "STALE_LEASE", "GONE_INSTANCE_DELETED", "CONFLICT_RETRY_EXHAUSTED", "BACKPRESSURE", "API_SUNSET",
                      "ACTION_NOT_PERMITTED", "FORM_VERSION_STALE", "FORM_VERSION_OUTDATED", "TASK_ALREADY_CLAIMED",
                      "APPROVAL_INVALIDATED", "SOD_VIOLATION", "POWER_LIMIT_EXCEEDED", "IDEMPOTENCY_KEY_REQUIRED",
                      "IDEMPOTENCY_KEY_INVALID", "IDEMPOTENCY_KEY_REUSED", "IDEMPOTENCY_KEY_PRINCIPAL_MISMATCH",
@@ -121,20 +121,29 @@ schema("FetchAndLockRequest", "Long-poll fetch-and-lock (VI.3, FC-36).",
        "workerId topics:list:TopicRequest maxTasks:int asyncResponseTimeoutMs:long usePriority:bool", ["workerId", "topics"])
 schema("ExternalWork", "A locked unit of external work. operationId = UUIDv5(tenant, root, activityInstanceId, loop) is stable across retries, redelivery and lease expiry; forward it downstream as the idempotency key (VI.3 rule 4, R36).",
        "id topic tenantId processInstanceId processDefinitionKey activityId activityInstanceId businessKey variables:map "
-       "lockVersion:long attemptId operationId lockExpiresAt:dt retries:int priority:long errorMessage")
+       "lockVersion:long attemptId operationId lockExpiresAt:dt retries:int priority:long errorMessage operation:WorkOperation",
+       descs={"operation": "Ledger state of operationId, recorded by the server when it leased the work (intent before dispatch, R37). mayDispatch=false with state SUCCEEDED: complete from storedOutcome without calling the downstream again (SL-16)."})
+schema("WorkOperation", "Operation-ledger entry of a leased work item (VI.3 rules 4-5, R37, A-8). attempts > 1 is a repeat attempt (class B: look the outcome up first).",
+       "state attempts:int capabilityClass mayDispatch:bool storedOutcome:obj",
+       enums={"state": ["INTENT", "SUCCEEDED", "FAILED", "UNKNOWN_OUTCOME"],
+              "capabilityClass": ["A_IDEMPOTENT_WITH_LOOKUP", "B_LOOKUP_ONLY", "C_NEITHER"]},
+       descs={"storedOutcome": "Recorded outcome when settled: {output, providerRef, duplicate}; null while INTENT."})
+schema("WorkOutcome", "The downstream result of the work, recorded as the ledger outcome (SL-16).", "reference details:obj",
+       descs={"reference": "Downstream reference, e.g. the payment reference (stored as providerRef)."})
 schema("ExtendLockRequest", "Heartbeat at lease/3 (VI.3 rule 3).", "workerId lockVersion:long attemptId newDurationMs:long",
        LOCK_REQ + ("newDurationMs",))
 schema("LockState", "Heartbeat response; cancelRequested tells the worker to stop and acknowledge (VI.3).",
        "id lockVersion:long lockExpiresAt:dt cancelRequested:bool")
-schema("WorkCompleteRequest", "Complete locked work (fenced).", "workerId lockVersion:long attemptId variables:map localVariables:map", LOCK_REQ)
-schema("WorkFailRequest", "Report a failure; retries=0 raises an incident (VI.3).",
+schema("WorkCompleteRequest", "Complete locked work (fenced). The ledger outcome SUCCEEDED (providerRef = outcome.reference, output = variables) commits with the engine completion; an identical repeat for the same lease is an idempotent 204.",
+       "workerId lockVersion:long attemptId variables:map localVariables:map outcome:WorkOutcome", LOCK_REQ)
+schema("WorkFailRequest", "Report a failure; retries=0 raises an incident and records the ledger operation FAILED; with retries left the ledger stays INTENT and the next attempt reuses the operationId (VI.3).",
        "workerId lockVersion:long attemptId errorMessage errorDetails retries:int retryTimeoutMs:long", LOCK_REQ)
 schema("WorkBpmnErrorRequest", "Throw a BPMN error routed by the model (COMPLETED_WITH_ERROR).",
        "workerId lockVersion:long attemptId errorCode errorMessage variables:map", LOCK_REQ + ("errorCode",))
 schema("WorkUnlockRequest", "Explicit release (LOCKED → AVAILABLE).", "workerId lockVersion:long attemptId", LOCK_REQ)
 schema("OutcomeUnknownRequest", "The downstream effect may or may not have happened (CX-5).",
        "workerId lockVersion:long attemptId detail evidence:map", LOCK_REQ)
-schema("OutcomeUnknownResult", "The work moved to UNKNOWN_OUTCOME and a reconciliation item was opened.",
+schema("OutcomeUnknownResult", "The work and its ledger operation (operationId, always set) moved to UNKNOWN_OUTCOME and a reconciliation item was opened.",
        "workId operationId reconciliationItemId state")
 schema("CancelAckRequest", "Acknowledge CANCEL_REQUESTED (VI.5).", "workerId lockVersion:long attemptId", LOCK_REQ)
 # Tasks
@@ -146,6 +155,10 @@ schema("TaskDetail", "Task plus the material payload hash the caller must send b
        "candidateUsers:list:s candidateGroups:list:s returnTargets:list:ReturnTarget sod:SodCheck candidates:list:CandidateSeat "
        "rejectReasons:list:CodedReason returnReasons:list:CodedReason changedSinceLastSeen:list:FieldChange "
        "ruleEvidence:list:RuleEvidence delegatedFrom")
+schema("TaskForm", "The task's form for the task UI (SL-37): deployed embedded HTML or Operaton form (form-js JSON), or the key of an external form.",
+       "taskId formKey kind contentType content", ["taskId", "kind"],
+       enums={"kind": ["EMBEDDED", "FORM", "EXTERNAL", "OTHER", "NONE"]},
+       descs={"content": "Deployed form content (HTML for EMBEDDED, JSON for FORM); absent when the form is not deployed with the process.", "contentType": "text/html or application/json"})
 schema("CompleteTaskRequest", "Decision on a task, bound to the payload hash and case version shown (K4, K9).",
        "payloadHash caseVersion:long decision remarks formVersion variables:map reasonCode nextSeatId nextSeatReason", ["payloadHash"],
        descs={"decision": "APPROVED | REJECTED | FORWARDED | ... (stored as variable sangamDecision)",
@@ -729,6 +742,8 @@ op("get", "/tasks/{id}", "getTask", "Tasks", "Get a task", "Task with variables 
    ["VI.4", "R47"], params=[ID], resp=(200, "TaskDetail"), perm="task.read", errors=GET_E)
 op("get", "/tasks/{id}/variables", "getTaskVariables", "Tasks", "Task variables", "Variables visible on the task (K11).", ["VI.4"],
    params=[ID], resp=(200, "object"), perm="task.read", errors=GET_E)
+op("get", "/tasks/{id}/form", "getTaskForm", "Tasks", "Task form", "The task's embedded or deployed form, read with the same task-level check as getTask (tenant; assignee, candidate user/group/seat or supervisor). Task users need no /engine-rest access.",
+   ["SL-37", "R47", "VI.4"], params=[ID], resp=(200, "TaskForm"), perm="task.read", errors=GET_E)
 op("post", "/tasks/{id}/claim", "claimTask", "Tasks", "Claim a task", "Single winner under the root lock; the loser gets 409 TASK_ALREADY_CLAIMED (CX-3).",
    ["R41", "CX-3", "K9"], params=[ID], resp=(204, None), cmd="task.claim", perm="task.write")
 op("post", "/tasks/{id}/unclaim", "unclaimTask", "Tasks", "Unclaim a task", "Returns the task to the seat/candidate pool (TASK_UNCLAIMED).",
@@ -1782,6 +1797,22 @@ import os as _os
 for _route_file in sorted(_glob.glob(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "routes", "*.py"))):
     with open(_route_file, encoding="utf-8") as _f:
         exec(compile(_f.read(), _route_file, "exec"), globals())
+
+# ---------------------------------------------------------------- API lifecycle (SL-38, API-LIFECYCLE-POLICY.md)
+# api/sangam-api-deprecations.yaml is the single deprecation registry: the server's DeprecationHeadersFilter reads the
+# same file from the class path. Every entry must name an operation that exists, and is marked deprecated here.
+with open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "sangam-api-deprecations.yaml"),
+          encoding="utf-8") as _f:
+    _dep = yaml.safe_load(_f) or {}
+for _e in _dep.get("deprecations") or []:
+    _path = _e["path"][len("/api/v1"):] if _e["path"].startswith("/api/v1/") else _e["path"]
+    _o = PATHS.get(_path, {}).get(_e["method"].lower())
+    assert _o is not None, "deprecation registry names an unknown operation: %s %s" % (_e["method"], _e["path"])
+    _o["deprecated"] = True
+    _o["x-sangam-deprecated-on"] = str(_e["deprecated"])
+    _o["x-sangam-sunset"] = str(_e["sunset"])
+    if _e.get("successor"):
+        _o["x-sangam-successor"] = _e["successor"]
 
 doc = {
     "openapi": "3.1.0",

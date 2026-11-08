@@ -10,6 +10,7 @@
       "id": "DOCS-CUSTODIAN",
       "role": "CUSTODIAN",
       "office": "BRANCH-LC",
+      "level": "HEAD_OFFICE",
       "reportsTo": "BRANCH-MGR",
       "name": {
         "en": "Documents custodian",
@@ -20,6 +21,7 @@
       "id": "BRANCH-MGR",
       "role": "BRANCHMGR",
       "office": "BRANCH-LC",
+      "level": "HEAD_OFFICE",
       "reportsTo": null,
       "name": {
         "en": "Branch manager",

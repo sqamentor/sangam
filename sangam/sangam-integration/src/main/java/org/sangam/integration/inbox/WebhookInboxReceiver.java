@@ -4,12 +4,8 @@ package org.sangam.integration.inbox;
 import org.sangam.core.layer.Inbox;
 import org.sangam.integration.relay.BackpressureGate;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.Duration;
-import java.util.HexFormat;
 import java.util.Map;
 
 /**
@@ -71,39 +67,9 @@ public final class WebhookInboxReceiver {
     }
 
     boolean verify(String header, byte[] body) {
-        if (header == null) {
-            return false;
-        }
-        long t = -1;
-        String v1 = null;
-        for (String part : header.split(",")) {
-            String[] kv = part.trim().split("=", 2);
-            if (kv.length == 2 && kv[0].equals("t")) {
-                try {
-                    t = Long.parseLong(kv[1]);
-                } catch (NumberFormatException e) {
-                    return false;
-                }
-            } else if (kv.length == 2 && kv[0].equals("v1")) {
-                v1 = kv[1];
-            }
-        }
-        if (t < 0 || v1 == null) {
-            return false;
-        }
-        long now = System.currentTimeMillis() / 1000;
-        if (Math.abs(now - t) > tolerance.toSeconds()) {
-            return false;
-        }
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(secret, "HmacSHA256"));
-            mac.update((t + ".").getBytes(StandardCharsets.UTF_8));
-            byte[] expected = HexFormat.of().formatHex(mac.doFinal(body)).getBytes(StandardCharsets.US_ASCII);
-            return MessageDigest.isEqual(expected, v1.getBytes(StandardCharsets.US_ASCII));
-        } catch (Exception e) {
-            return false;
-        }
+        // shared with the sender; accepts any of several v1 entries (secret rotation), constant-time compare
+        return org.sangam.integration.publish.WebhookSignature.verify(secret, header, body, tolerance,
+                System.currentTimeMillis() / 1000);
     }
 
     private static String header(Map<String, String> headers, String name) {

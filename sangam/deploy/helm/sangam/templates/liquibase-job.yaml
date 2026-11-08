@@ -47,8 +47,6 @@ spec:
             {{- include "sangam.server.env" . | nindent 12 }}
             - name: SANGAM_LIQUIBASE_MODE
               value: migrate-only
-            - name: SPRING_MAIN_WEB_APPLICATION_TYPE
-              value: none
             - name: SANGAM_JOB_EXECUTOR_ENABLED
               value: "false"
             - name: SANGAM_COMPLIANCE_SCHEDULE
