@@ -114,6 +114,18 @@ final class WorkLedger {
                 && e.lockVersion() == lockVersion && Objects.equals(e.outcome(), outcomeJson)).isPresent();
     }
 
+    /**
+     * The lock version of the lease attempt {@code attemptId} of operation {@code op} in {@code tenantId}: the ledger
+     * records attempt id and lock version of every lease (R37, on lease). Empty when the operation has no ledger row,
+     * belongs to another tenant, or {@code attemptId} is not its current attempt.
+     */
+    Optional<Long> lockVersionOfAttempt(Connection c, UUID op, String tenantId, String attemptId) {
+        Optional<OperationLedger.Entry> e = op == null || attemptId == null ? Optional.empty() : ledger.find(c, op);
+        return e.filter(x -> tenantId == null || tenantId.equals(x.tenantId()))
+                .filter(x -> attemptId.equals(x.attemptId()))
+                .map(OperationLedger.Entry::lockVersion);
+    }
+
     static String successJson(Map<String, Object> variables, WorkPort.WorkOutcome outcome) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("output", variables == null ? Map.of() : variables);

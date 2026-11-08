@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.function.LongFunction;
 
 import org.sangam.core.api.EngineAdapter;
-import org.sangam.core.api.LeaseTable;
 import org.sangam.ports.support.PortsProblem;
 import org.sangam.ports.worker.FlowableWorkerCompat;
 import org.sangam.rest.port.ApiProblem;
@@ -41,8 +40,12 @@ import org.springframework.web.bind.annotation.RestController;
  * {@code 409 FENCING_TOKEN_REQUIRED} (Flowable's own unfenced completion is not re-created). Only with
  * {@code sangam.compat.flowable.allow-unfenced=true} (default false, legacy clients that cannot echo it) is an
  * unfenced call accepted, and then only when it echoes {@code sangamAttemptId}, which must equal the lease's current
- * attempt id. The lease is read in the same transaction as the completion (no TOCTOU window), and every unfenced call
- * is audited ({@code UNFENCED_WORKER_CALL}).
+ * attempt id. The attempt is resolved to its lock version by {@link WorkPort#lockVersionOfAttempt} and the call is then
+ * made fenced with that version, so a re-lease in between is refused by the lease fence (no TOCTOU window); every
+ * accepted unfenced call is audited ({@code UNFENCED_WORKER_CALL}).
+ *
+ * <p><b>Errors (FWT-D11).</b> Every exception of this controller is answered as problem+json by
+ * {@link FlowableWorkerCompatProblemAdvice} (409/410/422, never the servlet error page).
  */
 @RestController
 @RequestMapping("/api/v1/compat/flowable/external-job-api")
@@ -134,8 +137,8 @@ public class FlowableWorkerCompatController {
 
     /**
      * Runs {@code call} with the fencing token. Echoed token: used as is. No token: {@code 409 FENCING_TOKEN_REQUIRED},
-     * unless the opt-in is on; then the attempt id is required, the lease is resolved and compared inside the same
-     * transaction as the call, and the call is audited.
+     * unless the opt-in is on; then the attempt id is required, resolved to the current lease's lock version on the
+     * worker API, used for the fenced call, and the call is audited.
      */
     private void fenced(RequestContext ctx, String jobId, Map<String, Object> m, String action, LongFunction<Void> call) {
         long token = translate(() -> FlowableWorkerCompat.fencingToken(m, allowUnfenced));
@@ -149,23 +152,18 @@ public class FlowableWorkerCompatController {
                     "an unfenced call must echo sangamAttemptId from the acquire response");
         }
         String worker = worker(m);
-        tx.runInTx(() -> {
-            LeaseTable.Row row = LeaseTable.lock(tx.connection(), jobId);
-            if (row == null || !worker.equals(row.workerId())) {
-                throw ApiProblem.staleLease(jobId, "NOT_OWNER", "no lease of worker " + worker + " on " + jobId);
-            }
-            if (!attemptId.equals(row.attemptId())) {
-                throw ApiProblem.staleLease(jobId, "STALE_VERSION", "sangamAttemptId does not match the current attempt");
-            }
-            Map<String, Object> payload = new LinkedHashMap<>();
-            payload.put("work_id", jobId);
-            payload.put("action", action);
-            payload.put("worker_id", worker);
-            payload.put("attempt_id", attemptId);
-            payload.put("lock_version", row.lockVersion());
-            audit.record(ctx, "sec:" + ctx.tenantId(), "UNFENCED_WORKER_CALL", payload);
-            call.apply(row.lockVersion());
-        });
+        // FWT-D12: the attempt is resolved on the worker API's own lease/work model (WorkPort; SL-16 operation ledger
+        // on the server), never on a table of its own. The resolved token then goes through the normal fenced call,
+        // so a re-lease in between is refused there with 409 STALE_LEASE.
+        long lockVersion = work.lockVersionOfAttempt(ctx, jobId, worker, attemptId);
+        call.apply(lockVersion);
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("work_id", jobId);
+        payload.put("action", action);
+        payload.put("worker_id", worker);
+        payload.put("attempt_id", attemptId);
+        payload.put("lock_version", lockVersion);
+        tx.runInTx(() -> audit.record(ctx, "sec:" + ctx.tenantId(), "UNFENCED_WORKER_CALL", payload));
     }
 
     /** Ports translation errors ({@link PortsProblem}: INVALID_INPUT, FENCING_TOKEN_REQUIRED, ...) → problem+json. */

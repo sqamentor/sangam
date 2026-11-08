@@ -135,6 +135,32 @@ class FwtWorkerCompatIT extends AbstractAcceptanceIT {
         return engine.startProcess(T, key, RUN + "-bk-" + scenario, Map.of());
     }
 
+    /**
+     * As {@link #start} with a declared capability class. An expired lease of undeclared work (A-8: class c) is held by
+     * the A-10 expiry policy, not re-offered; a re-acquire after expiry therefore needs class {@code a} (idempotent).
+     */
+    String start(String scenario, String topic, String capabilityClass) {
+        String key = RUN + "-" + scenario;
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="t">
+                  <process id="%s" isExecutable="true" operaton:historyTimeToLive="30">
+                    <startEvent id="s"/><sequenceFlow id="f1" sourceRef="s" targetRef="work"/>
+                    <serviceTask id="work" operaton:type="external" operaton:topic="%s">
+                      <extensionElements><operaton:properties>
+                        <operaton:property name="sangam:capabilityClass" value="%s"/>
+                      </operaton:properties></extensionElements>
+                    </serviceTask>
+                    <sequenceFlow id="f2" sourceRef="work" targetRef="after"/>
+                    <userTask id="after"/><sequenceFlow id="f3" sourceRef="after" targetRef="e"/><endEvent id="e"/>
+                  </process>
+                </definitions>
+                """.formatted(key, topic, capabilityClass);
+        engine.deploy(T, RUN + "-dep-" + scenario, Map.of(key + ".bpmn", xml.getBytes(StandardCharsets.UTF_8)));
+        return engine.startProcess(T, key, RUN + "-bk-" + scenario, Map.of());
+    }
+
     JsonNode acquire(String topic, String worker) {
         Rest r = post(API + "/acquire/jobs", Map.of("topic", topic, "workerId", worker, "lockDuration", "PT60S",
                 "numberOfTasks", 1));
@@ -162,11 +188,31 @@ class FwtWorkerCompatIT extends AbstractAcceptanceIT {
         assertFalse(processEngine.getRuntimeService().getVariables(pid).containsKey("x"), "no variable written");
     }
 
+    // FWT-D11 (second half): an error that still reaches the servlet /error dispatch keeps its status for a signed-in
+    // caller instead of becoming 403 ACTION_NOT_PERMITTED; without a token it stays 401. A malformed body on a
+    // server-module controller (no problem advice) is answered by Spring's resolver through /error.
+    @Test
+    void fwtD11_errorDispatchKeepsStatusForAuthenticatedCaller() throws Exception {
+        Rest malformed = post("/api/v1/onboarding/dry-run", "{not json");
+        assertEquals(400, malformed.status(), "the real error, not an auth failure: " + malformed.body());
+        Rest unknown = post("/api/v1/no-such-endpoint-" + RUN, Map.of());
+        assertEquals(404, unknown.status(), unknown.body());
+        HttpResponse<String> anonymous = http.send(HttpRequest.newBuilder(
+                        URI.create("http://localhost:" + port + "/api/v1/no-such-endpoint-" + RUN))
+                .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString("{}")).build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(401, anonymous.statusCode(), anonymous.body());
+        HttpResponse<String> direct = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/error"))
+                .header("Authorization", "Bearer " + bearer(T, "acc-admin", ADMIN_GROUPS)).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(403, direct.statusCode(), "a direct request to /error stays denied: " + direct.body());
+    }
+
     // FWT-010
     @Test
     void fwt010_staleCallAfterReacquireIsStaleLease() {
         String topic = RUN + "-t010";
-        String pid = start("010", topic);
+        String pid = start("010", topic, "a");
         JsonNode first = acquire(topic, "wA");
         clock = clock.plus(Duration.ofSeconds(61));
         engine.setClock(clock);

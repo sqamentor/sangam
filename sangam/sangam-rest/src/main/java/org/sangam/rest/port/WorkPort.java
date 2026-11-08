@@ -93,4 +93,17 @@ public interface WorkPort {
     OutcomeUnknownResult outcomeUnknown(RequestContext ctx, String workId, OutcomeUnknownRequest request);
 
     void cancelAck(RequestContext ctx, String workId, CancelAckRequest request);
+
+    /**
+     * The fencing token ({@code lockVersion}) of the current lease of {@code workId}, for a caller that can only echo
+     * the lease's {@code attemptId} (Flowable worker compatibility with {@code allow-unfenced}, FW-07). Read from the
+     * lease/work model of this implementation; {@code 409 STALE_LEASE} when {@code attemptId} is not the current attempt
+     * or the work is not leased in the caller's tenant. The returned token is then used on a normal fenced call, so a
+     * re-lease between the lookup and that call is still refused by the lease fence (no TOCTOU window).
+     * Additive (FWT-D12): an implementation that cannot resolve it refuses with {@code 409 FENCING_TOKEN_REQUIRED}.
+     */
+    default long lockVersionOfAttempt(RequestContext ctx, String workId, String workerId, String attemptId) {
+        throw ApiProblem.conflict("FENCING_TOKEN_REQUIRED",
+                "this worker API cannot resolve an attempt id; echo sangamLockVersion from the acquire response");
+    }
 }

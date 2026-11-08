@@ -99,6 +99,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/admin/cell/**")
                         .hasAnyAuthority("GROUP_CELL_ADMIN", "GROUP_sangam-cell-admin")
                         .requestMatchers("/api/**").authenticated()
+                        // FWT-D11: the servlet error dispatch of a request that already passed this chain keeps its
+                        // status for a signed-in caller (an uncaught 409/422 must not become 403 ACTION_NOT_PERMITTED);
+                        // without authentication it stays 401. A direct request to /error is still denied below.
+                        .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).authenticated()
                         .anyRequest().denyAll());
 
         List<String> origins = props.getCors().getAllowedOrigins();

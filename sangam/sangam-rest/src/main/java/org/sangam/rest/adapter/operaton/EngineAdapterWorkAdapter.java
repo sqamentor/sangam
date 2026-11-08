@@ -282,6 +282,21 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         tx.runInTx(() -> audit.record(ctx, t.get().rootId(), "CANCEL_ACKED", p));
     }
 
+    /**
+     * FWT-D12: the attempt is resolved on the SL-16 work model, the operation ledger row that the lease wrote (attempt id
+     * and lock version of the current lease). The worker id is not checked here: the fenced call that follows is.
+     */
+    @Override
+    public long lockVersionOfAttempt(RequestContext ctx, String workId, String workerId, String attemptId) {
+        UUID op = operationIdOf(workId);
+        if (op == null) {
+            throw ApiProblem.staleLease(workId, "NOT_OWNER", "work " + workId + " has no current lease");
+        }
+        Optional<Long> lv = engine.inEngineTransaction(c -> ledger.lockVersionOfAttempt(c, op, ctx.tenantId(), attemptId));
+        return lv.orElseThrow(() -> ApiProblem.staleLease(workId, "STALE_VERSION",
+                "sangamAttemptId does not match the current attempt of " + workId));
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private Duration lockDuration(Long ms) {

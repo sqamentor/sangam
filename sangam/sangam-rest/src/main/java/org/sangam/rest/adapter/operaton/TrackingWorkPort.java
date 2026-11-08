@@ -286,6 +286,12 @@ public class TrackingWorkPort implements WorkPort {
         end(ctx.tenantId(), workId);
     }
 
+    @Override
+    public long lockVersionOfAttempt(RequestContext ctx, String workId, String workerId, String attemptId) {
+        Worker w = worker(ctx.tenantId(), workerId);
+        return call(w, () -> delegate.lockVersionOfAttempt(ctx, workId, workerId, attemptId));
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private Worker worker(String tenant, String workerId) {

@@ -350,6 +350,23 @@ public class OperatonWorkAdapter implements WorkPort {
         });
     }
 
+    /** This adapter's lease model is its {@link LeaseTable} row (lock version and attempt id per lease). */
+    @Override
+    public long lockVersionOfAttempt(RequestContext ctx, String workId, String workerId, String attemptId) {
+        ensureLeaseTable();
+        return tx.inTx(() -> {
+            requireTask(ctx, workId);
+            LeaseTable.Row row = LeaseTable.lock(tx.connection(), workId);
+            if (row == null || workerId == null || !workerId.equals(row.workerId())) {
+                throw ApiProblem.staleLease(workId, "NOT_OWNER", "no lease of worker " + workerId + " on " + workId);
+            }
+            if (attemptId == null || !attemptId.equals(row.attemptId())) {
+                throw ApiProblem.staleLease(workId, "STALE_VERSION", "sangamAttemptId does not match the current attempt");
+            }
+            return row.lockVersion();
+        });
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private void ensureLeaseTable() {
