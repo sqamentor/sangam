@@ -54,10 +54,11 @@ public final class AuditChain {
 
     /** Appends one event to the root's chain inside the caller's transaction. */
     public AuditEvent append(Connection c, String tenant, String rootId, String eventType, Map<String, ?> payload) {
-        RootSeq.Row head = RootSeq.lock(c, dialect, tenant, rootId);
+        RootSeq.Locked locked = RootSeq.lockAndNow(c, dialect, tenant, rootId);   // one round trip on PostgreSQL
+        RootSeq.Row head = locked.row();
         long seq = head.nextAuditSeq();
         byte[] prev = seq == 1 ? genesis(tenant, rootId) : head.auditHeadHash();
-        Instant occurredAt = Jdbc.dbNow(c, dialect).truncatedTo(ChronoUnit.MICROS);
+        Instant occurredAt = locked.dbNow().truncatedTo(ChronoUnit.MICROS);
         String eventId = Hashes.uuidV7().toString();
         byte[] salt = new byte[16];
         RANDOM.nextBytes(salt);
@@ -66,10 +67,23 @@ public final class AuditChain {
         String envelope = envelope(eventId, tenant, rootId, seq, eventType, 1, occurredAt, payloadDigest, prev);
         byte[] hash = Hashes.sha256(prev, envelope.getBytes(StandardCharsets.UTF_8));
 
-        Jdbc.update(c, "INSERT INTO AUDIT_EVENT(tenant_id, chain_id, seq, event_id, event_type, schema_version, occurred_at,"
-                        + " envelope, payload_digest, prev_hash, hash) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                tenant, rootId, seq, eventId, eventType, 1, occurredAt, envelope, payloadDigest, prev, hash);
-        Jdbc.update(c, "INSERT INTO AUDIT_PAYLOAD(event_id, salt, payload) VALUES (?,?,?)", eventId, salt, payloadText);
+        String insertEvent = "INSERT INTO AUDIT_EVENT(tenant_id, chain_id, seq, event_id, event_type, schema_version, occurred_at,"
+                + " envelope, payload_digest, prev_hash, hash) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+        String insertPayload = "INSERT INTO AUDIT_PAYLOAD(event_id, salt, payload) VALUES (?,?,?)";
+        if (RootSeq.onePass(c, dialect)) {
+            // SG-15: the event, its payload and the new chain head in one statement (writable CTEs run in full,
+            // atomically, in the caller's transaction; a key violation fails the whole statement as before)
+            int n = Jdbc.update(c, "WITH e AS (" + insertEvent + "), p AS (" + insertPayload + ")"
+                            + " UPDATE ROOT_SEQ SET next_audit_seq=?, audit_head_hash=? WHERE tenant_id=? AND root_id=?",
+                    tenant, rootId, seq, eventId, eventType, 1, occurredAt, envelope, payloadDigest, prev, hash,
+                    eventId, salt, payloadText, seq + 1, hash, tenant, rootId);
+            if (n != 1) {
+                throw new IllegalStateException("audit head of " + rootId + " not advanced");
+            }
+            return new AuditEvent(eventId, rootId, seq, hash);
+        }
+        Jdbc.update(c, insertEvent, tenant, rootId, seq, eventId, eventType, 1, occurredAt, envelope, payloadDigest, prev, hash);
+        Jdbc.update(c, insertPayload, eventId, salt, payloadText);
         RootSeq.advanceAudit(c, tenant, rootId, seq + 1, hash);
         return new AuditEvent(eventId, rootId, seq, hash);
     }

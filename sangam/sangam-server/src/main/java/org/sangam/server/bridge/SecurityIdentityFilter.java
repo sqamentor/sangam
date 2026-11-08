@@ -50,6 +50,7 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
     private final SangamSecurity security;
     private final SecurityProperties props;
     private final LoginEventBatcher logins;
+    private final org.sangam.security.identity.ResolvedIdentityCache identities;
     private final Set<String> seen = Collections.newSetFromMap(new LinkedHashMap<>(1024, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
@@ -63,6 +64,8 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
         this.security = security;
         this.props = props;
         this.logins = logins;
+        // SG-15: exact per-token cache, validated against the database on every request (see the class)
+        this.identities = new org.sangam.security.identity.ResolvedIdentityCache(security.dialect(), security.principals());
     }
 
     @Override
@@ -95,8 +98,7 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
                 boolean jit = props.getJitProvisioningTenants().contains(raw.tenantId());
                 String name = raw.attributes().getOrDefault("name", raw.attributes().get("preferred_username"));
                 String email = raw.attributes().get("email");
-                SecurityIdentity input = raw;
-                resolved = tx.inTransaction(c -> security.principals().resolve(c, input, jit, name, email));
+                resolved = identities.resolve(tx, raw, jit, name, email);
             }
         } catch (SangamSecurityException e) {
             if (logins != null) {

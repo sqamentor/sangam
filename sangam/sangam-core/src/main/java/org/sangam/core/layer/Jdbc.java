@@ -63,6 +63,33 @@ public final class Jdbc {
         }
     }
 
+    /**
+     * Executes one statement for each parameter row as a single JDBC batch (one round trip on PostgreSQL); a single
+     * row is a plain update. Every row must affect exactly one row or the batch fails.
+     */
+    public static void batch(Connection c, String sql, List<Object[]> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+        if (rows.size() == 1) {
+            update(c, sql, rows.get(0));
+            return;
+        }
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            for (Object[] r : rows) {
+                bind(ps, 1, r);
+                ps.addBatch();
+            }
+            for (int n : ps.executeBatch()) {
+                if (n != 1 && n != java.sql.Statement.SUCCESS_NO_INFO) {
+                    throw new IllegalStateException("batch row affected " + n + " rows: " + sql);
+                }
+            }
+        } catch (SQLException e) {
+            throw new LayerSqlException(sql, e);
+        }
+    }
+
     public static <T> Optional<T> one(Connection c, String sql, RowMapper<T> mapper, Object... params) {
         List<T> rows = query(c, sql, mapper, params);
         if (rows.size() > 1) {

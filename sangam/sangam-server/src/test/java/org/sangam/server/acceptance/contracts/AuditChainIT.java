@@ -41,6 +41,107 @@ class AuditChainIT extends LayerSpecSupport {
         assertArrayEquals(Hashes.sha256("sangam-audit-v1:t1:root-1".getBytes(StandardCharsets.UTF_8)), firstPrev);
     }
 
+    /**
+     * SG-15 T-SCALE: on PostgreSQL an audit append is two round trips (lock+read+clock, then event+payload+head) and
+     * an outbox append three (allocate root_seq, outbox row, delivery batch), for a new and for an existing root;
+     * before the fix they were six and five. The chain stays gapless and verifies.
+     */
+    @Test
+    void appendRoundTripsOnPostgres() {
+        Outbox outbox = new Outbox(PG);
+        int[] counts = new int[4];
+        run(c -> {
+            org.junit.jupiter.api.Assumptions.assumeTrue(isPostgres(c), "PostgreSQL single-statement path");
+            Connection cc = counting(c, counts, 0);
+            audit.append(cc, "t1", "root-rt", "A", Map.of("n", 1));
+        });
+        run(c -> audit.append(counting(c, counts, 1), "t1", "root-rt", "A", Map.of("n", 2)));
+        run(c -> outbox.append(counting(c, counts, 2), "t1", "root-rt2", "E", "{}", List.of(Outbox.Destination.ordered("d1"))));
+        run(c -> outbox.append(counting(c, counts, 3), "t1", "root-rt2", "E", "{}",
+                List.of(Outbox.Destination.ordered("d1"), Outbox.Destination.unordered("d2"))));
+        assertEquals(2, counts[0], "audit append, new root");
+        assertEquals(2, counts[1], "audit append, existing root");
+        assertEquals(3, counts[2], "outbox append, new root, one destination");
+        assertEquals(3, counts[3], "outbox append, existing root, two destinations");
+        AuditChain.VerifyResult r = inTx(c -> audit.verify(c, "t1", "root-rt"));
+        assertTrue(r.ok(), String.valueOf(r));
+        assertEquals(2, r.eventsChecked());
+        assertEquals(List.of(1L, 2L), inTx(c -> Jdbc.query(c, "SELECT root_seq FROM OUTBOX WHERE root_id='root-rt2' ORDER BY root_seq",
+                rs -> rs.getLong(1))));
+    }
+
+    /**
+     * SG-15: a root written by the multi-statement path (every row before the upgrade) and then by the single-statement
+     * path verifies as one gapless chain, and so do outbox root_seq values across the switch.
+     */
+    @Test
+    void mixedOldAndNewPathHistoryVerifies() {
+        Outbox outbox = new Outbox(PG);
+        for (int i = 1; i <= 3; i++) {
+            int n = i;
+            run(c -> {
+                org.junit.jupiter.api.Assumptions.assumeTrue(isPostgres(c), "PostgreSQL single-statement path");
+                Connection old = asNonPostgres(c);
+                audit.append(old, "t1", "root-mix", "OLD", Map.of("n", n));
+                outbox.append(old, "t1", "root-mix", "E", "{}", List.of(Outbox.Destination.ordered("d1")));
+            });
+        }
+        for (int i = 4; i <= 6; i++) {
+            int n = i;
+            run(c -> {
+                audit.append(c, "t1", "root-mix", "NEW", Map.of("n", n));
+                outbox.append(c, "t1", "root-mix", "E", "{}", List.of(Outbox.Destination.ordered("d1")));
+            });
+        }
+        run(c -> audit.append(asNonPostgres(c), "t1", "root-mix", "OLD", Map.of("n", 7)));
+        AuditChain.VerifyResult r = inTx(c -> audit.verify(c, "t1", "root-mix"));
+        assertTrue(r.ok(), String.valueOf(r));
+        assertEquals(7, r.eventsChecked());
+        assertEquals(List.of(1L, 2L, 3L, 4L, 5L, 6L), inTx(c -> Jdbc.query(c,
+                "SELECT root_seq FROM OUTBOX WHERE root_id='root-mix' ORDER BY root_seq", rs -> rs.getLong(1))));
+    }
+
+    /** The same PostgreSQL connection, reporting another product name: forces the multi-statement (pre-SG-15) path. */
+    private static Connection asNonPostgres(Connection c) {
+        return (Connection) java.lang.reflect.Proxy.newProxyInstance(AuditChainIT.class.getClassLoader(),
+                new Class<?>[] {Connection.class}, (p, m, a) -> {
+                    if (m.getName().equals("getMetaData")) {
+                        java.sql.DatabaseMetaData md = c.getMetaData();
+                        return java.lang.reflect.Proxy.newProxyInstance(AuditChainIT.class.getClassLoader(),
+                                new Class<?>[] {java.sql.DatabaseMetaData.class}, (p2, m2, a2) ->
+                                        m2.getName().equals("getDatabaseProductName") ? "PostgreSQL-legacy-path" : m2.invoke(md, a2));
+                    }
+                    try {
+                        return m.invoke(c, a);
+                    } catch (java.lang.reflect.InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
+    }
+
+    private static boolean isPostgres(Connection c) {
+        try {
+            return "PostgreSQL".equals(c.getMetaData().getDatabaseProductName());
+        } catch (java.sql.SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** Counts prepared statements created on {@code c} (each one is executed once by Jdbc: one round trip). */
+    private static Connection counting(Connection c, int[] counts, int slot) {
+        return (Connection) java.lang.reflect.Proxy.newProxyInstance(AuditChainIT.class.getClassLoader(),
+                new Class<?>[] {Connection.class}, (p, m, a) -> {
+                    if (m.getName().equals("prepareStatement")) {
+                        counts[slot]++;
+                    }
+                    try {
+                        return m.invoke(c, a);
+                    } catch (java.lang.reflect.InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
+    }
+
     @Test
     void payloadTamperIsDetected() {
         appendFive("root-2");

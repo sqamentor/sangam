@@ -281,6 +281,28 @@ server pod get the same `drivers` volume.
 driver error for `oracle.jdbc.OracleDriver` / `jdbc:oracle:thin` (no suitable driver) if the jar is missing. With the jar present the log shows the Liquibase run against
 Oracle. To check a running container: `docker exec <c> ls -l /opt/sangam/drivers`.
 
+### 1.6 Connection pool sizing (SG-15 T-SCALE)
+
+`SANGAM_DB_POOL_SIZE` (Helm `database.pool.maximumPoolSize`, default 20) is the number of database connections
+one server node may hold. Size it from measurement, not from request concurrency. A request holds a connection
+for about `R × t_rt + t_db`, where `R` is the JDBC round trips of the request, `t_rt` the network plus driver time
+of one round trip and `t_db` the database work. By Little's law a node serving `X` requests per second needs
+
+    pool = ceil( X × (R × t_rt + t_db) × 1.3 )        (1.3 = headroom for bursts)
+
+and the database must allow `nodes × pool + admin/replication slots` connections (`max_connections`). Read `R`
+from the T-SCALE probe (`jdbc_round_trips_per_op` in `report.txt` of `TScaleLoadIT`, `-Dsangam.tscale=true`) and
+`t_rt` from `hikaricp.connections.usage` divided by `R`. More connections than about 2–4 × the database's cores
+add no throughput (PostgreSQL contends on WAL and locks); above that, lower `R` or add nodes.
+
+Measured on one shared developer machine (PostgreSQL 17 in a local container, probe of 30 serial lifecycles,
+2026-11-08/09): a process start takes 58 round trips (81 before SG-15) and a full T-SCALE lifecycle (start, fetch,
+complete work, list, get, complete task) 365 (485 before). With `t_rt` of 1–3 ms on that host, one 20-connection
+pool caps starts at `20 / (58 × t_rt)`, about 115–345 starts/s, before any other traffic. The 500 starts/s cell
+floor (ADR-D-24) therefore needs a dedicated database host (`t_rt` ≤ 0.5 ms) and, per node,
+`pool = ceil(500 / nodes × 58 × t_rt × 1.3)`, e.g. 10 connections per node for 2 nodes at 0.5 ms (plus the other
+operations' share). These are estimates; no load run has yet confirmed them.
+
 ---
 
 ## 2. Upgrade (R12, R32)

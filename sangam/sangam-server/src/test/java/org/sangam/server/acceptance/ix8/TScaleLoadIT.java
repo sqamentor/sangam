@@ -57,6 +57,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
  * throughput is reported, not asserted.
  */
 @EnabledIfSystemProperty(named = "sangam.tscale", matches = "true")
+@org.springframework.context.annotation.Import(StatementCounter.Config.class)
 class TScaleLoadIT extends AbstractAcceptanceIT {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -116,6 +117,7 @@ class TScaleLoadIT extends AbstractAcceptanceIT {
         int measure = prop("measureSeconds", 300);
         token = bearer("acc", "tscale-officer", ADMIN_GROUPS);
         deploy();
+        String probe = probe(prop("probe", 30));
 
         Path out = Path.of(System.getProperty("sangam.tscale.out", "target-scale/tscale"));
         Files.createDirectories(out);
@@ -200,6 +202,7 @@ class TScaleLoadIT extends AbstractAcceptanceIT {
         long engineCount = engine.getHistoryService().createHistoricProcessInstanceQuery().processDefinitionKey(KEY).count();
         report.append("engine_instances=").append(engineCount).append(" distinct_started_ids=").append(startedIds.size())
                 .append('\n');
+        report.append(probe);
         report.append("pg_wait_events (sampled pg_stat_activity, active non-idle backends):\n");
         pgWaits.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).limit(15)
                 .forEach(e -> report.append("  ").append(e.getValue()).append("  ").append(e.getKey()).append('\n'));
@@ -378,6 +381,87 @@ class TScaleLoadIT extends AbstractAcceptanceIT {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    // ------------------------------------------------------------------ round-trip probe (serial, before load)
+
+    /**
+     * Runs {@code n} full lifecycles one after another (start, fetch-and-lock, complete work, list, get, complete task)
+     * and reports JDBC round trips per operation on request threads, plus background round trips per lifecycle. The
+     * first lifecycle warms caches and is excluded. Reported, not asserted (the regression guards are unit tests).
+     */
+    private String probe(int n) throws Exception {
+        if (n <= 0) {
+            return "";
+        }
+        Map<String, long[]> perOp = new TreeMap<>();
+        long bg0 = 0;
+        for (int i = 0; i <= n; i++) {
+            boolean on = i > 0;
+            if (i == 1) {
+                StatementCounter.reset(true);
+                bg0 = StatementCounter.BACKGROUND.get();
+            }
+            probeCall(perOp, on, "start", "POST", "/api/v1/process-instances",
+                    Map.of("key", KEY, "businessKey", "TP-" + UUID.randomUUID(), "variables", Map.of("amountMinor", 1)));
+            JsonNode w = null;
+            for (int t = 0; t < 100 && w == null; t++) {
+                Res f = probeCall(perOp, on && t == 0, "work.fetch", "POST", "/api/v1/work/fetch-and-lock",
+                        Map.of("workerId", "probe", "maxTasks", 1, "asyncResponseTimeoutMs", 0,
+                                "topics", List.of(Map.of("name", TOPIC, "lockDurationMs", 120000))));
+                for (JsonNode x : f.body) {
+                    w = x;
+                }
+                if (w == null) {
+                    sleep(50);
+                }
+            }
+            assertThat(w).as("probe external task").isNotNull();
+            Map<String, Object> done = new LinkedHashMap<>();
+            done.put("workerId", "probe");
+            done.put("lockVersion", w.path("lockVersion").asLong());
+            done.put("attemptId", w.path("attemptId").asText());
+            done.put("variables", Map.of("outcome", "ok"));
+            probeCall(perOp, on, "work.complete", "POST", "/api/v1/work/" + w.path("id").asText() + "/complete", done);
+            Res list = probeCall(perOp, on, "task.list", "GET", "/api/v1/tasks?processInstanceId="
+                    + w.path("processInstanceId").asText() + "&page=0&size=5", null);
+            String tid = list.body.get(0).path("id").asText();
+            Res get = probeCall(perOp, on, "task.get", "GET", "/api/v1/tasks/" + tid, null);
+            Map<String, Object> td = new LinkedHashMap<>();
+            td.put("payloadHash", get.body.path("payloadHash").asText());
+            td.put("decision", "APPROVED");
+            td.put("variables", Map.of("approved", true));
+            probeCall(perOp, on, "task.complete", "POST", "/api/v1/tasks/" + tid + "/complete", td);
+        }
+        long bg = StatementCounter.BACKGROUND.get() - bg0;
+        StringBuilder sb = new StringBuilder("jdbc_round_trips_per_op (request threads; statements + commits/rollbacks;"
+                + " serial probe n=" + n + "):\n");
+        long total = 0;
+        for (var e : perOp.entrySet()) {
+            sb.append(String.format("  %-14s %7.1f%n", e.getKey(), e.getValue()[0] / (double) e.getValue()[1]));
+            total += e.getValue()[0];
+        }
+        sb.append(String.format("  %-14s %7.1f%n  %-14s %7.1f%n", "lifecycle", total / (double) n, "background/lc",
+                bg / (double) n));
+        sb.append("jdbc_statement_breakdown (request threads, per lifecycle, top 45):\n");
+        StatementCounter.breakdown().entrySet().stream().sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
+                .limit(45).forEach(e -> sb.append(String.format("  %6.2f  %s%n", e.getValue() / (double) n, e.getKey())));
+        StatementCounter.reset(false);
+        System.out.println("[tscale-probe]\n" + sb);
+        return sb.toString();
+    }
+
+    private Res probeCall(Map<String, long[]> perOp, boolean on, String op, String method, String path, Object body) {
+        long before = StatementCounter.REQUEST.get();
+        Res r = call(op, method, path, body);
+        assertThat(r).as(op).isNotNull();
+        assertThat(r.status / 100).as(op + " " + r.body).isEqualTo(2);
+        if (on) {
+            long[] c = perOp.computeIfAbsent(op, k -> new long[2]);
+            c[0] += StatementCounter.REQUEST.get() - before;
+            c[1]++;
+        }
+        return r;
     }
 
     // ------------------------------------------------------------------ setup + profiling

@@ -56,12 +56,14 @@ public final class Outbox {
                 "INSERT INTO OUTBOX(tenant_id, root_id, root_seq, event_type, event_id, payload, created_at) VALUES (?,?,?,?,?,?,"
                         + dialect.now() + ")",
                 "id", tenant, rootId, rootSeq, eventType, eventId, payloadJson);
+        // SG-15: one delivery row per destination, sent as one JDBC batch (one round trip, not one per destination)
+        java.util.List<Object[]> rows = new java.util.ArrayList<>(destinations.size());
         for (Destination d : destinations) {
-            Jdbc.update(c, "INSERT INTO OUTBOX_DELIVERY(outbox_id, destination, tenant_id, root_id, root_seq, ordered_flag, state,"
-                            + " attempts, next_attempt_at, claim_owner, claim_epoch, claim_expires_at, last_error)"
-                            + " VALUES (?,?,?,?,?,?,'PENDING',0," + dialect.now() + ",NULL,0,NULL,NULL)",
-                    id, d.name(), tenant, rootId, rootSeq, d.ordered() ? 1 : 0);
+            rows.add(new Object[] {id, d.name(), tenant, rootId, rootSeq, d.ordered() ? 1 : 0});
         }
+        Jdbc.batch(c, "INSERT INTO OUTBOX_DELIVERY(outbox_id, destination, tenant_id, root_id, root_seq, ordered_flag, state,"
+                + " attempts, next_attempt_at, claim_owner, claim_epoch, claim_expires_at, last_error)"
+                + " VALUES (?,?,?,?,?,?,'PENDING',0," + dialect.now() + ",NULL,0,NULL,NULL)", rows);
         return new Appended(id, eventId, rootSeq);
     }
 }
