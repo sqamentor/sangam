@@ -60,3 +60,34 @@ op('get', '/ops/migration-status', 'uiOpsMigration', _T, 'Migration checkpoints'
 op('get', '/ops/retention/plan', 'uiOpsRetentionPlan', _T, 'Preview retention', 'With a hash of the plan.', _OR, resp=(200, _OANY), perm='ops.tenant.read')
 op('get', '/ops/retention/runs', 'uiOpsRetentionRuns', _T, 'Retention runs', 'Executed purges of the caller tenant, with plan hash, reason and actor.', _OR, params=_OP, resp=(200, _OLIST), perm='ops.tenant.read')
 op('post', '/ops/retention/execute', 'uiOpsRetentionExecute', _T, 'Execute retention', 'Refused when the plan changed since the preview.', _OR, body=_OB, resp=(200, _OANY), cmd='ops.retention.execute.ui', perm='ops.tenant.admin')
+
+# SL-44 bulk ingest (BulkController): async jobs, chunked idempotent uploads, per-row status and error report.
+TAGS.append(('Bulk ingest', 'Asynchronous bulk data ingest per object type: chunked upload, per-row idempotency on (tenant, object type, external id), per-row status and error report (SL-44). sangam-ops; off unless enabled'))
+_B = 'Bulk ingest'
+_BR = ['SL-44', 'R19', 'VI.4', 'R36', 'R41']
+_BPERM = 'the permission declared by the object type sink (ops.variable: ops.tenant.admin)'
+schema('BulkCreateJob', 'CreateJobRequest. expectedChunks, when given, must all be uploaded before close.', 'objectType:s expectedChunks:int', required=('objectType',))
+schema('BulkRowInput', 'RowInput: the stable id of the record in the caller system of the record and its fields.', 'externalId:s data:obj', required=('externalId', 'data'))
+schema('BulkChunk', 'ChunkRequest. Limits: rows per chunk and bytes per chunk (413 BULK_LIMIT).', 'rows:list:BulkRowInput', required=('rows',))
+schema('BulkChunkReceipt', 'ChunkReceipt; replayed = the same content was stored before.', 'chunkSeq:int rows:int invalidRows:int replayed:bool')
+schema('BulkJob', 'Job with row counts per state.', 'id:s tenantId:s objectType:s state:s expectedChunks:int chunks:int totalRows:long rows:lmap createdBy:s createdAt:dt closedAt:dt completedAt:dt',
+       enums={'state': ['OPEN', 'PROCESSING', 'COMPLETED', 'COMPLETED_WITH_ERRORS', 'ABORTED']})
+schema('BulkRowStatus', 'RowStatus: per-row state, error and the sink result reference.', 'chunkSeq:int rowSeq:int externalId:s state:s attempts:int errorCode:s errorText:s resultRef:s',
+       enums={'state': ['PENDING', 'RUNNING', 'DONE', 'SKIPPED', 'FAILED', 'CANCELLED']})
+_BID = [pp('id')]
+
+
+def _bulk_limits(path, method, quota=False):
+    r = PATHS[path][method]['responses']
+    r['413'] = {"description": "BULK_LIMIT (rows or bytes per chunk, chunks or rows per job)" + (", or TENANT_QUOTA_EXCEEDED (the tenant's SL-43 batch size); nothing was stored" if quota else ""), "content": PROBLEM}
+
+
+op('post', '/bulk/jobs', 'bulkCreateJob', _B, 'Create a bulk job', 'Opens a job for one object type in the caller tenant; at most a configured number of open or processing jobs per tenant (409 BULK_ACTIVE_JOBS).', _BR, body='BulkCreateJob', resp=(201, 'BulkJob'), created=True, cmd='bulk.job.create', perm=_BPERM)
+op('get', '/bulk/jobs', 'bulkListJobs', _B, 'List bulk jobs', 'Jobs of the caller tenant for the object types the caller may load, newest first.', _BR, params=[q('state', enum=['OPEN', 'PROCESSING', 'COMPLETED', 'COMPLETED_WITH_ERRORS', 'ABORTED'])], resp=(200, 'array:BulkJob'), list_=True, perm=_BPERM, errors=STD_R)
+op('get', '/bulk/jobs/{id}', 'bulkGetJob', _B, 'Get a bulk job', 'State and row counts; a job of another tenant is 404.', _BR, params=_BID, resp=(200, 'BulkJob'), perm=_BPERM, errors=GET_E)
+op('put', '/bulk/jobs/{id}/chunks/{seq}', 'bulkUploadChunk', _B, 'Upload a chunk', 'Idempotent per sequence number: the same content again is a replay, other content for a stored sequence is 409 CHUNK_CONFLICT. Invalid rows are stored as FAILED INVALID_ROW. The SL-43 tenant batch-size quota is checked per chunk before anything is stored (413 TENANT_QUOTA_EXCEEDED).', _BR, params=_BID + [{'name': 'seq', 'in': 'path', 'required': True, 'schema': typ('int'), 'description': 'Chunk sequence number, 0-based'}], body='BulkChunk', resp=(200, 'BulkChunkReceipt'), cmd='bulk.chunk.upload', perm=_BPERM)
+_bulk_limits('/bulk/jobs/{id}/chunks/{seq}', 'put', quota=True)
+op('post', '/bulk/jobs/{id}/close', 'bulkCloseJob', _B, 'Close a bulk job', 'No more chunks; the worker applies the rows asynchronously (409 BULK_JOB_EMPTY, BULK_CHUNKS_MISSING).', _BR, params=_BID, resp=(200, 'BulkJob'), cmd='bulk.job.close', perm=_BPERM)
+op('post', '/bulk/jobs/{id}/abort', 'bulkAbortJob', _B, 'Abort a bulk job', 'Rows not yet applied are cancelled; applied rows stay applied.', _BR, params=_BID, resp=(200, 'BulkJob'), cmd='bulk.job.abort', perm=_BPERM)
+op('get', '/bulk/jobs/{id}/rows', 'bulkJobRows', _B, 'Per-row status', 'In upload order, optionally by state.', _BR, params=_BID + [q('state', enum=['PENDING', 'RUNNING', 'DONE', 'SKIPPED', 'FAILED', 'CANCELLED'])], resp=(200, 'array:BulkRowStatus'), list_=True, perm=_BPERM, errors=GET_E)
+op('get', '/bulk/jobs/{id}/errors', 'bulkJobErrors', _B, 'Error report', 'Failed rows with error code and text.', _BR, params=_BID, resp=(200, 'array:BulkRowStatus'), list_=True, perm=_BPERM, errors=GET_E)

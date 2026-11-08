@@ -5484,6 +5484,79 @@ CREATE TABLE INTEGRATION_WEBHOOK_STATE (
 );
 --rollback DROP TABLE INTEGRATION_WEBHOOK_STATE;
 
+--changeset sangam:0032-01-ops_bulk_job dbms:oracle
+--comment: bulk ingest jobs (SL-44)
+CREATE TABLE OPS_BULK_JOB (
+  id VARCHAR2(64 CHAR) NOT NULL,
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  object_type VARCHAR2(64 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
+  expected_chunks NUMBER(10),
+  chunk_count NUMBER(10) NOT NULL,
+  total_rows NUMBER(19) NOT NULL,
+  created_by VARCHAR2(255 CHAR),
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  closed_at TIMESTAMP WITH TIME ZONE,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT PK_OPS_BULK_JOB PRIMARY KEY (id)
+);
+CREATE INDEX OPS_BULK_JOB_TENANT ON OPS_BULK_JOB (tenant_id, state, created_at);
+--rollback DROP TABLE OPS_BULK_JOB;
+
+--changeset sangam:0032-02-ops_bulk_chunk dbms:oracle
+--comment: bulk ingest chunks, idempotent by sequence and content hash (SL-44)
+CREATE TABLE OPS_BULK_CHUNK (
+  job_id VARCHAR2(64 CHAR) NOT NULL,
+  chunk_seq NUMBER(10) NOT NULL,
+  row_count NUMBER(10) NOT NULL,
+  invalid_count NUMBER(10) NOT NULL,
+  byte_count NUMBER(19) NOT NULL,
+  chunk_hash VARCHAR2(64 CHAR) NOT NULL,
+  uploaded_by VARCHAR2(255 CHAR),
+  uploaded_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_OPS_BULK_CHUNK PRIMARY KEY (job_id, chunk_seq)
+);
+--rollback DROP TABLE OPS_BULK_CHUNK;
+
+--changeset sangam:0032-03-ops_bulk_row dbms:oracle
+--comment: bulk ingest rows with per-row status and error (SL-44)
+CREATE TABLE OPS_BULK_ROW (
+  job_id VARCHAR2(64 CHAR) NOT NULL,
+  chunk_seq NUMBER(10) NOT NULL,
+  row_seq NUMBER(10) NOT NULL,
+  external_id VARCHAR2(255 CHAR) NOT NULL,
+  payload CLOB NOT NULL,
+  payload_hash VARCHAR2(64 CHAR) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
+  attempts NUMBER(10) NOT NULL,
+  error_code VARCHAR2(64 CHAR),
+  error_text CLOB,
+  result_ref VARCHAR2(255 CHAR),
+  claimed_by VARCHAR2(64 CHAR),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_OPS_BULK_ROW PRIMARY KEY (job_id, chunk_seq, row_seq)
+);
+CREATE INDEX OPS_BULK_ROW_CLAIM ON OPS_BULK_ROW (state, job_id, chunk_seq, row_seq);
+CREATE INDEX OPS_BULK_ROW_JOB_STATE ON OPS_BULK_ROW (job_id, state);
+--rollback DROP TABLE OPS_BULK_ROW;
+
+--changeset sangam:0032-04-ops_bulk_key dbms:oracle
+--comment: bulk ingest per-row idempotency key: (tenant, object type, external id) (SL-44)
+CREATE TABLE OPS_BULK_KEY (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  object_type VARCHAR2(64 CHAR) NOT NULL,
+  external_id VARCHAR2(255 CHAR) NOT NULL,
+  payload_hash VARCHAR2(64 CHAR) NOT NULL,
+  result_ref VARCHAR2(255 CHAR),
+  job_id VARCHAR2(64 CHAR) NOT NULL,
+  chunk_seq NUMBER(10) NOT NULL,
+  row_seq NUMBER(10) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_OPS_BULK_KEY PRIMARY KEY (tenant_id, object_type, external_id)
+);
+--rollback DROP TABLE OPS_BULK_KEY;
+
 --changeset sangam:0016-03-form_draft-alter dbms:oracle
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD (form_version_hash VARCHAR2(64 CHAR));

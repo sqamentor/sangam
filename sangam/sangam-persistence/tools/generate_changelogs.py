@@ -998,6 +998,31 @@ TABLES = [
         ("destination", "{str}", "NOT NULL"), ("state", "{str64}", "NOT NULL"), ("consecutive_failures", "{int}", "NOT NULL"),
         ("last_error", "{text}", ""), ("disabled_at", "{ts}", ""), ("changed_by", "{str}", ""), ("updated_at", "{ts}", "NOT NULL"),
     ], ["destination"], []),
+    # SL-44 bulk ingest (sangam-ops OpsSchema.java, BulkIngest): async jobs, idempotent chunks, per-row status, and
+    # one idempotency key per (tenant, object type, external id)
+    ("0032-01", "bulk ingest jobs (SL-44)", "OPS_BULK_JOB", [
+        ("id", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", "NOT NULL"), ("object_type", "{str64}", "NOT NULL"),
+        ("state", "{str64}", "NOT NULL"), ("expected_chunks", "{int}", ""), ("chunk_count", "{int}", "NOT NULL"),
+        ("total_rows", "{long}", "NOT NULL"), ("created_by", "{str}", ""), ("created_at", "{ts}", "NOT NULL"),
+        ("updated_at", "{ts}", "NOT NULL"), ("closed_at", "{ts}", ""), ("completed_at", "{ts}", ""),
+    ], ["id"], [("OPS_BULK_JOB_TENANT", False, ["tenant_id", "state", "created_at"])]),
+    ("0032-02", "bulk ingest chunks, idempotent by sequence and content hash (SL-44)", "OPS_BULK_CHUNK", [
+        ("job_id", "{str64}", "NOT NULL"), ("chunk_seq", "{int}", "NOT NULL"), ("row_count", "{int}", "NOT NULL"),
+        ("invalid_count", "{int}", "NOT NULL"), ("byte_count", "{long}", "NOT NULL"), ("chunk_hash", "{str64}", "NOT NULL"),
+        ("uploaded_by", "{str}", ""), ("uploaded_at", "{ts}", "NOT NULL"),
+    ], ["job_id", "chunk_seq"], []),
+    ("0032-03", "bulk ingest rows with per-row status and error (SL-44)", "OPS_BULK_ROW", [
+        ("job_id", "{str64}", "NOT NULL"), ("chunk_seq", "{int}", "NOT NULL"), ("row_seq", "{int}", "NOT NULL"),
+        ("external_id", "{str}", "NOT NULL"), ("payload", "{text}", "NOT NULL"), ("payload_hash", "{str64}", "NOT NULL"),
+        ("state", "{str64}", "NOT NULL"), ("attempts", "{int}", "NOT NULL"), ("error_code", "{str64}", ""),
+        ("error_text", "{text}", ""), ("result_ref", "{str}", ""), ("claimed_by", "{str64}", ""), ("updated_at", "{ts}", "NOT NULL"),
+    ], ["job_id", "chunk_seq", "row_seq"], [("OPS_BULK_ROW_CLAIM", False, ["state", "job_id", "chunk_seq", "row_seq"]),
+                                            ("OPS_BULK_ROW_JOB_STATE", False, ["job_id", "state"])]),
+    ("0032-04", "bulk ingest per-row idempotency key: (tenant, object type, external id) (SL-44)", "OPS_BULK_KEY", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("object_type", "{str64}", "NOT NULL"), ("external_id", "{str}", "NOT NULL"),
+        ("payload_hash", "{str64}", "NOT NULL"), ("result_ref", "{str}", ""), ("job_id", "{str64}", "NOT NULL"),
+        ("chunk_seq", "{int}", "NOT NULL"), ("row_seq", "{int}", "NOT NULL"), ("updated_at", "{ts}", "NOT NULL"),
+    ], ["tenant_id", "object_type", "external_id"], []),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).

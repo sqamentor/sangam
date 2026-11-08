@@ -112,6 +112,9 @@ tags:
   description: 'Signed plugin drop-in: list, enable or disable (effective at restart), audit trail'
 - name: Tenant operations
   description: Search, usage, outliers, variables, secrets, sequences, index jobs, retention, migration status (R19). sangam-ops; off unless enabled
+- name: Bulk ingest
+  description: 'Asynchronous bulk data ingest per object type: chunked upload, per-row idempotency on (tenant, object type, external id), per-row
+    status and error report (SL-44). sangam-ops; off unless enabled'
 - name: Programmes
   description: 'Programme monitoring: programmes, targets, milestones, periodic returns, roll-up, progress, variance alerts, dashboards (N15).
     sangam-programme'
@@ -32101,6 +32104,401 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+  /bulk/jobs:
+    post:
+      operationId: bulkCreateJob
+      tags:
+      - Bulk ingest
+      summary: Create a bulk job
+      description: Opens a job for one object type in the caller tenant; at most a configured number of open or processing jobs per tenant (409
+        BULK_ACTIVE_JOBS).
+      x-sangam-command-type: bulk.job.create
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: 'the permission declared by the object type sink (ops.variable: ops.tenant.admin)'
+      x-sangam-requirements:
+      - SL-44
+      - R19
+      - VI.4
+      - R36
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkCreateJob'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkJob'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    get:
+      operationId: bulkListJobs
+      tags:
+      - Bulk ingest
+      summary: List bulk jobs
+      description: Jobs of the caller tenant for the object types the caller may load, newest first.
+      parameters:
+      - name: state
+        in: query
+        schema:
+          type: string
+          enum:
+          - OPEN
+          - PROCESSING
+          - COMPLETED
+          - COMPLETED_WITH_ERRORS
+          - ABORTED
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      x-sangam-permission: 'the permission declared by the object type sink (ops.variable: ops.tenant.admin)'
+      x-sangam-requirements:
+      - SL-44
+      - R19
+      - VI.4
+      - R36
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BulkJob'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/X-Total-Count'
+            X-Total-Count-Capped:
+              $ref: '#/components/headers/X-Total-Count-Capped'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /bulk/jobs/{id}:
+    get:
+      operationId: bulkGetJob
+      tags:
+      - Bulk ingest
+      summary: Get a bulk job
+      description: State and row counts; a job of another tenant is 404.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: 'the permission declared by the object type sink (ops.variable: ops.tenant.admin)'
+      x-sangam-requirements:
+      - SL-44
+      - R19
+      - VI.4
+      - R36
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /bulk/jobs/{id}/chunks/{seq}:
+    put:
+      operationId: bulkUploadChunk
+      tags:
+      - Bulk ingest
+      summary: Upload a chunk
+      description: 'Idempotent per sequence number: the same content again is a replay, other content for a stored sequence is 409 CHUNK_CONFLICT.
+        Invalid rows are stored as FAILED INVALID_ROW. The SL-43 tenant batch-size quota is checked per chunk before anything is stored (413 TENANT_QUOTA_EXCEEDED).'
+      x-sangam-command-type: bulk.chunk.upload
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: seq
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+        description: Chunk sequence number, 0-based
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: 'the permission declared by the object type sink (ops.variable: ops.tenant.admin)'
+      x-sangam-requirements:
+      - SL-44
+      - R19
+      - VI.4
+      - R36
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkChunk'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkChunkReceipt'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '413':
+          description: BULK_LIMIT (rows or bytes per chunk, chunks or rows per job), or TENANT_QUOTA_EXCEEDED (the tenant's SL-43 batch size);
+            nothing was stored
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /bulk/jobs/{id}/close:
+    post:
+      operationId: bulkCloseJob
+      tags:
+      - Bulk ingest
+      summary: Close a bulk job
+      description: No more chunks; the worker applies the rows asynchronously (409 BULK_JOB_EMPTY, BULK_CHUNKS_MISSING).
+      x-sangam-command-type: bulk.job.close
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: 'the permission declared by the object type sink (ops.variable: ops.tenant.admin)'
+      x-sangam-requirements:
+      - SL-44
+      - R19
+      - VI.4
+      - R36
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkJob'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /bulk/jobs/{id}/abort:
+    post:
+      operationId: bulkAbortJob
+      tags:
+      - Bulk ingest
+      summary: Abort a bulk job
+      description: Rows not yet applied are cancelled; applied rows stay applied.
+      x-sangam-command-type: bulk.job.abort
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: 'the permission declared by the object type sink (ops.variable: ops.tenant.admin)'
+      x-sangam-requirements:
+      - SL-44
+      - R19
+      - VI.4
+      - R36
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkJob'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /bulk/jobs/{id}/rows:
+    get:
+      operationId: bulkJobRows
+      tags:
+      - Bulk ingest
+      summary: Per-row status
+      description: In upload order, optionally by state.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: state
+        in: query
+        schema:
+          type: string
+          enum:
+          - PENDING
+          - RUNNING
+          - DONE
+          - SKIPPED
+          - FAILED
+          - CANCELLED
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      x-sangam-permission: 'the permission declared by the object type sink (ops.variable: ops.tenant.admin)'
+      x-sangam-requirements:
+      - SL-44
+      - R19
+      - VI.4
+      - R36
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BulkRowStatus'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/X-Total-Count'
+            X-Total-Count-Capped:
+              $ref: '#/components/headers/X-Total-Count-Capped'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /bulk/jobs/{id}/errors:
+    get:
+      operationId: bulkJobErrors
+      tags:
+      - Bulk ingest
+      summary: Error report
+      description: Failed rows with error code and text.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      x-sangam-permission: 'the permission declared by the object type sink (ops.variable: ops.tenant.admin)'
+      x-sangam-requirements:
+      - SL-44
+      - R19
+      - VI.4
+      - R36
+      - R41
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BulkRowStatus'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/X-Total-Count'
+            X-Total-Count-Capped:
+              $ref: '#/components/headers/X-Total-Count-Capped'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /programme-config:
     put:
       operationId: programmePublishConfig
@@ -56967,6 +57365,127 @@ components:
         purged:
           type: integer
           format: int32
+    BulkCreateJob:
+      type: object
+      description: CreateJobRequest. expectedChunks, when given, must all be uploaded before close.
+      properties:
+        objectType:
+          type: string
+        expectedChunks:
+          type: integer
+          format: int32
+      required:
+      - objectType
+    BulkRowInput:
+      type: object
+      description: 'RowInput: the stable id of the record in the caller system of the record and its fields.'
+      properties:
+        externalId:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+      required:
+      - externalId
+      - data
+    BulkChunk:
+      type: object
+      description: 'ChunkRequest. Limits: rows per chunk and bytes per chunk (413 BULK_LIMIT).'
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/BulkRowInput'
+      required:
+      - rows
+    BulkChunkReceipt:
+      type: object
+      description: ChunkReceipt; replayed = the same content was stored before.
+      properties:
+        chunkSeq:
+          type: integer
+          format: int32
+        rows:
+          type: integer
+          format: int32
+        invalidRows:
+          type: integer
+          format: int32
+        replayed:
+          type: boolean
+    BulkJob:
+      type: object
+      description: Job with row counts per state.
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        objectType:
+          type: string
+        state:
+          type: string
+          enum:
+          - OPEN
+          - PROCESSING
+          - COMPLETED
+          - COMPLETED_WITH_ERRORS
+          - ABORTED
+        expectedChunks:
+          type: integer
+          format: int32
+        chunks:
+          type: integer
+          format: int32
+        totalRows:
+          type: integer
+          format: int64
+        rows:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+    BulkRowStatus:
+      type: object
+      description: 'RowStatus: per-row state, error and the sink result reference.'
+      properties:
+        chunkSeq:
+          type: integer
+          format: int32
+        rowSeq:
+          type: integer
+          format: int32
+        externalId:
+          type: string
+        state:
+          type: string
+          enum:
+          - PENDING
+          - RUNNING
+          - DONE
+          - SKIPPED
+          - FAILED
+          - CANCELLED
+        attempts:
+          type: integer
+          format: int32
+        errorCode:
+          type: string
+        errorText:
+          type: string
+        resultRef:
+          type: string
     PgPublished:
       type: object
       description: Published (Java IndicatorRegistry.Published).

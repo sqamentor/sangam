@@ -18,4 +18,11 @@ public class OpsRestConfiguration {
     @Import({OpsController.class, OpsUiController.class})
     static class Controllers {
     }
+
+    /** SL-44 bulk ingest; active when sangam-server bound {@link org.sangam.ops.bulk.BulkIngest}. */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnBean(type = "org.sangam.ops.bulk.BulkIngest")
+    @Import({BulkController.class, BulkProblemAdvice.class})
+    static class Bulk {
+    }
 }

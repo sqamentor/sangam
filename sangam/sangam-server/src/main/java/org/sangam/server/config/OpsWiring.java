@@ -148,6 +148,37 @@ public class OpsWiring {
                 Duration.ofMinutes(1));
     }
 
+    /**
+     * SL-44 bulk ingest. Sinks: the built-in tenant-variable sink plus every {@link org.sangam.ops.bulk.BulkIngest.Sink}
+     * bean. Quota: the SL-43 {@code TenantQuotas} (batch size per chunk). Limits: {@code sangam.ops.bulk.*}.
+     */
+    @Bean
+    public org.sangam.ops.bulk.BulkIngest sangamBulkIngest(TxSupport tx, DataSource ds, ScopedVariables vars, RestProperties rest, Environment env,
+            ObjectProvider<org.sangam.ops.bulk.BulkIngest.Sink> sinks) {
+        Dialect d = tx.dialect();
+        org.sangam.ops.bulk.BulkIngest.Limits def = org.sangam.ops.bulk.BulkIngest.Limits.DEFAULTS;
+        org.sangam.ops.bulk.BulkIngest.Limits limits = new org.sangam.ops.bulk.BulkIngest.Limits(
+                env.getProperty("sangam.ops.bulk.max-rows-per-chunk", Integer.class, def.maxRowsPerChunk()),
+                env.getProperty("sangam.ops.bulk.max-chunk-bytes", Integer.class, def.maxChunkBytes()),
+                env.getProperty("sangam.ops.bulk.max-chunks-per-job", Integer.class, def.maxChunksPerJob()),
+                env.getProperty("sangam.ops.bulk.max-rows-per-job", Long.class, def.maxRowsPerJob()),
+                env.getProperty("sangam.ops.bulk.max-active-jobs-per-tenant", Integer.class, def.maxActiveJobsPerTenant()),
+                env.getProperty("sangam.ops.bulk.max-attempts", Integer.class, def.maxAttempts()));
+        org.sangam.ops.bulk.BulkIngest ingest = new org.sangam.ops.bulk.BulkIngest(d, Transactions.of(ds), new AuditChain(d), limits, rest.getNode());
+        ingest.register(org.sangam.ops.bulk.BulkSinks.variables(vars, org.sangam.rest.modules.ops.OpsController.ADMIN));
+        sinks.orderedStream().forEach(ingest::register);
+        return ingest;
+    }
+
+    /** Applies bulk rows on every node (SKIP LOCKED claims); resumes this node's rows at start. */
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    public org.sangam.ops.bulk.BulkIngestWorker sangamBulkIngestWorker(org.sangam.ops.bulk.BulkIngest ingest, Environment env) {
+        return new org.sangam.ops.bulk.BulkIngestWorker(ingest,
+                env.getProperty("sangam.ops.bulk.worker.batch", Integer.class, 100),
+                env.getProperty("sangam.ops.bulk.worker.poll-millis", Long.class, 2_000L),
+                env.getProperty("sangam.ops.bulk.worker.stale-millis", Long.class, 300_000L));
+    }
+
     private static UsageMetrics usage(Dialect d, Transactions t) {
         return new UsageMetrics(d, t, null);
     }

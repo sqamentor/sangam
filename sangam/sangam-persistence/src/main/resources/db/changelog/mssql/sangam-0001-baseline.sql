@@ -5484,6 +5484,79 @@ CREATE TABLE INTEGRATION_WEBHOOK_STATE (
 );
 --rollback DROP TABLE INTEGRATION_WEBHOOK_STATE;
 
+--changeset sangam:0032-01-ops_bulk_job dbms:mssql
+--comment: bulk ingest jobs (SL-44)
+CREATE TABLE OPS_BULK_JOB (
+  id NVARCHAR(64) NOT NULL,
+  tenant_id NVARCHAR(64) NOT NULL,
+  object_type NVARCHAR(64) NOT NULL,
+  state NVARCHAR(64) NOT NULL,
+  expected_chunks INT,
+  chunk_count INT NOT NULL,
+  total_rows BIGINT NOT NULL,
+  created_by NVARCHAR(255),
+  created_at DATETIMEOFFSET NOT NULL,
+  updated_at DATETIMEOFFSET NOT NULL,
+  closed_at DATETIMEOFFSET,
+  completed_at DATETIMEOFFSET,
+  CONSTRAINT PK_OPS_BULK_JOB PRIMARY KEY (id)
+);
+CREATE INDEX OPS_BULK_JOB_TENANT ON OPS_BULK_JOB (tenant_id, state, created_at);
+--rollback DROP TABLE OPS_BULK_JOB;
+
+--changeset sangam:0032-02-ops_bulk_chunk dbms:mssql
+--comment: bulk ingest chunks, idempotent by sequence and content hash (SL-44)
+CREATE TABLE OPS_BULK_CHUNK (
+  job_id NVARCHAR(64) NOT NULL,
+  chunk_seq INT NOT NULL,
+  row_count INT NOT NULL,
+  invalid_count INT NOT NULL,
+  byte_count BIGINT NOT NULL,
+  chunk_hash NVARCHAR(64) NOT NULL,
+  uploaded_by NVARCHAR(255),
+  uploaded_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_OPS_BULK_CHUNK PRIMARY KEY (job_id, chunk_seq)
+);
+--rollback DROP TABLE OPS_BULK_CHUNK;
+
+--changeset sangam:0032-03-ops_bulk_row dbms:mssql
+--comment: bulk ingest rows with per-row status and error (SL-44)
+CREATE TABLE OPS_BULK_ROW (
+  job_id NVARCHAR(64) NOT NULL,
+  chunk_seq INT NOT NULL,
+  row_seq INT NOT NULL,
+  external_id NVARCHAR(255) NOT NULL,
+  payload NVARCHAR(MAX) NOT NULL,
+  payload_hash NVARCHAR(64) NOT NULL,
+  state NVARCHAR(64) NOT NULL,
+  attempts INT NOT NULL,
+  error_code NVARCHAR(64),
+  error_text NVARCHAR(MAX),
+  result_ref NVARCHAR(255),
+  claimed_by NVARCHAR(64),
+  updated_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_OPS_BULK_ROW PRIMARY KEY (job_id, chunk_seq, row_seq)
+);
+CREATE INDEX OPS_BULK_ROW_CLAIM ON OPS_BULK_ROW (state, job_id, chunk_seq, row_seq);
+CREATE INDEX OPS_BULK_ROW_JOB_STATE ON OPS_BULK_ROW (job_id, state);
+--rollback DROP TABLE OPS_BULK_ROW;
+
+--changeset sangam:0032-04-ops_bulk_key dbms:mssql
+--comment: bulk ingest per-row idempotency key: (tenant, object type, external id) (SL-44)
+CREATE TABLE OPS_BULK_KEY (
+  tenant_id NVARCHAR(64) NOT NULL,
+  object_type NVARCHAR(64) NOT NULL,
+  external_id NVARCHAR(255) NOT NULL,
+  payload_hash NVARCHAR(64) NOT NULL,
+  result_ref NVARCHAR(255),
+  job_id NVARCHAR(64) NOT NULL,
+  chunk_seq INT NOT NULL,
+  row_seq INT NOT NULL,
+  updated_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_OPS_BULK_KEY PRIMARY KEY (tenant_id, object_type, external_id)
+);
+--rollback DROP TABLE OPS_BULK_KEY;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mssql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD form_version_hash NVARCHAR(64);

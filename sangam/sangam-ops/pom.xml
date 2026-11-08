@@ -51,5 +51,60 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Tests only: the PostgreSQL integration test (*IT, failsafe, profile sangam-db-it) applies the product
+         Liquibase changelog of sangam-persistence to a PostgreSQL 17 container. -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-persistence</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+
+  <profiles>
+    <!-- Database integration tests: -Dsangam.db=postgres runs BulkIngestPostgresIT (Docker needed). -->
+    <profile>
+      <id>sangam-db-it</id>
+      <activation>
+        <property>
+          <name>sangam.db</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <!-- PostgreSQL rejects the legacy zone id a Windows JVM in India reports (Asia/Calcutta) as the session
+                   TimeZone at connect; the server normalises it (LegacyTimeZoneEnvironmentPostProcessor), this
+                   plain-JDBC test JVM runs in UTC instead -->
+              <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=UTC</argLine>
+              <systemPropertyVariables>
+                <sangam.db>${sangam.db}</sangam.db>
+                <api.version>1.44</api.version>
+              </systemPropertyVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

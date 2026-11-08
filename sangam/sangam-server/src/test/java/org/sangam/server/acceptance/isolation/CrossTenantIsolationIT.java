@@ -88,6 +88,11 @@ class CrossTenantIsolationIT extends AbstractAcceptanceIT {
     @Autowired
     @Qualifier("requestMappingHandlerMapping")
     RequestMappingHandlerMapping mappings;
+    @Autowired
+    org.sangam.security.SangamSecurity security;
+    @Autowired
+    @Qualifier("sangamProductTransactions")
+    org.sangam.core.layer.Transactions productTransactions;
     @Value("${local.server.port}")
     int port;
 
@@ -138,6 +143,10 @@ class CrossTenantIsolationIT extends AbstractAcceptanceIT {
 
     @BeforeAll
     void seed() throws Exception {
+        // both tenants exist and are active, with their administrator grants: otherwise every call is 401
+        // TENANT_UNAVAILABLE and the sweep would pass without testing anything
+        org.sangam.server.bridge.SecurityBootstrap.run(security, productTransactions, List.of(A, B),
+                List.of("sangam-admin", "sangam-engine-admin"), false);
         for (String t : List.of(A, B)) {
             engine.deploy(t, KEY, Map.of(KEY + ".bpmn", bpmn().getBytes(StandardCharsets.UTF_8),
                     CASE_KEY + ".cmmn", cmmn().getBytes(StandardCharsets.UTF_8)));
@@ -148,8 +157,9 @@ class CrossTenantIsolationIT extends AbstractAcceptanceIT {
         piB = engine.startProcess(B, KEY, BK_B, Map.of("note", SECRET_B));
         // tenant B's own REST traffic, so its product tables (audit, idempotency, outbox, events) hold rows too
         String tokenB = bearer(B, "sl45-b-admin", ADMIN_GROUPS);
-        send(tokenB, "POST", "/api/v1/process-instances",
+        Reply started = send(tokenB, "POST", "/api/v1/process-instances",
                 Map.of("key", KEY, "businessKey", BK_B + "-rest", "variables", Map.of("note", SECRET_B)), Map.of());
+        assertEquals(201, started.status, "tenant B's own REST start works: " + started.body);
         send(tokenB, "POST", "/api/v1/events/definitions", Map.of("key", RUN + "-evdef", "name", "SL-45 event",
                 "startProcessKey", KEY, "businessKeyPointer", "/billId"), Map.of());
         send(tokenB, "POST", "/api/v1/events/channels", Map.of("key", RUN + "-chan", "name", "SL-45 channel",

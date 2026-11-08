@@ -48,23 +48,36 @@ public final class ScopedVariables {
 
     /** Writes a value; {@code version} increases on every change, and {@code reason} is stored with it. */
     public void set(String scope, String name, Object value, String actor, String reason) {
-        if (!name.matches("[A-Za-z][A-Za-z0-9_.-]{0,127}")) {
+        tx.inTransaction(c -> {
+            set(c, scope, name, value, actor, reason);
+            return null;
+        });
+        cache.remove(scope);
+    }
+
+    /**
+     * {@link #set(String, String, Object, String, String)} inside the caller's transaction (bulk ingest commits the value
+     * with its own row bookkeeping). The caller calls {@link #evict} after its commit.
+     */
+    public void set(java.sql.Connection c, String scope, String name, Object value, String actor, String reason) {
+        if (name == null || !name.matches("[A-Za-z][A-Za-z0-9_.-]{0,127}")) {
             throw new IllegalArgumentException("invalid variable name");
         }
         if (name.toLowerCase(java.util.Locale.ROOT).matches(".*(password|secret|token|apikey|api-key|credential).*")) {
             throw new IllegalArgumentException("secret-like names belong in the secret store");
         }
         String json = Json.write(Map.of("v", value));
-        tx.inTransaction(c -> {
-            Instant now = Jdbc.dbNow(c, dialect);
-            if (Jdbc.update(c, "UPDATE OPS_VARIABLE SET value_json=?, updated_by=?, updated_at=?, version=version+1, reason=? WHERE scope_id=? AND name=?",
-                    json, actor, now, reason, scope, name) == 0) {
-                Jdbc.update(c, "INSERT INTO OPS_VARIABLE(scope_id,name,value_json,updated_by,updated_at,scope_type,tenant_id,version,reason) VALUES (?,?,?,?,?,?,?,1,?)",
-                        scope, name, json, actor, now, scopeType(scope), tenantIdOf(scope), reason);
-            }
-            audit.append(c, tenantOf(scope), "variables:" + scope, "VARIABLE_SET", Map.of("scope", scope, "name", name, "actor", actor, "reason", String.valueOf(reason)));
-            return null;
-        });
+        Instant now = Jdbc.dbNow(c, dialect);
+        if (Jdbc.update(c, "UPDATE OPS_VARIABLE SET value_json=?, updated_by=?, updated_at=?, version=version+1, reason=? WHERE scope_id=? AND name=?",
+                json, actor, now, reason, scope, name) == 0) {
+            Jdbc.update(c, "INSERT INTO OPS_VARIABLE(scope_id,name,value_json,updated_by,updated_at,scope_type,tenant_id,version,reason) VALUES (?,?,?,?,?,?,?,1,?)",
+                    scope, name, json, actor, now, scopeType(scope), tenantIdOf(scope), reason);
+        }
+        audit.append(c, tenantOf(scope), "variables:" + scope, "VARIABLE_SET", Map.of("scope", scope, "name", name, "actor", actor, "reason", String.valueOf(reason)));
+    }
+
+    /** Drops the cached values of a scope (after a write committed elsewhere). */
+    public void evict(String scope) {
         cache.remove(scope);
     }
 

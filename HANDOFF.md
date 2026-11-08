@@ -174,6 +174,11 @@ The selftest `node tools/governance/selftest-push-approval.mjs` passes 31/31 und
 - **Cause:** suspected to be the ADR-D-25 strict-XOR change.
 - **Fix:** a fix agent was dispatched (worktree `scratchpad\wt-sg35`, lock owner `customwf-sg35`). If it died, redo it: no match must fail closed with an audited `NO_MATCHING_ROUTE` incident, for every exclusive gateway. Add a regression test on H2, on the IFMS bill pack and on PostgreSQL. WorkFlow needs the fix commit id.
 
+### 6b-3. Module-controller errors become 401 (found by SL-44)
+- **Defect:** controllers under `sangam-rest/modules` are outside `ProblemHandler`'s package scope. Their errors go to `/error`, and the security chain turns them into 401.
+- **Status:** bulk is fixed by `BulkProblemAdvice`. `OpsController` and the other module controllers still need a generic root fix: a single advice for all Sangam REST controllers, with a test.
+- **SL-36 and SL-44:** CLOSED in the register. SL-44 passed `BulkIngestPostgresIT` 3/3.
+
 ### 6c. Not started / open
 - **SL-35:** a new document type, end to end. It depends on packs4.
 - **IX.8 follow-ups:**

@@ -115,6 +115,8 @@ public final class SangamSchema {
             "MOD_SERVICE_MOCK", "OPS_RETENTION_RUN",
             // ChannelsSchema, ModellerSchema, OpsSchema
             "CH_CONVERSATION", "CH_PARTICIPANT", "CH_MESSAGE", "CH_OPT_IN", "CH_INBOUND_SEEN", "CH_POLL_CURSOR", "MOD_EDIT_LEASE", "MOD_TAKEOVER_DRAFT", "MOD_TEMPLATE", "MOD_ACTION", "MOD_ACTION_RUN", "MOD_TEST_RUN", "OPS_MIG_CHECKPOINT", "OPS_MIG_ROW", "OPS_USAGE_DAILY", "OPS_SEARCH_DOC", "OPS_SEARCH_ALIAS", "OPS_INDEX_JOB", "OPS_VARIABLE", "OPS_SECRET",
+            // SL-44 bulk ingest (OpsSchema)
+            "OPS_BULK_JOB", "OPS_BULK_CHUNK", "OPS_BULK_ROW", "OPS_BULK_KEY",
             // AiSchema, ComplianceSchema, PipelineStore, TelemetrySchema
             "AI_AGENT_RUN", "AI_AGENT_STEP", "AI_AGENT_APPROVAL", "AI_KB_VERSION", "AI_KB_CHUNK", "AI_DRAFT",
             "AI_CLASSIFICATION", "CMP_RESTRICTION", "CMP_BREACH_PLAN", "PIPELINE_RUN", "PIPELINE_STEP_RUN",

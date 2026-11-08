@@ -107,7 +107,68 @@ public final class OpsSchema {
               executed_by {str} NOT NULL,
               executed_at {ts} NOT NULL
             )""",
-            "CREATE INDEX OPS_RETENTION_RUN_TENANT ON OPS_RETENTION_RUN (tenant_id, executed_at)");
+            "CREATE INDEX OPS_RETENTION_RUN_TENANT ON OPS_RETENTION_RUN (tenant_id, executed_at)",
+            // SL-44 bulk ingest (BulkIngest): jobs, idempotent chunks, per-row status, per-(tenant, type, external id) keys
+            """
+            CREATE TABLE OPS_BULK_JOB (
+              id              {str64} NOT NULL PRIMARY KEY,
+              tenant_id       {str64} NOT NULL,
+              object_type     {str64} NOT NULL,
+              state           {str64} NOT NULL,
+              expected_chunks {int},
+              chunk_count     {int} NOT NULL,
+              total_rows      {long} NOT NULL,
+              created_by      {str},
+              created_at      {ts} NOT NULL,
+              updated_at      {ts} NOT NULL,
+              closed_at       {ts},
+              completed_at    {ts}
+            )""",
+            "CREATE INDEX OPS_BULK_JOB_TENANT ON OPS_BULK_JOB (tenant_id, state, created_at)",
+            """
+            CREATE TABLE OPS_BULK_CHUNK (
+              job_id        {str64} NOT NULL,
+              chunk_seq     {int} NOT NULL,
+              row_count     {int} NOT NULL,
+              invalid_count {int} NOT NULL,
+              byte_count    {long} NOT NULL,
+              chunk_hash    {str64} NOT NULL,
+              uploaded_by   {str},
+              uploaded_at   {ts} NOT NULL,
+              PRIMARY KEY (job_id, chunk_seq)
+            )""",
+            """
+            CREATE TABLE OPS_BULK_ROW (
+              job_id       {str64} NOT NULL,
+              chunk_seq    {int} NOT NULL,
+              row_seq      {int} NOT NULL,
+              external_id  {str} NOT NULL,
+              payload      {text} NOT NULL,
+              payload_hash {str64} NOT NULL,
+              state        {str64} NOT NULL,
+              attempts     {int} NOT NULL,
+              error_code   {str64},
+              error_text   {text},
+              result_ref   {str},
+              claimed_by   {str64},
+              updated_at   {ts} NOT NULL,
+              PRIMARY KEY (job_id, chunk_seq, row_seq)
+            )""",
+            "CREATE INDEX OPS_BULK_ROW_CLAIM ON OPS_BULK_ROW (state, job_id, chunk_seq, row_seq)",
+            "CREATE INDEX OPS_BULK_ROW_JOB_STATE ON OPS_BULK_ROW (job_id, state)",
+            """
+            CREATE TABLE OPS_BULK_KEY (
+              tenant_id    {str64} NOT NULL,
+              object_type  {str64} NOT NULL,
+              external_id  {str} NOT NULL,
+              payload_hash {str64} NOT NULL,
+              result_ref   {str},
+              job_id       {str64} NOT NULL,
+              chunk_seq    {int} NOT NULL,
+              row_seq      {int} NOT NULL,
+              updated_at   {ts} NOT NULL,
+              PRIMARY KEY (tenant_id, object_type, external_id)
+            )""");
 
     public static void create(Connection c, Dialect d) throws SQLException {
         try (Statement s = c.createStatement()) {
