@@ -11,12 +11,16 @@ import org.sangam.core.quota.TenantQuotas;
 import org.sangam.core.security.SecurityIdentity;
 import org.sangam.security.tenant.TenantContext;
 
+import java.sql.Connection;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 /**
@@ -43,6 +47,21 @@ import java.util.function.Function;
  * tenant chain {@code quota:<tenant>} in the quota's own transaction (it survives the rollback of the refused
  * command; one event per window, not per refused call, so a flood cannot flood the audit chain). Size refusals are
  * deduplicated per minute the same way.
+ *
+ * <p><b>Connections (SL-43-DEADLOCK).</b> Quotas are checked from inside units of work that already hold a pool
+ * connection (an engine command, a REST transaction). Taking a second connection from the same pool there is a
+ * pool-locking deadlock: with as many concurrent callers as pool slots, every caller holds one connection and waits for
+ * a second one. So:
+ * <ul>
+ *   <li>override reads run on the caller's own connection when it has one ({@code ambient}; read committed, read
+ *       only), and otherwise through {@code tx}, single-flight per tenant;</li>
+ *   <li>the counting {@code UPDATE} and the refusal audit must commit on their own (a counted call that rolls back is
+ *       still counted, the audit survives the refused command's rollback, and the per-tenant window row must not stay
+ *       locked until the caller commits), so they run through {@code tx}, which must be a <b>leaf</b> pool: a pool
+ *       separate from the one callers hold, whose connections are never held while any other connection is
+ *       requested. A wait for a leaf connection can then never be part of a wait cycle. The server wires a dedicated
+ *       small quota pool ({@code QuotaWiring}).</li>
+ * </ul>
  */
 public final class JdbcTenantQuotas implements TenantQuotas {
 
@@ -50,6 +69,23 @@ public final class JdbcTenantQuotas implements TenantQuotas {
     @FunctionalInterface
     public interface OverrideSource {
         Map<String, Object> overrides(String tenantId);
+    }
+
+    /** Tenant overrides read on a given connection (the caller's or a leaf connection). */
+    @FunctionalInterface
+    public interface ConnectionOverrideSource {
+        Map<String, Object> overrides(Connection c, String tenantId);
+    }
+
+    /** The connection of the caller's current transaction, or null when the caller holds none. */
+    @FunctionalInterface
+    public interface AmbientConnection {
+        Connection current();
+
+        AmbientConnection NONE = () -> null;
+    }
+
+    private record Flight(long generation, CompletableFuture<Map<String, Object>> result) {
     }
 
     public static final String AUDIT_EVENT = "TENANT_QUOTA_EXCEEDED";
@@ -61,18 +97,34 @@ public final class JdbcTenantQuotas implements TenantQuotas {
 
     private final Dialect dialect;
     private final Transactions tx;
-    private final OverrideSource source;
+    private final ConnectionOverrideSource source;
+    private final AmbientConnection ambient;
     private final Map<QuotaLimit, Long> defaults;
     private final AuditChain audit;
     private final Clock clock;
     private final long overrideTtlMs;
     private final Map<String, Cached> cache = new ConcurrentHashMap<>();
+    private final Map<String, AtomicLong> generations = new ConcurrentHashMap<>();
+    private final Map<String, Flight> inFlight = new ConcurrentHashMap<>();
 
+    /** Overrides from a source that needs no connection (tests, static configuration). */
     public JdbcTenantQuotas(Dialect dialect, Transactions tx, OverrideSource source, Map<QuotaLimit, Long> defaults,
                             AuditChain auditOrNull, Clock clock, Duration overrideTtl) {
+        this(dialect, tx, source == null ? null : (c, t) -> source.overrides(t), AmbientConnection.NONE, defaults,
+                auditOrNull, clock, overrideTtl);
+    }
+
+    /**
+     * @param tx      leaf transactions for counting, refusal audit and override reads of callers without a connection
+     *                (see the class comment: never the pool the callers hold)
+     * @param ambient the caller's current connection, on which overrides are read when present
+     */
+    public JdbcTenantQuotas(Dialect dialect, Transactions tx, ConnectionOverrideSource source, AmbientConnection ambient,
+                            Map<QuotaLimit, Long> defaults, AuditChain auditOrNull, Clock clock, Duration overrideTtl) {
         this.dialect = dialect;
         this.tx = tx;
-        this.source = source == null ? t -> Map.of() : source;
+        this.source = source == null ? (c, t) -> Map.of() : source;
+        this.ambient = ambient == null ? AmbientConnection.NONE : ambient;
         this.defaults = new EnumMap<>(QuotaLimit.class);
         for (QuotaLimit l : QuotaLimit.values()) {
             Long v = defaults == null ? null : defaults.get(l);
@@ -186,16 +238,81 @@ public final class JdbcTenantQuotas implements TenantQuotas {
         }
         long now = clock.millis();
         Cached cached = cache.get(tenantId);
-        if (cached == null || now - cached.loadedAt() >= overrideTtlMs) {
-            Map<String, Object> o = source.overrides(tenantId);
-            cached = new Cached(o == null ? Map.of() : Map.copyOf(withoutNulls(o)), now);
-            cache.put(tenantId, cached);
+        if (cached != null && now - cached.loadedAt() < overrideTtlMs) {
+            return cached.overrides();
         }
-        return cached.overrides();
+        Connection own = ambient.current();
+        if (own != null) {
+            // on the caller's connection: no second connection, no waiting for another thread
+            long gen = generation(tenantId);
+            return publish(tenantId, gen, now, source.overrides(own, tenantId));
+        }
+        return loadSingleFlight(tenantId, now);
     }
 
-    /** Drops the cached overrides of a tenant (after a configure on this node). */
+    /** One leaf read per tenant at a time; callers arriving meanwhile share it unless an invalidation intervened. */
+    private Map<String, Object> loadSingleFlight(String tenantId, long now) {
+        while (true) {
+            long gen = generation(tenantId);
+            Flight mine = new Flight(gen, new CompletableFuture<>());
+            Flight running = inFlight.putIfAbsent(tenantId, mine);
+            if (running != null) {
+                if (running.generation() != gen) {
+                    // the running read started before a configure: it may return the old values
+                    running.result().handle((v, e) -> null).join();
+                    continue;
+                }
+                return join(running.result());
+            }
+            try {
+                Map<String, Object> o = publish(tenantId, gen, now, tx.inTransaction(c -> source.overrides(c, tenantId)));
+                mine.result().complete(o);
+                return o;
+            } catch (RuntimeException | Error e) {
+                mine.result().completeExceptionally(e);
+                throw e;
+            } finally {
+                inFlight.remove(tenantId, mine);
+            }
+        }
+    }
+
+    private static Map<String, Object> join(CompletableFuture<Map<String, Object>> f) {
+        try {
+            return f.join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof RuntimeException r) {
+                throw r;
+            }
+            if (e.getCause() instanceof Error err) {
+                throw err;
+            }
+            throw e;
+        }
+    }
+
+    /** Caches a read unless the tenant was invalidated since the read began (it may predate the change). */
+    private Map<String, Object> publish(String tenantId, long gen, long loadedAt, Map<String, Object> read) {
+        Map<String, Object> o = read == null ? Map.of() : Map.copyOf(withoutNulls(read));
+        cache.compute(tenantId, (k, old) -> generation(tenantId) != gen ? old
+                : old != null && old.loadedAt() > loadedAt ? old : new Cached(o, loadedAt));
+        return o;
+    }
+
+    private long generation(String tenantId) {
+        return generations.computeIfAbsent(tenantId, k -> new AtomicLong()).get();
+    }
+
+    /**
+     * Drops the cached overrides of a tenant; call it after a configure commits on this node (other nodes see the
+     * change within {@code overrideTtl}). A read already running when this is called is not cached.
+     */
+    @Override
     public void invalidate(String tenantId) {
+        if (tenantId == null) {
+            return;
+        }
+        generations.computeIfAbsent(tenantId, k -> new AtomicLong()).incrementAndGet();
         cache.remove(tenantId);
     }
 

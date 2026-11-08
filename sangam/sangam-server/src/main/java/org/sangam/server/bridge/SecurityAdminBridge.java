@@ -392,6 +392,8 @@ public final class SecurityAdminBridge implements AdminPort {
             }
             return null;
         });
+        // SL-43: the tenant row (quotas included) changed; the cached quota overrides of this node go now
+        org.sangam.server.config.QuotaWiring.invalidateAfterCommit(id);
         return tenant(ctx, id);
     }
 

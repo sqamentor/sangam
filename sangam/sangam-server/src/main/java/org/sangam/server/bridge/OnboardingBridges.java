@@ -108,6 +108,8 @@ public final class OnboardingBridges {
                 security.tenants().configure(c, platformAdmin(id), config, quotas, null);
                 return null;
             });
+            // SL-43: the tenant's quota overrides changed; drop this node's cached copy once committed
+            org.sangam.server.config.QuotaWiring.invalidateAfterCommit(id);
         }
 
         @Override

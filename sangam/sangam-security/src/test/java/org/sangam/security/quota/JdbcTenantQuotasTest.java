@@ -186,6 +186,80 @@ class JdbcTenantQuotasTest {
         assertDoesNotThrow(() -> JdbcTenantQuotas.validate(Map.of("startsPerSecond", 5, "somethingElse", "x")));
     }
 
+    /** Counts the units of work run through it (the leaf pool). */
+    final java.util.concurrent.atomic.AtomicInteger leafUnits = new java.util.concurrent.atomic.AtomicInteger();
+
+    Transactions countingTx() {
+        Transactions t = tx();
+        return new Transactions() {
+            @Override
+            public <T> T inTransaction(Function<Connection, T> work) {
+                leafUnits.incrementAndGet();
+                return t.inTransaction(work);
+            }
+        };
+    }
+
+    @Test
+    void overridesAreReadOnTheCallersOwnConnectionWhenItHasOne() throws Exception {
+        try (Connection callers = DriverManager.getConnection(url, "sa", "")) {
+            List<Connection> seen = new java.util.concurrent.CopyOnWriteArrayList<>();
+            JdbcTenantQuotas q = new JdbcTenantQuotas(D, countingTx(), (c, t) -> {
+                seen.add(c);
+                return Map.of("maxBatchSize", 5);
+            }, () -> callers, Map.of(), new AuditChain(D), clock, Duration.ZERO);
+            assertEquals(5, q.limit("t1", QuotaLimit.BATCH_SIZE));
+            assertEquals(5, q.limit("t1", QuotaLimit.BATCH_SIZE));
+            assertEquals(List.of(callers, callers), seen, "read on the ambient connection every time (ttl 0)");
+            assertEquals(0, leafUnits.get(), "no other connection taken for the override read");
+        }
+    }
+
+    @Test
+    void callersWithoutAConnectionShareOneOverrideReadAndAnInvalidatedReadIsNotCached() throws Exception {
+        CountDownLatch inRead = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicInteger value = new java.util.concurrent.atomic.AtomicInteger(5);
+        JdbcTenantQuotas q = new JdbcTenantQuotas(D, countingTx(), (c, t) -> {
+            int v = value.get();
+            if (reads.incrementAndGet() == 1) {
+                inRead.countDown();
+                try {
+                    release.await(30, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return Map.of("maxBatchSize", v);
+        }, null, Map.of(), new AuditChain(D), clock, Duration.ofHours(1));
+        ExecutorService pool = Executors.newFixedThreadPool(6);
+        try {
+            Future<Long> first = pool.submit(() -> q.limit("t1", QuotaLimit.BATCH_SIZE));
+            assertTrue(inRead.await(30, TimeUnit.SECONDS));
+            List<Future<Long>> joiners = new ArrayList<>();
+            for (int i = 0; i < 4; i++) {
+                joiners.add(pool.submit(() -> q.limit("t1", QuotaLimit.BATCH_SIZE)));
+            }
+            Thread.sleep(200);
+            assertEquals(1, reads.get(), "callers arriving during a read wait for it instead of reading again");
+            // a configure commits while the first read is still running: that read must not be cached
+            value.set(9);
+            q.invalidate("t1");
+            Future<Long> afterChange = pool.submit(() -> q.limit("t1", QuotaLimit.BATCH_SIZE));
+            release.countDown();
+            assertEquals(5L, first.get(30, TimeUnit.SECONDS));
+            for (Future<Long> j : joiners) {
+                assertEquals(5L, j.get(30, TimeUnit.SECONDS));
+            }
+            assertEquals(9L, afterChange.get(30, TimeUnit.SECONDS), "a caller after the change reads the new value");
+            assertEquals(9L, q.limit("t1", QuotaLimit.BATCH_SIZE), "the cache holds the new value, not the old read");
+            assertEquals(2, reads.get());
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
     @Test
     void twoNodesSharingTheDatabaseNeverAdmitMoreThanTheLimit() throws Exception {
         overrides.put("t1", Map.of("apiCallsPerMinute", 40));

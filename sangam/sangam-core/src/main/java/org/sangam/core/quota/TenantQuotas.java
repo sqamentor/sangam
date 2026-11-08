@@ -18,6 +18,13 @@ public interface TenantQuotas {
     /** The effective limit of the tenant ({@link QuotaLimit#UNLIMITED} = none). */
     long limit(String tenantId, QuotaLimit limit);
 
+    /**
+     * The tenant's quota configuration changed (e.g. {@code TenantAdminService.configure}): drop anything cached for
+     * it, so the next check on this node reads the new values. Call it after the change commits. Default: nothing.
+     */
+    default void invalidate(String tenantId) {
+    }
+
     /** No quotas (tests, embedded use). */
     TenantQuotas NONE = new TenantQuotas() {
         @Override

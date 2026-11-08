@@ -141,6 +141,12 @@ class CrossTenantIsolationIT extends AbstractAcceptanceIT {
                 """.formatted(CASE_KEY);
     }
 
+    /** The run's two tenants link their token identities on first use, like the shared tenant {@code acc}. */
+    @org.springframework.test.context.DynamicPropertySource
+    static void tenants(org.springframework.test.context.DynamicPropertyRegistry r) {
+        r.add("sangam.security.jit-provisioning-tenants", () -> "acc," + A + "," + B);
+    }
+
     @BeforeAll
     void seed() throws Exception {
         // both tenants exist and are active, with their administrator grants: otherwise every call is 401
