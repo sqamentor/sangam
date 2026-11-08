@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+# Sangam's own pre-push hook (repository-local core.hooksPath).
+# 1. SG-21: refuse while a source file is hidden by .gitignore.
+# 2. SD-432 "Gate Sangam like IFMS": every ref update needs a recorded, unconsumed approval in the
+#    human's own words for exactly that commit, remote and ref; fast-forward only; hash-chained ledger
+#    under an exclusive lock (tools/governance/push-approval.mjs).
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+bash "$root/tools/check-ignored-sources.sh"
+exec node "$root/tools/governance/push-approval.mjs" check "$1" "$2"
