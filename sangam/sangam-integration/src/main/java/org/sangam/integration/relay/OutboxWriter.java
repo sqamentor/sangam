@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The write side used by commands, delegates and the history projector (VI.2.2; Flowable FC-02 "send event",
- * FC-25/FC-43 "history and typed events onto the outbox").
+ * The write side used by commands, delegates and the history projector (VI.2.2; FLOWABLE-INTO-OPERATON FC-02 "send event",
+ * FLOWABLE-INTO-OPERATON FC-25/FLOWABLE-INTO-OPERATON FC-43 "history and typed events onto the outbox").
  *
  * <p>{@link #append} runs <b>inside the command transaction</b> (the engine transaction): the event commits with the
  * state change or not at all. Destinations come from a {@link SubscriptionResolver}; the event registry of WS-PORTS

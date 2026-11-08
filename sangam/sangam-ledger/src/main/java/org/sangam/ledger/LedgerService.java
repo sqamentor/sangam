@@ -36,6 +36,7 @@ public final class LedgerService {
     private final Map<String, LedgerDefinition> definitions = new ConcurrentHashMap<>();
     private final LedgerControlStore control;
     private final Clock clock;
+    private org.sangam.core.time.BusinessClock businessClock;
     private LedgerPorts.RatePort rates = (f, t, type, d) -> f.equals(t) ? Optional.of(BigDecimal.ONE) : Optional.empty();
     private LedgerPorts.DecisionPort decisions;
     private LedgerPorts.ExternalLedgerPort external;
@@ -48,11 +49,32 @@ public final class LedgerService {
         this.store = store;
         this.control = control;
         this.clock = clock == null ? Clock.systemUTC() : clock;
+        this.businessClock = org.sangam.core.time.BusinessClock.utc(this.clock);
     }
 
     /** Development constructor with an in-memory control store (holds and freeze orders are not durable). */
     public LedgerService(LedgerStore store, Clock clock) {
         this(store, new LedgerControlStore.InMemory(), clock);
+    }
+
+    /** Business dates (default as-of) in the tenant's zone; default UTC on this service's clock. */
+    public LedgerService withBusinessClock(org.sangam.core.time.BusinessClock b) {
+        this.businessClock = java.util.Objects.requireNonNull(b, "businessClock");
+        return this;
+    }
+
+    private LocalDate today(LedgerRequest r) {
+        return today(r.account().tenant());
+    }
+
+    /** Today's business date of a tenant (its zone, see {@link #withBusinessClock}). */
+    public LocalDate today(String tenant) {
+        return businessClock.today(tenant);
+    }
+
+    /** The business zone of a tenant. */
+    public java.time.ZoneId zone(String tenant) {
+        return businessClock.zone(tenant);
     }
 
     public LedgerService withRates(LedgerPorts.RatePort r) {
@@ -108,6 +130,15 @@ public final class LedgerService {
     }
 
     // ------------------------------------------------------------------------------------------------ queries
+    /** Available amount of a money account as exact {@link org.sangam.core.money.Money} (account or ledger currency). */
+    public org.sangam.core.money.Money availableMoney(AccountKey key) {
+        String ccy = store.get(key).map(Balance::currency).orElse(definition(key.tenant(), key.ledger()).currency());
+        if (ccy == null) {
+            throw new IllegalStateException("ledger " + key.ledger() + " has no currency (a quantity ledger)");
+        }
+        return org.sangam.core.money.Money.ofMajor(available(key), ccy);
+    }
+
     public BigDecimal available(AccountKey key) {
         LedgerDefinition def = definition(key.tenant(), key.ledger());
         if (def.mode() == LedgerDefinition.Mode.SHADOW && external != null) {
@@ -164,11 +195,16 @@ public final class LedgerService {
         if ("ALLOCATE".equals(r.operation()) || "ADJUST".equals(r.operation())) {
             // spread across stripes so each stripe can serve concurrent consumers
             List<Movement> legs = new ArrayList<>();
-            BigDecimal part = leg.deltas().getOrDefault(Bucket.TOTAL, BigDecimal.ZERO).divide(BigDecimal.valueOf(n), 6, RoundingMode.DOWN);
-            BigDecimal rest = leg.deltas().getOrDefault(Bucket.TOTAL, BigDecimal.ZERO).subtract(part.multiply(BigDecimal.valueOf(n)));
+            // exact integer split in the amount's own smallest unit: Σ stripes == amount, remainder on stripe 0 (SG-20)
+            BigDecimal whole = leg.deltas().getOrDefault(Bucket.TOTAL, BigDecimal.ZERO);
+            int scale = Math.max(whole.scale(), 0);
+            long u = whole.setScale(scale).unscaledValue().longValueExact();
+            long part = Math.floorDiv(u, n);
+            long rest = Math.subtractExact(u, Math.multiplyExact(part, n));
             for (int i = 0; i < n; i++) {
                 legs.add(new Movement(leg.key().withSub("S" + i), leg.currency(),
-                        Map.of(Bucket.TOTAL, i == 0 ? part.add(rest) : part), leg.guardAvailable(), leg.requireOpen()));
+                        Map.of(Bucket.TOTAL, BigDecimal.valueOf(i == 0 ? part + rest : part, scale)), leg.guardAvailable(),
+                        leg.requireOpen()));
             }
             return post(def, r, legs, findings);
         }
@@ -291,13 +327,29 @@ public final class LedgerService {
     private BigDecimal convert(LedgerDefinition def, LedgerRequest r) {
         BigDecimal a = r.amount() == null ? BigDecimal.ZERO : r.amount();
         String accountCcy = store.get(r.account()).map(Balance::currency).orElse(def.currency());
+        // API boundary (SD-398): an amount finer than its currency's minor unit is rejected, never rounded
+        JdbcLedgerStore.units(a, r.currency() != null ? r.currency() : accountCcy);
+        // SG-23: the operation carries the direction (UNCOMMIT, REVERSE, WITHDRAW ...), so its amount is strictly
+        // positive; only ADJUST is signed (and guarded). A negative COMMIT would silently release funds.
+        if (!"ADJUST".equals(r.operation()) && a.signum() <= 0) {
+            throw new IllegalArgumentException(r.operation() + " amount must be > 0, got " + a.toPlainString());
+        }
         if (r.currency() == null || accountCcy == null || r.currency().equals(accountCcy)) {
             return a;
         }
         BigDecimal rate = rates.rate(r.currency(), accountCcy, r.rateType() == null ? "OFFICIAL" : r.rateType(),
-                r.asOf() == null ? LocalDate.now(clock) : r.asOf())
+                r.asOf() == null ? today(r) : r.asOf())
                 .orElseThrow(() -> new IllegalArgumentException("no rate " + r.currency() + "->" + accountCcy));
-        return a.multiply(rate).setScale(6, RoundingMode.HALF_UP);
+        return roundOnce(def, a.multiply(rate), accountCcy);
+    }
+
+    /**
+     * The single rounding step of a computed amount (FX conversion, formula, revaluation): to whole minor units of
+     * {@code ccy} (or the quantity unit), with the ledger's {@code rounding.mode} (default HALF_UP).
+     */
+    static BigDecimal roundOnce(LedgerDefinition def, BigDecimal exact, String ccy) {
+        RoundingMode mode = RoundingMode.valueOf(Tree.str(def.get("rounding.mode"), "HALF_UP").toUpperCase());
+        return exact.setScale(JdbcLedgerStore.exponent(ccy), mode);
     }
 
     // ------------------------------------------------------------------------------------------------ policies
@@ -318,7 +370,7 @@ public final class LedgerService {
                     }
                 }
                 LocalDate until = Tree.date(b.get().attrs().get("availableUntil"), null);
-                LocalDate asOf = r.asOf() == null ? LocalDate.now(clock) : r.asOf();
+                LocalDate asOf = r.asOf() == null ? today(r) : r.asOf();
                 if (until != null && asOf.isAfter(until) && !"ADJUSTMENT".equals(r.attrs().get("purpose"))) {
                     out.add(Finding.error("PERIOD_EXPIRED", r.account().period(), "period of availability ended " + until, null));
                 }
@@ -391,7 +443,7 @@ public final class LedgerService {
             return amt;
         }
         return rates.rate(r.currency(), def.currency(), r.rateType() == null ? "OFFICIAL" : r.rateType(),
-                r.asOf() == null ? LocalDate.now(clock) : r.asOf()).map(amt::multiply).orElse(null);
+                r.asOf() == null ? today(r) : r.asOf()).map(rate -> roundOnce(def, amt.multiply(rate), def.currency())).orElse(null);
     }
 
     private static String expand(String t, LedgerRequest r) {
@@ -606,7 +658,9 @@ public final class LedgerService {
      */
     public Result allocateFormula(AccountKey target, AccountKey basis, BigDecimal percent, String reference, String actor) {
         BigDecimal base = store.get(basis).map(Balance::total).orElse(BigDecimal.ZERO);
-        BigDecimal amt = base.multiply(percent).divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
+        LedgerDefinition def = definition(target.tenant(), target.ledger());
+        String ccy = store.get(target).map(Balance::currency).orElse(def.currency());
+        BigDecimal amt = roundOnce(def, base.multiply(percent).movePointLeft(2), ccy);
         return apply(new LedgerRequest("ALLOCATE", target, null, amt, null, null, reference, null, actor, null, false, false,
                 false, Map.of("formula", "percentOf:" + basis + ":" + percent)));
     }
@@ -630,7 +684,7 @@ public final class LedgerService {
                 continue;
             }
             if (booked != null) {
-                BigDecimal diff = open.multiply(now.get().subtract(booked)).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal diff = roundOnce(def, open.multiply(now.get().subtract(booked)), def.currency());
                 if (diff.signum() != 0) {
                     String gainLoss = Tree.str(def.get("exchangeDifferenceAccount"), "EXCHANGE_DIFFERENCE");
                     out.add(new LedgerPorts.AccountingEntry(tenant, "reval:" + asOf + ":" + b.key().id(), "REVALUE", "ACCRUAL",

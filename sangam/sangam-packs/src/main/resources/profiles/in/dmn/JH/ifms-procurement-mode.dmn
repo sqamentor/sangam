@@ -4,7 +4,7 @@
   <!-- Procurement rule pack family per profile (IFS-031). JH -->
   <decision id="ifms-procurement-mode" name="Procurement mode by value (JH)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="ifms-procurement-mode_t" hitPolicy="FIRST">
-      <input id="ifms-procurement-mode_i0" label="Estimated value (INR)"><inputExpression id="ifms-procurement-mode_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="ifms-procurement-mode_i0" label="Estimated value (INR)"><inputExpression id="ifms-procurement-mode_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <input id="ifms-procurement-mode_i1" label="Scientific department"><inputExpression id="ifms-procurement-mode_ie1" typeRef="boolean"><text>scientificDepartment</text></inputExpression></input>
       <output id="ifms-procurement-mode_o0" label="Procurement mode" name="procurementMode" typeRef="string"/>
       <output id="ifms-procurement-mode_o1" label="Rule" name="ruleRef" typeRef="string"/>

@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Change-tenant tooling (FC-35; Flowable {@code ChangeTenantIdBuilder}). Route 2 with no direct engine-table update:
+ * Change-tenant tooling (FLOWABLE-INTO-OPERATON FC-35; Flowable {@code ChangeTenantIdBuilder}). Route 2 with no direct engine-table update:
  * <ol>
  *   <li>{@link #copyDefinition}: redeploys the source definition's deployment resources into the target tenant
  *       (duplicate filtering, so it is idempotent).</li>

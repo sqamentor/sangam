@@ -139,7 +139,7 @@ public enum EngineDialect {
         }
     }
 
-    /** Largest string the engine's {@code TEXT_} column takes on this database (D-07, FC-29). */
+    /** Largest string the engine's {@code TEXT_} column takes on this database (FLOWABLE-INTO-OPERATON D-07, FLOWABLE-INTO-OPERATON FC-29). */
     public int engineTextLimitChars() {
         // Oracle ACT_*.TEXT_ is NVARCHAR2(2000); PostgreSQL/MySQL varchar(4000); SQL Server nvarchar(4000); H2 4000.
         return this == ORACLE ? 2000 : 4000;

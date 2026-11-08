@@ -25,7 +25,7 @@ import org.sangam.security.policy.ResourceRegistry;
 import org.sangam.security.tenant.TenantContext;
 
 /**
- * {@link HistoryPort} on sangam-flowable-ports' {@link HistoryQueryService} (FC-25, R63, PF-01; CQRS: no load on the
+ * {@link HistoryPort} on sangam-flowable-ports' {@link HistoryQueryService} (FLOWABLE-INTO-OPERATON FC-25, R63, PF-01; CQRS: no load on the
  * engine history tables for lists).
  * <ul>
  *   <li>Process instances, activity instances and tasks come from the history read model ({@code HRM_*}), variables

@@ -15,7 +15,7 @@ import java.util.Map;
 
 /**
  * One timeline per case file (N04): the file's own journal ({@code CF_EVENT}, including the journals of cases merged
- * into it) merged with the history of every process and CMMN case instance working on it (read model, FC-25, through
+ * into it) merged with the history of every process and CMMN case instance working on it (read model, FLOWABLE-INTO-OPERATON FC-25, through
  * {@link CaseFilePorts.ProcessHistorySource}), newest first.
  */
 public class CaseTimelineService {

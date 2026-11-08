@@ -12,7 +12,6 @@ import java.util.Objects;
 import org.operaton.bpm.dmn.engine.DmnDecision;
 import org.operaton.bpm.dmn.engine.DmnDecisionTableResult;
 import org.operaton.bpm.dmn.engine.DmnEngine;
-import org.operaton.bpm.dmn.engine.DmnEngineConfiguration;
 import org.operaton.bpm.dmn.engine.delegate.DmnDecisionTableEvaluationEvent;
 import org.operaton.bpm.dmn.engine.delegate.DmnDecisionTableEvaluationListener;
 import org.operaton.bpm.dmn.engine.delegate.DmnEvaluatedDecisionRule;
@@ -43,7 +42,7 @@ public final class DmnTesting {
 
     private static DmnEngine buildEngine() {
         DefaultDmnEngineConfiguration cfg =
-                (DefaultDmnEngineConfiguration) DmnEngineConfiguration.createDefaultDmnEngineConfiguration();
+                org.sangam.engine.feel.SangamFeel.dmnEngineConfiguration();
         DmnDecisionTableEvaluationListener listener = (DmnDecisionTableEvaluationEvent event) -> {
             for (DmnEvaluatedDecisionRule r : event.getMatchingRules()) {
                 MATCHED.get().add(r.getId());

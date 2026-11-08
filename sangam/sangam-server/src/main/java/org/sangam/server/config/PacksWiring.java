@@ -104,12 +104,19 @@ public class PacksWiring {
     @Bean
     public InitializingBean sangamPackRuntimeInstaller(TxSupport tx, Environment env,
             ObjectProvider<SangamSecurity> security,
-            ObjectProvider<org.sangam.core.engine.SangamClock> sangamClock) {
+            ObjectProvider<org.sangam.core.engine.SangamClock> sangamClock,
+            ObjectProvider<org.sangam.core.time.BusinessClock> businessClocks) {
         return () -> {
             Dialect dialect = tx.dialect();
             String defaultTenant = env.getProperty("sangam.tenant.default",
                     env.getProperty("sangam.security.dev-token.tenant", "dev"));
-            ZoneId zone = ZoneId.of(env.getProperty("sangam.packs.zone", "Asia/Kolkata"));
+            // Seat validity days are business dates in each tenant's profile zone; sangam.packs.zone, if set,
+            // forces one zone for every tenant (legacy override).
+            String forced = env.getProperty("sangam.packs.zone");
+            org.sangam.core.time.BusinessClock seatClock = forced != null && !forced.isBlank()
+                    ? org.sangam.core.time.BusinessClock.fixedZone(ConfigWiring.engineClock(), ZoneId.of(forced))
+                    : org.sangam.core.time.BusinessClock.of(ConfigWiring.engineClock(),
+                            t -> ConfigWiring.businessClock(businessClocks).zone(t));
             if (env.getProperty("sangam.persistence.dev-schema", Boolean.class, false)) {
                 createPackOperationTable(tx, dialect);
             }
@@ -118,7 +125,7 @@ public class PacksWiring {
                     .withClock(new EngineClock(ZoneOffset.UTC));
             SangamSecurity sec = security.getIfAvailable();
             if (sec != null) {
-                ports = ports.withSeats(new PacksSeatDirectory(sec, tx, zone));
+                ports = ports.withSeats(new PacksSeatDirectory(sec, tx, seatClock));
             } else {
                 LOG.warn("No SangamSecurity bean: packs use the in-memory seat directory");
             }
@@ -241,7 +248,7 @@ public class PacksWiring {
         });
     }
 
-    /** {@link Clock} over the engine clock (one clock per JVM, D-10). */
+    /** {@link Clock} over the engine clock (one clock per JVM, FLOWABLE-INTO-OPERATON D-10). */
     static final class EngineClock extends Clock {
         private final ZoneId zone;
 

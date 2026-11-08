@@ -21,13 +21,13 @@ import org.sangam.core.engine.EngineEventSink;
 import org.sangam.engine.tx.CommandState;
 
 /**
- * History hook (R42, EC-09, FC-43, FC-25/D-41, D-25), registered next to Operaton's own DB history handler. Each
+ * History hook (R42, EC-09, FLOWABLE-INTO-OPERATON FC-43, FLOWABLE-INTO-OPERATON FC-25/FLOWABLE-INTO-OPERATON D-41, FLOWABLE-INTO-OPERATON D-25), registered next to Operaton's own DB history handler. Each
  * history event is handled <b>inside the engine command, on the engine connection</b>:
  * <ul>
  *   <li>the configured event types become class-B audit events on the root's hash chain ({@link AuditSink});</li>
  *   <li>every (or every configured) event becomes a typed engine event ({@link EngineEventSink}, typically an
  *       outbox row), the base of async history projections and webhooks;</li>
- *   <li><b>CMMN audit projection (D-25)</b>: a human task that Operaton's history ends as "terminated" although it was
+ *   <li><b>CMMN audit projection (FLOWABLE-INTO-OPERATON D-25)</b>: a human task that Operaton's history ends as "terminated" although it was
  *       completed through TaskService (E1) is projected as {@code CASE_TASK_COMPLETED}; an exit by sentry as
  *       {@code CASE_TASK_EXITED}; any other termination as {@code CASE_TASK_TERMINATED}. The engine's own history row
  *       is left unchanged; the projection records both ({@code engineState}).</li>
@@ -99,7 +99,7 @@ public class SangamHistoryEventHandler implements HistoryEventHandler {
         }
     }
 
-    /** D-25 mapping; see the class comment. */
+    /** FLOWABLE-INTO-OPERATON D-25 mapping; see the class comment. */
     static String caseTaskOutcome(HistoricCaseActivityInstanceEventEntity ca) {
         CommandState s = CommandState.current();
         String recorded = s == null ? null : s.caseTaskOutcome(ca.getCaseExecutionId());

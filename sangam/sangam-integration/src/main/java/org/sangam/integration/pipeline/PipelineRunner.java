@@ -36,7 +36,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
- * Runs one pipeline run (N11). Sangam orchestrates; heavy engines stay outside (D-22): this is for bounded feeds.
+ * Runs one pipeline run (N11). Sangam orchestrates; heavy engines stay outside (ADR-D-22): this is for bounded feeds.
  *
  * <ul>
  *   <li><b>Staging.</b> Each EXTRACT/TRANSFORM step writes a JSON-lines file under {@code stageRoot/<runId>/}, renamed into

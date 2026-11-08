@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Consequence previews (O03, O08, R63), suspension of instances and definitions (D-32), cross-boundary moves (FC-17)
+ * Consequence previews (O03, O08, R63), suspension of instances and definitions (FLOWABLE-INTO-OPERATON D-32), cross-boundary moves (FLOWABLE-INTO-OPERATON FC-17)
  * and the historic external-task log (PF-01).
  */
 @RestController

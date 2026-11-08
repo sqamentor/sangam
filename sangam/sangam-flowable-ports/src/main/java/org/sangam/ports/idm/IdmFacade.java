@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Flowable IDM-style API for privileges, privilege mappings and tokens (FC-42; Flowable {@code IdmIdentityService}
+ * Flowable IDM-style API for privileges, privilege mappings and tokens (FLOWABLE-INTO-OPERATON FC-42; Flowable {@code IdmIdentityService}
  * {@code createPrivilege / addUserPrivilegeMapping / addGroupPrivilegeMapping / getPrivileges / createToken}).
  * <b>No state here</b>: every call delegates to WS-SECURITY through {@link IdentityExtrasPort} (tables
  * {@code SEC_PRIVILEGE}, {@code SEC_PRIVILEGE_MAPPING}, {@code SEC_API_TOKEN}; deny-wins, audit, scopes, expiry), so

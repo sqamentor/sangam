@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Map;
 
 /**
- * Shared Jackson mapper for the ports module (no default typing, no Java serialization: D-47).
+ * Shared Jackson mapper for the ports module (no default typing, no Java serialization: FLOWABLE-INTO-OPERATON D-47).
  *
  * <p>FW-02 (Flowable's Jackson 3.0.1 DoS findings: document-length, nesting-depth and number-length bypasses): every
  * JSON the ports read goes through this mapper, which carries explicit {@link StreamReadConstraints} instead of

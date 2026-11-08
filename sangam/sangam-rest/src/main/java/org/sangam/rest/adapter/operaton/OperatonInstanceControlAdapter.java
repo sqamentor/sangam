@@ -30,7 +30,7 @@ import org.sangam.rest.support.TxSupport;
 
 /**
  * Default {@link InstanceControlPort} on the Operaton runtime and repository API: consequence previews (O03, O08),
- * suspension with optional deadline re-dating (D-32), cross-boundary moves (FC-17) and the external-task log.
+ * suspension with optional deadline re-dating (FLOWABLE-INTO-OPERATON D-32), cross-boundary moves (FLOWABLE-INTO-OPERATON FC-17) and the external-task log.
  */
 public class OperatonInstanceControlAdapter implements InstanceControlPort {
 
@@ -47,10 +47,13 @@ public class OperatonInstanceControlAdapter implements InstanceControlPort {
     private final TxSupport tx;
     private final AuditPort audit;
     private final RestProperties props;
+    private final OperatonOperationIds operationIds;
 
     public OperatonInstanceControlAdapter(RuntimeService runtime, RepositoryService repository, HistoryService history,
                                           ExternalTaskService externalTasks, TaskService tasks, ProcessPort processes,
-                                          TxSupport tx, AuditPort audit, RestProperties props) {
+                                          TxSupport tx, AuditPort audit, RestProperties props,
+                                          OperatonOperationIds operationIds) {
+        this.operationIds = operationIds;
         this.runtime = runtime;
         this.repository = repository;
         this.history = history;
@@ -77,8 +80,7 @@ public class OperatonInstanceControlAdapter implements InstanceControlPort {
         long locked = open.stream().filter(t -> t.getLockExpirationTime() != null
                 && t.getLockExpirationTime().getTime() > now).count();
         long offered = open.size() - locked;
-        List<String> ops = open.stream().map(t -> OperatonWorkAdapter.operationId(t.getTenantId(),
-                t.getProcessInstanceId(), t.getActivityInstanceId()).toString()).toList();
+        List<String> ops = open.stream().map(t -> operationIds.of(t).toString()).toList();
         long openTasks = OperatonSupport.call(() -> tasks.createTaskQuery().processInstanceId(processInstanceId).count());
         boolean technical = "TECHNICAL".equals(mode);
         long reconOpen = openReconciliation(ctx, processInstanceId);
@@ -143,15 +145,13 @@ public class OperatonInstanceControlAdapter implements InstanceControlPort {
                     } else {
                         summary.add("Cancel all instances of " + i.activityId());
                         open.stream().filter(t -> i.activityId().equals(t.getActivityId()))
-                                .forEach(t -> cancelledOps.add(OperatonWorkAdapter.operationId(t.getTenantId(),
-                                        t.getProcessInstanceId(), t.getActivityInstanceId()).toString()));
+                                .forEach(t -> cancelledOps.add(operationIds.of(t).toString()));
                     }
                 }
                 case "cancelActivityInstance" -> {
                     summary.add("Cancel activity instance " + i.activityInstanceId());
                     open.stream().filter(t -> Objects.equals(i.activityInstanceId(), t.getActivityInstanceId()))
-                            .forEach(t -> cancelledOps.add(OperatonWorkAdapter.operationId(t.getTenantId(),
-                                    t.getProcessInstanceId(), t.getActivityInstanceId()).toString()));
+                            .forEach(t -> cancelledOps.add(operationIds.of(t).toString()));
                 }
                 case "cancelTransitionInstance" -> summary.add("Cancel transition instance " + i.transitionInstanceId());
                 default -> {
@@ -160,7 +160,7 @@ public class OperatonInstanceControlAdapter implements InstanceControlPort {
                 }
             }
             if (i.targetProcessInstanceId() != null) {
-                summary.add("  (applied to instance " + i.targetProcessInstanceId() + ", FC-17)");
+                summary.add("  (applied to instance " + i.targetProcessInstanceId() + ", FLOWABLE-INTO-OPERATON FC-17)");
             }
         }
         if (!cancelledOps.isEmpty()) {
@@ -244,7 +244,7 @@ public class OperatonInstanceControlAdapter implements InstanceControlPort {
         return processes.definition(ctx, definitionId);
     }
 
-    // ------------------------------------------------------------------ FC-17
+    // ------------------------------------------------------------------ FLOWABLE-INTO-OPERATON FC-17
 
     @Override
     public ProcessPort.ProcessInstance crossBoundaryMove(RequestContext ctx, String processInstanceId,

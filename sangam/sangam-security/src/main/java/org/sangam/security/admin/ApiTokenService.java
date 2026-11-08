@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Personal and service API tokens (FC-42 {@code Token}; worker/service principals of R26 and IJ-01). A token is
+ * Personal and service API tokens (FLOWABLE-INTO-OPERATON FC-42 {@code Token}; worker/service principals of R26 and IJ-01). A token is
  * {@code sgm_<tokenId>.<secret>}; only {@code SHA-256(secret)} is stored, the plaintext is returned once at issue.
  * Tokens carry an owner, a tenant, scopes (role ids the token may use, a subset of the owner's), an expiry and a
  * revocation flag. Authentication compares hashes in constant time and records {@code last_used_at}.

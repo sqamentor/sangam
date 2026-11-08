@@ -44,7 +44,7 @@ public class EngineWiring {
         if (tenant != null && !tenant.isBlank()) {
             s.setDefaultTenantId(tenant);
         }
-        // FC-55: WS-PORTS' CMMN event listeners are on when the ports module is (note 12)
+        // FLOWABLE-INTO-OPERATON FC-55: WS-PORTS' CMMN event listeners are on when the ports module is (note 12)
         s.setCmmnEventListenersEnabled(env.getProperty("sangam.ports.cmmn-event-listeners", Boolean.class, true));
         meters.ifAvailable(r -> s.setMetrics(new EngineMicrometerMetrics(r)));
         // Note 16 (VI.4 rule 7): jobs, timers and async continuations run with the tenant's system identity bound in

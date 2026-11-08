@@ -59,7 +59,10 @@ public class ProgrammeController {
     private final ProgrammeRestPort port;
     private final PermissionPort permissions;
 
-    public ProgrammeController(ProgrammeRestPort port, PermissionPort permissions) {
+    private final org.sangam.rest.support.BusinessDates dates;
+
+    public ProgrammeController(ProgrammeRestPort port, PermissionPort permissions, org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
+        this.dates = new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable);
         this.port = port;
         this.permissions = permissions;
     }
@@ -296,7 +299,7 @@ public class ProgrammeController {
             @RequestParam String periodId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf,
             @RequestParam(required = false, defaultValue = "500") int limit) {
-        return Lists.ok(port.defaulters(api(ctx, READ), returnKey, periodId, asOf == null ? LocalDate.now() : asOf,
+        return Lists.ok(port.defaulters(api(ctx, READ), returnKey, periodId, dates.orToday(asOf, ctx.tenantId()),
                 Math.max(1, Math.min(limit, 5000))));
     }
 
@@ -431,8 +434,8 @@ public class ProgrammeController {
     @PostMapping("/programmes/{id}/variance-check")
     public ResponseEntity<List<VarianceService.Alert>> checkVariance(RequestContext ctx, @PathVariable String id,
                                                                      @RequestBody VarianceRequest body) {
-        return Lists.ok(port.checkVariance(api(ctx, WRITE), id, body.periodId(), body.asOf() == null ? LocalDate.now()
-                : body.asOf()));
+        return Lists.ok(port.checkVariance(api(ctx, WRITE), id, body.periodId(),
+                dates.orToday(body.asOf(), ctx.tenantId())));
     }
 
     /** Open variance alerts. */

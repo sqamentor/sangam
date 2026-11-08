@@ -47,7 +47,7 @@ public final class SangamEngineComponents {
         this.leases = new SangamLeaseTable(dialect, settings.getLockTimeout());
         this.exclusiveLeases = new ExclusiveLeaseTable(dialect, settings.getLockTimeout());
         this.timerPolicies = new TimerPolicies(settings);
-        // Offset-less starts are local time in the JVM zone Operaton cached at class load (D-02).
+        // Offset-less starts are local time in the JVM zone Operaton cached at class load (FLOWABLE-INTO-OPERATON D-02).
         this.timerGuard = new TimerGuard(dialect, settings.getLockTimeout(), ZoneId.systemDefault(), settings.getTimerZone());
         this.retrier = new CommandRetrier(settings.getRetryMaxAttempts(), settings.getRetryBase(), settings.getRetryCap(),
                 metrics);

@@ -17,23 +17,23 @@ public class PortsSettings {
     private Dialect dialect = Dialect.POSTGRESQL;
     private Outbox outbox;
 
-    private boolean adHocSubProcess = true;            // FC-01, patch P-1
-    private boolean eventRegistry = true;               // FC-02..04, FC-43
-    private boolean bpmnBehaviourExtensions = true;     // FC-12, FC-13, FC-22
+    private boolean adHocSubProcess = true;            // FLOWABLE-INTO-OPERATON FC-01, patch P-1
+    private boolean eventRegistry = true;               // FLOWABLE-INTO-OPERATON FC-02..04, FLOWABLE-INTO-OPERATON FC-43
+    private boolean bpmnBehaviourExtensions = true;     // FLOWABLE-INTO-OPERATON FC-12, FLOWABLE-INTO-OPERATON FC-13, FLOWABLE-INTO-OPERATON FC-22
     private boolean skipExpressionsAlwaysEnabled = false;
-    private boolean multiInstanceAggregation = true;    // FC-21
-    private boolean taskEvents = true;                  // task listeners on more events, FC-52
-    private boolean entityLinks = true;                 // FC-31/32
-    private boolean readModelFeed = false;              // FC-25 projection / FC-20
+    private boolean multiInstanceAggregation = true;    // FLOWABLE-INTO-OPERATON FC-21
+    private boolean taskEvents = true;                  // task listeners on more events, FLOWABLE-INTO-OPERATON FC-52
+    private boolean entityLinks = true;                 // FLOWABLE-INTO-OPERATON FC-31/32
+    private boolean readModelFeed = false;              // FLOWABLE-INTO-OPERATON FC-25 projection / FLOWABLE-INTO-OPERATON FC-20
     private List<String> readModelExtraDestinations = new ArrayList<>();
-    private boolean cmmnEventListeners = true;          // FC-55 (WS-ENGINE: rejectCmmnEventListeners=false)
-    private boolean cmmnLifecycleListeners = true;      // FC-56 part
-    private boolean dmnPriorityHitPolicies = true;      // FC-54
-    private boolean preDeployValidator = true;          // FC-46 complement
-    private boolean splitJobExecutors = false;          // FC-24
+    private boolean cmmnEventListeners = true;          // FLOWABLE-INTO-OPERATON FC-55 (WS-ENGINE: rejectCmmnEventListeners=false)
+    private boolean cmmnLifecycleListeners = true;      // FLOWABLE-INTO-OPERATON FC-56 part
+    private boolean dmnPriorityHitPolicies = true;      // FLOWABLE-INTO-OPERATON FC-54
+    private boolean preDeployValidator = true;          // FLOWABLE-INTO-OPERATON FC-46 complement
+    private boolean splitJobExecutors = false;          // FLOWABLE-INTO-OPERATON FC-24
     private int timerThreads = 2;
-    private boolean globalAcquireLock = false;          // FC-24
-    private boolean asyncJobHandOff = false;            // FC-24
+    private boolean globalAcquireLock = false;          // FLOWABLE-INTO-OPERATON FC-24
+    private boolean asyncJobHandOff = false;            // FLOWABLE-INTO-OPERATON FC-24
     private boolean storeEventPayloads = false;         // EVT_LOG payloads (R61: off)
 
     public Dialect getDialect() { return dialect; }

@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
- * Kafka publisher (R71 "Kafka"; Flowable FC-03 outbound channel). Optional: needs {@code kafka-clients} (Apache-2.0)
+ * Kafka publisher (R71 "Kafka"; FLOWABLE-INTO-OPERATON FC-03 outbound channel). Optional: needs {@code kafka-clients} (Apache-2.0)
  * on the class path.
  *
  * <ul>

@@ -22,13 +22,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The ports' CMMN transform listener (route 1), registered next to WS-ENGINE's
- * {@code org.sangam.engine.deploy.SangamCmmnTransformListener} (which owns D-08 rejection, D-25 outcome capture and
- * D-26 cancel-on-exit). This one carries:
+ * {@code org.sangam.engine.deploy.SangamCmmnTransformListener} (which owns FLOWABLE-INTO-OPERATON D-08 rejection, FLOWABLE-INTO-OPERATON D-25 outcome capture and
+ * FLOWABLE-INTO-OPERATON D-26 cancel-on-exit). This one carries:
  * <ul>
- *   <li>FC-55: marks event listeners ({@code timer|user|generic}) and stores the timer expression for
+ *   <li>FLOWABLE-INTO-OPERATON FC-55: marks event listeners ({@code timer|user|generic}) and stores the timer expression for
  *       {@link SangamEventListenerActivityBehavior}. WS-ENGINE must run with {@code rejectCmmnEventListeners=false}
  *       when this port is enabled.</li>
- *   <li>FC-56 (feasible part): plan-item lifecycle listeners, Flowable {@code PlanItemInstanceLifecycleListener}; every
+ *   <li>FLOWABLE-INTO-OPERATON FC-56 (feasible part): plan-item lifecycle listeners, Flowable {@code PlanItemInstanceLifecycleListener}; every
  *       CMMN transition of every plan item is offered to the registered {@link PlanItemLifecycleListener}s. The
  *       extra Flowable states (async-active, wait_repetition, unavailable, completion-neutral, parent-completion rule)
  *       need a state-machine patch and are not implemented (PATCHES.md P-4, stage E).</li>

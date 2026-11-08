@@ -18,7 +18,7 @@ import java.util.HexFormat;
 import java.util.Optional;
 
 /**
- * File-system document store (FC-40). Objects are written to a temp file, fsync'd, then atomically moved into place,
+ * File-system document store (FLOWABLE-INTO-OPERATON FC-40). Objects are written to a temp file, fsync'd, then atomically moved into place,
  * so a crash never leaves a partial object under a live key. Keys are validated (no {@code ..}, no absolute paths).
  */
 public class FileSystemDocumentStore implements DocumentStore {

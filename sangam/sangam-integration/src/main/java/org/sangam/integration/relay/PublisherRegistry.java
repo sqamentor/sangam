@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Routes outbox destinations to {@link Publisher}s. This is the plug-in point for the event registry of WS-PORTS
- * (Flowable FC-02/FC-03 channels): a channel adapter registers a publisher under its destination name (exact) or a
+ * (FLOWABLE-INTO-OPERATON FC-02/FLOWABLE-INTO-OPERATON FC-03 channels): a channel adapter registers a publisher under its destination name (exact) or a
  * prefix ending in {@code *} ({@code kafka:*}, {@code webhook:*}). The longest matching prefix wins.
  *
  * <p>An unknown destination is a permanent failure: the delivery is parked/skipped and dead-lettered instead of being

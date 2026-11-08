@@ -31,6 +31,21 @@ public record LedgerRequest(String operation, AccountKey account, AccountKey tar
         operation = operation.toUpperCase();
     }
 
+    /**
+     * A money operation (SD-398): the amount is exact {@link org.sangam.core.money.Money} and its currency is the
+     * transaction currency. Use this for LIMIT / RECEIVABLE ledgers; {@link #of} remains for QUANTITY ledgers.
+     */
+    public static LedgerRequest money(String op, AccountKey account, org.sangam.core.money.Money amount, String reference) {
+        return new LedgerRequest(op, account, null, amount.toMajor(), amount.currencyCode(), null, reference, null, null, null,
+                false, false, false, null);
+    }
+
+    /** Replaces the amount (and currency) with an exact money amount. */
+    public LedgerRequest withMoney(org.sangam.core.money.Money m) {
+        return new LedgerRequest(operation, account, target, m.toMajor(), m.currencyCode(), rateType, reference, auditRef, actor,
+                asOf, fromCommitment, fromEncumbrance, holdIfShort, attrs);
+    }
+
     public static LedgerRequest of(String op, AccountKey account, BigDecimal amount, String reference) {
         return new LedgerRequest(op, account, null, amount, null, null, reference, null, null, null, false, false, false, null);
     }

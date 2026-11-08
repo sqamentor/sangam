@@ -32,7 +32,6 @@ import org.operaton.bpm.engine.repository.ProcessDefinition;
 import org.operaton.bpm.engine.runtime.Incident;
 import org.sangam.core.layer.Hashes;
 import org.sangam.core.layer.Jdbc;
-import org.sangam.core.layer.OperationLedger;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.InstanceControlPort;
@@ -90,6 +89,13 @@ public class OperatonOpsConsoleAdapter implements OpsConsolePort {
     private volatile BiConsumer<RequestContext, NotificationFailure> resender;
     private volatile java.util.function.BiFunction<RequestContext, OpsPort.ReconciliationItem, LookupResult> lookup;
 
+    private volatile OperatonOperationIds operationIds;
+
+    /** The shared T35 resolver (engine-aware); the default is the Operaton fallback over the same derivation. */
+    public void setOperationIds(OperatonOperationIds operationIds) {
+        this.operationIds = operationIds;
+    }
+
     public OperatonOpsConsoleAdapter(RuntimeService runtime, ManagementService management, HistoryService history,
                                      ExternalTaskService externalTasks, TaskService tasks, RepositoryService repository,
                                      OpsPort ops, TrackingWorkPort tracking, TxSupport tx, AuditPort audit,
@@ -109,6 +115,7 @@ public class OperatonOpsConsoleAdapter implements OpsConsolePort {
         this.audit = audit;
         this.props = props;
         this.jobExecutorActive = jobExecutorActive == null ? () -> false : jobExecutorActive;
+        this.operationIds = new OperatonOperationIds(runtime, history, externalTasks);
     }
 
     // ------------------------------------------------------------------ extension hooks for sangam-integration
@@ -391,8 +398,7 @@ public class OperatonOpsConsoleAdapter implements OpsConsolePort {
         if (e == null || e.getActivityInstanceId() == null) {
             return List.of();
         }
-        return List.of(OperationLedger.operationId(ctx.tenantId(), e.getProcessInstanceId(), e.getActivityInstanceId(), 0)
-                .toString());
+        return List.of(operationIds.of(e).toString());
     }
 
     @Override

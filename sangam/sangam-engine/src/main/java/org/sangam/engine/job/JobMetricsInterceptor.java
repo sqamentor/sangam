@@ -8,7 +8,7 @@ import org.operaton.bpm.engine.impl.jobexecutor.AcquiredJobs;
 import org.sangam.core.engine.EngineMetrics;
 
 /**
- * {@code sangam_jobs_acquired_total} (D-39, R13): counts the jobs each job-executor acquisition command
+ * {@code sangam_jobs_acquired_total} (FLOWABLE-INTO-OPERATON D-39, R13): counts the jobs each job-executor acquisition command
  * ({@link AcquireJobsCmd}) acquired. Registered as a post interceptor on the REQUIRED chain, which the job executor's
  * acquisition thread uses.
  */

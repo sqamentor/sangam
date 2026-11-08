@@ -16,9 +16,9 @@ import org.sangam.rest.support.TxSupport;
 import org.sangam.rest.support.TypedVariables;
 
 /**
- * {@link CasePort} with the CMMN extensions of sangam-flowable-ports: event listeners can {@code occur} (FC-55, via
+ * {@link CasePort} with the CMMN extensions of sangam-flowable-ports: event listeners can {@code occur} (FLOWABLE-INTO-OPERATON FC-55, via
  * {@link CmmnEventListenerService}), and {@code reactivate} / {@code cutOver} create a linked new case with the
- * history read (FC-59, {@link CaseLifecycleService}). Every other call is the default Operaton case adapter.
+ * history read (FLOWABLE-INTO-OPERATON FC-59, {@link CaseLifecycleService}). Every other call is the default Operaton case adapter.
  */
 public final class PortsCaseBridge implements CasePort {
 

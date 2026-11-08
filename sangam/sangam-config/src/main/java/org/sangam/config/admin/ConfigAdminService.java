@@ -118,7 +118,10 @@ public final class ConfigAdminService {
         ProfileRepository.Stored s = require(id, version, Status.APPROVED);
         repo.setStatus(id, version, Status.ACTIVE);
         resolver.invalidate();
-        LocalDate from = s.document().effectiveFrom() == null ? LocalDate.now(clock) : s.document().effectiveFrom();
+        // Default effective date: today in the document scope's business zone (office overlay id "scope/office").
+        LocalDate from = s.document().effectiveFrom() != null ? s.document().effectiveFrom()
+                : new org.sangam.config.locale.ProfileBusinessClock(resolver, clock)
+                        .today(id.contains("/") ? id.substring(0, id.indexOf('/')) : id);
         List<Finding> all = new ArrayList<>();
         for (String scope : scopesToCheck == null ? List.<String>of() : scopesToCheck) {
             all.addAll(validator.validate(resolver, scope, null, from));

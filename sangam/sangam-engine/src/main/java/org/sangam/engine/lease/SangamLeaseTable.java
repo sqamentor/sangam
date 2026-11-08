@@ -17,7 +17,7 @@ import org.sangam.core.layer.Jdbc;
 import org.sangam.engine.db.EngineDialect;
 
 /**
- * The product fencing table {@code SANGAM_LEASE} (VI.3, R9, R20, D-17, D-18, D-20), productised from the spike's
+ * The product fencing table {@code SANGAM_LEASE} (VI.3, R9, R20, FLOWABLE-INTO-OPERATON D-17, FLOWABLE-INTO-OPERATON D-18, FLOWABLE-INTO-OPERATON D-20), productised from the spike's
  * {@code SPIKE_LEASE} (W-8, W-9, W-12) and created by the Liquibase changelog, not by the adapter.
  *
  * <p><b>XI.10.4 fix: the write is idempotent per (work_id, lock_version) and serialized with the engine lock.</b>

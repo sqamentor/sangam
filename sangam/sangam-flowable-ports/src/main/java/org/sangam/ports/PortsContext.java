@@ -11,7 +11,7 @@ import java.util.Objects;
 
 /**
  * Process-wide access point for services used from engine callbacks that the engine instantiates by class name
- * (delegates, listeners, behaviours). Sangam runs one engine per JVM (D-10 containment), so one context is enough;
+ * (delegates, listeners, behaviours). Sangam runs one engine per JVM (FLOWABLE-INTO-OPERATON D-10 containment), so one context is enough;
  * {@link SangamPortsPlugin} fills it when the engine is built.
  */
 public final class PortsContext {

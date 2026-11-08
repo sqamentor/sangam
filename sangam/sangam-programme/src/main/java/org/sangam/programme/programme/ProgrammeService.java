@@ -11,6 +11,7 @@ import org.sangam.programme.indicator.IndicatorRegistry;
 import org.sangam.programme.support.Db;
 
 import java.math.BigDecimal;
+import org.sangam.core.money.Money;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,7 +35,7 @@ public final class ProgrammeService {
     public enum Status { DRAFT, ACTIVE, SUSPENDED, COMPLETED, CLOSED }
 
     public record Programme(String id, String parentId, String kind, String code, String name, String ownerOrg, LocalDate startsOn,
-                            LocalDate endsOn, Status status, BigDecimal budget, String currency, List<String> indicators,
+                            LocalDate endsOn, Status status, Money budget, String currency, List<String> indicators,
                             Map<String, Object> attributes, int rowVersion, String createdBy, Instant createdAt, Instant updatedAt) {
     }
 
@@ -77,7 +78,7 @@ public final class ProgrammeService {
                         + " budget, currency, indicators_json, attributes_json, row_version, created_by, created_at, updated_at)"
                         + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,?)",
                 t, id, in.parentId(), in.kind(), in.code(), in.name(), in.ownerOrg(), Db.sqlDate(in.startsOn()), Db.sqlDate(in.endsOn()),
-                Status.DRAFT.name(), in.budget(), in.currency(), Db.json(in.indicators() == null ? List.of() : in.indicators()),
+                Status.DRAFT.name(), minor(in.budget(), in.currency()), in.currency(), Db.json(in.indicators() == null ? List.of() : in.indicators()),
                 Db.json(in.attributes()), actor, now, now);
         return get(c, t, id);
     }
@@ -93,7 +94,7 @@ public final class ProgrammeService {
                         + " attributes_json=?, row_version=row_version+1, updated_at=" + dialect.now() + " WHERE tenant_id=? AND programme_id=? AND row_version=?",
                 in.name() == null ? p.name() : in.name(), in.ownerOrg() == null ? p.ownerOrg() : in.ownerOrg(),
                 Db.sqlDate(in.startsOn() == null ? p.startsOn() : in.startsOn()), Db.sqlDate(in.endsOn() == null ? p.endsOn() : in.endsOn()),
-                in.budget() == null ? p.budget() : in.budget(), in.currency() == null ? p.currency() : in.currency(),
+                budgetMinor(in, p), in.currency() == null ? p.currency() : in.currency(),
                 Db.json(in.indicators() == null ? p.indicators() : in.indicators()), Db.json(in.attributes() == null ? p.attributes() : in.attributes()),
                 t, id, expectedVersion), "programme");
         return get(c, t, id);
@@ -220,12 +221,38 @@ public final class ProgrammeService {
         }
     }
 
+    /** API boundary (SD-398): a budget is exact in its currency's minor units; more fraction digits are rejected. */
+    static Long minor(BigDecimal amount, String currency) {
+        if (amount == null) {
+            return null;
+        }
+        if (currency == null) {
+            throw ProgrammeException.invalid("budget needs a currency (ISO 4217)");
+        }
+        try {
+            return Money.ofMajor(amount, currency).minor();
+        } catch (RuntimeException e) {
+            throw ProgrammeException.invalid("budget: " + e.getMessage());
+        }
+    }
+
+    private static Long budgetMinor(ProgrammeInput in, Programme p) {
+        String ccy = in.currency() == null ? p.currency() : in.currency();
+        if (in.budget() != null) {
+            return minor(in.budget(), ccy);
+        }
+        if (p.budget() != null && !p.budget().currencyCode().equals(ccy)) {
+            throw ProgrammeException.invalid("changing the currency requires restating the budget");
+        }
+        return p.budget() == null ? null : p.budget().minor();
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     static Programme map(ResultSet rs) throws SQLException {
         List<String> inds = (List) Db.list(rs.getString("indicators_json"));
         return new Programme(rs.getString("programme_id"), rs.getString("parent_id"), rs.getString("kind"), rs.getString("code"),
                 rs.getString("name"), rs.getString("owner_org"), Db.date(rs, "starts_on"), Db.date(rs, "ends_on"),
-                Status.valueOf(rs.getString("status")), rs.getBigDecimal("budget"), rs.getString("currency"), inds,
+                Status.valueOf(rs.getString("status")), Db.money(rs, "budget"), rs.getString("currency"), inds,
                 Db.map(rs.getString("attributes_json")), rs.getInt("row_version"), rs.getString("created_by"),
                 Jdbc.instant(rs, "created_at"), Jdbc.instant(rs, "updated_at"));
     }

@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Event registry (FC-02..04, R38, R83) and forms contract (R47, FC-39). */
+/** Event registry (FLOWABLE-INTO-OPERATON FC-02..04, R38, R83) and forms contract (R47, FLOWABLE-INTO-OPERATON FC-39). */
 @RestController
 @RequestMapping("/api/v1")
 public class EventFormController {

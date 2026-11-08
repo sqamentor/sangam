@@ -31,7 +31,7 @@ import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 
 /**
- * Executable packages (R43 / X.2.4, FC-41 app bundles) persisted in the product table {@code PACKAGE_VERSION}:
+ * Executable packages (R43 / X.2.4, FLOWABLE-INTO-OPERATON FC-41 app bundles) persisted in the product table {@code PACKAGE_VERSION}:
  * one row per REST package, addressed by {@code package_id} (changeset 0016-05, indexed). Columns:
  * {@code package_key}; {@code version} = the per-key sequence number assigned at creation (the REST {@code revision}
  * counts the edits of that package); {@code package_hash} = the frozen content hash (32 zero bytes until submit);

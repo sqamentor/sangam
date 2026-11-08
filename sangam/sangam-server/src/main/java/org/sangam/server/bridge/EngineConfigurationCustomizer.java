@@ -45,7 +45,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
  * level, job executor, id generator, serialization, generic properties) runs first, so the Sangam plugins can rely on
  * and override those defaults. Then {@link SangamProcessEnginePlugin}, then sangam-security's, sangam-integration's and
  * sangam-flowable-ports' plugins in that order (README note 11), then every other {@code ProcessEnginePlugin} bean,
- * and last a step that re-applies the pinned database type (D-05), which the starter's datasource plugin would
+ * and last a step that re-applies the pinned database type (FLOWABLE-INTO-OPERATON D-05), which the starter's datasource plugin would
  * otherwise overwrite with {@code operaton.bpm.database.type}.
  *
  * <p>Liquibase ({@code SchemaBootstrap}) is forced to run before the engine is configured, so product tables exist
@@ -188,7 +188,7 @@ public final class EngineConfigurationCustomizer implements BeanPostProcessor, B
         }
     }
 
-    /** Last plugin: re-pins the database type detected by {@code DatabaseGuard} (D-05: never inferred from the driver). */
+    /** Last plugin: re-pins the database type detected by {@code DatabaseGuard} (FLOWABLE-INTO-OPERATON D-05: never inferred from the driver). */
     static final class EngineSettingsReapplyPlugin extends org.operaton.bpm.engine.impl.cfg.AbstractProcessEnginePlugin {
         private final String databaseType;
 

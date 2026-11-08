@@ -16,6 +16,7 @@ import org.sangam.registry.support.Maps;
 import org.sangam.registry.support.RegistryAudit;
 
 import java.math.BigDecimal;
+import org.sangam.core.money.Money;
 import java.math.RoundingMode;
 import java.sql.Connection;
 import java.time.Instant;
@@ -176,8 +177,8 @@ public final class AssetService {
                             + " disposed_date, status, version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     o.id(), ctx.tenant(), classKey, tag, parent, Maps.str(req, "locationRef"), Maps.str(req, "geometryRef"),
                     Maps.str(req, "custodianRef"), acq == null ? null : acq.toString(),
-                    inService == null ? null : inService.toString(), Maps.decimal(req, "acquisitionValue"),
-                    Maps.decimal(req, "residualValue"), Maps.str(req, "currency"), Maps.integer(req, "usefulLifeMonths"),
+                    inService == null ? null : inService.toString(), minor(req, "acquisitionValue", Maps.str(req, "currency")),
+                    minor(req, "residualValue", Maps.str(req, "currency")), Maps.str(req, "currency"), Maps.integer(req, "usefulLifeMonths"),
                     method == null ? null : method.toUpperCase(), Maps.decimal(req, "depreciationRate"),
                     Maps.str(req, "warrantyRef"), warrantyUntil == null ? null : warrantyUntil.toString(), null,
                     "IN_SERVICE", 1L);
@@ -196,7 +197,7 @@ public final class AssetService {
         }
         audit.record(c, ctx, o.id(), "ASSET_REGISTERED", Maps.of("classKey", classKey, "tag", tag, "parentAssetId", parent,
                 "locationRef", Maps.str(req, "locationRef"), "custodianRef", Maps.str(req, "custodianRef"),
-                "acquisitionValue", Maps.decimal(req, "acquisitionValue"), "meters", cls.meters().size(),
+                "acquisitionValue", Maps.str(req, "acquisitionValue"), "currency", Maps.str(req, "currency"), "meters", cls.meters().size(),
                 "plans", cls.plans().size()));
         return new AssetView(o, asset(c, ctx.tenant(), o.id()));
     }
@@ -365,14 +366,21 @@ public final class AssetService {
         LocalDate acq = Maps.date(patch, "acquisitionDate");
         LocalDate ins = Maps.date(patch, "inServiceDate");
         LocalDate wu = Maps.date(patch, "warrantyUntil");
-        BigDecimal value = patch.containsKey("acquisitionValue") ? Maps.decimal(patch, "acquisitionValue") : a.acquisitionValue();
-        BigDecimal residual = patch.containsKey("residualValue") ? Maps.decimal(patch, "residualValue") : a.residualValue();
+        String ccy = Maps.str(patch, "currency", a.currency());
+        if (!java.util.Objects.equals(ccy, a.currency()) && !patch.containsKey("acquisitionValue")
+                && (a.acquisitionValue() != null || a.residualValue() != null)) {
+            throw RegistryException.invalid("changing the currency requires restating acquisitionValue / residualValue");
+        }
+        Long value = patch.containsKey("acquisitionValue") ? minor(patch, "acquisitionValue", ccy)
+                : a.acquisitionValue() == null ? null : a.acquisitionValue().minor();
+        Long residual = patch.containsKey("residualValue") ? minor(patch, "residualValue", ccy)
+                : a.residualValue() == null ? null : a.residualValue().minor();
         Integer life = patch.containsKey("usefulLifeMonths") ? Maps.integer(patch, "usefulLifeMonths") : a.usefulLifeMonths();
         BigDecimal rate = patch.containsKey("depreciationRate") ? Maps.decimal(patch, "depreciationRate") : a.depreciationRate();
         Jdbc.update(c, "UPDATE REG_ASSET SET acquisition_value=?, residual_value=?, currency=?, useful_life_months=?,"
                         + " depreciation_method=?, depreciation_rate=?, acquisition_date=?, in_service_date=?, warranty_ref=?,"
                         + " warranty_until=?, version=version+1 WHERE object_id=? AND tenant_id=? AND version=?",
-                value, residual, Maps.str(patch, "currency", a.currency()), life, method == null ? null : method.toUpperCase(),
+                value, residual, ccy, life, method == null ? null : method.toUpperCase(),
                 rate, acq == null ? a.acquisitionDate() : acq.toString(), ins == null ? a.inServiceDate() : ins.toString(),
                 Maps.str(patch, "warrantyRef", a.warrantyRef()), wu == null ? a.warrantyUntil() : wu.toString(),
                 id, ctx.tenant(), a.version());
@@ -400,9 +408,10 @@ public final class AssetService {
         lockAsset(c, ctx.tenant(), id);
         Jdbc.update(c, "UPDATE REG_ASSET SET status='DISPOSED', disposed_date=?, version=version+1 WHERE object_id=? AND tenant_id=?",
                 d.toString(), id, ctx.tenant());
-        BigDecimal bv = bookValue(c, ctx, id, d);
+        Money bv = bookValue(c, ctx, id, d);
         audit.record(c, ctx, id, "ASSET_DISPOSED", Maps.of("date", d, "method", method, "reason", reason,
-                "bookValue", bv, "transition", tr));
+                "bookValue", bv == null ? null : bv.toPlainString(), "currency", bv == null ? null : bv.currencyCode(),
+                "transition", tr));
         return new AssetView(o, asset(c, ctx.tenant(), id));
     }
 
@@ -420,10 +429,12 @@ public final class AssetService {
         DepreciationParams p = resolveClass(c, ctx.tenant(), a.classKey()).depreciation();
         String method = a.depreciationMethod() != null ? a.depreciationMethod() : p.effectiveMethod();
         int life = a.usefulLifeMonths() != null ? a.usefulLifeMonths() : p.usefulLifeMonths() == null ? 0 : p.usefulLifeMonths();
-        BigDecimal cost = a.acquisitionValue();
-        BigDecimal residual = a.residualValue();
+        Money cost = a.acquisitionValue();
+        Money residual = a.residualValue();
         if (residual == null && cost != null && p.residualPercent() != null) {
-            residual = cost.multiply(p.residualPercent()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            // one rounding of a derived amount (residual % of cost) to whole minor units
+            residual = Money.round(cost.toMajor().multiply(p.residualPercent()).movePointLeft(2), cost.currencyCode(),
+                    RoundingMode.HALF_UP);
         }
         LocalDate inService = a.inServiceDate() != null ? LocalDate.parse(a.inServiceDate())
                 : a.acquisitionDate() != null ? LocalDate.parse(a.acquisitionDate()) : null;
@@ -453,8 +464,27 @@ public final class AssetService {
         return DepreciationCalculator.schedule(depreciationInputs(c, ctx, id));
     }
 
-    public BigDecimal bookValue(Connection c, RegistryContext ctx, String id, LocalDate asOf) {
+    public Money bookValue(Connection c, RegistryContext ctx, String id, LocalDate asOf) {
         return DepreciationCalculator.bookValue(depreciationInputs(c, ctx, id), asOf == null ? LocalDate.now(ctx.zone()) : asOf);
+    }
+
+    /**
+     * Money field of a request as minor units of {@code currency} (API boundary, SD-398): a decimal string or number in
+     * major units, rejected if it has more fraction digits than the currency allows or has no currency.
+     */
+    static Long minor(Map<String, Object> req, String field, String currency) {
+        Object v = req.get(field);
+        if (v == null) {
+            return null;
+        }
+        if (currency == null) {
+            throw RegistryException.invalid(field + " needs a currency (ISO 4217)");
+        }
+        try {
+            return Money.parse(v.toString(), currency).minor();
+        } catch (RuntimeException e) {
+            throw RegistryException.invalid(field + ": " + e.getMessage());
+        }
     }
 
     static String classRoot(String tenant, String classKey) {

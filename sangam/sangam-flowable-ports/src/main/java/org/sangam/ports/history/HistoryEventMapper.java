@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  * Converts Operaton history events to plain maps (JSON-safe; times as ISO-8601 UTC strings) for the async history
- * stream (FC-25) and the typed engine event bus (FC-43). Variable values are <b>not</b> copied (only name, type and
+ * stream (FLOWABLE-INTO-OPERATON FC-25) and the typed engine event bus (FLOWABLE-INTO-OPERATON FC-43). Variable values are <b>not</b> copied (only name, type and
  * revision), so personal data does not leak into the outbox stream (R61/DPDP); consumers that need values read them
  * through the authorised API.
  */
@@ -171,7 +171,7 @@ public final class HistoryEventMapper {
         return "active";
     }
 
-    /** Raw CMMN state; the D-25 audit label (exited vs terminated) is WS-ENGINE's projection. */
+    /** Raw CMMN state; the FLOWABLE-INTO-OPERATON D-25 audit label (exited vs terminated) is WS-ENGINE's projection. */
     static String caseActivityState(HistoricCaseActivityInstanceEventEntity c) {
         if (c.isCompleted()) {
             return "completed";

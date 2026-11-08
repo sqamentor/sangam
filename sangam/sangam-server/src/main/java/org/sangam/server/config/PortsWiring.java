@@ -108,10 +108,10 @@ import org.springframework.core.env.Environment;
  *   <li>event registry: {@link EventDispatcher} (with WS-INTEGRATION's {@link UniqueStartPort}) on the inbox,
  *       {@link ChannelPublisher} and (when {@code sangam.history.read-model-projection=true}) {@link HistoryProjector}
  *       on the relay, through {@link EventRegistryWiring#wire};</li>
- *   <li>REST ports: {@link EventPort}, {@link DynamicPort} (FC-01, FC-15: the 501 defaults are gone), {@link CasePort},
- *       {@link FormPort}, {@link DocumentPort}, {@link DocumentExtrasPort}, {@link DeploymentPort} (app bundles FC-41),
- *       {@link LinkPort}, {@link InstanceControlPort} (FC-17) and, in sandbox profiles, {@link DebugPort};</li>
- *   <li>{@link IdmFacade} over WS-SECURITY's {@link IdentityExtrasPort} (FC-42).</li>
+ *   <li>REST ports: {@link EventPort}, {@link DynamicPort} (FLOWABLE-INTO-OPERATON FC-01, FLOWABLE-INTO-OPERATON FC-15: the 501 defaults are gone), {@link CasePort},
+ *       {@link FormPort}, {@link DocumentPort}, {@link DocumentExtrasPort}, {@link DeploymentPort} (app bundles FLOWABLE-INTO-OPERATON FC-41),
+ *       {@link LinkPort}, {@link InstanceControlPort} (FLOWABLE-INTO-OPERATON FC-17) and, in sandbox profiles, {@link DebugPort};</li>
+ *   <li>{@link IdmFacade} over WS-SECURITY's {@link IdentityExtrasPort} (FLOWABLE-INTO-OPERATON FC-42).</li>
  * </ul>
  * Beans declared here replace the {@code @ConditionalOnMissingBean} defaults of {@code SangamRestAutoConfiguration}.
  * Disable the whole module with {@code sangam.modules.ports.enabled=false}.
@@ -153,12 +153,12 @@ public class PortsWiring {
         s.setDialect(schema.dialect());
         s.setOutbox(new Outbox(schema.dialect()));
         // One history-to-outbox stream only: integration's OutboxHistoryEventHandler feeds the outbox; the ports
-        // handler publishes only the read-model projection (FC-25) when this is on.
+        // handler publishes only the read-model projection (FLOWABLE-INTO-OPERATON FC-25) when this is on.
         s.setReadModelFeed(env.getProperty("sangam.history.read-model-projection", Boolean.class, true));
         return s;
     }
 
-    /** Debugger (FC-44, R80): only with {@code sangam.debug.enabled=true} on a profile that is not production. */
+    /** Debugger (FLOWABLE-INTO-OPERATON FC-44, R80): only with {@code sangam.debug.enabled=true} on a profile that is not production. */
     @Bean
     @ConditionalOnExpression("${sangam.debug.enabled:false} and !'${spring.profiles.active:}'.contains('prod')")
     public DebuggerService sangamPortsDebugger(PortsSettings settings, ObjectProvider<ProcessEngine> engine, Environment env) {
@@ -254,7 +254,7 @@ public class PortsWiring {
                                                  SangamPortsPlugin plugin, ObjectProvider<UniqueStartPort> uniqueStart) {
         UniqueStartPort guard = uniqueStart.getIfAvailable();
         if (guard == null) {
-            LOG.warn("No UniqueStartPort bean: event definitions with startUniqueReference will be refused (FC-04)");
+            LOG.warn("No UniqueStartPort bean: event definitions with startUniqueReference will be refused (FLOWABLE-INTO-OPERATON FC-04)");
         }
         return new EventDispatcher(engine, registry, log, plugin.links(), guard);
     }
@@ -350,7 +350,7 @@ public class PortsWiring {
                 events, channels);
     }
 
-    /** FC-42 privileges and API tokens; {@code null} (no bean) when sangam-security's IdentityExtrasPort is absent. */
+    /** FLOWABLE-INTO-OPERATON FC-42 privileges and API tokens; {@code null} (no bean) when sangam-security's IdentityExtrasPort is absent. */
     @Bean
     public IdmFacade sangamIdmFacade(ObjectProvider<IdentityExtrasPort> identity, ProcessEngine engine) {
         IdentityExtrasPort port = identity.getIfAvailable();
@@ -433,10 +433,11 @@ public class PortsWiring {
 
     @Bean
     public InstanceControlPort sangamPortsInstanceControlPort(ProcessEngine engine, ProcessPort processes,
-            CrossInstanceStateChangeService moves, TxSupport tx, AuditPort audit, RestProperties props) {
+            CrossInstanceStateChangeService moves, TxSupport tx, AuditPort audit, RestProperties props,
+            org.sangam.rest.adapter.operaton.OperatonOperationIds operationIds) {
         InstanceControlPort base = new OperatonInstanceControlAdapter(engine.getRuntimeService(),
                 engine.getRepositoryService(), engine.getHistoryService(), engine.getExternalTaskService(),
-                engine.getTaskService(), processes, tx, audit, props);
+                engine.getTaskService(), processes, tx, audit, props, operationIds);
         return new PortsInstanceControlBridge(base, moves, processes, tx, audit);
     }
 
@@ -450,7 +451,7 @@ public class PortsWiring {
 
     // ---------------------------------------------------------------- history read model, SLA, product batches
 
-    /** History query API over the read model (FC-25); needs the projection ({@code sangam.history.read-model-projection}). */
+    /** History query API over the read model (FLOWABLE-INTO-OPERATON FC-25); needs the projection ({@code sangam.history.read-model-projection}). */
     @Bean
     @ConditionalOnProperty(name = "sangam.history.read-model-projection", havingValue = "true", matchIfMissing = true)
     public org.sangam.ports.history.HistoryQueryService sangamHistoryQueryService(ProcessEngine engine, TxSupport tx) {
@@ -488,7 +489,7 @@ public class PortsWiring {
     }
 
     /**
-     * Product batch service (R64, D-34): four eyes for DELETE / MIGRATE / RESTART and above
+     * Product batch service (R64, FLOWABLE-INTO-OPERATON D-34): four eyes for DELETE / MIGRATE / RESTART and above
      * {@code sangam.rest.batch-four-eyes-threshold} items; up to {@code sangam.ports.batch.max-attempts} attempts.
      */
     @Bean
@@ -506,11 +507,13 @@ public class PortsWiring {
     /** OpsPort: batches on ProductBatchService, everything else on the default OperatonOpsAdapter. */
     @Bean(destroyMethod = "close")
     public org.sangam.rest.port.OpsPort sangamPortsOpsPort(org.sangam.ports.batch.ProductBatchService batches,
-            ProcessEngine engine, ProcessPort processes, TxSupport tx, AuditPort audit, RestProperties props) {
+            ProcessEngine engine, ProcessPort processes, TxSupport tx, AuditPort audit, RestProperties props,
+            ObjectProvider<org.sangam.core.layer.ReconciliationResolver> resolver) {
         var defaults = new org.sangam.rest.adapter.operaton.OperatonOpsAdapter(engine.getRuntimeService(),
                 engine.getManagementService(), engine.getHistoryService(), engine.getRepositoryService(),
                 engine.getExternalTaskService(), tx, audit, props);
         defaults.setProcessPort(processes);
+        defaults.setReconciliationResolver(resolver::getIfAvailable);   // release held work on every resolve
         return new org.sangam.server.bridge.PortsOpsBridge(batches, defaults, engine, processes, audit, props);
     }
 

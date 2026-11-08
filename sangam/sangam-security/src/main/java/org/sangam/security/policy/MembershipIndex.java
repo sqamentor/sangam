@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The materialised membership table {@code AUTH_MEMBERSHIP(member_id → principal_id)} (VI.4 rule 2, D-55): which
+ * The materialised membership table {@code AUTH_MEMBERSHIP(member_id → principal_id)} (VI.4 rule 2, FLOWABLE-INTO-OPERATON D-55): which
  * groups, roles and seats a user is a member of, effective-dated. It serves two purposes:
  * <ul>
  *   <li>identity enrichment: the principal ids added to a caller from Sangam groups, role bindings and postings;</li>

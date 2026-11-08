@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp55">
+  <!-- GP-55 periodic verification campaign (GFR 213): every 31 March a campaign starts, each register item is verified
+       in its own branch, and every discrepancy opens its own investigation case that outlives the campaign. -->
+  <process id="gp55-verification" name="GP-55 Annual physical verification" isExecutable="true">
+    <startEvent id="gp55_start"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">R/2027-03-31T04:30:00Z/P1Y</timeCycle></timerEventDefinition></startEvent>
+    <sequenceFlow id="f1" sourceRef="gp55_start" targetRef="gp55_load"/>
+    <serviceTask id="gp55_load" name="Load stock register" @@ext|stock-register@@/>
+    <sequenceFlow id="f2" sourceRef="gp55_load" targetRef="gp55_items"/>
+    <subProcess id="gp55_items" name="Verify item">
+      <multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">${itemCount}</loopCardinality></multiInstanceLoopCharacteristics>
+      <startEvent id="gp55_iStart"/>
+      <sequenceFlow id="i1" sourceRef="gp55_iStart" targetRef="gp55_verify"/>
+      <userTask id="gp55_verify" name="Physically verify item"><potentialOwner><resourceAssignmentExpression><formalExpression>group(verification-board)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="i2" sourceRef="gp55_verify" targetRef="gp55_gw"/>
+      <exclusiveGateway id="gp55_gw" default="i4"/>
+      <sequenceFlow id="i3" sourceRef="gp55_gw" targetRef="gp55_iEndOk"><conditionExpression xsi:type="tFormalExpression">${physicalQty == bookQty}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="i4" sourceRef="gp55_gw" targetRef="gp55_open"/>
+      <serviceTask id="gp55_open" name="Open discrepancy case" @@ext|open-discrepancy;nonexclusive@@/>
+      <sequenceFlow id="i5" sourceRef="gp55_open" targetRef="gp55_iEndCase"/>
+      <endEvent id="gp55_iEndOk"/>
+      <endEvent id="gp55_iEndCase"/>
+    </subProcess>
+    <sequenceFlow id="f3" sourceRef="gp55_items" targetRef="gp55_report"/>
+    <userTask id="gp55_report" name="Verification report (Form GFR-10 items)"><potentialOwner><resourceAssignmentExpression><formalExpression>group(hod)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f4" sourceRef="gp55_report" targetRef="gp55_end"/>
+    <endEvent id="gp55_end"/>
+  </process>
+</definitions>

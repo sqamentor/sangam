@@ -92,6 +92,7 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
         }
         JobEntity job = cc.getCurrentJob();
         if (job instanceof TimerEntity timer && timer.getRepeat() != null) {
+            scheduleFollowUp(timer, configuration);
             TimerGuard.Verdict v = timerGuard.decide(c, timer,
                     policies.policyFor(timer.getProcessDefinitionKey(), timer.getActivityId()), clock.now().toEpochMilli());
             if (v != TimerGuard.Verdict.FIRE) {
@@ -100,6 +101,24 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
             }
         }
         delegate.execute(configuration, execution, cc, tenantId);
+    }
+
+    /**
+     * Creates the next job of a repeating timer. Operaton does this in {@code TimerEntity.preExecute} only when
+     * {@code getJobHandler() instanceof TimerEventJobHandler}, which is false for this wrapper, so without this every
+     * cycle timer fired once and stopped. Runs before the guard decision, as Operaton's pre-execute does, so the cycle
+     * calendar sees the fire count of the firings before this one (Rn bound). Not done: Operaton's re-evaluation of a
+     * changed cycle expression when due, and its rollback listener for a failed repeating job.
+     */
+    private void scheduleFollowUp(TimerEntity timer, T configuration) {
+        if (delegate instanceof org.operaton.bpm.engine.impl.jobexecutor.TimerEventJobHandler
+                && configuration instanceof org.operaton.bpm.engine.impl.jobexecutor.TimerEventJobHandler.TimerJobConfiguration tc
+                && !tc.isFollowUpJobCreated()) {
+            java.util.Date next = timer.calculateNewDueDate();
+            if (next != null) {
+                timer.createNewTimerJob(next);
+            }
+        }
     }
 
     @Override

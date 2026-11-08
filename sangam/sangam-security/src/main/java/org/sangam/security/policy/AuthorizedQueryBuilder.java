@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * The single read path for protected resources (VI.4 rule 3, K2, D-15): list, count, search, export, dashboards and
+ * The single read path for protected resources (VI.4 rule 3, K2, FLOWABLE-INTO-OPERATON D-15): list, count, search, export, dashboards and
  * get-by-id all go through here, so every read carries the VI.4 predicate and the tenant binding. Results are never
  * filtered after the query (A-3). The REST layer and the console must not call engine queries for protected types
  * directly (to be enforced by an ArchUnit rule in {@code sangam-server}; see README).

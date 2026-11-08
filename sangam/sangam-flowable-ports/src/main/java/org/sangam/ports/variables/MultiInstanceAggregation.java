@@ -22,15 +22,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Multi-instance variable aggregation (FC-21, Flowable {@code VariableAggregationDefinition}). On a multi-instance
+ * Multi-instance variable aggregation (FLOWABLE-INTO-OPERATON FC-21, Flowable {@code VariableAggregationDefinition}). On a multi-instance
  * activity element:
  * <pre>{@code <userTask id="review" sangam:aggregateTo="reviews" sangam:aggregateVariables="decision,comment">
  *   <multiInstanceLoopCharacteristics .../></userTask>}</pre>
  * When each item ends, the named variables (local first) are written with the {@code loopCounter} to
  * {@code MI_AGGREGATE} in the same transaction; no shared parent variable is touched per item, so parallel items do
- * not collide on one variable row (no OLE storm, D-23). When the multi-instance body ends, the rows are assembled in
+ * not collide on one variable row (no OLE storm, FLOWABLE-INTO-OPERATON D-23). When the multi-instance body ends, the rows are assembled in
  * loop order into a JSON array {@code [{"loopCounter":0,"decision":..},..]}, stored as variable {@code aggregateTo}
- * (a string holding JSON; large values follow the FC-29 rule of WS-ENGINE) and the rows are deleted.
+ * (a string holding JSON; large values follow the FLOWABLE-INTO-OPERATON FC-29 rule of WS-ENGINE) and the rows are deleted.
  */
 public class MultiInstanceAggregation implements BpmnParseListener {
 

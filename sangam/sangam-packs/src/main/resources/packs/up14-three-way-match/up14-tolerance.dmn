@@ -3,11 +3,11 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="up14-tolerance" name="Three-way match tolerances (2% quantity, 1% price)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="up14-tolerance_t" hitPolicy="FIRST">
-      <input id="up14-tolerance_i0" label="Invoice qty"><inputExpression id="up14-tolerance_ie0" typeRef="double"><text>invoiceQty</text></inputExpression></input>
-      <input id="up14-tolerance_i1" label="Received qty"><inputExpression id="up14-tolerance_ie1" typeRef="double"><text>grnQty</text></inputExpression></input>
-      <input id="up14-tolerance_i2" label="PO qty"><inputExpression id="up14-tolerance_ie2" typeRef="double"><text>poQty</text></inputExpression></input>
-      <input id="up14-tolerance_i3" label="Invoice price"><inputExpression id="up14-tolerance_ie3" typeRef="double"><text>invoicePrice</text></inputExpression></input>
-      <input id="up14-tolerance_i4" label="PO price"><inputExpression id="up14-tolerance_ie4" typeRef="double"><text>poPrice</text></inputExpression></input>
+      <input id="up14-tolerance_i0" label="Invoice qty"><inputExpression id="up14-tolerance_ie0" typeRef="number"><text>invoiceQty</text></inputExpression></input>
+      <input id="up14-tolerance_i1" label="Received qty"><inputExpression id="up14-tolerance_ie1" typeRef="number"><text>grnQty</text></inputExpression></input>
+      <input id="up14-tolerance_i2" label="PO qty"><inputExpression id="up14-tolerance_ie2" typeRef="number"><text>poQty</text></inputExpression></input>
+      <input id="up14-tolerance_i3" label="Invoice price"><inputExpression id="up14-tolerance_ie3" typeRef="number"><text>invoicePrice</text></inputExpression></input>
+      <input id="up14-tolerance_i4" label="PO price"><inputExpression id="up14-tolerance_ie4" typeRef="number"><text>poPrice</text></inputExpression></input>
       <output id="up14-tolerance_o0" label="Result" name="matchResult" typeRef="string"/>
       <rule id="up14-tolerance_r0">
         <inputEntry id="up14-tolerance_r0_i0"><text>-</text></inputEntry>

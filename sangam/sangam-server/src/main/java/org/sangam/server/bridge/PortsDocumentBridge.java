@@ -28,7 +28,7 @@ import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 
 /**
- * {@link DocumentPort} on sangam-flowable-ports' content service (FC-40, EC-18, R74): immutable versions with SHA-256
+ * {@link DocumentPort} on sangam-flowable-ports' content service (FLOWABLE-INTO-OPERATON FC-40, EC-18, R74): immutable versions with SHA-256
  * verified on read, pluggable store (file system / S3), optional malware scan. Scopes: {@code bpmn} (process
  * instance), {@code cmmn} (case instance) and {@code task} (a task without a process). Attachment limits (K12): type
  * allow-list and 25 MB. A document under legal hold (R61) cannot be deleted ({@code 409 LEGAL_HOLD}). Holds are

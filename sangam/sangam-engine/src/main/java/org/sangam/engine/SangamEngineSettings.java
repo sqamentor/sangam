@@ -19,7 +19,7 @@ import org.sangam.core.engine.TimerCatchUpPolicy;
 import org.sangam.core.engine.WorkCalendar;
 
 /**
- * Typed configuration facade of the Sangam engine (D-53): every setting Sangam changes on Operaton's 5,000-line
+ * Typed configuration facade of the Sangam engine (FLOWABLE-INTO-OPERATON D-53): every setting Sangam changes on Operaton's 5,000-line
  * mutable configuration is here, with the Sangam default and the requirement it serves. JavaBean style, so
  * sangam-server can bind it with {@code @ConfigurationProperties("sangam.engine")}.
  */
@@ -31,7 +31,14 @@ public class SangamEngineSettings {
     private String defaultTenantId = "default";
     private String history = "full";
     private boolean jobExecutorActivate = false;
-    /** D-38/D-10: one engine per JVM because ClockUtil is static; tests may lift it. */
+    /**
+     * SG-19: Operaton {@code databaseSchemaUpdate} ("false", "true", "create-drop", ...). {@code null} (default) keeps
+     * the value the engine configuration already has (Spring: {@code operaton.bpm.database.schema-update} from the
+     * profile, "false" on every production database profile). Sangam never forces engine DDL at start-up: schema
+     * changes on production go only through the controlled {@code migrate-only} job (deploy README section 2).
+     */
+    private String engineSchemaUpdate;
+    /** FLOWABLE-INTO-OPERATON D-38/FLOWABLE-INTO-OPERATON D-10: one engine per JVM because ClockUtil is static; tests may lift it. */
     private boolean allowMultipleEnginesPerJvm = false;
     /** Run the product changelog before building the engine (R12; production may run it as a Job instead). */
     private boolean applyProductSchema = true;
@@ -39,11 +46,11 @@ public class SangamEngineSettings {
     private boolean applyEnginePatches = true;
     /** IR-8: partition ACT_HI_* by REMOVAL_TIME_ after the build (PostgreSQL, Oracle, SQL Server); env SANGAM_PARTITIONED_HISTORY. */
     private boolean partitionedHistory = false;
-    /** D-05: the Operaton databaseType to pin on MySQL servers whatever the driver says ("mysql" or "mariadb"). */
+    /** FLOWABLE-INTO-OPERATON D-05: the Operaton databaseType to pin on MySQL servers whatever the driver says ("mysql" or "mariadb"). */
     private String mysqlDatabaseType = "mysql";
-    /** D-56 / R84: SQL Server must run with READ_COMMITTED_SNAPSHOT ON. */
+    /** FLOWABLE-INTO-OPERATON D-56 / R84: SQL Server must run with READ_COMMITTED_SNAPSHOT ON. */
     private boolean requireSqlServerRcsi = true;
-    /** D-06: MySQL JDBC statement timeout in seconds (also applied on the other databases; 0 = off). */
+    /** FLOWABLE-INTO-OPERATON D-06: MySQL JDBC statement timeout in seconds (also applied on the other databases; 0 = off). */
     private int jdbcStatementTimeoutSeconds = 30;
 
     // ------------------------------------------------------------------ VI.1 locks and retries
@@ -59,39 +66,42 @@ public class SangamEngineSettings {
     private int fetchAttempts = 20;
     private Duration maxLease = Duration.ofHours(24);
 
-    // ------------------------------------------------------------------ jobs and timers (A-12, R31, FC-24)
+    // ------------------------------------------------------------------ jobs and timers (A-12, R31, FLOWABLE-INTO-OPERATON FC-24)
     private int maxJobExecutionsPerCall = 1_000;
     private int maxExecutionsPerJobDefinitionPerCall = 50;
+    // Deliberately the JVM zone, not a tenant business zone: the engine evaluates cron / cycle due dates in the JVM
+    // default zone, and the DST timer guard must bucket firings on that same wall clock (a repeated local hour is
+    // only detectable in the zone that produced it). Business dates use org.sangam.core.time.BusinessClock instead.
     private ZoneId timerZone = ZoneId.systemDefault();
     private TimerCatchUpPolicy timerCatchUpDefault = TimerCatchUpPolicy.FIRE_ONCE;
     private Map<String, TimerCatchUpPolicy> timerCatchUpByProcessKey = new LinkedHashMap<>();
     private int maxCatchUpFires = 100;
     private Map<String, WorkCalendar> workCalendars = new LinkedHashMap<>();
-    /** FC-24 (config route): SKIP LOCKED acquisition, prioritized jobs, timers first. */
+    /** FLOWABLE-INTO-OPERATON FC-24 (config route): SKIP LOCKED acquisition, prioritized jobs, timers first. */
     private boolean jobAcquireWithSkipLocked = true;
     private boolean jobPreferTimers = true;
 
-    // ------------------------------------------------------------------ deployment validation (FC-46)
-    /** GP-09 / D-23: multi-instance above this cardinality is rejected (deploy: literal; runtime: evaluated). */
+    // ------------------------------------------------------------------ deployment validation (FLOWABLE-INTO-OPERATON FC-46)
+    /** GP-09 / FLOWABLE-INTO-OPERATON D-23: multi-instance above this cardinality is rejected (deploy: literal; runtime: evaluated). */
     // Same default as WS-PACKS' ModelGuard.MAX_MULTI_INSTANCE (50), so the engine and the pack guard never disagree.
     private int multiInstanceMaxCardinality = 50;
-    /** D-46 / R6: Release 1 has no in-engine scripts. */
+    /** FLOWABLE-INTO-OPERATON D-46 / R6: Release 1 has no in-engine scripts. */
     private boolean rejectScriptTasks = true;
-    /** D-08: CMMN event listeners deploy silently but never fire on Operaton 2.2. */
+    /** FLOWABLE-INTO-OPERATON D-08: CMMN event listeners deploy silently but never fire on Operaton 2.2. */
     private boolean rejectCmmnEventListeners = true;
-    /** FC-55 (WS-PORTS) enabled: CMMN event listeners are executed, so D-08 must not reject them. */
+    /** FLOWABLE-INTO-OPERATON FC-55 (WS-PORTS) enabled: CMMN event listeners are executed, so FLOWABLE-INTO-OPERATON D-08 must not reject them. */
     private boolean cmmnEventListenersEnabled = false;
-    /** D-12: decisionRefBinding / calledElementBinding default to "deployment" instead of "latest". */
+    /** FLOWABLE-INTO-OPERATON D-12: decisionRefBinding / calledElementBinding default to "deployment" instead of "latest". */
     private boolean defaultBindingDeployment = true;
-    /** D-51 / R24: DOCTYPE declarations are rejected at deploy. */
+    /** FLOWABLE-INTO-OPERATON D-51 / R24: DOCTYPE declarations are rejected at deploy. */
     private boolean rejectDoctype = true;
 
-    // ------------------------------------------------------------------ history and retention (D-13, FC-26, R61)
+    // ------------------------------------------------------------------ history and retention (FLOWABLE-INTO-OPERATON D-13, FLOWABLE-INTO-OPERATON FC-26, R61)
     /** Days of history TTL injected for retention class "default"; null = never cleaned (R61-safe). */
     private Integer defaultHistoryTtlDays = null;
     /** Retention class (sangam:retentionClass) -> TTL days; a class mapped to null is kept forever. */
     private Map<String, Integer> historyTtlDaysByRetentionClass = new LinkedHashMap<>();
-    /** FC-26: history level (none, activity, audit, full) per {@code processKey} or {@code processKey#activityId}. */
+    /** FLOWABLE-INTO-OPERATON FC-26: history level (none, activity, audit, full) per {@code processKey} or {@code processKey#activityId}. */
     private Map<String, String> historyLevelByProcessKey = new LinkedHashMap<>();
     /** History event types fed into the audit chain (Operaton HistoryEventTypes names). */
     private Set<String> auditedHistoryEvents = new LinkedHashSet<>(List.of(
@@ -99,10 +109,10 @@ public class SangamEngineSettings {
             "TASK_INSTANCE_CREATE", "TASK_INSTANCE_UPDATE", "TASK_INSTANCE_COMPLETE", "TASK_INSTANCE_DELETE",
             "INCIDENT_CREATE", "INCIDENT_RESOLVE", "INCIDENT_DELETE",
             "CASE_INSTANCE_CREATE", "CASE_INSTANCE_CLOSE", "CASE_ACTIVITY_INSTANCE_END"));
-    /** History event types published as typed engine events (FC-43 / FC-25); empty = all. */
+    /** History event types published as typed engine events (FLOWABLE-INTO-OPERATON FC-43 / FLOWABLE-INTO-OPERATON FC-25); empty = all. */
     private Set<String> publishedHistoryEvents = new LinkedHashSet<>();
 
-    // ------------------------------------------------------------------ variables (D-07, FC-28, FC-29, D-47)
+    // ------------------------------------------------------------------ variables (FLOWABLE-INTO-OPERATON D-07, FLOWABLE-INTO-OPERATON FC-28, FLOWABLE-INTO-OPERATON FC-29, FLOWABLE-INTO-OPERATON D-47)
     /** Strings longer than this go to a byte array; null = the database's TEXT_ limit (Oracle 2,000, else 4,000). */
     private Integer largeStringThresholdChars = null;
 
@@ -151,6 +161,8 @@ public class SangamEngineSettings {
     public void setDefaultTenantId(String v) { defaultTenantId = v; }
     public String getHistory() { return history; }
     public void setHistory(String v) { history = v; }
+    public String getEngineSchemaUpdate() { return engineSchemaUpdate; }
+    public void setEngineSchemaUpdate(String v) { engineSchemaUpdate = v; }
     public boolean isJobExecutorActivate() { return jobExecutorActivate; }
     public void setJobExecutorActivate(boolean v) { jobExecutorActivate = v; }
     public boolean isAllowMultipleEnginesPerJvm() { return allowMultipleEnginesPerJvm; }
@@ -205,7 +217,7 @@ public class SangamEngineSettings {
     public void setMultiInstanceMaxCardinality(int v) { multiInstanceMaxCardinality = v; }
     public boolean isRejectScriptTasks() { return rejectScriptTasks; }
     public void setRejectScriptTasks(boolean v) { rejectScriptTasks = v; }
-    /** D-08 rejection is in force unless FC-55 is enabled. */
+    /** FLOWABLE-INTO-OPERATON D-08 rejection is in force unless FLOWABLE-INTO-OPERATON FC-55 is enabled. */
     public boolean isRejectCmmnEventListeners() { return rejectCmmnEventListeners && !cmmnEventListenersEnabled; }
     public boolean isCmmnEventListenersEnabled() { return cmmnEventListenersEnabled; }
     public void setCmmnEventListenersEnabled(boolean v) { cmmnEventListenersEnabled = v; }
@@ -238,6 +250,10 @@ public class SangamEngineSettings {
     public void setJobIdentityBinder(JobIdentityBinder v) { jobIdentityBinder = v; }
     public EngineMetrics getMetrics() { return metrics; }
     public void setMetrics(EngineMetrics v) { metrics = v == null ? EngineMetrics.NONE : v; }
+    /** ADR-D-25: object check for route corrections (PROCESS_INSTANCE / MODIFY). Unset = every correction denied. */
+    private org.sangam.core.security.SecurityPorts.Authorization routeCorrectionAuthorization;
+    public org.sangam.core.security.SecurityPorts.Authorization getRouteCorrectionAuthorization() { return routeCorrectionAuthorization; }
+    public void setRouteCorrectionAuthorization(org.sangam.core.security.SecurityPorts.Authorization v) { routeCorrectionAuthorization = v; }
 
     public boolean isApplyEnvironment() { return applyEnvironment; }
     public void setApplyEnvironment(boolean v) { applyEnvironment = v; }

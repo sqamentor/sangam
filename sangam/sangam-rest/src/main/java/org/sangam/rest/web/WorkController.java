@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Worker API (ARCHITECTURE §4, VI.3, FC-36). Fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE. */
+/** Worker API (ARCHITECTURE §4, VI.3, FLOWABLE-INTO-OPERATON FC-36). Fenced by (workerId, lockVersion, attemptId): 409 STALE_LEASE. */
 @RestController
 @RequestMapping("/api/v1/work")
 public class WorkController {

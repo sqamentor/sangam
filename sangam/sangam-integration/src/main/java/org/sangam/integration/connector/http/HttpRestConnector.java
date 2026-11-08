@@ -24,7 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Generic HTTP/REST connector (R71; Flowable FC-06 HTTP task; Operaton connect-plugin parity B-16).
+ * Generic HTTP/REST connector (R71; FLOWABLE-INTO-OPERATON FC-06 HTTP task; Operaton connect-plugin parity B-16).
  *
  * <p>Request: {@code method}, {@code path} (appended to the base URI; {@code {name}} placeholders are filled from the
  * input, URL-encoded), {@code query} (map), {@code headers} (map), {@code body} (any JSON value; a string is sent as

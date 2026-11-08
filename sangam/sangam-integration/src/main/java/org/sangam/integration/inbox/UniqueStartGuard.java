@@ -8,7 +8,7 @@ import java.sql.Connection;
 import java.util.Optional;
 
 /**
- * {@code uniqueStart} (SANGAM.md VI.2.6 rule 4, R38, T35; Flowable FC-04 {@code storeAsUniqueReferenceId}): at most one
+ * {@code uniqueStart} (SANGAM.md VI.2.6 rule 4, R38, T35; FLOWABLE-INTO-OPERATON FC-04 {@code storeAsUniqueReferenceId}): at most one
  * business start per (tenant, definition key, business key), enforced by the primary key of {@code UNIQUE_START} and
  * checked in the same transaction as the start. A database restore while the broker holds newer messages therefore
  * cannot produce a second start: the inbox dedups the message and, if the inbox row was lost with the restore, this

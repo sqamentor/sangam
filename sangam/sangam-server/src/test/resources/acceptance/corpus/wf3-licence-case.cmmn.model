@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WF-3 licence, case variant (SANGAM.md XI.3: "Case variant in CMMN on both engines"). SHARED by both engines:
+  standard CMMN 1.1 only, no vendor namespace.
+  Stage "Licence processing": human task Scrutiny (active at once) -> sentry -> human task Inspection
+  -> sentry -> milestone "Approved". Stage and case plan auto-complete when the milestone is reached.
+  Not modelled on purpose (each needs a vendor extension, see corpus/VARIANTS.md "Not used"):
+  candidate groups on the human tasks, case-level history time to live.
+-->
+<definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL"
+             id="wf3-licence-case-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <case id="wf3-licence-case" name="WF-3 Licence case">
+    <casePlanModel id="wf3c_casePlanModel" name="Licence case plan" autoComplete="true">
+      <planItem id="wf3c_pi_stage" definitionRef="wf3c_stage"/>
+
+      <stage id="wf3c_stage" name="Licence processing" autoComplete="true">
+        <planItem id="wf3c_pi_scrutiny" definitionRef="wf3c_scrutiny"/>
+        <planItem id="wf3c_pi_inspection" definitionRef="wf3c_inspection">
+          <entryCriterion id="wf3c_ec_inspection" sentryRef="wf3c_sentry_scrutinyDone"/>
+        </planItem>
+        <planItem id="wf3c_pi_approved" definitionRef="wf3c_approved">
+          <entryCriterion id="wf3c_ec_approved" sentryRef="wf3c_sentry_inspectionDone"/>
+        </planItem>
+
+        <sentry id="wf3c_sentry_scrutinyDone" name="Scrutiny completed">
+          <planItemOnPart id="wf3c_onPart_scrutiny" sourceRef="wf3c_pi_scrutiny">
+            <standardEvent>complete</standardEvent>
+          </planItemOnPart>
+        </sentry>
+        <sentry id="wf3c_sentry_inspectionDone" name="Inspection completed">
+          <planItemOnPart id="wf3c_onPart_inspection" sourceRef="wf3c_pi_inspection">
+            <standardEvent>complete</standardEvent>
+          </planItemOnPart>
+        </sentry>
+
+        <humanTask id="wf3c_scrutiny" name="Scrutiny"/>
+        <humanTask id="wf3c_inspection" name="Inspection"/>
+        <milestone id="wf3c_approved" name="Approved"/>
+      </stage>
+    </casePlanModel>
+  </case>
+</definitions>

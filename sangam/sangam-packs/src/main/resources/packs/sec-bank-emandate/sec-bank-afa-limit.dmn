@@ -4,7 +4,7 @@
   <decision id="sec-bank-afa-limit" name="Additional factor of authentication for recurring debits" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-bank-afa-limit_t" hitPolicy="FIRST">
       <input id="sec-bank-afa-limit_i0" label="Merchant category"><inputExpression id="sec-bank-afa-limit_ie0" typeRef="string"><text>merchantCategory</text></inputExpression></input>
-      <input id="sec-bank-afa-limit_i1" label="Amount"><inputExpression id="sec-bank-afa-limit_ie1" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="sec-bank-afa-limit_i1" label="Amount"><inputExpression id="sec-bank-afa-limit_ie1" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="sec-bank-afa-limit_o0" label="AFA required" name="afaRequired" typeRef="boolean"/>
       <rule id="sec-bank-afa-limit_r0"><description>Rs 1 lakh for mutual funds, insurance premium, credit card bills</description>
         <inputEntry id="sec-bank-afa-limit_r0_i0"><text>"MUTUAL_FUND","INSURANCE","CREDIT_CARD"</text></inputEntry>

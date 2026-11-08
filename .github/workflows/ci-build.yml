@@ -35,9 +35,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: ["25", "21"]   # R5: 25 LTS is the baseline, 21 the supported minimum (deploy/SUPPORT-MATRIX.md)
+        java: ["25", "21", "27"]   # R5: 25 LTS baseline, 21 supported minimum, 27 current (SG-06; deploy/SUPPORT-MATRIX.md)
     steps:
       - uses: actions/checkout@v4
+      - name: Generated packs match their generator (no hand edits that a regeneration would undo)
+        working-directory: .
+        run: |
+          python sangam/sangam-packs/tools/packgen/main.py
+          git diff --exit-code -- sangam/sangam-packs/src/main/resources/packs \
+            || { echo "Pack files differ from tools/packgen output: change the generator, then regenerate."; exit 1; }
+      - name: No source file hidden by .gitignore (SG-21)
+        working-directory: .
+        run: |
+          # A source file matched by .gitignore never reaches git, so a clean checkout does not compile.
+          # Tracked files must never match an ignore rule (catches a new rule that would hide sources).
+          # The same check for untracked files runs before every commit: tools/check-ignored-sources.sh
+          hidden=$(git ls-files -z | git check-ignore --no-index -z --stdin | tr '\0' '\n' \
+            | grep -E '(^|/)src/' || true)
+          if [ -n "$hidden" ]; then echo "Tracked sources matched by .gitignore:"; echo "$hidden"; exit 1; fi
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

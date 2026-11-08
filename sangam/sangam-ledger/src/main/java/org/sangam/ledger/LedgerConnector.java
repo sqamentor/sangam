@@ -72,7 +72,7 @@ public final class LedgerConnector implements SangamConnector {
         try {
             String op = r.operation().contains(".") ? r.operation().substring(r.operation().lastIndexOf('.') + 1) : r.operation();
             String tenant = r.tenantId();
-            LocalDate today = LocalDate.now(clock);
+            LocalDate today = clock.instant().atZone(ledger.zone(tenant)).toLocalDate(); // tenant business date
             String ledgerId = first(r, List.of("ledgerId", "ledger"), "BUDGET");
             LedgerDefinition def = ledger.definition(tenant, ledgerId);
             String period = first(r, List.of("period", "fiscalYear"), null);

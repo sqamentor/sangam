@@ -4,7 +4,7 @@
   <!-- SYNTHETIC bands; replace with the board policy. -->
   <decision id="sec-bank-ots-authority" name="Settlement / restructuring authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-bank-ots-authority_t" hitPolicy="FIRST">
-      <input id="sec-bank-ots-authority_i0" label="Amount (INR)"><inputExpression id="sec-bank-ots-authority_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="sec-bank-ots-authority_i0" label="Amount (INR)"><inputExpression id="sec-bank-ots-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="sec-bank-ots-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="sec-bank-ots-authority_r0">
         <inputEntry id="sec-bank-ots-authority_r0_i0"><text>&lt;= 1000000</text></inputEntry>

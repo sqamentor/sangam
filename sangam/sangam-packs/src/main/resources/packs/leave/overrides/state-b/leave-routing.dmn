@@ -5,7 +5,7 @@
     <decisionTable id="leave-routing_t" hitPolicy="FIRST">
       <input id="leave-routing_i0" label="Leave type"><inputExpression id="leave-routing_ie0" typeRef="string"><text>leaveType</text></inputExpression></input>
       <input id="leave-routing_i1" label="Days"><inputExpression id="leave-routing_ie1" typeRef="integer"><text>leaveDays</text></inputExpression></input>
-      <input id="leave-routing_i2" label="Balance"><inputExpression id="leave-routing_ie2" typeRef="double"><text>leaveBalance</text></inputExpression></input>
+      <input id="leave-routing_i2" label="Balance"><inputExpression id="leave-routing_ie2" typeRef="number"><text>leaveBalance</text></inputExpression></input>
       <output id="leave-routing_o0" label="Route" name="leaveRoute" typeRef="string"/>
       <output id="leave-routing_o1" label="Note" name="note" typeRef="string"/>
       <rule id="leave-routing_r0">

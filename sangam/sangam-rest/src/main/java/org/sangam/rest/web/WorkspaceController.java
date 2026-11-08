@@ -23,8 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Staff workspace (S02, S03, S07–S09, S15, R76): {@code /me} with seats, notifications, delegations and leave; inbox
- * counts and bulk actions (D-34); candidate seats, field diff and lifecycle (FC-52) of a task; the start catalogue;
- * case comments, participants and reactivation (FC-59); the field-inspection app (EC-16).
+ * counts and bulk actions (FLOWABLE-INTO-OPERATON D-34); candidate seats, field diff and lifecycle (FLOWABLE-INTO-OPERATON FC-52) of a task; the start catalogue;
+ * case comments, participants and reactivation (FLOWABLE-INTO-OPERATON FC-59); the field-inspection app (EC-16).
  */
 @RestController
 @RequestMapping("/api/v1")

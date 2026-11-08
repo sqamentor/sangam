@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Event registry (FC-02, FC-03, FC-04; R38 inbox, R83): channels, event definitions and publication of CloudEvents
+ * Event registry (FLOWABLE-INTO-OPERATON FC-02, FLOWABLE-INTO-OPERATON FC-03, FLOWABLE-INTO-OPERATON FC-04; R38 inbox, R83): channels, event definitions and publication of CloudEvents
  * 1.0. Inbound events are de-duplicated through the inbox by {@code (tenant, source, id)} and then start a process
  * ({@code uniqueStart} on the business key) or correlate a message. Implemented by sangam-flowable-ports.
  * The channel keys {@code channels} and {@code definitions} are reserved.

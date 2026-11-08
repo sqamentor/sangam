@@ -13,7 +13,7 @@ import org.sangam.ports.history.EngineEventBus;
 import java.util.Map;
 
 /**
- * Skip expressions (FC-13, Flowable {@code flowable:skipExpression} + {@code SkipExpressionUtil}). An activity with
+ * Skip expressions (FLOWABLE-INTO-OPERATON FC-13, Flowable {@code flowable:skipExpression} + {@code SkipExpressionUtil}). An activity with
  * {@code sangam:skipExpression="${...}"} is left through its outgoing flows without doing its work when
  * <ol>
  *   <li>skipping is enabled for the instance: process variable {@code _SANGAM_SKIP_EXPRESSION_ENABLED == true}
@@ -24,7 +24,7 @@ import java.util.Map;
  * Each skip is published as engine event {@code activity.skip} (R42 audit). User tasks use a
  * {@link UserTaskActivityBehavior} subclass, so Operaton's migration and task code still recognise them; other
  * supported tasks use a delegating wrapper. Sub-processes, call activities, gateways, events and external tasks are
- * not wrappable and are rejected by the validator (wrapping scope/MI behaviours "needs care", gap list FC-13).
+ * not wrappable and are rejected by the validator (wrapping scope/MI behaviours "needs care", gap list FLOWABLE-INTO-OPERATON FC-13).
  */
 public final class SkipExpressionSupport {
 

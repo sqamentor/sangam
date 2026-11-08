@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="sec-nbfc-dlg-cap" name="DLG cap (RBI DLG guidelines, 8 Jun 2023)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-nbfc-dlg-cap_t" hitPolicy="FIRST">
-      <input id="sec-nbfc-dlg-cap_i0" label="Cover %"><inputExpression id="sec-nbfc-dlg-cap_ie0" typeRef="double"><text>dlgPct</text></inputExpression></input>
+      <input id="sec-nbfc-dlg-cap_i0" label="Cover %"><inputExpression id="sec-nbfc-dlg-cap_ie0" typeRef="number"><text>dlgPct</text></inputExpression></input>
       <input id="sec-nbfc-dlg-cap_i1" label="Form"><inputExpression id="sec-nbfc-dlg-cap_ie1" typeRef="string"><text>dlgForm</text></inputExpression></input>
       <output id="sec-nbfc-dlg-cap_o0" label="Allowed" name="dlgAllowed" typeRef="boolean"/>
       <rule id="sec-nbfc-dlg-cap_r0"><description>above 5 % of the portfolio</description>

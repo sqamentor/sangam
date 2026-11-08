@@ -56,7 +56,7 @@ public class CaseFileService {
     private final DeadlineService deadlines;
     private final InstanceLinkService links;
 
-    /** @param linksOrNull FC-31/32 entity links; {@code null} keeps the binding only in {@code CF_CASE_RECORD} */
+    /** @param linksOrNull FLOWABLE-INTO-OPERATON FC-31/32 entity links; {@code null} keeps the binding only in {@code CF_CASE_RECORD} */
     public CaseFileService(Dialect dialect, CaseConfigRegistry config, NumberService numbers, CaseEvents events,
                            DeadlineService deadlines, InstanceLinkService linksOrNull) {
         this.dialect = dialect;
@@ -320,7 +320,7 @@ public class CaseFileService {
         return get(c, tenant, caseId);
     }
 
-    /** Binds a CMMN case or BPMN process instance working on this file (FC-32 entity link + {@code CF_CASE_RECORD}). */
+    /** Binds a CMMN case or BPMN process instance working on this file (FLOWABLE-INTO-OPERATON FC-32 entity link + {@code CF_CASE_RECORD}). */
     public void bindInstance(Connection c, String tenant, String caseId, String scopeType, String instanceId, String actor) {
         String t = Db.tenant(tenant);
         if ("cmmn".equals(scopeType)) {

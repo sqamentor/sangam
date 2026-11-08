@@ -95,7 +95,7 @@ public class OperatonDecisionAdapter implements DecisionPort {
         if (defs.isEmpty()) {
             throw ApiProblem.notFound("decision definition", version == null ? key : key + ":" + version);
         }
-        // A tenant's own definition wins over a shared one (FC-33 fallback to shared definitions).
+        // A tenant's own definition wins over a shared one (FLOWABLE-INTO-OPERATON FC-33 fallback to shared definitions).
         return defs.stream().filter(d -> Objects.equals(d.getTenantId(), ctx.tenantId())).findFirst()
                 .orElse(defs.get(0));
     }

@@ -19,14 +19,14 @@ import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 
 /**
- * Default model debugger (R80, FC-44). It can never run on a production profile: when it is disabled, when the active
+ * Default model debugger (R80, FLOWABLE-INTO-OPERATON FC-44). It can never run on a production profile: when it is disabled, when the active
  * profile contains "prod", or when the caller is outside the sandbox tenant, every call except {@link #status} returns
  * {@code 403 DEBUGGER_DISABLED}.
  *
  * <p>Stepping executes the next due job of the instance. Breakpoints are honoured at job boundaries only: a step whose
  * next job belongs to a breakpoint activity is refused with a "paused at breakpoint" note. Turning an arbitrary
  * activity into a stop point needs an {@code asyncBefore} injected at parse time by the sangam-engine debug parse
- * listener (FC-44); until that is wired, breakpoints on activities without a job are never reached.
+ * listener (FLOWABLE-INTO-OPERATON FC-44); until that is wired, breakpoints on activities without a job are never reached.
  *
  * <p>Breakpoints are persisted in {@code DEBUG_BREAKPOINT} (sandbox tenants only): one row per activity with
  * {@code process_instance_id} set (changeset 0016-06). Because the table's primary key is

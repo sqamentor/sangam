@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Model debugger (R80, FC-44): sandbox tenants only, never on a production profile (403 DEBUGGER_DISABLED). */
+/** Model debugger (R80, FLOWABLE-INTO-OPERATON FC-44): sandbox tenants only, never on a production profile (403 DEBUGGER_DISABLED). */
 @RestController
 @RequestMapping("/api/v1/debug")
 public class DebugController {

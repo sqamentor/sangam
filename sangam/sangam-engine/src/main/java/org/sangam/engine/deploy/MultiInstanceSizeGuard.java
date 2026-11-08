@@ -6,7 +6,7 @@ import org.operaton.bpm.engine.delegate.DelegateExecution;
 import org.operaton.bpm.engine.delegate.ExecutionListener;
 
 /**
- * Runtime half of the GP-09 / D-23 rule: when a multi-instance inner activity starts, {@code nrOfInstances} (set by
+ * Runtime half of the GP-09 / FLOWABLE-INTO-OPERATON D-23 rule: when a multi-instance inner activity starts, {@code nrOfInstances} (set by
  * the multi-instance body from the evaluated cardinality or collection) must not exceed the configured maximum.
  * Above it the command fails with a clear message (a job turns into an incident), instead of the n-squared completion
  * measured in E16a (1,732 of 5,000 done in 180 s).

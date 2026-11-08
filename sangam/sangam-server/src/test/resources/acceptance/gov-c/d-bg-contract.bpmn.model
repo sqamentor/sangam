@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_dbg">
+  <!-- D-BANK-GUARANTEE: the performance security (gp41-bg, reused unchanged) runs as a long-lived CHILD of the contract,
+       next to execution and the defect liability period; the contract closes when both branches are done. -->
+  <process id="d-bg-contract" name="D-BANK-GUARANTEE Contract with performance security" isExecutable="true">
+    <startEvent id="dbg_start"/>
+    <sequenceFlow id="f1" sourceRef="dbg_start" targetRef="dbg_issueLoA"/>
+    <userTask id="dbg_issueLoA" name="Issue letter of acceptance"><potentialOwner><resourceAssignmentExpression><formalExpression>group(contracts)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="dbg_issueLoA" targetRef="dbg_fork"/>
+    <parallelGateway id="dbg_fork"/>
+    <sequenceFlow id="f3" sourceRef="dbg_fork" targetRef="dbg_security"/>
+    <sequenceFlow id="f4" sourceRef="dbg_fork" targetRef="dbg_execute"/>
+    <callActivity id="dbg_security" name="Performance security (BG)" calledElement="gp41-bg" @@callbk@@>@@callio|in=bgExpiry,reminderAt,bgAmount;bk@@</callActivity>
+    <sequenceFlow id="f5" sourceRef="dbg_security" targetRef="dbg_join"/>
+    <userTask id="dbg_execute" name="Execute work"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f6" sourceRef="dbg_execute" targetRef="dbg_dlp"/>
+    <intermediateCatchEvent id="dbg_dlp" name="Defect liability period ends"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dlpEnd}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <sequenceFlow id="f7" sourceRef="dbg_dlp" targetRef="dbg_finalBill"/>
+    <userTask id="dbg_finalBill" name="Final bill, no-claim certificate"><potentialOwner><resourceAssignmentExpression><formalExpression>group(accounts)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f8" sourceRef="dbg_finalBill" targetRef="dbg_join"/>
+    <parallelGateway id="dbg_join"/>
+    <sequenceFlow id="f9" sourceRef="dbg_join" targetRef="dbg_close"/>
+    <userTask id="dbg_close" name="Close contract"><potentialOwner><resourceAssignmentExpression><formalExpression>group(contracts)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f10" sourceRef="dbg_close" targetRef="dbg_end"/>
+    <endEvent id="dbg_end"/>
+  </process>
+</definitions>

@@ -202,7 +202,8 @@ public class RegistryWiring {
     /** Party identifier-type and match-configuration seeds from the packs (registry README §6). */
     @Bean
     public ApplicationRunner sangamRegistrySeeds(RegistryModule module, Environment env,
-            ObjectProvider<org.sangam.config.profile.ProfileResolver> profiles) {
+            ObjectProvider<org.sangam.config.profile.ProfileResolver> profiles,
+            ObjectProvider<org.sangam.core.time.BusinessClock> clocks) {
         return args -> {
             java.util.Map<String, String> jurisdictions = new java.util.concurrent.ConcurrentHashMap<>();
             module.parties().identifierTypes().jurisdictionResolver(tenant -> {
@@ -212,7 +213,7 @@ public class RegistryWiring {
                     return known;
                 }
                 try {
-                    String j = p.resolve(tenant, java.time.LocalDate.now()).str("jurisdiction", null);
+                    String j = p.resolve(tenant, ConfigWiring.businessClock(clocks).today(tenant)).str("jurisdiction", null);
                     if (j != null) {
                         jurisdictions.put(tenant, j);
                     }

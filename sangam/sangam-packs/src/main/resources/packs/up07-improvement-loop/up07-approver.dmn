@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="up07-approver" name="Change approver" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="up07-approver_t" hitPolicy="FIRST">
-      <input id="up07-approver_i0" label="Amount"><inputExpression id="up07-approver_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="up07-approver_i0" label="Amount"><inputExpression id="up07-approver_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="up07-approver_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="up07-approver_r0">
         <inputEntry id="up07-approver_r0_i0"><text>-</text></inputEntry>

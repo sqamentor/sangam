@@ -62,6 +62,22 @@ public final class TokenWalk {
         List<Move> moves = new ArrayList<>();
         List<String> visited = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
+        // ADR-D-25: the same strict-XOR deploy rule the engine applies (shared org.sangam.core.engine.RoutingPolicy)
+        for (ExclusiveGateway g : model.getModelElementsByType(ExclusiveGateway.class)) {
+            List<org.sangam.core.engine.RoutingPolicy.FlowSpec> specs = new ArrayList<>();
+            for (SequenceFlow f : outgoing.getOrDefault(g.getId(), List.of())) {
+                specs.add(new org.sangam.core.engine.RoutingPolicy.FlowSpec(f.getId(), f.getConditionExpression() != null,
+                        f.getAttributeValueNs(org.sangam.core.engine.RoutingPolicy.NS_URI,
+                                org.sangam.core.engine.RoutingPolicy.ATTR_PRIORITY)));
+            }
+            for (String p : org.sangam.core.engine.RoutingPolicy.validate(g.getId(),
+                    g.getAttributeValueNs(org.sangam.core.engine.RoutingPolicy.NS_URI, org.sangam.core.engine.RoutingPolicy.ATTR_POLICY),
+                    g.getAttributeValueNs(org.sangam.core.engine.RoutingPolicy.NS_URI,
+                            org.sangam.core.engine.RoutingPolicy.ATTR_POLICY_VERSION), specs,
+                    g.getDefault() == null ? null : g.getDefault().getId())) {
+                warnings.add("ADR-D-25: " + p + " (deployment will reject this model)");
+            }
+        }
         Map<String, Integer> used = new HashMap<>();
         Map<String, Integer> joinArrivals = new HashMap<>();
         Deque<FlowNode> tokens = new ArrayDeque<>();

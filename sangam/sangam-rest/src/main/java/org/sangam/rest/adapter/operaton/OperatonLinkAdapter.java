@@ -21,7 +21,7 @@ import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 
 /**
- * Entity links (FC-31, FC-32, FC-59). PARENT / CHILD / ROOT links are derived from Operaton's own hierarchy columns
+ * Entity links (FLOWABLE-INTO-OPERATON FC-31, FLOWABLE-INTO-OPERATON FC-32, FLOWABLE-INTO-OPERATON FC-59). PARENT / CHILD / ROOT links are derived from Operaton's own hierarchy columns
  * ({@code superProcessInstanceId}, {@code rootProcessInstanceId}, {@code superCaseInstanceId}) through the history
  * service, so they stay visible after the instances end. REACTIVATED_FROM is derived from the case variable written by
  * case reactivation. Explicit REFERENCE / SIBLING links are persisted in the product table {@code INSTANCE_LINK}

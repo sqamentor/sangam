@@ -115,9 +115,11 @@ public class SecurityWiring {
 
     @Bean
     public AdminPort sangamSecurityAdminPort(SangamSecurity security, TxSupport tx, AuditPort audit,
-                                             RestProperties props, org.sangam.rest.support.DocumentStore store) {
+                                             RestProperties props, org.sangam.rest.support.DocumentStore store,
+                                             org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
         // Parts the security bridge does not serve (person delegations) persist in REST_DOCUMENT.
-        return new SecurityAdminBridge(security, tx, new JdbcAdminAdapter(store, tx, audit, props), props);
+        return new SecurityAdminBridge(security, tx, new JdbcAdminAdapter(store, tx, audit, props,
+                new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable)), props);
     }
 
     @Bean
@@ -129,7 +131,7 @@ public class SecurityWiring {
         return new SecurityIdentityAdminBridge(security, tx, fallback, props);
     }
 
-    /** For sangam-flowable-ports' {@code IdmFacade} (FC-42). */
+    /** For sangam-flowable-ports' {@code IdmFacade} (FLOWABLE-INTO-OPERATON FC-42). */
     @Bean
     public IdentityExtrasPort sangamIdentityExtrasPort(SangamSecurity security) {
         return new SecurityIdentityExtras(security.privileges(), security.tokens());

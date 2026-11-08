@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_dcc">
+  <!-- D-COURT-CASE (LIMBS-style): every hearing date comes from the court (message or the recorded order); a stay
+       order suspends the impugned process; a final order leads to appeal (new hearing series) or compliance. -->
+  <message id="m_listed" name="hearingListed"/>
+  <message id="m_resched" name="hearingRescheduled"/>
+  <process id="d-court-case" name="D-COURT-CASE Litigation" isExecutable="true">
+    <startEvent id="dcc_start"/>
+    <sequenceFlow id="f1" sourceRef="dcc_start" targetRef="dcc_examine"/>
+    <userTask id="dcc_examine" name="Nodal officer examines petition"><potentialOwner><resourceAssignmentExpression><formalExpression>group(nodal-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="dcc_examine" targetRef="dcc_lawVetting"/>
+    <userTask id="dcc_lawVetting" name="Law ministry vets reply"><potentialOwner><resourceAssignmentExpression><formalExpression>group(law-ministry)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="dcc_lawVetting" targetRef="dcc_listed"/>
+    <intermediateCatchEvent id="dcc_listed" name="Listed by the court"><messageEventDefinition messageRef="m_listed"/></intermediateCatchEvent>
+    <sequenceFlow id="f4" sourceRef="dcc_listed" targetRef="dcc_merge"/>
+    <exclusiveGateway id="dcc_merge"/>
+    <sequenceFlow id="f5" sourceRef="dcc_merge" targetRef="dcc_fork"/>
+    <parallelGateway id="dcc_fork"/>
+    <sequenceFlow id="f6" sourceRef="dcc_fork" targetRef="dcc_counter"/>
+    <sequenceFlow id="f7" sourceRef="dcc_fork" targetRef="dcc_waitHearing"/>
+    <userTask id="dcc_counter" name="File counter-affidavit / compliance"><potentialOwner><resourceAssignmentExpression><formalExpression>group(law-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="dcc_briefDue" attachedToRef="dcc_counter" cancelActivity="false">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${briefDue}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f8" sourceRef="dcc_briefDue" targetRef="dcc_escalate"/>
+    <userTask id="dcc_escalate" name="Counter overdue: JS (Legal)"><potentialOwner><resourceAssignmentExpression><formalExpression>group(js-legal)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f9" sourceRef="dcc_escalate" targetRef="dcc_escEnd"/>
+    <endEvent id="dcc_escEnd"/>
+    <sequenceFlow id="f10" sourceRef="dcc_counter" targetRef="dcc_join"/>
+    <eventBasedGateway id="dcc_waitHearing"/>
+    <sequenceFlow id="f11" sourceRef="dcc_waitHearing" targetRef="dcc_hearingDay"/>
+    <sequenceFlow id="f12" sourceRef="dcc_waitHearing" targetRef="dcc_rescheduled"/>
+    <intermediateCatchEvent id="dcc_hearingDay"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${nextHearing}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="dcc_rescheduled"><messageEventDefinition messageRef="m_resched"/></intermediateCatchEvent>
+    <sequenceFlow id="f13" sourceRef="dcc_rescheduled" targetRef="dcc_waitHearing"/>
+    <sequenceFlow id="f14" sourceRef="dcc_hearingDay" targetRef="dcc_hearing"/>
+    <userTask id="dcc_hearing" name="Attend hearing, record order"><potentialOwner><resourceAssignmentExpression><formalExpression>group(law-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f15" sourceRef="dcc_hearing" targetRef="dcc_join"/>
+    <parallelGateway id="dcc_join"/>
+    <sequenceFlow id="f16" sourceRef="dcc_join" targetRef="dcc_outcome"/>
+    <exclusiveGateway id="dcc_outcome" default="f19"/>
+    <sequenceFlow id="f17" sourceRef="dcc_outcome" targetRef="dcc_merge"><conditionExpression xsi:type="tFormalExpression">${order == 'ADJOURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f18" sourceRef="dcc_outcome" targetRef="dcc_stay"><conditionExpression xsi:type="tFormalExpression">${order == 'STAY'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f19" sourceRef="dcc_outcome" targetRef="dcc_decideAppeal"/>
+    <userTask id="dcc_stay" name="Implement stay on the impugned action"><potentialOwner><resourceAssignmentExpression><formalExpression>group(department)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f20" sourceRef="dcc_stay" targetRef="dcc_merge"/>
+    <userTask id="dcc_decideAppeal" name="Final order: appeal or comply"><potentialOwner><resourceAssignmentExpression><formalExpression>group(law-ministry)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f21" sourceRef="dcc_decideAppeal" targetRef="dcc_appealGw"/>
+    <exclusiveGateway id="dcc_appealGw" default="f23"/>
+    <sequenceFlow id="f22" sourceRef="dcc_appealGw" targetRef="dcc_fileAppeal"><conditionExpression xsi:type="tFormalExpression">${decision == 'APPEAL'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f23" sourceRef="dcc_appealGw" targetRef="dcc_comply"/>
+    <userTask id="dcc_fileAppeal" name="File appeal in the higher court"><potentialOwner><resourceAssignmentExpression><formalExpression>group(law-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f24" sourceRef="dcc_fileAppeal" targetRef="dcc_merge"/>
+    <userTask id="dcc_comply" name="Comply with the final order"><potentialOwner><resourceAssignmentExpression><formalExpression>group(department)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="dcc_complianceDue" attachedToRef="dcc_comply" cancelActivity="false">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${complianceDue}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f25" sourceRef="dcc_complianceDue" targetRef="dcc_contemptRisk"/>
+    <userTask id="dcc_contemptRisk" name="Compliance overdue: contempt risk"><potentialOwner><resourceAssignmentExpression><formalExpression>group(js-legal)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f26" sourceRef="dcc_contemptRisk" targetRef="dcc_contemptEnd"/>
+    <endEvent id="dcc_contemptEnd"/>
+    <sequenceFlow id="f27" sourceRef="dcc_comply" targetRef="dcc_end"/>
+    <endEvent id="dcc_end"/>
+  </process>
+</definitions>

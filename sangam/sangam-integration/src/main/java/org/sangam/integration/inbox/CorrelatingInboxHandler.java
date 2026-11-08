@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * Default inbox handler: correlate to a waiting instance, else apply the event definition's policy (VI.2.6 rule 3):
- * buffer, reject, or start a new instance guarded by {@code uniqueStart} (rule 4). Fixes Operaton D-33 (early messages
+ * buffer, reject, or start a new instance guarded by {@code uniqueStart} (rule 4). Fixes FLOWABLE-INTO-OPERATON D-33 (early messages
  * are lost with {@code MismatchingMessageCorrelationException}): an early message waits in the inbox as BUFFERED.
  *
  * <p>Variables passed to the engine: the payload's top-level fields, plus {@code sangamInboxSource},

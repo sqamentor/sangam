@@ -211,6 +211,34 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Acceptance suite (org.sangam.server.acceptance, *IT): Testcontainers on the four Tier-1 databases.
+         Test scope only: the Oracle driver is never bundled (LIC-4). -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>oracle-free</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>mssqlserver</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>mysql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.oracle.database.jdbc</groupId>
+      <artifactId>ojdbc11</artifactId>
+      <version>23.8.0.25.04</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.sangam</groupId>
       <artifactId>sangam-channels</artifactId>
@@ -272,6 +300,8 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
+              <!-- the repackaged Boot jar hides classes under BOOT-INF; test against the compiled classes -->
+              <classesDirectory>${project.build.outputDirectory}</classesDirectory>
               <systemPropertyVariables>
                 <sangam.db>${sangam.db}</sangam.db>
                 <api.version>1.44</api.version>

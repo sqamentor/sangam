@@ -162,10 +162,17 @@ public class LedgerController {
         }
         definitions.ensure(ctx.tenantId());
         LedgerRequest r = new LedgerRequest(body.operation(), body.account().key(ctx.tenantId(), ledger),
-                body.target() == null ? null : body.target().key(ctx.tenantId(), ledger), decimal(body.amount()),
+                body.target() == null ? null : body.target().key(ctx.tenantId(), ledger),
+                amount(body.amount(), body.currency() != null ? body.currency()
+                        : service().definition(ctx.tenantId(), ledger).currency()),
                 body.currency(), body.rateType(), reference, body.auditRef(), ctx.principalId(), body.asOf(),
                 body.fromCommitment(), body.fromEncumbrance(), body.holdIfShort(), body.attrs());
-        LedgerService.Result res = service().apply(r);
+        LedgerService.Result res;
+        try {
+            res = service().apply(r);
+        } catch (IllegalArgumentException e) { // SG-22 / SG-23: sub-minor-unit or non-positive amount
+            throw ApiProblem.badRequest("VALIDATION_FAILED", e.getMessage());
+        }
         return Lists.okRef(reference, ResultView.of(res));
     }
 
@@ -203,7 +210,7 @@ public class LedgerController {
             @PathVariable String period, @RequestBody(required = false) CloseRequest body) {
         permissions.require(ctx, ADMIN);
         definitions.ensure(ctx.tenantId());
-        LocalDate asOf = body == null || body.asOf() == null ? LocalDate.now() : body.asOf();
+        LocalDate asOf = body == null || body.asOf() == null ? service().today(ctx.tenantId()) : body.asOf();
         List<LedgerService.Result> res = service().closePeriod(ctx.tenantId(), ledger, period,
                 body == null ? null : body.nextPeriod(), asOf, ctx.principalId());
         return Lists.okRef(ledger + ":" + period, res.stream().map(ResultView::of).toList());
@@ -252,15 +259,32 @@ public class LedgerController {
         return ids;
     }
 
-    private static BigDecimal decimal(String s) {
+    /**
+     * Controller boundary (MoneyAmount, SD-398): a money ledger takes a strict decimal string in its currency (more
+     * fraction digits than the minor unit are rejected); a quantity ledger a strict plain decimal. A missing amount is
+     * an error, never zero.
+     */
+    static BigDecimal amount(String s, String currency) {
         if (s == null || s.isBlank()) {
-            return BigDecimal.ZERO;
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "amount is required (MoneyAmount decimal string)");
         }
+        boolean money;
         try {
-            return new BigDecimal(s.trim());
-        } catch (NumberFormatException e) {
-            throw ApiProblem.badRequest("VALIDATION_FAILED", "amount must be a decimal string (R33)");
+            money = currency != null && java.util.Currency.getInstance(currency).getDefaultFractionDigits() >= 0;
+        } catch (IllegalArgumentException notIso) {
+            money = false; // a quantity unit code
         }
+        if (money) {
+            try {
+                return org.sangam.core.money.Money.parse(s, currency).toMajor();
+            } catch (RuntimeException e) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", e.getMessage());
+            }
+        }
+        if (!s.strip().matches("[+-]?\\d+(\\.\\d+)?")) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "amount must be a plain decimal string (R33)");
+        }
+        return new BigDecimal(s.strip());
     }
 
 }

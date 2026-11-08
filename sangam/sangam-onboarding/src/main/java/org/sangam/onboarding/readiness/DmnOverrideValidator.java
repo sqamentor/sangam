@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.operaton.bpm.dmn.engine.DmnEngine;
-import org.operaton.bpm.dmn.engine.DmnEngineConfiguration;
 import org.operaton.bpm.model.dmn.Dmn;
 import org.operaton.bpm.model.dmn.DmnModelInstance;
 import org.operaton.bpm.model.dmn.instance.Decision;
@@ -31,7 +30,7 @@ import org.sangam.packs.spi.SangamPack;
  */
 public final class DmnOverrideValidator {
 
-    private final DmnEngine engine = DmnEngineConfiguration.createDefaultDmnEngineConfiguration().buildEngine();
+    private final DmnEngine engine = org.sangam.engine.feel.SangamFeel.dmnEngineConfiguration().buildEngine();
 
     public List<Problem> validate(Map<String, String> overrides, List<SangamPack> enabled) {
         List<Problem> problems = new ArrayList<>();

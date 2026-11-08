@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Separate async and timer job executors plus post-commit hand-off (FC-24), all through configuration and plugin
+ * Separate async and timer job executors plus post-commit hand-off (FLOWABLE-INTO-OPERATON FC-24), all through configuration and plugin
  * hooks (no engine patch). WS-ENGINE already applies the config route (SKIP LOCKED, timers preferred, priorities);
  * this adds Flowable's executor shape:
  * <ul>

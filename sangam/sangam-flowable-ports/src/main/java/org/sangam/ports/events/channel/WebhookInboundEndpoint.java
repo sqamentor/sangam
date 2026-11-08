@@ -14,7 +14,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Inbound webhook channel (FC-03, ARCHITECTURE §4 {@code POST /events/{channel}}): WS-REST maps the request onto
+ * Inbound webhook channel (FLOWABLE-INTO-OPERATON FC-03, ARCHITECTURE §4 {@code POST /events/{channel}}): WS-REST maps the request onto
  * {@link #receive}. When the channel has {@code properties.secretRef}, the {@code X-Sangam-Signature: sha256=<hex>}
  * header must be the HMAC-SHA256 of the raw body (constant-time compare). The message id is the
  * {@code Idempotency-Key} header, else {@code X-Sangam-Message-Id}, else the channel's {@code messageIdJsonPointer}.

@@ -15,10 +15,10 @@ import org.operaton.bpm.engine.impl.persistence.entity.TimerEntity;
 import java.util.Date;
 
 /**
- * Event listener behaviour with the {@code created} step Operaton leaves as a TODO (FC-55).
+ * Event listener behaviour with the {@code created} step Operaton leaves as a TODO (FLOWABLE-INTO-OPERATON FC-55).
  * <ul>
  *   <li><b>Timer event listener</b> ({@code timerExpression} = ISO date, duration, or cycle; calendar tags of
- *       FC-23 work): a timer job of type {@link CmmnTimerJobHandler#TYPE} is scheduled for the case execution. When it
+ *       FLOWABLE-INTO-OPERATON FC-23 work): a timer job of type {@link CmmnTimerJobHandler#TYPE} is scheduled for the case execution. When it
  *       fires, the listener occurs, which satisfies sentries that wait on its {@code occur} transition. CMMN event
  *       listeners are not repeatable, so a cycle expression fires once, at its first due date.</li>
  *   <li><b>User / generic event listener</b>: nothing to schedule; it occurs through the product API.</li>

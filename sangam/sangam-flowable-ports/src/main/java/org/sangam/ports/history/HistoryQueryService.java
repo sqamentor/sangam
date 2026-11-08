@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * History query API over the ports' read model (FC-25/FC-20 {@code HRM_*}; backs sangam-rest {@code HistoryPort}).
+ * History query API over the ports' read model (FLOWABLE-INTO-OPERATON FC-25/FLOWABLE-INTO-OPERATON FC-20 {@code HRM_*}; backs sangam-rest {@code HistoryPort}).
  * Process instances, cases, activity instances and tasks are read from the read model (no load on engine history
  * tables, CQRS); variables and decisions are not projected (values never enter the stream, R61), so they are read
  * from Operaton's history service. Every list is filtered, paged and count-capped (A-16).
@@ -128,7 +128,7 @@ public class HistoryQueryService {
                         duration(Jdbc.instant(rs, "start_time"), Jdbc.instant(rs, "end_time"))), p);
     }
 
-    /** FC-20: open activity instances of one process or case instance. */
+    /** FLOWABLE-INTO-OPERATON FC-20: open activity instances of one process or case instance. */
     public List<ActivityRow> openActivities(String tenantId, String instanceId, AuthPredicate auth) {
         Filter f = new Filter(tenantId, null, instanceId, null, null, null, null, null, "open", null, null, null);
         return activityInstances(f, auth, new PageRequest(0, Paging.MAX_PAGE)).items();

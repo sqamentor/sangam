@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 /**
- * READ COMMITTED on every connection the engine takes (D-56, R84, ARCHITECTURE §1.6 "REPEATABLE READ rejected").
+ * READ COMMITTED on every connection the engine takes (FLOWABLE-INTO-OPERATON D-56, R84, ARCHITECTURE §1.6 "REPEATABLE READ rejected").
  * MySQL's default is REPEATABLE READ, which Operaton refuses at build ({@code ENGINE-12019}); a pool that hands out a
  * session left in another level by other code is also corrected here, per checkout.
  */

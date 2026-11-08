@@ -4,7 +4,7 @@
   <decision id="p4-inspection-required" name="P4 inspection required?" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="p4-inspection-required_t" hitPolicy="FIRST">
       <input id="p4-inspection-required_i0" label="Licence type"><inputExpression id="p4-inspection-required_ie0" typeRef="string"><text>licenceType</text></inputExpression></input>
-      <input id="p4-inspection-required_i1" label="Area (sq m)"><inputExpression id="p4-inspection-required_ie1" typeRef="double"><text>premisesArea</text></inputExpression></input>
+      <input id="p4-inspection-required_i1" label="Area (sq m)"><inputExpression id="p4-inspection-required_ie1" typeRef="number"><text>premisesArea</text></inputExpression></input>
       <output id="p4-inspection-required_o0" label="Inspection" name="inspectionRequired" typeRef="boolean"/>
       <rule id="p4-inspection-required_r0">
         <inputEntry id="p4-inspection-required_r0_i0"><text>"FOOD"</text></inputEntry>

@@ -37,7 +37,7 @@ import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 
 /**
- * Forms contract (R47 / X.2.5, FC-39) on Operaton deployments. Drafts are persisted in the product table
+ * Forms contract (R47 / X.2.5, FLOWABLE-INTO-OPERATON FC-39) on Operaton deployments. Drafts are persisted in the product table
  * {@code FORM_DRAFT} (X.2.5.8): the form version hash in {@code form_version_hash} (changeset 0016-03; the legacy int
  * {@code form_version} is written as 0), the data in {@code data_ciphertext}: encrypted with the tenant's data key by
  * sangam-security's {@code FieldEncryptor} when bound (X.2.5.8 rule 1; AES-GCM, context = draft id), else UTF-8 JSON. Expired drafts

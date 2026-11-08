@@ -4,7 +4,7 @@
   <decision id="sec-hr-exit-tat" name="Exit settlement periods (Code on Wages s.17(2); Code on Social Security; verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-hr-exit-tat_t" hitPolicy="FIRST">
       <input id="sec-hr-exit-tat_i0" label="Exit type"><inputExpression id="sec-hr-exit-tat_ie0" typeRef="string"><text>exitType</text></inputExpression></input>
-      <input id="sec-hr-exit-tat_i1" label="Qualifying service (years)"><inputExpression id="sec-hr-exit-tat_ie1" typeRef="double"><text>qualifyingService</text></inputExpression></input>
+      <input id="sec-hr-exit-tat_i1" label="Qualifying service (years)"><inputExpression id="sec-hr-exit-tat_ie1" typeRef="number"><text>qualifyingService</text></inputExpression></input>
       <output id="sec-hr-exit-tat_o0" label="Wages within" name="fnfSpec" typeRef="string"/>
       <output id="sec-hr-exit-tat_o1" label="Gratuity within" name="gratuitySpec" typeRef="string"/>
       <output id="sec-hr-exit-tat_o2" label="Gratuity payable" name="gratuityPayable" typeRef="boolean"/>

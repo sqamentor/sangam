@@ -5,7 +5,7 @@
     <decisionTable id="sec-util-sop_t" hitPolicy="FIRST">
       <input id="sec-util-sop_i0" label="Area"><inputExpression id="sec-util-sop_ie0" typeRef="string"><text>areaType</text></inputExpression></input>
       <output id="sec-util-sop_o0" label="Connect within" name="connSpec" typeRef="string"/>
-      <output id="sec-util-sop_o1" label="Compensation (SYNTHETIC, SERC notifies)" name="compensationAmount" typeRef="double"/>
+      <output id="sec-util-sop_o1" label="Compensation (SYNTHETIC, SERC notifies)" name="compensationAmount" typeRef="number"/>
       <rule id="sec-util-sop_r0">
         <inputEntry id="sec-util-sop_r0_i0"><text>"METRO"</text></inputEntry>
         <outputEntry id="sec-util-sop_r0_o0"><text>"7D"</text></outputEntry>

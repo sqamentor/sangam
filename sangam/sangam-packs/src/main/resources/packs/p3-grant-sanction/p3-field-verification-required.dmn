@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="p3-field-verification-required" name="P3 field verification required?" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="p3-field-verification-required_t" hitPolicy="FIRST">
-      <input id="p3-field-verification-required_i0" label="Land holding (ha)"><inputExpression id="p3-field-verification-required_ie0" typeRef="double"><text>landHolding</text></inputExpression></input>
+      <input id="p3-field-verification-required_i0" label="Land holding (ha)"><inputExpression id="p3-field-verification-required_ie0" typeRef="number"><text>landHolding</text></inputExpression></input>
       <input id="p3-field-verification-required_i1" label="Self-uploaded documents"><inputExpression id="p3-field-verification-required_ie1" typeRef="boolean"><text>documentsSelfUploaded</text></inputExpression></input>
       <output id="p3-field-verification-required_o0" label="Field verification" name="fieldVerification" typeRef="boolean"/>
       <rule id="p3-field-verification-required_r0"><description>documents not from DigiLocker</description>

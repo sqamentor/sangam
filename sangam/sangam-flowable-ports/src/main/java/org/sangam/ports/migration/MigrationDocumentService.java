@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Executes {@link MigrationDocument}s on Operaton's migration API (FC-18, R48):
+ * Executes {@link MigrationDocument}s on Operaton's migration API (FLOWABLE-INTO-OPERATON FC-18, R48):
  * <ul>
  *   <li><b>Dry run</b> ({@link #dryRun}): builds and validates the plan (Operaton's validators) and counts the
  *       instances per source activity and per affected mapping, without changing anything.</li>

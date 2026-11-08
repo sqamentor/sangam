@@ -4,7 +4,7 @@
   <!-- SYNTHETIC bands; replace with the board policy. -->
   <decision id="sec-scm-pr-authority" name="Requisition approver" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-scm-pr-authority_t" hitPolicy="FIRST">
-      <input id="sec-scm-pr-authority_i0" label="Amount (INR)"><inputExpression id="sec-scm-pr-authority_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="sec-scm-pr-authority_i0" label="Amount (INR)"><inputExpression id="sec-scm-pr-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="sec-scm-pr-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="sec-scm-pr-authority_r0">
         <inputEntry id="sec-scm-pr-authority_r0_i0"><text>&lt;= 500000</text></inputEntry>

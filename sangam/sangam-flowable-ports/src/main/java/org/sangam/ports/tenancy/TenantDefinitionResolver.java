@@ -9,7 +9,7 @@ import org.operaton.bpm.engine.repository.ProcessDefinition;
 import java.util.Optional;
 
 /**
- * Callee tenant handling (FC-33; Flowable {@code fallbackToDefaultTenant}, {@code overrideProcessDefinitionTenantId},
+ * Callee tenant handling (FLOWABLE-INTO-OPERATON FC-33; Flowable {@code fallbackToDefaultTenant}, {@code overrideProcessDefinitionTenantId},
  * {@code DefaultTenantProvider}). Operaton's {@code calledElementTenantId} is kept (better, B-6); what it lacks is the
  * fallback from a tenant to shared definitions. Resolution order: the tenant's own latest definition, then the shared
  * definition (no tenant), then (optional) a configured default tenant. Every fallback is checked by

@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="gem-procurement-mode" name="Mode of procurement (synthetic thresholds)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="gem-procurement-mode_t" hitPolicy="FIRST">
-      <input id="gem-procurement-mode_i0" label="Value"><inputExpression id="gem-procurement-mode_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="gem-procurement-mode_i0" label="Value"><inputExpression id="gem-procurement-mode_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <input id="gem-procurement-mode_i1" label="Available on GeM"><inputExpression id="gem-procurement-mode_ie1" typeRef="boolean"><text>gemAvailable</text></inputExpression></input>
       <output id="gem-procurement-mode_o0" label="Mode" name="procurementMode" typeRef="string"/>
       <output id="gem-procurement-mode_o1" label="Auto-approve" name="autoApprove" typeRef="boolean"/>

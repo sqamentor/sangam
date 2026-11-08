@@ -22,7 +22,6 @@ import org.operaton.bpm.engine.externaltask.LockedExternalTask;
 import org.sangam.core.api.LeaseTable;
 import org.sangam.core.api.StaleLeaseException;
 import org.sangam.core.layer.AuditChain;
-import org.sangam.core.layer.OperationLedger;
 import org.sangam.core.layer.ReconciliationQueue;
 import org.sangam.core.layer.Tombstones;
 import org.sangam.rest.port.ApiProblem;
@@ -49,9 +48,11 @@ public class OperatonWorkAdapter implements WorkPort {
     private final Tombstones tombstones;
     private final ReconciliationQueue reconciliation;
     private final AtomicBoolean leaseTableReady = new AtomicBoolean();
+    private final OperatonOperationIds operationIds;
 
     public OperatonWorkAdapter(ExternalTaskService externalTasks, RuntimeService runtime, TxSupport tx, AuditPort audit,
-                               RestProperties props) {
+                               RestProperties props, OperatonOperationIds operationIds) {
+        this.operationIds = operationIds;
         this.externalTasks = externalTasks;
         this.runtime = runtime;
         this.tx = tx;
@@ -136,7 +137,7 @@ public class OperatonWorkAdapter implements WorkPort {
             out.add(new ExternalWork(t.getId(), t.getTopicName(), t.getTenantId(), t.getProcessInstanceId(),
                     t.getProcessDefinitionKey(), t.getActivityId(), t.getActivityInstanceId(), t.getBusinessKey(),
                     TypedVariables.toJson(t.getVariables()), lease.lockVersion(), lease.attemptId(),
-                    operationId(t.getTenantId(), t.getProcessInstanceId(), t.getActivityInstanceId()).toString(),
+                    operationIds.of(t.getId()).toString(),
                     expires, t.getRetries(), t.getPriority(), t.getErrorMessage()));
         }
         return out;
@@ -260,7 +261,7 @@ public class OperatonWorkAdapter implements WorkPort {
                     r.evidence());
             ExternalTask task = requireTask(ctx, workId);
             fence(c, workId, r.workerId(), r.lockVersion(), r.attemptId());
-            UUID op = operationId(task.getTenantId(), task.getProcessInstanceId(), task.getActivityInstanceId());
+            UUID op = operationIds.of(task);
             Map<String, Object> details = new LinkedHashMap<>();
             details.put("workerId", r.workerId());
             details.put("lockVersion", r.lockVersion());
@@ -311,11 +312,6 @@ public class OperatonWorkAdapter implements WorkPort {
     }
 
     // ------------------------------------------------------------------ helpers
-
-    static UUID operationId(String tenant, String rootId, String activityInstanceId) {
-        return OperationLedger.operationId(tenant == null ? "" : tenant, rootId == null ? "" : rootId,
-                activityInstanceId == null ? "" : activityInstanceId, 0);
-    }
 
     private void ensureLeaseTable() {
         if (leaseTableReady.get()) {
@@ -389,15 +385,14 @@ public class OperatonWorkAdapter implements WorkPort {
         }
     }
 
-    private static Map<String, Object> payload(ExternalTask t, String workerId, long lockVersion, String attemptId,
+    private Map<String, Object> payload(ExternalTask t, String workerId, long lockVersion, String attemptId,
                                                Map<String, ?> extra) {
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("work_id", t.getId());
         p.put("topic", t.getTopicName());
         p.put("activity_id", t.getActivityId());
         p.put("activity_instance_id", t.getActivityInstanceId());
-        p.put("operation_id", operationId(t.getTenantId(), t.getProcessInstanceId(), t.getActivityInstanceId())
-                .toString());
+        p.put("operation_id", operationIds.of(t).toString());
         p.put("worker_id", workerId);
         p.put("lock_version", lockVersion);
         p.put("attempt_id", attemptId);

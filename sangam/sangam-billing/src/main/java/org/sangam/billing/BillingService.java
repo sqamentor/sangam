@@ -2,6 +2,8 @@
 package org.sangam.billing;
 
 import org.sangam.config.catalogue.NumberSeries;
+import org.sangam.core.money.Money;
+import org.sangam.core.time.BusinessClock;
 import org.sangam.ledger.AccountKey;
 import org.sangam.ledger.Balance;
 import org.sangam.ledger.LedgerRequest;
@@ -24,17 +26,18 @@ public final class BillingService {
     /** Collection rail (payment gateway, bank, counter, aggregator). Implemented over ConnectorGateway. */
     public interface PaymentPort {
         /** Verifies a payment reported by a channel; returns the confirmed amount (or null if not confirmed). */
-        BigDecimal confirm(String tenant, String channel, String paymentRef, BigDecimal amount);
+        Money confirm(String tenant, String channel, String paymentRef, Money amount);
 
         /** Initiates a refund; returns the rail reference. */
-        String refund(String tenant, String channel, String paymentRef, BigDecimal amount, String operationId);
+        String refund(String tenant, String channel, String paymentRef, Money amount, String operationId);
     }
 
+    /** {@code total} is the document total rounded once; the line moneys sum to it exactly (SG-20). */
     public record Invoice(String number, String consumer, String cycle, LocalDate dueDate, List<TariffEngine.Line> lines,
-                          BigDecimal total, List<LedgerService.Result> postings) {
+                          Money total, List<LedgerService.Result> postings) {
     }
 
-    public record Receipt(String number, String consumer, BigDecimal amount, Map<String, BigDecimal> allocation,
+    public record Receipt(String number, String consumer, Money amount, Map<String, Money> allocation,
                           List<LedgerService.Result> postings) {
     }
 
@@ -43,7 +46,16 @@ public final class BillingService {
     private final NumberSeries series;
     private final PaymentPort payments;
 
+    private final BusinessClock businessClock;
+
+    /** Business dates in UTC (tests / single-zone tools); production wiring passes the tenant business clock. */
     public BillingService(LedgerService ledger, TariffEngine tariffs, NumberSeries series, PaymentPort payments) {
+        this(ledger, tariffs, series, payments, BusinessClock.utc(java.time.Clock.systemUTC()));
+    }
+
+    public BillingService(LedgerService ledger, TariffEngine tariffs, NumberSeries series, PaymentPort payments,
+                          BusinessClock businessClock) {
+        this.businessClock = java.util.Objects.requireNonNull(businessClock, "businessClock");
         this.ledger = ledger;
         this.tariffs = tariffs;
         this.series = series;
@@ -57,9 +69,9 @@ public final class BillingService {
         List<TariffEngine.Line> lines = tariffs.compute(tenant, tariff, measures, attrs);
         String no = "INV/" + cycle + "/" + series.next(tenant, "INVOICE", "-", cycle);
         List<LedgerService.Result> posts = new ArrayList<>();
-        BigDecimal total = BigDecimal.ZERO;
+        Money total = Money.zero(TariffEngine.currency(tariff));
         for (TariffEngine.Line l : lines) {
-            if (l.amount().signum() == 0) {
+            if (l.money().isZero()) {
                 continue;
             }
             AccountKey k = new AccountKey(tenant, ledgerId, period, l.head() == null ? l.component() : l.head(), consumer,
@@ -68,7 +80,7 @@ public final class BillingService {
                     "inv:" + consumer + ":" + cycle + ":" + l.component(), no, actor, null, false, false, false,
                     Map.of("invoice", no))));
             ledger.setAttributes(k, Map.of("dueDate", dueDate.toString(), "invoice", no, "tariff", String.valueOf(tariff.get("id"))));
-            total = total.add(l.amount());
+            total = total.plus(l.money());
         }
         return new Invoice(no, consumer, cycle, dueDate, lines, total, posts);
     }
@@ -78,8 +90,11 @@ public final class BillingService {
      * demand oldest due date first (arrears before current), each allocation guarded by the ledger.
      */
     public Receipt collect(String tenant, String ledgerId, String consumer, String channel, String paymentRef,
-                           BigDecimal amount, String actor) {
-        BigDecimal confirmed = payments == null ? amount : payments.confirm(tenant, channel, paymentRef, amount);
+                           Money amount, String actor) {
+        Money confirmed = payments == null ? amount : payments.confirm(tenant, channel, paymentRef, amount);
+        if (confirmed != null && !confirmed.currencyCode().equals(amount.currencyCode())) {
+            throw new IllegalStateException("payment " + paymentRef + " confirmed in " + confirmed.currencyCode());
+        }
         if (confirmed == null || confirmed.signum() <= 0) {
             throw new IllegalStateException("payment not confirmed: " + paymentRef);
         }
@@ -90,19 +105,22 @@ public final class BillingService {
             }
         }
         open.sort(java.util.Comparator.comparing(b -> String.valueOf(b.attrs().get("dueDate"))));
-        BigDecimal left = confirmed;
-        Map<String, BigDecimal> alloc = new LinkedHashMap<>();
+        Money left = confirmed;
+        Map<String, Money> alloc = new LinkedHashMap<>();
         List<LedgerService.Result> posts = new ArrayList<>();
-        String no = "RCP/" + series.next(tenant, "RECEIPT", channel, LocalDate.now().toString());
+        String no = "RCP/" + series.next(tenant, "RECEIPT", channel, businessClock.today(tenant).toString());
         for (Balance b : open) {
             if (left.signum() <= 0) {
                 break;
             }
-            BigDecimal take = b.available().min(left);
-            posts.add(ledger.apply(new LedgerRequest("CONSUME", b.key(), null, take, null, null,
+            Money take = b.availableMoney().min(left);
+            if (take.signum() <= 0) {
+                continue;
+            }
+            posts.add(ledger.apply(new LedgerRequest("CONSUME", b.key(), null, take.toMajor(), take.currencyCode(), null,
                     "rcp:" + paymentRef + ":" + b.key().id(), no, actor, null, false, false, false, Map.of("receipt", no))));
             alloc.put(b.key().line() + "/" + b.key().sub(), take);
-            left = left.subtract(take);
+            left = left.minus(take);
         }
         if (left.signum() > 0) {
             alloc.put("ADVANCE", left); // excess kept as an advance (credit) on the consumer
@@ -111,16 +129,16 @@ public final class BillingService {
     }
 
     /** Refund of a collection (reverses consumption and calls the rail once per operation id). */
-    public String refund(AccountKey demandAccount, String channel, String paymentRef, BigDecimal amount, String operationId,
+    public String refund(AccountKey demandAccount, String channel, String paymentRef, Money amount, String operationId,
                          String actor) {
-        ledger.apply(new LedgerRequest("REVERSE", demandAccount, null, amount, null, null, "refund:" + operationId, operationId,
+        ledger.apply(new LedgerRequest("REVERSE", demandAccount, null, amount.toMajor(), amount.currencyCode(), null, "refund:" + operationId, operationId,
                 actor, null, false, false, false, Map.of()));
         return payments == null ? null : payments.refund(demandAccount.tenant(), channel, paymentRef, amount, operationId);
     }
 
     /** Waiver / write-off of outstanding demand (the approval is a pack; this records it). */
-    public LedgerService.Result waive(AccountKey demandAccount, BigDecimal amount, String orderRef, String actor) {
-        return ledger.apply(new LedgerRequest("WRITE_OFF", demandAccount, null, amount, null, null, "waive:" + orderRef,
+    public LedgerService.Result waive(AccountKey demandAccount, Money amount, String orderRef, String actor) {
+        return ledger.apply(new LedgerRequest("WRITE_OFF", demandAccount, null, amount.toMajor(), amount.currencyCode(), null, "waive:" + orderRef,
                 orderRef, actor, null, false, false, false, Map.of()));
     }
 
@@ -135,10 +153,10 @@ public final class BillingService {
                 continue;
             }
             LocalDate due = LocalDate.parse(String.valueOf(b.attrs().get("dueDate")));
-            BigDecimal p = tariffs.penalty(tenant, tariff, b.available(), due, asOf);
+            Money p = tariffs.penalty(tenant, tariff, b.available(), due, asOf);
             if (p.signum() > 0) {
                 AccountKey k = new AccountKey(tenant, ledgerId, period, head, consumer, "DEMAND", b.key().sub());
-                out.add(ledger.apply(new LedgerRequest("ALLOCATE", k, null, p, null, null,
+                out.add(ledger.apply(new LedgerRequest("ALLOCATE", k, null, p.toMajor(), null, null,
                         "pen:" + b.key().id() + ":" + asOf, null, actor, asOf, false, false, false, Map.of("penaltyOn", b.key().id()))));
                 ledger.setAttributes(k, Map.of("dueDate", asOf.toString()));
             }

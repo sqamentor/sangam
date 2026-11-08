@@ -47,6 +47,10 @@ Upstream PRs to offer: MySQL create/upgrade scripts with `datetime(3)` and `utf8
 | B-18 | (IR-7) a `DefaultJobExecutor` sized from the settings is installed when the configuration has none; acquisition by due date / priority / exclusive-over-hierarchies set from the settings | `SangamProcessEnginePlugin.preInit` | IR-7, FC-24 |
 | B-19 | (R2) acquisition commands (job acquisition, external-task fetch, lease sweep) are marked and never take L2; the lease sweep claims with per-dialect SKIP LOCKED / READPAST / Oracle two-step | `tx/RollbackGuardInterceptor`, `lock/RootLockFlushListener`, `lease/SangamLeaseTable` | R2, VI.1 rule 4 |
 | B-20 | (R10) custom post deployer binds definitions to the FEEL engine; a pre decision-evaluation listener on the DMN engine refuses a mismatch; business rule tasks may declare strict-null results | `feel/*`, `SangamProcessEnginePlugin.preInit` (sets a `DefaultDmnEngineConfiguration` when none is set) | R10 |
+| B-21 | (SG-08a) Compensation runs in **reverse completion order, one handler at a time** (Operaton triggers all subscriptions at once, ordered only by a millisecond `created`): `created` made strictly increasing per scope; compensation throw/end events, embedded sub-processes and the `compensate` event handler trigger only the newest subscription and continue on `compensationDone` | `deploy/SequentialCompensation` (parse listener + `customEventHandlers`) | UP-02 saga rule; tests `InheritedWeaknessH2Test.compensation*` |
+| B-22 | (SG-10, D-25) CMMN history: an item completed in the command but ended by a stage completion cascade is written COMPLETED, not TERMINATED, in `ACT_HI_CASEACTINST` | `history/CompletionAwareCmmnHistoryEventProducer` (`cmmnHistoryEventProducer`), completion recorded by `deploy/SangamCmmnTransformListener` | E1; test `sentryChainCompletionIsRecordedAsCompleted` |
+| B-23 | (SG-11, E6) The adapter resolves a command's root by SQL, not by engine queries: an engine query before L2 cached a pre-lock revision and the command still failed with ENGINE-03005 under the lock | `OperatonEngineAdapter.rootOfInstance/rootOfTask/correlateMessage` | A-11, D-24; test `hotRootAllCommandsCommitUnderRootLock` |
+| B-24 | (ADR-D-25) **Strict exclusive (XOR) routing** instead of Operaton's first-true-in-document-order: exactly one true flow is taken; several true = `AMBIGUOUS_ROUTE`, none true and no default = `NO_MATCHING_ROUTE`, each an incident of type `sangamRouting` at the gateway with the execution parked there (nothing downstream runs); evaluation errors propagate; first-match only with `sangam:routingPolicy="priority"` + `sangam:priority`, validated at deploy; recovery by `OperatonEngineAdapter.correctRoute` (PROCESS_INSTANCE/MODIFY, audited `ROUTE_CORRECTED`) | `deploy/StrictExclusiveGatewayBehavior`, `deploy/SangamBpmnParseListener` (parseExclusiveGateway / parseSequenceFlow / validation), shared rule `sangam-core` `RoutingPolicy` / `RouteDecision` | ADR-D-25, R44; tests `StrictExclusiveRoutingH2Test` |
 | (opt.) | Per-definition history level (only when `historyLevelByProcessKey` is set; level id 21 stored in `ACT_GE_PROPERTY`) | `history/PerDefinitionHistoryLevel` | FC-26, D-49 |
 
 ## Internal (`impl`) classes used
@@ -67,9 +71,27 @@ Upstream PRs to offer: MySQL create/upgrade scripts with `datetime(3)` and `utf8
 | I-13 | `impl.cmd.AcquireJobsCmd`, `impl.jobexecutor.AcquiredJobs`, `impl.jobexecutor.FailedJobCommandFactory` | `job/JobMetricsInterceptor`, `job/CountingFailedJobCommandFactory` | job metrics |
 | I-12 | `impl.variable.serializer.*`, `impl.history.*`, `impl.incident.*`, `impl.persistence.StrongUuidGenerator` | variables, history, incident, plugin | serializer / history / incident SPI |
 
+| I-14 | `bpmn.behavior.CompensationEventActivityBehavior`, `SubProcessActivityBehavior#signalCompensationDone`, `event.CompensationEventHandler`, `bpmn.helper.CompensationUtil`, `EventSubscriptionEntity#setCreated` | `deploy/SequentialCompensation` | B-21 |
+| I-15 | `history.producer.CacheAwareCmmnHistoryEventProducer`, `cmmn.execution.CaseExecutionState` | `history/CompletionAwareCmmnHistoryEventProducer` | B-22 |
+| I-16 | `bpmn.behavior.ExclusiveGatewayActivityBehavior` (subclassed; `doLeave`/`signal` overridden), `impl.Condition`, transition property `condition`, activity property `default`, `util.xml.Namespace` | `deploy/StrictExclusiveGatewayBehavior`, `deploy/SangamBpmnParseListener` | B-24 |
+
+### SG-09: internal behaviours with no public API, pinned by tests
+
+Operaton 2.2 has no public API or extension point for these four behaviours (checked: `ProcessEngineConfiguration`,
+`ProcessEnginePlugin`, the command-interceptor, history, calendar and job-handler SPIs expose none of them). Each is
+pinned by `EngineInternalsPinTest`, so an upgrade that changes it fails the build:
+
+| Internal behaviour | Relied on by | Pin test |
+|---|---|---|
+| I-7 `DbEntityManager.invokeOptimisticLockingListeners`: last listener's result wins | adapter fetch (lost race = not fetched) | `i7_lostFetchRaceIsSilentAndExclusive` |
+| I-8 `CommandContext.tryCloseInternal`: close listeners fire before `flushSessions` | L2 flush backstop | `i8_flushBackstopTakesRootLockForPlainEngineCommands` |
+| I-9 `TimerEntity.calculateNewDueDate` uses the `cycle` calendar as a `CycleBusinessCalendar` | DST-safe cycle calendar | `i9_i10_cycleCalendarAndFollowUpScheduling` |
+| I-10 `TimerEntity.preExecute` schedules the follow-up before the handler | `TimerGuard` suppression | `i9_i10_cycleCalendarAndFollowUpScheduling` |
+
 ## Upgrade checklist (every Operaton minor)
 
 1. Re-run P-1/P-2 detection (`secondPrecisionColumns`, `utf8mb3Tables`) after the upgrade scripts.
 2. Re-read `DbEntityManager.invokeOptimisticLockingListeners` (I-7) and `CommandContext.tryCloseInternal` (I-8).
 3. Check that `TimerEntity.calculateNewDueDate` still calls the `cycle` calendar and that `preExecute` still precedes the handler (I-9, I-10).
+5. Re-run `StrictExclusiveRoutingH2Test` (B-24 relies on the gateway behaviour class and the `condition`/`default` properties).
 4. Re-check the `TEXT_` column sizes per dialect (B-7) and the H2 `BLOB` type in PostgreSQL mode (`DatabaseGuard.prepareH2`).

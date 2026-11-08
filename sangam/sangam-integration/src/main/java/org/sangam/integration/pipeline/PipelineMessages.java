@@ -14,7 +14,7 @@ import java.util.Map;
 
 /**
  * Delivers a finished BPMN-started run to its waiting instance through the inbox (buffered if the instance is not
- * waiting yet, D-33), and offers the DMN port on the engine.
+ * waiting yet, FLOWABLE-INTO-OPERATON D-33), and offers the DMN port on the engine.
  */
 public final class PipelineMessages implements InboxHandler {
 

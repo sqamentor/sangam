@@ -18,11 +18,11 @@ import java.util.Set;
 /**
  * Case reactivation and case "migration" by run-off / cut-over.
  * <ul>
- *   <li><b>FC-59 reactivation</b> (Flowable {@code CaseReactivationBuilder}, also of historic cases): Operaton
+ *   <li><b>FLOWABLE-INTO-OPERATON FC-59 reactivation</b> (Flowable {@code CaseReactivationBuilder}, also of historic cases): Operaton
  *       cannot reopen a closed case, so a <em>linked new case</em> is started from the same (or a newer) definition
  *       with the historic variables (minus excluded names), and an {@code INSTANCE_LINK} of type
  *       {@code reactivation} connects old and new (GP-22 pattern).</li>
- *   <li><b>FC-19 case migration</b>: native CMMN migration does not exist in Operaton (blocker, XL patch). Route 2:
+ *   <li><b>FLOWABLE-INTO-OPERATON FC-19 case migration</b>: native CMMN migration does not exist in Operaton (blocker, XL patch). Route 2:
  *       <em>run-off</em> (old cases finish on their definition, new cases start on the new one: nothing to do), or
  *       <em>cut-over</em> of selected cases: start a new case on the target definition with the current variables,
  *       link it ({@code cut-over}), and terminate the old case, in one transaction.</li>

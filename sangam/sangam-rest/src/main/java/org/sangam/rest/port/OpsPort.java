@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Operations (O01–O09, R63, R64): incidents, reconciliation workbench (VI.3 rule 4, VI.5), outbox repair (VI.2.3),
  * jobs, batches (R64: count preview from the same predicate, pause/resume/cancel, per-item results, one root per
- * transaction, four-eyes above a threshold), migration (R48, FC-18 1:N/N:1 mapping), restart and history cleanup.
+ * transaction, four-eyes above a threshold), migration (R48, FLOWABLE-INTO-OPERATON FC-18 1:N/N:1 mapping), restart and history cleanup.
  * Every state-changing call requires a reason and is audited (R42).
  */
 public interface OpsPort {

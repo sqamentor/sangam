@@ -134,15 +134,32 @@ public class SangamRestAutoConfiguration {
 
     // ---------------------------------------------------------------- engine ports (Operaton Java API)
 
+    /**
+     * T35: the one operation-id resolver of every REST path; the Sangam engine adapter is its authority when bound.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public org.sangam.rest.adapter.operaton.OperatonOperationIds sangamOperationIds(ProcessEngine engine,
+            ObjectProvider<EngineAdapter> engineAdapter) {
+        var ids = new org.sangam.rest.adapter.operaton.OperatonOperationIds(engine.getRuntimeService(),
+                engine.getHistoryService(), engine.getExternalTaskService());
+        if (engineAdapter.getIfAvailable() instanceof org.sangam.core.engine.SangamEngineAdapter s) {
+            ids.setEngine(s);
+        }
+        return ids;
+    }
+
     /** The hardened sangam-engine {@link EngineAdapter} is preferred when present; else Operaton directly. */
     @Bean
     @ConditionalOnMissingBean
     public WorkPort sangamWorkPort(ObjectProvider<EngineAdapter> engineAdapter, ProcessEngine engine, TxSupport tx,
-                                   AuditPort audit, RestProperties props, org.sangam.rest.support.DocumentStore store) {
+                                   AuditPort audit, RestProperties props, org.sangam.rest.support.DocumentStore store,
+                                   org.sangam.rest.adapter.operaton.OperatonOperationIds operationIds) {
         EngineAdapter adapter = engineAdapter.getIfAvailable();
         WorkPort raw = adapter != null
                 ? new EngineAdapterWorkAdapter(adapter, tx, audit, props)
-                : new OperatonWorkAdapter(engine.getExternalTaskService(), engine.getRuntimeService(), tx, audit, props);
+                : new OperatonWorkAdapter(engine.getExternalTaskService(), engine.getRuntimeService(), tx, audit, props,
+                        operationIds);
         // Worker/topic tracking and persisted topic pause for the ops console (O06).
         return new org.sangam.rest.adapter.operaton.TrackingWorkPort(raw, store);
     }
@@ -156,9 +173,10 @@ public class SangamRestAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ProcessPort sangamProcessPort(ProcessEngine engine, TxSupport tx, AuditPort audit, RestProperties props) {
+    public ProcessPort sangamProcessPort(ProcessEngine engine, TxSupport tx, AuditPort audit, RestProperties props,
+                                         org.sangam.rest.adapter.operaton.OperatonOperationIds operationIds) {
         return new OperatonProcessAdapter(engine.getRuntimeService(), engine.getRepositoryService(),
-                engine.getHistoryService(), engine.getExternalTaskService(), tx, audit, props);
+                engine.getHistoryService(), engine.getExternalTaskService(), tx, audit, props, operationIds);
     }
 
     @Bean
@@ -214,11 +232,13 @@ public class SangamRestAutoConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     public OpsPort sangamOpsPort(ProcessEngine engine, TxSupport tx, AuditPort audit, RestProperties props,
-                                 ProcessPort processes) {
+                                 ProcessPort processes,
+                                 ObjectProvider<org.sangam.core.layer.ReconciliationResolver> resolver) {
         OperatonOpsAdapter ops = new OperatonOpsAdapter(engine.getRuntimeService(), engine.getManagementService(),
                 engine.getHistoryService(), engine.getRepositoryService(), engine.getExternalTaskService(), tx, audit,
                 props);
         ops.setProcessPort(processes);
+        ops.setReconciliationResolver(resolver::getIfAvailable);
         return ops;
     }
 
@@ -268,36 +288,41 @@ public class SangamRestAutoConfiguration {
     @ConditionalOnMissingBean
     public org.sangam.rest.port.WorkspacePort sangamWorkspacePort(TaskPort tasks, ProcessEngine engine,
             AdminPort admin, PermissionPort permissions, AuditPort audit, RestProperties props,
-            org.sangam.rest.support.DocumentStore store) {
+            org.sangam.rest.support.DocumentStore store,
+            org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
         return new org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter(tasks, engine.getTaskService(),
                 engine.getRuntimeService(), engine.getHistoryService(), engine.getRepositoryService(),
-                engine.getFormService(), admin, permissions, audit, props, store);
+                engine.getFormService(), admin, permissions, audit, props, store,
+                new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable));
     }
 
     @Bean
     @ConditionalOnMissingBean
     public org.sangam.rest.port.InstanceControlPort sangamInstanceControlPort(ProcessEngine engine,
-            ProcessPort processes, TxSupport tx, AuditPort audit, RestProperties props) {
+            ProcessPort processes, TxSupport tx, AuditPort audit, RestProperties props,
+            org.sangam.rest.adapter.operaton.OperatonOperationIds operationIds) {
         return new org.sangam.rest.adapter.operaton.OperatonInstanceControlAdapter(engine.getRuntimeService(),
                 engine.getRepositoryService(), engine.getHistoryService(), engine.getExternalTaskService(),
-                engine.getTaskService(), processes, tx, audit, props);
+                engine.getTaskService(), processes, tx, audit, props, operationIds);
     }
 
     @Bean
     @ConditionalOnMissingBean
     public org.sangam.rest.port.PortalPort sangamPortalPort(ProcessPort processes, ProcessEngine engine,
             DocumentPort documents, org.sangam.rest.port.RegistryPort registry, AuditPort audit, RestProperties props,
-            TxSupport tx, org.sangam.rest.support.DocumentStore store) {
+            TxSupport tx, org.sangam.rest.support.DocumentStore store,
+            org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
         return new org.sangam.rest.adapter.operaton.OperatonPortalAdapter(processes, engine.getTaskService(),
                 engine.getRuntimeService(), engine.getHistoryService(), engine.getRepositoryService(), documents,
-                registry, audit, props, tx, store);
+                registry, audit, props, tx, store, new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable));
     }
 
     @Bean
     @ConditionalOnMissingBean
     public org.sangam.rest.port.OpsConsolePort sangamOpsConsolePort(ProcessEngine engine, OpsPort ops, WorkPort work,
             TxSupport tx, AuditPort audit, RestProperties props, org.sangam.rest.support.DocumentStore store,
-            org.sangam.rest.support.BlobStore blobs) {
+            org.sangam.rest.support.BlobStore blobs,
+            org.sangam.rest.adapter.operaton.OperatonOperationIds operationIds) {
         // The default WorkPort is already wrapped; a module-provided one is wrapped here for statistics and pauses.
         var tracking = work instanceof org.sangam.rest.adapter.operaton.TrackingWorkPort t ? t
                 : new org.sangam.rest.adapter.operaton.TrackingWorkPort(work, store);
@@ -306,10 +331,12 @@ public class SangamRestAutoConfiguration {
             return cfg instanceof org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl impl
                     && impl.getJobExecutor() != null && impl.getJobExecutor().isActive();
         };
-        return new org.sangam.rest.adapter.operaton.OperatonOpsConsoleAdapter(engine.getRuntimeService(),
+        var console = new org.sangam.rest.adapter.operaton.OperatonOpsConsoleAdapter(engine.getRuntimeService(),
                 engine.getManagementService(), engine.getHistoryService(), engine.getExternalTaskService(),
                 engine.getTaskService(), engine.getRepositoryService(), ops, tracking, tx, audit, props,
                 jobExecutorActive, store, blobs);
+        console.setOperationIds(operationIds);
+        return console;
     }
 
     @Bean
@@ -376,9 +403,11 @@ public class SangamRestAutoConfiguration {
     @ConditionalOnMissingBean
     public org.sangam.rest.port.IdentityAdminPort sangamIdentityAdminPort(org.sangam.rest.support.DocumentStore store,
             AdminPort admin, TaskPort tasks, PermissionPort permissions, AuditPort audit, RestProperties props,
-            org.springframework.core.env.Environment env) {
+            org.springframework.core.env.Environment env,
+            org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
         return new org.sangam.rest.adapter.jdbc.JdbcIdentityAdminAdapter(store, admin, tasks, permissions, audit, props,
-                env.getProperty("sangam.outbound.enabled", Boolean.class, false));
+                env.getProperty("sangam.outbound.enabled", Boolean.class, false),
+                new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable));
     }
 
     @Bean

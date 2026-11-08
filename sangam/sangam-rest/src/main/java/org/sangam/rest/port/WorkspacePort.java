@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * The staff workspace beyond the core task API (S02, S03, S07–S09, S15, R76): inbox counts, bulk actions, candidate
- * seats, field-level diff, task lifecycle (FC-52), the caller's profile, seats, notifications, delegations and leave,
+ * seats, field-level diff, task lifecycle (FLOWABLE-INTO-OPERATON FC-52), the caller's profile, seats, notifications, delegations and leave,
  * the start catalogue, case comments and participants, and the field-inspection app (EC-16).
  */
 public interface WorkspacePort {
@@ -41,7 +41,7 @@ public interface WorkspacePort {
     record BulkClaimRequest(List<String> ids) {
     }
 
-    /** D-34: bulk completion runs as a batch, one task per transaction; each task is still hash-bound. */
+    /** FLOWABLE-INTO-OPERATON D-34: bulk completion runs as a batch, one task per transaction; each task is still hash-bound. */
     record BulkCompleteRequest(List<String> ids, String action, String remarks) {
     }
 

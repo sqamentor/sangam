@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Core: committee decision (all / quorum). Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_committee" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_committee" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
   <process id="sangam-core-committee" name="Core: committee decision (all / quorum)" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <documentation>GP-03 (all members must sign) and GP-04 (quorum n of m) for purchase, tender opening and evaluation, survey / condemnation and selection boards: members are seats in committeeSeats, at most 50 (GP-09 limit, enforced at deploy); quorumRule ALL / MAJORITY / n. Output: committeeApproved.</documentation>
     <startEvent id="cm_start" name="Committee convened"></startEvent>

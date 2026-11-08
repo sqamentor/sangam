@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Job acquisition restricted to one job class (FC-24, Flowable {@code AcquireTimerJobsRunnable} /
+ * Job acquisition restricted to one job class (FLOWABLE-INTO-OPERATON FC-24, Flowable {@code AcquireTimerJobsRunnable} /
  * {@code AcquireAsyncJobsDueRunnable}), so timers and async jobs are acquired by <b>separate</b> job executors and a
  * burst of async continuations cannot starve due timers (and vice versa). Optional <b>global acquire lock</b>
  * (Flowable {@code AcquireJobsWithGlobalAcquireLockCmd}): one row of {@code JOB_ACQUIRE_LOCK} is locked

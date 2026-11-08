@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * SOAP 1.1 / 1.2 connector (R71; Flowable FC-50 web-service task; Operaton connect-plugin SOAP parity B-16).
+ * SOAP 1.1 / 1.2 connector (R71; FLOWABLE-INTO-OPERATON FC-50 web-service task; Operaton connect-plugin SOAP parity B-16).
  *
  * <p>Input: {@code soapAction}, {@code bodyXml} (the payload element(s) to place in {@code soap:Body}; well-formedness
  * is checked with a hardened parser), optional {@code headerXml}. A WS-Addressing {@code MessageID} header

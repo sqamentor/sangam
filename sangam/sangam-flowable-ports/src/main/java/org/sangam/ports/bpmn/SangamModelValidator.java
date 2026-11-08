@@ -18,20 +18,20 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Pluggable pre-deploy validator (FC-46, Flowable {@code flowable-process-validation} / {@code flowable-case-validation};
+ * Pluggable pre-deploy validator (FLOWABLE-INTO-OPERATON FC-46, Flowable {@code flowable-process-validation} / {@code flowable-case-validation};
  * the R44 profile and R43 closure check). Errors stop the deployment; warnings are reported. It runs as an Operaton
  * pre-deployer ({@link #deployer()}), so every deployment path (REST, app bundle, packs) is covered, and standalone
  * via {@link #validate}.
  *
- * <p>Built-in rules (complementing WS-ENGINE's parse/transform listeners, which already reject script tasks D-46,
- * CMMN event listeners D-08 unless FC-55 is on, business-rule tasks without a binding D-12, and DOCTYPE D-51 at
+ * <p>Built-in rules (complementing WS-ENGINE's parse/transform listeners, which already reject script tasks FLOWABLE-INTO-OPERATON D-46,
+ * CMMN event listeners FLOWABLE-INTO-OPERATON D-08 unless FLOWABLE-INTO-OPERATON FC-55 is on, business-rule tasks without a binding FLOWABLE-INTO-OPERATON D-12, and DOCTYPE FLOWABLE-INTO-OPERATON D-51 at
  * engine deploy; this validator runs <em>before</em> the engine so a bundle gets the whole report at once):
  * <ul>
- *   <li>D-51: DOCTYPE/ENTITY declarations → error (the hardened parser refuses to read them anyway).</li>
- *   <li>D-09: {@code adHocSubProcess} → error unless patch P-1 is installed.</li>
- *   <li>D-52: complex gateway, standard loop, multiple/parallel-multiple events, data stores → error (not executable on
+ *   <li>FLOWABLE-INTO-OPERATON D-51: DOCTYPE/ENTITY declarations → error (the hardened parser refuses to read them anyway).</li>
+ *   <li>FLOWABLE-INTO-OPERATON D-09: {@code adHocSubProcess} → error unless patch P-1 is installed.</li>
+ *   <li>FLOWABLE-INTO-OPERATON D-52: complex gateway, standard loop, multiple/parallel-multiple events, data stores → error (not executable on
  *       Operaton).</li>
- *   <li>FC-13: skip expressions on scopes → error.</li>
+ *   <li>FLOWABLE-INTO-OPERATON FC-13: skip expressions on scopes → error.</li>
  *   <li>Flowable namespace attributes left in a model → warning (use {@code FlowableModelImporter}).</li>
  *   <li>Custom rules: {@link Rule} (EC-21 / R48 profiles, pack-specific rules).</li>
  * </ul>
@@ -98,6 +98,14 @@ public class SangamModelValidator {
             return out;
         }
         walk(doc.getDocumentElement(), resource, bpmn, cmmn, out);
+        if (bpmn) {
+            // ADR-D-25 / R44: the shared strict-XOR rule (same check as the engine parse listener)
+            for (XorRoutingDom.Gateway g : XorRoutingDom.gateways(doc.getDocumentElement())) {
+                for (String p : g.problems()) {
+                    out.add(new Finding(Severity.ERROR, "ADR-D-25", resource, g.id(), p));
+                }
+            }
+        }
         for (Rule r : rules) {
             r.check(resource, doc, out);
         }

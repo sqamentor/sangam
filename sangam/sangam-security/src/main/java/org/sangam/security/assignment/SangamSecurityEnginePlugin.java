@@ -16,7 +16,7 @@ import java.util.List;
  * <ul>
  *   <li>registers {@link SeatAssignmentParseListener} as a post-parse listener (seat assignment, SoD, initiator);</li>
  *   <li>sets {@link SangamTenantIdProvider} so every instance carries the identity's tenant (VI.4 rule 6);</li>
- *   <li>keeps Operaton's built-in authorization <b>off</b>: it has no deny-wins (D-14); reads go through the VI.4
+ *   <li>keeps Operaton's built-in authorization <b>off</b>: it has no deny-wins (FLOWABLE-INTO-OPERATON D-14); reads go through the VI.4
  *       predicate only (ARCHITECTURE.md §1.4).</li>
  * </ul>
  */

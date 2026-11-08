@@ -10,7 +10,7 @@ import org.sangam.ports.support.EngineTx;
 import java.util.List;
 
 /**
- * "Occur" API for CMMN user/generic event listeners (FC-55; Flowable {@code CmmnRuntimeService.triggerPlanItemInstance}
+ * "Occur" API for CMMN user/generic event listeners (FLOWABLE-INTO-OPERATON FC-55; Flowable {@code CmmnRuntimeService.triggerPlanItemInstance}
  * / {@code completeUserEventListenerInstance}). WS-REST exposes it; authorization is the caller's (VI.4).
  */
 public class CmmnEventListenerService {

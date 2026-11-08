@@ -54,6 +54,8 @@ services:
       SANGAM_CP_DB_URL: jdbc:h2:file:/var/lib/sangam/control-plane/cp;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE
       SANGAM_CP_DB_USER: sa
       SANGAM_CP_DB_PASSWORD: ""
+      # development only: the engine may create its ACT_* tables in this local database (SG-19)
+      SANGAM_CP_ENGINE_SCHEMA_UPDATE: "true"
       # comma-separated <token>:<ROLE> entries (a list bound from one string: one role per entry); ADMIN, CELL, GATEWAY, ROLLUP
       SANGAM_CP_TOKENS: "${SANGAM_CP_ADMIN_TOKEN:-dev-cp-admin-token}:ADMIN,${SANGAM_CP_CELL_TOKEN:-dev-cell-token}:CELL,${SANGAM_CP_GATEWAY_TOKEN:-dev-gateway-token}:GATEWAY,${SANGAM_CP_ROLLUP_TOKEN:-dev-rollup-token}:ROLLUP"
       SANGAM_CP_CELL_ADMIN_TOKEN: ${SANGAM_CP_CELL_ADMIN_TOKEN:-dev-cell-admin-token}

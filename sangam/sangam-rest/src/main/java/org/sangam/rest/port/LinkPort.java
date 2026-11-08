@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Entity links (FC-31 sibling/reference links, FC-32 parent/child/root hierarchy across BPMN, CMMN and tasks, FC-59
+ * Entity links (FLOWABLE-INTO-OPERATON FC-31 sibling/reference links, FLOWABLE-INTO-OPERATON FC-32 parent/child/root hierarchy across BPMN, CMMN and tasks, FLOWABLE-INTO-OPERATON FC-59
  * reactivation links). Implemented by sangam-flowable-ports ({@code INSTANCE_LINK} table); the default adapter derives
  * the hierarchy from Operaton super/sub instances and keeps explicit links in memory.
  */

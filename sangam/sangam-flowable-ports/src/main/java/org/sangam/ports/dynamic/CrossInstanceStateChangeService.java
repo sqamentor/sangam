@@ -7,7 +7,7 @@ import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.sangam.ports.support.EngineTx;
 
 /**
- * Change state across call-activity boundaries (FC-17; Flowable {@code ChangeActivityStateBuilder.moveActivityIdToParentActivityId
+ * Change state across call-activity boundaries (FLOWABLE-INTO-OPERATON FC-17; Flowable {@code ChangeActivityStateBuilder.moveActivityIdToParentActivityId
  * / moveActivityIdToSubProcessInstanceActivityId}). Composition of two Operaton modifications in <b>one</b> engine
  * transaction: cancel the activity instance in the source instance and start the target activity in the target
  * instance. R49 checks: both instances must share the same root process instance and tenant; the caller authorises the

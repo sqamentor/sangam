@@ -29,7 +29,7 @@ public final class ProgrammeSchema {
             """
             CREATE TABLE PG_PROGRAMME (tenant_id {str64} NOT NULL, programme_id {str64} NOT NULL, parent_id {str64}, kind {str64} NOT NULL,
               code {str64} NOT NULL, name {str} NOT NULL, owner_org {str64}, starts_on {date}, ends_on {date}, status {str64} NOT NULL,
-              budget {dec}, currency {str64}, indicators_json {text}, attributes_json {text}, row_version {int} NOT NULL,
+              budget {money}, currency {str64}, indicators_json {text}, attributes_json {text}, row_version {int} NOT NULL,
               created_by {str}, created_at {ts} NOT NULL, updated_at {ts} NOT NULL, PRIMARY KEY (tenant_id, programme_id))""",
             """
             CREATE TABLE PG_INDICATOR (tenant_id {str64} NOT NULL, indicator_key {str64} NOT NULL, version {int} NOT NULL, name {str} NOT NULL,
@@ -82,7 +82,7 @@ public final class ProgrammeSchema {
               PRIMARY KEY (tenant_id, programme_id, indicator_key, period_id, org_unit))""",
             """
             CREATE TABLE PG_FINANCIAL (tenant_id {str64} NOT NULL, programme_id {str64} NOT NULL, period_id {str64} NOT NULL, org_unit {str64} NOT NULL,
-              head {str64} NOT NULL, allocated {dec}, released {dec}, committed_amt {dec}, expended {dec}, currency {str64}, source {str64} NOT NULL,
+              head {str64} NOT NULL, allocated {money}, released {money}, committed_amt {money}, expended {money}, currency {str64}, source {str64} NOT NULL,
               updated_by {str}, updated_at {ts} NOT NULL, PRIMARY KEY (tenant_id, programme_id, period_id, org_unit, head))""",
             """
             CREATE TABLE PG_ALERT (tenant_id {str64} NOT NULL, alert_id {str64} NOT NULL, kind {str64} NOT NULL, programme_id {str64},

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             id="wf1-delegation-of-powers-definitions"
+             name="WF-1 delegation of powers"
+             namespace="http://sangam.org/spike/corpus">
+  <!--
+    The comment is INSIDE the root element on purpose: Flowable 8.0.0 picks the DMN XSD from the
+    namespace of the first StAX event after the XML declaration; a comment before <definitions>
+    makes it fall back to the DMN 1.1 XSD and reject the file (see corpus/VARIANTS.md, F-01).
+
+    WF-1 delegation of financial powers (SANGAM.md IX.5 item 3). Shared by both engines (DMN 1.3, no extensions).
+    SYNTHETIC amount bands for the spike, not a real delegation-of-powers order.
+    Amounts are in rupees: 1 lakh = 100000, 10 lakh = 1000000, 1 crore = 10000000.
+
+    Portability rules applied (see corpus/VARIANTS.md, section "FEEL / JUEL"):
+      * input entries use only the FEEL unary-test subset that Flowable's JUEL pre-parser also accepts:
+        "<", "<=", ">", ">=", a single literal (number or "quoted string"), and "-" (any);
+      * output entries are plain literals (a "quoted string" or an integer);
+      * no ranges [a..b], lists a,b, not(...), "=", "!=", functions or dates.
+  -->
+
+  <decision id="wf1-delegation-of-powers" name="Delegation of financial powers">
+    <decisionTable id="wf1_dop_table" hitPolicy="FIRST">
+      <input id="wf1_dop_in_amount" label="Bill amount (INR)">
+        <inputExpression id="wf1_dop_inexpr_amount" typeRef="number">
+          <text>amount</text>
+        </inputExpression>
+      </input>
+      <input id="wf1_dop_in_budgetHead" label="Budget head">
+        <inputExpression id="wf1_dop_inexpr_budgetHead" typeRef="string">
+          <text>budgetHead</text>
+        </inputExpression>
+      </input>
+      <output id="wf1_dop_out_approverLevel" label="Approver level" name="approverLevel" typeRef="string"/>
+      <output id="wf1_dop_out_maxAmount" label="Max amount of that level (INR)" name="maxAmount" typeRef="number"/>
+
+      <!-- R1: capital works head above 50 lakh always goes to the Secretary (exercises a string literal test and FIRST order). -->
+      <rule id="wf1_dop_r1_capital">
+        <inputEntry id="wf1_dop_r1_amount"><text>&gt; 5000000</text></inputEntry>
+        <inputEntry id="wf1_dop_r1_budgetHead"><text>"4059-CAPITAL"</text></inputEntry>
+        <outputEntry id="wf1_dop_r1_level"><text>"SECRETARY"</text></outputEntry>
+        <outputEntry id="wf1_dop_r1_max"><text>1000000000</text></outputEntry>
+      </rule>
+      <!-- R2: up to 1 lakh -->
+      <rule id="wf1_dop_r2_upTo1Lakh">
+        <inputEntry id="wf1_dop_r2_amount"><text>&lt;= 100000</text></inputEntry>
+        <inputEntry id="wf1_dop_r2_budgetHead"><text>-</text></inputEntry>
+        <outputEntry id="wf1_dop_r2_level"><text>"SECTION_OFFICER"</text></outputEntry>
+        <outputEntry id="wf1_dop_r2_max"><text>100000</text></outputEntry>
+      </rule>
+      <!-- R3: up to 10 lakh -->
+      <rule id="wf1_dop_r3_upTo10Lakh">
+        <inputEntry id="wf1_dop_r3_amount"><text>&lt;= 1000000</text></inputEntry>
+        <inputEntry id="wf1_dop_r3_budgetHead"><text>-</text></inputEntry>
+        <outputEntry id="wf1_dop_r3_level"><text>"DDO"</text></outputEntry>
+        <outputEntry id="wf1_dop_r3_max"><text>1000000</text></outputEntry>
+      </rule>
+      <!-- R4: up to 1 crore -->
+      <rule id="wf1_dop_r4_upTo1Crore">
+        <inputEntry id="wf1_dop_r4_amount"><text>&lt;= 10000000</text></inputEntry>
+        <inputEntry id="wf1_dop_r4_budgetHead"><text>-</text></inputEntry>
+        <outputEntry id="wf1_dop_r4_level"><text>"HOD"</text></outputEntry>
+        <outputEntry id="wf1_dop_r4_max"><text>10000000</text></outputEntry>
+      </rule>
+      <!-- R5: above 1 crore -->
+      <rule id="wf1_dop_r5_above1Crore">
+        <inputEntry id="wf1_dop_r5_amount"><text>&gt; 10000000</text></inputEntry>
+        <inputEntry id="wf1_dop_r5_budgetHead"><text>-</text></inputEntry>
+        <outputEntry id="wf1_dop_r5_level"><text>"SECRETARY"</text></outputEntry>
+        <outputEntry id="wf1_dop_r5_max"><text>1000000000</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

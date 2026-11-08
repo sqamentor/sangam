@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Delivers buffered inbound events to the engine (FC-02 event-to-process/case start and correlation, FC-04 unique
- * start (on WS-INTEGRATION's {@code UNIQUE_START}, business key = unique reference value), D-33 early-message buffering, D-35 branch addressing). It is an {@link Inbox.Handler} for sources with the
+ * Delivers buffered inbound events to the engine (FLOWABLE-INTO-OPERATON FC-02 event-to-process/case start and correlation, FLOWABLE-INTO-OPERATON FC-04 unique
+ * start (on WS-INTEGRATION's {@code UNIQUE_START}, business key = unique reference value), FLOWABLE-INTO-OPERATON D-33 early-message buffering, FLOWABLE-INTO-OPERATON D-35 branch addressing). It is an {@link Inbox.Handler} for sources with the
  * prefix {@code evt:}; the inbox loop must run its transaction as an engine command
  * ({@code EngineTx.transactions(engine)}), so the engine effect, the {@code PROCESSED} mark and the event-log row
  * commit together.

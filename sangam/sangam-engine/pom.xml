@@ -26,6 +26,16 @@
       <artifactId>sangam-packs</artifactId>
     </dependency>
 
+    <!-- SG-28: SangamProcessEnginePlugin (and sangam-cell) use Operaton's StrongUuidGenerator, which needs
+         java-uuid-generator at run time. operaton-engine 2.2.0 declares it "provided", so it must be declared here;
+         before, it arrived only by chance through org.camunda.feel:feel-engine. Version = the one operaton-engine
+         2.2.0 is built against (version.java-uuid-generator in the root pom, also pinned in sangam-bom). -->
+    <dependency>
+      <groupId>com.fasterxml.uuid</groupId>
+      <artifactId>java-uuid-generator</artifactId>
+      <version>${version.java-uuid-generator}</version>
+    </dependency>
+
     <!-- Operaton 2.2.0 (Apache-2.0), versions from operaton-bom. BPMN + CMMN; DMN/FEEL come with the engine. -->
     <dependency>
       <groupId>org.operaton.bpm</groupId>

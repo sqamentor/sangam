@@ -36,6 +36,7 @@ public class RollupConfig {
 
     @Bean
     public SpringLiquibase rollupLiquibase(DataSource dataSource, @Value("${sangam.rollup.schema.apply:true}") boolean apply) {
+        org.sangam.core.licence.LiquibaseLicenceGuard.check(); // SG-26 / LIC-7
         SpringLiquibase lb = new SpringLiquibase();
         lb.setDataSource(dataSource);
         lb.setChangeLog("classpath:db/changelog/rollup/ru-master.xml");

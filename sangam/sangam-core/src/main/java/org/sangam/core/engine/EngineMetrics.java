@@ -2,7 +2,7 @@
 package org.sangam.core.engine;
 
 /**
- * Engine metrics port (D-39, R13). sangam-server binds it to Micrometer. Label cardinality is bounded: process
+ * Engine metrics port (FLOWABLE-INTO-OPERATON D-39, R13). sangam-server binds it to Micrometer. Label cardinality is bounded: process
  * definition keys and topics only, never instance ids (VI.1 rule 8).
  */
 public interface EngineMetrics {

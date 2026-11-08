@@ -4,7 +4,7 @@ package org.sangam.core.engine;
 import java.util.Locale;
 
 /**
- * R31 / D-30: what a cycle timer does with firings missed while the engine was down. Declared per timer
+ * R31 / FLOWABLE-INTO-OPERATON D-30: what a cycle timer does with firings missed while the engine was down. Declared per timer
  * ({@code sangam:catchUp} extension property), per process definition key, or engine-wide.
  */
 public enum TimerCatchUpPolicy {

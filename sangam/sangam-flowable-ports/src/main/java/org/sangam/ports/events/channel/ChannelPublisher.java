@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Relay publisher for outbound channels (FC-03): WS-INTEGRATION's relay calls {@link #publish} for every outbox
+ * Relay publisher for outbound channels (FLOWABLE-INTO-OPERATON FC-03): WS-INTEGRATION's relay calls {@link #publish} for every outbox
  * delivery whose destination starts with {@code channel:}. The adapter is created per (tenant, channel, version) and
  * cached; a redeployed channel version gets a fresh adapter.
  */

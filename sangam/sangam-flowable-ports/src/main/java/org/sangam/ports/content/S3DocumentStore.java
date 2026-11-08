@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 /**
- * S3-compatible document store (FC-40; AWS S3, MinIO, Ceph RGW, OCI/GCS interop) with AWS Signature V4 over
+ * S3-compatible document store (FLOWABLE-INTO-OPERATON FC-40; AWS S3, MinIO, Ceph RGW, OCI/GCS interop) with AWS Signature V4 over
  * {@link HttpClient}: no SDK dependency, path-style URLs ({@code endpoint/bucket/key}). {@code put} uses
  * {@code If-None-Match: *} so an existing key is never overwritten (stores that ignore the header still get unique
  * keys from the content service). Objects up to {@code maxBytes} are buffered to compute the payload hash; larger

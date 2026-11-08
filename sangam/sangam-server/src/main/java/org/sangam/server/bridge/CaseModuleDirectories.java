@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Port bindings of the case module (sangam-case README "Integration notes" §3) onto the other modules: business
- * calendars (FC-23 {@code WorkCalendar} beans by name), escalation seats (sangam-security {@code SeatDirectory}),
+ * calendars (FLOWABLE-INTO-OPERATON FC-23 {@code WorkCalendar} beans by name), escalation seats (sangam-security {@code SeatDirectory}),
  * engine history for the timeline (ports {@code HistoryQueryService}, read model), venue booking (sangam-resources
  * {@code BookingService}, N01) and the party registry (sangam-registry {@code PartyService}, N14).
  */

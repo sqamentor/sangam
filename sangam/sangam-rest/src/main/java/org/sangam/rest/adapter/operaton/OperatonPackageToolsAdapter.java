@@ -47,7 +47,7 @@ import org.w3c.dom.Node;
 /**
  * Modeller tooling over {@link PackagePort} packages:
  * <ul>
- *   <li><b>validate</b>: parse every artifact with the Operaton model APIs and apply the Sangam profile (D-8 no
+ *   <li><b>validate</b>: parse every artifact with the Operaton model APIs and apply the Sangam profile (ADR-D-8 no
  *       in-engine scripts, GP-09 multi-instance limit, executable flag) plus the X.2.4.6 closure check (every form
  *       key and decision reference resolves inside the package);</li>
  *   <li><b>tests</b>: {@code *.test.json} resources ({@code {"decision","cases":[{"name","inputs","expected"}]}})
@@ -110,7 +110,7 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
         this.props = props;
     }
 
-    // ------------------------------------------------------------------ validation (R44, X.2.4.6, FC-46)
+    // ------------------------------------------------------------------ validation (R44, X.2.4.6, FLOWABLE-INTO-OPERATON FC-46)
 
     @Override
     public List<ValidationIssue> validate(RequestContext ctx, String packageId) {
@@ -192,7 +192,7 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
                     && !t.getScript().getTextContent().isBlank();
             if (inline || t.getOperatonResource() != null) {
                 issues.add(new ValidationIssue("ERROR", name, t.getId(),
-                        "Scripts do not run in the engine (D-8): use an external task for the script worker",
+                        "Scripts do not run in the engine (ADR-D-8): use an external task for the script worker",
                         "SCRIPT_IN_ENGINE"));
             }
         }
@@ -414,7 +414,7 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
                 assessDmn(f.name(), root, rows);
             } else if (lower.endsWith(".cmmn") || String.valueOf(root.getNamespaceURI()).contains("CMMN")) {
                 rows.add(new AssessmentRow(f.name(), root.getAttribute("id"), "cmmn:definitions", "SUPPORTED",
-                        "CMMN 1.1 runs on Operaton; Flowable plan-item extensions need sangam-flowable-ports (FC-55..58)"));
+                        "CMMN 1.1 runs on Operaton; Flowable plan-item extensions need sangam-flowable-ports (FLOWABLE-INTO-OPERATON FC-55..58)"));
             } else {
                 walkBpmn(f.name(), root, rows);
             }
@@ -429,9 +429,9 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
         if (bpmn) {
             if ("adHocSubProcess".equals(local)) {
                 rows.add(new AssessmentRow(file, id, "bpmn:adHocSubProcess", "PATTERN",
-                        "ad-hoc via sangam-flowable-ports FC-01"));
+                        "ad-hoc via sangam-flowable-ports FLOWABLE-INTO-OPERATON FC-01"));
             } else if ("scriptTask".equals(local)) {
-                rows.add(new AssessmentRow(file, id, "bpmn:scriptTask", "PATTERN", "out-of-process script worker, D-8"));
+                rows.add(new AssessmentRow(file, id, "bpmn:scriptTask", "PATTERN", "out-of-process script worker, ADR-D-8"));
             } else if (SUPPORTED_BPMN.contains(local)) {
                 if (id != null) {
                     rows.add(new AssessmentRow(file, id, "bpmn:" + local, "SUPPORTED", null));
@@ -493,10 +493,10 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
 
     private static String note(String construct) {
         return switch (construct) {
-            case "skipExpression" -> "skip expressions need a sangam parse listener (FC-13)";
-            case "triggerable" -> "use sangam:triggerable (FC-12)";
-            case "eventType", "eventCorrelationParameter", "channelKey" -> "event registry via sangam-flowable-ports (FC-02)";
-            case "variableAggregation" -> "multi-instance aggregation pattern (FC-21)";
+            case "skipExpression" -> "skip expressions need a sangam parse listener (FLOWABLE-INTO-OPERATON FC-13)";
+            case "triggerable" -> "use sangam:triggerable (FLOWABLE-INTO-OPERATON FC-12)";
+            case "eventType", "eventCorrelationParameter", "channelKey" -> "event registry via sangam-flowable-ports (FLOWABLE-INTO-OPERATON FC-02)";
+            case "variableAggregation" -> "multi-instance aggregation pattern (FLOWABLE-INTO-OPERATON FC-21)";
             default -> "no direct Operaton equivalent; review and map manually";
         };
     }
@@ -512,7 +512,7 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
             String id = t.getParentNode() instanceof Element d ? d.getAttribute("id") : null;
             if ("PRIORITY".equals(hp) || "OUTPUT ORDER".equals(hp)) {
                 rows.add(new AssessmentRow(file, id, "dmn:hitPolicy " + hp, "PATTERN",
-                        "hit policy " + hp + " needs the sangam DMN hit-policy handlers (FC-54)"));
+                        "hit policy " + hp + " needs the sangam DMN hit-policy handlers (FLOWABLE-INTO-OPERATON FC-54)"));
             } else {
                 rows.add(new AssessmentRow(file, id, "dmn:decisionTable" + (hp.isEmpty() ? "" : " " + hp), "SUPPORTED", null));
             }

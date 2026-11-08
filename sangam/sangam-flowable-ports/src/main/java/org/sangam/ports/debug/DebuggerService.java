@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Process debugger back end (FC-44 Flowable {@code DebugFlowableEngineAgenda}, EC-13 Inspect; R80). The UI is WS-UI.
+ * Process debugger back end (FLOWABLE-INTO-OPERATON FC-44 Flowable {@code DebugFlowableEngineAgenda}, EC-13 Inspect; R80). The UI is WS-UI.
  * Breakpoints ({@code DEBUG_BREAKPOINT}) exist only for <b>sandbox tenants</b>: at parse time an activity with a
  * breakpoint becomes {@code asyncBefore}, so execution stops there as a job; the debugger then steps (executes that
  * one job), continues, fires timers, sends messages and edits variables through the normal services.

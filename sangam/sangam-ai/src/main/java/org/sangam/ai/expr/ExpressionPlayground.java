@@ -2,7 +2,6 @@
 package org.sangam.ai.expr;
 
 import org.operaton.bpm.dmn.feel.impl.FeelEngine;
-import org.operaton.bpm.dmn.feel.impl.scala.ScalaFeelEngineFactory;
 import org.operaton.bpm.engine.variable.Variables;
 import org.sangam.ai.llm.Llm;
 import org.sangam.ai.llm.LlmPort;
@@ -30,7 +29,7 @@ public final class ExpressionPlayground {
 
     public static final int MAX_CHARS = 8000;
 
-    private static final FeelEngine ENGINE = new ScalaFeelEngineFactory().createInstance();
+    private static final FeelEngine ENGINE = org.sangam.engine.feel.SangamFeel.feelEngine();
 
     private final Duration limit;
     private final LlmPort llm;

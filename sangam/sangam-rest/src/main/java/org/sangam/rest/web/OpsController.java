@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Operations console API (O01–O09, R63, R64): incidents, reconciliation (VI.3 rule 4, VI.5), outbox repair (VI.2.3),
- * jobs, batches, migration (R48, FC-18), restart, history cleanup. State changes require a reason.
+ * jobs, batches, migration (R48, FLOWABLE-INTO-OPERATON FC-18), restart, history cleanup. State changes require a reason.
  */
 @RestController
 @RequestMapping("/api/v1/ops")

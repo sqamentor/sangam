@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
- * JMS → inbox (R38 rule 1, Flowable FC-03 inbound JMS channel). Optional: needs {@code jakarta.jms-api}.
+ * JMS → inbox (R38 rule 1, FLOWABLE-INTO-OPERATON FC-03 inbound JMS channel). Optional: needs {@code jakarta.jms-api}.
  *
  * <p>Transacted session: for each message, {@link InboxService#receive} commits to the database first, then the JMS
  * session commits (ack). On back-pressure or an inbox failure the session rolls back, so the broker redelivers. A

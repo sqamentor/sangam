@@ -14,11 +14,11 @@ import org.sangam.ports.history.EngineEventBus;
 /**
  * Parse-time BPMN behaviour extensions (route 1, {@link BpmnParseListener}; handed to WS-PORTS by WS-ENGINE):
  * <ul>
- *   <li>FC-12 triggerable service task ({@code sangam:triggerable="true"});</li>
- *   <li>FC-13 skip expressions ({@code sangam:skipExpression});</li>
- *   <li>FC-22 terminate end event {@code sangam:terminate="all|multiInstance"}.</li>
+ *   <li>FLOWABLE-INTO-OPERATON FC-12 triggerable service task ({@code sangam:triggerable="true"});</li>
+ *   <li>FLOWABLE-INTO-OPERATON FC-13 skip expressions ({@code sangam:skipExpression});</li>
+ *   <li>FLOWABLE-INTO-OPERATON FC-22 terminate end event {@code sangam:terminate="all|multiInstance"}.</li>
  * </ul>
- * D-12 bindings and D-13 TTL are WS-ENGINE's ({@code org.sangam.engine.deploy.SangamBpmnParseListener}).
+ * FLOWABLE-INTO-OPERATON D-12 bindings and FLOWABLE-INTO-OPERATON D-13 TTL are WS-ENGINE's ({@code org.sangam.engine.deploy.SangamBpmnParseListener}).
  * Register as a <em>post</em> parse listener after WS-ENGINE's, so its validations see Operaton's own behaviours.
  */
 public class BpmnExtensionsParseListener implements BpmnParseListener {
@@ -33,7 +33,7 @@ public class BpmnExtensionsParseListener implements BpmnParseListener {
         this.bus = bus;
     }
 
-    // ------------------------------------------------------------------ FC-12 / FC-13
+    // ------------------------------------------------------------------ FLOWABLE-INTO-OPERATON FC-12 / FLOWABLE-INTO-OPERATON FC-13
 
     @Override
     public void parseServiceTask(Element e, ScopeImpl scope, ActivityImpl a) {
@@ -95,7 +95,7 @@ public class BpmnExtensionsParseListener implements BpmnParseListener {
                 skipAlwaysEnabled, bus));
     }
 
-    // ------------------------------------------------------------------ FC-22
+    // ------------------------------------------------------------------ FLOWABLE-INTO-OPERATON FC-22
 
     @Override
     public void parseEndEvent(Element e, ScopeImpl scope, ActivityImpl a) {

@@ -9,11 +9,11 @@ import org.operaton.bpm.engine.impl.util.ClockUtil;
 import org.sangam.core.engine.SangamClock;
 
 /**
- * The single wrapper of Operaton's static, JVM-wide {@link ClockUtil} (D-10, W-7, XI.10.4). Nothing else in Sangam
+ * The single wrapper of Operaton's static, JVM-wide {@link ClockUtil} (FLOWABLE-INTO-OPERATON D-10, W-7, XI.10.4). Nothing else in Sangam
  * may call {@code ClockUtil}; everything reads time through {@link SangamClock}.
  *
  * <p>Because the clock is JVM-wide, Sangam runs <b>one engine per JVM</b>: {@link #register(boolean)} refuses a second
- * engine unless explicitly allowed (tests). A per-engine clock SPI is the upstream patch planned for Stage D (D-10).
+ * engine unless explicitly allowed (tests). A per-engine clock SPI is the upstream patch planned for Stage D (FLOWABLE-INTO-OPERATON D-10).
  */
 public final class OperatonClock implements SangamClock {
 
@@ -51,7 +51,7 @@ public final class OperatonClock implements SangamClock {
         int n = ENGINES.incrementAndGet();
         if (n > 1 && !allowMany) {
             ENGINES.decrementAndGet();
-            throw new IllegalStateException("D-10: a second Sangam engine in one JVM shares Operaton's static ClockUtil; "
+            throw new IllegalStateException("FLOWABLE-INTO-OPERATON D-10: a second Sangam engine in one JVM shares Operaton's static ClockUtil; "
                     + "run one engine per JVM (set allowMultipleEnginesPerJvm only for tests)");
         }
     }

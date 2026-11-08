@@ -83,16 +83,16 @@ import org.slf4j.LoggerFactory;
  *   <li><b>L2 first (A-11, VI.1)</b>: every state-changing call resolves its root read-only, locks it
  *       ({@code ROOT_SEQ FOR UPDATE}) and only then touches engine state; whole commands are retried on retryable
  *       conflicts with full-jitter back-off and end in {@link ConflictRetryExhaustedException} (VI.1 rule 7).</li>
- *   <li><b>Fencing (VI.3, R20, D-17, D-18)</b>: {@code SANGAM_LEASE} checked under a row lock in the same command as
+ *   <li><b>Fencing (VI.3, R20, FLOWABLE-INTO-OPERATON D-17, FLOWABLE-INTO-OPERATON D-18)</b>: {@code SANGAM_LEASE} checked under a row lock in the same command as
  *       the engine call; grants are idempotent per (work_id, lock_version) and serialized with the engine's fetch by the
- *       per-topic fetch lock (XI.10.4, W-9, D-19).</li>
- *   <li><b>A-10 expiry hook (D-21)</b> before any re-offer, in the transaction that ends the lease; an unacknowledged
+ *       per-topic fetch lock (XI.10.4, W-9, FLOWABLE-INTO-OPERATON D-19).</li>
+ *   <li><b>A-10 expiry hook (FLOWABLE-INTO-OPERATON D-21)</b> before any re-offer, in the transaction that ends the lease; an unacknowledged
  *       cancel always holds (VI.3.1 CANCEL_REQUESTED → UNKNOWN_OUTCOME).</li>
  *   <li><b>T35 operationId</b> on every leased item; the ledger row gets the engine work id (A-14).</li>
  *   <li><b>VI.6 exclusivity</b> ({@code sangam:exclusive} = {@code execution:<group>} | {@code resource:<variable>}).</li>
  *   <li><b>VI.5</b>: deleting an instance tombstones its leased work and records the open operation ids.</li>
  *   <li><b>Bounded job execution</b> (A-12): per call and per job definition.</li>
- *   <li><b>D-51</b>: DOCTYPE declarations rejected at deploy.</li>
+ *   <li><b>FLOWABLE-INTO-OPERATON D-51</b>: DOCTYPE declarations rejected at deploy.</li>
  * </ul>
  * Internal Operaton classes used are listed in {@code sangam-engine/PATCHES.md}.
  */
@@ -191,7 +191,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
 
     /**
      * Q1: {@code work} runs inside one engine command and gets its connection; product rows and engine state commit
-     * or roll back together (explicit rollback guard, D-22). Not retried: the caller decides.
+     * or roll back together (explicit rollback guard, FLOWABLE-INTO-OPERATON D-22). Not retried: the caller decides.
      *
      * <p><b>Context reuse (contract relied on by sangam-integration):</b> when an Operaton command context is already
      * active on this thread (a delegate, listener, job or an outer {@code inEngineTransaction}), {@code work} runs
@@ -221,29 +221,38 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         return i < 0 ? processDefinitionId : processDefinitionId.substring(0, i);
     }
 
-    /** Root of a process or case instance id (read-only), or null if unknown. */
+    /*
+     * SG-11 (E6 hot root): the root of a command is resolved with plain SQL on the command's connection, never with an
+     * engine query. An engine query inside the command puts the TaskEntity / ExecutionEntity into the command's entity
+     * cache with the revision read BEFORE the L2 lock; after waiting for the lock the command then works on, and
+     * flushes, that stale revision, and fails with ENGINE-03005 although L2 serialized it (reproduced:
+     * InheritedWeaknessH2Test.hotRootAllCommandsCommitUnderRootLock). With SQL nothing is cached before the lock, so
+     * every engine row is first read after L2 is held.
+     */
+
+    /** Root of a process or case instance id (read by SQL, nothing cached), or null if unknown. */
     private RootRef rootOfInstance(String instanceId) {
         if (instanceId == null) {
             return null;
         }
-        ProcessInstance pi = runtimeService.createProcessInstanceQuery().processInstanceId(instanceId).singleResult();
-        if (pi != null) {
-            String root = pi.getRootProcessInstanceId() != null ? pi.getRootProcessInstanceId() : pi.getId();
-            return new RootRef(root, tenant(pi.getTenantId()), keyOf(pi.getProcessDefinitionId()));
+        Connection conn = CommandState.currentConnection();
+        Optional<RootRef> p = Jdbc.one(conn, "SELECT COALESCE(ROOT_PROC_INST_ID_, ID_), TENANT_ID_, PROC_DEF_ID_ "
+                        + "FROM ACT_RU_EXECUTION WHERE ID_ = ? AND ID_ = PROC_INST_ID_",
+                rs -> new RootRef(rs.getString(1), tenant(rs.getString(2)), keyOf(rs.getString(3))), instanceId);
+        if (p.isPresent()) {
+            return p.get();
         }
-        CaseInstance ci = caseService.createCaseInstanceQuery().caseInstanceId(instanceId).singleResult();
-        if (ci != null) {
-            return new RootRef(ci.getId(), tenant(ci.getTenantId()), keyOf(ci.getCaseDefinitionId()));
-        }
-        return null;
+        return Jdbc.one(conn, "SELECT ID_, TENANT_ID_, CASE_DEF_ID_ FROM ACT_RU_CASE_EXECUTION "
+                        + "WHERE ID_ = ? AND ID_ = CASE_INST_ID_",
+                rs -> new RootRef(rs.getString(1), tenant(rs.getString(2)), keyOf(rs.getString(3))), instanceId)
+                .orElse(null);
     }
 
     private RootRef rootOfTask(String taskId) {
-        Task t = taskService.createTaskQuery().taskId(taskId).singleResult();
-        if (t == null) {
-            return null;
-        }
-        return rootOfInstance(t.getProcessInstanceId() != null ? t.getProcessInstanceId() : t.getCaseInstanceId());
+        Optional<String> inst = Jdbc.one(CommandState.currentConnection(),
+                "SELECT COALESCE(PROC_INST_ID_, CASE_INST_ID_) FROM ACT_RU_TASK WHERE ID_ = ?", rs -> rs.getString(1),
+                taskId);
+        return inst.map(this::rootOfInstance).orElse(null);
     }
 
     private void lock(CommandContext cc, RootRef ref) {
@@ -261,7 +270,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                 String head = new String(r.getValue(), 0, Math.min(r.getValue().length, 4096), StandardCharsets.UTF_8)
                         .toUpperCase(Locale.ROOT);
                 if (head.contains("<!DOCTYPE") || head.contains("<!ENTITY")) {
-                    throw new ProcessEngineException("D-51/R24: resource " + r.getKey()
+                    throw new ProcessEngineException("FLOWABLE-INTO-OPERATON D-51/R24: resource " + r.getKey()
                             + " declares a DOCTYPE or ENTITY; XML with DTDs is rejected at deploy");
                 }
             }
@@ -328,21 +337,25 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     @Override
     public String correlateMessage(String tenantId, String messageName, String businessKey, Map<String, Object> variables) {
         return command("correlateMessage", (cc, conn) -> {
-            var eq = runtimeService.createExecutionQuery().messageEventSubscriptionName(messageName);
+            // SG-11: subscribed roots by SQL (an execution query would cache pre-lock revisions, see rootOfInstance)
+            StringBuilder sql = new StringBuilder("SELECT DISTINCT COALESCE(p.ROOT_PROC_INST_ID_, p.ID_), p.TENANT_ID_, "
+                    + "p.PROC_DEF_ID_ FROM ACT_RU_EVENT_SUBSCR s JOIN ACT_RU_EXECUTION p ON p.ID_ = s.PROC_INST_ID_ "
+                    + "WHERE s.EVENT_TYPE_ = 'message' AND s.EVENT_NAME_ = ?");
+            List<Object> args = new ArrayList<>(List.of(messageName));
             if (businessKey != null) {
-                eq.processInstanceBusinessKey(businessKey);
+                sql.append(" AND p.BUSINESS_KEY_ = ?");
+                args.add(businessKey);
             }
             if (tenantId != null) {
-                eq.tenantIdIn(tenantId);
+                sql.append(" AND s.TENANT_ID_ = ?");
+                args.add(tenantId);
             }
             Map<String, String> roots = new HashMap<>();
             String metricKey = null;
-            for (Execution e : eq.list()) {
-                RootRef r = rootOfInstance(e.getProcessInstanceId());
-                if (r != null) {
-                    roots.putIfAbsent(r.rootId(), r.tenant());
-                    metricKey = r.definitionKey();
-                }
+            for (RootRef r : Jdbc.query(conn, sql.toString(),
+                    rs -> new RootRef(rs.getString(1), tenant(rs.getString(2)), keyOf(rs.getString(3))), args.toArray())) {
+                roots.putIfAbsent(r.rootId(), r.tenant());
+                metricKey = r.definitionKey();
             }
             c.rootLock().lock(cc, roots, metricKey);
             MessageCorrelationBuilder b = runtimeService.createMessageCorrelation(messageName);
@@ -367,18 +380,66 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                                            Map<String, Object> variables) {
         return command("correlateMessageToBranch", (cc, conn) -> {
             lock(cc, rootOfInstance(processInstanceId));
+            // Operaton refuses processInstanceId together with tenantId on a correlation (BadUserRequestException),
+            // so the tenant is checked here, against the addressed instance, for both delivery paths.
+            if (tenantId != null) {
+                ProcessInstance pi = runtimeService.createProcessInstanceQuery()
+                        .processInstanceId(processInstanceId).singleResult();
+                if (pi == null || !tenantId.equals(pi.getTenantId())) {
+                    throw new org.operaton.bpm.engine.MismatchingMessageCorrelationException(messageName,
+                            "no execution of tenant " + tenantId + " waits for it");
+                }
+            }
+            long direct = runtimeService.createExecutionQuery().processInstanceId(processInstanceId)
+                    .messageEventSubscriptionName(messageName).variableValueEquals(localVariableName, localVariableValue)
+                    .count();
+            if (direct == 0) {
+                // The branch variable (e.g. a multi-instance loopCounter) is local to the branch's scope execution,
+                // while the subscription sits on a nested execution inside that scope (multi-instance sub-process,
+                // event-based gateway): deliver to the one waiting execution below the matching scope.
+                String target = waitingBelowScope(messageName, processInstanceId, localVariableName, localVariableValue);
+                if (target != null) {
+                    runtimeService.messageEventReceived(messageName, target, variables);
+                    return target;
+                }
+            }
             MessageCorrelationBuilder b = runtimeService.createMessageCorrelation(messageName)
                     .processInstanceId(processInstanceId)
                     .localVariableEquals(localVariableName, localVariableValue);
-            if (tenantId != null) {
-                b.tenantId(tenantId);
-            }
             if (variables != null) {
                 b.setVariables(variables);
             }
             MessageCorrelationResult r = b.correlateWithResult();
             return r.getExecution() != null ? r.getExecution().getId() : null;
         });
+    }
+
+    /** The single execution waiting for {@code messageName} below a scope that has the local variable, else null. */
+    private String waitingBelowScope(String messageName, String processInstanceId, String name, Object value) {
+        Set<String> scopes = new HashSet<>();
+        for (Execution e : runtimeService.createExecutionQuery().processInstanceId(processInstanceId)
+                .variableValueEquals(name, value).list()) {
+            scopes.add(e.getId());
+        }
+        if (scopes.isEmpty()) {
+            return null;
+        }
+        String found = null;
+        for (Execution e : runtimeService.createExecutionQuery().processInstanceId(processInstanceId)
+                .messageEventSubscriptionName(messageName).list()) {
+            for (ExecutionEntity p = ((ExecutionEntity) e).getParent(); p != null; p = p.getParent()) {
+                if (scopes.contains(p.getId())) {
+                    if (found != null) {
+                        throw new org.operaton.bpm.engine.MismatchingMessageCorrelationException(messageName,
+                                "FLOWABLE-INTO-OPERATON D-35: more than one execution waits for it below the branch " + name + "=" + value
+                                        + " of process instance " + processInstanceId);
+                    }
+                    found = e.getId();
+                    break;
+                }
+            }
+        }
+        return found;
     }
 
     // ================================================================== user tasks
@@ -408,7 +469,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         return buildTaskQuery(query).listPage(0, Math.max(0, cap) + 1).size();
     }
 
-    /** D-36 / W-4: candidate user + groups as an OR query; assigned tasks included. */
+    /** FLOWABLE-INTO-OPERATON D-36 / W-4: candidate user + groups as an OR query; assigned tasks included. */
     private org.operaton.bpm.engine.task.TaskQuery buildTaskQuery(TaskQuery query) {
         org.operaton.bpm.engine.task.TaskQuery q = taskService.createTaskQuery();
         if (query.tenantId() != null) {
@@ -572,7 +633,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             ExternalWork work = new ExternalWork(t.getId(), t.getTopicName(), t.getProcessInstanceId(), t.getActivityId(),
                     t.getActivityInstanceId(), t.getRetries() == null ? -1 : t.getRetries(),
                     Instant.ofEpochMilli(expiresAt), lease.lockVersion(), lease.attemptId(),
-                    new HashMap<>(t.getVariables()));
+                    new HashMap<>(t.getVariables()), operationId.toString());
             out.add(new LeasedWork(work, tenant, t.getBusinessKey(), rootId, operationId, lease.attemptNo(), capability,
                     fence, false));
         }
@@ -598,15 +659,20 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
      * variable).
      */
     private UUID operationId(String tenant, LockedExternalTask t, String rootId, Map<String, String> ext) {
-        long visit = historyService.createHistoricActivityInstanceQuery().processInstanceId(t.getProcessInstanceId())
-                .activityId(t.getActivityId()).finished().count();
-        Object loop = t.getVariables().get("loopCounter");
+        return operationId(tenant, t.getBusinessKey(), rootId, t.getProcessInstanceId(), t.getActivityId(), ext,
+                t.getVariables()::get);
+    }
+
+    /** The only place the engine gathers the T35 facts of a work item; both fetch and {@link #operationIdOf} use it. */
+    private UUID operationId(String tenant, String businessKey, String rootId, String processInstanceId,
+                             String activityId, Map<String, String> ext, java.util.function.Function<String, Object> var) {
+        long visit = historyService.createHistoricActivityInstanceQuery().processInstanceId(processInstanceId)
+                .activityId(activityId).finished().count();
+        Object loop = var.apply("loopCounter");
         String keyVar = ext.get("sangam:retrySafeKey");
-        Object key = keyVar == null ? null : t.getVariables().get(keyVar);
-        String bk = t.getBusinessKey() != null && !t.getBusinessKey().isEmpty() ? t.getBusinessKey() : rootId;
-        return OperationIdentity.of(tenant, bk, t.getActivityId(),
-                OperationIdentity.scope(visit, loop instanceof Number n ? n.intValue() : null,
-                        key == null ? null : String.valueOf(key)));
+        Object key = keyVar == null ? null : var.apply(keyVar);
+        return OperationIdentity.forWork(tenant, businessKey, rootId, activityId, visit,
+                loop instanceof Number n ? n.intValue() : null, key == null ? null : String.valueOf(key));
     }
 
     /** Expired held leases: the policy per lease, then the lease ends. Returns the ids the policy held. */
@@ -765,7 +831,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         });
     }
 
-    /** D-18: owner- and version-checked; Operaton's own {@code unlock(id)} checks nothing. */
+    /** FLOWABLE-INTO-OPERATON D-18: owner- and version-checked; Operaton's own {@code unlock(id)} checks nothing. */
     @Override
     public void unlockExternal(String workId, String workerId, long lockVersion) {
         command("unlockExternal", (cc, conn) -> {
@@ -788,17 +854,23 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
      */
     @Override
     public void cancelInstance(String instanceId, String reason) {
-        command("cancelInstance", (cc, conn) -> {
+        terminateInstance(instanceId, "system", reason, true);
+    }
+
+    @Override
+    public Termination terminateInstance(String instanceId, String actor, String reason, boolean technical) {
+        return command("terminateInstance", (cc, conn) -> {
             RootRef root = rootOfInstance(instanceId);
             lock(cc, root);
             if (caseService.createCaseInstanceQuery().caseInstanceId(instanceId).count() > 0) {
                 caseService.terminateCaseExecution(instanceId);
-                return null;
+                return new Termination(List.of(), 0);
             }
             List<String> workIds = new ArrayList<>();
             collectExternalTaskIds(instanceId, workIds, 0);
             long now = clock.now().toEpochMilli();
             List<UUID> open = new ArrayList<>();
+            int cancelRequested = 0;
             for (String workId : workIds) {
                 SangamLeaseTable.Row row = leases.lock(conn, workId);
                 if (row != null && row.held()) {
@@ -806,12 +878,17 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                     long remaining = row.expiresAtMs() == null ? 0 : Math.max(0, row.expiresAtMs() - now);
                     tombstones.write(conn, tenant(row.tenantId()), workId, op,
                             row.rootId() == null ? instanceId : row.rootId(), row.lockVersion(), Duration.ofMillis(remaining));
+                    cancelRequested++;
                     if (op != null) {
                         open.add(op);
                     }
                 }
             }
-            runtimeService.deleteProcessInstance(instanceId, reason);
+            if (technical) {
+                runtimeService.deleteProcessInstance(instanceId, reason, true, true, true);
+            } else {
+                runtimeService.deleteProcessInstance(instanceId, reason, false, true, false);
+            }
             for (String workId : workIds) {
                 SangamLeaseTable.Row row = leases.lock(conn, workId);
                 if (row != null) {
@@ -819,10 +896,31 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                     leases.remove(conn, workId);
                 }
             }
-            if (root != null) {
-                tombstones.recordDeletion(conn, root.tenant(), root.rootId(), "system", reason, open);
+            if (technical && root != null) {
+                tombstones.recordDeletion(conn, root.tenant(), root.rootId(), actor, reason, open);
             }
-            return null;
+            return new Termination(List.copyOf(open), cancelRequested);
+        });
+    }
+
+    @Override
+    public UUID operationIdOf(String workId) {
+        return command("operationIdOf", (cc, conn) -> {
+            Optional<String> stored = Jdbc.one(conn, "SELECT operation_id FROM SANGAM_LEASE WHERE work_id = ?",
+                    rs -> rs.getString(1), workId);
+            if (stored.isPresent() && stored.get() != null) {
+                return UUID.fromString(stored.get());
+            }
+            ExternalTask t = externalTaskService.createExternalTaskQuery().externalTaskId(workId).singleResult();
+            if (t == null) {
+                return null;
+            }
+            ExecutionEntity exec = cc.getExecutionManager().findExecutionById(t.getExecutionId());
+            String rootId = exec != null && exec.getRootProcessInstanceId() != null
+                    ? exec.getRootProcessInstanceId() : t.getProcessInstanceId();
+            Map<String, String> ext = t.getExtensionProperties() == null ? Map.of() : t.getExtensionProperties();
+            return operationId(tenant(t.getTenantId()), t.getBusinessKey(), rootId, t.getProcessInstanceId(),
+                    t.getActivityId(), ext, name -> runtimeService.getVariable(t.getExecutionId(), name));
         });
     }
 
@@ -899,7 +997,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         return vars;
     }
 
-    // ================================================================== pause / resume (D-32)
+    // ================================================================== pause / resume (FLOWABLE-INTO-OPERATON D-32)
 
     @Override
     public void pauseInstance(String processInstanceId, String actor, String reason) {
@@ -925,9 +1023,61 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     }
 
     /**
-     * D-32: tx 1 moves every timer due date and task due date of the instance tree by the paused time while it is
+     * FLOWABLE-INTO-OPERATON D-32: tx 1 moves every timer due date and task due date of the instance tree by the paused time while it is
      * still suspended (re-dating and activating in one transaction fails with ENGINE-03005); tx 2 activates it.
      */
+    /**
+     * <b>ADR-D-25 recovery</b> of an {@code AMBIGUOUS_ROUTE} / {@code NO_MATCHING_ROUTE} incident, in one command
+     * under L2: object check {@code PROCESS_INSTANCE / MODIFY} for {@code actor} (fail closed when no authorization
+     * port is bound), the corrected variables are set, every execution parked at a strict exclusive gateway of the
+     * instance is re-routed by the shared policy, and a {@code ROUTE_CORRECTED} audit event records who corrected
+     * what (variable names, not values) and the flow taken. If any gateway still does not route, the whole correction
+     * rolls back and {@link org.sangam.engine.deploy.StrictExclusiveGatewayBehavior.RoutingException} carries the code.
+     *
+     * @return the ids of the re-routed gateways
+     */
+    public List<String> correctRoute(org.sangam.core.security.SecurityIdentity actor, String processInstanceId,
+                                     Map<String, Object> variables, String reason) {
+        return command("correctRoute", (cc, conn) -> {
+            RootRef root = rootOfInstance(processInstanceId);
+            if (root == null) {
+                throw new ProcessEngineException("no running process instance " + processInstanceId);
+            }
+            lock(cc, root);
+            var authz = settings.getRouteCorrectionAuthorization();
+            if (authz == null) {
+                throw new org.sangam.core.security.SangamSecurityException.AccessDenied(
+                        "ADR-D-25: no authorization port bound for route corrections", 0);
+            }
+            authz.require(conn, actor, "PROCESS_INSTANCE", "MODIFY", processInstanceId);
+            List<String> parked = Jdbc.query(conn, "SELECT EXECUTION_ID_ FROM ACT_RU_INCIDENT WHERE PROC_INST_ID_ = ? "
+                    + "AND INCIDENT_TYPE_ = ?", rs -> rs.getString(1), processInstanceId,
+                    org.sangam.engine.deploy.StrictExclusiveGatewayBehavior.INCIDENT_TYPE);
+            if (parked.isEmpty()) {
+                throw new ProcessEngineException("instance " + processInstanceId + " has no routing incident");
+            }
+            if (variables != null && !variables.isEmpty()) {
+                runtimeService.setVariables(processInstanceId, variables);
+            }
+            List<String> taken = new ArrayList<>();
+            for (String executionId : parked) {
+                String gateway = Jdbc.one(conn, "SELECT ACT_ID_ FROM ACT_RU_EXECUTION WHERE ID_ = ?",
+                        rs -> rs.getString(1), executionId).orElse(null);
+                runtimeService.signal(executionId); // re-runs the shared policy; RoutingException rolls everything back
+                taken.add(gateway);
+            }
+            Map<String, Object> audit = new LinkedHashMap<>();
+            audit.put("processInstanceId", processInstanceId);
+            audit.put("actorPersonId", actor.personId());
+            audit.put("actorSubject", actor.subject());
+            audit.put("reason", reason);
+            audit.put("correctedVariables", variables == null ? List.of() : new ArrayList<>(new java.util.TreeSet<>(variables.keySet())));
+            audit.put("gateways", taken);
+            c.auditSink().append(conn, root.tenant(), root.rootId(), "ROUTE_CORRECTED", audit);
+            return taken;
+        });
+    }
+
     @Override
     public void resumeInstance(String processInstanceId, String actor) {
         List<String> tree = command("resumeInstance.redate", (cc, conn) -> {
@@ -936,7 +1086,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                             "process_instance_id = ? AND state = 'PAUSED'", settings.getLockTimeout()),
                     rs -> rs.getLong(1), processInstanceId);
             if (pausedAt.isEmpty()) {
-                throw new ProcessEngineException("D-32: process instance " + processInstanceId + " is not paused");
+                throw new ProcessEngineException("FLOWABLE-INTO-OPERATON D-32: process instance " + processInstanceId + " is not paused");
             }
             long now = clock.now().toEpochMilli();
             long shift = Math.max(0, now - pausedAt.get());
@@ -1019,7 +1169,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         return executed;
     }
 
-    /** Moves the engine clock; {@code null} returns to system time. JVM-wide (D-10). */
+    /** Moves the engine clock; {@code null} returns to system time. JVM-wide (FLOWABLE-INTO-OPERATON D-10). */
     @Override
     public void setClock(Instant now) {
         clock.set(now);

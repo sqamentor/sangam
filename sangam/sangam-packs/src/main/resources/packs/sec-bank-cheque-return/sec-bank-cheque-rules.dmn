@@ -5,7 +5,7 @@
     <decisionTable id="sec-bank-cheque-rules_t" hitPolicy="FIRST">
       <input id="sec-bank-cheque-rules_i0" label="Reason"><inputExpression id="sec-bank-cheque-rules_ie0" typeRef="string"><text>returnReason</text></inputExpression></input>
       <input id="sec-bank-cheque-rules_i1" label="Returns this year"><inputExpression id="sec-bank-cheque-rules_ie1" typeRef="integer"><text>returnCount</text></inputExpression></input>
-      <input id="sec-bank-cheque-rules_i2" label="Amount"><inputExpression id="sec-bank-cheque-rules_ie2" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="sec-bank-cheque-rules_i2" label="Amount"><inputExpression id="sec-bank-cheque-rules_ie2" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="sec-bank-cheque-rules_o0" label="Withdraw facility" name="withdrawChequeBook" typeRef="boolean"/>
       <output id="sec-bank-cheque-rules_o1" label="Charge (INR)" name="returnCharge" typeRef="integer"/>
       <rule id="sec-bank-cheque-rules_r0"><description>dishonour four times in a financial year for 1 crore or more</description>

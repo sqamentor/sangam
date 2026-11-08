@@ -3,7 +3,6 @@ package org.sangam.integration.pipeline;
 
 import org.operaton.bpm.dmn.engine.DmnDecision;
 import org.operaton.bpm.dmn.engine.DmnEngine;
-import org.operaton.bpm.dmn.engine.DmnEngineConfiguration;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -11,12 +10,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Standalone FEEL (no GraalJS, D-8): each expression is compiled once as a DMN literal-expression decision on Operaton's
+ * Standalone FEEL (no GraalJS, ADR-D-8): each expression is compiled once as a DMN literal-expression decision on Operaton's
  * DMN engine and cached.
  */
 public final class FeelEvaluator {
 
-    private final DmnEngine engine = DmnEngineConfiguration.createDefaultDmnEngineConfiguration().buildEngine();
+    private final DmnEngine engine = org.sangam.engine.feel.SangamFeel.dmnEngineConfiguration().buildEngine();
     private final Map<String, DmnDecision> cache = new ConcurrentHashMap<>();
 
     public Object evaluate(String expression, Map<String, Object> variables) {

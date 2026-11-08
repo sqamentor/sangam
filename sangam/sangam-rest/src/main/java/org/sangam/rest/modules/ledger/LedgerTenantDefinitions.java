@@ -41,7 +41,7 @@ public final class LedgerTenantDefinitions {
         }
         ResolvedProfile p;
         try {
-            p = profiles.resolve(tenant, LocalDate.now());
+            p = profiles.resolve(tenant, ledger.today(tenant));
         } catch (RuntimeException e) {
             return;   // tenant without a profile: definitions must come from elsewhere (definition() then fails clearly)
         }
@@ -62,7 +62,7 @@ public final class LedgerTenantDefinitions {
             return List.of();
         }
         try {
-            return LedgerDefinition.all(profiles.resolve(tenant, LocalDate.now()).get("ledgers")).stream()
+            return LedgerDefinition.all(profiles.resolve(tenant, ledger.today(tenant)).get("ledgers")).stream()
                     .map(LedgerDefinition::id).toList();
         } catch (RuntimeException e) {
             return List.of();

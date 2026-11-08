@@ -9,7 +9,7 @@ import org.operaton.bpm.engine.impl.interceptor.CommandInterceptor;
 
 /**
  * Per-command Sangam hooks on <b>every</b> engine command, not only on adapter commands (job executions, Operaton
- * REST, delegates): the Q1 explicit rollback listener (D-22) and, when configured, the L2 flush backstop
+ * REST, delegates): the Q1 explicit rollback listener (FLOWABLE-INTO-OPERATON D-22) and, when configured, the L2 flush backstop
  * ({@link org.sangam.engine.lock.RootLockFlushListener}). Registered as a post-context interceptor for the REQUIRED
  * and REQUIRES_NEW chains; each hook is installed once per command context and never opens a database session.
  */

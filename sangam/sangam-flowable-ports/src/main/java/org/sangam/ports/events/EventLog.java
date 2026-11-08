@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Database event log (FC-43, Flowable {@code ACT_EVT_LOG}; table {@code EVT_LOG}). Every inbound receipt,
+ * Database event log (FLOWABLE-INTO-OPERATON FC-43, Flowable {@code ACT_EVT_LOG}; table {@code EVT_LOG}). Every inbound receipt,
  * dispatch outcome and outbound hand-off is written in the same transaction as its effect, so the log never claims an
  * effect that rolled back. Payloads are stored only when {@code storePayloads} is on (R61/DPDP: default off).
  */

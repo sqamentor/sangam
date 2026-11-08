@@ -23,6 +23,8 @@ import org.sangam.packs.port.PackRuntime;
  *   <li>{@code BALANCE}: reads the balance into {@code resultVar}.</li>
  * </ul>
  * Fields {@code ledger} (budget, leave, roster, sanction ...), {@code account} (expression), {@code amount}
+ * (expression), {@code unit} (REQUIRED for ENCUMBER / CREDIT: an ISO 4217 currency for money, e.g. {@code INR}, stored
+ * in minor units; or a quantity unit such as {@code DAYS} / {@code POINTS}; SD-398: never implicit), {@code amount}
  * (expression), {@code reference} (default: business key + ledger), {@code resultVar}.
  */
 public class LedgerDelegate implements JavaDelegate {
@@ -34,6 +36,7 @@ public class LedgerDelegate implements JavaDelegate {
     private Expression reference;
     private Expression resultVar;
     private Expression errorCode;
+    private Expression unit;
 
     @Override
     public void execute(DelegateExecution ex) {
@@ -45,9 +48,15 @@ public class LedgerDelegate implements JavaDelegate {
         String rv = Vars.field(resultVar, ex, l + "Balance");
         BigDecimal amt = Vars.decimal(Vars.field(amount, ex, "0"));
         LedgerStore.Posting p;
+        String op0 = Vars.field(op, ex, "BALANCE");
+        String u = Vars.field(unit, ex, null);
+        if (("ENCUMBER".equals(op0) || "CREDIT".equals(op0)) && (u == null || u.isBlank())) {
+            throw new IllegalStateException("LedgerDelegate " + op0 + " on ledger " + l + " needs field 'unit' (ISO 4217 "
+                    + "currency or a quantity unit such as DAYS)");
+        }
         switch (Vars.field(op, ex, "BALANCE")) {
             case "ENCUMBER" -> {
-                p = store.post(Vars.tenant(ex), l, acct, amt.negate(), ref, false);
+                p = store.post(Vars.tenant(ex), l, acct, u, amt.negate(), ref, false);
                 if (!p.applied()) {
                     ex.setVariable(rv, Vars.engineValue(p.balanceAfter()));
                     Vars.audit(ex, "RULE_EVALUATED", Vars.map("ledger", l, "account", acct, "result",
@@ -60,7 +69,7 @@ public class LedgerDelegate implements JavaDelegate {
                 ex.setVariable(l + "EncumbranceRef", ref);
             }
             case "RELEASE" -> p = store.reverse(Vars.tenant(ex), l, acct, ref);
-            case "CREDIT" -> p = store.post(Vars.tenant(ex), l, acct, amt, ref, true);
+            case "CREDIT" -> p = store.post(Vars.tenant(ex), l, acct, u, amt, ref, true);
             default -> p = new LedgerStore.Posting(true, null, store.balance(Vars.tenant(ex), l, acct));
         }
         ex.setVariable(rv, Vars.engineValue(p.balanceAfter()));

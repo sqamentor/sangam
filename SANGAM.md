@@ -75,6 +75,8 @@
 | D-22 | Boundary: workflow + rules + generic ledgers/master data; integrate with IFMS/EHR/core banking (X.0e) | DECIDED |
 | D-23 | First jurisdiction packs: India, USA health, EU GDPR, international PFM (X.0e) | DECIDED |
 | D-24 | Load target: India national (~3,000 starts/s, ~30,000 ops/s, ~1M users) (X.0e) | DECIDED |
+| D-25 | Strict exclusive (XOR) routing: one true flow taken; several → AMBIGUOUS_ROUTE incident; none → default or NO_MATCHING_ROUTE; priority only by explicit versioned policy (X.0f) | DECIDED |
+| D-26 | Strict, exact DMN/FEEL evaluation: numbers exact (BigDecimal/Long, never Double); evaluation failure and unmatched null input are errors, not null or catch-all; typeRef "number"; money doubles refused at deploy (X.0g) | DECIDED |
 
 ### Where the current specification lives (read only these)
 
@@ -4268,6 +4270,42 @@ No login, CAPTCHA or other protection was bypassed. When a search engine showed 
 | **ADR-D-23 Jurisdiction packs, first set** | India: DPDP, CERT-In, IT Act; GOI and all 36 states/UTs; ABDM. USA health: HIPAA, HL7 FHIR R4, X12 837/835, CMS-0057-F prior authorisation. EU GDPR. International public financial management: IMF GFS/COFOG, IPSAS, World Bank FMIS patterns. Other countries are added later as packs, without code changes. |
 | **ADR-D-24 Load target** | Designed and tested for India national scale: about 3,000 workflow starts/s at peak, about 30,000 task/query operations/s, around 1 million concurrent users across cells. Each cell must sustain at least 500 starts/s; further capacity comes from more cells. |
 | Status | Decision: DECIDED (owner, 2026-11-05). Delivery: SPECIFIED. |
+
+## X.0f ADR-D-25: strict exclusive (XOR) routing (DECIDED 2026-11-08)
+
+> **Product policy, a deliberate difference from native BPMN engines.** Operaton, Camunda and Flowable take the
+> *first* outgoing flow whose condition is true, in document order. A model whose conditions overlap (for example
+> `amount >= 100000` and `amount > 99999`) then routes by XML order, silently. For financial and government
+> approvals that is not acceptable: the route must follow from the data, never from where a flow was drawn.
+
+| Rule | Behaviour |
+|---|---|
+| Exactly one condition true | Take that flow. |
+| More than one true | Stable error **`AMBIGUOUS_ROUTE`**. The instance stays at the gateway in a recoverable incident. Model order is never used. Nothing after the gateway runs: no activity, listener, outbox row or ledger posting. |
+| None true | The explicitly configured `default` flow. With no default: **`NO_MATCHING_ROUTE`** incident. |
+| Evaluation error (missing variable, type error) | An error or incident. Never treated as false, never falls to the default. |
+| Inclusive and parallel gateways | Unchanged BPMN semantics. |
+| First-match precedence | Only through an explicit, versioned policy on the gateway: `sangam:routingPolicy="priority"` (optional `sangam:routingPolicyVersion="1"`) and `sangam:priority="<int>"` on every conditional flow. Never inferred from model order. |
+| Deploy validation (R44) | Rejects: an unknown policy or version; missing, duplicate or non-integer priorities; priorities on a strict gateway; a priority on the default flow; a non-default flow without a condition on a diverging gateway. |
+| Recovery | An authorized (`PROCESS_INSTANCE` / `MODIFY`), audited correction of the data, then a retry of the gateway. It resumes on exactly one route, resolves the incident, and records a `ROUTE_CORRECTED` audit event naming the corrector. A correction that is still not routable rolls back completely. |
+| Import | An importer from an engine with native first-match semantics reports every exclusive gateway with two or more conditional flows as a `WARNING` (ADR-D-25), never silently changing meaning. Import and export keep `sangam:routingPolicy` / `sangam:priority`. |
+| One rule everywhere | Engine-neutral `org.sangam.core.engine.RoutingPolicy` / `RouteDecision`, applied by the Operaton adapter (parse listener replacing the exclusive-gateway behaviour), the pre-deploy model validator, the Flowable importer and the modeller's simulation. |
+| Status | Decision: DECIDED (owner, 2026-11-08). Delivery: IMPLEMENTED (`sangam-engine` PATCHES.md B-24). |
+
+## X.0g ADR-D-26: Sangam FEEL policy (exact numbers, strict evaluation) (DECIDED 2026-11-08)
+
+The FEEL engine is kept as pinned (feel-scala 1.22.1 behind operaton-engine-dmn 2.2.0, SG-27 / SD-301 exception). Sangam puts its own policy on top, in one place (`org.sangam.engine.feel.SangamFeel`). Every Sangam DMN engine uses it: process engines through `SangamProcessEnginePlugin` (Spring server and `SangamEngineFactory`), and standalone DMN engines through `SangamFeel.dmnEngineConfiguration()`. This is a **deliberate difference from native, lenient FEEL**. A model's FEEL binding (R10) records the new factory, so a model deployed under the native engine must be redeployed to be re-validated.
+
+| Topic | Rule |
+|---|---|
+| Exact numbers (SG-33) | `SangamValueMapper` maps FEEL numbers to `Long` when whole, otherwise to `BigDecimal`, never to `Double`. `BigDecimal` and `Money` (exact major amount) go in unchanged. `typeRef="number"` is registered as an exact type (`NumberDataTypeTransformer`). |
+| Money types at deploy (SG-33, R44) | A `.dmn` input, output or variable with `typeRef="double"`/`"float"` whose name, label or expression is money (amount, value, cost, fee, limit, budget, price, charge, …) is **refused**. Other doubles get a warning recommending `number`. Money uses `long` (minor units) or `number`. All 176 shipped pack files were migrated from `double` to `number`, so no justified doubles remain. |
+| Strict evaluation (SG-34) | A FEEL failure or suppressed failure fails the decision with `SANGAM-FEEL-STRICT`. This covers a missing variable, a null or mistyped operand, division by zero, an unknown function, an invalid literal date/time/duration/number, and a null condition. Native FEEL would return null, take the else branch, or fire a catch-all rule. A value that is genuinely null is still a value: `x = null` and `x != null` work. |
+| Null decision-table input (SG-34) | A null input is an error (`SANGAM-DMN-NULL-INPUT`) unless at least one rule tests that input with `null`. A catch-all `-` never catches a null. With an explicit null rule, a null input matches only the null tests. |
+| Failure handling | The check runs inside the engine command, before the result reaches the process. No rule's output is used and the command rolls back. On an async business rule task the result is an incident on the task. After the data is corrected, a job retry evaluates again and resolves the incident. |
+| Date-time equality (SG-35) | DMN 1.3 compares date-times on the time line (OMG issue DMN13-35, resolved in DMN 1.3: `=` is the same instant). The pinned engine's `=` also compares the zone (feel-scala issue #767), and an operator cannot be overridden without changing the engine, which the SG-27 pin forbids. **Policy: the spec semantics, same instant.** Until the engine is upgraded, the deploy-time lint `SANGAM-DMN-DATETIME-EQ` warns on `=`/`!=`, and on a bare input entry, against a zoned date-time literal. Models compare instants with `<`, `>`, ranges, or `a - b = duration("PT0S")`. This is a documented gap, not a silent rule. |
+| Known residual | A built-in conversion (`date(x)`, `duration(x)`, …) whose argument is a **variable** holding an invalid string still yields null in the pinned engine (built-ins cannot be overridden). Literal arguments are refused. A null that reaches a later operator, a decision-table input or a required output is still caught (strict evaluation, null-input rule, R10 `requiredOutputs`). |
+| Status | Decision: DECIDED (SG-33/34/35 root-cause fixes, 2026-11-08). Delivery: IMPLEMENTED (`sangam-engine` `org.sangam.engine.feel`). Tests: `FeelBehaviourH2Test`, `DmnModelLintTest`. |
 
 ## X.1 Normative requirements R1–R62
 

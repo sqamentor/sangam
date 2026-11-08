@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <b>Engine schema patch P-2 (MySQL only; D-04).</b> Operaton 2.2.0 creates its MySQL tables with
+ * <b>Engine schema patch P-2 (MySQL only; FLOWABLE-INTO-OPERATON D-04).</b> Operaton 2.2.0 creates its MySQL tables with
  * {@code DEFAULT CHARSET=utf8 COLLATE utf8_bin}, i.e. utf8mb3: 4-byte characters (emoji, CJK extension B) cannot be
  * stored in engine string columns. This patch converts every {@code ACT_*} table whose collation is utf8mb3 to
  * {@code utf8mb4 / utf8mb4_bin} (still binary, so ids stay case-sensitive).

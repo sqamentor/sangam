@@ -66,7 +66,7 @@ public final class BillingConnector implements SangamConnector {
         try {
             String op = r.operation().contains(".") ? r.operation().substring(r.operation().lastIndexOf('.') + 1) : r.operation();
             String tenant = r.tenantId();
-            LocalDate today = LocalDate.now(clock);
+            LocalDate today = clock.instant().atZone(ledger.zone(tenant)).toLocalDate(); // tenant business date
             String ledgerId = Tree.str(r.input().get("ledgerId"), "DEMAND");
             String period = Tree.str(r.input().get("period"), today.toString().substring(0, 4));
             String consumer = r.str("consumer");
@@ -92,7 +92,7 @@ public final class BillingConnector implements SangamConnector {
                 }
                 case "collect" -> {
                     BillingService.Receipt rc = billing.collect(tenant, ledgerId, consumer, r.str("channel"), r.str("paymentRef"),
-                            new BigDecimal(r.str("amount")), r.str("actor"));
+                            money(tenant, ledgerId, r.str("amount")), r.str("actor"));
                     out.put("receiptNo", rc.number());
                     out.put("collected", rc.amount().toPlainString());
                     out.put("outstanding", outstanding(tenant, ledgerId, consumer).toPlainString());
@@ -115,7 +115,7 @@ public final class BillingConnector implements SangamConnector {
                 }
                 case "waive" -> {
                     AccountKey k = new AccountKey(tenant, ledgerId, period, r.str("head"), consumer, "DEMAND", r.str("cycle"));
-                    LedgerService.Result res = billing.waive(k, new BigDecimal(r.str("amount")), r.str("orderRef"), r.str("actor"));
+                    LedgerService.Result res = billing.waive(k, money(tenant, ledgerId, r.str("amount")), r.str("orderRef"), r.str("actor"));
                     out.put("applied", res.applied());
                 }
                 default -> {
@@ -126,6 +126,15 @@ public final class BillingConnector implements SangamConnector {
         } catch (RuntimeException e) {
             return ConnectorResult.BusinessFailure.of("BILLING_ERROR", e.getMessage());
         }
+    }
+
+    /** API boundary (SD-398): a decimal string in the ledger currency, rejected if finer than its minor unit. */
+    private org.sangam.core.money.Money money(String tenant, String ledgerId, String amount) {
+        String ccy = ledger.definition(tenant, ledgerId).currency();
+        if (ccy == null) {
+            throw new IllegalArgumentException("ledger " + ledgerId + " has no currency");
+        }
+        return org.sangam.core.money.Money.parse(amount, ccy);
     }
 
     private BigDecimal outstanding(String tenant, String ledgerId, String consumer) {

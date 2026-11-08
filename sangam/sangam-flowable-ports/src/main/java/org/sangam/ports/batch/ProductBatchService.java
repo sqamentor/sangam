@@ -17,8 +17,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Product batch service (Flowable {@code BatchService}; D-34 bulk task completion, FC-35 change tenant, FC-18
- * migration post-steps, FC-19 case cut-over, bulk correlation). Operaton's own batch framework (B-14) stays the tool
+ * Product batch service (Flowable {@code BatchService}; FLOWABLE-INTO-OPERATON D-34 bulk task completion, FLOWABLE-INTO-OPERATON FC-35 change tenant, FLOWABLE-INTO-OPERATON FC-18
+ * migration post-steps, FLOWABLE-INTO-OPERATON FC-19 case cut-over, bulk correlation). Operaton's own batch framework (B-14) stays the tool
  * for migration, modification, deletion, restart and history operations; this service covers the operations
  * Operaton has no batch for. Tables {@code PORT_BATCH} / {@code PORT_BATCH_ITEM}. Backs sangam-rest {@code OpsPort}
  * batches.

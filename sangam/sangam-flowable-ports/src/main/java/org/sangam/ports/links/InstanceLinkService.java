@@ -13,12 +13,12 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Reference links and entity links (FC-31 Flowable {@code referenceId/referenceType}; FC-32 Flowable
+ * Reference links and entity links (FLOWABLE-INTO-OPERATON FC-31 Flowable {@code referenceId/referenceType}; FLOWABLE-INTO-OPERATON FC-32 Flowable
  * {@code EntityLinkService}; table {@code INSTANCE_LINK}).
  *
  * <p>Link types used by Sangam: {@code child} (parent → child, hierarchy {@code root|parent|grand-parent}),
- * {@code reference} (sibling/reference link set by the product), {@code reactivation} (FC-59), {@code cut-over}
- * (FC-19 run-off), {@code event-delivery} (event → instance), {@code dynamic-injection} (FC-15). Scope types:
+ * {@code reference} (sibling/reference link set by the product), {@code reactivation} (FLOWABLE-INTO-OPERATON FC-59), {@code cut-over}
+ * (FLOWABLE-INTO-OPERATON FC-19 run-off), {@code event-delivery} (event → instance), {@code dynamic-injection} (FLOWABLE-INTO-OPERATON FC-15). Scope types:
  * {@code process}, {@code case}, {@code task}, {@code event}, {@code document}.
  *
  * <p>Writes run in the caller's transaction ({@code inEngineTransaction}, Q1). Reads must be wrapped by the VI.4
@@ -51,7 +51,7 @@ public class InstanceLinkService {
                 tenant == null ? "" : tenant, linkType, hierarchyType, sourceType, sourceId, targetType, targetId, rootType, rootId, createdBy);
     }
 
-    /** Product API: a reference/sibling link between two instances (FC-31), in its own transaction. */
+    /** Product API: a reference/sibling link between two instances (FLOWABLE-INTO-OPERATON FC-31), in its own transaction. */
     public boolean addReference(String tenant, String sourceType, String sourceId, String targetType, String targetId, String user) {
         return tx.inTransaction(c -> link(c, tenant, "reference", null, sourceType, sourceId, targetType, targetId, user));
     }
@@ -75,7 +75,7 @@ public class InstanceLinkService {
         return tx.inTransaction(c -> query(c, "tenant_id = ? AND target_type = ? AND target_id = ?", tenant == null ? "" : tenant, targetType, targetId));
     }
 
-    /** Every link under one root (whole hierarchy of a root process or case, FC-32). */
+    /** Every link under one root (whole hierarchy of a root process or case, FLOWABLE-INTO-OPERATON FC-32). */
     public List<Link> byRoot(String tenant, String rootType, String rootId) {
         return tx.inTransaction(c -> query(c, "tenant_id = ? AND root_type = ? AND root_id = ?", tenant == null ? "" : tenant, rootType, rootId));
     }

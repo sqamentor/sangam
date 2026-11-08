@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Privileges and privilege mappings (FC-42, Flowable IDM {@code Privilege}/{@code PrivilegeMapping}): named
+ * Privileges and privilege mappings (FLOWABLE-INTO-OPERATON FC-42, Flowable IDM {@code Privilege}/{@code PrivilegeMapping}): named
  * application capabilities ({@code access-admin}, {@code access-modeler}, {@code access-console}, {@code access-rest-api}
  * ...) mapped to users, groups, roles or seats. A privilege check is an object check on the virtual resource
  * {@code PRIVILEGE/<id>} with {@code READ}, so it goes through the same policy engine and an explicit deny mapping wins.

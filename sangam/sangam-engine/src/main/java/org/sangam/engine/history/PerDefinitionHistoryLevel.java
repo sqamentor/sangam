@@ -13,7 +13,7 @@ import org.operaton.bpm.engine.impl.persistence.entity.TaskEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.VariableInstanceEntity;
 
 /**
- * History configuration per process definition and per activity (FC-26, D-49): Operaton has one global level; this
+ * History configuration per process definition and per activity (FLOWABLE-INTO-OPERATON FC-26, FLOWABLE-INTO-OPERATON D-49): Operaton has one global level; this
  * level delegates to a configured level ({@code none | activity | audit | full}) per entry, most specific first:
  * {@code <processKey>#<activityId>}, then {@code <processKey>}, then the base level. The activity is the execution's
  * current activity, the task definition key, or the job's / external task's activity. Installed only when overrides are configured. Its id ({@value #ID}) is stored by the engine in
@@ -39,7 +39,7 @@ public final class PerDefinitionHistoryLevel implements HistoryLevel {
             case "activity" -> HistoryLevel.HISTORY_LEVEL_ACTIVITY;
             case "audit" -> HistoryLevel.HISTORY_LEVEL_AUDIT;
             case "full" -> HistoryLevel.HISTORY_LEVEL_FULL;
-            default -> throw new IllegalArgumentException("FC-26: unknown history level " + name);
+            default -> throw new IllegalArgumentException("FLOWABLE-INTO-OPERATON FC-26: unknown history level " + name);
         };
     }
 

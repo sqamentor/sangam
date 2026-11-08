@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * BPMN service task → connector as a {@link JavaDelegate} (Flowable FC-06 HTTP task / FC-07 mail task parity;
+ * BPMN service task → connector as a {@link JavaDelegate} (FLOWABLE-INTO-OPERATON FC-06 HTTP task / FLOWABLE-INTO-OPERATON FC-07 mail task parity;
  * Operaton connect-plugin B-16 replacement with R27 egress and R36 identity).
  *
  * <pre>{@code

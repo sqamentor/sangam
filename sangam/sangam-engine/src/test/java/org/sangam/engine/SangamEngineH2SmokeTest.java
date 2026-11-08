@@ -55,6 +55,7 @@ class SangamEngineH2SmokeTest {
         ds.setURL("jdbc:h2:mem:smoke;MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamEngineSettings settings = new SangamEngineSettings();
         settings.setAllowMultipleEnginesPerJvm(true);
+        settings.setEngineSchemaUpdate("true"); // empty in-memory database owned by this test
         try (OperatonEngineAdapter a = SangamEngineFactory.build(ds, settings, "h2")) {
             a.deploy("t1", "d", Map.of("pay.bpmn", BPMN.getBytes(StandardCharsets.UTF_8)));
             String big = "x".repeat(5000);

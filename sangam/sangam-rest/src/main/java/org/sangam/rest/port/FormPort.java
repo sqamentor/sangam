@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Forms contract (R47 / X.2.5; FC-39): data schema (authoritative, JSON Schema 2020-12 profile), layout (form-js,
+ * Forms contract (R47 / X.2.5; FLOWABLE-INTO-OPERATON FC-39): data schema (authoritative, JSON Schema 2020-12 profile), layout (form-js,
  * presentation only) and field policy (authoritative, default deny), versioned by their hash triple; server-side
  * validation; server-side drafts with {@code If-Match} revisions ({@code 409 DRAFT_CONFLICT}).
  * The form key {@code drafts} is reserved.

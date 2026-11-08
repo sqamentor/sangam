@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * Delivers the pack message contract (sangam-packs README §4) to waiting process instances through the inbox, so a
- * result that arrives before the instance waits is buffered (D-33) and a redelivery is deduplicated (R38).
+ * result that arrives before the instance waits is buffered (FLOWABLE-INTO-OPERATON D-33) and a redelivery is deduplicated (R38).
  *
  * <table>
  *   <caption>Messages and variables</caption>

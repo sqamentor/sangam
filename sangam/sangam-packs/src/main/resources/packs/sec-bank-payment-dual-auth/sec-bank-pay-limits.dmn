@@ -4,7 +4,7 @@
   <decision id="sec-bank-pay-limits" name="Rail limits and authorisation levels (SYNTHETIC bands)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-bank-pay-limits_t" hitPolicy="FIRST">
       <input id="sec-bank-pay-limits_i0" label="Rail"><inputExpression id="sec-bank-pay-limits_ie0" typeRef="string"><text>paymentRail</text></inputExpression></input>
-      <input id="sec-bank-pay-limits_i1" label="Amount"><inputExpression id="sec-bank-pay-limits_ie1" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="sec-bank-pay-limits_i1" label="Amount"><inputExpression id="sec-bank-pay-limits_ie1" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="sec-bank-pay-limits_o0" label="Rail allowed" name="railAllowed" typeRef="boolean"/>
       <output id="sec-bank-pay-limits_o1" label="Authorisation levels" name="authLevels" typeRef="integer"/>
       <rule id="sec-bank-pay-limits_r0"><description>RTGS minimum 2 lakh</description>

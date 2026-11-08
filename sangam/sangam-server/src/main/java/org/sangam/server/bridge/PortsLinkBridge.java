@@ -18,8 +18,8 @@ import org.sangam.rest.port.LinkPort;
 import org.sangam.rest.port.RequestContext;
 
 /**
- * {@link LinkPort} on sangam-flowable-ports' {@code INSTANCE_LINK} (FC-31 references, FC-32 hierarchy across BPMN,
- * CMMN and tasks, filled by the ports history handler; FC-59 reactivation links).
+ * {@link LinkPort} on sangam-flowable-ports' {@code INSTANCE_LINK} (FLOWABLE-INTO-OPERATON FC-31 references, FLOWABLE-INTO-OPERATON FC-32 hierarchy across BPMN,
+ * CMMN and tasks, filled by the ports history handler; FLOWABLE-INTO-OPERATON FC-59 reactivation links).
  *
  * <p>Mapping: REST scope types {@code bpmn | cmmn | task} are the ports' {@code process | case | task}. Links are
  * reported from the queried scope's side: an outgoing {@code child} link is {@code CHILD}, an incoming one is

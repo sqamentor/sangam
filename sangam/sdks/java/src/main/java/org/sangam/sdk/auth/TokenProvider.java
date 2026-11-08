@@ -31,7 +31,7 @@ public interface TokenProvider {
     }
 
     /**
-     * HTTP Basic credentials (Flowable external-client parity, FC-37). Only for dev/test gateways that accept
+     * HTTP Basic credentials (Flowable external-client parity, FLOWABLE-INTO-OPERATON FC-37). Only for dev/test gateways that accept
      * Basic; the Sangam server itself expects OIDC bearer tokens.
      */
     static TokenProvider basic(String user, String password) {

@@ -122,7 +122,8 @@ public class BillingController {
         in.put("consumer", body.consumer());
         in.put("channel", body.channel());
         in.put("paymentRef", body.paymentRef());
-        in.put("amount", decimal(body.amount()).toPlainString());
+        definitions.ensure(ctx.tenantId()); // the ledger's currency decides the allowed minor-unit digits
+        in.put("amount", money(body.amount(), definitions.ledger().definition(ctx.tenantId(), ledger).currency()).toPlainString());
         Map<String, Object> out = call(ctx, "collect", in);
         return Lists.okRef(String.valueOf(out.get("receiptNo")), out);
     }
@@ -163,7 +164,8 @@ public class BillingController {
         put(in, "head", body.head());
         put(in, "cycle", body.cycle());
         put(in, "period", body.period());
-        in.put("amount", decimal(body.amount()).toPlainString());
+        definitions.ensure(ctx.tenantId()); // the ledger's currency decides the allowed minor-unit digits
+        in.put("amount", money(body.amount(), definitions.ledger().definition(ctx.tenantId(), ledger).currency()).toPlainString());
         in.put("orderRef", body.orderRef());
         return Lists.okRef(body.orderRef(), call(ctx, "waive", in));
     }
@@ -178,11 +180,12 @@ public class BillingController {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "consumer, channel, paymentRef and amount are required");
         }
         String operationId = ctx.idempotencyKey() != null ? ctx.idempotencyKey() : Hashes.uuidV7().toString();
-        String period = body.period() == null ? Integer.toString(LocalDate.now().getYear()) : body.period();
+        String period = body.period() == null ? Integer.toString(definitions.ledger().today(ctx.tenantId()).getYear()) : body.period();
         AccountKey demand = new AccountKey(ctx.tenantId(), ledger, period, body.head(), body.consumer(), "DEMAND",
                 body.cycle());
         definitions.ensure(ctx.tenantId());
-        String rail = billing.refund(demand, body.channel(), body.paymentRef(), decimal(body.amount()), operationId,
+        String rail = billing.refund(demand, body.channel(), body.paymentRef(),
+                money(body.amount(), definitions.ledger().definition(ctx.tenantId(), ledger).currency()), operationId,
                 ctx.principalId());
         return Lists.okRef(operationId, new RefundResult(rail, operationId));
     }
@@ -205,11 +208,13 @@ public class BillingController {
         }
     }
 
-    private static BigDecimal decimal(String s) {
+    /** Controller boundary (MoneyAmount, SD-398): strict decimal string in the ledger currency. */
+    private static org.sangam.core.money.Money money(String s, String currency) {
         try {
-            return new BigDecimal(s.trim());
+            return org.sangam.core.money.Money.parse(s, currency);
         } catch (RuntimeException e) {
-            throw ApiProblem.badRequest("VALIDATION_FAILED", "amount must be a decimal string (R33)");
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "amount must be a decimal string in " + currency
+                    + " with at most its minor-unit digits (MoneyAmount): " + e.getMessage());
         }
     }
 }

@@ -14,9 +14,9 @@
       <input id="ifms-reapp-rules_i7" label="Quarter"><inputExpression id="ifms-reapp-rules_ie7" typeRef="integer"><text>quarter</text></inputExpression></input>
       <input id="ifms-reapp-rules_i8" label="NER technical"><inputExpression id="ifms-reapp-rules_ie8" typeRef="boolean"><text>nerTechnical</text></inputExpression></input>
       <input id="ifms-reapp-rules_i9" label="Object group"><inputExpression id="ifms-reapp-rules_ie9" typeRef="string"><text>objectGroup</text></inputExpression></input>
-      <input id="ifms-reapp-rules_i10" label="Amount"><inputExpression id="ifms-reapp-rules_ie10" typeRef="double"><text>amount</text></inputExpression></input>
-      <input id="ifms-reapp-rules_i11" label="Increase % of BE"><inputExpression id="ifms-reapp-rules_ie11" typeRef="double"><text>percentOfBe</text></inputExpression></input>
-      <input id="ifms-reapp-rules_i12" label="Secret service %"><inputExpression id="ifms-reapp-rules_ie12" typeRef="double"><text>secretServicePercent</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i10" label="Amount"><inputExpression id="ifms-reapp-rules_ie10" typeRef="number"><text>amount</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i11" label="Increase % of BE"><inputExpression id="ifms-reapp-rules_ie11" typeRef="number"><text>percentOfBe</text></inputExpression></input>
+      <input id="ifms-reapp-rules_i12" label="Secret service %"><inputExpression id="ifms-reapp-rules_ie12" typeRef="number"><text>secretServicePercent</text></inputExpression></input>
       <output id="ifms-reapp-rules_o0" label="Allowed" name="reappAllowed" typeRef="boolean"/>
       <output id="ifms-reapp-rules_o1" label="Finance Ministry approval" name="mofCase" typeRef="boolean"/>
       <output id="ifms-reapp-rules_o2" label="Report to Parliament" name="parliamentReport" typeRef="boolean"/>

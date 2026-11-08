@@ -5,7 +5,7 @@ import java.sql.Connection;
 import java.util.Map;
 
 /**
- * Typed engine events (FC-43, FC-25/D-41): one event per engine lifecycle change, delivered inside the engine command
+ * Typed engine events (FLOWABLE-INTO-OPERATON FC-43, FLOWABLE-INTO-OPERATON FC-25/FLOWABLE-INTO-OPERATON D-41): one event per engine lifecycle change, delivered inside the engine command
  * on the engine connection. The integration module implements it by appending an outbox row (VI.2), so history
  * projectors, analytics and webhooks receive the events after commit, in per-root order.
  */

@@ -84,6 +84,19 @@ SCHEMAS["TypedValue"] = {
     },
     "examples": [{"type": "Decimal", "value": "1234.50"}],
 }
+SCHEMAS["MoneyAmount"] = {
+    "type": "string",
+    "pattern": "^-?[0-9]+([.][0-9]+)?$",
+    "description": ("Money convention for EVERY endpoint (SD-398, SG-20): an amount is a plain decimal string in MAJOR units "
+                    "of the ISO 4217 currency given next to it (field `currency`, or the ledger / tariff currency), e.g. "
+                    "\"100000.00\" INR. It must not have more fraction digits than the currency's minor unit (INR/USD 2, "
+                    "JPY 0, KWD 3): \"0.001\" INR is rejected with VALIDATION_FAILED, never rounded. No exponent, no JSON "
+                    "number, no binary float. The server stores integer minor units (org.sangam.core.money.Money) and "
+                    "returns amounts with exactly the currency's fraction digits. Directional operations (commit, "
+                    "encumber, pay, allocate) take amounts > 0; reversals are separate operations. Computed documents "
+                    "(bills, penalties) are rounded once per document total and the lines sum to the total exactly."),
+    "examples": ["100000.00", "0.01", "1.230"],
+}
 SCHEMAS["VariableMap"] = {
     "type": "object",
     "description": ("Variables by name. Plain JSON values pass through (a JSON number with a fraction is read as an exact "

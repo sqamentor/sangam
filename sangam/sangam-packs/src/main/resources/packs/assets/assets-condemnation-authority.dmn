@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="assets-condemnation-authority" name="Condemnation powers by book value" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="assets-condemnation-authority_t" hitPolicy="FIRST">
-      <input id="assets-condemnation-authority_i0" label="Amount"><inputExpression id="assets-condemnation-authority_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="assets-condemnation-authority_i0" label="Amount"><inputExpression id="assets-condemnation-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="assets-condemnation-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="assets-condemnation-authority_r0">
         <inputEntry id="assets-condemnation-authority_r0_i0"><text>&lt;= 500000</text></inputEntry>

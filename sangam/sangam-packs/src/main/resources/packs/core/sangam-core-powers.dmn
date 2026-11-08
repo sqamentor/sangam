@@ -6,7 +6,7 @@
     <decisionTable id="sangam-core-powers_t" hitPolicy="FIRST">
       <input id="sangam-core-powers_i0" label="Seat role"><inputExpression id="sangam-core-powers_ie0" typeRef="string"><text>seatRole</text></inputExpression></input>
       <input id="sangam-core-powers_i1" label="Case type"><inputExpression id="sangam-core-powers_ie1" typeRef="string"><text>caseType</text></inputExpression></input>
-      <output id="sangam-core-powers_o0" label="Power limit (INR)" name="powerLimit" typeRef="double"/>
+      <output id="sangam-core-powers_o0" label="Power limit (INR)" name="powerLimit" typeRef="number"/>
       <output id="sangam-core-powers_o1" label="Allowed" name="allowed" typeRef="boolean"/>
       <rule id="sangam-core-powers_r0"><description>SO up to 100000</description>
         <inputEntry id="sangam-core-powers_r0_i0"><text>"SO"</text></inputEntry>

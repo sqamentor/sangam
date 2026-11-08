@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp44">
+  <!-- GP-44 deemed outcome: RTI s7(2) - no decision in 30 days is a deemed refusal, which opens the first appeal (s19,
+       30 days). The outcome is the event reached (gp44_deemedRefusal), visible in history. -->
+  <message id="m_appeal" name="firstAppealFiled"/>
+  <process id="gp44-deemed" name="GP-44 Deemed refusal" isExecutable="true">
+    <startEvent id="gp44_start"/>
+    <sequenceFlow id="f1" sourceRef="gp44_start" targetRef="gp44_pioDecide"/>
+    <userTask id="gp44_pioDecide" name="PIO decides request"><potentialOwner><resourceAssignmentExpression><formalExpression>group(pio)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="gp44_deadline" attachedToRef="gp44_pioDecide" cancelActivity="true">
+      <timerEventDefinition><timeDuration xsi:type="tFormalExpression">P30D</timeDuration></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f2" sourceRef="gp44_pioDecide" targetRef="gp44_end_decided"/>
+    <endEvent id="gp44_end_decided"/>
+    <sequenceFlow id="f3" sourceRef="gp44_deadline" targetRef="gp44_deemedRefusal"/>
+    <intermediateThrowEvent id="gp44_deemedRefusal" name="Deemed refusal (s7(2))"/>
+    <sequenceFlow id="f4" sourceRef="gp44_deemedRefusal" targetRef="gp44_appealWindow"/>
+    <eventBasedGateway id="gp44_appealWindow"/>
+    <sequenceFlow id="f5" sourceRef="gp44_appealWindow" targetRef="gp44_appealFiled"/>
+    <sequenceFlow id="f6" sourceRef="gp44_appealWindow" targetRef="gp44_appealLapse"/>
+    <intermediateCatchEvent id="gp44_appealFiled"><messageEventDefinition messageRef="m_appeal"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="gp44_appealLapse"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P30D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <sequenceFlow id="f7" sourceRef="gp44_appealFiled" targetRef="gp44_faaHearing"/>
+    <userTask id="gp44_faaHearing" name="First appellate authority hears appeal"><potentialOwner><resourceAssignmentExpression><formalExpression>group(faa)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f8" sourceRef="gp44_faaHearing" targetRef="gp44_end_appeal"/>
+    <endEvent id="gp44_end_appeal"/>
+    <sequenceFlow id="f9" sourceRef="gp44_appealLapse" targetRef="gp44_end_lapsed"/>
+    <endEvent id="gp44_end_lapsed"/>
+  </process>
+</definitions>

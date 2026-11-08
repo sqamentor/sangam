@@ -5,7 +5,7 @@ import java.sql.Connection;
 import java.util.Map;
 
 /**
- * Engine port used by inbox processing (R38; Flowable FC-02 "inbox → createMessageCorrelation /
+ * Engine port used by inbox processing (R38; FLOWABLE-INTO-OPERATON FC-02 "inbox → createMessageCorrelation /
  * startProcessInstanceByMessage"). Implemented for Operaton by
  * {@code org.sangam.integration.bridge.operaton.OperatonMessageCorrelationPort}. Every method runs inside the inbox
  * processing transaction, which must be the engine transaction ({@code Transactions.of(engineAdapter)}), so the

@@ -43,7 +43,7 @@ public interface ProcessPort {
     }
 
     /**
-     * Modification instruction (O03, R49; FC-17 across call-activity boundaries when {@code targetProcessInstanceId}
+     * Modification instruction (O03, R49; FLOWABLE-INTO-OPERATON FC-17 across call-activity boundaries when {@code targetProcessInstanceId}
      * is set). type: startBeforeActivity | startAfterActivity | startTransition | cancelActivity |
      * cancelActivityInstance | cancelTransitionInstance.
      */
@@ -56,7 +56,7 @@ public interface ProcessPort {
                          boolean skipIoMappings) {
     }
 
-    /** FC-12 triggerable tasks / receive tasks: signal one waiting execution. */
+    /** FLOWABLE-INTO-OPERATON FC-12 triggerable tasks / receive tasks: signal one waiting execution. */
     record TriggerRequest(String executionId, String activityId, Map<String, Object> variables, String reason) {
     }
 

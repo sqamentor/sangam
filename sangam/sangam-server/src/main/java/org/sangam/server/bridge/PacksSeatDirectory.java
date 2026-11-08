@@ -22,18 +22,19 @@ import org.sangam.security.org.OrgModel;
  * Packs {@link SeatDirectory} on sangam-security's organisation model (IX.5 rules 1, 2, 4; K7): effective-dated
  * postings, additional charge and delegation from {@code PostingService}, seat designation and office from
  * {@code SeatService}, and the escalation seat. Seat ids are the candidate groups. A date is evaluated at noon in the
- * configured zone (default Asia/Kolkata), so an order effective "from" a date counts for the whole day.
+ * tenant's business zone ({@link org.sangam.core.time.BusinessClock}), so an order effective "from" a date counts for the whole day.
  */
 public final class PacksSeatDirectory implements SeatDirectory {
 
     private final SangamSecurity security;
     private final TxSupport tx;
-    private final ZoneId zone;
+    private final org.sangam.core.time.BusinessClock businessClock;
 
-    public PacksSeatDirectory(SangamSecurity security, TxSupport tx, ZoneId zone) {
+    /** Posting validity dates are business dates in each tenant's zone ({@code businessClock}). */
+    public PacksSeatDirectory(SangamSecurity security, TxSupport tx, org.sangam.core.time.BusinessClock businessClock) {
         this.security = security;
         this.tx = tx;
-        this.zone = zone;
+        this.businessClock = java.util.Objects.requireNonNull(businessClock, "businessClock");
     }
 
     @Override
@@ -43,13 +44,13 @@ public final class PacksSeatDirectory implements SeatDirectory {
 
     @Override
     public List<SeatHolding> holdingsOf(String tenantId, String personId, LocalDate date) {
-        Instant at = at(date);
-        return db(c -> security.postings().seatsOf(c, tenantId, personId, at)).stream().map(this::map).toList();
+        Instant at = at(tenantId, date);
+        return db(c -> security.postings().seatsOf(c, tenantId, personId, at)).stream().map(h -> map(h, businessClock.zone(tenantId))).toList();
     }
 
     @Override
     public Optional<String> holderOf(String tenantId, String seatId, LocalDate date) {
-        List<SecurityPorts.SeatHolder> holders = db(c -> security.postings().holdersAt(c, tenantId, seatId, at(date)));
+        List<SecurityPorts.SeatHolder> holders = db(c -> security.postings().holdersAt(c, tenantId, seatId, at(tenantId, date)));
         return holders.stream().filter(h -> !h.actingFor()).findFirst()
                 .or(() -> holders.stream().findFirst())
                 .map(SecurityPorts.SeatHolder::personId);
@@ -67,7 +68,7 @@ public final class PacksSeatDirectory implements SeatDirectory {
 
     @Override
     public Optional<String> seatForRole(String tenantId, String roleCode, String officeId) {
-        return eligibleSeats(tenantId, roleCode, officeId, LocalDate.now(zone)).stream().findFirst();
+        return eligibleSeats(tenantId, roleCode, officeId, businessClock.today(tenantId)).stream().findFirst();
     }
 
     @Override
@@ -75,7 +76,7 @@ public final class PacksSeatDirectory implements SeatDirectory {
         if (officeId == null) {
             return List.of();
         }
-        return db(c -> security.seats().seatsInUnit(c, tenantId, officeId, roleCode, at(date)));
+        return db(c -> security.seats().seatsInUnit(c, tenantId, officeId, roleCode, at(tenantId, date)));
     }
 
     @Override
@@ -87,7 +88,7 @@ public final class PacksSeatDirectory implements SeatDirectory {
         return db(c -> security.seats().seatAt(c, tenantId, seatId, Instant.now()));
     }
 
-    private SeatHolding map(SecurityPorts.SeatHolder h) {
+    private static SeatHolding map(SecurityPorts.SeatHolder h, ZoneId zone) {
         String kind = h.kind() == null ? "" : h.kind().toUpperCase(Locale.ROOT);
         SeatHolding.Basis basis = kind.contains("DELEGAT") ? SeatHolding.Basis.DELEGATION
                 : h.actingFor() || kind.contains("ADDITIONAL") || kind.contains("LEAVE") ? SeatHolding.Basis.ADDITIONAL_CHARGE
@@ -97,8 +98,9 @@ public final class PacksSeatDirectory implements SeatDirectory {
         return new SeatHolding(h.seatId(), h.personId(), basis, h.postingId(), from, to);
     }
 
-    private Instant at(LocalDate date) {
-        return (date == null ? LocalDate.now(zone) : date).atTime(12, 0).atZone(zone).toInstant();
+    private Instant at(String tenantId, LocalDate date) {
+        ZoneId zone = businessClock.zone(tenantId);
+        return (date == null ? businessClock.today(tenantId) : date).atTime(12, 0).atZone(zone).toInstant();
     }
 
     private <T> T db(Function<Connection, T> work) {

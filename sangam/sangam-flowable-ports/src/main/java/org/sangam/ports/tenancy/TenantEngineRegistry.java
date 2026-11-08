@@ -19,12 +19,12 @@ import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
 /**
- * Database-per-tenant routing (FC-34; Flowable {@code MultiSchemaMultiTenantProcessEngineConfiguration} and
+ * Database-per-tenant routing (FLOWABLE-INTO-OPERATON FC-34; Flowable {@code MultiSchemaMultiTenantProcessEngineConfiguration} and
  * {@code TenantAwareDataSource}): one Operaton engine per tenant database, all sharing <b>one</b> job executor
  * (Operaton's {@code JobExecutor} serves several registered engines, which removes the per-engine thread-pool cost).
  * {@link TenantContext} selects the engine and the product-layer pool ({@link RoutingDataSource}) per request.
  *
- * <p><b>Clock limit (D-10).</b> Operaton's {@code ClockUtil} (behind {@code SangamClockHolder}) is a JVM-wide static: every engine in this JVM shares one
+ * <p><b>Clock limit (FLOWABLE-INTO-OPERATON D-10).</b> Operaton's {@code ClockUtil} (behind {@code SangamClockHolder}) is a JVM-wide static: every engine in this JVM shares one
  * clock. Production never moves the clock, so routing is safe there; tests that move the clock must run one tenant
  * engine per JVM. {@link #register} therefore refuses a second engine while a fake clock is set, and
  * {@link #assertRealClock} is called before every engine start. A per-engine clock SPI is patch P-6 (PATCHES.md,
@@ -125,11 +125,11 @@ public class TenantEngineRegistry implements AutoCloseable {
         return new RoutingDataSource(dataSources);
     }
 
-    /** D-10 guard: a moved clock would apply to every tenant engine of this JVM. */
+    /** FLOWABLE-INTO-OPERATON D-10 guard: a moved clock would apply to every tenant engine of this JVM. */
     public static void assertRealClock() {
         long drift = Math.abs(SangamClockHolder.now().toEpochMilli() - System.currentTimeMillis());
         if (drift > 5_000) {
-            throw new IllegalStateException("the engine clock is moved (D-10): several tenant engines cannot share a fake clock; "
+            throw new IllegalStateException("the engine clock is moved (FLOWABLE-INTO-OPERATON D-10): several tenant engines cannot share a fake clock; "
                     + "run one engine per JVM for clock tests");
         }
     }

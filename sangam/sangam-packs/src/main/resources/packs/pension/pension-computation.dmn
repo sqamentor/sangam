@@ -4,13 +4,13 @@
   <!-- Replaces the earlier 50 % placeholder. Values from the CCS (Pension) Rules 2021 as summarised in IFMS-CENTRAL IFC-179; ceilings marked [U] are configuration placeholders. Commutation uses ccs-commutation-factor. -->
   <decision id="pension-computation" name="Pension computation (CCS (Pension) Rules 2021)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="pension-computation_t" hitPolicy="FIRST">
-      <input id="pension-computation_i0" label="Qualifying service (years)"><inputExpression id="pension-computation_ie0" typeRef="double"><text>qualifyingService</text></inputExpression></input>
-      <input id="pension-computation_i1" label="Last emoluments"><inputExpression id="pension-computation_ie1" typeRef="double"><text>lastPay</text></inputExpression></input>
-      <input id="pension-computation_i2" label="Average emoluments (10 months)"><inputExpression id="pension-computation_ie2" typeRef="double"><text>averageEmoluments</text></inputExpression></input>
-      <output id="pension-computation_o0" label="Monthly pension" name="pensionAmount" typeRef="double"/>
+      <input id="pension-computation_i0" label="Qualifying service (years)"><inputExpression id="pension-computation_ie0" typeRef="number"><text>qualifyingService</text></inputExpression></input>
+      <input id="pension-computation_i1" label="Last emoluments"><inputExpression id="pension-computation_ie1" typeRef="number"><text>lastPay</text></inputExpression></input>
+      <input id="pension-computation_i2" label="Average emoluments (10 months)"><inputExpression id="pension-computation_ie2" typeRef="number"><text>averageEmoluments</text></inputExpression></input>
+      <output id="pension-computation_o0" label="Monthly pension" name="pensionAmount" typeRef="number"/>
       <output id="pension-computation_o1" label="Eligible" name="eligibleForPension" typeRef="boolean"/>
-      <output id="pension-computation_o2" label="Retirement gratuity" name="retirementGratuity" typeRef="double"/>
-      <output id="pension-computation_o3" label="Family pension (ordinary rate)" name="familyPension" typeRef="double"/>
+      <output id="pension-computation_o2" label="Retirement gratuity" name="retirementGratuity" typeRef="number"/>
+      <output id="pension-computation_o3" label="Family pension (ordinary rate)" name="familyPension" typeRef="number"/>
       <output id="pension-computation_o4" label="Rule" name="ruleRef" typeRef="string"/>
       <rule id="pension-computation_r0"><description>pension after 10 years of qualifying service</description>
         <inputEntry id="pension-computation_r0_i0"><text>&gt;= 10</text></inputEntry>

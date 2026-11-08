@@ -51,7 +51,24 @@
     { "purl": "pkg:npm/angular@1", "rule": "LIC-6 legacy AngularJS webapps are not shipped" },
     { "purl": "pkg:npm/angular@", "rule": "LIC-6 legacy AngularJS (angular 1.x package) is not shipped" }
   ],
-  "_comment_versions": "Version ceilings (LIC-7 Liquibase >= 5.0 is FSL until the D-7 legal review).",
+  "_comment_namespace_bans": "Namespaces banned by a downstream programme (purl prefix), with exact group:artifact:version exceptions. Any version or artifact not listed fails; a listed one must carry exactly the stated SPDX licence.",
+  "namespace_bans": [
+    {
+      "purl": "pkg:maven/org.camunda",
+      "rule": "OneIFMS SD-301 bans org.camunda* at the workflow-engine boundary"
+    }
+  ],
+  "_comment_pinned_exceptions": "SG-27 owner exception (deploy/licence/SG-27-SD-301-exception.md). Each entry is one exact coordinate. watch=true: any OTHER version of the same group:artifact fails, so a version change must be re-verified and re-listed.",
+  "pinned_exceptions_evidence": "deploy/licence/SG-27-SD-301-exception.md",
+  "pinned_exceptions": [
+    { "purl": "pkg:maven/org.camunda.feel/feel-engine@1.22.1", "license": "Apache-2.0", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine" },
+    { "purl": "pkg:maven/org.scala-lang/scala-library@2.13.18", "license": "Apache-2.0", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (runtime of feel-engine)" },
+    { "purl": "pkg:maven/com.lihaoyi/fastparse_2.13@3.1.1", "license": "MIT", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (parser of feel-engine)" },
+    { "purl": "pkg:maven/com.lihaoyi/sourcecode_2.13@0.4.0", "license": "MIT", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (via fastparse)" },
+    { "purl": "pkg:maven/com.lihaoyi/geny_2.13@1.1.0", "license": "MIT", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (via fastparse)" },
+    { "purl": "pkg:maven/com.fasterxml.jackson.module/jackson-module-scala_2.13@2.22.3", "license": "Apache-2.0", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (JSON values of feel-engine)" }
+  ],
+  "_comment_versions":"Version ceilings (LIC-7 Liquibase >= 5.0 is FSL until the D-7 legal review).",
   "max_versions": [
     { "purl": "pkg:maven/org.liquibase/liquibase-core", "below": "5.0.0", "rule": "LIC-7 Liquibase pinned at 4.33.0" }
   ],

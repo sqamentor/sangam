@@ -201,16 +201,16 @@ def eligibility():
     q271 = s.conn('el_270', 'Eligibility inquiry 270 / response 271', 'x12.eligibility', 'eligibility', 'query',
                   'memberId,payerId,providerNpi,serviceTypes,patientName', 'elig')
     s.flow(npi, q271)
-    g = s.xgw('el_resultGw', 'Coverage?')
+    g = s.xgw('el_resultGw', 'Coverage?', policy='priority')  # ADR-D-25: conditions can both be true; explicit precedence
     s.flow(q271, g)
     rv = s.user('el_review', 'Review benefits and estimate patient responsibility | '
                 'Revisar beneficios y estimar la responsabilidad del paciente', '${regSeat}',
                 form='sec-ushealth-eligibility/review', decision=None,
                 fields=['benefitSummary', 'estimatedPatientShare*', 'remarks'])
-    s.flow(g, rv, "eligEligibility == 'ACTIVE'", 'active')
+    s.flow(g, rv, "eligEligibility == 'ACTIVE'", 'active', priority=1)
     s.flow(rv, end_ok(p, s, 'el_end', 'Coverage verified'))
     w = s.catch_timer('el_wait', 'Payer unavailable: retry later', duration='${eligRetryAfter}')
-    s.flow(g, w, "eligStatus == 'UNKNOWN' || eligStatus == 'PENDING'", 'no answer')
+    s.flow(g, w, "eligStatus == 'UNKNOWN' || eligStatus == 'PENDING'", 'no answer', priority=2)
     s.flow(w, q271)
     fc = s.user('el_resolve', 'Resolve coverage: correct data, other coverage, self-pay | '
                 'Resolver la cobertura: corregir datos, otra cobertura, pago propio', '${finSeat}',

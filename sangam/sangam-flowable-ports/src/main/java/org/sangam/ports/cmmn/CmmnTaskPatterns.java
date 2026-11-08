@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * CMMN task types Operaton lacks (FC-11 external worker for CMMN, FC-58 service/HTTP/send-event tasks), delivered by
+ * CMMN task types Operaton lacks (FLOWABLE-INTO-OPERATON FC-11 external worker for CMMN, FLOWABLE-INTO-OPERATON FC-58 service/HTTP/send-event tasks), delivered by
  * the gap list's pattern route: a CMMN {@code processTask} calls a generated one-step BPMN process that does the
  * work. Mark the process task:
  * <pre>{@code

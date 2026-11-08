@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="sec-scm-ewb" name="E-way bill threshold and validity (CGST Rules r.138; verify state thresholds)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-scm-ewb_t" hitPolicy="FIRST">
-      <input id="sec-scm-ewb_i0" label="Value"><inputExpression id="sec-scm-ewb_ie0" typeRef="double"><text>consignmentValue</text></inputExpression></input>
+      <input id="sec-scm-ewb_i0" label="Value"><inputExpression id="sec-scm-ewb_ie0" typeRef="number"><text>consignmentValue</text></inputExpression></input>
       <input id="sec-scm-ewb_i1" label="Distance (km)"><inputExpression id="sec-scm-ewb_ie1" typeRef="integer"><text>distanceKm</text></inputExpression></input>
       <output id="sec-scm-ewb_o0" label="Required" name="ewbRequired" typeRef="boolean"/>
       <output id="sec-scm-ewb_o1" label="Validity" name="validitySpec" typeRef="string"/>

@@ -92,6 +92,17 @@ public class ConfigWiring {
         return new ProfileResolver(store, layers);
     }
 
+    /**
+     * The tenant business clock: business dates in the tenant's {@code locale.zone}, never the JVM zone
+     * (fallback UTC when a tenant has no profile; see {@link org.sangam.config.locale.ProfileBusinessClock}).
+     */
+    @Bean
+    public org.sangam.core.time.BusinessClock sangamBusinessClock(ProfileResolver resolver) {
+        org.sangam.core.time.BusinessClock b = new org.sangam.config.locale.ProfileBusinessClock(resolver, engineClock());
+        org.sangam.core.time.BusinessClock.install(b);   // for value types built without injection
+        return b;
+    }
+
     @Bean
     public ProfileValidator sangamProfileValidator(LayerModel layers) {
         return new ProfileValidator(layers);
@@ -110,8 +121,8 @@ public class ConfigWiring {
 
     @Bean
     public ConfigConnector sangamConfigConnector(ProfileResolver resolver, ClassificationRegistry registry,
-                                                 JdbcConfigStore store) {
-        return new ConfigConnector(resolver, registry, store);
+                                                 JdbcConfigStore store, org.sangam.core.time.BusinessClock businessClock) {
+        return new ConfigConnector(resolver, registry, store, businessClock);
     }
 
     /** {@code config.*} pack connector ids → the {@code config} connector (the request carries the operation). */
@@ -133,7 +144,8 @@ public class ConfigWiring {
     /** Case binding at instance start (engine plugin; no dependency on the engine bean). */
     @Bean
     public ConfigCaseBindingPlugin sangamConfigPlugin(ObjectProvider<ProfileResolver> profiles, TxSupport tx) {
-        return new ConfigCaseBindingPlugin(profiles, tx.dialect());
+        return new ConfigCaseBindingPlugin(profiles, tx.dialect(),
+                new org.sangam.config.locale.ProfileBusinessClock(profiles::getIfAvailable, engineClock()));
     }
 
     /** Release profiles and their master-code seeds, at start-up, idempotently. */
@@ -245,7 +257,16 @@ public class ConfigWiring {
         }
     }
 
-    /** {@link Clock} over the engine clock (one clock per JVM, D-10). */
+    /**
+     * The tenant business clock bean, or UTC business dates when the config module is off (no profiles, so no
+     * tenant zone). Call at use time, not at wiring time.
+     */
+    static org.sangam.core.time.BusinessClock businessClock(ObjectProvider<org.sangam.core.time.BusinessClock> clocks) {
+        org.sangam.core.time.BusinessClock b = clocks == null ? null : clocks.getIfAvailable();
+        return b != null ? b : org.sangam.core.time.BusinessClock.utc(engineClock());
+    }
+
+    /** {@link Clock} over the engine clock (one clock per JVM, FLOWABLE-INTO-OPERATON D-10). */
     static Clock engineClock() {
         return new Clock() {
             @Override

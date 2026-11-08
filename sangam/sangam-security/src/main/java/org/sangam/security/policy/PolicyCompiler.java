@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *       business key ...) removes the resource, whatever grants exist. Compiled as {@code NOT EXISTS}.</li>
  *   <li><b>Conditional rows</b>: a grant matches only when its compiled condition is true on the row; a deny applies
  *       when its condition is true, and <i>always</i> when its condition is unknown to the compiler (fail closed).</li>
- *   <li><b>Index plan</b> (A-16, D-55): the wildcard and each scope are separate {@code EXISTS} branches instead of one
+ *   <li><b>Index plan</b> (A-16, FLOWABLE-INTO-OPERATON D-55): the wildcard and each scope are separate {@code EXISTS} branches instead of one
  *       {@code OR} inside one subquery, so each branch is an index seek on
  *       {@code (tenant_id, resource_type, resource_id, principal_id)}; the tenant is bound, not correlated.</li>
  *   <li><b>Large principals</b>: above {@value #MAX_IN_LIST} principal ids the predicate joins

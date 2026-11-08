@@ -17,7 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Hardened XML parsing for every model the ports module reads or rewrites (D-51, R24): DOCTYPE declarations are
+ * Hardened XML parsing for every model the ports module reads or rewrites (FLOWABLE-INTO-OPERATON D-51, R24): DOCTYPE declarations are
  * rejected outright, external entities and XInclude are off, and secure processing is on. Nothing here uses
  * Flowable's {@code ProcessDiagramLayoutFactory} (XXE CVE-2026-91197; not ported by decision).
  */
@@ -55,7 +55,7 @@ public final class SecureXml {
         }
     }
 
-    /** True when the document declares a DOCTYPE (rejected at deploy, D-51). */
+    /** True when the document declares a DOCTYPE (rejected at deploy, FLOWABLE-INTO-OPERATON D-51). */
     public static boolean hasDoctype(byte[] xml) {
         if (xml == null) {
             return false;
@@ -77,7 +77,7 @@ public final class SecureXml {
             throw PortsProblem.tooLarge("MODEL_TOO_LARGE", "XML model", xml.length, MAX_MODEL_BYTES);
         }
         if (hasDoctype(xml)) {
-            throw new IllegalArgumentException("DOCTYPE/ENTITY declarations are not allowed in models (D-51)");
+            throw new IllegalArgumentException("DOCTYPE/ENTITY declarations are not allowed in models (FLOWABLE-INTO-OPERATON D-51)");
         }
         try {
             return builder().parse(new ByteArrayInputStream(xml));

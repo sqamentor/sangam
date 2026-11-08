@@ -8,7 +8,7 @@ import org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration;
 import org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity;
 
 /**
- * Job handler for CMMN timer event listeners (FC-55; registered through {@code customJobHandlers}). The configuration
+ * Job handler for CMMN timer event listeners (FLOWABLE-INTO-OPERATON FC-55; registered through {@code customJobHandlers}). The configuration
  * is the case execution id. If the listener is still available when the job runs, it occurs; if the case or the
  * listener ended first (exit, terminate, completion), the job does nothing.
  */

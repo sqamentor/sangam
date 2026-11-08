@@ -203,6 +203,14 @@ public final class DelegationOfPowersService implements SecurityPorts.Delegation
 
     // ------------------------------------------------------------------ internals
 
+    /**
+     * Band boundary of a delegated power: the limit is INCLUSIVE ({@code amount <= limit}), compared exactly
+     * ({@link BigDecimal#compareTo}, scale-insensitive: 100000 == 100000.00), never via floating point.
+     */
+    static boolean withinPower(BigDecimal amount, BigDecimal limit, boolean unlimited) {
+        return amount == null || (limit == null ? unlimited : amount.compareTo(limit) <= 0);
+    }
+
     private SecurityPorts.PowerDecision decide(Connection c, String tenant, PowerTable pt, String seatId, String caseType,
                                                BigDecimal amount, Map<String, Object> extra, Instant at, BigDecimal postingCap) {
         OrgModel.Seat seat = seats.requireSeat(c, tenant, seatId, at);
@@ -221,7 +229,7 @@ public final class DelegationOfPowersService implements SecurityPorts.Delegation
             limit = limit == null ? postingCap : limit.min(postingCap);
         }
         boolean hasPower = e.allowedFlag() && (e.unlimited() || e.limit() != null);
-        boolean within = amount == null || (limit == null ? e.unlimited() : amount.compareTo(limit) <= 0);
+        boolean within = withinPower(amount, limit, e.unlimited());
         boolean allowed = hasPower && within;
         String reason = allowed ? "within delegated power"
                 : !hasPower ? "seat " + seatId + " has no delegated power for " + caseType

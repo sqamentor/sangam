@@ -14,7 +14,7 @@ import org.sangam.core.engine.TimerCatchUpPolicy;
 import org.sangam.engine.tx.CommandState;
 
 /**
- * Replacement of Operaton's {@code cycle} business calendar (A-12, R31, D-01, D-02, D-29, D-30, D-31), registered by
+ * Replacement of Operaton's {@code cycle} business calendar (A-12, R31, FLOWABLE-INTO-OPERATON D-01, FLOWABLE-INTO-OPERATON D-02, FLOWABLE-INTO-OPERATON D-29, FLOWABLE-INTO-OPERATON D-30, FLOWABLE-INTO-OPERATON D-31), registered by
  * the plugin in the {@code MapBusinessCalendarManager}. It must extend {@link CycleBusinessCalendar}:
  * {@code TimerEntity.calculateNewDueDate} calls it through that class (2.2.0 bytecode).
  *
@@ -54,7 +54,7 @@ public class DstSafeCycleBusinessCalendar extends CycleBusinessCalendar {
             if (cycle.times() != null) {
                 long fired = guard.fireCount(CommandState.currentConnection(), TimerGuard.seriesKey(current));
                 if (fired + 1 >= cycle.times()) {
-                    return null; // the firing being executed is the n-th: the series ends (D-29)
+                    return null; // the firing being executed is the n-th: the series ends (FLOWABLE-INTO-OPERATON D-29)
                 }
             }
             TimerCatchUpPolicy policy = policies.policyFor(current.getProcessDefinitionKey(), current.getActivityId());

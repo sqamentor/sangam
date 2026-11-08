@@ -18,7 +18,7 @@ import java.util.Optional;
 
 /**
  * Versioned, hash-pinned store of case types, reference kinds and committee kinds ({@code CF_CONFIG}, R43). A tenant
- * definition wins over the shared ({@code ""}) one with the same key (FC-33 fallback). Publishing the same content
+ * definition wins over the shared ({@code ""}) one with the same key (FLOWABLE-INTO-OPERATON FC-33 fallback). Publishing the same content
  * again is a no-op that returns the existing version.
  */
 public class CaseConfigRegistry {

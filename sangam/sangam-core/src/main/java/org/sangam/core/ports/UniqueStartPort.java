@@ -5,7 +5,7 @@ import java.sql.Connection;
 import java.util.Optional;
 
 /**
- * Unique business start (VI.2.6 rule 4, FC-04, R38) on WS-INTEGRATION's {@code UNIQUE_START} table. Added by WS-PORTS
+ * Unique business start (VI.2.6 rule 4, FLOWABLE-INTO-OPERATON FC-04, R38) on WS-INTEGRATION's {@code UNIQUE_START} table. Added by WS-PORTS
  * so the event registry can use the integration table without a module cycle (sangam-integration depends on
  * sangam-flowable-ports). Method shapes are those of {@code org.sangam.integration.inbox.UniqueStartGuard}; the
  * integrator binds it ({@code UniqueStartGuard implements UniqueStartPort}, or a one-line adapter).

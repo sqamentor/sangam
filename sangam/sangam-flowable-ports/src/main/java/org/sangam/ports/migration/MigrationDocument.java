@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * JSON migration document (FC-18; Flowable {@code ProcessInstanceMigrationDocument}). Example:
+ * JSON migration document (FLOWABLE-INTO-OPERATON FC-18; Flowable {@code ProcessInstanceMigrationDocument}). Example:
  * <pre>{@code
  * { "source": {"key":"bill","version":3}, "target": {"key":"bill","version":4},
  *   "mapEqualActivities": true, "updateEventTriggers": true,

@@ -438,8 +438,10 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
     public ProgressService.Financial recordFinancial(ApiContext ctx, FinancialRequest r) {
         return run(c -> {
             requireProgramme(c, ctx, "MODIFY", r.programmeId());
-            return m.progress().recordFinancial(c, ctx.tenant(), r.programmeId(), r.periodId(), r.orgUnit(), r.head(), r.allocated(), r.released(),
-                    r.committed(), r.expended(), r.currency(), ctx.actor());
+            // controller boundary: decimal + currency on the wire, exact Money inside (SD-398)
+            return m.progress().recordFinancial(c, ctx.tenant(), r.programmeId(), r.periodId(), r.orgUnit(), r.head(),
+                    money(r.allocated(), r.currency()), money(r.released(), r.currency()), money(r.committed(), r.currency()),
+                    money(r.expended(), r.currency()), r.currency(), ctx.actor());
         });
     }
 
@@ -527,5 +529,19 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
             require(c, ctx, PROGRAMME, "READ", ALL);
             return m.registry().config(c, ctx.tenant());
         });
+    }
+
+    private static org.sangam.core.money.Money money(java.math.BigDecimal v, String currency) {
+        if (v == null) {
+            return null;
+        }
+        if (currency == null) {
+            throw org.sangam.programme.ProgrammeException.invalid("financial amounts need a currency (ISO 4217)");
+        }
+        try {
+            return org.sangam.core.money.Money.ofMajor(v, currency);
+        } catch (RuntimeException e) {
+            throw org.sangam.programme.ProgrammeException.invalid(e.getMessage());
+        }
     }
 }

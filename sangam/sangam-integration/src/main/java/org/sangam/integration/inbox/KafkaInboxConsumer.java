@@ -23,7 +23,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Kafka → inbox (R38 rule 1, Flowable FC-03 inbound Kafka channel). Optional: needs {@code kafka-clients}.
+ * Kafka → inbox (R38 rule 1, FLOWABLE-INTO-OPERATON FC-03 inbound Kafka channel). Optional: needs {@code kafka-clients}.
  *
  * <p>Auto-commit is off. For each record: map → {@link InboxService#receive} (committed in the database) → only then the
  * record's offset is committed to Kafka ("receive and commit, then ack the broker"). A duplicate after a crash between

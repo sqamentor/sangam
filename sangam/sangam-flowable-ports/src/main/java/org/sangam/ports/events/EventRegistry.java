@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Versioned repository of event and channel definitions (FC-02/FC-03; tables {@code EVT_EVENT_DEF},
+ * Versioned repository of event and channel definitions (FLOWABLE-INTO-OPERATON FC-02/FLOWABLE-INTO-OPERATON FC-03; tables {@code EVT_EVENT_DEF},
  * {@code EVT_CHANNEL_DEF}). Deploying identical content again is a no-op (same SHA-256); changed content becomes the
  * next version. Lookups return the latest <em>active</em> version and are cached briefly per node.
  *

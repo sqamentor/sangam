@@ -36,6 +36,14 @@ public record Balance(AccountKey key, String currency, BigDecimal total, BigDeci
         return total.subtract(distributed).subtract(committed).subtract(encumbered).subtract(consumed);
     }
 
+    /** {@link #available()} as exact money in the account currency (money ledgers only; SD-398). */
+    public org.sangam.core.money.Money availableMoney() {
+        if (currency == null) {
+            throw new IllegalStateException("account " + key + " has no currency (a quantity account)");
+        }
+        return org.sangam.core.money.Money.ofMajor(available(), currency);
+    }
+
     public BigDecimal bucket(Bucket b) {
         return switch (b) {
             case TOTAL -> total;

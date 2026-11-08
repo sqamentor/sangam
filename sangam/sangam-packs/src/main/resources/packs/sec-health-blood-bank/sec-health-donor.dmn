@@ -4,7 +4,7 @@
   <decision id="sec-health-donor" name="Donor eligibility (verify against the current blood donor selection criteria)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-health-donor_t" hitPolicy="FIRST">
       <input id="sec-health-donor_i0" label="Age"><inputExpression id="sec-health-donor_ie0" typeRef="integer"><text>age</text></inputExpression></input>
-      <input id="sec-health-donor_i1" label="Haemoglobin g/dL"><inputExpression id="sec-health-donor_ie1" typeRef="double"><text>haemoglobin</text></inputExpression></input>
+      <input id="sec-health-donor_i1" label="Haemoglobin g/dL"><inputExpression id="sec-health-donor_ie1" typeRef="number"><text>haemoglobin</text></inputExpression></input>
       <output id="sec-health-donor_o0" label="Eligible" name="donorEligible" typeRef="boolean"/>
       <rule id="sec-health-donor_r0">
         <inputEntry id="sec-health-donor_r0_i0"><text>&lt; 18</text></inputEntry>

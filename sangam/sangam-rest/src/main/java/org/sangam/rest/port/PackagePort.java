@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Executable packages (R43 / X.2.4; FC-41 app bundles): a hash-pinned bundle of BPMN, DMN, CMMN, forms, event and
+ * Executable packages (R43 / X.2.4; FLOWABLE-INTO-OPERATON FC-41 app bundles): a hash-pinned bundle of BPMN, DMN, CMMN, forms, event and
  * channel models, worker contracts and connector configuration, with the lifecycle
  * DRAFT → IN_REVIEW → APPROVED → DEPLOYED → ACTIVE → RETIRED → ARCHIVED (plus REJECTED→DRAFT, WITHDRAWN, SUSPENDED).
  * Reviewer, approver and deployer must differ from the author, by person and seat.

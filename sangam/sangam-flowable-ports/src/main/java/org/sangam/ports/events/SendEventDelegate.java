@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Send-event task (FC-02, Flowable {@code SendEventTaskActivityBehavior}). Use on a send/service task:
+ * Send-event task (FLOWABLE-INTO-OPERATON FC-02, Flowable {@code SendEventTaskActivityBehavior}). Use on a send/service task:
  * {@code operaton:class="org.sangam.ports.events.SendEventDelegate"} with fields {@code eventKey} and
  * {@code channels} (comma separated), or let {@link EventRegistryParseListener} attach it to a throw/end event
  * carrying {@code sangam:eventType}. The event goes to the outbox in the engine transaction (R4); the message id is

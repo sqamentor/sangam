@@ -18,12 +18,12 @@ import org.sangam.engine.tx.CommandState;
 /**
  * CMMN deploy-time rules and engine fixes through the transform SPI (no engine patch):
  * <ul>
- *   <li><b>D-08</b>: Operaton 2.2 registers no handler for CMMN event listeners (timer/user listeners deploy but
- *       never fire). Any model with an event listener is rejected (R44) until WS-PORTS delivers FC-55.</li>
- *   <li><b>D-26</b>: exiting or terminating a blocking process task left the called BPMN process running. A case
+ *   <li><b>FLOWABLE-INTO-OPERATON D-08</b>: Operaton 2.2 registers no handler for CMMN event listeners (timer/user listeners deploy but
+ *       never fire). Any model with an event listener is rejected (R44) until WS-PORTS delivers FLOWABLE-INTO-OPERATON FC-55.</li>
+ *   <li><b>FLOWABLE-INTO-OPERATON D-26</b>: exiting or terminating a blocking process task left the called BPMN process running. A case
  *       execution listener on exit / terminate / parentTerminate deletes the called process instance in the same
  *       command.</li>
- *   <li><b>D-25 support</b>: a human task's {@code complete} transition is recorded in the command state, so the
+ *   <li><b>FLOWABLE-INTO-OPERATON D-25 support</b>: a human task's {@code complete} transition is recorded in the command state, so the
  *       audit projection can label it COMPLETED even when the history row says "terminated".</li>
  * </ul>
  */
@@ -38,7 +38,7 @@ public class SangamCmmnTransformListener implements CmmnTransformListener {
     @Override
     public void transformEventListener(PlanItem planItem, EventListener eventListener, CmmnActivity activity) {
         if (settings.isRejectCmmnEventListeners()) {
-            throw new ProcessEngineException("D-08: CMMN event listener '" + planItem.getId() + "' is not executed by "
+            throw new ProcessEngineException("FLOWABLE-INTO-OPERATON D-08: CMMN event listener '" + planItem.getId() + "' is not executed by "
                     + "Operaton 2.2 (it would deploy and never fire); use a BPMN timer or a process task instead");
         }
     }
@@ -49,11 +49,31 @@ public class SangamCmmnTransformListener implements CmmnTransformListener {
         activity.addBuiltInListener(CaseExecutionListener.EXIT, cancelCalled);
         activity.addBuiltInListener(CaseExecutionListener.TERMINATE, cancelCalled);
         activity.addBuiltInListener(CaseExecutionListener.PARENT_TERMINATE, cancelCalled);
+        recordCompletion(activity);
+    }
+
+    @Override
+    public void transformCaseTask(PlanItem planItem, org.operaton.bpm.model.cmmn.instance.CaseTask caseTask,
+                                  CmmnActivity activity) {
+        recordCompletion(activity);
+    }
+
+    @Override
+    public void transformStage(PlanItem planItem, org.operaton.bpm.model.cmmn.instance.Stage stage,
+                               CmmnActivity activity) {
+        recordCompletion(activity);
+    }
+
+    /** SG-10: a plan item's complete transition is recorded so its history end row is COMPLETED (see the producer). */
+    private static void recordCompletion(CmmnActivity activity) {
+        activity.addBuiltInListener(CaseExecutionListener.COMPLETE, (CaseExecutionListener) ce ->
+                org.sangam.engine.history.CompletionAwareCmmnHistoryEventProducer.recordCompleteTransition(ce.getId()));
     }
 
     @Override
     public void transformHumanTask(PlanItem planItem, HumanTask humanTask, CmmnActivity activity) {
         activity.addBuiltInListener(CaseExecutionListener.COMPLETE, (CaseExecutionListener) ce -> outcome(ce, "COMPLETED"));
+        recordCompletion(activity);
         activity.addBuiltInListener(CaseExecutionListener.EXIT, (CaseExecutionListener) ce -> outcome(ce, "EXITED"));
     }
 
@@ -68,7 +88,7 @@ public class SangamCmmnTransformListener implements CmmnTransformListener {
         if (execution instanceof CaseExecutionEntity ce) {
             ExecutionEntity sub = ce.getSubProcessInstance();
             if (sub != null && !sub.isEnded()) {
-                sub.deleteCascade("D-26: process task " + ce.getActivityId() + " exited or terminated");
+                sub.deleteCascade("FLOWABLE-INTO-OPERATON D-26: process task " + ce.getActivityId() + " exited or terminated");
             }
         }
     }

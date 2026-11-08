@@ -50,22 +50,22 @@ import org.sangam.engine.variables.LargeStringValueSerializer;
  *
  * <table>
  *   <caption>What is registered where</caption>
- *   <tr><td>Q1 / D-22 explicit rollback + L2 flush backstop</td><td>post command interceptors (REQUIRED and
+ *   <tr><td>Q1 / FLOWABLE-INTO-OPERATON D-22 explicit rollback + L2 flush backstop</td><td>post command interceptors (REQUIRED and
  *       REQUIRES_NEW): {@link RollbackGuardInterceptor}, {@link RootLockFlushListener}</td></tr>
- *   <tr><td>L2 root lock and lock timeouts on job execution (A-11, D-24); DST timer guard (A-12)</td><td>every job
+ *   <tr><td>L2 root lock and lock timeouts on job execution (A-11, FLOWABLE-INTO-OPERATON D-24); DST timer guard (A-12)</td><td>every job
  *       handler wrapped in {@link GuardedJobHandler} (postInit)</td></tr>
- *   <tr><td>DST-safe cycles, catch-up, Rn semantics (A-12, R31, D-01/02/29/30/31); calendar per timer (FC-23)</td>
+ *   <tr><td>DST-safe cycles, catch-up, Rn semantics (A-12, R31, FLOWABLE-INTO-OPERATON D-01/02/29/30/31); calendar per timer (FLOWABLE-INTO-OPERATON FC-23)</td>
  *       <td>business calendar manager: {@link DstSafeCycleBusinessCalendar}, {@link TaggedDurationBusinessCalendar}</td></tr>
- *   <tr><td>Long strings past the 4,000 / 2,000-char limit (D-07, FC-29); JSON variables (FC-28, D-47)</td><td>custom
+ *   <tr><td>Long strings past the 4,000 / 2,000-char limit (FLOWABLE-INTO-OPERATON D-07, FLOWABLE-INTO-OPERATON FC-29); JSON variables (FLOWABLE-INTO-OPERATON FC-28, FLOWABLE-INTO-OPERATON D-47)</td><td>custom
  *       pre variable serializers</td></tr>
- *   <tr><td>Deploy-time rules: GP-09 MI guard, script tasks (D-46), bindings (D-12), TTL (D-13), catch-up (R31);
- *       CMMN listeners (D-08), process-task exit (D-26), case-task outcome (D-25)</td><td>BPMN parse listener, CMMN
+ *   <tr><td>Deploy-time rules: GP-09 MI guard, script tasks (FLOWABLE-INTO-OPERATON D-46), bindings (FLOWABLE-INTO-OPERATON D-12), TTL (FLOWABLE-INTO-OPERATON D-13), catch-up (R31);
+ *       CMMN listeners (FLOWABLE-INTO-OPERATON D-08), process-task exit (FLOWABLE-INTO-OPERATON D-26), case-task outcome (FLOWABLE-INTO-OPERATON D-25)</td><td>BPMN parse listener, CMMN
  *       transform listener</td></tr>
- *   <tr><td>History → audit chain and typed events (R42, FC-43, FC-25); per-definition history (FC-26)</td><td>custom
+ *   <tr><td>History → audit chain and typed events (R42, FLOWABLE-INTO-OPERATON FC-43, FLOWABLE-INTO-OPERATON FC-25); per-definition history (FLOWABLE-INTO-OPERATON FC-26)</td><td>custom
  *       history event handler; custom history level</td></tr>
  *   <tr><td>Incidents → reconciliation</td><td>custom incident handlers (failedJob, failedExternalTask)</td></tr>
- *   <tr><td>Engine defaults: authorization off (VI.4 is the product's), Java serialization off (D-47), XXE off (D-51),
- *       isolation check on (D-56), SKIP LOCKED + timers first + priorities (FC-24 config route), UUID ids, history TTL
+ *   <tr><td>Engine defaults: authorization off (VI.4 is the product's), Java serialization off (FLOWABLE-INTO-OPERATON D-47), XXE off (FLOWABLE-INTO-OPERATON D-51),
+ *       isolation check on (FLOWABLE-INTO-OPERATON D-56), SKIP LOCKED + timers first + priorities (FLOWABLE-INTO-OPERATON FC-24 config route), UUID ids, history TTL
  *       not enforced (R61 decides per retention class)</td><td>preInit</td></tr>
  * </table>
  *
@@ -166,6 +166,12 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 ? new ArrayList<>() : new ArrayList<>(dmn.getCustomPreDecisionEvaluationListeners());
         dmnListeners.add(new FeelPinningListener(feel, components.clock()));
         dmn.setCustomPreDecisionEvaluationListeners(dmnListeners);
+        // ADR-D-26 (SG-33/34): exact numbers, strict FEEL evaluation, strict null input
+        org.sangam.engine.feel.SangamFeel.install(dmn);
+        List<org.operaton.bpm.engine.impl.persistence.deploy.Deployer> preDeployers =
+                cfg.getCustomPreDeployers() == null ? new ArrayList<>() : new ArrayList<>(cfg.getCustomPreDeployers());
+        preDeployers.add(new org.sangam.engine.feel.DmnModelLint.DeployRule()); // ADR-D-26: deploy-time DMN type rules
+        cfg.setCustomPreDeployers(preDeployers);
         cfg.setDmnEngineConfiguration(dmn);
 
         // deploy-time validation
@@ -173,10 +179,19 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 : new ArrayList<>(cfg.getCustomPostBPMNParseListeners());
         bpmn.add(new SangamBpmnParseListener(s, components.timerPolicies()));
         cfg.setCustomPostBPMNParseListeners(bpmn);
+        // SG-08 (a): scope compensated through its children triggers them one at a time (replaces "compensate")
+        List<org.operaton.bpm.engine.impl.event.EventHandler> eventHandlers = cfg.getCustomEventHandlers() == null
+                ? new ArrayList<>() : new ArrayList<>(cfg.getCustomEventHandlers());
+        eventHandlers.add(new org.sangam.engine.deploy.SequentialCompensation.EventHandler());
+        cfg.setCustomEventHandlers(eventHandlers);
         List<CmmnTransformListener> cmmn = cfg.getCustomPostCmmnTransformListeners() == null ? new ArrayList<>()
                 : new ArrayList<>(cfg.getCustomPostCmmnTransformListeners());
         cmmn.add(new SangamCmmnTransformListener(s));
         cfg.setCustomPostCmmnTransformListeners(cmmn);
+        // SG-10: completed CMMN items are written COMPLETED, not TERMINATED, in the engine's own history
+        if (cfg.getCmmnHistoryEventProducer() == null) {
+            cfg.setCmmnHistoryEventProducer(new org.sangam.engine.history.CompletionAwareCmmnHistoryEventProducer());
+        }
 
         // history: audit chain + typed events; per-definition levels
         List<HistoryEventHandler> history = cfg.getCustomHistoryEventHandlers() == null ? new ArrayList<>()
@@ -207,6 +222,9 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 : new ArrayList<>(cfg.getCustomIncidentHandlers());
         incidents.add(new SangamIncidentHandler("failedJob", components.incidentSink(), s.getDefaultTenantId()));
         incidents.add(new SangamIncidentHandler("failedExternalTask", components.incidentSink(), s.getDefaultTenantId()));
+        // ADR-D-25: AMBIGUOUS_ROUTE / NO_MATCHING_ROUTE at a strict exclusive gateway
+        incidents.add(new SangamIncidentHandler(org.sangam.engine.deploy.StrictExclusiveGatewayBehavior.INCIDENT_TYPE,
+                components.incidentSink(), s.getDefaultTenantId()));
         cfg.setCustomIncidentHandlers(incidents);
     }
 

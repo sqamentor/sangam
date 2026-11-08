@@ -40,7 +40,7 @@ public final class BillingPaymentPort implements BillingService.PaymentPort {
     }
 
     @Override
-    public BigDecimal confirm(String tenant, String channel, String paymentRef, BigDecimal amount) {
+    public org.sangam.core.money.Money confirm(String tenant, String channel, String paymentRef, org.sangam.core.money.Money amount) {
         if (trusted.contains(channel)) {
             return amount;
         }
@@ -56,7 +56,8 @@ public final class BillingPaymentPort implements BillingService.PaymentPort {
         if (o instanceof ConnectorInvoker.Completed c) {
             Object a = c.output() == null ? null : c.output().get("amount");
             if (a != null) {
-                return new BigDecimal(a.toString());
+                // the rail's confirmed amount, exact in the collection currency (a sub-paisa figure is an error)
+                return org.sangam.core.money.Money.parse(a.toString(), amount.currencyCode());
             }
             Object s = c.output() == null ? null : c.output().get("status");
             return s == null || "SUCCESS".equalsIgnoreCase(s.toString()) || "PAID".equalsIgnoreCase(s.toString())
@@ -66,7 +67,7 @@ public final class BillingPaymentPort implements BillingService.PaymentPort {
     }
 
     @Override
-    public String refund(String tenant, String channel, String paymentRef, BigDecimal amount, String operationId) {
+    public String refund(String tenant, String channel, String paymentRef, org.sangam.core.money.Money amount, String operationId) {
         String connector = env.getProperty("sangam.billing.channels." + channel + ".connector");
         if (connector == null || invoker == null) {
             return null;

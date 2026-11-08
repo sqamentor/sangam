@@ -524,7 +524,8 @@ def leave():
     rej = rejection(p, s, 'lv_rj')
     auto = s.svc('lv_auto', 'Auto-approved below threshold (GP-29)', C['CASE'], {'op': 'BIND_DEEMED'})
     san = core(s, 'lv_sanction', 'Leave sanction (core)', 'sanction')
-    debit = s.svc('lv_debit', 'Debit balance', C['LEDGER'], {'op': 'ENCUMBER', 'ledger': 'leave',
+    # unit: the pack ledger refuses postings without an explicit unit (DAYS is a quantity, not money; SG-20)
+    debit = s.svc('lv_debit', 'Debit balance', C['LEDGER'], {'op': 'ENCUMBER', 'unit': 'DAYS', 'ledger': 'leave',
                                                              'account': '${encumbranceAccount}',
                                                              'amount': '${leaveDays}'})
     short = reject_with(p, s, 'lv_rjShort', 'INSUFFICIENT_LEAVE_BALANCE')
@@ -587,7 +588,8 @@ def leave():
     a3 = s.svc('lc_balance', 'EL balance', C['LEDGER'], {'op': 'BALANCE', 'ledger': 'leave', 'account': '${elAccount}',
                                                          'resultVar': 'leaveBalance'})
     a4 = s.rule('lc_rule', 'Credit and carry-forward cap (DMN)', 'leave-yearend')
-    a5 = s.svc('lc_credit', 'Post net credit', C['LEDGER'], {'op': 'CREDIT', 'ledger': 'leave', 'account': '${elAccount}',
+    a5 = s.svc('lc_credit', 'Post net credit', C['LEDGER'], {'op': 'CREDIT', 'unit': 'DAYS', 'ledger': 'leave',
+                                                            'account': '${elAccount}',
                                                             'amount': '${netCredit}'})
     s.seq(a1, a2, a3, a4, a5, end_ok(c, s, 'lc_end', 'Credited'))
     pk.dmn('leave-yearend', 'EL credit with 300-day cap (synthetic)', 'FIRST', [('Balance', 'leaveBalance', 'double')],

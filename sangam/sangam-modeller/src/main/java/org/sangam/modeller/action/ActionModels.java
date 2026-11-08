@@ -18,7 +18,7 @@ import java.util.function.Predicate;
 /**
  * Action models: named, versioned, reusable user-triggered behaviour. An action declares a label, a scope (case, process or task type),
  * a permission, an optional form and a target: start a BPMN process, call a REST path, or run a script through the out-of-process
- * worker (D-8). The permission check is on the server, every invocation has an idempotent operation id, and every UI gets the same result.
+ * worker (ADR-D-8). The permission check is on the server, every invocation has an idempotent operation id, and every UI gets the same result.
  */
 public final class ActionModels {
 

@@ -94,6 +94,12 @@
       <groupId>org.sangam</groupId>
       <artifactId>sangam-core</artifactId>
     </dependency>
+    <!-- ADR-D-26: standalone DMN engines use Sangam's FEEL policies (SangamFeel); supplied at runtime by sangam-server -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-engine</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
     <!-- Web layer -->
     <dependency>

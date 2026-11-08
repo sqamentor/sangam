@@ -43,11 +43,11 @@ import java.util.List;
  * (scripts, MI limit, bindings, TTL) see Operaton's behaviours first and the ports' behaviour replacements run last.
  *
  * <ul>
- *   <li>preInit: BPMN parse factory (P-1 ad-hoc), post BPMN parse listeners (event registry, FC-12/13/22, FC-21, task
- *       events, optional debugger), CMMN transform listener (FC-55 marks, FC-56 lifecycle listeners), CMMN timer job
- *       handler, history handler (FC-43 bus, FC-32 links, optional FC-25 read-model feed), DMN hit policies (FC-54),
- *       pre-deployer validator (FC-46), split job executors / hand-off (FC-24).</li>
- *   <li>postInit: CMMN element handler registry with event listeners (FC-55).</li>
+ *   <li>preInit: BPMN parse factory (P-1 ad-hoc), post BPMN parse listeners (event registry, FLOWABLE-INTO-OPERATON FC-12/13/22, FLOWABLE-INTO-OPERATON FC-21, task
+ *       events, optional debugger), CMMN transform listener (FLOWABLE-INTO-OPERATON FC-55 marks, FLOWABLE-INTO-OPERATON FC-56 lifecycle listeners), CMMN timer job
+ *       handler, history handler (FLOWABLE-INTO-OPERATON FC-43 bus, FLOWABLE-INTO-OPERATON FC-32 links, optional FLOWABLE-INTO-OPERATON FC-25 read-model feed), DMN hit policies (FLOWABLE-INTO-OPERATON FC-54),
+ *       pre-deployer validator (FLOWABLE-INTO-OPERATON FC-46), split job executors / hand-off (FLOWABLE-INTO-OPERATON FC-24).</li>
+ *   <li>postInit: CMMN element handler registry with event listeners (FLOWABLE-INTO-OPERATON FC-55).</li>
  *   <li>postProcessEngineBuild: {@link PortsContext} install; timer executor start.</li>
  * </ul>
  */

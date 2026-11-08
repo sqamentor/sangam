@@ -23,6 +23,8 @@ spec:
             - { name: SANGAM_CP_PORT, value: {{ $c.port | quote }} }
             - { name: SANGAM_CP_MANAGEMENT_PORT, value: {{ $c.managementPort | quote }} }
             - { name: SANGAM_CP_DB_URL, value: {{ required "controlPlane.database.jdbcUrl is required" $c.database.jdbcUrl | quote }} }
+            # SG-19: false except for the one controlled install/upgrade rollout (values controlPlane.engineSchemaUpdate)
+            - { name: SANGAM_CP_ENGINE_SCHEMA_UPDATE, value: {{ $c.engineSchemaUpdate | default false | quote }} }
             - name: SANGAM_CP_DB_USER
               valueFrom: { secretKeyRef: { name: {{ required "controlPlane.database.existingSecret" $c.database.existingSecret }}, key: username } }
             - name: SANGAM_CP_DB_PASSWORD

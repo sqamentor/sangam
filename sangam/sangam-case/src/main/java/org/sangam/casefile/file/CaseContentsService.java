@@ -22,7 +22,7 @@ import java.util.Set;
 /**
  * What a case file holds besides its parties (N04): linked records (process and case instances, tasks, files,
  * applications, other systems' records), a document folder tree over sangam-flowable-ports' versioned content store
- * (FC-40: SHA-256, scan hook, S3 or file system), exhibits, and notes (append-only; an edit supersedes).
+ * (FLOWABLE-INTO-OPERATON FC-40: SHA-256, scan hook, S3 or file system), exhibits, and notes (append-only; an edit supersedes).
  */
 public class CaseContentsService {
 
@@ -196,7 +196,7 @@ public class CaseContentsService {
                 confidentiality, exhibit, exhibitRef, actor));
     }
 
-    /** A new version of a filed document's content (FC-40 versioning). */
+    /** A new version of a filed document's content (FLOWABLE-INTO-OPERATON FC-40 versioning). */
     public ContentService.ContentVersion newVersion(String tenant, String documentId, InputStream bytes, String actor) {
         if (content == null) {
             throw new CaseFileException(CaseFileException.Code.INVALID_STATE, "no content store configured");

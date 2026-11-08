@@ -4,7 +4,7 @@
   <decision id="ccs-commutation-factor" name="Commutation factor by age next birthday (CCS (Commutation of Pension) Rules)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="ccs-commutation-factor_t" hitPolicy="FIRST">
       <input id="ccs-commutation-factor_i0" label="Age next birthday"><inputExpression id="ccs-commutation-factor_ie0" typeRef="integer"><text>ageNextBirthday</text></inputExpression></input>
-      <output id="ccs-commutation-factor_o0" label="Commutation factor" name="commutationFactor" typeRef="double"/>
+      <output id="ccs-commutation-factor_o0" label="Commutation factor" name="commutationFactor" typeRef="number"/>
       <output id="ccs-commutation-factor_o1" label="Rule" name="ruleRef" typeRef="string"/>
       <rule id="ccs-commutation-factor_r0"><description>retirement at 60</description>
         <inputEntry id="ccs-commutation-factor_r0_i0"><text>61</text></inputEntry>

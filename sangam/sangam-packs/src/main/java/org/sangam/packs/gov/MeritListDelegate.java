@@ -87,7 +87,7 @@ public class MeritListDelegate implements JavaDelegate {
         left.forEach((k, v) -> {
             if (v > 0 && !"UR".equals(k)) {
                 carry.put(k, v);
-                PackRuntime.ledgers().post(tenant, "roster", k, BigDecimal.valueOf(v),
+                PackRuntime.ledgers().post(tenant, "roster", k, "POINTS", BigDecimal.valueOf(v),
                         batchId + ":carry-forward:" + k, true);
             }
         });

@@ -5,7 +5,7 @@
   <decision id="p3-eligibility" name="P3 eligibility (scheme rule)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="p3-eligibility_t" hitPolicy="FIRST">
       <input id="p3-eligibility_i0" label="Scheme"><inputExpression id="p3-eligibility_ie0" typeRef="string"><text>schemeId</text></inputExpression></input>
-      <input id="p3-eligibility_i1" label="Income"><inputExpression id="p3-eligibility_ie1" typeRef="double"><text>income</text></inputExpression></input>
+      <input id="p3-eligibility_i1" label="Income"><inputExpression id="p3-eligibility_ie1" typeRef="number"><text>income</text></inputExpression></input>
       <input id="p3-eligibility_i2" label="Age"><inputExpression id="p3-eligibility_ie2" typeRef="integer"><text>age</text></inputExpression></input>
       <input id="p3-eligibility_i3" label="Child with guardian"><inputExpression id="p3-eligibility_ie3" typeRef="boolean"><text>childApplicant</text></inputExpression></input>
       <output id="p3-eligibility_o0" label="Eligible" name="eligible" typeRef="boolean"/>

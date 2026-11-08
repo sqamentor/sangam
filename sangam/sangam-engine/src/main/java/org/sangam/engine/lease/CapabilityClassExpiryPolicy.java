@@ -15,7 +15,7 @@ import org.sangam.core.layer.OperationLedger;
 import org.sangam.core.layer.ReconciliationQueue;
 
 /**
- * Default lease-expiry policy (A-10, A-8, VI.3 rule 5, D-21): decides <b>in the transaction that ends the lease and
+ * Default lease-expiry policy (A-10, A-8, VI.3 rule 5, FLOWABLE-INTO-OPERATON D-21): decides <b>in the transaction that ends the lease and
  * before the work can be offered again</b>.
  *
  * <ul>

@@ -9,8 +9,9 @@ import java.sql.Statement;
 import java.util.List;
 
 /**
- * DDL of the generic ledger (portable with {@link Dialect} tokens; amounts are {@code NUMERIC(24,6)} on every
- * dialect so quantities with decimals and every ISO 4217 minor unit fit). The integrator copies it into the Liquibase
+ * DDL of the generic ledger (portable with {@link Dialect} tokens). Every amount column is {@code {money}} =
+ * BIGINT holding integer minor units (SD-398): ISO 4217 minor units of the row's {@code currency} for money, or
+ * {@link JdbcLedgerStore#QUANTITY_EXPONENT} decimal places for a quantity account (no currency). The integrator copies it into the Liquibase
  * changelogs.
  *
  * <ul>
@@ -40,11 +41,11 @@ public final class LedgerSchema {
               stage        {str64} NOT NULL,
               sub          {str} NOT NULL,
               currency     {str64},
-              total        NUMERIC(24,6) NOT NULL,
-              distributed_amt NUMERIC(24,6) NOT NULL,
-              committed    NUMERIC(24,6) NOT NULL,
-              encumbered   NUMERIC(24,6) NOT NULL,
-              consumed     NUMERIC(24,6) NOT NULL,
+              total        {money} NOT NULL,
+              distributed_amt {money} NOT NULL,
+              committed    {money} NOT NULL,
+              encumbered   {money} NOT NULL,
+              consumed     {money} NOT NULL,
               state        {str64} NOT NULL,
               version      {long} NOT NULL,
               attrs_json   {text}
@@ -68,7 +69,7 @@ public final class LedgerSchema {
               tenant_id    {str64} NOT NULL,
               reference    {str} NOT NULL,
               account_id   {str64} NOT NULL,
-              amount       NUMERIC(24,6) NOT NULL,
+              amount       {money} NOT NULL,
               request_json {text} NOT NULL,
               held_at      {ts} NOT NULL,
               released_at  {ts},
@@ -94,9 +95,9 @@ public final class LedgerSchema {
               basis        {str64} NOT NULL,
               debit        {str} NOT NULL,
               credit       {str} NOT NULL,
-              amount       NUMERIC(24,6) NOT NULL,
+              amount       {money} NOT NULL,
               currency     {str64},
-              functional_amount NUMERIC(24,6),
+              functional_amount {money},
               created_at   {ts} NOT NULL,
               exported_at  {ts}
             )""",

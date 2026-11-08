@@ -45,7 +45,7 @@ public class PowerLimitGuardListener implements TaskListener {
         Map<String, Object> in = new HashMap<>(t.getVariables()); // tables may key on any case field (subject head)
         in.put("seatRole", role);
         in.put("caseType", Vars.str(t, Vars.field(caseTypeVar, t, "caseType"), "GENERAL"));
-        in.put("amount", amount == null ? 0d : amount.doubleValue());
+        in.put("amount", amount == null ? BigDecimal.ZERO : amount); // exact: band boundaries (SG-01)
         String key = Vars.field(decisionKey, t, "sangam-core-powers");
         Decisions.Evaluation ev = Decisions.evaluate(t.getProcessEngineServices(), Vars.tenant(t), key, in);
         Map<String, Object> row = ev.single();

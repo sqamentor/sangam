@@ -25,9 +25,9 @@ import org.sangam.rest.support.TxSupport;
 import org.sangam.rest.support.TypedVariables;
 
 /**
- * CMMN 1.1 cases on the Operaton {@link CaseService}. Reactivation (FC-59) is a linked new case of the same definition
+ * CMMN 1.1 cases on the Operaton {@link CaseService}. Reactivation (FLOWABLE-INTO-OPERATON FC-59) is a linked new case of the same definition
  * with the old variables and business key ({@code sangamReactivatedFrom}); Operaton has no native case reactivation.
- * The richer plan-item lifecycle (FC-55..FC-58) comes from sangam-flowable-ports behind this port.
+ * The richer plan-item lifecycle (FLOWABLE-INTO-OPERATON FC-55..FLOWABLE-INTO-OPERATON FC-58) comes from sangam-flowable-ports behind this port.
  */
 public class OperatonCaseAdapter implements CasePort {
 
@@ -220,7 +220,7 @@ public class OperatonCaseAdapter implements CasePort {
         });
     }
 
-    /** FC-59: a linked new case with the old variables and business key; the old case is never resurrected. */
+    /** FLOWABLE-INTO-OPERATON FC-59: a linked new case with the old variables and business key; the old case is never resurrected. */
     private CaseInstance reactivate(RequestContext ctx, String oldId, InstanceCommand c) {
         if (c.reason() == null || c.reason().isBlank()) {
             throw ApiProblem.badRequest("REASON_REQUIRED", "A reason is required to reactivate a case");

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Send-event task (Flowable FC-02 {@code SendEventTaskActivityBehavior}; R4, R71): appends an outbox event <b>in the
+ * Send-event task (FLOWABLE-INTO-OPERATON FC-02 {@code SendEventTaskActivityBehavior}; R4, R71): appends an outbox event <b>in the
  * engine transaction</b> of the current command, so the event leaves only if the step commits. The relay publishes it
  * to the subscribed destinations (Kafka, JMS, webhook) through WS-PORTS' channels.
  *

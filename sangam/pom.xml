@@ -21,6 +21,7 @@
 
   <!-- Module ownership: ARCHITECTURE.md section 3. Each module is owned by one workstream. -->
   <modules>
+    <module>sangam-bom</module>
     <module>sangam-core</module>
     <module>sangam-persistence</module>
     <module>sangam-engine</module>
@@ -67,7 +68,19 @@
     <version.jackson>2.22.3</version.jackson>
     <!-- D-7 / LIC-7: 5.x only after legal review -->
     <version.liquibase>4.33.0</version.liquibase>
-    <version.junit>5.11.4</version.junit>
+    <!-- SG-28: runtime dependency of Operaton's StrongUuidGenerator; operaton-engine 2.2.0 builds against 5.2.0 -->
+    <version.java-uuid-generator>5.2.0</version.java-uuid-generator>
+    <!-- SG-27 / OneIFMS SD-301 owner exception: Operaton DMN FEEL engine, exactly the versions operaton-engine-dmn
+         2.2.0 resolves (verified licences in deploy/licence/SG-27-SD-301-exception.md). Any change is re-verified;
+         sangam-bom pins the same (BomPinsTest). scala-library 2.13.18 = the highest of 2.13.8/2.13.14/2.13.18 asked
+         for by fastparse/sourcecode/geny/feel-engine, so the tree converges on what Maven already picked. -->
+    <version.feel-engine>1.22.1</version.feel-engine>
+    <version.scala-library>2.13.18</version.scala-library>
+    <version.fastparse>3.1.1</version.fastparse>
+    <version.sourcecode>0.4.0</version.sourcecode>
+    <version.geny>1.1.0</version.geny>
+    <!-- must match Spring Boot 4.1.2's managed junit-jupiter.version (Spring Framework 7 needs JUnit 6) -->
+    <version.junit>6.0.3</version.junit>
     <version.testcontainers>1.21.4</version.testcontainers>
     <version.postgresql>42.7.7</version.postgresql>
     <version.mariadb>3.5.3</version.mariadb>
@@ -129,6 +142,12 @@
         <artifactId>liquibase-core</artifactId>
         <version>${version.liquibase}</version>
       </dependency>
+      <!-- SG-27: Operaton DMN FEEL engine closure, exact pins (see version.feel-engine) -->
+      <dependency><groupId>org.camunda.feel</groupId><artifactId>feel-engine</artifactId><version>${version.feel-engine}</version></dependency>
+      <dependency><groupId>org.scala-lang</groupId><artifactId>scala-library</artifactId><version>${version.scala-library}</version></dependency>
+      <dependency><groupId>com.lihaoyi</groupId><artifactId>fastparse_2.13</artifactId><version>${version.fastparse}</version></dependency>
+      <dependency><groupId>com.lihaoyi</groupId><artifactId>sourcecode_2.13</artifactId><version>${version.sourcecode}</version></dependency>
+      <dependency><groupId>com.lihaoyi</groupId><artifactId>geny_2.13</artifactId><version>${version.geny}</version></dependency>
       <dependency>
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
@@ -277,6 +296,10 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>3.5.3</version>
+          <configuration>
+            <!-- same as surefire: the JDK's Windows selector pipe (AF_UNIX) fails in some user temp folders -->
+            <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}"</argLine>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

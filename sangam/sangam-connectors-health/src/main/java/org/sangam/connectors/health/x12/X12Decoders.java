@@ -5,7 +5,8 @@ import org.sangam.connectors.health.x12.X12.Delimiters;
 import org.sangam.connectors.health.x12.X12.Segment;
 import org.sangam.connectors.health.x12.X12.Transaction;
 
-import java.math.BigDecimal;
+import org.sangam.core.money.Money;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -157,24 +158,9 @@ public final class X12Decoders {
             // occurrence of this patient control number in the file: the claim-scoped posting key with the trace number
             c.put("occurrence", seen.merge(String.valueOf(c.get("patientControlNumber")), 1, Integer::sum) - 1);
         }
-        for (Map<String, Object> c : claims) {
-            // [U] claim balance CLP03 - sum(CAS) = CLP04: from knowledge of the 835 TR3, no public text could be read
-            Map<String, String> totals = new LinkedHashMap<>();
-            BigDecimal adjSum = BigDecimal.ZERO;
-            if (c.get("adjustments") instanceof List<?> l) {
-                for (Object o : l) {
-                    if (o instanceof Map<?, ?> a) {
-                        BigDecimal v = dec(String.valueOf(a.get("amount")));
-                        adjSum = adjSum.add(v);
-                        totals.merge(String.valueOf(a.get("group")), v.toPlainString(),
-                                (x, y) -> new BigDecimal(x).add(new BigDecimal(y)).toPlainString());
-                    }
-                }
-            }
-            c.put("adjustmentTotals", totals);
-            c.put("claimBalanced", dec(String.valueOf(c.get("chargeAmount"))).subtract(adjSum)
-                    .compareTo(dec(String.valueOf(c.get("paidAmount")))) == 0);
-        }
+        List<String> invalid = new ArrayList<>();
+        balanceClaims(claims, currency(m), invalid);
+        m.put("invalidAmounts", invalid);
         m.put("claims", claims);
         if (!claims.isEmpty()) {
             m.putAll(firstNonList(claims.get(0)));
@@ -245,8 +231,9 @@ public final class X12Decoders {
         Map<String, Object> claim = null;
         List<Map<String, Object>> adj = null;
         List<String> remarks = null;
-        BigDecimal paidSum = BigDecimal.ZERO;
-        BigDecimal plbSum = BigDecimal.ZERO;
+        List<String> invalid = new ArrayList<>();
+        List<String> paid = new ArrayList<>();
+        List<String> plb = new ArrayList<>();
         for (Segment s : t.segments()) {
             switch (s.id()) {
                 case "BPR" -> {
@@ -257,6 +244,7 @@ public final class X12Decoders {
                     m.put("paymentDate", s.el(16));
                 }
                 case "TRN" -> m.put("traceNumber", s.el(2));
+                case "CUR" -> m.put("currency", s.el(2)); // CUR02: ISO 4217 code of the remittance (default USD)
                 case "N1" -> {
                     if ("PR".equals(s.el(1))) {
                         m.put("payerName", s.el(2));
@@ -281,7 +269,7 @@ public final class X12Decoders {
                     claim.put("adjustments", adj);
                     claim.put("remarkCodes", remarks);
                     claims.add(claim);
-                    paidSum = paidSum.add(dec(s.el(4)));
+                    paid.add(s.el(4));
                 }
                 case "CAS" -> {
                     if (adj != null) {
@@ -323,35 +311,24 @@ public final class X12Decoders {
                         p.put("reference", s.comp(i, 2, d));
                         p.put("amount", s.el(i + 1));
                         plbs.add(p);
-                        plbSum = plbSum.add(dec(s.el(i + 1)));
+                        plb.add(s.el(i + 1));
                     }
                 }
                 default -> {
                 }
             }
         }
-        for (Map<String, Object> c : claims) {
-            // [U] claim balance CLP03 - sum(CAS) = CLP04: from knowledge of the 835 TR3, no public text could be read
-            Map<String, String> totals = new LinkedHashMap<>();
-            BigDecimal adjSum = BigDecimal.ZERO;
-            if (c.get("adjustments") instanceof List<?> l) {
-                for (Object o : l) {
-                    if (o instanceof Map<?, ?> a) {
-                        BigDecimal v = dec(String.valueOf(a.get("amount")));
-                        adjSum = adjSum.add(v);
-                        totals.merge(String.valueOf(a.get("group")), v.toPlainString(),
-                                (x, y) -> new BigDecimal(x).add(new BigDecimal(y)).toPlainString());
-                    }
-                }
-            }
-            c.put("adjustmentTotals", totals);
-            c.put("claimBalanced", dec(String.valueOf(c.get("chargeAmount"))).subtract(adjSum)
-                    .compareTo(dec(String.valueOf(c.get("paidAmount")))) == 0);
-        }
+        balanceClaims(claims, currency(m), invalid);
         m.put("claims", claims);
         m.put("providerAdjustments", plbs);
-        BigDecimal bpr = dec(String.valueOf(m.getOrDefault("paymentAmount", "0")));
-        m.put("balanced", bpr.compareTo(paidSum.subtract(plbSum)) == 0);
+        String ccy = currency(m);
+        Money bpr = amount(String.valueOf(m.getOrDefault("paymentAmount", "0")), ccy, "BPR02", invalid);
+        Money paidSum = sum(paid, ccy, "CLP04", invalid);
+        Money plbSum = sum(plb, ccy, "PLB", invalid);
+        // BPR02 = sum(CLP04) - sum(PLB), exactly in minor units; any malformed amount makes the file unbalanced
+        m.put("balanced", invalid.isEmpty() && bpr != null && paidSum != null && plbSum != null
+                && bpr.equals(paidSum.minus(plbSum)));
+        m.put("invalidAmounts", invalid);
         m.put("claimCount", claims.size());
         if (!claims.isEmpty()) {
             // first claim at the top level, for single-claim routing in a process (claim pack: era* variables)
@@ -474,11 +451,68 @@ public final class X12Decoders {
         return m;
     }
 
-    private static BigDecimal dec(String v) {
+    /** Currency of the transaction: CUR02 when present, else USD (the X12 HIPAA default). */
+    static String currency(Map<String, Object> m) {
+        Object c = m.get("currency");
+        return c == null || c.toString().isBlank() ? "USD" : c.toString().trim();
+    }
+
+    /**
+     * Exact amount (SD-398): blank is zero; a malformed value or one with more decimals than the currency allows is
+     * recorded in {@code invalid} and returns null. It is never silently read as zero (the old decoder did), which
+     * made a corrupt file look balanced or posted a wrong amount.
+     */
+    static Money amount(String v, String ccy, String field, List<String> invalid) {
+        if (v == null || v.isBlank() || "null".equals(v)) {
+            return Money.zero(ccy);
+        }
         try {
-            return v == null || v.isBlank() ? BigDecimal.ZERO : new BigDecimal(v.trim());
-        } catch (NumberFormatException e) {
-            return BigDecimal.ZERO;
+            return Money.parse(v, ccy);
+        } catch (RuntimeException e) {
+            invalid.add(field + "=" + v);
+            return null;
+        }
+    }
+
+    static Money sum(List<String> values, String ccy, String field, List<String> invalid) {
+        Money s = Money.zero(ccy);
+        for (String v : values) {
+            Money x = amount(v, ccy, field, invalid);
+            if (x == null) {
+                return null;
+            }
+            s = s.plus(x);
+        }
+        return s;
+    }
+
+    /** [U] claim balance CLP03 - sum(CAS) = CLP04 (from knowledge of the 835 TR3), exactly in minor units. */
+    static void balanceClaims(List<Map<String, Object>> claims, String ccy, List<String> invalid) {
+        for (Map<String, Object> c : claims) {
+            Map<String, Money> byGroup = new LinkedHashMap<>();
+            List<String> adjs = new ArrayList<>();
+            boolean ok = true;
+            if (c.get("adjustments") instanceof List<?> l) {
+                for (Object o : l) {
+                    if (o instanceof Map<?, ?> a) {
+                        Money v = amount(String.valueOf(a.get("amount")), ccy, "CAS", invalid);
+                        if (v == null) {
+                            ok = false;
+                            continue;
+                        }
+                        adjs.add(v.toPlainString());
+                        byGroup.merge(String.valueOf(a.get("group")), v, Money::plus);
+                    }
+                }
+            }
+            Map<String, String> totals = new LinkedHashMap<>();
+            byGroup.forEach((g, v) -> totals.put(g, v.toPlainString()));
+            c.put("adjustmentTotals", totals);
+            Money charge = amount(String.valueOf(c.get("chargeAmount")), ccy, "chargeAmount", invalid);
+            Money paidAmt = amount(String.valueOf(c.get("paidAmount")), ccy, "paidAmount", invalid);
+            Money adjSum = ok ? sum(adjs, ccy, "CAS", invalid) : null;
+            c.put("claimBalanced", charge != null && paidAmt != null && adjSum != null
+                    && charge.minus(adjSum).equals(paidAmt));
         }
     }
 

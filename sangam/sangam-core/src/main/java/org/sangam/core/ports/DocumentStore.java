@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.util.Optional;
 
 /**
- * Binary object store SPI behind the content service (FC-40, EC-18, R74). Implementations: file system and
+ * Binary object store SPI behind the content service (FLOWABLE-INTO-OPERATON FC-40, EC-18, R74). Implementations: file system and
  * S3-compatible (sangam-flowable-ports {@code org.sangam.ports.content}). Keys are opaque, tenant-prefixed and
  * immutable: a new document version is a new key, never an overwrite.
  */

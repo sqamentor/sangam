@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Worker API (ARCHITECTURE §4, VI.3, FC-36 / FC-11 external-worker parity for BPMN and CMMN-hosted work).
+ * Worker API (ARCHITECTURE §4, VI.3, FLOWABLE-INTO-OPERATON FC-36 / FLOWABLE-INTO-OPERATON FC-11 external-worker parity for BPMN and CMMN-hosted work).
  * Every call after fetch carries {@code (workerId, lockVersion, attemptId)}; a stale value is
  * {@code 409 STALE_LEASE} and changes nothing (VI.3 rule 2). A result for a deleted instance is
  * {@code 410 GONE_INSTANCE_DELETED} (VI.5 rule 3). The worker principal is bound to its tenant (K14).

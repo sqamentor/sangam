@@ -4,7 +4,7 @@
   <!-- Thresholds mirror the GOI profile appraisal.ladder; a State loads its own ladder as a tenant override. -->
   <decision id="ifms-scheme-appraisal" name="Scheme appraisal ladder (DoE OM 05-08-2016)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="ifms-scheme-appraisal_t" hitPolicy="FIRST">
-      <input id="ifms-scheme-appraisal_i0" label="Total outlay (INR)"><inputExpression id="ifms-scheme-appraisal_ie0" typeRef="double"><text>totalOutlay</text></inputExpression></input>
+      <input id="ifms-scheme-appraisal_i0" label="Total outlay (INR)"><inputExpression id="ifms-scheme-appraisal_ie0" typeRef="number"><text>totalOutlay</text></inputExpression></input>
       <output id="ifms-scheme-appraisal_o0" label="Appraisal forum" name="appraisalForum" typeRef="string"/>
       <output id="ifms-scheme-appraisal_o1" label="Approval authority" name="approvalAuthority" typeRef="string"/>
       <output id="ifms-scheme-appraisal_o2" label="Rule" name="ruleRef" typeRef="string"/>

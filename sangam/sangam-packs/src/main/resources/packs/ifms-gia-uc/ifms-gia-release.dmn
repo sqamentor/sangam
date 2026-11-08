@@ -5,10 +5,10 @@
   <decision id="ifms-gia-release" name="Grant release rules" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="ifms-gia-release_t" hitPolicy="FIRST">
       <input id="ifms-gia-release_i0" label="Recurring"><inputExpression id="ifms-gia-release_ie0" typeRef="boolean"><text>recurringGrant</text></inputExpression></input>
-      <input id="ifms-gia-release_i1" label="Release % of sanction"><inputExpression id="ifms-gia-release_ie1" typeRef="double"><text>releasePercent</text></inputExpression></input>
+      <input id="ifms-gia-release_i1" label="Release % of sanction"><inputExpression id="ifms-gia-release_ie1" typeRef="number"><text>releasePercent</text></inputExpression></input>
       <input id="ifms-gia-release_i2" label="UC status"><inputExpression id="ifms-gia-release_ie2" typeRef="string"><text>ucStatus</text></inputExpression></input>
-      <input id="ifms-gia-release_i3" label="Unspent balance"><inputExpression id="ifms-gia-release_ie3" typeRef="double"><text>unspentBalance</text></inputExpression></input>
-      <input id="ifms-gia-release_i4" label="Amount"><inputExpression id="ifms-gia-release_ie4" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="ifms-gia-release_i3" label="Unspent balance"><inputExpression id="ifms-gia-release_ie3" typeRef="number"><text>unspentBalance</text></inputExpression></input>
+      <input id="ifms-gia-release_i4" label="Amount"><inputExpression id="ifms-gia-release_ie4" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="ifms-gia-release_o0" label="Allowed" name="releaseAllowed" typeRef="boolean"/>
       <output id="ifms-gia-release_o1" label="Rule" name="ruleRef" typeRef="string"/>
       <rule id="ifms-gia-release_r0">

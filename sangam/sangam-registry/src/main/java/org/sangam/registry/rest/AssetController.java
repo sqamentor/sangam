@@ -151,7 +151,9 @@ public class AssetController {
     public Map<String, Object> bookValue(@PathVariable String id, @RequestParam(required = false) String asOf) {
         return support.tx((c, ctx) -> {
             LocalDate d = asOf == null ? LocalDate.now(ctx.zone()) : LocalDate.parse(asOf);
-            return Maps.of("assetId", id, "asOf", d, "bookValue", assets.bookValue(c, ctx, id, d));
+            org.sangam.core.money.Money bv = assets.bookValue(c, ctx, id, d); // MoneyAmount string + currency
+            return Maps.of("assetId", id, "asOf", d, "bookValue", bv == null ? null : bv.toPlainString(),
+                    "currency", bv == null ? null : bv.currencyCode());
         });
     }
 

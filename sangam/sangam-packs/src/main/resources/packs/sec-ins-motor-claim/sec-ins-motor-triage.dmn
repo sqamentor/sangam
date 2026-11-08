@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="sec-ins-motor-triage" name="Motor claim triage (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-ins-motor-triage_t" hitPolicy="FIRST">
-      <input id="sec-ins-motor-triage_i0" label="Claim amount"><inputExpression id="sec-ins-motor-triage_ie0" typeRef="double"><text>claimAmount</text></inputExpression></input>
+      <input id="sec-ins-motor-triage_i0" label="Claim amount"><inputExpression id="sec-ins-motor-triage_ie0" typeRef="number"><text>claimAmount</text></inputExpression></input>
       <input id="sec-ins-motor-triage_i1" label="Fraud score"><inputExpression id="sec-ins-motor-triage_ie1" typeRef="integer"><text>fraudScore</text></inputExpression></input>
       <output id="sec-ins-motor-triage_o0" label="Licensed surveyor" name="surveyorRequired" typeRef="boolean"/>
       <output id="sec-ins-motor-triage_o1" label="SIU" name="siuReferral" typeRef="boolean"/>

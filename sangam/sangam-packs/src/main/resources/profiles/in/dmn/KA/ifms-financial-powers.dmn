@@ -7,7 +7,7 @@
       <input id="ifms-financial-powers_i0" label="Seat role"><inputExpression id="ifms-financial-powers_ie0" typeRef="string"><text>seatRole</text></inputExpression></input>
       <input id="ifms-financial-powers_i1" label="Case type"><inputExpression id="ifms-financial-powers_ie1" typeRef="string"><text>caseType</text></inputExpression></input>
       <output id="ifms-financial-powers_o0" label="Allowed" name="allowed" typeRef="boolean"/>
-      <output id="ifms-financial-powers_o1" label="Power limit (INR)" name="maxAmount" typeRef="double"/>
+      <output id="ifms-financial-powers_o1" label="Power limit (INR)" name="maxAmount" typeRef="number"/>
       <output id="ifms-financial-powers_o2" label="Rule" name="ruleRef" typeRef="string"/>
       <rule id="ifms-financial-powers_r0"><description>[U] central default, replace from KTPP Act 1999 / Rules 2000 (2024 amendments) (was: RPR 2022: DDO draws within a sanction; no sanction power of its own)</description>
         <inputEntry id="ifms-financial-powers_r0_i0"><text>"DDO"</text></inputEntry>

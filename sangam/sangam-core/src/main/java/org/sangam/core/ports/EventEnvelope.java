@@ -4,7 +4,7 @@ package org.sangam.core.ports;
 import java.util.Map;
 
 /**
- * Engine-neutral form of one event crossing a channel (event registry, FLOWABLE-INTO-OPERATON FC-02/FC-03). Added by
+ * Engine-neutral form of one event crossing a channel (event registry, FLOWABLE-INTO-OPERATON FC-02/FLOWABLE-INTO-OPERATON FC-03). Added by
  * WS-PORTS under {@code org.sangam.core.ports}; no existing core file is changed.
  *
  * @param tenantId       tenant of the channel binding (R38: the binding, not the payload, decides the tenant)

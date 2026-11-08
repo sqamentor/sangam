@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Dynamic BPMN injection into one running instance (FC-15; Flowable {@code InjectUserTaskInProcessInstanceCmd},
+ * Dynamic BPMN injection into one running instance (FLOWABLE-INTO-OPERATON FC-15; Flowable {@code InjectUserTaskInProcessInstanceCmd},
  * {@code InjectEmbeddedSubProcessInProcessInstanceCmd}, {@code InjectParallelUserTaskCmd}), by the gap list's route:
  * derive a model variant, deploy it, migrate that one instance, start the injected element.
  *
@@ -43,7 +43,7 @@ import java.util.UUID;
  *       {@code DYN_INJECTION} and an {@code INSTANCE_LINK} ({@code dynamic-injection}). Any failure rolls all back.</li>
  * </ol>
  * The variant has no diagram shapes for the injected element; viewers show it from the activity-instance tree.
- * Runtime patching without redeploy (Flowable {@code DynamicBpmnService}, FC-16) is not replicated by decision.
+ * Runtime patching without redeploy (Flowable {@code DynamicBpmnService}, FLOWABLE-INTO-OPERATON FC-16) is not replicated by decision.
  */
 public class DynamicInjectionService {
 

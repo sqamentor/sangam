@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * Static access to the engine clock for code that cannot be handed a {@link SangamClock} (Operaton job handlers,
  * listeners, the WS-PORTS jobs and tenant guard): {@code SangamClockHolder.now()} instead of {@code ClockUtil}
- * (D-10). sangam-engine registers its clock when it configures the engine; until then it is the JVM wall clock.
+ * (FLOWABLE-INTO-OPERATON D-10). sangam-engine registers its clock when it configures the engine; until then it is the JVM wall clock.
  * Code that can take a constructor argument should inject {@link SangamClock} instead (the server exposes it as a bean).
  */
 public final class SangamClockHolder {
@@ -27,7 +27,7 @@ public final class SangamClockHolder {
         return clock.now();
     }
 
-    /** Engine side: registers the engine clock (one engine per JVM, D-10). */
+    /** Engine side: registers the engine clock (one engine per JVM, FLOWABLE-INTO-OPERATON D-10). */
     public static void set(SangamClock c) {
         clock = Objects.requireNonNull(c, "clock");
     }

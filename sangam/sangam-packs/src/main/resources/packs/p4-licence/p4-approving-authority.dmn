@@ -4,7 +4,7 @@
   <decision id="p4-approving-authority" name="P4 approving authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="p4-approving-authority_t" hitPolicy="FIRST">
       <input id="p4-approving-authority_i0" label="Licence type"><inputExpression id="p4-approving-authority_ie0" typeRef="string"><text>licenceType</text></inputExpression></input>
-      <input id="p4-approving-authority_i1" label="Amount"><inputExpression id="p4-approving-authority_ie1" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="p4-approving-authority_i1" label="Amount"><inputExpression id="p4-approving-authority_ie1" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="p4-approving-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="p4-approving-authority_r0"><description>Deputy Commissioner</description>
         <inputEntry id="p4-approving-authority_r0_i0"><text>"FACTORY"</text></inputEntry>

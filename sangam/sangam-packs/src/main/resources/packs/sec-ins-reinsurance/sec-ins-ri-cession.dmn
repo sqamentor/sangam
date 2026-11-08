@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="sec-ins-ri-cession" name="Retention and cession (SYNTHETIC; obligatory cession % per IRDAI notification - verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-ins-ri-cession_t" hitPolicy="FIRST">
-      <input id="sec-ins-ri-cession_i0" label="Sum insured"><inputExpression id="sec-ins-ri-cession_ie0" typeRef="double"><text>sumInsured</text></inputExpression></input>
+      <input id="sec-ins-ri-cession_i0" label="Sum insured"><inputExpression id="sec-ins-ri-cession_ie0" typeRef="number"><text>sumInsured</text></inputExpression></input>
       <input id="sec-ins-ri-cession_i1" label="Line"><inputExpression id="sec-ins-ri-cession_ie1" typeRef="string"><text>lineOfBusiness</text></inputExpression></input>
       <output id="sec-ins-ri-cession_o0" label="Obligatory cession %" name="obligatoryPct" typeRef="integer"/>
       <output id="sec-ins-ri-cession_o1" label="Facultative" name="facultativeRequired" typeRef="boolean"/>

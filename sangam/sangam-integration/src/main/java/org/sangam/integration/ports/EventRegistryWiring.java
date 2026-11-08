@@ -11,7 +11,7 @@ import org.sangam.ports.history.HistoryProjector;
 import org.sangam.ports.history.PortsHistoryEventHandler;
 
 /**
- * Connects WS-PORTS' event registry (sangam-flowable-ports, Flowable FC-02/FC-03/FC-25) to this module's inbox and
+ * Connects WS-PORTS' event registry (sangam-flowable-ports, FLOWABLE-INTO-OPERATON FC-02/FLOWABLE-INTO-OPERATON FC-03/FLOWABLE-INTO-OPERATON FC-25) to this module's inbox and
  * relay. A direct dependency is safe: sangam-flowable-ports depends only on sangam-core, so there is no module cycle.
  *
  * <ul>

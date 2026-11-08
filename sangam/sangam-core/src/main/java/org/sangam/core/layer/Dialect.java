@@ -62,10 +62,16 @@ public enum Dialect {
     private final Map<String, String> types;
 
     Dialect(Map<String, String> types) {
-        this.types = types;
+        Map<String, String> t = new java.util.HashMap<>(types);
+        // Money (SD-398, SG-20): integer minor units of the row's ISO 4217 currency, never a decimal column.
+        t.put("{money}", types.getOrDefault("{long}", "BIGINT"));
+        this.types = Map.copyOf(t);
     }
 
-    /** Type tokens used by {@link Schema}; e.g. {@code {ts}} → {@code TIMESTAMP WITH TIME ZONE}. */
+    /**
+     * Type tokens used by {@link Schema}; e.g. {@code {ts}} → {@code TIMESTAMP WITH TIME ZONE}, {@code {money}} →
+     * {@code BIGINT} (minor units, see {@code org.sangam.core.money.Money}).
+     */
     public Map<String, String> types() {
         return types;
     }
@@ -97,7 +103,9 @@ public enum Dialect {
     /** {@code now() + ? milliseconds}, with one bind parameter (a long). */
     public String nowPlusMillisParam() {
         return switch (this) {
-            case POSTGRESQL -> "(CURRENT_TIMESTAMP + (? * INTERVAL '1 millisecond'))";
+            // SQL-standard interval literal and a typed parameter: PostgreSQL and H2 (MODE=PostgreSQL, development)
+            // both accept this; H2 rejects INTERVAL '1 millisecond' and an untyped "? * INTERVAL".
+            case POSTGRESQL -> "(CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '0.001' SECOND))";
             case ORACLE -> "(SYSTIMESTAMP + NUMTODSINTERVAL(? / 1000, 'SECOND'))";
             case SQLSERVER -> "DATEADD(millisecond, ?, SYSDATETIMEOFFSET())";
             case MYSQL -> "TIMESTAMPADD(MICROSECOND, ? * 1000, UTC_TIMESTAMP(6))";

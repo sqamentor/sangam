@@ -71,8 +71,9 @@ public class BillingWiring {
 
     @Bean
     public BillingService sangamBillingService(LedgerService ledger, TariffEngine tariffs, JdbcConfigStore series,
-                                               BillingService.PaymentPort payments) {
-        return new BillingService(ledger, tariffs, series, payments);
+                                               BillingService.PaymentPort payments,
+                                               org.sangam.core.time.BusinessClock businessClock) {
+        return new BillingService(ledger, tariffs, series, payments, businessClock);
     }
 
     @Bean
@@ -102,7 +103,8 @@ public class BillingWiring {
                 LOG.warn("No sangam-registry PartyService: the registry.party payee connector is not registered");
                 return;
             }
-            ZoneId zone = ZoneId.of(env.getProperty("sangam.billing.payee.zone", "Asia/Kolkata"));
+            String forcedZone = env.getProperty("sangam.billing.payee.zone");   // optional override; default: tenant zone
+            ZoneId zone = forcedZone == null || forcedZone.isBlank() ? null : ZoneId.of(forcedZone);
             RegistryPayeeDirectory payees = new RegistryPayeeDirectory(tx.dataSource(), party,
                     env.getProperty("sangam.billing.payee.identifier-type", "BANK_ACCOUNT"),
                     tenant -> new RegistryContext(tenant, "system:payment", null, "payment", null, zone));

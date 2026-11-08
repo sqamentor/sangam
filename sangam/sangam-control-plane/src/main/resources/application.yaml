@@ -23,7 +23,9 @@ operaton:
     # one engine per JVM (D-10); this engine only runs control-plane processes (tenant moves)
     process-engine-name: sangam-control-plane
     database:
-      schema-update: true
+      # SG-19: the engine never changes the schema on its own in production; the install/upgrade step sets
+      # SANGAM_CP_ENGINE_SCHEMA_UPDATE=true for that one controlled run (local compose sets it for development).
+      schema-update: ${SANGAM_CP_ENGINE_SCHEMA_UPDATE:false}
     history-level: audit
     authorization:
       enabled: false

@@ -4,7 +4,7 @@ package org.sangam.core.engine;
 import java.time.Instant;
 
 /**
- * The only clock product and engine code may read (D-10, W-7). Operaton's {@code ClockUtil} is static and JVM-wide;
+ * The only clock product and engine code may read (FLOWABLE-INTO-OPERATON D-10, W-7). Operaton's {@code ClockUtil} is static and JVM-wide;
  * the engine module wraps it in exactly one implementation, and nothing else in Sangam calls {@code ClockUtil}.
  * Leases and claims that must agree across nodes use the database clock (A-1) instead.
  */

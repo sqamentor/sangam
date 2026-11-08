@@ -271,16 +271,16 @@ def bill():
     payee = s.conn('bl_payee', 'Payee golden record (party registry)', 'registry.party', 'payee.resolve', 'query',
                    'partyId,payee,payeeAccount,ifsc', 'payee')
     s.seq(st, d, bind, typ, cls, chk, dup, payee)
-    vg = s.xgw('bl_validGw', 'Valid?')
+    vg = s.xgw('bl_validGw', 'Valid?', policy='priority')  # ADR-D-25: conditions can both be true; explicit precedence
     s.flow(payee, vg)
-    s.flow(vg, reject_with(p, s, 'bl_rjInvalid', 'BILL_INVALID'), '!docValid || !clsValid', 'invalid (findings cite the rule)')
-    s.flow(vg, reject_with(p, s, 'bl_rjDup', 'DUPLICATE_CLAIM'), 'dupDuplicate', 'duplicate')
+    s.flow(vg, reject_with(p, s, 'bl_rjInvalid', 'BILL_INVALID'), '!docValid || !clsValid', 'invalid (findings cite the rule)', priority=1)
+    s.flow(vg, reject_with(p, s, 'bl_rjDup', 'DUPLICATE_CLAIM'), 'dupDuplicate', 'duplicate', priority=2)
     fa = s.conn('bl_funds', 'Funds at the control dimension', 'ledger.available', 'available', 'query',
                 'ledgerId,headOfAccount,ddoCode', 'funds')
     pr = s.user('bl_payeeReview', 'Confirm payee: account held by several parties | आदाता की पुष्टि', 'PAO-1',
                 form='ifms-bill/payee-review', decision=('payeeDecision', ['approve', 'reject']),
                 fields=['payee', 'payeeAccount', 'remarks*'], sod=True)
-    s.flow(vg, pr, 'payeeMultiple', 'several beneficiaries on the account')
+    s.flow(vg, pr, 'payeeMultiple', 'several beneficiaries on the account', priority=3)
     pg = s.xgw('bl_payeeGw')
     s.flow(pr, pg)
     s.flow(pg, fa, "payeeDecision == 'approve'", 'confirmed')
@@ -435,10 +435,10 @@ def reappropriation():
     sav = s.conn('ra_savings', 'Savings in the source line', 'ledger.available', 'available', 'query', 'ledgerId,fromHead', 'funds')
     rules = s.rule('ra_rules', 'Re-appropriation rules (DMN, cited)', 'ifms-reapp-rules')
     s.seq(st, d, sav, rules)
-    g = s.xgw('ra_allowedGw', 'Allowed?')
+    g = s.xgw('ra_allowedGw', 'Allowed?', policy='priority')  # ADR-D-25: conditions can both be true; explicit precedence
     s.flow(rules, g)
-    s.flow(g, reject_with(p, s, 'ra_rjRule', 'REAPP_RULE'), "reappAllowed == false", 'refused (rule cited)')
-    s.flow(g, reject_with(p, s, 'ra_rjSav', 'SAVINGS_NOT_AVAILABLE'), 'fundsAvailable < amount', 'no savings')
+    s.flow(g, reject_with(p, s, 'ra_rjRule', 'REAPP_RULE'), "reappAllowed == false", 'refused (rule cited)', priority=1)
+    s.flow(g, reject_with(p, s, 'ra_rjSav', 'SAVINGS_NOT_AVAILABLE'), 'fundsAvailable < amount', 'no savings', priority=2)
     e1, x1 = task(s, 'ra_fa', 'FA consultation | वित्तीय सलाहकार से परामर्श', 'faSeat', 'ifms-reappropriation/fa',
                   ('faDecision', ['faConcur', 'faNotConcur']), ['remarks*'], '5WD', sod=True)
     s.flow(g, e1, None, 'allowed', default=True)

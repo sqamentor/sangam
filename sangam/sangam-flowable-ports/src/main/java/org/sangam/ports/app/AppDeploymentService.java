@@ -25,12 +25,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * App deployment (FC-41, Flowable {@code AppRepositoryService.createDeployment}): deploys an {@link AppBundle} as one
+ * App deployment (FLOWABLE-INTO-OPERATON FC-41, Flowable {@code AppRepositoryService.createDeployment}): deploys an {@link AppBundle} as one
  * unit, all or nothing, in <b>one engine transaction</b>:
  * <ol>
- *   <li>validator (FC-46/R44) over every model; any error rejects the bundle;</li>
+ *   <li>validator (FLOWABLE-INTO-OPERATON FC-46/R44) over every model; any error rejects the bundle;</li>
  *   <li>approval ({@link ApprovalPolicy}, R43: the approver signs the bundle hash);</li>
- *   <li>CMMN task patterns are expanded (FC-11/FC-58);</li>
+ *   <li>CMMN task patterns are expanded (FLOWABLE-INTO-OPERATON FC-11/FLOWABLE-INTO-OPERATON FC-58);</li>
  *   <li>one Operaton deployment with all BPMN/CMMN/DMN resources (name = app key, source = {@code sangam-app});</li>
  *   <li>forms, event and channel definitions are versioned with the app deployment id;</li>
  *   <li>an {@code APP_DEPLOYMENT} row records key, version, bundle hash and manifest.</li>

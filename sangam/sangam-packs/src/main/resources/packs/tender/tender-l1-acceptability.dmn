@@ -3,8 +3,8 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="tender-l1-acceptability" name="L1 acceptability against the justified estimate" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="tender-l1-acceptability_t" hitPolicy="FIRST">
-      <input id="tender-l1-acceptability_i0" label="L1 amount"><inputExpression id="tender-l1-acceptability_ie0" typeRef="double"><text>evaluateL1Amount</text></inputExpression></input>
-      <input id="tender-l1-acceptability_i1" label="Estimate"><inputExpression id="tender-l1-acceptability_ie1" typeRef="double"><text>estimateAmount</text></inputExpression></input>
+      <input id="tender-l1-acceptability_i0" label="L1 amount"><inputExpression id="tender-l1-acceptability_ie0" typeRef="number"><text>evaluateL1Amount</text></inputExpression></input>
+      <input id="tender-l1-acceptability_i1" label="Estimate"><inputExpression id="tender-l1-acceptability_ie1" typeRef="number"><text>estimateAmount</text></inputExpression></input>
       <input id="tender-l1-acceptability_i2" label="Responsive bids"><inputExpression id="tender-l1-acceptability_ie2" typeRef="integer"><text>evaluateResponsiveBids</text></inputExpression></input>
       <input id="tender-l1-acceptability_i3" label="Negotiation rounds"><inputExpression id="tender-l1-acceptability_ie3" typeRef="integer"><text>negotiationRounds</text></inputExpression></input>
       <output id="tender-l1-acceptability_o0" label="Action" name="l1Action" typeRef="string"/>

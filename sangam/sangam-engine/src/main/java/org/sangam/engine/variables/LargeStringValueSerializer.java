@@ -12,7 +12,7 @@ import org.operaton.bpm.engine.variable.value.StringValue;
 import org.operaton.bpm.engine.variable.value.TypedValue;
 
 /**
- * Long text variables (D-07, FC-29, GP-38): Operaton stores strings in {@code TEXT_}, which is {@code varchar(4000)}
+ * Long text variables (FLOWABLE-INTO-OPERATON D-07, FLOWABLE-INTO-OPERATON FC-29, GP-38): Operaton stores strings in {@code TEXT_}, which is {@code varchar(4000)}
  * on PostgreSQL/MySQL, {@code nvarchar(4000)} on SQL Server and <b>{@code NVARCHAR2(2000)} on Oracle</b>; GP-38
  * failed with a PSQLException at 5,590 characters. This pre-serializer (registered first, so it wins over Operaton's
  * {@code StringValueSerializer}) stores a string above the database's limit in the variable's byte array

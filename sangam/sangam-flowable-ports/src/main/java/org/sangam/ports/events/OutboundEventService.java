@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Send-event path (FC-02 send-event task / throw event, R4): an outbound event is one {@link Outbox} row with one
+ * Send-event path (FLOWABLE-INTO-OPERATON FC-02 send-event task / throw event, R4): an outbound event is one {@link Outbox} row with one
  * delivery per channel ({@code channel:<key>}), written in the engine transaction. The relay (WS-INTEGRATION) hands
  * each delivery to {@link ChannelPublisher}; the event leaves the system only if the engine transaction committed.
  */

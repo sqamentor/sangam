@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Flowable external-worker REST compatibility (FC-36, FC-37): existing Flowable external-worker clients (Java, JS,
+ * Flowable external-worker REST compatibility (FLOWABLE-INTO-OPERATON FC-36, FLOWABLE-INTO-OPERATON FC-37): existing Flowable external-worker clients (Java, JS,
  * Python, .NET, Go) can point at {@code /api/v1/compat/flowable/external-job-api}. Requests are translated by
  * sangam-flowable-ports' {@link FlowableWorkerCompat} onto the fenced Sangam worker API ({@link WorkPort}), so lease
  * fencing (409 {@code STALE_LEASE}), tombstones (410) and audit are the same as on {@code /api/v1/work}.

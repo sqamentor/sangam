@@ -26,13 +26,32 @@ class PackLedgersH2Test {
         SangamSchema.apply(ds);
 
         JdbcLedgerStore ledger = new JdbcLedgerStore(ds, SangamClock.SYSTEM, Duration.ofSeconds(2));
-        ledger.open("t", "budget", "2026-27/H1", new BigDecimal("100.00"));
-        LedgerStore.Posting p1 = ledger.post("t", "budget", "2026-27/H1", new BigDecimal("-60"), "bill-1", false);
+        ledger.open("t", "budget", "2026-27/H1", "INR", new BigDecimal("100.00"));
+        LedgerStore.Posting p1 = ledger.post("t", "budget", "2026-27/H1", "INR", new BigDecimal("-60"), "bill-1", false);
         assertEquals(0, new BigDecimal("40").compareTo(p1.balanceAfter()));
-        assertEquals("DUPLICATE_REFERENCE", ledger.post("t", "budget", "2026-27/H1", new BigDecimal("-60"), "bill-1", false).reason());
-        assertFalse(ledger.post("t", "budget", "2026-27/H1", new BigDecimal("-50"), "bill-2", false).applied());
+        assertEquals("DUPLICATE_REFERENCE", ledger.post("t", "budget", "2026-27/H1", "INR", new BigDecimal("-60"), "bill-1", false).reason());
+        assertFalse(ledger.post("t", "budget", "2026-27/H1", "INR", new BigDecimal("-50"), "bill-2", false).applied());
         assertEquals(0, new BigDecimal("100").compareTo(ledger.reverse("t", "budget", "2026-27/H1", "bill-1").balanceAfter()));
         assertEquals("NOTHING_TO_REVERSE", ledger.reverse("t", "budget", "2026-27/H1", "bill-1").reason());
+
+        // SG-20: explicit units; money in minor units, quantities at 4 places, never mixed or rounded
+        assertEquals("UNIT_MISMATCH", ledger.post("t", "budget", "2026-27/H1", "DAYS", BigDecimal.ONE, "bill-9", true).reason());
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> ledger.post("t", "budget", "2026-27/H1", "INR", new BigDecimal("0.001"), "bill-10", true));
+        assertEquals(0, new BigDecimal("1.5").compareTo(ledger.post("t", "leave", "E1/EL", "DAYS", new BigDecimal("1.5"), "c1", true).balanceAfter()));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> ledger.post("t", "leave", "E1/EL", "DAYS", new BigDecimal("0.00001"), "c2", true));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> ledger.post("t", "leave", "E1/EL", null, BigDecimal.ONE, "c3", true));
+        try (java.sql.Connection c = ds.getConnection();
+             java.sql.ResultSet rs = c.createStatement().executeQuery(
+                     "SELECT unit, balance FROM PACK_LEDGER_ACCOUNT WHERE tenant_id='t' AND ledger='budget'")) {
+            org.junit.jupiter.api.Assertions.assertTrue(rs.next());
+            assertEquals("INR", rs.getString(1));
+            assertEquals(10_000L, rs.getLong(2), "100.00 INR = 10,000 paise");
+        } catch (java.sql.SQLException e) {
+            throw new IllegalStateException(e);
+        }
 
         JdbcBatchLedger batch = new JdbcBatchLedger(ds, SangamClock.SYSTEM);
         batch.open("t", "merit", 1, List.of("a", "b", "c"));

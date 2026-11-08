@@ -45,7 +45,7 @@ import org.sangam.rest.support.TypedVariables;
  * <ul>
  *   <li>Seats are candidate groups (IX.5 rule 1); "my seats" are the caller's assignments effective today.</li>
  *   <li>Counts are capped at {@code sangam.rest.count-cap}: a capped section reports {@code "N+"} (A-16).</li>
- *   <li>Bulk completion (D-34) is synchronous, one task per transaction through {@link TaskPort#complete}, and binds
+ *   <li>Bulk completion (FLOWABLE-INTO-OPERATON D-34) is synchronous, one task per transaction through {@link TaskPort#complete}, and binds
  *       each task to the payload hash the server holds at that moment. Only tasks whose process variable
  *       {@code sangamBulkAllowed} is {@code true} are eligible; the others fail with {@code BULK_NOT_ALLOWED}.</li>
  *   <li>Notifications ({@code REST_DOCUMENT} kind {@value #KIND_NOTIFICATION}, owner = principal, state
@@ -79,11 +79,22 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
     static final String KIND_CASE_COMMENT = "case-comment";
 
     private final org.sangam.rest.support.DocumentStore docs;
+    private final org.sangam.rest.support.BusinessDates dates;
 
     public OperatonWorkspaceAdapter(TaskPort taskPort, TaskService tasks, RuntimeService runtime, HistoryService history,
                                     RepositoryService repository, FormService forms, AdminPort admin,
                                     PermissionPort permissions, AuditPort audit, RestProperties props,
                                     org.sangam.rest.support.DocumentStore docs) {
+        this(taskPort, tasks, runtime, history, repository, forms, admin, permissions, audit, props, docs,
+                org.sangam.rest.support.BusinessDates.utc());
+    }
+
+    /** @param dates business dates (assignment validity \"today\") in the tenant's zone */
+    public OperatonWorkspaceAdapter(TaskPort taskPort, TaskService tasks, RuntimeService runtime, HistoryService history,
+                                    RepositoryService repository, FormService forms, AdminPort admin,
+                                    PermissionPort permissions, AuditPort audit, RestProperties props,
+                                    org.sangam.rest.support.DocumentStore docs, org.sangam.rest.support.BusinessDates dates) {
+        this.dates = java.util.Objects.requireNonNull(dates, "dates");
         this.docs = docs;
         this.taskPort = taskPort;
         this.tasks = tasks;
@@ -161,7 +172,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
     private List<AdminPort.Assignment> myAssignments(RequestContext ctx) {
         try {
             return admin.assignments(ctx, new AdminPort.AdminFilter(null, null, null, null, ctx.principalId(), null,
-                    LocalDate.now(), false), new Page.PageRequest(0, Page.PageRequest.MAX_SIZE)).items();
+                    dates.today(ctx.tenantId()), false), new Page.PageRequest(0, Page.PageRequest.MAX_SIZE)).items();
         } catch (ApiProblem e) {
             return List.of();
         }
@@ -170,7 +181,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
     private List<AdminPort.Assignment> seatAssignments(RequestContext ctx, String seatId) {
         try {
             return admin.assignments(ctx, new AdminPort.AdminFilter(null, null, null, seatId, null, null,
-                    LocalDate.now(), false), new Page.PageRequest(0, Page.PageRequest.MAX_SIZE)).items();
+                    dates.today(ctx.tenantId()), false), new Page.PageRequest(0, Page.PageRequest.MAX_SIZE)).items();
         } catch (ApiProblem e) {
             return List.of();
         }

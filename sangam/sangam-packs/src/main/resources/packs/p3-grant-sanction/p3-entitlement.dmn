@@ -5,7 +5,7 @@
     <decisionTable id="p3-entitlement_t" hitPolicy="FIRST">
       <input id="p3-entitlement_i0" label="Scheme"><inputExpression id="p3-entitlement_ie0" typeRef="string"><text>schemeId</text></inputExpression></input>
       <input id="p3-entitlement_i1" label="Social category"><inputExpression id="p3-entitlement_ie1" typeRef="string"><text>socialCategory</text></inputExpression></input>
-      <output id="p3-entitlement_o0" label="Entitlement (INR)" name="entitlement" typeRef="double"/>
+      <output id="p3-entitlement_o0" label="Entitlement (INR)" name="entitlement" typeRef="number"/>
       <output id="p3-entitlement_o1" label="Instalments" name="instalments" typeRef="integer"/>
       <rule id="p3-entitlement_r0"><description>three instalments of 2,000</description>
         <inputEntry id="p3-entitlement_r0_i0"><text>"PM-KISAN-LIKE"</text></inputEntry>

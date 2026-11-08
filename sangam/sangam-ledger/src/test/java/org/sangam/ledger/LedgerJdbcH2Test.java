@@ -99,7 +99,7 @@ class LedgerJdbcH2Test {
         ConnectorResult again = conn.invoke(req(pay, "consume", payIn));
         assertTrue(((ConnectorResult.Success) again).duplicate(), "a retried step never posts twice");
         ConnectorResult avail = conn.invoke(req(UUID.randomUUID(), "available", payIn));
-        assertEquals("40.000000", ((ConnectorResult.Success) avail).output().get("available"));
+        assertEquals("40.00", ((ConnectorResult.Success) avail).output().get("available")); // INR minor units: exactly 2 fraction digits (SD-398)
         ConnectorResult over = conn.invoke(req(UUID.randomUUID(), "encumber", Map.of("ledgerId", "BUDGET",
                 "headOfAccount", "2054-00-001-01-00-13", "ddoCode", "DDO-1", "amount", "41")));
         assertInstanceOf(ConnectorResult.BusinessFailure.class, over);

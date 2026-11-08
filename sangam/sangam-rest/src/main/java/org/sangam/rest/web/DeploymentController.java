@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/** Raw deployments and governed executable packages (R43 / X.2.4, FC-41 app bundles). */
+/** Raw deployments and governed executable packages (R43 / X.2.4, FLOWABLE-INTO-OPERATON FC-41 app bundles). */
 @RestController
 @RequestMapping("/api/v1")
 public class DeploymentController {

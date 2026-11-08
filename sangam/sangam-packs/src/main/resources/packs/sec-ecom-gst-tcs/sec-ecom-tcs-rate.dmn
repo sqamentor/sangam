@@ -3,8 +3,8 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="sec-ecom-tcs-rate" name="GST TCS rate (CGST + SGST / IGST; verify notification)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-ecom-tcs-rate_t" hitPolicy="FIRST">
-      <input id="sec-ecom-tcs-rate_i0" label="Supplies"><inputExpression id="sec-ecom-tcs-rate_ie0" typeRef="double"><text>netSupplies</text></inputExpression></input>
-      <output id="sec-ecom-tcs-rate_o0" label="Rate %" name="tcsRatePct" typeRef="double"/>
+      <input id="sec-ecom-tcs-rate_i0" label="Supplies"><inputExpression id="sec-ecom-tcs-rate_ie0" typeRef="number"><text>netSupplies</text></inputExpression></input>
+      <output id="sec-ecom-tcs-rate_o0" label="Rate %" name="tcsRatePct" typeRef="number"/>
       <rule id="sec-ecom-tcs-rate_r0"><description>0.5 % from 10 Jul 2024 (was 1 %) (verify)</description>
         <inputEntry id="sec-ecom-tcs-rate_r0_i0"><text>-</text></inputEntry>
         <outputEntry id="sec-ecom-tcs-rate_r0_o0"><text>0.5</text></outputEntry>

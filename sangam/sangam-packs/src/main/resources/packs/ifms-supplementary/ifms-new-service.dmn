@@ -4,7 +4,7 @@
   <decision id="ifms-new-service" name="New service / new instrument of service" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="ifms-new-service_t" hitPolicy="FIRST">
       <input id="ifms-new-service_i0" label="New service"><inputExpression id="ifms-new-service_ie0" typeRef="boolean"><text>newServiceFlag</text></inputExpression></input>
-      <input id="ifms-new-service_i1" label="Amount"><inputExpression id="ifms-new-service_ie1" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="ifms-new-service_i1" label="Amount"><inputExpression id="ifms-new-service_ie1" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="ifms-new-service_o0" label="Route" name="newServiceRoute" typeRef="string"/>
       <output id="ifms-new-service_o1" label="Rule" name="ruleRef" typeRef="string"/>
       <rule id="ifms-new-service_r0"><description>NS/NIS: limits are placeholders</description>

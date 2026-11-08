@@ -88,6 +88,7 @@ public final class JdbcIdentityAdminAdapter implements IdentityAdminPort {
     private final AuditPort audit;
     private final RestProperties props;
     private final boolean allowOutbound;
+    private final org.sangam.rest.support.BusinessDates dates;
 
     private final DocMap<User> users;
     private final DocMap<Membership> members;
@@ -103,6 +104,14 @@ public final class JdbcIdentityAdminAdapter implements IdentityAdminPort {
 
     public JdbcIdentityAdminAdapter(DocumentStore store, AdminPort admin, TaskPort tasks, PermissionPort permissions,
                                     AuditPort audit, RestProperties props, boolean allowOutbound) {
+        this(store, admin, tasks, permissions, audit, props, allowOutbound, org.sangam.rest.support.BusinessDates.utc());
+    }
+
+    /** @param dates the rejection end date (\"today\") in the tenant's business zone */
+    public JdbcIdentityAdminAdapter(DocumentStore store, AdminPort admin, TaskPort tasks, PermissionPort permissions,
+                                    AuditPort audit, RestProperties props, boolean allowOutbound,
+                                    org.sangam.rest.support.BusinessDates dates) {
+        this.dates = java.util.Objects.requireNonNull(dates, "dates");
         this.tx = store.tx();
         this.admin = admin;
         this.tasks = tasks;
@@ -225,7 +234,7 @@ public final class JdbcIdentityAdminAdapter implements IdentityAdminPort {
             d.put(assignmentId, new AssignmentDecision(approve, ctx.principalId(), reason, Instant.now()));
             AdminPort.Assignment result = a;
             if (!approve) {
-                result = admin.endAssignment(ctx, assignmentId, LocalDate.now(ZoneOffset.UTC), reason);
+                result = admin.endAssignment(ctx, assignmentId, dates.today(ctx.tenantId()), reason);
             }
             audit.record(ctx, JdbcSupport.securityChain(ctx), approve ? "ASSIGNMENT_APPROVED" : "ASSIGNMENT_REJECTED",
                     payload("assignmentId", assignmentId, "seatId", a.seatId(), "personId", a.personId(), "kind", a.kind(),

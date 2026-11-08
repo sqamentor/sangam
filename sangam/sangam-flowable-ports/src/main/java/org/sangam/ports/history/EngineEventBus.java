@@ -10,7 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
- * Global typed event dispatcher (FC-43, Flowable {@code FlowableEventDispatcher}). Events come from the history
+ * Global typed event dispatcher (FLOWABLE-INTO-OPERATON FC-43, Flowable {@code FlowableEventDispatcher}). Events come from the history
  * handler (process, activity, task, variable, case), from {@code TaskEventDispatcher} (fine-grained task events) and
  * from the event registry. Listeners run synchronously inside the engine transaction; a listener registered as
  * {@code failOnException=false} cannot break the command (its exception is logged).

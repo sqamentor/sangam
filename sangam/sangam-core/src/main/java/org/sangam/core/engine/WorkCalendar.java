@@ -7,7 +7,7 @@ import java.time.Period;
 import java.time.ZoneId;
 
 /**
- * A named business calendar (FC-23, D-11, R79): working days, holidays, office hours. Timer expressions select one
+ * A named business calendar (FLOWABLE-INTO-OPERATON FC-23, FLOWABLE-INTO-OPERATON D-11, R79): working days, holidays, office hours. Timer expressions select one
  * with the prefix {@code cal:<name>:}, for example {@code cal:mh-gov:P3D}. Implementations come from packs or the
  * tenant configuration; the engine module registers them by name.
  */

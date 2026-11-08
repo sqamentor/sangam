@@ -1,0 +1,1 @@
+{"source":"ATS1","import":{"targetTenant":"ATS2","name":"Acceptance State Two","goLive":{"evidence":{"CERT_IN_AUDIT_CLEARANCE":"at:audit","GIGW_CONFORMANCE_MATRIX":"at:matrix","DATA_PROCESSOR_AGREEMENT":"at:dpa","SMOKE_TEST_PER_PACK":"at:smoke","ISOLATION_CHECK":"at:isolation"}}},"allowedDifferences":["name","request.profile","documents[","packVersions"]}

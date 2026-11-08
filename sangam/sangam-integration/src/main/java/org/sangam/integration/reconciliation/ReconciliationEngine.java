@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * </ul>
  * Lookups back off exponentially between {@code minBackoff} and {@code maxBackoff}.
  */
-public final class ReconciliationEngine implements AutoCloseable {
+public final class ReconciliationEngine implements AutoCloseable, org.sangam.core.layer.ReconciliationResolver {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReconciliationEngine.class);
     public static final String SYSTEM_ACTOR = "system:reconciler";
@@ -292,6 +292,13 @@ public final class ReconciliationEngine implements AutoCloseable {
      */
     public ReconciliationQueue.Item resolveManually(long itemId, ReconciliationQueue.Action action, String actor,
                                                      Map<String, Object> result, String reason) {
+        return resolve(itemId, action, actor, result, reason, null);
+    }
+
+    /** {@link org.sangam.core.layer.ReconciliationResolver}: the officer's console resolves through here as well. */
+    @Override
+    public ReconciliationQueue.Item resolve(long itemId, ReconciliationQueue.Action action, String actor,
+                                            Map<String, Object> result, String reason, String evidence) {
         ReconciliationQueue.Item item = tx.inTransaction(c -> queue.get(c, itemId))
                 .orElseThrow(() -> new IllegalArgumentException("no reconciliation item " + itemId));
         guard.check(item, action, actor);
@@ -305,6 +312,9 @@ public final class ReconciliationEngine implements AutoCloseable {
             case RETRY_SAME_OPERATION -> {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("reason", reason);
+                if (evidence != null) {
+                    m.put("evidence", evidence);
+                }
                 yield Json.write(m);
             }
         };

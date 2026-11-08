@@ -11,7 +11,7 @@ import org.operaton.bpm.engine.impl.pvm.process.ScopeImpl;
 import org.operaton.bpm.engine.impl.pvm.runtime.PvmExecutionImpl;
 
 /**
- * Terminate end event with Flowable's {@code terminateAll} / {@code terminateMultiInstance} (FC-22), set by
+ * Terminate end event with Flowable's {@code terminateAll} / {@code terminateMultiInstance} (FLOWABLE-INTO-OPERATON FC-22), set by
  * {@link BpmnExtensionsParseListener} for {@code sangam:terminate="all"} or {@code "multiInstance"} on a terminate end
  * event. Operaton's own behaviour terminates only the enclosing scope.
  * <ul>

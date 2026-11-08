@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Non-JWT bearer authentication: Sangam API tokens ({@code sgm_...}, FC-42, R26 worker principals) and, in the dev
+ * Non-JWT bearer authentication: Sangam API tokens ({@code sgm_...}, FLOWABLE-INTO-OPERATON FC-42, R26 worker principals) and, in the dev
  * profile only, static development tokens (ARCHITECTURE.md §4 "dev profile uses a static token").
  */
 public final class TokenAuthenticationFilters {

@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * Task and instance lifecycle fields Operaton lacks (FC-52, Flowable {@code TaskInfo}: {@code claimTime/claimedBy},
+ * Task and instance lifecycle fields Operaton lacks (FLOWABLE-INTO-OPERATON FC-52, Flowable {@code TaskInfo}: {@code claimTime/claimedBy},
  * {@code inProgressStartTime/By}, {@code suspendedTime}; instance {@code businessStatus}). Tables
  * {@code TASK_LIFECYCLE} and {@code INSTANCE_BUSINESS_STATUS}, written in the engine transaction by
  * {@link TaskEventDispatcher} or by the product API (R42/R65 read model).

@@ -7,9 +7,9 @@ import java.util.Map;
 /**
  * Flowable-parity dynamic behaviour, implemented by sangam-flowable-ports:
  * <ul>
- *   <li>FC-01 ad-hoc sub-process: list enabled activities, start one, complete the ad-hoc scope;</li>
- *   <li>FC-15 dynamic injection of a user task or embedded/parallel sub-process into one instance, done as a
- *       reviewed model variant (R43) plus migration of that single instance (no silent runtime patching, FC-16).</li>
+ *   <li>FLOWABLE-INTO-OPERATON FC-01 ad-hoc sub-process: list enabled activities, start one, complete the ad-hoc scope;</li>
+ *   <li>FLOWABLE-INTO-OPERATON FC-15 dynamic injection of a user task or embedded/parallel sub-process into one instance, done as a
+ *       reviewed model variant (R43) plus migration of that single instance (no silent runtime patching, FLOWABLE-INTO-OPERATON FC-16).</li>
  * </ul>
  */
 public interface DynamicPort {

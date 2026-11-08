@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Users (persons) of a tenant: the user part of the IDM boundary owned by WS-SECURITY (FC-42, R67). A person is linked
+ * Users (persons) of a tenant: the user part of the IDM boundary owned by WS-SECURITY (FLOWABLE-INTO-OPERATON FC-42, R67). A person is linked
  * to an IdP subject ({@code external_subject}); seats never come from the IdP (AJ-05 step 3). Just-in-time creation on
  * first login is optional per tenant (R67); an unlinked login otherwise gets {@code 401 NOT_LINKED}.
  */

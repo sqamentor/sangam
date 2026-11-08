@@ -2,7 +2,6 @@
 package org.sangam.server.config;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -88,7 +87,8 @@ public class ResourcesWiring {
     public SangamResources sangamResources(TxSupport tx, Environment env, ProcessEngine engine,
             ObjectProvider<SangamSecurity> security, ObjectProvider<ResourcesPorts.BillingPort> billing,
             ObjectProvider<WorkspacePort> workspace, ObjectProvider<ConnectorRegistry> connectors,
-            ObjectProvider<MeterRegistry> meters, ObjectProvider<ProfileResolver> profiles) {
+            ObjectProvider<MeterRegistry> meters, ObjectProvider<ProfileResolver> profiles,
+            ObjectProvider<org.sangam.core.time.BusinessClock> clocks) {
         ResourcesDialect dialect = tx.withConnection(ResourcesDialect::detect);
         if (env.getProperty("sangam.persistence.dev-schema", Boolean.class, false)) {
             tx.withConnection(c -> {
@@ -142,7 +142,7 @@ public class ResourcesWiring {
             // The tenant is the configuration scope; calendars come from the resolved profile's locale settings.
             b.businessCalendars((tenant, id) -> {
                 try {
-                    return Optional.of(pr.resolve(tenant, LocalDate.now()).locale().calendar(id));
+                    return Optional.of(pr.resolve(tenant, ConfigWiring.businessClock(clocks).today(tenant)).locale().calendar(id));
                 } catch (RuntimeException e) {
                     LOG.debug("no business calendar {} for tenant {}: {}", id, tenant, e.toString());
                     return Optional.empty();

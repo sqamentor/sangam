@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * Consequence previews and suspension for instances and definitions (O03, O08, R63: "show a consequence preview"),
- * cross-boundary moves (FC-17) and the historic external-task log (PF-01).
+ * cross-boundary moves (FLOWABLE-INTO-OPERATON FC-17) and the historic external-task log (PF-01).
  */
 public interface InstanceControlPort {
 
@@ -19,7 +19,7 @@ public interface InstanceControlPort {
                               Long affectedCount, boolean limitExceeded) {
     }
 
-    /** D-32: {@code redateDeadlines} shifts SLA due dates by the suspended time on resume. */
+    /** FLOWABLE-INTO-OPERATON D-32: {@code redateDeadlines} shifts SLA due dates by the suspended time on resume. */
     record SuspensionRequest(boolean suspended, String reason, Boolean redateDeadlines, Boolean includeInstances) {
     }
 

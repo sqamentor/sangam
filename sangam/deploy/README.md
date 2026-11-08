@@ -181,6 +181,19 @@ java -Dloader.path=/opt/sangam/lib-ext,/opt/sangam/drivers -cp sangam-server.jar
 
 The MariaDB jar goes in `lib-ext`, and your own drivers go in `drivers`.
 
+Give a JVM without containers the same options as the image (`server.Dockerfile`):
+
+```bash
+JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -XX:+UseG1GC -Duser.timezone=UTC \
+  -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/opt/sangam/tmp -Djdk.net.unixdomain.tmpdir=/opt/sangam/tmp"
+```
+
+On a **Windows** host, set both temp directories to a folder the service account owns outside the user profile
+(for example `D:\sangam\tmp`). The JDK's Windows selector opens an AF_UNIX socket in `jdk.net.unixdomain.tmpdir`
+(default: the user temp folder). Endpoint-protection filters on `C:\Users\...` can block such sockets; the server
+then fails at start-up with `IOException: Unable to establish loopback connection`. The build sets the same
+property for its test JVMs (root `pom.xml`, surefire and failsafe).
+
 On VMs, run the database migrations **once** before starting the nodes:
 
 ```bash

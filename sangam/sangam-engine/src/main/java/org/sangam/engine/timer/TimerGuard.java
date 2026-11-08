@@ -13,7 +13,7 @@ import org.sangam.core.layer.Jdbc;
 import org.sangam.engine.db.EngineDialect;
 
 /**
- * <b>DST timer guard (A-12, R31, D-01, D-30).</b> One row per timer series in {@code SANGAM_TIMER_GUARD}, written in
+ * <b>DST timer guard (A-12, R31, FLOWABLE-INTO-OPERATON D-01, FLOWABLE-INTO-OPERATON D-30).</b> One row per timer series in {@code SANGAM_TIMER_GUARD}, written in
  * the job's own transaction:
  * <ul>
  *   <li>{@code last_fired_interval}: the interval of the last firing ({@link CycleExpression#intervalOf}). A firing
@@ -22,7 +22,7 @@ import org.sangam.engine.db.EngineDialect;
  *   <li>the catch-up policy: {@link TimerCatchUpPolicy#SKIP_MISSED} suppresses a firing that is more than one period
  *       late; {@code FIRE_ONCE} fires it once; {@code FIRE_ALL} fires every missed slot (the calendar then schedules
  *       the next slot after the fired one, bounded by {@code maxCatchUpFires});</li>
- *   <li>{@code fire_count}: firings so far, which bounds {@code Rn} to n firings in total (D-29).</li>
+ *   <li>{@code fire_count}: firings so far, which bounds {@code Rn} to n firings in total (FLOWABLE-INTO-OPERATON D-29).</li>
  * </ul>
  * A series is {@code jobDefinitionId:processInstanceId} (or {@code jobDefinitionId:start} for timer start events).
  */

@@ -6,7 +6,7 @@
     <decisionTable id="sec-ushealth-gfe-config_t" hitPolicy="FIRST">
       <input id="sec-ushealth-gfe-config_i0" label="Business days until service"><inputExpression id="sec-ushealth-gfe-config_ie0" typeRef="integer"><text>daysUntilService</text></inputExpression></input>
       <output id="sec-ushealth-gfe-config_o0" label="GFE due within" name="gfeSpec" typeRef="string"/>
-      <output id="sec-ushealth-gfe-config_o1" label="Dispute threshold (USD)" name="ppdrThreshold" typeRef="double"/>
+      <output id="sec-ushealth-gfe-config_o1" label="Dispute threshold (USD)" name="ppdrThreshold" typeRef="number"/>
       <output id="sec-ushealth-gfe-config_o2" label="Initiation window from the bill date" name="ppdrWindowLead" typeRef="string"/>
       <rule id="sec-ushealth-gfe-config_r0"><description>on request: 3 business days</description>
         <inputEntry id="sec-ushealth-gfe-config_r0_i0"><text>0</text></inputEntry>

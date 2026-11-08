@@ -17,10 +17,10 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.operaton.bpm.engine.impl.variable.serializer.AbstractObjectValueSerializer;
 
 /**
- * JSON object variables without Java serialization (FC-28, D-47, R11, R33). Maps and lists of JSON-compatible values
+ * JSON object variables without Java serialization (FLOWABLE-INTO-OPERATON FC-28, FLOWABLE-INTO-OPERATON D-47, R11, R33). Maps and lists of JSON-compatible values
  * (String, Boolean, numbers, nested maps/lists, null) are stored as UTF-8 JSON in the variable's byte array with
  * data format {@value #FORMAT}; they read back as {@code LinkedHashMap} / {@code ArrayList}. Any other object type is
- * refused (Java serialization stays disabled, D-47), so no class name from the database is ever instantiated.
+ * refused (Java serialization stays disabled, FLOWABLE-INTO-OPERATON D-47), so no class name from the database is ever instantiated.
  *
  * <p>R11 limits: nesting depth 64, string length 10 MiB, document size 16 MiB; default typing is never enabled.
  * R33: decimals read as {@link BigDecimal} (money is never a binary float); integers as Integer/Long, or

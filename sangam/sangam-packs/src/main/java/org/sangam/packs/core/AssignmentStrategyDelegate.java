@@ -41,7 +41,7 @@ public class AssignmentStrategyDelegate implements JavaDelegate {
                 String pool = String.join("|", cands);
                 String ref = (ex.getProcessBusinessKey() == null ? ex.getProcessInstanceId()
                         : ex.getProcessBusinessKey()) + ":" + ex.getCurrentActivityId();
-                LedgerStore.Posting p = l.post(Vars.tenant(ex), "round-robin", pool, BigDecimal.ONE, ref, true);
+                LedgerStore.Posting p = l.post(Vars.tenant(ex), "round-robin", pool, "COUNT", BigDecimal.ONE, ref, true);
                 yield cands.get(p.balanceAfter().intValue() % cands.size());
             }
             case "SKILLS" -> {

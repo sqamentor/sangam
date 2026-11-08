@@ -14,12 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Start-up checks of the database the engine runs on (R84, D-05, D-56, VI.1.6):
+ * Start-up checks of the database the engine runs on (R84, FLOWABLE-INTO-OPERATON D-05, FLOWABLE-INTO-OPERATON D-56, VI.1.6):
  * <ul>
  *   <li>the dialect is a supported one (Tier 1 + H2);</li>
  *   <li>the session isolation is READ COMMITTED (also forced per connection by {@link IsolationGuardDataSource});</li>
  *   <li>SQL Server: {@code READ_COMMITTED_SNAPSHOT} is ON for the database (VI.1.6 "RCSI required");</li>
- *   <li>MySQL family (D-05): the server is identified from the server, not from the driver. The MariaDB driver makes
+ *   <li>MySQL family (FLOWABLE-INTO-OPERATON D-05): the server is identified from the server, not from the driver. The MariaDB driver makes
  *       Operaton pick its MariaDB dialect (driver name check) even on a MySQL server; Sangam pins
  *       {@code databaseType} to the configured value so create/upgrade scripts always match the server.</li>
  * </ul>
@@ -43,7 +43,7 @@ public final class DatabaseGuard {
             String driver = md.getDriverName();
             EngineDialect d = EngineDialect.fromProductName(product);
             if (c.getTransactionIsolation() != Connection.TRANSACTION_READ_COMMITTED) {
-                throw new IllegalStateException("R84/D-56: the engine pool must run READ COMMITTED (found isolation "
+                throw new IllegalStateException("R84/FLOWABLE-INTO-OPERATON D-56: the engine pool must run READ COMMITTED (found isolation "
                         + c.getTransactionIsolation() + "); wrap the DataSource in IsolationGuardDataSource");
             }
             String type = null;
@@ -59,12 +59,15 @@ public final class DatabaseGuard {
                     boolean mariaServer = String.valueOf(version).toLowerCase(Locale.ROOT).contains("mariadb");
                     type = mariaServer ? "mariadb" : mysqlDatabaseType;
                     if (!mariaServer && String.valueOf(driver).toLowerCase(Locale.ROOT).contains("mariadb")) {
-                        LOG.info("D-05: MariaDB Connector/J on a MySQL server; Operaton databaseType pinned to '{}'", type);
+                        LOG.info("FLOWABLE-INTO-OPERATON D-05: MariaDB Connector/J on a MySQL server; Operaton databaseType pinned to '{}'", type);
                     }
                 }
                 case POSTGRESQL -> type = "postgres";
                 case ORACLE -> type = "oracle";
-                case H2 -> type = "h2";
+                case H2 -> {
+                    requireH2PostgresMode(c);
+                    type = "h2";
+                }
                 default -> {
                 }
             }
@@ -87,6 +90,26 @@ public final class DatabaseGuard {
             }
         } catch (SQLException e) {
             LOG.debug("H2: BLOB domain alias not created ({}); default mode assumed", e.getMessage());
+        }
+    }
+
+    /**
+     * H2 is a development database for Sangam and is supported only in {@code MODE=PostgreSQL}: the product layer
+     * uses the PostgreSQL dialect on H2 ({@code INSERT .. ON CONFLICT DO NOTHING}, interval arithmetic). In any other
+     * mode those statements fail later with an obscure syntax error, so refuse at start-up with the exact fix.
+     */
+    static void requireH2PostgresMode(Connection c) throws SQLException {
+        String mode = null;
+        try (PreparedStatement ps = c.prepareStatement(
+                "SELECT SETTING_VALUE FROM INFORMATION_SCHEMA.SETTINGS WHERE SETTING_NAME = 'MODE'");
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                mode = rs.getString(1);
+            }
+        }
+        if (mode == null || !mode.trim().equalsIgnoreCase("PostgreSQL")) {
+            throw new IllegalStateException("H2 must run in PostgreSQL compatibility mode for Sangam (found MODE="
+                    + mode + "); add ;MODE=PostgreSQL to the JDBC URL, e.g. jdbc:h2:mem:sangam;MODE=PostgreSQL");
         }
     }
 

@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * DMN decision services (FC-53; Flowable {@code DmnDecisionService.executeDecisionService}). Operaton's DMN engine
+ * DMN decision services (FLOWABLE-INTO-OPERATON FC-53; Flowable {@code DmnDecisionService.executeDecisionService}). Operaton's DMN engine
  * has no decision-service element (grep 0) and its model API does not parse it, so the service definition is read
  * from the deployed DMN XML (hardened parser) and evaluated on Operaton's engine: each <em>output decision</em> is
  * evaluated with the given inputs; required (encapsulated) decisions are evaluated by Operaton's DRG evaluation. The

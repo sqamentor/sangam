@@ -18,7 +18,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * App definition bundle (FC-41, Flowable app engine {@code .bar}/{@code .zip} with an {@code .app} model): one archive
+ * App definition bundle (FLOWABLE-INTO-OPERATON FC-41, Flowable app engine {@code .bar}/{@code .zip} with an {@code .app} model): one archive
  * with a manifest {@code sangam-app.json} (Flowable {@code *.app} JSON is accepted too) and the BPMN, CMMN, DMN,
  * form, event and channel models that ship together. The bundle is the R43 executable package unit: every resource is
  * hashed and the bundle hash is the SHA-256 over the sorted {@code name=hash} lines, which is what approval signs.

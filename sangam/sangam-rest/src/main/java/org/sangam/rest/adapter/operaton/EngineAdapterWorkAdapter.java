@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 
 import org.sangam.core.api.EngineAdapter;
 import org.sangam.core.api.StaleLeaseException;
+import org.sangam.core.engine.SangamEngineAdapter;
 import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.ReconciliationQueue;
 import org.sangam.core.layer.Tombstones;
@@ -96,10 +97,15 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         } catch (RuntimeException ignored) {
             // the instance view is informational only
         }
-        UUID op = OperatonWorkAdapter.operationId(ctx.tenantId(), w.processInstanceId(), w.activityInstanceId());
+        // T35: the operation id is the one the engine adapter granted with the lease; never re-derived here.
+        String op = w.operationId();
+        if (op == null && engine instanceof SangamEngineAdapter s) {
+            UUID id = s.operationIdOf(w.id());
+            op = id == null ? null : id.toString();
+        }
         return new ExternalWork(w.id(), w.topic(), ctx.tenantId(), w.processInstanceId(), null, w.activityId(),
                 w.activityInstanceId(), businessKey, TypedVariables.toJson(w.variables()), w.lockVersion(),
-                w.attemptId(), op.toString(), w.lockExpiresAt(), w.retries(), null, null);
+                w.attemptId(), op, w.lockExpiresAt(), w.retries(), null, null);
     }
 
     @Override

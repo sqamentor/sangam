@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * DMN hit policies PRIORITY and OUTPUT ORDER (FC-54). Logic ported from Flowable's {@code HitPolicyPriority},
+ * DMN hit policies PRIORITY and OUTPUT ORDER (FLOWABLE-INTO-OPERATON FC-54). Logic ported from Flowable's {@code HitPolicyPriority},
  * {@code HitPolicyOutputOrder} and {@code OutputOrderComparator} (Apache-2.0; see NOTICE): the priority of an output
  * value is its position in the output clause's {@code outputValues} list (first = highest); rules are compared output
  * by output in clause order. Values not in the list rank last.

@@ -18,7 +18,7 @@ import java.util.Map;
  * writes the event into the core {@link Inbox} (R38) with source {@code evt:<channelKey>} in one short transaction.
  * The adapter acknowledges the broker only after {@link #receive} returns; a redelivery is a {@code DUPLICATE} and
  * is acknowledged again. Dispatch to processes and cases happens later in {@link EventDispatcher} (so an event that
- * arrives before its subscription is buffered, D-33).
+ * arrives before its subscription is buffered, FLOWABLE-INTO-OPERATON D-33).
  *
  * <p>Robustness (FLOWABLE-WEAKNESS-AUDIT FW-02, FW-28): a raw payload larger than {@link #maxPayloadBytes()} (default
  * {@value #DEFAULT_MAX_PAYLOAD_BYTES} bytes) is {@code REJECTED} before parsing; <em>every</em> payload failure of the

@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Content / document service (FC-40 Flowable {@code ContentService}; EC-18; R74): versioned documents attached to a
+ * Content / document service (FLOWABLE-INTO-OPERATON FC-40 Flowable {@code ContentService}; EC-18; R74): versioned documents attached to a
  * process instance, case instance, task or any product scope, stored through a {@link DocumentStore}
  * (file system or S3-compatible), with SHA-256 checksums verified on read and an optional malware-scan hook.
  *

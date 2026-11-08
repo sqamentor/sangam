@@ -37,7 +37,7 @@ public final class CaseFilePorts {
         Notifier NONE = (c, m) -> null;
     }
 
-    /** Business calendars by name (FC-23); {@code null} or unknown names fall back to {@link WorkCalendar#PLAIN}. */
+    /** Business calendars by name (FLOWABLE-INTO-OPERATON FC-23); {@code null} or unknown names fall back to {@link WorkCalendar#PLAIN}. */
     @FunctionalInterface
     public interface Calendars {
         WorkCalendar calendar(String name);
@@ -78,7 +78,7 @@ public final class CaseFilePorts {
 
     /**
      * Process and case history for the timeline. The integrator binds it to sangam-flowable-ports
-     * {@code HistoryQueryService.activityInstances} (read model, FC-25) with the VI.4 predicate.
+     * {@code HistoryQueryService.activityInstances} (read model, FLOWABLE-INTO-OPERATON FC-25) with the VI.4 predicate.
      */
     @FunctionalInterface
     public interface ProcessHistorySource {

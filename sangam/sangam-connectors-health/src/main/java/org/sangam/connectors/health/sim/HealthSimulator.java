@@ -589,10 +589,11 @@ public final class HealthSimulator implements AutoCloseable {
      */
     public static String remittance835(String patientControlNumber, String charge, String paid, String patientResp,
                                        boolean denied) {
-        java.math.BigDecimal c = new java.math.BigDecimal(charge);
-        java.math.BigDecimal p = denied ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(paid);
-        java.math.BigDecimal pr = denied ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(patientResp);
-        java.math.BigDecimal co = c.subtract(p).subtract(pr);
+        // exact USD minor units (SD-398); a malformed or sub-cent amount fails here, not in the payer's file
+        org.sangam.core.money.Money c = org.sangam.core.money.Money.parse(charge, "USD");
+        org.sangam.core.money.Money p = denied ? org.sangam.core.money.Money.zero("USD") : org.sangam.core.money.Money.parse(paid, "USD");
+        org.sangam.core.money.Money pr = denied ? org.sangam.core.money.Money.zero("USD") : org.sangam.core.money.Money.parse(patientResp, "USD");
+        org.sangam.core.money.Money co = c.minus(p).minus(pr);
         List<X12.Segment> b = new ArrayList<>();
         b.add(X12.Segment.of("BPR", "I", p.toPlainString(), "C", "ACH", "CCP", "01", "999999999", "DA", "123456",
                 "1999999999", "", "01", "888888888", "DA", "654321", "20260115"));

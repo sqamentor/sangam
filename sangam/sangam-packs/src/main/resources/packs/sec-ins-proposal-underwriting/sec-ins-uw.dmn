@@ -4,7 +4,7 @@
   <decision id="sec-ins-uw" name="Underwriting route (SYNTHETIC grid)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-ins-uw_t" hitPolicy="FIRST">
       <input id="sec-ins-uw_i0" label="Age"><inputExpression id="sec-ins-uw_ie0" typeRef="integer"><text>age</text></inputExpression></input>
-      <input id="sec-ins-uw_i1" label="Sum assured"><inputExpression id="sec-ins-uw_ie1" typeRef="double"><text>sumAssured</text></inputExpression></input>
+      <input id="sec-ins-uw_i1" label="Sum assured"><inputExpression id="sec-ins-uw_ie1" typeRef="number"><text>sumAssured</text></inputExpression></input>
       <input id="sec-ins-uw_i2" label="Smoker"><inputExpression id="sec-ins-uw_ie2" typeRef="boolean"><text>smoker</text></inputExpression></input>
       <output id="sec-ins-uw_o0" label="Route" name="uwRoute" typeRef="string"/>
       <output id="sec-ins-uw_o1" label="Medicals" name="medicalRequired" typeRef="boolean"/>

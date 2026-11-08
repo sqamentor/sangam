@@ -15,7 +15,7 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.TxSupport;
 
 /**
- * {@link InstanceControlPort} where the cross-boundary move (FC-17, move into or out of a call activity's instance)
+ * {@link InstanceControlPort} where the cross-boundary move (FLOWABLE-INTO-OPERATON FC-17, move into or out of a call activity's instance)
  * is sangam-flowable-ports' {@link CrossInstanceStateChangeService} (one engine command, same root tree enforced by
  * the service). Previews, suspension and the external-task log stay with the default adapter.
  */

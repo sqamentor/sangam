@@ -14,6 +14,7 @@ import org.sangam.registry.support.Maps;
 import org.sangam.registry.support.RegistryAudit;
 
 import java.math.BigDecimal;
+import org.sangam.core.money.Money;
 import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -626,20 +627,24 @@ public final class MaintenanceService {
         }
         List<Object> parts = result.get("parts") instanceof List<?> l ? new ArrayList<>(l) : List.of();
         List<Object> evidence = result.get("evidence") instanceof List<?> l ? new ArrayList<>(l) : List.of();
-        BigDecimal cost = Maps.decimal(result, "cost");
+        // cost in the asset's currency (or the request's), integer minor units (SD-398)
+        String ccy = Maps.str(result, "currency", Jdbc.one(c, "SELECT currency FROM REG_ASSET WHERE tenant_id=? AND object_id=?",
+                rs -> rs.getString(1), ctx.tenant(), wo.assetId()).orElse(null));
+        Long cost = AssetService.minor(result, "cost", ccy);
         List<Object> params = new ArrayList<>();
         params.add(done);
         params.add(dStart);
         params.add(dEnd);
         params.add(meterAtDone);
         params.add(cost);
+        params.add(cost == null ? null : ccy);
         params.add(Json.write(findings));
         params.add(Json.write(parts));
         params.add(Json.write(evidence));
         WorkOrder out = step(c, ctx, wo, "COMPLETED", "WORK_ORDER_COMPLETED", "completed_at=?, downtime_start=?, downtime_end=?,"
-                        + " meter_at_done=?, cost=?, findings_json=?, parts_json=?, evidence_json=?", params,
+                        + " meter_at_done=?, cost=?, currency=?, findings_json=?, parts_json=?, evidence_json=?", params,
                 Maps.of("completedAt", done, "downtimeStart", dStart, "downtimeEnd", dEnd, "meterAtDone", meterAtDone,
-                        "cost", cost, "parts", parts.size(), "evidence", evidence, "findings", findings));
+                        "cost", Maps.str(result, "cost"), "currency", ccy, "parts", parts.size(), "evidence", evidence, "findings", findings));
         if (p != null) {
             Instant nextAt = "TIME".equals(p.trigger()) ? AssetRows.nextTime(done, p.intervalDays()) : p.nextDueAt();
             BigDecimal nextMeter = "METER".equals(p.trigger()) && meterAtDone != null ? meterAtDone.add(p.meterInterval())
@@ -687,10 +692,10 @@ public final class MaintenanceService {
         long failures = 0;
         long downtimeSec = 0;
         long repairSec = 0;
-        BigDecimal cost = BigDecimal.ZERO;
+        Money cost = null;
         for (WorkOrder w : wos) {
             if (w.cost() != null) {
-                cost = cost.add(w.cost());
+                cost = cost == null ? w.cost() : cost.plus(w.cost()); // exact; mixed currencies fail loudly
             }
             if (!FAILURE_TYPES.contains(w.workType())) {
                 continue;
@@ -715,7 +720,8 @@ public final class MaintenanceService {
                 "mtbfHours", failures == 0 ? null : hours(operating / failures),
                 "mttrHours", failures == 0 ? null : hours(repairSec / failures),
                 "availability", BigDecimal.valueOf(operating).divide(BigDecimal.valueOf(window), 6, RoundingMode.HALF_UP),
-                "maintenanceCost", cost);
+                "maintenanceCost", cost == null ? null : cost.toPlainString(),
+                "currency", cost == null ? null : cost.currencyCode());
     }
 
     private static BigDecimal hours(long seconds) {

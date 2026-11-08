@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Production inbox (SANGAM.md VI.2.6, R38, T09, T35; Operaton D-33; Flowable FC-02/FC-04) on top of the proven
+ * Production inbox (SANGAM.md VI.2.6, R38, T09, T35; FLOWABLE-INTO-OPERATON D-33; FLOWABLE-INTO-OPERATON FC-02/FLOWABLE-INTO-OPERATON FC-04) on top of the proven
  * {@link Inbox} primitive.
  *
  * <ol>

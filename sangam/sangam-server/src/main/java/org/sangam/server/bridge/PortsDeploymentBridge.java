@@ -15,9 +15,9 @@ import org.sangam.rest.port.Page;
 import org.sangam.rest.port.RequestContext;
 
 /**
- * {@link DeploymentPort} with app bundles (FC-41): a deployment that carries a {@code sangam-app.json} / Flowable
+ * {@link DeploymentPort} with app bundles (FLOWABLE-INTO-OPERATON FC-41): a deployment that carries a {@code sangam-app.json} / Flowable
  * {@code .app} manifest, or event-registry models ({@code .event}, {@code .channel}), is deployed as one app bundle
- * by {@link AppDeploymentService} (validator FC-46, event registry, channels, Sangam forms, then the BPMN/CMMN/DMN
+ * by {@link AppDeploymentService} (validator FLOWABLE-INTO-OPERATON FC-46, event registry, channels, Sangam forms, then the BPMN/CMMN/DMN
  * engine deployment). Plain BPMN/DMN/CMMN/form-js deployments, and every read, use the default Operaton adapter.
  * Because the R43 package lifecycle ({@code /packages}) deploys through this port, approved packages that contain
  * event or channel models are deployed as app bundles too.

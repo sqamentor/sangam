@@ -5,9 +5,9 @@
   <decision id="p4-fee" name="P4 licence fee" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="p4-fee_t" hitPolicy="FIRST">
       <input id="p4-fee_i0" label="Licence type"><inputExpression id="p4-fee_ie0" typeRef="string"><text>licenceType</text></inputExpression></input>
-      <input id="p4-fee_i1" label="Area (sq m)"><inputExpression id="p4-fee_ie1" typeRef="double"><text>premisesArea</text></inputExpression></input>
+      <input id="p4-fee_i1" label="Area (sq m)"><inputExpression id="p4-fee_ie1" typeRef="number"><text>premisesArea</text></inputExpression></input>
       <input id="p4-fee_i2" label="Years"><inputExpression id="p4-fee_ie2" typeRef="integer"><text>durationYears</text></inputExpression></input>
-      <output id="p4-fee_o0" label="Fee (INR)" name="fee" typeRef="double"/>
+      <output id="p4-fee_o0" label="Fee (INR)" name="fee" typeRef="number"/>
       <rule id="p4-fee_r0"><description>small shop</description>
         <inputEntry id="p4-fee_r0_i0"><text>"TRADE"</text></inputEntry>
         <inputEntry id="p4-fee_r0_i1"><text>&lt;= 50</text></inputEntry>

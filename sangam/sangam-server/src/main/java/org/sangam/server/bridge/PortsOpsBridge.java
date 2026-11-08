@@ -33,7 +33,7 @@ import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TypedVariables;
 
 /**
- * {@link OpsPort} with the batch part on sangam-flowable-ports' {@link ProductBatchService} (R64, D-34): pause, resume,
+ * {@link OpsPort} with the batch part on sangam-flowable-ports' {@link ProductBatchService} (R64, FLOWABLE-INTO-OPERATON D-34): pause, resume,
  * cancel, four-eyes approve / reject (approver ≠ creator), per-item results, chunked execution with SKIP LOCKED so
  * several nodes share a batch, resumable after a restart (the rows are in {@code PORT_BATCH} / {@code PORT_BATCH_ITEM}).
  * Every other operation (incidents, reconciliation, outbox, jobs, migration planning, history cleanup) delegates to

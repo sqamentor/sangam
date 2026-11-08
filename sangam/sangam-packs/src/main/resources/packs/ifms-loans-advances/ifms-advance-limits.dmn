@@ -4,7 +4,7 @@
   <decision id="ifms-advance-limits" name="Advance limits" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="ifms-advance-limits_t" hitPolicy="FIRST">
       <input id="ifms-advance-limits_i0" label="Kind"><inputExpression id="ifms-advance-limits_ie0" typeRef="string"><text>advanceKind</text></inputExpression></input>
-      <input id="ifms-advance-limits_i1" label="Amount"><inputExpression id="ifms-advance-limits_ie1" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="ifms-advance-limits_i1" label="Amount"><inputExpression id="ifms-advance-limits_ie1" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="ifms-advance-limits_o0" label="Allowed" name="advanceAllowed" typeRef="boolean"/>
       <output id="ifms-advance-limits_o1" label="Rule" name="ruleRef" typeRef="string"/>
       <rule id="ifms-advance-limits_r0"><description>placeholder</description>

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Post-commit hand-off of new async jobs (FC-24, Flowable's async executor hand-off): an async continuation created
+ * Post-commit hand-off of new async jobs (FLOWABLE-INTO-OPERATON FC-24, Flowable's async executor hand-off): an async continuation created
  * by a command is pre-locked for this node in the same transaction and, once the transaction <b>committed</b>, handed
  * straight to the job executor's thread pool. The job never waits for the next acquisition cycle and is never
  * acquired by another node (it is locked). If the pool rejects it, the lock simply expires and normal acquisition

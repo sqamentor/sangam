@@ -12,7 +12,7 @@ import org.sangam.core.security.SecurityIdentity;
  * authenticated identity (VI.4 rule 6), so every engine row carries {@code TENANT_ID_} and the VI.4 predicate applies.
  *
  * <p>Rules: a definition deployed to a tenant keeps that tenant (Operaton passes it through and does not call the
- * provider); a shared definition (no tenant) started by a tenant user is bound to the caller's tenant (FC-33: fallback
+ * provider); a shared definition (no tenant) started by a tenant user is bound to the caller's tenant (FLOWABLE-INTO-OPERATON FC-33: fallback
  * from the tenant to shared definitions); a sub-instance inherits the parent's tenant. Without a bound identity
  * (e.g. a timer start of a shared definition) no tenant is assigned: such rows match no VI.4 predicate (the predicate
  * requires {@code tenant = :tenant}), so they are invisible to every tenant (fail closed) and a warning is logged.

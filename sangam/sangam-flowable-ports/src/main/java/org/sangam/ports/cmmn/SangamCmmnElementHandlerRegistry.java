@@ -7,7 +7,7 @@ import org.operaton.bpm.engine.impl.cmmn.handler.EventListenerItemHandler;
 import org.operaton.bpm.model.cmmn.instance.EventListener;
 
 /**
- * FC-55 / D-08: Operaton 2.2.0 leaves CMMN event listeners unregistered
+ * FLOWABLE-INTO-OPERATON FC-55 / FLOWABLE-INTO-OPERATON D-08: Operaton 2.2.0 leaves CMMN event listeners unregistered
  * ({@code DefaultCmmnElementHandlerRegistry}: "EventListener is currently not supported"), so a timer or user event
  * listener deploys silently and never fires (GP-21). This registry, installed with
  * {@code CmmnTransformer.setCmmnElementHandlerRegistry} (route 1 on an impl class), registers an item handler whose

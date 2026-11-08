@@ -13,7 +13,7 @@ import org.sangam.security.admin.ApiTokenService;
 import org.sangam.security.admin.PrivilegeService;
 
 /**
- * {@link IdentityExtrasPort} (sangam-core, consumed by sangam-flowable-ports' {@code IdmFacade}, FC-42) as a thin
+ * {@link IdentityExtrasPort} (sangam-core, consumed by sangam-flowable-ports' {@code IdmFacade}, FLOWABLE-INTO-OPERATON FC-42) as a thin
  * adapter over sangam-security's {@link PrivilegeService} and {@link ApiTokenService}. Same transaction semantics as
  * the services: every call runs on the caller's connection.
  */

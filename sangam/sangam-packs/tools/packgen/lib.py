@@ -209,8 +209,10 @@ class Scope:
         self.proc.calls.add(called)
         return self._add(dict(tag='callActivity', id=id, name=name, kind='task', attrs=attrs, ext=ext))
 
-    def xgw(self, id, name=''):
-        return self._add(dict(tag='exclusiveGateway', id=id, name=name, kind='gateway'))
+    def xgw(self, id, name='', policy=None):
+        # ADR-D-25: strict XOR by default; policy='priority' needs flow(..., priority=n) on every conditional flow
+        attrs = {'sangam:routingPolicy': policy} if policy else {}
+        return self._add(dict(tag='exclusiveGateway', id=id, name=name, kind='gateway', attrs=attrs))
 
     def pgw(self, id, name=''):
         return self._add(dict(tag='parallelGateway', id=id, name=name, kind='gateway'))
@@ -269,9 +271,9 @@ class Scope:
     def assoc(self, src, tgt):
         self.assocs.append((self.proc.fid('a'), src, tgt))
 
-    def flow(self, src, tgt, c=None, name=None, default=False):
+    def flow(self, src, tgt, c=None, name=None, default=False, priority=None):
         fid = self.proc.fid('f')
-        self.flows.append(dict(id=fid, src=src, tgt=tgt, cond=c, name=name, default=default))
+        self.flows.append(dict(id=fid, src=src, tgt=tgt, cond=c, name=name, default=default, priority=priority))
         return fid
 
     def seq(self, *ids):
@@ -423,6 +425,7 @@ class Proc:
                '<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" '
                'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
                'xmlns:operaton="http://operaton.org/schema/1.0/bpmn" '
+               'xmlns:sangam="http://sangam.org/schema/1.0/bpmn" '
                'xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" '
                'xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" '
                'xmlns:di="http://www.omg.org/spec/DD/20100524/DI" '
@@ -468,6 +471,8 @@ class Proc:
                        f'cancelActivity="{"true" if b["cancel"] else "false"}">{"".join(b["body"])}</boundaryEvent>')
         for f in s.flows:
             nm = f' name="{a(f["name"])}"' if f['name'] else ''
+            if f.get('priority') is not None:
+                nm += f' sangam:priority="{f["priority"]}"'
             if f['cond']:
                 out.append(f'{ind}<sequenceFlow id="{f["id"]}"{nm} sourceRef="{f["src"]}" targetRef="{f["tgt"]}">'
                            f'<conditionExpression xsi:type="tFormalExpression">{escape(cond(f["cond"]))}'
@@ -644,8 +649,16 @@ def route(s, t, k):
 
 # ---- DMN -------------------------------------------------------------------------------------------------------
 
+def dmn_type(typ):
+    """ADR-D-26 / SL-05: shipped DMN never uses binary floating point; 'double'/'float' become the exact 'number'.
+    The single place every generated DMN type goes through, so a pack definition cannot reintroduce a double."""
+    return 'number' if str(typ).lower() in ('double', 'float') else typ
+
+
 def dmn(did, name, hit, inputs, outputs, rules, doc='', ttl=3650, version='1.0.0'):
     """inputs: [(label, expression, typeRef)], outputs: [(name, label, typeRef)], rules: [(ins, outs, note)]."""
+    inputs = [(label, expr, dmn_type(typ)) for (label, expr, typ) in inputs]
+    outputs = [(nm, label, dmn_type(typ)) for (nm, label, typ) in outputs]
     o = ['<?xml version="1.0" encoding="UTF-8"?>',
          '<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" '
          'xmlns:operaton="http://operaton.org/schema/1.0/dmn" '

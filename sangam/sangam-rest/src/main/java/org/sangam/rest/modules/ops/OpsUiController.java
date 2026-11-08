@@ -52,7 +52,10 @@ public class OpsUiController {
     private final OpsApi api;
     private final PermissionPort permissions;
 
-    public OpsUiController(OpsApi api, PermissionPort permissions) {
+    private final org.sangam.rest.support.BusinessDates dates;
+
+    public OpsUiController(OpsApi api, PermissionPort permissions, org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
+        this.dates = new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable);
         this.api = api;
         this.permissions = permissions;
     }
@@ -116,7 +119,7 @@ public class OpsUiController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         permissions.require(ctx, OpsController.READ);
-        LocalDate end = to == null ? LocalDate.now() : to;
+        LocalDate end = dates.orToday(to, ctx.tenantId());
         return Lists.ok(api.usage().read(ctx.tenantId(), from == null ? end.minusDays(30) : from, end));
     }
 

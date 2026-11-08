@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Item handlers for {@link ProductBatchService}:
  * <ul>
- *   <li>{@code task-complete} (D-34 bulk completion, Flowable {@code TaskService.bulkComplete}): item = task id; config
+ *   <li>{@code task-complete} (FLOWABLE-INTO-OPERATON D-34 bulk completion, Flowable {@code TaskService.bulkComplete}): item = task id; config
  *       {@code variables} (map) and optional {@code assignee} that the task must have (guard against completing tasks
  *       re-assigned since the selection). Already-completed tasks count as done (idempotent).</li>
  *   <li>{@code message-correlate}: item = business key; config {@code messageName}, {@code variables}, {@code tenantId}.</li>

@@ -8,18 +8,18 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Event definition ({@code .event} model, FC-02/FC-03). The JSON shape is Flowable's
+ * Event definition ({@code .event} model, FLOWABLE-INTO-OPERATON FC-02/FLOWABLE-INTO-OPERATON FC-03). The JSON shape is Flowable's
  * ({@code key, name, payload[], correlationParameters[]}) plus Sangam fields, so Flowable {@code .event} files deploy
  * unchanged.
  *
  * @param key                   event key; also the BPMN message name the event correlates to (see README)
  * @param payload               typed payload fields copied into process variables
  * @param correlationParameters fields that must equal a variable of the waiting instance; {@code scope=local}
- *                              matches a local variable of the waiting execution (branch addressing, D-35)
+ *                              matches a local variable of the waiting execution (branch addressing, FLOWABLE-INTO-OPERATON D-35)
  * @param businessKeyField      payload field used as business key for start and correlation (optional)
  * @param startUniqueReference  correlation parameter whose value must be unique per process definition key; a second
- *                              event with the same value does not start a second instance (FC-04, R38 uniqueStart)
- * @param ttlSeconds            how long an unmatched event stays buffered (D-33); default 86400
+ *                              event with the same value does not start a second instance (FLOWABLE-INTO-OPERATON FC-04, R38 uniqueStart)
+ * @param ttlSeconds            how long an unmatched event stays buffered (FLOWABLE-INTO-OPERATON D-33); default 86400
  * @param startProcessKey       process definition key started by this event when the process has no message start
  *                              event named after the event (event-to-process start)
  * @param startCaseKey          case definition key started by this event (event-to-case start; CMMN has no message

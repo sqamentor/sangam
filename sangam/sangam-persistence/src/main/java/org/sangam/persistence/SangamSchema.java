@@ -10,6 +10,7 @@ import java.util.Objects;
 import javax.sql.DataSource;
 
 import liquibase.Scope;
+import org.sangam.core.licence.LiquibaseLicenceGuard;
 import liquibase.command.CommandScope;
 import liquibase.command.core.UpdateCommandStep;
 import liquibase.command.core.helpers.DbUrlConnectionArgumentsCommandStep;
@@ -21,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Applies the Sangam product schema (R12, D-7, D-54): the Liquibase 4.33.0 master changelog
+ * Applies the Sangam product schema (R12, ADR-D-7, FLOWABLE-INTO-OPERATON D-54): the Liquibase 4.33.0 master changelog
  * {@value #MASTER_CHANGELOG} with one formatted-SQL changelog per dialect (PostgreSQL, Oracle, SQL Server,
  * MySQL 8.4, H2), and, separately, the engine schema patches {@value #ENGINE_PATCHES_CHANGELOG} (P-1, P-2).
  *
@@ -207,6 +208,7 @@ public final class SangamSchema {
      */
     public static void apply(Connection connection, String changelog, String contexts) {
         Objects.requireNonNull(connection, "connection");
+        LiquibaseLicenceGuard.check(); // SG-26: never run a non-4.x Liquibase
         boolean autoCommit = true;
         try {
             autoCommit = connection.getAutoCommit();

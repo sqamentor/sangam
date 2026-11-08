@@ -15,19 +15,19 @@ public final class SangamBpmn {
     public static final String NS_URI = "http://sangam.org/schema/1.0/bpmn";
     public static final Namespace NS = new Namespace(NS_URI);
 
-    /** Event registry: event key sent (throw/end/send) or awaited (catch) by the element. FC-02. */
+    /** Event registry: event key sent (throw/end/send) or awaited (catch) by the element. FLOWABLE-INTO-OPERATON FC-02. */
     public static final String EVENT_TYPE = "eventType";
-    /** Comma-separated outbound channel keys for a send. FC-02. */
+    /** Comma-separated outbound channel keys for a send. FLOWABLE-INTO-OPERATON FC-02. */
     public static final String CHANNELS = "channels";
-    /** Triggerable service task. FC-12. */
+    /** Triggerable service task. FLOWABLE-INTO-OPERATON FC-12. */
     public static final String TRIGGERABLE = "triggerable";
-    /** Skip expression (FEEL/JUEL boolean). FC-13. */
+    /** Skip expression (FEEL/JUEL boolean). FLOWABLE-INTO-OPERATON FC-13. */
     public static final String SKIP_EXPRESSION = "skipExpression";
-    /** Terminate end event scope: {@code all} (whole process instance) or {@code multiInstance}. FC-22. */
+    /** Terminate end event scope: {@code all} (whole process instance) or {@code multiInstance}. FLOWABLE-INTO-OPERATON FC-22. */
     public static final String TERMINATE = "terminate";
-    /** Multi-instance aggregation: target variable name. FC-21. */
+    /** Multi-instance aggregation: target variable name. FLOWABLE-INTO-OPERATON FC-21. */
     public static final String AGGREGATE_TO = "aggregateTo";
-    /** Multi-instance aggregation: comma-separated variable names collected per item. FC-21. */
+    /** Multi-instance aggregation: comma-separated variable names collected per item. FLOWABLE-INTO-OPERATON FC-21. */
     public static final String AGGREGATE_VARIABLES = "aggregateVariables";
 
     private SangamBpmn() {

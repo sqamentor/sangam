@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * JMS 3.x publisher (R71 "AMQP/JMS"; Flowable FC-03 JMS channel). Optional: needs {@code jakarta.jms-api} and a broker
+ * JMS 3.x publisher (R71 "AMQP/JMS"; FLOWABLE-INTO-OPERATON FC-03 JMS channel). Optional: needs {@code jakarta.jms-api} and a broker
  * client (ActiveMQ Artemis, IBM MQ, ...) supplying the {@link ConnectionFactory}.
  *
  * <ul>

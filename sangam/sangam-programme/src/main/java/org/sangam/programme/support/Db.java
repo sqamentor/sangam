@@ -240,4 +240,10 @@ public final class Db {
             throw new ProgrammeException(ProgrammeException.Code.CONFLICT, what + " was changed concurrently or is in another state");
         }
     }
+
+    /** A {@code {money}} column (BIGINT minor units) in the row's {@code currency} column (SD-398). */
+    public static org.sangam.core.money.Money money(java.sql.ResultSet rs, String col) throws java.sql.SQLException {
+        long v = rs.getLong(col);
+        return rs.wasNull() ? null : org.sangam.core.money.Money.ofMinor(v, rs.getString("currency"));
+    }
 }

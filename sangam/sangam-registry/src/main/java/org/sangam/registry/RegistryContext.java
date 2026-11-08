@@ -21,7 +21,7 @@ public record RegistryContext(String tenant, String actor, String onBehalfOf, St
     public RegistryContext {
         Objects.requireNonNull(tenant, "tenant");
         Objects.requireNonNull(actor, "actor");
-        zone = zone == null ? ZoneId.of("UTC") : zone;
+        zone = zone == null ? org.sangam.core.time.BusinessClock.system().zone(tenant) : zone;   // tenant business zone
     }
 
     public static RegistryContext of(String tenant, String actor) {

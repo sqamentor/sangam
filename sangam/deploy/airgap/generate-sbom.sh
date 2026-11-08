@@ -58,9 +58,13 @@ if [ -n "$IMAGES" ]; then
   fi
 fi
 
-( cd "$OUT" && sha256sum *.json > SHA256SUMS )
+# Licence policy before the checksums: --annotate records the SG-27 / SD-301 owner exception (reason, verified SPDX,
+# evidence file) as CycloneDX properties on the exact excepted components and in metadata.properties.
 echo ">> licence policy"
-python3 -I "$SANGAM/deploy/licence/check_licences.py" --policy "$SANGAM/deploy/licence/licence-policy.json" \
+python3 -I "$SANGAM/deploy/licence/check_licences.py" --policy "$SANGAM/deploy/licence/licence-policy.json" --annotate \
   --sbom "$OUT"/sangam-maven.cdx.json $( [ -f "$OUT/sangam-ui.cdx.json" ] && echo --sbom "$OUT/sangam-ui.cdx.json" ) \
   --report "$OUT/licence-report.md"
+# Attribution the exception carries (Apache-2.0 section 4(d) NOTICE of scala-library; MIT notices of com.lihaoyi)
+cp "$SANGAM/../NOTICE" "$OUT/NOTICE" 2>/dev/null || true
+( cd "$OUT" && sha256sum *.json > SHA256SUMS )
 echo "SBOMs in $OUT"

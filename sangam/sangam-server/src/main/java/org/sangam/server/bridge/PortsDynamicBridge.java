@@ -19,8 +19,8 @@ import org.sangam.rest.support.TxSupport;
 import org.sangam.rest.support.TypedVariables;
 
 /**
- * {@link DynamicPort} on sangam-flowable-ports: ad-hoc sub-process (FC-01, {@link AdHocSubProcessService}) and dynamic
- * injection (FC-15, {@link DynamicInjectionService}: derived model variant, deployed, single-instance migration).
+ * {@link DynamicPort} on sangam-flowable-ports: ad-hoc sub-process (FLOWABLE-INTO-OPERATON FC-01, {@link AdHocSubProcessService}) and dynamic
+ * injection (FLOWABLE-INTO-OPERATON FC-15, {@link DynamicInjectionService}: derived model variant, deployed, single-instance migration).
  * The tenant check is the process-instance read of {@link ProcessPort#get} (404 for another tenant).
  */
 public final class PortsDynamicBridge implements DynamicPort {

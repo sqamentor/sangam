@@ -7,7 +7,7 @@ import java.time.ZoneId;
 
 import org.sangam.core.engine.SangamClockHolder;
 
-/** A {@link Clock} over the engine clock (one clock per JVM, D-10), for modules that take a {@code java.time.Clock}. */
+/** A {@link Clock} over the engine clock (one clock per JVM, FLOWABLE-INTO-OPERATON D-10), for modules that take a {@code java.time.Clock}. */
 public final class GeoEngineClock extends Clock {
 
     private final ZoneId zone;

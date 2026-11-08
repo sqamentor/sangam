@@ -4,7 +4,7 @@ package org.sangam.integration.inbox;
 import java.util.Map;
 
 /**
- * Inbound pipeline shape (Flowable FC-03: deserializer, {@code InboundEventKeyDetector}, {@code InboundEventTenantDetector},
+ * Inbound pipeline shape (FLOWABLE-INTO-OPERATON FC-03: deserializer, {@code InboundEventKeyDetector}, {@code InboundEventTenantDetector},
  * payload extractor) reduced to one function from a transport message to an {@link InboundMessage}. WS-PORTS'
  * channel models produce implementations; {@link #cloudEvents} is the default for CloudEvents binary-mode messages.
  *

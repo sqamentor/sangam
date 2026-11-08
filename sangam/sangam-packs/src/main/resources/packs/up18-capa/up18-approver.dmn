@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="up18-approver" name="CAPA approver" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="up18-approver_t" hitPolicy="FIRST">
-      <input id="up18-approver_i0" label="Amount"><inputExpression id="up18-approver_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="up18-approver_i0" label="Amount"><inputExpression id="up18-approver_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="up18-approver_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="up18-approver_r0">
         <inputEntry id="up18-approver_r0_i0"><text>-</text></inputEntry>

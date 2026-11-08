@@ -4,8 +4,8 @@
   <decision id="contract-ld" name="Liquidated damages (synthetic GCC clause)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="contract-ld_t" hitPolicy="FIRST">
       <input id="contract-ld_i0" label="Delay (days)"><inputExpression id="contract-ld_ie0" typeRef="integer"><text>delayDays</text></inputExpression></input>
-      <input id="contract-ld_i1" label="Contract value"><inputExpression id="contract-ld_ie1" typeRef="double"><text>contractValue</text></inputExpression></input>
-      <output id="contract-ld_o0" label="LD amount" name="ldAmount" typeRef="double"/>
+      <input id="contract-ld_i1" label="Contract value"><inputExpression id="contract-ld_ie1" typeRef="number"><text>contractValue</text></inputExpression></input>
+      <output id="contract-ld_o0" label="LD amount" name="ldAmount" typeRef="number"/>
       <rule id="contract-ld_r0"><description>no delay</description>
         <inputEntry id="contract-ld_r0_i0"><text>&lt;= 0</text></inputEntry>
         <inputEntry id="contract-ld_r0_i1"><text>-</text></inputEntry>

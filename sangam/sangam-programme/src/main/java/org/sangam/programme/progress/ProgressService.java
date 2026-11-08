@@ -17,6 +17,7 @@ import org.sangam.programme.support.Db;
 import org.sangam.programme.target.TargetService;
 
 import java.math.BigDecimal;
+import org.sangam.core.money.Money;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.sql.Connection;
@@ -39,13 +40,14 @@ import java.util.Set;
  */
 public final class ProgressService {
 
-    public record Financial(String programmeId, String periodId, String orgUnit, String head, BigDecimal allocated, BigDecimal released,
-                            BigDecimal committed, BigDecimal expended, String currency, String source, String updatedBy, Instant updatedAt) {
+    /** Amounts are exact {@link Money} in {@code currency} (JSON: MoneyAmount decimal strings). */
+    public record Financial(String programmeId, String periodId, String orgUnit, String head, Money allocated, Money released,
+                            Money committed, Money expended, String currency, String source, String updatedBy, Instant updatedAt) {
     }
 
     public record Progress(String programmeId, String periodId, String orgUnit, String physicalBasis, BigDecimal physicalPct,
                            BigDecimal plannedPhysicalPct, BigDecimal financialPct, BigDecimal releasedPct, BigDecimal utilisationOfReleasedPct,
-                           BigDecimal gapPct, BigDecimal allocated, BigDecimal released, BigDecimal expended) {
+                           BigDecimal gapPct, Money allocated, Money released, Money expended) {
     }
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
@@ -78,16 +80,19 @@ public final class ProgressService {
     // ------------------------------------------------------------------------------------------------ financial
 
     public Financial recordFinancial(Connection c, String tenant, String programmeId, String periodId, String orgUnit, String head,
-                                     BigDecimal allocated, BigDecimal released, BigDecimal committed, BigDecimal expended, String currency,
+                                     Money allocated, Money released, Money committed, Money expended, String currency,
                                      String actor) {
         String t = Db.tenant(tenant);
         programmes.get(c, t, programmeId);
         periods.requireWritable(c, t, periodId, true);
         Db.requireText(orgUnit, "org unit");
         String h = head == null || head.isBlank() ? "TOTAL" : head;
-        for (BigDecimal v : new BigDecimal[]{allocated, released, committed, expended}) {
+        for (Money v : new Money[]{allocated, released, committed, expended}) {
             if (v != null && v.signum() < 0) {
                 throw ProgrammeException.invalid("financial amounts must not be negative");
+            }
+            if (v != null && !v.currencyCode().equals(currency)) {
+                throw ProgrammeException.invalid("financial amount in " + v.currencyCode() + " but the row currency is " + currency);
             }
         }
         write(c, t, programmeId, periodId, orgUnit, h, allocated, released, committed, expended, currency, "MANUAL", actor);
@@ -98,10 +103,15 @@ public final class ProgressService {
     public int importFinancial(Connection c, String tenant, String programmeId, String periodId, String orgUnit, String actor) {
         String t = Db.tenant(tenant);
         int n = 0;
-        for (Map.Entry<String, BigDecimal[]> e : financialSource.actuals(c, t, programmeId, periodId, orgUnit).entrySet()) {
-            BigDecimal[] v = e.getValue();
-            write(c, t, programmeId, periodId, orgUnit, e.getKey(), at(v, 0), at(v, 1), at(v, 2), at(v, 3),
-                    programmes.get(c, t, programmeId).currency(), "IMPORT", actor);
+        String ccy = programmes.get(c, t, programmeId).currency();
+        for (Map.Entry<String, Money[]> e : financialSource.actuals(c, t, programmeId, periodId, orgUnit).entrySet()) {
+            Money[] v = e.getValue();
+            for (Money x : v) {
+                if (x != null && !x.currencyCode().equals(ccy)) {
+                    throw ProgrammeException.invalid("imported " + x.currencyCode() + " amount for a " + ccy + " programme");
+                }
+            }
+            write(c, t, programmeId, periodId, orgUnit, e.getKey(), at(v, 0), at(v, 1), at(v, 2), at(v, 3), ccy, "IMPORT", actor);
             n++;
         }
         return n;
@@ -134,14 +144,26 @@ public final class ProgressService {
                 t, programmeId, periodId, node);
         List<Object> params = new ArrayList<>(List.of(t, programmeId, periodId));
         params.addAll(kids);
-        List<Object[]> sums = Jdbc.query(c, "SELECT head, SUM(allocated) AS a, SUM(released) AS r, SUM(committed_amt) AS cm, SUM(expended) AS e,"
-                        + " MAX(currency) AS cur FROM PG_FINANCIAL WHERE tenant_id=? AND programme_id=? AND period_id=? AND org_unit IN "
-                        + Db.in(kids.size()) + " GROUP BY head",
-                rs -> new Object[]{rs.getString("head"), rs.getBigDecimal("a"), rs.getBigDecimal("r"), rs.getBigDecimal("cm"),
-                        rs.getBigDecimal("e"), rs.getString("cur")}, params.toArray());
+        // exact integer sums per head AND currency: amounts in different currencies are never added (the old MAX(currency)
+        // labelled a mixed sum with one of them)
+        List<Object[]> sums = Jdbc.query(c, "SELECT head, currency, SUM(allocated) AS a, SUM(released) AS r, SUM(committed_amt) AS cm,"
+                        + " SUM(expended) AS e, COUNT(allocated) AS na, COUNT(released) AS nr, COUNT(committed_amt) AS ncm,"
+                        + " COUNT(expended) AS ne FROM PG_FINANCIAL WHERE tenant_id=? AND programme_id=? AND period_id=? AND org_unit IN "
+                        + Db.in(kids.size()) + " GROUP BY head, currency ORDER BY head",
+                rs -> {
+                    String cur = rs.getString("currency");
+                    return new Object[]{rs.getString("head"), cur, sum(rs, "a", "na", cur), sum(rs, "r", "nr", cur),
+                            sum(rs, "cm", "ncm", cur), sum(rs, "e", "ne", cur)};
+                }, params.toArray());
+        Set<String> heads = new HashSet<>();
         for (Object[] s : sums) {
-            write(c, t, programmeId, periodId, node, (String) s[0], (BigDecimal) s[1], (BigDecimal) s[2], (BigDecimal) s[3], (BigDecimal) s[4],
-                    (String) s[5], "ROLLUP", null);
+            if (!heads.add((String) s[0])) {
+                throw ProgrammeException.invalid("cannot roll up head " + s[0] + " of " + node + ": children report different currencies");
+            }
+        }
+        for (Object[] s : sums) {
+            write(c, t, programmeId, periodId, node, (String) s[0], (Money) s[2], (Money) s[3], (Money) s[4], (Money) s[5],
+                    (String) s[1], "ROLLUP", null);
             n[0]++;
         }
     }
@@ -151,13 +173,22 @@ public final class ProgressService {
                 ProgressService::mapFinancial, Db.tenant(tenant), programmeId, periodId, orgUnit);
     }
 
-    private void write(Connection c, String t, String programmeId, String periodId, String orgUnit, String head, BigDecimal allocated,
-                       BigDecimal released, BigDecimal committed, BigDecimal expended, String currency, String source, String actor) {
+    private static Money sum(ResultSet rs, String col, String count, String currency) throws SQLException {
+        return rs.getLong(count) == 0 ? null : Money.ofMinor(rs.getLong(col), currency);
+    }
+
+    private static Long minor(Money m) {
+        return m == null ? null : m.minor();
+    }
+
+    private void write(Connection c, String t, String programmeId, String periodId, String orgUnit, String head, Money allocated,
+                       Money released, Money committed, Money expended, String currency, String source, String actor) {
         Jdbc.update(c, "DELETE FROM PG_FINANCIAL WHERE tenant_id=? AND programme_id=? AND period_id=? AND org_unit=? AND head=?",
                 t, programmeId, periodId, orgUnit, head);
         Jdbc.update(c, "INSERT INTO PG_FINANCIAL(tenant_id, programme_id, period_id, org_unit, head, allocated, released, committed_amt, expended,"
                         + " currency, source, updated_by, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?," + dialect.now() + ")",
-                t, programmeId, periodId, orgUnit, head, allocated, released, committed, expended, currency, source, actor);
+                t, programmeId, periodId, orgUnit, head, minor(allocated), minor(released), minor(committed), minor(expended), currency,
+                source, actor);
     }
 
     // ------------------------------------------------------------------------------------------------ progress
@@ -177,17 +208,18 @@ public final class ProgressService {
             physical = indicatorPhysical(c, t, cfg, prog, periodId, orgUnit);
             planned = HUNDRED;
         }
-        BigDecimal alloc = BigDecimal.ZERO;
-        BigDecimal rel = BigDecimal.ZERO;
-        BigDecimal exp = BigDecimal.ZERO;
         List<Financial> rows = financial(c, t, programmeId, periodId, orgUnit);
+        String ccy = rows.isEmpty() ? prog.currency() : rows.get(0).currency();
+        Money alloc = ccy == null ? null : Money.zero(ccy);
+        Money rel = alloc;
+        Money exp = alloc;
         boolean onlyTotal = rows.stream().allMatch(f -> "TOTAL".equals(f.head()));
         for (Financial f : rows) {
             // a TOTAL head next to detailed heads is a control figure, not added again
             if (onlyTotal || !"TOTAL".equals(f.head())) {
-                alloc = alloc.add(nz(f.allocated()));
-                rel = rel.add(nz(f.released()));
-                exp = exp.add(nz(f.expended()));
+                alloc = alloc.plus(nz(f.allocated(), f.currency())); // exact; a mixed currency fails here
+                rel = rel.plus(nz(f.released(), f.currency()));
+                exp = exp.plus(nz(f.expended(), f.currency()));
             }
         }
         BigDecimal finPct = pct(exp, alloc);
@@ -236,21 +268,24 @@ public final class ProgressService {
         return target.multiply(BigDecimal.valueOf(PeriodService.elapsedShare(p, asOf)), MC);
     }
 
-    private static BigDecimal pct(BigDecimal part, BigDecimal whole) {
-        return whole == null || whole.signum() == 0 ? null : part.multiply(HUNDRED).divide(whole, MC).setScale(2, RoundingMode.HALF_UP);
+    /** A percentage of two money amounts (a ratio, not money): computed from exact minor units, shown to 2 places. */
+    private static BigDecimal pct(Money part, Money whole) {
+        return whole == null || whole.signum() == 0 ? null
+                : BigDecimal.valueOf(part.minor()).multiply(HUNDRED).divide(BigDecimal.valueOf(whole.minor()), MC)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
-    private static BigDecimal nz(BigDecimal v) {
-        return v == null ? BigDecimal.ZERO : v;
+    private static Money nz(Money v, String currency) {
+        return v == null ? Money.zero(currency) : v;
     }
 
-    private static BigDecimal at(BigDecimal[] v, int i) {
+    private static Money at(Money[] v, int i) {
         return v != null && v.length > i ? v[i] : null;
     }
 
     static Financial mapFinancial(ResultSet rs) throws SQLException {
         return new Financial(rs.getString("programme_id"), rs.getString("period_id"), rs.getString("org_unit"), rs.getString("head"),
-                rs.getBigDecimal("allocated"), rs.getBigDecimal("released"), rs.getBigDecimal("committed_amt"), rs.getBigDecimal("expended"),
+                Db.money(rs, "allocated"), Db.money(rs, "released"), Db.money(rs, "committed_amt"), Db.money(rs, "expended"),
                 rs.getString("currency"), rs.getString("source"), rs.getString("updated_by"), Jdbc.instant(rs, "updated_at"));
     }
 }

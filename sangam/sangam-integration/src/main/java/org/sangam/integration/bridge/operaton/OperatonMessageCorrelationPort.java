@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Operaton implementation of the inbox → engine port (R38; Flowable FC-02). Correlation key match: the process business
+ * Operaton implementation of the inbox → engine port (R38; FLOWABLE-INTO-OPERATON FC-02). Correlation key match: the process business
  * key, else a process variable {@code sangamCorrelationKey} (e.g. the operationId a payment step waits on).
  * {@link #hasSubscription} checks message event subscriptions first, so an early message is buffered instead of
- * raising {@code MismatchingMessageCorrelationException} (D-33).
+ * raising {@code MismatchingMessageCorrelationException} (FLOWABLE-INTO-OPERATON D-33).
  *
  * <p>Runs inside the inbox processing transaction; that transaction must be the engine's
  * ({@code Transactions.of(engineAdapter)}) so the correlation and the inbox PROCESSED mark commit together.

@@ -151,7 +151,7 @@ public interface LedgerControlStore {
         public void hold(LedgerRequest r, Instant at) {
             tx(c -> Jdbc.insertIfAbsent(c, dialect, "INSERT INTO LDG_HOLD (tenant_id, reference, account_id, amount, request_json, "
                             + "held_at, released_at) VALUES (?,?,?,?,?,?,?)", r.account().tenant(), r.reference(), r.account().id(),
-                    r.amount() == null ? BigDecimal.ZERO : r.amount(), write(r), at, null));
+                    JdbcLedgerStore.units(r.amount(), r.currency()), write(r), at, null)); // integer units (SD-398)
         }
 
         @Override

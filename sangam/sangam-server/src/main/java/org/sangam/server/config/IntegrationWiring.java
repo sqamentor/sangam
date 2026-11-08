@@ -280,7 +280,7 @@ public class IntegrationWiring {
         return new UniqueStartGuard(tx.dialect());
     }
 
-    /** For sangam-flowable-ports' {@code EventDispatcher} (FC-04). */
+    /** For sangam-flowable-ports' {@code EventDispatcher} (FLOWABLE-INTO-OPERATON FC-04). */
     @Bean
     public UniqueStartPort sangamUniqueStartPort(UniqueStartGuard guard) {
         return new IntegrationUniqueStartPort(guard);

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp47">
+  <!-- GP-47 provisional result -> paid challenge window -> committee review -> bulk recompute (parallel multi-instance of
+       external work, one item per candidate) -> final result. -->
+  <process id="gp47-answer-key" name="GP-47 Answer key cycle" isExecutable="true">
+    <startEvent id="gp47_start"/>
+    <sequenceFlow id="f1" sourceRef="gp47_start" targetRef="gp47_publishProvisional"/>
+    <userTask id="gp47_publishProvisional" name="Publish provisional key"><potentialOwner><resourceAssignmentExpression><formalExpression>group(exam-cell)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp47_publishProvisional" targetRef="gp47_window"/>
+    <intermediateCatchEvent id="gp47_window" name="Challenge window closes"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${windowEnd}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <sequenceFlow id="f3" sourceRef="gp47_window" targetRef="gp47_review"/>
+    <userTask id="gp47_review" name="Expert committee reviews challenges"><potentialOwner><resourceAssignmentExpression><formalExpression>group(expert-committee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f4" sourceRef="gp47_review" targetRef="gp47_recompute"/>
+    <serviceTask id="gp47_recompute" name="Recompute score" @@ext|recompute;nonexclusive@@>
+      <multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">${candidateCount}</loopCardinality></multiInstanceLoopCharacteristics>
+    </serviceTask>
+    <sequenceFlow id="f5" sourceRef="gp47_recompute" targetRef="gp47_publishFinal"/>
+    <userTask id="gp47_publishFinal" name="Publish final result"><potentialOwner><resourceAssignmentExpression><formalExpression>group(exam-cell)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f6" sourceRef="gp47_publishFinal" targetRef="gp47_end"/>
+    <endEvent id="gp47_end"/>
+  </process>
+</definitions>

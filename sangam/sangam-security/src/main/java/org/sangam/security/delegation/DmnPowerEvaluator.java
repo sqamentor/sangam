@@ -4,7 +4,6 @@ package org.sangam.security.delegation;
 import org.operaton.bpm.dmn.engine.DmnDecision;
 import org.operaton.bpm.dmn.engine.DmnDecisionResult;
 import org.operaton.bpm.dmn.engine.DmnEngine;
-import org.operaton.bpm.dmn.engine.DmnEngineConfiguration;
 import org.sangam.core.security.SangamSecurityException;
 
 import java.io.ByteArrayInputStream;
@@ -45,7 +44,7 @@ public final class DmnPowerEvaluator {
     private final Map<String, DmnDecision> cache = new ConcurrentHashMap<>();
 
     public DmnPowerEvaluator() {
-        this(DmnEngineConfiguration.createDefaultDmnEngineConfiguration().buildEngine());
+        this(org.sangam.engine.feel.SangamFeel.dmnEngineConfiguration().buildEngine());
     }
 
     public DmnPowerEvaluator(DmnEngine engine) {

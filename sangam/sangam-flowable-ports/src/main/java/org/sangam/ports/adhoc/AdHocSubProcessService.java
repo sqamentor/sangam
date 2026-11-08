@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Runtime API of the ad-hoc sub-process (FC-01): Flowable's {@code getEnabledActivitiesFromAdhocSubProcess},
+ * Runtime API of the ad-hoc sub-process (FLOWABLE-INTO-OPERATON FC-01): Flowable's {@code getEnabledActivitiesFromAdhocSubProcess},
  * {@code executeActivityInAdhocSubProcess} and {@code completeAdhocSubProcess}.
  *
  * <p>Starting an inner activity uses Operaton's public process-instance modification
@@ -103,11 +103,42 @@ public class AdHocSubProcessService {
                 throw new ProcessEngineException("activity " + activityId + " is not enabled in an ad-hoc sub-process of "
                         + processInstanceId + " (unknown, has an incoming flow, or sequential ordering is busy)");
             }
-            engine.getRuntimeService().createProcessInstanceModification(processInstanceId)
-                    .startBeforeActivity(activityId, target.adHocActivityInstanceId())
-                    .execute();
+            // An idle ad-hoc scope (entered, nothing started yet) is a scope execution waiting on the ad-hoc activity
+            // itself. Operaton's modification reuses a scope execution only when its activity is null, so on that
+            // state it would split the scope into a concurrent child that takes over the ad-hoc activity instance,
+            // and every later start fails ("Cannot create concurrent execution"). The first start therefore runs the
+            // inner activity on the scope execution, exactly as SubProcessActivityBehavior starts its initial
+            // activity; later starts (scope busy) go through the modification and become concurrent children.
+            ExecutionEntity idle = idleScopeExecution(root, target);
+            if (idle != null) {
+                idle.executeActivity(idle.getActivity().findActivity(activityId));
+            } else {
+                engine.getRuntimeService().createProcessInstanceModification(processInstanceId)
+                        .startBeforeActivity(activityId, target.adHocActivityInstanceId())
+                        .execute();
+            }
             return null;
         });
+    }
+
+    /** The scope execution of {@code target}'s ad-hoc instance when it is idle (no inner work), else null. */
+    private static ExecutionEntity idleScopeExecution(ExecutionEntity execution, EnabledActivity target) {
+        if (execution == null) {
+            return null;
+        }
+        if (execution.isScope() && execution.getActivity() != null
+                && target.adHocActivityId().equals(execution.getActivity().getId())
+                && target.adHocActivityInstanceId().equals(execution.getActivityInstanceId())
+                && execution.getNonEventScopeExecutions().isEmpty()) {
+            return execution;
+        }
+        for (ExecutionEntity child : execution.getExecutions()) {
+            ExecutionEntity found = idleScopeExecution(child, target);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
     }
 
     /**

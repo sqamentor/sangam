@@ -16,20 +16,21 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Flowable → Sangam/Operaton model import and incompatibility analysis (FC-05 import mapping; EC-21 LEAP-style
+ * Flowable → Sangam/Operaton model import and incompatibility analysis (FLOWABLE-INTO-OPERATON FC-05 import mapping; EC-21 LEAP-style
  * analyser; R44/R48). Converts {@code flowable:*} BPMN extensions to {@code operaton:*} or {@code sangam:*} and
  * classifies every Flowable construct as {@code MAPPED}, {@code PORTED} (needs a Sangam port that exists) or
- * {@code UNSUPPORTED} (with the reason and gap-list id). Input is parsed with the hardened parser (D-51).
+ * {@code UNSUPPORTED} (with the reason and gap-list id). Input is parsed with the hardened parser (FLOWABLE-INTO-OPERATON D-51).
  *
  * <p>Notable mappings: {@code variableListenerEventDefinition} → {@code conditionalEventDefinition} with
- * {@code operaton:variableName}/{@code operaton:variableEvents} (FC-05, Operaton evaluates it automatically, B-2);
- * {@code flowable:triggerable} / {@code flowable:skipExpression} / {@code terminateAll} → Sangam ports (FC-12, FC-13,
- * FC-22); {@code flowable:eventType} → {@code sangam:eventType} (FC-02); {@code flowable:type="external-worker"} →
+ * {@code operaton:variableName}/{@code operaton:variableEvents} (FLOWABLE-INTO-OPERATON FC-05, Operaton evaluates it automatically, B-2);
+ * {@code flowable:triggerable} / {@code flowable:skipExpression} / {@code terminateAll} → Sangam ports (FLOWABLE-INTO-OPERATON FC-12, FLOWABLE-INTO-OPERATON FC-13,
+ * FLOWABLE-INTO-OPERATON FC-22); {@code flowable:eventType} → {@code sangam:eventType} (FLOWABLE-INTO-OPERATON FC-02); {@code flowable:type="external-worker"} →
  * {@code operaton:type="external"} + topic; {@code flowable:async} → {@code operaton:asyncBefore}.
  */
 public final class FlowableModelImporter {
 
-    public enum Classification { MAPPED, PORTED, UNSUPPORTED }
+    /** WARNING: imports, but its meaning may differ on Sangam and the author must decide (e.g. ADR-D-25 first-match). */
+    public enum Classification { MAPPED, PORTED, WARNING, UNSUPPORTED }
 
     public record Finding(Classification classification, String elementId, String construct, String reference, String note) {
     }
@@ -77,6 +78,21 @@ public final class FlowableModelImporter {
         root.setAttributeNS(XMLNS, "xmlns:operaton", OPERATON_NS);
         root.setAttributeNS(XMLNS, "xmlns:sangam", SangamBpmn.NS_URI);
         walk(doc, root, findings);
+        // ADR-D-25: Flowable takes the first true flow in document order; Sangam routes strictly. Never silently
+        // change the meaning: every gateway that could depend on first-match is reported, and an existing
+        // sangam:routingPolicy / sangam:priority is kept as is (attributes in the Sangam namespace are not touched).
+        for (org.sangam.ports.bpmn.XorRoutingDom.Gateway g : org.sangam.ports.bpmn.XorRoutingDom.gateways(root)) {
+            if (g.nativeFirstMatchSensitive()) {
+                findings.add(new Finding(Classification.WARNING, g.id(), "exclusiveGateway first-match", "ADR-D-25",
+                        "Flowable picks the first true of " + g.conditionalFlows() + " conditions in document order; "
+                                + "Sangam raises AMBIGUOUS_ROUTE when more than one is true. Make the conditions "
+                                + "mutually exclusive, or keep first-match explicitly with sangam:routingPolicy=\"priority\" "
+                                + "and sangam:priority on every conditional flow"));
+            }
+            for (String p : g.problems()) {
+                findings.add(new Finding(Classification.UNSUPPORTED, g.id(), "exclusiveGateway routing", "ADR-D-25", p));
+            }
+        }
         return new Result(SecureXml.write(doc), findings);
     }
 
@@ -89,7 +105,7 @@ public final class FlowableModelImporter {
                 out.add(new Finding(Classification.MAPPED, parentId(el), "flowable:" + local, "A-18", "operaton:" + local));
                 el = (Element) renamed;
             } else if ("eventCorrelationParameter".equals(local) || "eventOutParameter".equals(local) || "eventInParameter".equals(local)) {
-                out.add(new Finding(Classification.PORTED, parentId(el), "flowable:" + local, "FC-02/FC-04",
+                out.add(new Finding(Classification.PORTED, parentId(el), "flowable:" + local, "FLOWABLE-INTO-OPERATON FC-02/FLOWABLE-INTO-OPERATON FC-04",
                         "declare correlation parameters in the .event definition (EventDefinition.correlationParameters)"));
             } else if ("eventType".equals(local)) {
                 if (el.getParentNode() != null && el.getParentNode().getParentNode() instanceof Element owner) {
@@ -232,7 +248,7 @@ public final class FlowableModelImporter {
 
     /**
      * FW-27: Flowable's {@code serviceTask flowable:type="dmn"} becomes an Operaton {@code businessRuleTask} with
-     * {@code operaton:decisionRef} (from the {@code decisionTableReferenceKey} field) and deployment binding (D-12). Without
+     * {@code operaton:decisionRef} (from the {@code decisionTableReferenceKey} field) and deployment binding (FLOWABLE-INTO-OPERATON D-12). Without
      * a decision key the task is UNSUPPORTED: left as a plain service task it would deploy and do nothing.
      */
     private static void mapDmnTask(Element el, List<Finding> out) {
@@ -280,7 +296,7 @@ public final class FlowableModelImporter {
         return FLOWABLE_NS.equals(ns) || ACTIVITI_NS.equals(ns);
     }
 
-    /** FC-05: {@code flowable:variableListenerEventDefinition} becomes an Operaton conditional event definition. */
+    /** FLOWABLE-INTO-OPERATON FC-05: {@code flowable:variableListenerEventDefinition} becomes an Operaton conditional event definition. */
     private static void mapVariableListener(Document doc, Element ext, List<Finding> out) {
         NodeList l = ext.getElementsByTagNameNS("*", "variableListenerEventDefinition");
         List<Element> defs = new ArrayList<>();

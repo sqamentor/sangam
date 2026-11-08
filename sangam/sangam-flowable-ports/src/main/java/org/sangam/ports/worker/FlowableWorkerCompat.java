@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * External-worker REST semantics parity (FC-36; Flowable {@code flowable-external-job-rest}:
+ * External-worker REST semantics parity (FLOWABLE-INTO-OPERATON FC-36; Flowable {@code flowable-external-job-rest}:
  * {@code POST /acquire/jobs}, {@code /acquire/jobs/{id}/complete|fail|bpmnError|cmmnTerminate}). Sangam's worker API
  * (ARCHITECTURE §4, {@code /api/v1/work}, owned by WS-REST) is the contract; this class translates Flowable's request
  * and response shapes onto it so existing Flowable external-worker clients (Java, JS, Python, .NET, Go) can be pointed
@@ -28,7 +28,7 @@ import java.util.Map;
  *   <tr><td>complete {workerId, variables[{name,type,value}]}</td><td>complete {workerId, lockVersion, variables{}}</td></tr>
  *   <tr><td>fail {workerId, errorMessage, errorDetails, retries, retryTimeout}</td><td>fail {workerId, lockVersion, errorMessage, retries, retryBackoffMs}</td></tr>
  *   <tr><td>bpmnError {workerId, errorCode, variables}</td><td>bpmn-error {workerId, lockVersion, errorCode, variables}</td></tr>
- *   <tr><td>cmmnTerminate</td><td>not applicable: CMMN external work runs as a BPMN process task (FC-11 pattern); mapped to
+ *   <tr><td>cmmnTerminate</td><td>not applicable: CMMN external work runs as a BPMN process task (FLOWABLE-INTO-OPERATON FC-11 pattern); mapped to
  *       complete with variable {@code _cmmnTerminate=true}</td></tr>
  *   <tr><td>HTTP 409 on a stale lock</td><td>409 {@code stale-lease} (identical status)</td></tr>
  * </table>

@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Process instances, definitions, messages and signals (ARCHITECTURE §4); cancel/delete (VI.5); resubmit and version
- * history (R43); modification (R49, FC-17); triggers (FC-12); ad-hoc (FC-01) and injection (FC-15); links (FC-31/32).
+ * history (R43); modification (R49, FLOWABLE-INTO-OPERATON FC-17); triggers (FLOWABLE-INTO-OPERATON FC-12); ad-hoc (FLOWABLE-INTO-OPERATON FC-01) and injection (FLOWABLE-INTO-OPERATON FC-15); links (FLOWABLE-INTO-OPERATON FC-31/32).
  */
 @RestController
 @RequestMapping("/api/v1")

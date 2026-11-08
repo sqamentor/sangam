@@ -27,6 +27,8 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 import org.sangam.core.api.LeaseTable;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Schema;
+import org.sangam.engine.db.DatabaseGuard;
+import org.sangam.core.licence.LiquibaseLicenceGuard;
 import org.sangam.rest.support.TxSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +49,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * Product schema at startup, driven by {@code SANGAM_LIQUIBASE_MODE} ({@link LiquibaseMode}):
  * <ul>
  *   <li>when the sangam-persistence master changelog is on the class path ({@code sangam.persistence.changelog},
- *       default {@code classpath:db/changelog/sangam-master.yaml}), Liquibase 4.33.0 (D-7) runs it in the selected
+ *       default {@code classpath:db/changelog/sangam-master.yaml}), Liquibase 4.33.0 (ADR-D-7) runs it in the selected
  *       mode: {@code startup}/{@code migrate-only} update, {@code validate} fails on pending changesets,
  *       {@code update-sql} writes SQL, {@code release-locks} releases the lock;</li>
  *   <li>otherwise, only when {@code sangam.persistence.dev-schema=true} (h2 profile), the core product tables
@@ -73,6 +75,12 @@ public class SchemaBootstrap {
     public SpringLiquibase sangamLiquibase(DataSource dataSource, Environment env) {
         LiquibaseMode mode = mode(env);
         String changelog = env.getProperty(CHANGELOG_PROPERTY, DEFAULT_CHANGELOG);
+        // H2 (development) only: the BLOB alias Operaton's H2 scripts need must exist before Liquibase's own tables,
+        // because H2 2.x rejects CREATE DOMAIN BLOB once any large-object column exists.
+        LiquibaseLicenceGuard.check(); // SG-26 / LIC-7
+        if (isH2(dataSource)) {
+            DatabaseGuard.prepareH2(dataSource);
+        }
         SpringLiquibase liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog(changelog);
@@ -90,6 +98,7 @@ public class SchemaBootstrap {
     @Conditional(ChangelogPresent.class)
     public InitializingBean sangamLiquibaseTask(DataSource dataSource, Environment env) {
         return () -> {
+            LiquibaseLicenceGuard.check(); // SG-26 / LIC-7
             LiquibaseMode mode = mode(env);
             if (mode == LiquibaseMode.STARTUP || mode == LiquibaseMode.MIGRATE_ONLY) {
                 return;
@@ -121,6 +130,14 @@ public class SchemaBootstrap {
                 }
             }
         };
+    }
+
+    private static boolean isH2(DataSource dataSource) {
+        try (Connection c = dataSource.getConnection()) {
+            return "H2".equalsIgnoreCase(c.getMetaData().getDatabaseProductName());
+        } catch (SQLException e) {
+            throw new IllegalStateException("cannot read the database product name", e);
+        }
     }
 
     private static void writeUpdateSql(Liquibase lb, Contexts contexts, String file) throws Exception {

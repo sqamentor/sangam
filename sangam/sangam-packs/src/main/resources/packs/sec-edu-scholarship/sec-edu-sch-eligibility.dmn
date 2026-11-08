@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="sec-edu-sch-eligibility" name="Income ceiling (SYNTHETIC; per scheme guidelines)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-edu-sch-eligibility_t" hitPolicy="FIRST">
-      <input id="sec-edu-sch-eligibility_i0" label="Income"><inputExpression id="sec-edu-sch-eligibility_ie0" typeRef="double"><text>income</text></inputExpression></input>
+      <input id="sec-edu-sch-eligibility_i0" label="Income"><inputExpression id="sec-edu-sch-eligibility_ie0" typeRef="number"><text>income</text></inputExpression></input>
       <output id="sec-edu-sch-eligibility_o0" label="Eligible" name="eligible" typeRef="boolean"/>
       <rule id="sec-edu-sch-eligibility_r0"><description>post-matric style ceiling Rs 2.5 lakh</description>
         <inputEntry id="sec-edu-sch-eligibility_r0_i0"><text>&lt;= 250000</text></inputEntry>

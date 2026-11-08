@@ -37,7 +37,24 @@ public final class OperationIdentity {
     }
 
     /**
-     * The attempt scope: {@code v<visit>|l<loopCounter>|k<retrySafeKey>}. {@code visit} counts earlier completed
+     * THE operation id of one engine work item (T35). Every path that hands out, records or lists the operation id
+     * of engine work (the worker API, the engine adapter's lease, ledger intents, delete tombstones, consequence
+     * previews, reconciliation) derives it here, from engine-neutral facts of the work item; there is no second
+     * derivation from engine ids.
+     *
+     * @param businessKey     the instance's business key; null/empty falls back to {@code rootId} (documented weaker form)
+     * @param completedVisits finished earlier visits of {@code activityId} in the instance (0 on the first visit)
+     * @param loopCounter     the multi-instance loop counter, or null
+     * @param retrySafeKey    the value of the variable named by {@code sangam:retrySafeKey}, or null
+     */
+    public static UUID forWork(String tenant, String businessKey, String rootId, String activityId,
+                               long completedVisits, Integer loopCounter, String retrySafeKey) {
+        String bk = businessKey != null && !businessKey.isEmpty() ? businessKey : rootId;
+        return of(tenant, bk, activityId, scope(completedVisits, loopCounter, retrySafeKey));
+    }
+
+    /**
+     * The attempt scope:{@code v<visit>|l<loopCounter>|k<retrySafeKey>}. {@code visit} counts earlier completed
      * visits of the activity in the same root (0 on the first visit), so a return-and-resubmit loop gets a new
      * operation, while a retry or a lease expiry of the same visit keeps the old one.
      */

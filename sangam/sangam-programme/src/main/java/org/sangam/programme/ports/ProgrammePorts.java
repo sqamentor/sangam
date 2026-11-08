@@ -2,6 +2,7 @@
 package org.sangam.programme.ports;
 
 import java.math.BigDecimal;
+import org.sangam.core.money.Money;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +117,8 @@ public final class ProgrammePorts {
     /** Financial actuals source (e.g. sangam-ledger consumption or an external finance system connector). */
     public interface FinancialSource {
         /** Rows {@code head -> [allocated, released, committed, expended]} for a programme, period and node. */
-        Map<String, BigDecimal[]> actuals(Connection c, String tenantId, String programmeId, String periodId, String orgUnit);
+        /** Per head: {allocated, released, committed, expended} in the programme currency (exact minor units). */
+        Map<String, Money[]> actuals(Connection c, String tenantId, String programmeId, String periodId, String orgUnit);
 
         FinancialSource NONE = (c, t, p, per, o) -> Map.of();
     }

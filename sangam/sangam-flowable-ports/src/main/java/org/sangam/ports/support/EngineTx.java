@@ -13,7 +13,7 @@ import java.util.function.Function;
 
 /**
  * Access to the engine transaction from product code (Q1): product rows written through {@link #connection()} commit
- * or roll back with the engine command. The explicit-rollback listener for the Q1 defect (D-22) is installed by
+ * or roll back with the engine command. The explicit-rollback listener for the Q1 defect (FLOWABLE-INTO-OPERATON D-22) is installed by
  * WS-ENGINE's adapter; product code here never commits the connection itself.
  */
 public final class EngineTx {

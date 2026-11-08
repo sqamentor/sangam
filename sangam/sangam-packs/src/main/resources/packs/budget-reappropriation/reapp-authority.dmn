@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="reapp-authority" name="Re-appropriation power" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="reapp-authority_t" hitPolicy="FIRST">
-      <input id="reapp-authority_i0" label="Amount"><inputExpression id="reapp-authority_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="reapp-authority_i0" label="Amount"><inputExpression id="reapp-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="reapp-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="reapp-authority_r0">
         <inputEntry id="reapp-authority_r0_i0"><text>&lt;= 1000000</text></inputEntry>

@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * Content and attachments (FC-40, EC-18, R74, R47 attachments, K12): immutable versions with SHA-256 checksums,
+ * Content and attachments (FLOWABLE-INTO-OPERATON FC-40, EC-18, R74, R47 attachments, K12): immutable versions with SHA-256 checksums,
  * a malware-scan hook ({@code scanStatus}), references passed to forms/workers instead of content.
  * Implemented by sangam-flowable-ports; the default adapter uses Operaton task/process attachments.
  */

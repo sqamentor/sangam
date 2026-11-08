@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * the Q1 rollback guard, the L2 roots this transaction holds, the {@link LockScope} mark and the CMMN tasks completed
  * in this command (for the audit projection).
  *
- * <p><b>Q1 / D-22 / W-2.</b> MyBatis {@code DefaultSqlSession.rollback()} does nothing while no MyBatis write ran
+ * <p><b>Q1 / FLOWABLE-INTO-OPERATON D-22 / W-2.</b> MyBatis {@code DefaultSqlSession.rollback()} does nothing while no MyBatis write ran
  * ({@code dirty == false}); Operaton flushes its own writes only at command close; {@code JdbcTransaction.close()}
  * then calls {@code setAutoCommit(true)}, which under JDBC rules <b>commits</b> product rows written through the
  * engine connection. {@link #connection(CommandContext)} therefore registers a {@code ROLLINGBACK} listener that rolls
@@ -35,6 +35,12 @@ public final class CommandState {
     private static final Map<CommandContext, CommandState> STATES = Collections.synchronizedMap(new WeakHashMap<>());
 
     private boolean rollbackGuard;
+    /**
+     * The engine connection handed out by {@link #connection}, kept for the rollback guard: under Operaton's Spring
+     * integration ROLLINGBACK runs from Spring's beforeCompletion, after the command context closed its MyBatis
+     * session ("Executor was closed"), while the JDBC connection is still bound to the transaction.
+     */
+    private Connection handedOut;
     private boolean lockScopeEntered;
     private final TreeSet<String> heldRoots = new TreeSet<>();
     private final Map<String, String> caseTaskOutcomes = new java.util.HashMap<>();
@@ -59,6 +65,10 @@ public final class CommandState {
      */
     public static Connection connection(CommandContext cc) {
         Connection c = cc.getDbSqlSession().getSqlSession().getConnection();
+        CommandState s = of(cc);
+        synchronized (s) {
+            s.handedOut = c;
+        }
         installRollbackGuard(cc);
         return c;
     }
@@ -88,18 +98,42 @@ public final class CommandState {
     }
 
     private static void rollbackOpenSession(CommandContext cc) {
+        Connection kept;
+        CommandState s = of(cc);
+        synchronized (s) {
+            kept = s.handedOut;
+        }
+        boolean done = false;
         for (Session session : cc.getSessions().values()) {
             if (session instanceof DbSqlSession db) {
+                Connection c;
                 try {
-                    Connection c = db.getSqlSession().getConnection();
-                    if (!c.getAutoCommit()) {
-                        c.rollback();
-                    }
-                } catch (SQLException | RuntimeException e) {
-                    // The connection is broken; it is discarded by the pool and nothing can commit through it.
-                    LOG.warn("Q1 rollback guard: explicit rollback of the engine connection failed", e);
+                    c = db.getSqlSession().getConnection();
+                } catch (RuntimeException closed) {
+                    // session already closed by the command context (Spring integration): use the kept connection
+                    c = kept;
                 }
+                done |= rollback(c);
             }
+        }
+        if (!done && kept != null) {
+            rollback(kept);
+        }
+    }
+
+    private static boolean rollback(Connection c) {
+        if (c == null) {
+            return false;
+        }
+        try {
+            if (!c.isClosed() && !c.getAutoCommit()) {
+                c.rollback();
+            }
+            return true;
+        } catch (SQLException | RuntimeException e) {
+            // The connection is broken; it is discarded by the pool and nothing can commit through it.
+            LOG.warn("Q1 rollback guard: explicit rollback of the engine connection failed", e);
+            return true;
         }
     }
 
@@ -145,7 +179,7 @@ public final class CommandState {
     }
 
     /**
-     * CMMN audit projection (D-25): the transition a case task (case execution id) took in this command,
+     * CMMN audit projection (FLOWABLE-INTO-OPERATON D-25): the transition a case task (case execution id) took in this command,
      * {@code COMPLETED} or {@code EXITED}; a completion is never overwritten by a later exit of the same task.
      */
     public synchronized void caseTaskOutcome(String caseExecutionId, String outcome) {

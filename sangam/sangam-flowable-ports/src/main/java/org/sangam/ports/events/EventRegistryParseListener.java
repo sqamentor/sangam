@@ -10,7 +10,7 @@ import org.operaton.bpm.engine.impl.util.xml.Element;
 import org.sangam.ports.bpmn.SangamBpmn;
 
 /**
- * BPMN side of the event registry (FC-02), read by a {@link BpmnParseListener} as the gap list prescribes.
+ * BPMN side of the event registry (FLOWABLE-INTO-OPERATON FC-02), read by a {@link BpmnParseListener} as the gap list prescribes.
  * <ul>
  *   <li>Throw/end events and send tasks with {@code sangam:eventType} and {@code sangam:channels} send the event on
  *       activity start (a {@link SendEventDelegate} execution listener; outbox in the engine transaction).</li>

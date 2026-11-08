@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  * An ISO 8601 repeating interval {@code R[n]/[start]/<period>[/end]} (and an optional calendar tag prefix
  * {@code cal:<name>:}), evaluated with {@code java.time} instead of Operaton's {@code DurationHelper}, which adds
  * periods with a {@code GregorianCalendar} in the JVM zone and stores the start as local time without an offset
- * (D-01 root-cause candidates). Semantics (R31, A-12):
+ * (FLOWABLE-INTO-OPERATON D-01 root-cause candidates). Semantics (R31, A-12):
  *
  * <ul>
  *   <li><b>Elapsed cadence</b> (the period has no Y/M/W/D part, e.g. {@code PT1H}): slot k = start + k × period,
@@ -24,11 +24,11 @@ import java.util.regex.Pattern;
  *       autumn-fold runaway).</li>
  *   <li><b>Calendar cadence</b> (the period has a date part, e.g. {@code P1D}, {@code P1M}): slot k = (start in the
  *       cadence zone) + k × period, always <b>anchored on the original start</b>, so {@code P1M} from the 31st gives
- *       31 Jan, 28 Feb, 31 Mar (D-31), never drifting to the 28th. A local time that falls into a DST gap moves forward
+ *       31 Jan, 28 Feb, 31 Mar (FLOWABLE-INTO-OPERATON D-31), never drifting to the 28th. A local time that falls into a DST gap moves forward
  *       by the gap length; a local time in a fold takes the earlier offset ({@code ZonedDateTime} rules).</li>
  *   <li>A start without an offset is local time in the zone Operaton wrote it in (the JVM default zone it caches at
- *       class load, D-02); a start with an offset or {@code Z} is absolute.</li>
- *   <li>{@code Rn}: n firings in total (D-29: Operaton fires n + 1 times for {@code R3/<start>/P1M}); the count is
+ *       class load, FLOWABLE-INTO-OPERATON D-02); a start with an offset or {@code Z} is absolute.</li>
+ *   <li>{@code Rn}: n firings in total (FLOWABLE-INTO-OPERATON D-29: Operaton fires n + 1 times for {@code R3/<start>/P1M}); the count is
  *       kept by the timer guard per series. {@code R} alone repeats without bound.</li>
  * </ul>
  */
@@ -182,7 +182,7 @@ public final class CycleExpression {
             }
         } else {
             ZonedDateTime z0 = s.atZone(cadenceZone);
-            // estimate k from the nominal length, then correct; anchored on the original start (D-31)
+            // estimate k from the nominal length, then correct; anchored on the original start (FLOWABLE-INTO-OPERATON D-31)
             long nominal = Math.max(1, nominalPeriodMillis());
             long k = Math.max(0, Math.floorDiv(after.toEpochMilli() - s.toEpochMilli(), nominal) - 1);
             next = slot(z0, k);

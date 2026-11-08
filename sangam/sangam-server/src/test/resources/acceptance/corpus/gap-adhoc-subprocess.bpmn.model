@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GAP set (SANGAM.md XI.3, CF-13 / R34): ad-hoc sub-process. SHARED, standard BPMN 2.0.2.
+  Two optional user tasks with no sequence flows between them, parallel ordering.
+  completionCondition uses execution.getVariable(...) so an unset variable does not throw in JUEL.
+  Starting an inner activity has no standard API: the experiment uses the engine's own call
+  (Flowable: RuntimeService.executeActivityInAdhocSubProcess) or records that none exists.
+  Pass: both inner tasks can be started on demand; setting adhocDone=true and completing an
+  inner task completes the ad-hoc sub-process, and the instance waits in gap_adhoc_probe.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             id="gap-adhoc-subprocess-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <process id="gap-adhoc-subprocess" name="GAP ad-hoc sub-process" isExecutable="true">
+    <startEvent id="gap_adhoc_start"/>
+    <sequenceFlow id="gap_adhoc_f1" sourceRef="gap_adhoc_start" targetRef="gap_adhoc_sub"/>
+
+    <adHocSubProcess id="gap_adhoc_sub" name="Optional checks" ordering="Parallel" cancelRemainingInstances="true">
+      <userTask id="gap_adhoc_taskA" name="Optional check A"/>
+      <userTask id="gap_adhoc_taskB" name="Optional check B"/>
+      <completionCondition xsi:type="tFormalExpression">${execution.getVariable('adhocDone') == true}</completionCondition>
+    </adHocSubProcess>
+    <sequenceFlow id="gap_adhoc_f2" sourceRef="gap_adhoc_sub" targetRef="gap_adhoc_probe"/>
+
+    <userTask id="gap_adhoc_probe" name="Reached after ad-hoc"/>
+    <sequenceFlow id="gap_adhoc_f3" sourceRef="gap_adhoc_probe" targetRef="gap_adhoc_end"/>
+    <endEvent id="gap_adhoc_end"/>
+  </process>
+</definitions>

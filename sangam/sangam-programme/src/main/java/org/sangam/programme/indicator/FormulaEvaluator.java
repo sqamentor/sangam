@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * Safe arithmetic for indicator formulas and return rules (no script engine, D-8). Grammar:
+ * Safe arithmetic for indicator formulas and return rules (no script engine, ADR-D-8). Grammar:
  * <pre>
  * expr    := or
  * or      := and ('||' and)*

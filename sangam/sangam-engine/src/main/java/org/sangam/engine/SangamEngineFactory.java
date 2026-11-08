@@ -4,6 +4,7 @@ package org.sangam.engine;
 import javax.sql.DataSource;
 
 import org.operaton.bpm.engine.ProcessEngine;
+import org.operaton.bpm.engine.ProcessEngineConfiguration;
 import org.operaton.bpm.engine.impl.cfg.StandaloneProcessEngineConfiguration;
 
 /**
@@ -36,6 +37,8 @@ public final class SangamEngineFactory {
         SangamEngineConfigurer configurer = new SangamEngineConfigurer(settings);
         DataSource ds = configurer.prepare(dataSource);
         StandaloneProcessEngineConfiguration cfg = new StandaloneProcessEngineConfiguration();
+        // SG-19: production-safe default for a standalone engine; callers that own an empty database opt in
+        cfg.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_FALSE);
         configurer.configure(cfg, ds, extraPlugins);
         ProcessEngine engine;
         try {

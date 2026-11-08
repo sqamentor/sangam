@@ -10,7 +10,7 @@ import org.operaton.bpm.engine.impl.pvm.delegate.ActivityExecution;
 import org.operaton.bpm.engine.impl.util.ReflectUtil;
 
 /**
- * Triggerable service task (FC-12, Flowable {@code flowable:triggerable="true"} + {@code TriggerableJavaDelegate}).
+ * Triggerable service task (FLOWABLE-INTO-OPERATON FC-12, Flowable {@code flowable:triggerable="true"} + {@code TriggerableJavaDelegate}).
  * The delegate's {@code execute} runs, then the activity <em>waits</em>; {@code RuntimeService.signal(executionId,
  * signalName, signalData, variables)} (or the Sangam API) triggers it: a {@link Trigger} delegate gets
  * {@code trigger(..)}, then the activity leaves. Set by {@link BpmnExtensionsParseListener} on a service task with

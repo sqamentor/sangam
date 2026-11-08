@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Channel definition ({@code .channel} model, FC-03). Field names follow Flowable's channel JSON
+ * Channel definition ({@code .channel} model, FLOWABLE-INTO-OPERATON FC-03). Field names follow Flowable's channel JSON
  * ({@code channelType, type, deserializerType, serializerType, topics, destination, channelEventKeyDetection,
  * channelEventTenantJsonPointerExpression}); Sangam adds {@code url, exchange, routingKey, queue, properties,
  * messageIdJsonPointer, allowPayloadTenant}.

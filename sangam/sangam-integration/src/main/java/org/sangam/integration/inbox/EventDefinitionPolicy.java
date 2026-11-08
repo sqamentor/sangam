@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Inbound policy per event definition (SANGAM.md VI.2.6 rules 3–4, R38; Flowable FC-04 unique start; Operaton D-33
+ * Inbound policy per event definition (SANGAM.md VI.2.6 rules 3–4, R38; FLOWABLE-INTO-OPERATON FC-04 unique start; FLOWABLE-INTO-OPERATON D-33
  * "early messages are not buffered").
  *
  * @param noSubscription what happens when no waiting instance / start event matches: {@link NoSubscription#BUFFER}

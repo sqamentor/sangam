@@ -4,9 +4,9 @@
   <decision id="gpf-withdrawal" name="GPF advance / withdrawal eligibility" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="gpf-withdrawal_t" hitPolicy="FIRST">
       <input id="gpf-withdrawal_i0" label="Purpose"><inputExpression id="gpf-withdrawal_ie0" typeRef="string"><text>gpfPurpose</text></inputExpression></input>
-      <input id="gpf-withdrawal_i1" label="Amount"><inputExpression id="gpf-withdrawal_ie1" typeRef="double"><text>amount</text></inputExpression></input>
-      <input id="gpf-withdrawal_i2" label="Balance"><inputExpression id="gpf-withdrawal_ie2" typeRef="double"><text>gpfBalance</text></inputExpression></input>
-      <input id="gpf-withdrawal_i3" label="Qualifying service"><inputExpression id="gpf-withdrawal_ie3" typeRef="double"><text>qualifyingService</text></inputExpression></input>
+      <input id="gpf-withdrawal_i1" label="Amount"><inputExpression id="gpf-withdrawal_ie1" typeRef="number"><text>amount</text></inputExpression></input>
+      <input id="gpf-withdrawal_i2" label="Balance"><inputExpression id="gpf-withdrawal_ie2" typeRef="number"><text>gpfBalance</text></inputExpression></input>
+      <input id="gpf-withdrawal_i3" label="Qualifying service"><inputExpression id="gpf-withdrawal_ie3" typeRef="number"><text>qualifyingService</text></inputExpression></input>
       <output id="gpf-withdrawal_o0" label="Eligible" name="gpfEligible" typeRef="boolean"/>
       <output id="gpf-withdrawal_o1" label="Rule" name="ruleRef" typeRef="string"/>
       <rule id="gpf-withdrawal_r0">

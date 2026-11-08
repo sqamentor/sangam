@@ -69,10 +69,12 @@ public class OperatonProcessAdapter implements ProcessPort {
     private final RestProperties props;
     private final Tombstones tombstones;
     private final AtomicBoolean leaseTableReady = new AtomicBoolean();
+    private final OperatonOperationIds operationIds;
 
     public OperatonProcessAdapter(RuntimeService runtime, RepositoryService repository, HistoryService history,
                                   ExternalTaskService externalTasks, TxSupport tx, AuditPort audit,
-                                  RestProperties props) {
+                                  RestProperties props, OperatonOperationIds operationIds) {
+        this.operationIds = operationIds;
         this.runtime = runtime;
         this.repository = repository;
         this.history = history;
@@ -321,6 +323,22 @@ public class OperatonProcessAdapter implements ProcessPort {
             throw ApiProblem.badRequest("REASON_REQUIRED", "A reason is required to " + (technical ? "delete" : "cancel")
                     + " an instance");
         }
+        org.sangam.core.engine.SangamEngineAdapter engine = operationIds.engine();
+        if (engine != null) {
+            // VI.5: the engine adapter's terminate is the one delete path (its lease table, its T35 operation ids,
+            // its engine clock for the remaining lease, L2 on the root, INSTANCE_DELETED with the open operation ids).
+            return tx.inTx(() -> {
+                org.operaton.bpm.engine.runtime.ProcessInstance pi = requireRuntime(ctx, id);
+                org.sangam.core.engine.SangamEngineAdapter.Termination t =
+                        engine.terminateInstance(id, ctx.principalId(), r.reason(), technical);
+                List<String> ops = t.openOperationIds().stream().map(UUID::toString).toList();
+                if (!technical) {
+                    recordCancelled(ctx, id, r, pi, ops);
+                }
+                return new TerminationResult(id, technical ? "DELETED" : "CANCELLED", ops, t.cancelRequested(),
+                        t.cancelRequested());
+            });
+        }
         ensureLeaseTable();
         return tx.inTx(() -> {
             org.operaton.bpm.engine.runtime.ProcessInstance pi = requireRuntime(ctx, id);
@@ -338,8 +356,7 @@ public class OperatonProcessAdapter implements ProcessPort {
                 }
                 LeaseTable.Row lease = LeaseTable.lock(c, t.getId());
                 long lockVersion = lease == null ? 0 : lease.lockVersion();
-                UUID op = OperatonWorkAdapter.operationId(t.getTenantId(), t.getProcessInstanceId(),
-                        t.getActivityInstanceId());
+                UUID op = operationIds.of(t);
                 tombstones.write(c, ctx.tenantId(), t.getId(), op, id, lockVersion, Duration.between(now, lockEnd));
                 openOps.add(op);
                 cancelRequested++;
@@ -350,18 +367,23 @@ public class OperatonProcessAdapter implements ProcessPort {
                 tombstones.recordDeletion(c, ctx.tenantId(), id, ctx.principalId(), r.reason(), openOps);
             } else {
                 OperatonSupport.run(() -> runtime.deleteProcessInstance(id, reason, false, true, false));
-                Map<String, Object> p = new LinkedHashMap<>();
-                p.put("actor", ctx.actor());
-                p.put("reason", r.reason());
-                p.put("reason_code", r.reasonCode());
-                p.put("business_key", pi.getBusinessKey());
-                p.put("openOperationIds", openOps.stream().map(UUID::toString).toList());
-                p.values().removeIf(Objects::isNull);
-                audit.record(ctx, id, "INSTANCE_CANCELLED", p);
+                recordCancelled(ctx, id, r, pi, openOps.stream().map(UUID::toString).toList());
             }
             return new TerminationResult(id, technical ? "DELETED" : "CANCELLED",
                     openOps.stream().map(UUID::toString).toList(), cancelRequested, cancelRequested);
         });
+    }
+
+    private void recordCancelled(RequestContext ctx, String id, TerminateRequest r,
+                                 org.operaton.bpm.engine.runtime.ProcessInstance pi, List<String> openOps) {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("actor", ctx.actor());
+        p.put("reason", r.reason());
+        p.put("reason_code", r.reasonCode());
+        p.put("business_key", pi.getBusinessKey());
+        p.put("openOperationIds", openOps);
+        p.values().removeIf(Objects::isNull);
+        audit.record(ctx, id, "INSTANCE_CANCELLED", p);
     }
 
     private void ensureLeaseTable() {
@@ -475,7 +497,7 @@ public class OperatonProcessAdapter implements ProcessPort {
             for (ModificationInstruction i : r.instructions()) {
                 String target = i.targetProcessInstanceId() == null ? id : i.targetProcessInstanceId();
                 if (!target.equals(id)) {
-                    requireRuntime(ctx, target);   // FC-17: cross-instance moves stay inside the tenant
+                    requireRuntime(ctx, target);   // FLOWABLE-INTO-OPERATON FC-17: cross-instance moves stay inside the tenant
                 }
                 byInstance.computeIfAbsent(target, k -> new ArrayList<>()).add(i);
             }

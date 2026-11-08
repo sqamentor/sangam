@@ -147,6 +147,9 @@ class Checker:
                 self.errors.append(f"FORBIDDEN COMPONENT {label}: {fc['rule']}")
                 return
 
+        if not self.check_pinned_exceptions(comp, purl, label):
+            return
+
         for mv in self.p.get("max_versions", []):
             if purl.startswith(mv["purl"]) and version_tuple(version) >= version_tuple(mv["below"]):
                 self.errors.append(f"VERSION {label} must be below {mv['below']}: {mv['rule']}")
@@ -186,6 +189,32 @@ class Checker:
             (self.errors if self.strict else self.warnings).append(msg)
         else:
             self.errors.append(f"FORBIDDEN LICENCE {label}: {shown}")
+
+    def check_pinned_exceptions(self, comp, purl, label):
+        """SG-27: namespace bans with exact-coordinate exceptions. Returns False when the component already failed."""
+        coord = purl.split("?", 1)[0].split("#", 1)[0]
+        base = coord.rsplit("@", 1)[0]
+        exceptions = self.p.get("pinned_exceptions", [])
+        exact = next((e for e in exceptions if e["purl"] == coord), None)
+        if exact is not None:
+            ids, expr = licence_terms(comp)
+            terms = {t for alt in expression_alternatives(expr) for t in alt} if expr else {normalise(i) for i in ids}
+            if exact["license"] not in terms:
+                self.errors.append(f"PINNED EXCEPTION {label}: licence {sorted(terms) or 'none'} is not the verified "
+                                   f"{exact['license']} ({exact['reason']}); re-verify")
+                return False
+            self.notes.append(f"EXCEPTION {label}: {exact['license']} -> {exact['reason']}")
+            return True
+        for e in exceptions:
+            if e.get("watch") and e["purl"].rsplit("@", 1)[0] == base:
+                self.errors.append(f"PINNED EXCEPTION {label}: only {e['purl']} is verified ({e['reason']}); "
+                                   "a version change must be re-verified and re-listed")
+                return False
+        for ban in self.p.get("namespace_bans", []):
+            if purl.startswith(ban["purl"]):
+                self.errors.append(f"BANNED NAMESPACE {label}: {ban['rule']} (no exact exception listed)")
+                return False
+        return True
 
     def check_sbom(self, path):
         bom = load_json(path)
@@ -230,6 +259,34 @@ class Checker:
         return count
 
 
+def annotate_sbom(path, policy):
+    """SG-27: records each pinned exception (reason, verified SPDX, evidence) as CycloneDX properties, in place."""
+    bom = load_json(path)
+    exceptions = {e["purl"]: e for e in policy.get("pinned_exceptions", [])}
+    evidence = policy.get("pinned_exceptions_evidence", "deploy/licence/SG-27-SD-301-exception.md")
+    hit = 0
+    for comp in iter_components(bom):
+        coord = unquote(comp.get("purl") or "").split("?", 1)[0]
+        e = exceptions.get(coord)
+        if not e:
+            continue
+        props = [p for p in comp.get("properties") or [] if not p.get("name", "").startswith("sangam:exception")]
+        props += [{"name": "sangam:exception", "value": "SG-27 / OneIFMS SD-301"},
+                  {"name": "sangam:exception:reason", "value": e["reason"]},
+                  {"name": "sangam:exception:verified-license", "value": e["license"]},
+                  {"name": "sangam:exception:evidence", "value": evidence}]
+        comp["properties"] = props
+        hit += 1
+    meta = bom.setdefault("metadata", {})
+    props = [p for p in meta.get("properties") or [] if p.get("name") != "sangam:exceptions"]
+    props.append({"name": "sangam:exceptions", "value": f"SG-27 / OneIFMS SD-301: {hit} component(s) under the owner "
+                  f"exception for the Operaton DMN FEEL engine; evidence {evidence}"})
+    meta["properties"] = props
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(bom, f, indent=2)
+    return hit
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--policy", required=True)
@@ -238,12 +295,18 @@ def main():
     ap.add_argument("--tree", action="append", default=[], help="directory to scan for driver jars (repeatable)")
     ap.add_argument("--strict", action="store_true", help="unknown / missing licences fail")
     ap.add_argument("--report", help="write a Markdown report here")
+    ap.add_argument("--annotate", action="store_true",
+                    help="write the SG-27 pinned-exception properties into each --sbom (in place) before checking")
     a = ap.parse_args()
     if not (a.sbom or a.jar or a.tree):
         ap.error("give at least one --sbom, --jar or --tree")
 
-    ch = Checker(load_json(a.policy), a.strict)
+    policy = load_json(a.policy)
+    ch = Checker(policy, a.strict)
     summary = []
+    if a.annotate:
+        for s in a.sbom:
+            summary.append(f"ANNOTATED {s}: {annotate_sbom(s, policy)} SG-27 exception component(s)")
     for s in a.sbom:
         summary.append(f"SBOM {s}: {ch.check_sbom(s)} components")
     for j in a.jar:

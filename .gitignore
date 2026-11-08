@@ -7,6 +7,10 @@ target/
 # per-workstream build folders (-Dsangam.target=target-<ws>)
 target-*/
 **/target-*/
+# SG-21: never hide source packages named like build folders (org.sangam.programme.target was silently left out of
+# git, so a clean checkout did not compile). Build output never lives under src/; CI fails on any ignored source.
+!**/src/**/target/
+!**/src/**/target-*/
 # local Python virtual environments
 .venv/
 **/.venv/

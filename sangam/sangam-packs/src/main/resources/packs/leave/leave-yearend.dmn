@@ -3,8 +3,8 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="leave-yearend" name="EL credit with 300-day cap (synthetic)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="leave-yearend_t" hitPolicy="FIRST">
-      <input id="leave-yearend_i0" label="Balance"><inputExpression id="leave-yearend_ie0" typeRef="double"><text>leaveBalance</text></inputExpression></input>
-      <output id="leave-yearend_o0" label="Net credit" name="netCredit" typeRef="double"/>
+      <input id="leave-yearend_i0" label="Balance"><inputExpression id="leave-yearend_ie0" typeRef="number"><text>leaveBalance</text></inputExpression></input>
+      <output id="leave-yearend_o0" label="Net credit" name="netCredit" typeRef="number"/>
       <rule id="leave-yearend_r0"><description>at cap: nothing more accrues</description>
         <inputEntry id="leave-yearend_r0_i0"><text>&gt;= 300</text></inputEntry>
         <outputEntry id="leave-yearend_r0_o0"><text>0</text></outputEntry>

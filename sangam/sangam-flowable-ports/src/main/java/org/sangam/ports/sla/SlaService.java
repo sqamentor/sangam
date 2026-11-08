@@ -24,8 +24,8 @@ import java.util.function.Function;
 
 /**
  * SLA models (EC-08, Flowable Enterprise SLA; R79): an SLA clock per process instance, case or task with a target,
- * an optional warning threshold and a working calendar (WS-ENGINE's {@link WorkCalendar}, FC-23). Pause/resume moves
- * the deadline by the paused time (the SLA half of D-32; pausing the <em>instance</em> itself is WS-ENGINE's
+ * an optional warning threshold and a working calendar (WS-ENGINE's {@link WorkCalendar}, FLOWABLE-INTO-OPERATON FC-23). Pause/resume moves
+ * the deadline by the paused time (the SLA half of FLOWABLE-INTO-OPERATON D-32; pausing the <em>instance</em> itself is WS-ENGINE's
  * {@code pauseInstance/resumeInstance}). {@link #sweep} raises {@code sangam.sla.warning} and
  * {@code sangam.sla.breached} outbox events exactly once per clock (flag + state in the same transaction).
  * Times are database time (A-1). Table {@code SLA_INSTANCE}.

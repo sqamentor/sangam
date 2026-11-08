@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * History events onto the outbox (Flowable FC-25 async history / FC-43 global typed event dispatcher; R4, R13, R65 read
+ * History events onto the outbox (FLOWABLE-INTO-OPERATON FC-25 async history / FLOWABLE-INTO-OPERATON FC-43 global typed event dispatcher; R4, R13, R65 read
  * model feed). Registered as a <b>custom</b> history event handler next to Operaton's DB handler, so synchronous
  * history stays the strict record and the outbox carries typed {@code sangam.history.*} events for projectors,
  * analytics and channels. Written in the engine command's own transaction (same JDBC connection), so an event exists

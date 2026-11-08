@@ -4,7 +4,6 @@ package org.sangam.rest.adapter.operaton;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.Year;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -81,11 +80,22 @@ public class OperatonPortalAdapter implements PortalPort {
     static final String KIND_GRIEVANCE = "portal:grievance";
 
     private final org.sangam.rest.support.DocumentStore docs;
+    private final org.sangam.rest.support.BusinessDates dates;
 
     public OperatonPortalAdapter(ProcessPort processes, TaskService tasks, RuntimeService runtime, HistoryService history,
                                  RepositoryService repository, DocumentPort documents, RegistryPort registry,
                                  AuditPort audit, RestProperties props, TxSupport tx,
                                  org.sangam.rest.support.DocumentStore docs) {
+        this(processes, tasks, runtime, history, repository, documents, registry, audit, props, tx, docs,
+                org.sangam.rest.support.BusinessDates.utc());
+    }
+
+    /** @param dates the year of a reference number is the tenant's business year */
+    public OperatonPortalAdapter(ProcessPort processes, TaskService tasks, RuntimeService runtime, HistoryService history,
+                                 RepositoryService repository, DocumentPort documents, RegistryPort registry,
+                                 AuditPort audit, RestProperties props, TxSupport tx,
+                                 org.sangam.rest.support.DocumentStore docs, org.sangam.rest.support.BusinessDates dates) {
+        this.dates = java.util.Objects.requireNonNull(dates, "dates");
         this.docs = docs;
         this.processes = processes;
         this.tasks = tasks;
@@ -135,7 +145,7 @@ public class OperatonPortalAdapter implements PortalPort {
     public Application apply(RequestContext ctx, ApplyRequest r) {
         Map<String, Object> svc = requireService(ctx, r.serviceKey());
         String processKey = svc.get("processKey") != null ? str(svc.get("processKey")) : r.serviceKey();
-        String reference = reference(r.serviceKey());
+        String reference = reference(r.serviceKey(), dates.today(ctx.tenantId()).getYear());
         String serviceName = str(svc.get("name"));
         if (!r.submit()) {
             String id = "draft-" + Hashes.uuidV7();
@@ -428,7 +438,7 @@ public class OperatonPortalAdapter implements PortalPort {
 
     @Override
     public GrievanceReceipt fileGrievance(RequestContext ctx, GrievanceRequest r) {
-        String reference = "GRV-" + Year.now(ZoneOffset.UTC) + "-" + digits(6);
+        String reference = "GRV-" + dates.today(ctx.tenantId()).getYear() + "-" + digits(6);
         Instant now = Instant.now();
         String kind = r.kind() == null ? "GRIEVANCE" : r.kind();
         var dq = repository.createProcessDefinitionQuery().processDefinitionKey("grievance").latestVersion();
@@ -473,9 +483,9 @@ public class OperatonPortalAdapter implements PortalPort {
     }
 
     /** {@code <SERVICE>-<yyyy>-<6 digits>}, e.g. {@code TRADE-LICENCE-2026-048213}. */
-    static String reference(String serviceKey) {
+    static String reference(String serviceKey, int year) {
         String s = serviceKey.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]+", "-").replaceAll("(^-|-$)", "");
-        return s + "-" + Year.now(ZoneOffset.UTC) + "-" + digits(6);
+        return s + "-" + year + "-" + digits(6);
     }
 
     private static String digits(int n) {

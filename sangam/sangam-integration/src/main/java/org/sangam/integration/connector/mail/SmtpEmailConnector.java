@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * E-mail over SMTP (R71 "e-mail", R60 gov.in e-mail adapter, Flowable FC-07 mail task).
+ * E-mail over SMTP (R71 "e-mail", R60 gov.in e-mail adapter, FLOWABLE-INTO-OPERATON FC-07 mail task).
  *
  * <p>Input: {@code to}, {@code cc}, {@code bcc} (string with commas, or list), {@code subject}, {@code text} and/or
  * {@code html}, optional {@code attachments} (list of {@code {name, contentType, base64}}). The {@code Message-ID} is

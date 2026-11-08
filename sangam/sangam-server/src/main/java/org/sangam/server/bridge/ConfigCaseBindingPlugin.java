@@ -3,7 +3,6 @@ package org.sangam.server.bridge;
 
 import java.sql.Connection;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,9 +39,13 @@ public final class ConfigCaseBindingPlugin extends AbstractProcessEnginePlugin {
     private final ObjectProvider<ProfileResolver> profiles;
     private final Dialect dialect;
 
-    public ConfigCaseBindingPlugin(ObjectProvider<ProfileResolver> profiles, Dialect dialect) {
+    private final org.sangam.core.time.BusinessClock businessClock;
+
+    public ConfigCaseBindingPlugin(ObjectProvider<ProfileResolver> profiles, Dialect dialect,
+                                   org.sangam.core.time.BusinessClock businessClock) {
         this.profiles = profiles;
         this.dialect = dialect;
+        this.businessClock = java.util.Objects.requireNonNull(businessClock, "businessClock");
     }
 
     @Override
@@ -75,7 +78,7 @@ public final class ConfigCaseBindingPlugin extends AbstractProcessEnginePlugin {
         }
         ResolvedProfile p;
         try {
-            p = resolver.resolve(tenant, LocalDate.now());
+            p = resolver.resolve(tenant, businessClock.today(tenant));
         } catch (RuntimeException ex) {
             LOG.debug("no configuration profile for tenant {}: {}", tenant, ex.getMessage());
             return;

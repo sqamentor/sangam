@@ -32,7 +32,7 @@ import org.sangam.rest.support.TxSupport;
 import org.sangam.rest.support.TypedVariables;
 
 /**
- * Event registry (FC-02, FC-03, FC-04; R38, R83) persisted in the versioned product tables {@code EVT_CHANNEL_DEF} and
+ * Event registry (FLOWABLE-INTO-OPERATON FC-02, FLOWABLE-INTO-OPERATON FC-03, FLOWABLE-INTO-OPERATON FC-04; R38, R83) persisted in the versioned product tables {@code EVT_CHANNEL_DEF} and
  * {@code EVT_EVENT_DEF}, with the database inbox for de-duplication. <b>Module-disabled default</b>: when
  * sangam-flowable-ports is bound, its {@code EventRegistry} owns these tables (Kafka/JMS/AMQP channels, key and tenant
  * detectors, BPMN event-registry elements). Row format: {@code definition} = JSON

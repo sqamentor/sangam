@@ -246,8 +246,26 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
         resolution.put("result", request.result());
         resolution.put("reason", request.reason());
         String resolutionJson = writeJson(resolution);
+        org.sangam.core.layer.ReconciliationResolver r = resolver.get();
+        if (r != null) {
+            // The one resolve operation (resolution + ledger + release of the held work), never a bare queue update.
+            product.get(ctx, id);   // tenant check, 404 otherwise
+            long itemId;
+            try {
+                itemId = Long.parseLong(id);
+            } catch (NumberFormatException e) {
+                throw ApiProblem.notFound("reconciliation item", id);
+            }
+            try {
+                r.resolve(itemId, action, ctx.principalId(), request.result(), request.reason(), request.evidence());
+            } catch (ReconciliationQueue.AlreadyResolvedException e) {
+                throw ApiProblem.conflict("ALREADY_RESOLVED", "Reconciliation item " + id + " is already resolved");
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                throw ApiProblem.unprocessable("RECONCILIATION_ACTION_NOT_ALLOWED", e.getMessage());
+            }
+        }
         return tx.inTx(() -> {
-            ReconciliationItem item = product.resolve(ctx, id, action, resolutionJson);
+            ReconciliationItem item = r != null ? product.get(ctx, id) : product.resolve(ctx, id, action, resolutionJson);
             Map<String, Object> p = new LinkedHashMap<>();
             p.put("itemId", item.id());
             p.put("kind", item.kind());
@@ -258,6 +276,16 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
             audit.record(ctx, chainOf(ctx, item.rootId()), "RECON_ITEM_RESOLVED", p);
             return item;
         });
+    }
+
+    private volatile java.util.function.Supplier<org.sangam.core.layer.ReconciliationResolver> resolver = () -> null;
+
+    /**
+     * The shared resolve operation (sangam-integration's reconciliation engine) when it is bound; looked up per call
+     * so the bean graph has no cycle.
+     */
+    public void setReconciliationResolver(java.util.function.Supplier<org.sangam.core.layer.ReconciliationResolver> resolver) {
+        this.resolver = resolver == null ? () -> null : resolver;
     }
 
     // ================================================================== outbox
@@ -1085,7 +1113,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
         return p;
     }
 
-    // ================================================================== migration (R48, FC-18) and restart
+    // ================================================================== migration (R48, FLOWABLE-INTO-OPERATON FC-18) and restart
 
     @Override
     public MigrationPlan planMigration(RequestContext ctx, MigrationPlanRequest request) {
@@ -1160,7 +1188,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
     }
 
     /**
-     * FC-18: Operaton migration instructions are 1:1; a 1:N or N:1 instruction is expanded into its pairs, which the
+     * FLOWABLE-INTO-OPERATON FC-18: Operaton migration instructions are 1:1; a 1:N or N:1 instruction is expanded into its pairs, which the
      * engine validates (a source activity may map to one target only, so a real 1:N split is rejected with a clear
      * validation error).
      */

@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="sec-scm-sourcing" name="Sourcing mode by value (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-scm-sourcing_t" hitPolicy="FIRST">
-      <input id="sec-scm-sourcing_i0" label="Value"><inputExpression id="sec-scm-sourcing_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="sec-scm-sourcing_i0" label="Value"><inputExpression id="sec-scm-sourcing_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="sec-scm-sourcing_o0" label="Mode" name="sourcingMode" typeRef="string"/>
       <rule id="sec-scm-sourcing_r0">
         <inputEntry id="sec-scm-sourcing_r0_i0"><text>&lt;= 100000</text></inputEntry>

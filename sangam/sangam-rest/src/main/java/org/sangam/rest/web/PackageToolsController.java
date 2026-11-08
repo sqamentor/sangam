@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Modeller tooling: validation (R44, X.2.4.6, FC-46), model tests (R80), Git (R69), review comments and the
+ * Modeller tooling: validation (R44, X.2.4.6, FLOWABLE-INTO-OPERATON FC-46), model tests (R80), Git (R69), review comments and the
  * migration assessment (EC-21). {@code /packages/assessment} is a literal path and wins over {@code /packages/{id}}.
  */
 @RestController

@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Inbound event pipeline (FC-03). The SPI shapes follow Flowable's event-registry API
+ * Inbound event pipeline (FLOWABLE-INTO-OPERATON FC-03). The SPI shapes follow Flowable's event-registry API
  * ({@code InboundEventDeserializer}, {@code InboundEventKeyDetector}, {@code InboundEventTenantDetector},
  * {@code InboundEventPayloadExtractor}, {@code InboundEventTransformer}; Apache-2.0), re-implemented here without
  * the Spring coupling. The default pipeline is JSON.

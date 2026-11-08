@@ -6,7 +6,7 @@ import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Transactions;
 
 /**
- * Relay-driven wake-up (R1, VI.2.3 rule 6; fixes Operaton D-40 "long polling is not cluster-aware").
+ * Relay-driven wake-up (R1, VI.2.3 rule 6; fixes FLOWABLE-INTO-OPERATON D-40 "long polling is not cluster-aware").
  *
  * <p>One batched notification per claim cycle that published something, carrying <b>no payload</b> (no tenant data on
  * a broadly visible channel), sent by the relay outside any command transaction. Listeners (worker long-poll, task

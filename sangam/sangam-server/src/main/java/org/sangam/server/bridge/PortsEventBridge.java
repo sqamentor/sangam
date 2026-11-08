@@ -23,7 +23,7 @@ import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.RestProperties;
 
 /**
- * {@link EventPort} on sangam-flowable-ports' event registry (FC-02, FC-03, FC-04; R38, R83).
+ * {@link EventPort} on sangam-flowable-ports' event registry (FLOWABLE-INTO-OPERATON FC-02, FLOWABLE-INTO-OPERATON FC-03, FLOWABLE-INTO-OPERATON FC-04; R38, R83).
  * <ul>
  *   <li>Channels and event definitions are deployed into {@link EventRegistry} as Flowable-compatible
  *       {@code .channel} / {@code .event} JSON; each save is a new immutable version. Retire / restore / delete use the

@@ -34,7 +34,7 @@ public class CumulativeThresholdDelegate implements JavaDelegate {
         BigDecimal tol = Vars.decimal(Vars.field(tolerancePct, ex, "10"));
         boolean crossed = lim.signum() > 0
                 && total.compareTo(lim.multiply(BigDecimal.ONE.add(tol.movePointLeft(2)))) > 0;
-        ex.setVariable(tv, total.doubleValue());
+        ex.setVariable(tv, total.toPlainString()); // exact decimal string (R33, SD-398)
         ex.setVariable(tv + "Pct", lim.signum() == 0 ? 0d
                 : total.multiply(BigDecimal.valueOf(100)).divide(lim, 2, RoundingMode.HALF_UP).doubleValue());
         ex.setVariable("thresholdCrossed", crossed);

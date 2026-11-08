@@ -5,7 +5,7 @@
     <decisionTable id="up13-policy_t" hitPolicy="FIRST">
       <input id="up13-policy_i0" label="Category"><inputExpression id="up13-policy_ie0" typeRef="string"><text>category</text></inputExpression></input>
       <output id="up13-policy_o0" label="Eligible" name="returnEligible" typeRef="boolean"/>
-      <output id="up13-policy_o1" label="Restocking fee %" name="restockingFeePct" typeRef="double"/>
+      <output id="up13-policy_o1" label="Restocking fee %" name="restockingFeePct" typeRef="number"/>
       <rule id="up13-policy_r0">
         <inputEntry id="up13-policy_r0_i0"><text>"PERISHABLE"</text></inputEntry>
         <outputEntry id="up13-policy_r0_o0"><text>false</text></outputEntry>

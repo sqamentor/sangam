@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="sec-edu-eligibility" name="Eligibility (SYNTHETIC programme rule)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-edu-eligibility_t" hitPolicy="FIRST">
-      <input id="sec-edu-eligibility_i0" label="Score"><inputExpression id="sec-edu-eligibility_ie0" typeRef="double"><text>score</text></inputExpression></input>
+      <input id="sec-edu-eligibility_i0" label="Score"><inputExpression id="sec-edu-eligibility_ie0" typeRef="number"><text>score</text></inputExpression></input>
       <input id="sec-edu-eligibility_i1" label="Category"><inputExpression id="sec-edu-eligibility_ie1" typeRef="string"><text>socialCategory</text></inputExpression></input>
       <output id="sec-edu-eligibility_o0" label="Eligible" name="eligible" typeRef="boolean"/>
       <rule id="sec-edu-eligibility_r0">

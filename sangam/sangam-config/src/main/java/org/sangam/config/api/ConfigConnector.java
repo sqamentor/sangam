@@ -8,6 +8,7 @@ import org.sangam.config.common.Tree;
 import org.sangam.config.master.ClassificationRegistry;
 import org.sangam.config.master.ClassificationScheme;
 import org.sangam.config.master.Crosswalk;
+import org.sangam.config.locale.ProfileBusinessClock;
 import org.sangam.config.profile.ProfileResolver;
 import org.sangam.config.profile.ResolvedProfile;
 import org.sangam.core.integration.ConnectorDescriptor;
@@ -17,6 +18,7 @@ import org.sangam.core.integration.ConnectorResult;
 import org.sangam.core.integration.LookupResult;
 import org.sangam.core.integration.SangamConnector;
 import org.sangam.core.layer.CapabilityClass;
+import org.sangam.core.time.BusinessClock;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -53,11 +55,20 @@ public final class ConfigConnector implements SangamConnector {
     private final NumberSeries series;
     private final Map<String, Object> issued = new java.util.concurrent.ConcurrentHashMap<>();
 
+    private final BusinessClock businessClock;
+
+    /** Business dates from the profiles' own {@code locale.zone} (system clock). */
     public ConfigConnector(ProfileResolver resolver, ClassificationRegistry registry, NumberSeries series) {
+        this(resolver, registry, series, new ProfileBusinessClock(resolver, java.time.Clock.systemUTC()));
+    }
+
+    public ConfigConnector(ProfileResolver resolver, ClassificationRegistry registry, NumberSeries series,
+                           BusinessClock businessClock) {
         this.resolver = resolver;
+        this.businessClock = java.util.Objects.requireNonNull(businessClock, "businessClock");
         this.registry = registry.withReferenceScopes(scope -> {
             List<String> ids = new ArrayList<>();
-            for (String ref : resolver.resolve(scope, LocalDate.now()).chain()) {
+            for (String ref : resolver.resolve(scope, businessClock.today(scope)).chain()) {
                 ids.add(ref.substring(0, ref.indexOf('@')));
             }
             java.util.Collections.reverse(ids);
@@ -76,7 +87,7 @@ public final class ConfigConnector implements SangamConnector {
     @Override
     public ConnectorResult invoke(ConnectorRequest r) {
         try {
-            LocalDate asOf = r.str("asOf") == null ? LocalDate.now() : LocalDate.parse(r.str("asOf"));
+            LocalDate asOf = r.str("asOf") == null ? businessClock.today(r.tenantId()) : LocalDate.parse(r.str("asOf"));
             ResolvedProfile p = resolver.resolve(r.tenantId(), r.str("office"), asOf);
             Map<String, Object> out = new LinkedHashMap<>();
             switch (r.operation()) {

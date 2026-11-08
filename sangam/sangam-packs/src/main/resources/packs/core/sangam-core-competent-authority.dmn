@@ -5,7 +5,7 @@
   <decision id="sangam-core-competent-authority" name="Competent authority (generic amount bands)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sangam-core-competent-authority_t" hitPolicy="FIRST">
       <input id="sangam-core-competent-authority_i0" label="Case type"><inputExpression id="sangam-core-competent-authority_ie0" typeRef="string"><text>caseType</text></inputExpression></input>
-      <input id="sangam-core-competent-authority_i1" label="Amount (INR)"><inputExpression id="sangam-core-competent-authority_ie1" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="sangam-core-competent-authority_i1" label="Amount (INR)"><inputExpression id="sangam-core-competent-authority_ie1" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="sangam-core-competent-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="sangam-core-competent-authority_r0"><description>up to 100000</description>
         <inputEntry id="sangam-core-competent-authority_r0_i0"><text>-</text></inputEntry>

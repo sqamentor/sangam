@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Modeller tooling around packages: deployment validation (R44 profile, X.2.4.6 closure check, FC-46), model tests
+ * Modeller tooling around packages: deployment validation (R44 profile, X.2.4.6 closure check, FLOWABLE-INTO-OPERATON FC-46), model tests
  * (R80), Git sync (R69), review comments (R69) and the migration assessment of foreign models (EC-21, R48).
  */
 public interface PackageToolsPort {

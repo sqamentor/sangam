@@ -109,7 +109,9 @@ public class LedgerWiring {
     public LedgerService sangamLedgerService(JdbcLedgerStore store, LedgerControlStore control,
             LedgerPorts.DecisionPort decisions, ObjectProvider<ProfileResolver> profiles, ObjectProvider<AuditPort> audit,
             ObjectProvider<OutboxWriter> outbox, TxSupport tx, Environment env) {
-        LedgerService service = new LedgerService(store, control, ConfigWiring.engineClock()).withDecisions(decisions);
+        LedgerService service = new LedgerService(store, control, ConfigWiring.engineClock()).withDecisions(decisions)
+                .withBusinessClock(new org.sangam.config.locale.ProfileBusinessClock(profiles::getIfAvailable,
+                        ConfigWiring.engineClock()));
         String rateScope = env.getProperty("sangam.ledger.rate-scope", "IN");
         service.withRates((from, to, rateType, asOf) -> {
             if (from.equals(to)) {
@@ -120,8 +122,9 @@ public class LedgerWiring {
                 return Optional.empty();
             }
             try {
-                return r.resolve(rateScope, asOf == null ? LocalDate.now() : asOf).locale().exchangeRates()
-                        .rate(from, to, asOf == null ? LocalDate.now() : asOf);
+                // A missing as-of is "today" of the rate scope (its own profile zone).
+                LocalDate d = asOf != null ? asOf : service.today(rateScope);
+                return r.resolve(rateScope, d).locale().exchangeRates().rate(from, to, d);
             } catch (RuntimeException e) {
                 return Optional.empty();
             }

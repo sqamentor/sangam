@@ -613,9 +613,9 @@ CREATE TABLE SEC_ORG_UNIT_PARENT (
   unit_id VARCHAR2(64 CHAR) NOT NULL,
   parent_id VARCHAR2(64 CHAR),
   valid_from TIMESTAMP WITH TIME ZONE NOT NULL,
-  valid_to TIMESTAMP WITH TIME ZONE,
-  CONSTRAINT PK_SEC_ORG_UNIT_PARENT PRIMARY KEY (tenant_id, unit_id, valid_from)
+  valid_to TIMESTAMP WITH TIME ZONE
 );
+CREATE UNIQUE INDEX PK_SEC_ORG_UNIT_PARENT ON SEC_ORG_UNIT_PARENT (tenant_id, unit_id, SYS_EXTRACT_UTC(valid_from));
 CREATE INDEX SEC_ORG_UNIT_PARENT_P ON SEC_ORG_UNIT_PARENT (tenant_id, parent_id);
 --rollback DROP TABLE SEC_ORG_UNIT_PARENT;
 
@@ -630,9 +630,9 @@ CREATE TABLE SEC_ORG_UNIT_NAME (
   name_hi VARCHAR2(255 CHAR),
   order_ref VARCHAR2(255 CHAR),
   created_by VARCHAR2(255 CHAR),
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-  CONSTRAINT PK_SEC_ORG_UNIT_NAME PRIMARY KEY (tenant_id, unit_id, valid_from)
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
+CREATE UNIQUE INDEX PK_SEC_ORG_UNIT_NAME ON SEC_ORG_UNIT_NAME (tenant_id, unit_id, SYS_EXTRACT_UTC(valid_from));
 --rollback DROP TABLE SEC_ORG_UNIT_NAME;
 
 --changeset sangam:0026-01-sec_tenant_key dbms:oracle
@@ -675,9 +675,9 @@ CREATE TABLE SEC_SEAT_PLACEMENT (
   seat_id VARCHAR2(64 CHAR) NOT NULL,
   unit_id VARCHAR2(64 CHAR) NOT NULL,
   valid_from TIMESTAMP WITH TIME ZONE NOT NULL,
-  valid_to TIMESTAMP WITH TIME ZONE,
-  CONSTRAINT PK_SEC_SEAT_PLACEMENT PRIMARY KEY (tenant_id, seat_id, valid_from)
+  valid_to TIMESTAMP WITH TIME ZONE
 );
+CREATE UNIQUE INDEX PK_SEC_SEAT_PLACEMENT ON SEC_SEAT_PLACEMENT (tenant_id, seat_id, SYS_EXTRACT_UTC(valid_from));
 CREATE INDEX SEC_SEAT_PLACEMENT_U ON SEC_SEAT_PLACEMENT (tenant_id, unit_id);
 --rollback DROP TABLE SEC_SEAT_PLACEMENT;
 
@@ -1402,7 +1402,8 @@ CREATE TABLE PACK_LEDGER_ACCOUNT (
   tenant_id VARCHAR2(64 CHAR) NOT NULL,
   ledger VARCHAR2(64 CHAR) NOT NULL,
   account VARCHAR2(255 CHAR) NOT NULL,
-  balance NUMBER(19,4) NOT NULL,
+  unit VARCHAR2(32 CHAR) NOT NULL,
+  balance NUMBER(19) NOT NULL,
   version NUMBER(19) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
   CONSTRAINT PK_PACK_LEDGER_ACCOUNT PRIMARY KEY (tenant_id, ledger, account)
@@ -1416,9 +1417,9 @@ CREATE TABLE PACK_LEDGER_POSTING (
   ledger VARCHAR2(64 CHAR) NOT NULL,
   account VARCHAR2(255 CHAR) NOT NULL,
   reference VARCHAR2(255 CHAR) NOT NULL,
-  delta NUMBER(19,4) NOT NULL,
+  delta NUMBER(19) NOT NULL,
   state VARCHAR2(32 CHAR) NOT NULL,
-  balance_after NUMBER(19,4) NOT NULL,
+  balance_after NUMBER(19) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   reversed_at TIMESTAMP WITH TIME ZONE,
   CONSTRAINT PK_PACK_LEDGER_POSTING PRIMARY KEY (tenant_id, ledger, account, reference)
@@ -2131,11 +2132,11 @@ CREATE TABLE LDG_BALANCE (
   stage VARCHAR2(64 CHAR) NOT NULL,
   sub VARCHAR2(255 CHAR) NOT NULL,
   currency VARCHAR2(64 CHAR),
-  total NUMBER(24,6) NOT NULL,
-  distributed_amt NUMBER(24,6) NOT NULL,
-  committed NUMBER(24,6) NOT NULL,
-  encumbered NUMBER(24,6) NOT NULL,
-  consumed NUMBER(24,6) NOT NULL,
+  total NUMBER(19) NOT NULL,
+  distributed_amt NUMBER(19) NOT NULL,
+  committed NUMBER(19) NOT NULL,
+  encumbered NUMBER(19) NOT NULL,
+  consumed NUMBER(19) NOT NULL,
   state VARCHAR2(64 CHAR) NOT NULL,
   version NUMBER(19) NOT NULL,
   attrs_json CLOB,
@@ -2166,7 +2167,7 @@ CREATE TABLE LDG_HOLD (
   tenant_id VARCHAR2(64 CHAR) NOT NULL,
   reference VARCHAR2(255 CHAR) NOT NULL,
   account_id VARCHAR2(64 CHAR) NOT NULL,
-  amount NUMBER(24,6) NOT NULL,
+  amount NUMBER(19) NOT NULL,
   request_json CLOB NOT NULL,
   held_at TIMESTAMP WITH TIME ZONE NOT NULL,
   released_at TIMESTAMP WITH TIME ZONE,
@@ -2198,9 +2199,9 @@ CREATE TABLE LDG_ACCOUNTING (
   basis VARCHAR2(64 CHAR) NOT NULL,
   debit VARCHAR2(255 CHAR) NOT NULL,
   credit VARCHAR2(255 CHAR) NOT NULL,
-  amount NUMBER(24,6) NOT NULL,
+  amount NUMBER(19) NOT NULL,
   currency VARCHAR2(64 CHAR),
-  functional_amount NUMBER(24,6),
+  functional_amount NUMBER(19),
   created_at TIMESTAMP WITH TIME ZONE NOT NULL,
   exported_at TIMESTAMP WITH TIME ZONE,
   CONSTRAINT PK_LDG_ACCOUNTING PRIMARY KEY (entry_id)
@@ -2654,8 +2655,8 @@ CREATE TABLE REG_ASSET (
   custodian_ref VARCHAR2(255 CHAR),
   acquisition_date VARCHAR2(64 CHAR),
   in_service_date VARCHAR2(64 CHAR),
-  acquisition_value NUMBER(24,6),
-  residual_value NUMBER(24,6),
+  acquisition_value NUMBER(19),
+  residual_value NUMBER(19),
   currency VARCHAR2(64 CHAR),
   useful_life_months NUMBER(10),
   depreciation_method VARCHAR2(64 CHAR),
@@ -2778,7 +2779,8 @@ CREATE TABLE REG_WORK_ORDER (
   downtime_start TIMESTAMP WITH TIME ZONE,
   downtime_end TIMESTAMP WITH TIME ZONE,
   meter_at_done NUMBER(24,6),
-  cost NUMBER(24,6),
+  cost NUMBER(19),
+  currency VARCHAR2(64 CHAR),
   findings_json CLOB,
   parts_json CLOB,
   evidence_json CLOB,
@@ -3951,9 +3953,9 @@ CREATE TABLE FLD_POSITION (
   speed_cmps NUMBER(19),
   heading_deg NUMBER(10),
   source VARCHAR2(64 CHAR),
-  trip_id VARCHAR2(64 CHAR),
-  CONSTRAINT PK_FLD_POSITION PRIMARY KEY (tenant_id, unit_id, fix_at)
+  trip_id VARCHAR2(64 CHAR)
 );
+CREATE UNIQUE INDEX PK_FLD_POSITION ON FLD_POSITION (tenant_id, unit_id, SYS_EXTRACT_UTC(fix_at));
 --rollback DROP TABLE FLD_POSITION;
 
 --changeset sangam:0024-01-cf_config dbms:oracle
@@ -4519,7 +4521,7 @@ CREATE TABLE PG_PROGRAMME (
   starts_on DATE,
   ends_on DATE,
   status VARCHAR2(64 CHAR) NOT NULL,
-  budget NUMBER(24,6),
+  budget NUMBER(19),
   currency VARCHAR2(64 CHAR),
   indicators_json CLOB,
   attributes_json CLOB,
@@ -4773,10 +4775,10 @@ CREATE TABLE PG_FINANCIAL (
   period_id VARCHAR2(64 CHAR) NOT NULL,
   org_unit VARCHAR2(64 CHAR) NOT NULL,
   head VARCHAR2(64 CHAR) NOT NULL,
-  allocated NUMBER(24,6),
-  released NUMBER(24,6),
-  committed_amt NUMBER(24,6),
-  expended NUMBER(24,6),
+  allocated NUMBER(19),
+  released NUMBER(19),
+  committed_amt NUMBER(19),
+  expended NUMBER(19),
   currency VARCHAR2(64 CHAR),
   source VARCHAR2(64 CHAR) NOT NULL,
   updated_by VARCHAR2(255 CHAR),

@@ -58,10 +58,13 @@ public class ConfigController {
     private final ProfileValidator validator;
     private final ConfigConnector connector;
     private final PermissionPort permissions;
+    private final org.sangam.rest.support.BusinessDates dates;
 
     public ConfigController(ProfileResolver resolver, ConfigAdminService admin, ProfileRepository repository,
                             MasterStore master, ClassificationRegistry classification, ProfileValidator validator,
-                            ConfigConnector connector, PermissionPort permissions) {
+                            ConfigConnector connector, PermissionPort permissions,
+                            org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
+        this.dates = new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable);
         this.resolver = resolver;
         this.admin = admin;
         this.repository = repository;
@@ -117,7 +120,8 @@ public class ConfigController {
             @RequestParam(required = false) String office,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
         permissions.require(ctx, ConfigPermissions.READ);
-        return resolver.resolve(scope(ctx, scope), blank(office), asOf == null ? LocalDate.now() : asOf);
+        String s = scope(ctx, scope);
+        return resolver.resolve(s, blank(office), dates.orToday(asOf, s));
     }
 
     @GetMapping("/profiles/{id}/versions")
@@ -206,7 +210,7 @@ public class ConfigController {
     public FindingsResult validate(RequestContext ctx, @RequestBody ValidateRequest body) {
         permissions.require(ctx, ConfigPermissions.READ);
         String scope = scope(ctx, body == null ? null : body.scope());
-        LocalDate asOf = body == null || body.asOf() == null ? LocalDate.now() : body.asOf();
+        LocalDate asOf = dates.orToday(body == null ? null : body.asOf(), scope);
         return FindingsResult.of(validator.validate(resolver, scope, body == null ? null : blank(body.office()), asOf));
     }
 
@@ -219,7 +223,7 @@ public class ConfigController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
         permissions.require(ctx, ConfigPermissions.READ);
         String s = scope(ctx, scope);
-        LocalDate d = asOf == null ? LocalDate.now() : asOf;
+        LocalDate d = dates.orToday(asOf, s);
         List<MasterCode> all = parent == null ? master.list(s, scheme, segment)
                 : master.find(s, scheme, segment, parent, null);
         return Lists.ok(all.stream().filter(c -> c.validOn(d)).toList());
@@ -273,8 +277,8 @@ public class ConfigController {
             @RequestParam(required = false) String scope, @RequestParam(required = false) String family,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
         permissions.require(ctx, ConfigPermissions.READ);
-        DocumentTypeCatalogue cat = DocumentTypeCatalogue.of(resolver.resolve(scope(ctx, scope),
-                asOf == null ? LocalDate.now() : asOf));
+        String s = scope(ctx, scope);
+        DocumentTypeCatalogue cat = DocumentTypeCatalogue.of(resolver.resolve(s, dates.orToday(asOf, s)));
         List<DocumentType> types = family == null ? cat.all() : cat.family(family);
         List<Map<String, Object>> out = new ArrayList<>();
         for (DocumentType t : types) {

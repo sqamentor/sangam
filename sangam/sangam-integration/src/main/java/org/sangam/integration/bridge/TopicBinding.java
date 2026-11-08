@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Binds an external-task topic to a connector call (R71 service registry → BPMN service task; Flowable FC-06/FC-07
+ * Binds an external-task topic to a connector call (R71 service registry → BPMN service task; FLOWABLE-INTO-OPERATON FC-06/FLOWABLE-INTO-OPERATON FC-07
  * HTTP/mail task as external work).
  *
  * @param topic            external-task topic, e.g. {@code sangam.ifms.pay}

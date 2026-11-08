@@ -13,7 +13,7 @@ import org.sangam.engine.db.EngineDialect;
 import org.sangam.engine.tx.CommandState;
 
 /**
- * <b>L2 root lock (VI.1, A-11, D-24).</b> Operaton has only optimistic locking; on a hot root 30-75 % of commands
+ * <b>L2 root lock (VI.1, A-11, FLOWABLE-INTO-OPERATON D-24).</b> Operaton has only optimistic locking; on a hot root 30-75 % of commands
  * failed after 5 retries in E6. Every state-changing command therefore locks the row of its root instance in
  * {@code ROOT_SEQ} ({@code SELECT .. FOR UPDATE}, Oracle {@code FOR UPDATE WAIT n}, SQL Server
  * {@code WITH (UPDLOCK, ROWLOCK)}) <b>before</b> it reads or changes engine state, so commands on one root run one

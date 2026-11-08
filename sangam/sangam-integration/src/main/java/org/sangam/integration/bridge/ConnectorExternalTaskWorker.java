@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * BPMN service task → connector bridge over external work (SANGAM.md VI.3, A-2, R36, R71; Flowable FC-06/FC-07 HTTP and
+ * BPMN service task → connector bridge over external work (SANGAM.md VI.3, A-2, R36, R71; FLOWABLE-INTO-OPERATON FC-06/FLOWABLE-INTO-OPERATON FC-07 HTTP and
  * mail tasks). Engine-neutral: it uses only the core {@link EngineAdapter} worker calls, so the lease fencing of
  * {@code SANGAM_LEASE} (lockVersion, attemptId) applies to every call.
  *

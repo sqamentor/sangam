@@ -40,4 +40,6 @@ sangam:
   db:
     require-rcsi: false
   persistence:
-    dev-schema: true
+    # The sangam-persistence changelog (H2 dialect included) owns every product table; the per-module dev-schema
+    # creators would run before Liquibase and collide with it ("Table ... already exists").
+    dev-schema: false

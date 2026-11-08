@@ -16,7 +16,7 @@ import java.util.Map;
  * Inbox handler for the pack messages ({@link PackMessages}): correlates the message to every execution waiting for it
  * whose correlation variable equals the operationId (sangam-packs README §4), in the tenant of the inbox row, with the
  * message variables as process variables. Runs in the inbox processing transaction, which is the engine transaction.
- * No waiting execution yet → {@code NO_SUBSCRIPTION}: the message stays BUFFERED until its TTL (D-33).
+ * No waiting execution yet → {@code NO_SUBSCRIPTION}: the message stays BUFFERED until its TTL (FLOWABLE-INTO-OPERATON D-33).
  */
 public final class PackMessageInboxHandler implements InboxHandler {
 

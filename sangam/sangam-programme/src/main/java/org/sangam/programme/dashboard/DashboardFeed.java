@@ -160,6 +160,10 @@ public final class DashboardFeed {
         return out;
     }
 
+    private static String plain(org.sangam.core.money.Money v) {
+        return v == null ? null : v.toPlainString();
+    }
+
     private static String plain(BigDecimal v) {
         return v == null ? null : v.stripTrailingZeros().toPlainString();
     }

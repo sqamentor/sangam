@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Flowable IDM privileges, privilege mappings and tokens (FC-42), owned by WS-SECURITY ({@code PrivilegeService},
+ * Flowable IDM privileges, privilege mappings and tokens (FLOWABLE-INTO-OPERATON FC-42), owned by WS-SECURITY ({@code PrivilegeService},
  * {@code ApiTokenService} on {@code SEC_PRIVILEGE}, {@code SEC_PRIVILEGE_MAPPING}, {@code SEC_API_TOKEN}). Added by
  * WS-PORTS so the ports' Flowable-style facade can delegate without depending on sangam-security (which carries
  * Spring Security). The integrator binds it with a thin adapter over the two security services; every call is

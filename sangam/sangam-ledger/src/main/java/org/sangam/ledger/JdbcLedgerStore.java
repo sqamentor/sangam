@@ -31,12 +31,41 @@ import java.util.Optional;
  * updates zero rows rolls the whole posting back. Hot accounts can be striped ({@code stripes} in the definition):
  * the service spreads allocations across stripe sub-accounts and tries the reference's preferred stripe first.
  * No remote call happens inside the transaction (R3).
+ *
+ * <p>Amounts (SD-398, SG-20): every bucket is a BIGINT of integer units. For a money account (ISO 4217 {@code currency})
+ * the unit is the currency minor unit ({@link org.sangam.core.money.Money}); for a quantity account (no / non-ISO
+ * currency) it is 10^-{@value #QUANTITY_EXPONENT}. A value finer than the unit is rejected ({@link #units}), never
+ * rounded, so a balance can never drift by a fraction of a minor unit.
  */
 public final class JdbcLedgerStore implements LedgerStore {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final String COLS = "account_id, tenant_id, ledger_id, period, line_code, holder, stage, sub, currency, "
             + "total, distributed_amt, committed, encumbered, consumed, state, version, attrs_json";
+
+    /** Decimal places of a quantity account (stock, units); money accounts use their currency exponent. */
+    public static final int QUANTITY_EXPONENT = 6;
+
+    /** Exponent of the integer units of an account in {@code currency} (ISO 4217 minor unit, else quantity). */
+    public static int exponent(String currency) {
+        if (currency != null) {
+            try {
+                return org.sangam.core.money.Money.currency(currency).getDefaultFractionDigits();
+            } catch (IllegalArgumentException notIso) {
+                // a quantity unit code (e.g. KG, NOS): fall through
+            }
+        }
+        return QUANTITY_EXPONENT;
+    }
+
+    /** Exact integer units of {@code v}; throws if {@code v} has more fraction digits than the account unit. */
+    public static long units(BigDecimal v, String currency) {
+        return org.sangam.core.money.Money.toMinorExact(v == null ? BigDecimal.ZERO : v, exponent(currency));
+    }
+
+    public static BigDecimal amount(long units, String currency) {
+        return BigDecimal.valueOf(units, exponent(currency));
+    }
 
     private final DataSource ds;
     private final Dialect dialect;
@@ -68,11 +97,12 @@ public final class JdbcLedgerStore implements LedgerStore {
                 List<Balance> after = new ArrayList<>();
                 for (Movement m : legs) {
                     ensure(c, m.key(), m.currency());
-                    BigDecimal t = d(m, Balance.Bucket.TOTAL);
-                    BigDecimal di = d(m, Balance.Bucket.DISTRIBUTED);
-                    BigDecimal co = d(m, Balance.Bucket.COMMITTED);
-                    BigDecimal en = d(m, Balance.Bucket.ENCUMBERED);
-                    BigDecimal cs = d(m, Balance.Bucket.CONSUMED);
+                    String ccy = currencyOf(c, m);
+                    long t = d(m, Balance.Bucket.TOTAL, ccy);
+                    long di = d(m, Balance.Bucket.DISTRIBUTED, ccy);
+                    long co = d(m, Balance.Bucket.COMMITTED, ccy);
+                    long en = d(m, Balance.Bucket.ENCUMBERED, ccy);
+                    long cs = d(m, Balance.Bucket.CONSUMED, ccy);
                     boolean guard = m.guardAvailable() != null && m.availableDelta().signum() < 0;
                     String sql = "UPDATE LDG_BALANCE SET total = total + ?, distributed_amt = distributed_amt + ?, committed = committed + ?, "
                             + "encumbered = encumbered + ?, consumed = consumed + ?, version = version + 1 WHERE account_id = ?"
@@ -80,7 +110,7 @@ public final class JdbcLedgerStore implements LedgerStore {
                             + (guard ? " AND (total + ?) - (distributed_amt + ?) - (committed + ?) - (encumbered + ?) - (consumed + ?) >= ?" : "");
                     List<Object> p = new ArrayList<>(List.of(t, di, co, en, cs, m.key().id()));
                     if (guard) {
-                        p.addAll(List.of(t, di, co, en, cs, m.guardAvailable()));
+                        p.addAll(List.of(t, di, co, en, cs, units(m.guardAvailable(), ccy)));
                     }
                     int n = Jdbc.update(c, sql, p.toArray());
                     if (n == 0) {
@@ -103,14 +133,20 @@ public final class JdbcLedgerStore implements LedgerStore {
         }
     }
 
-    private static BigDecimal d(Movement m, Balance.Bucket b) {
-        return m.deltas().getOrDefault(b, BigDecimal.ZERO);
+    private static long d(Movement m, Balance.Bucket b, String ccy) {
+        return units(m.deltas().getOrDefault(b, BigDecimal.ZERO), ccy);
+    }
+
+    /** The unit of an existing account is fixed by its stored currency (the leg's currency only seeds a new row). */
+    private static String currencyOf(Connection c, Movement m) {
+        return Jdbc.one(c, "SELECT currency FROM LDG_BALANCE WHERE account_id = ?", rs -> rs.getString(1), m.key().id())
+                .orElse(m.currency());
     }
 
     private void ensure(Connection c, AccountKey k, String currency) {
         Jdbc.insertIfAbsent(c, dialect, "INSERT INTO LDG_BALANCE (" + COLS + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 k.id(), k.tenant(), k.ledger(), k.period(), k.line(), k.holder(), k.stage(), k.sub(), currency,
-                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, Balance.OPEN, 0L, "{}");
+                0L, 0L, 0L, 0L, 0L, Balance.OPEN, 0L, "{}");
     }
 
     private Optional<Balance> read(Connection c, AccountKey k) {
@@ -193,8 +229,9 @@ public final class JdbcLedgerStore implements LedgerStore {
     private static Balance row(ResultSet rs) throws SQLException {
         AccountKey k = new AccountKey(rs.getString("tenant_id"), rs.getString("ledger_id"), rs.getString("period"),
                 rs.getString("line_code"), rs.getString("holder"), rs.getString("stage"), rs.getString("sub"));
-        return new Balance(k, rs.getString("currency"), rs.getBigDecimal("total"), rs.getBigDecimal("distributed_amt"),
-                rs.getBigDecimal("committed"), rs.getBigDecimal("encumbered"), rs.getBigDecimal("consumed"),
+        String ccy = rs.getString("currency");
+        return new Balance(k, ccy, amount(rs.getLong("total"), ccy), amount(rs.getLong("distributed_amt"), ccy),
+                amount(rs.getLong("committed"), ccy), amount(rs.getLong("encumbered"), ccy), amount(rs.getLong("consumed"), ccy),
                 rs.getString("state"), rs.getLong("version"), map(rs.getString("attrs_json")));
     }
 

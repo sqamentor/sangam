@@ -4,9 +4,9 @@
   <decision id="sec-util-tariff" name="Tariff (SYNTHETIC; SERC tariff order)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-util-tariff_t" hitPolicy="FIRST">
       <input id="sec-util-tariff_i0" label="Category"><inputExpression id="sec-util-tariff_ie0" typeRef="string"><text>tariffCategory</text></inputExpression></input>
-      <input id="sec-util-tariff_i1" label="Units"><inputExpression id="sec-util-tariff_ie1" typeRef="double"><text>units</text></inputExpression></input>
-      <output id="sec-util-tariff_o0" label="Fixed charge" name="fixedCharge" typeRef="double"/>
-      <output id="sec-util-tariff_o1" label="Energy rate per unit" name="energyRate" typeRef="double"/>
+      <input id="sec-util-tariff_i1" label="Units"><inputExpression id="sec-util-tariff_ie1" typeRef="number"><text>units</text></inputExpression></input>
+      <output id="sec-util-tariff_o0" label="Fixed charge" name="fixedCharge" typeRef="number"/>
+      <output id="sec-util-tariff_o1" label="Energy rate per unit" name="energyRate" typeRef="number"/>
       <output id="sec-util-tariff_o2" label="Bill head (must equal the tariff line head)" name="head" typeRef="string"/>
       <rule id="sec-util-tariff_r0">
         <inputEntry id="sec-util-tariff_r0_i0"><text>"DOMESTIC"</text></inputEntry>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp42">
+  <!-- GP-42 cumulative-threshold re-sanction: RA bills aggregate into 'cumulative'; within 10 % over the sanction a lower
+       authority notes the excess; beyond it a NON-interrupting conditional boundary event starts the revised sanction
+       (call activity) while billing goes on. -->
+  <process id="gp42-cumulative" name="GP-42 Cumulative threshold" isExecutable="true">
+    <startEvent id="gp42_start"/>
+    <sequenceFlow id="f1" sourceRef="gp42_start" targetRef="gp42_billing"/>
+    <subProcess id="gp42_billing" name="Running bills">
+      <startEvent id="gp42_bStart"/>
+      <sequenceFlow id="b1" sourceRef="gp42_bStart" targetRef="gp42_raBill"/>
+      <userTask id="gp42_raBill" name="Pass RA bill"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="b2" sourceRef="gp42_raBill" targetRef="gp42_aggregate"/>
+      <serviceTask id="gp42_aggregate" name="Add to cumulative" @@expr|${execution.setVariable('cumulative', cumulative + billAmount)}@@/>
+      <sequenceFlow id="b3" sourceRef="gp42_aggregate" targetRef="gp42_gw"/>
+      <exclusiveGateway id="gp42_gw" default="b6"/>
+      <sequenceFlow id="b4" sourceRef="gp42_gw" targetRef="gp42_bEnd"><conditionExpression xsi:type="tFormalExpression">${done == true}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="b5" sourceRef="gp42_gw" targetRef="gp42_excessApproval"><conditionExpression xsi:type="tFormalExpression">${cumulative gt sanctioned and cumulative le sanctioned * 1.1 and excessNoted != true}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="b6" sourceRef="gp42_gw" targetRef="gp42_raBill"/>
+      <userTask id="gp42_excessApproval" name="Note excess within 10 %"><potentialOwner><resourceAssignmentExpression><formalExpression>group(se)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="b7" sourceRef="gp42_excessApproval" targetRef="gp42_raBill"/>
+      <endEvent id="gp42_bEnd"/>
+    </subProcess>
+    <boundaryEvent id="gp42_overLimit" attachedToRef="gp42_billing" cancelActivity="false">
+      <conditionalEventDefinition><condition xsi:type="tFormalExpression">${cumulative gt sanctioned * 1.1 and revisionPending != true}</condition></conditionalEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f2" sourceRef="gp42_overLimit" targetRef="gp42_markPending"/>
+    <serviceTask id="gp42_markPending" @@expr|${execution.setVariable('revisionPending', true)}@@/>
+    <sequenceFlow id="f3" sourceRef="gp42_markPending" targetRef="gp42_revise"/>
+    <callActivity id="gp42_revise" name="Revised AA" calledElement="gp42-revised-sanction">@@callio|in=cumulative,sanctioned;out=revisedSanction@@</callActivity>
+    <sequenceFlow id="f4" sourceRef="gp42_revise" targetRef="gp42_applyRevision"/>
+    <serviceTask id="gp42_applyRevision" @@expr|${execution.setVariable('sanctioned', revisedSanction)}@@/>
+    <sequenceFlow id="f5" sourceRef="gp42_applyRevision" targetRef="gp42_clearPending"/>
+    <serviceTask id="gp42_clearPending" @@expr|${execution.setVariable('revisionPending', false)}@@/>
+    <sequenceFlow id="f6" sourceRef="gp42_clearPending" targetRef="gp42_end_revision"/>
+    <endEvent id="gp42_end_revision"/>
+    <sequenceFlow id="f7" sourceRef="gp42_billing" targetRef="gp42_end"/>
+    <endEvent id="gp42_end"/>
+  </process>
+</definitions>

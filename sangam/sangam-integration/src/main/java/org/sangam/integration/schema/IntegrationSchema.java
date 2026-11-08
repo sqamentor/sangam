@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Reference DDL of the tables this module adds on top of the core product tables ({@code org.sangam.core.layer.Schema}:
  * OUTBOX, OUTBOX_DELIVERY, INBOX, IDEMPOTENCY_RECORD, OPERATION_LEDGER, RECONCILIATION_ITEM, TOMBSTONE, ROOT_SEQ,
- * AUDIT_*). WS-ENGINE ports these statements into the per-dialect Liquibase changelogs of sangam-persistence (D-7);
+ * AUDIT_*). WS-ENGINE ports these statements into the per-dialect Liquibase changelogs of sangam-persistence (ADR-D-7);
  * {@link #create} exists for tests and development databases only. Portable type tokens as in the core schema.
  */
 public final class IntegrationSchema {

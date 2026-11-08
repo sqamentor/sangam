@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Core: scrutiny and clarification. Generated layout; edit freely in the Sangam modeller. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_scrutiny" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_scrutiny" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
   <message id="msg_sangam_clarificationReceived" name="sangam.clarificationReceived"/>
   <process id="sangam-core-scrutiny" name="Core: scrutiny and clarification" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <documentation>SCRUTINY &lt;&gt; CLARIFICATION_SOUGHT (IX.3, GP-16). The statutory clock pauses while the applicant is asked for clarification when the pack says so (GP-45, J-P4 step 6), and the case version moves n to n+1 on the response (R43). Inputs: scrutinySeat, scrutinySla, clarificationWindow, pauseOnClarification. Output: scrutinyOutcome ACCEPTED / REJECTED / LAPSED.</documentation>

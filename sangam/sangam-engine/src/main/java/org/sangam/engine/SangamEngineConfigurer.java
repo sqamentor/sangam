@@ -43,8 +43,8 @@ public final class SangamEngineConfigurer {
     }
 
     /**
-     * Wraps {@code raw} in the READ COMMITTED guard (D-56), runs the start-up checks (dialect, isolation, SQL Server
-     * RCSI, MySQL server identity: D-05) and, when enabled, applies the product changelog (R12).
+     * Wraps {@code raw} in the READ COMMITTED guard (FLOWABLE-INTO-OPERATON D-56), runs the start-up checks (dialect, isolation, SQL Server
+     * RCSI, MySQL server identity: FLOWABLE-INTO-OPERATON D-05) and, when enabled, applies the product changelog (R12).
      */
     public DataSource prepare(DataSource raw) {
         if (settings.isApplyEnvironment()) {
@@ -83,9 +83,12 @@ public final class SangamEngineConfigurer {
         OperatonClock.register(settings.isAllowMultipleEnginesPerJvm());
         cfg.setProcessEngineName(settings.getProcessEngineName());
         cfg.setDataSource(preparedDataSource);
-        cfg.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
+        // SG-19: never force engine DDL; keep the configuration's own value unless the settings say otherwise
+        if (settings.getEngineSchemaUpdate() != null) {
+            cfg.setDatabaseSchemaUpdate(settings.getEngineSchemaUpdate());
+        }
         if (findings.operatonDatabaseType() != null) {
-            cfg.setDatabaseType(findings.operatonDatabaseType()); // D-05: pinned, never inferred from the driver
+            cfg.setDatabaseType(findings.operatonDatabaseType()); // FLOWABLE-INTO-OPERATON D-05: pinned, never inferred from the driver
         }
         cfg.setHistory(settings.getHistory());
         cfg.setJobExecutorActivate(settings.isJobExecutorActivate());

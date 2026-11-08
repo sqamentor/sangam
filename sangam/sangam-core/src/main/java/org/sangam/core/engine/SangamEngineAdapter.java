@@ -12,8 +12,8 @@ import org.sangam.core.api.EngineAdapter;
 /**
  * Stage C extension of {@link EngineAdapter} with the fields and calls the worker API needs (ARCHITECTURE §4,
  * VI.3): operationId, attempt number, business key and tenant on every leased item; heartbeat with
- * {@code cancelRequested}; cancel request; capped counts (A-16); branch-addressed correlation (D-35); pause/resume
- * (D-32). Engine-neutral: no Operaton type appears here.
+ * {@code cancelRequested}; cancel request; capped counts (A-16); branch-addressed correlation (FLOWABLE-INTO-OPERATON D-35); pause/resume
+ * (FLOWABLE-INTO-OPERATON D-32). Engine-neutral: no Operaton type appears here.
  *
  * <p>Integration note: {@code EngineAdapter.ExternalWork} in sangam-core has no {@code operationId}; this interface
  * carries it in {@link LeasedWork} until the integrator adds it to the core record.
@@ -44,6 +44,25 @@ public interface SangamEngineAdapter extends EngineAdapter {
     /** {@link #extendLock} returning the new expiry and whether a cancel was requested. */
     Heartbeat heartbeat(String workId, String workerId, long lockVersion, Duration newDuration);
 
+    /**
+     * T35 operation id of an open work item: the id stored with its lease (the one handed to the worker), else
+     * {@link OperationIdentity#forWork} over the item's current facts. Null for an unknown work id.
+     */
+    UUID operationIdOf(String workId);
+
+    /** Result of {@link #terminateInstance}: the open operation ids that were tombstoned. */
+    record Termination(List<UUID> openOperationIds, int cancelRequested) {
+    }
+
+    /**
+     * VI.5, the one terminate path (REST delete/cancel and {@link #cancelInstance} use it): in one engine command, L2
+     * on the root; every leased work item of the instance tree gets a CANCEL_REQUESTED tombstone carrying its lease's
+     * operation id, lock version and remaining lease (engine clock); the instance is deleted (technical: custom
+     * listeners and IO mappings skipped; business cancel: listeners run); the lease rows are removed; a technical
+     * delete records {@code INSTANCE_DELETED} with the actor, reason and open operation ids.
+     */
+    Termination terminateInstance(String instanceId, String actor, String reason, boolean technical);
+
     /** VI.3.1 {@code LOCKED --cancel requested--> CANCEL_REQUESTED}; the next heartbeat reports it. */
     void requestCancel(String workId);
 
@@ -51,18 +70,18 @@ public interface SangamEngineAdapter extends EngineAdapter {
     long countTasksCapped(TaskQuery query, int cap);
 
     /**
-     * D-35: correlates a message to one waiting branch of an instance, addressed by a local variable of the waiting
+     * FLOWABLE-INTO-OPERATON D-35: correlates a message to one waiting branch of an instance, addressed by a local variable of the waiting
      * execution (for example the multi-instance item id). Returns the execution id that received it.
      */
     String correlateMessageToBranch(String tenantId, String messageName, String processInstanceId,
                                     String localVariableName, Object localVariableValue, Map<String, Object> variables);
 
-    /** D-32: suspends the instance and records the pause; deadlines are moved on {@link #resumeInstance}. */
+    /** FLOWABLE-INTO-OPERATON D-32: suspends the instance and records the pause; deadlines are moved on {@link #resumeInstance}. */
     void pauseInstance(String processInstanceId, String actor, String reason);
 
-    /** D-32: re-dates every timer of the instance by the paused time (tx 1), then activates it (tx 2). */
+    /** FLOWABLE-INTO-OPERATON D-32: re-dates every timer of the instance by the paused time (tx 1), then activates it (tx 2). */
     void resumeInstance(String processInstanceId, String actor);
 
-    /** The engine clock (D-10). */
+    /** The engine clock (FLOWABLE-INTO-OPERATON D-10). */
     SangamClock clock();
 }

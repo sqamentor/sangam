@@ -4,7 +4,7 @@
   <decision id="sec-bank-credit-policy" name="Credit policy (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-bank-credit-policy_t" hitPolicy="FIRST">
       <input id="sec-bank-credit-policy_i0" label="Bureau score"><inputExpression id="sec-bank-credit-policy_ie0" typeRef="integer"><text>bureauScore</text></inputExpression></input>
-      <input id="sec-bank-credit-policy_i1" label="FOIR %"><inputExpression id="sec-bank-credit-policy_ie1" typeRef="double"><text>foirPct</text></inputExpression></input>
+      <input id="sec-bank-credit-policy_i1" label="FOIR %"><inputExpression id="sec-bank-credit-policy_ie1" typeRef="number"><text>foirPct</text></inputExpression></input>
       <output id="sec-bank-credit-policy_o0" label="Decision" name="creditDecision" typeRef="string"/>
       <output id="sec-bank-credit-policy_o1" label="KFS validity" name="kfsValidity" typeRef="string"/>
       <rule id="sec-bank-credit-policy_r0"><description>score below cut-off</description>

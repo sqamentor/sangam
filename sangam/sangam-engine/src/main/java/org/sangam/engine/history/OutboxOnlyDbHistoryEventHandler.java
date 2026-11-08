@@ -13,7 +13,7 @@ import org.operaton.bpm.engine.impl.history.event.HistoryEvent;
 import org.operaton.bpm.engine.impl.history.handler.DbHistoryEventHandler;
 
 /**
- * IR-5 "outbox-only history" per definition (SCALE-ARCHITECTURE, FC-25, D-41): replaces Operaton's default
+ * IR-5 "outbox-only history" per definition (SCALE-ARCHITECTURE, FLOWABLE-INTO-OPERATON FC-25, FLOWABLE-INTO-OPERATON D-41): replaces Operaton's default
  * {@link DbHistoryEventHandler}. For a definition listed in {@code outboxOnlyHistoryKeys}, the engine's {@code ACT_HI_*}
  * tables keep only the <b>audit level</b> (process / case instances, activity / case-activity instances, tasks,
  * variable instances); variable details, form properties, incidents, job and external-task logs, identity links,

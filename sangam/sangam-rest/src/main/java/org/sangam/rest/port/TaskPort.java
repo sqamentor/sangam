@@ -16,7 +16,7 @@ public interface TaskPort {
                       String taskDefinitionKey, String state, String sortBy, String sortOrder) {
     }
 
-    /** FC-52 lifecycle fields included: state, claimTime/claimedBy, lastUpdated. */
+    /** FLOWABLE-INTO-OPERATON FC-52 lifecycle fields included: state, claimTime/claimedBy, lastUpdated. */
     record Task(String id, String name, String description, String taskDefinitionKey, String processInstanceId,
                 String processDefinitionKey, String caseInstanceId, String businessKey, String assignee, String owner,
                 String seatId, String tenantId, Instant created, Instant due, Instant followUp, Instant lastUpdated,

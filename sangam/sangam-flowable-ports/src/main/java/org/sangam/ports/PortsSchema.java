@@ -27,7 +27,7 @@ public final class PortsSchema {
     }
 
     private static final List<String> TEMPLATES = List.of(
-            // ------------------------------------------------ event registry (FC-02, FC-03, FC-43); FC-04 uses UNIQUE_START (WS-INTEGRATION)
+            // ------------------------------------------------ event registry (FLOWABLE-INTO-OPERATON FC-02, FLOWABLE-INTO-OPERATON FC-03, FLOWABLE-INTO-OPERATON FC-43); FLOWABLE-INTO-OPERATON FC-04 uses UNIQUE_START (WS-INTEGRATION)
             """
             CREATE TABLE EVT_CHANNEL_DEF (
               tenant_id   {str64} NOT NULL,
@@ -71,7 +71,7 @@ public final class PortsSchema {
               created_at      {ts} NOT NULL
             )""",
             "CREATE INDEX EVT_LOG_KEY ON EVT_LOG (tenant_id, event_key, created_at)",
-            // ------------------------------------------------ links (FC-31, FC-32, FC-59)
+            // ------------------------------------------------ links (FLOWABLE-INTO-OPERATON FC-31, FLOWABLE-INTO-OPERATON FC-32, FLOWABLE-INTO-OPERATON FC-59)
             """
             CREATE TABLE INSTANCE_LINK (
               id             {identity} PRIMARY KEY,
@@ -90,7 +90,7 @@ public final class PortsSchema {
             "CREATE UNIQUE INDEX INSTANCE_LINK_UQ ON INSTANCE_LINK (tenant_id, link_type, source_type, source_id, target_type, target_id)",
             "CREATE INDEX INSTANCE_LINK_TGT ON INSTANCE_LINK (tenant_id, target_type, target_id)",
             "CREATE INDEX INSTANCE_LINK_ROOT ON INSTANCE_LINK (tenant_id, root_type, root_id)",
-            // ------------------------------------------------ content (FC-40, EC-18)
+            // ------------------------------------------------ content (FLOWABLE-INTO-OPERATON FC-40, EC-18)
             """
             CREATE TABLE CONTENT_ITEM (
               id              {str64} NOT NULL PRIMARY KEY,
@@ -118,7 +118,7 @@ public final class PortsSchema {
               created_at  {ts} NOT NULL,
               PRIMARY KEY (item_id, version)
             )""",
-            // ------------------------------------------------ forms (FC-39, EC-02 runtime)
+            // ------------------------------------------------ forms (FLOWABLE-INTO-OPERATON FC-39, EC-02 runtime)
             """
             CREATE TABLE FORM_DEF (
               tenant_id   {str64} NOT NULL,
@@ -130,7 +130,7 @@ public final class PortsSchema {
               created_at  {ts} NOT NULL,
               PRIMARY KEY (tenant_id, form_key, version)
             )""",
-            // ------------------------------------------------ app bundles (FC-41)
+            // ------------------------------------------------ app bundles (FLOWABLE-INTO-OPERATON FC-41)
             """
             CREATE TABLE APP_DEPLOYMENT (
               id                   {str64} NOT NULL PRIMARY KEY,
@@ -145,7 +145,7 @@ public final class PortsSchema {
               created_at           {ts} NOT NULL
             )""",
             "CREATE UNIQUE INDEX APP_DEPLOYMENT_UQ ON APP_DEPLOYMENT (tenant_id, app_key, version)",
-            // ------------------------------------------------ product batch service (D-34, FC-35, FC-18)
+            // ------------------------------------------------ product batch service (FLOWABLE-INTO-OPERATON D-34, FLOWABLE-INTO-OPERATON FC-35, FLOWABLE-INTO-OPERATON FC-18)
             """
             CREATE TABLE PORT_BATCH (
               id          {str64} NOT NULL PRIMARY KEY,
@@ -177,7 +177,7 @@ public final class PortsSchema {
               updated_at {ts} NOT NULL,
               PRIMARY KEY (batch_id, item_seq)
             )""",
-            // ------------------------------------------------ multi-instance aggregation (FC-21)
+            // ------------------------------------------------ multi-instance aggregation (FLOWABLE-INTO-OPERATON FC-21)
             """
             CREATE TABLE MI_AGGREGATE (
               tenant_id               {str64} NOT NULL,
@@ -188,7 +188,7 @@ public final class PortsSchema {
               created_at              {ts} NOT NULL,
               PRIMARY KEY (process_instance_id, mi_body_instance_id, loop_counter)
             )""",
-            // ------------------------------------------------ task lifecycle + business status (FC-52)
+            // ------------------------------------------------ task lifecycle + business status (FLOWABLE-INTO-OPERATON FC-52)
             """
             CREATE TABLE TASK_LIFECYCLE (
               task_id           {str64} NOT NULL PRIMARY KEY,
@@ -209,7 +209,7 @@ public final class PortsSchema {
               updated_by      {str},
               updated_at      {ts} NOT NULL
             )""",
-            // ------------------------------------------------ history read model (FC-25, FC-20, D-41)
+            // ------------------------------------------------ history read model (FLOWABLE-INTO-OPERATON FC-25, FLOWABLE-INTO-OPERATON FC-20, FLOWABLE-INTO-OPERATON D-41)
             """
             CREATE TABLE HRM_PROCESS_INSTANCE (
               id               {str64} NOT NULL PRIMARY KEY,
@@ -264,7 +264,7 @@ public final class PortsSchema {
               last_seq   {long} NOT NULL,
               PRIMARY KEY (projector, tenant_id, root_id)
             )""",
-            // ------------------------------------------------ dynamic injection audit (FC-15, FC-17)
+            // ------------------------------------------------ dynamic injection audit (FLOWABLE-INTO-OPERATON FC-15, FLOWABLE-INTO-OPERATON FC-17)
             """
             CREATE TABLE DYN_INJECTION (
               id                    {str64} NOT NULL PRIMARY KEY,
@@ -277,7 +277,7 @@ public final class PortsSchema {
               approved_by           {str},
               created_at            {ts} NOT NULL
             )""",
-            // ------------------------------------------------ SLA (EC-08, D-32)
+            // ------------------------------------------------ SLA (EC-08, FLOWABLE-INTO-OPERATON D-32)
             """
             CREATE TABLE SLA_INSTANCE (
               id          {str64} NOT NULL PRIMARY KEY,
@@ -301,14 +301,14 @@ public final class PortsSchema {
             )""",
             "CREATE INDEX SLA_INSTANCE_DUE ON SLA_INSTANCE (state, due_at)",
             "CREATE INDEX SLA_INSTANCE_STATS ON SLA_INSTANCE (tenant_id, definition_key, sla_key, started_at)",
-            // ------------------------------------------------ job executor global acquire lock (FC-24)
+            // ------------------------------------------------ job executor global acquire lock (FLOWABLE-INTO-OPERATON FC-24)
             """
             CREATE TABLE JOB_ACQUIRE_LOCK (
               lock_name   {str64} NOT NULL PRIMARY KEY,
               owner_id    {str},
               acquired_at {ts}
             )""",
-            // ------------------------------------------------ debugger breakpoints, sandbox tenants only (FC-44)
+            // ------------------------------------------------ debugger breakpoints, sandbox tenants only (FLOWABLE-INTO-OPERATON FC-44)
             """
             CREATE TABLE DEBUG_BREAKPOINT (
               tenant_id      {str64} NOT NULL,

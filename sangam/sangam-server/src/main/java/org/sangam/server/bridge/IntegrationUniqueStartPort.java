@@ -8,7 +8,7 @@ import org.sangam.core.ports.UniqueStartPort;
 import org.sangam.integration.inbox.UniqueStartGuard;
 
 /**
- * sangam-core {@link UniqueStartPort} (consumed by sangam-flowable-ports' {@code EventDispatcher}, FC-04 / R38
+ * sangam-core {@link UniqueStartPort} (consumed by sangam-flowable-ports' {@code EventDispatcher}, FLOWABLE-INTO-OPERATON FC-04 / R38
  * {@code uniqueStart}) on sangam-integration's {@link UniqueStartGuard}: one table, one guard for inbox and event
  * registry starts.
  */

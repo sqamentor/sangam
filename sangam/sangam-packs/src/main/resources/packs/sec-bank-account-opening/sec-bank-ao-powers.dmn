@@ -6,7 +6,7 @@
     <decisionTable id="sec-bank-ao-powers_t" hitPolicy="FIRST">
       <input id="sec-bank-ao-powers_i0" label="Seat role"><inputExpression id="sec-bank-ao-powers_ie0" typeRef="string"><text>seatRole</text></inputExpression></input>
       <input id="sec-bank-ao-powers_i1" label="Case type"><inputExpression id="sec-bank-ao-powers_ie1" typeRef="string"><text>caseType</text></inputExpression></input>
-      <output id="sec-bank-ao-powers_o0" label="Power limit (INR)" name="powerLimit" typeRef="double"/>
+      <output id="sec-bank-ao-powers_o0" label="Power limit (INR)" name="powerLimit" typeRef="number"/>
       <output id="sec-bank-ao-powers_o1" label="Allowed" name="allowed" typeRef="boolean"/>
       <rule id="sec-bank-ao-powers_r0"><description>operations checker</description>
         <inputEntry id="sec-bank-ao-powers_r0_i0"><text>"OPSCHECKER"</text></inputEntry>

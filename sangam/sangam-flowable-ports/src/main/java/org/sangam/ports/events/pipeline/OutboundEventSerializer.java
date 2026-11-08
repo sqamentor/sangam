@@ -6,7 +6,7 @@ import org.sangam.ports.support.Json;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Outbound serializer (FC-03): Flowable's {@code OutboundEventSerializer} shape; JSON is the shipped format. */
+/** Outbound serializer (FLOWABLE-INTO-OPERATON FC-03): Flowable's {@code OutboundEventSerializer} shape; JSON is the shipped format. */
 @FunctionalInterface
 public interface OutboundEventSerializer {
 

@@ -4,12 +4,12 @@
   <decision id="sec-hr-statutory" name="PF and ESI rates (EPF Scheme / ESI Act; verify current notifications)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="sec-hr-statutory_t" hitPolicy="FIRST">
       <input id="sec-hr-statutory_i0" label="Period"><inputExpression id="sec-hr-statutory_ie0" typeRef="string"><text>period</text></inputExpression></input>
-      <output id="sec-hr-statutory_o0" label="PF employee %" name="pfEmployeePct" typeRef="double"/>
-      <output id="sec-hr-statutory_o1" label="PF employer %" name="pfEmployerPct" typeRef="double"/>
-      <output id="sec-hr-statutory_o2" label="ESI employee %" name="esiEmployeePct" typeRef="double"/>
-      <output id="sec-hr-statutory_o3" label="ESI employer %" name="esiEmployerPct" typeRef="double"/>
-      <output id="sec-hr-statutory_o4" label="PF wage ceiling" name="pfWageCeiling" typeRef="double"/>
-      <output id="sec-hr-statutory_o5" label="ESI wage limit" name="esiWageLimit" typeRef="double"/>
+      <output id="sec-hr-statutory_o0" label="PF employee %" name="pfEmployeePct" typeRef="number"/>
+      <output id="sec-hr-statutory_o1" label="PF employer %" name="pfEmployerPct" typeRef="number"/>
+      <output id="sec-hr-statutory_o2" label="ESI employee %" name="esiEmployeePct" typeRef="number"/>
+      <output id="sec-hr-statutory_o3" label="ESI employer %" name="esiEmployerPct" typeRef="number"/>
+      <output id="sec-hr-statutory_o4" label="PF wage ceiling" name="pfWageCeiling" typeRef="number"/>
+      <output id="sec-hr-statutory_o5" label="ESI wage limit" name="esiWageLimit" typeRef="number"/>
       <rule id="sec-hr-statutory_r0"><description>PF ceiling Rs 15,000; ESI limit Rs 21,000 (verify)</description>
         <inputEntry id="sec-hr-statutory_r0_i0"><text>-</text></inputEntry>
         <outputEntry id="sec-hr-statutory_r0_o0"><text>12</text></outputEntry>

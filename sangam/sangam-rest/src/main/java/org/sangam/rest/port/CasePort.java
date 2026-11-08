@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * CMMN 1.1 cases (ARCHITECTURE §4 {@code POST /case-instances}; FC-55..FC-59 lifecycle extensions and reactivation
+ * CMMN 1.1 cases (ARCHITECTURE §4 {@code POST /case-instances}; FLOWABLE-INTO-OPERATON FC-55..FLOWABLE-INTO-OPERATON FC-59 lifecycle extensions and reactivation
  * are provided by sangam-flowable-ports behind this port).
  */
 public interface CasePort {
@@ -31,7 +31,7 @@ public interface CasePort {
     record ExecutionCommand(String action, Map<String, Object> variables, String reason) {
     }
 
-    /** action: complete | close | terminate | reactivate (FC-59: a linked new case). */
+    /** action: complete | close | terminate | reactivate (FLOWABLE-INTO-OPERATON FC-59: a linked new case). */
     record InstanceCommand(String action, Map<String, Object> variables, String reason) {
     }
 

@@ -23,15 +23,15 @@ import java.util.Map;
 /**
  * The ports' history stage, registered in {@code customHistoryEventHandlers} next to Operaton's DB handler and next
  * to WS-ENGINE's {@code org.sangam.engine.history.PortsHistoryEventHandler} (audit chain R42, typed events to
- * {@code EngineEventSink}, CMMN outcome projection D-25). This handler adds only what the engine module does not:
+ * {@code EngineEventSink}, CMMN outcome projection FLOWABLE-INTO-OPERATON D-25). This handler adds only what the engine module does not:
  * <ol>
- *   <li><b>Read-model feed (FC-25 projection, FC-20).</b> Optional (null outbox = off). Events of one command are buffered and, when the engine
+ *   <li><b>Read-model feed (FLOWABLE-INTO-OPERATON FC-25 projection, FLOWABLE-INTO-OPERATON FC-20).</b> Optional (null outbox = off). Events of one command are buffered and, when the engine
  *       transaction commits ({@code COMMITTING}), appended to the {@link Outbox} as one row per ordering root with
  *       destination {@code history-projector} (plus any extra destinations, e.g. analytics). The relay delivers them
  *       to {@link HistoryProjector}, which builds the CQRS read model. Because the row is in the engine transaction,
  *       the stream never contains an event whose command rolled back.</li>
- *   <li><b>Typed event bus (FC-43).</b> Every event is dispatched to {@link EngineEventBus} synchronously.</li>
- *   <li><b>Entity links (FC-32).</b> Process/case start events with a super instance and task creation write
+ *   <li><b>Typed event bus (FLOWABLE-INTO-OPERATON FC-43).</b> Every event is dispatched to {@link EngineEventBus} synchronously.</li>
+ *   <li><b>Entity links (FLOWABLE-INTO-OPERATON FC-32).</b> Process/case start events with a super instance and task creation write
  *       {@code child} links (with root) into {@code INSTANCE_LINK} in the same transaction.</li>
  * </ol>
  */
@@ -50,11 +50,18 @@ public class PortsHistoryEventHandler implements HistoryEventHandler {
 
     private static final class Buffer {
         final CommandContext cc;
+        /**
+         * The command's JDBC connection, taken while its MyBatis session is open. Under Operaton's Spring integration
+         * the COMMITTING listener runs from Spring's beforeCommit, after the command context closed its session
+         * ("Executor was closed"); the connection and its transaction are still open there.
+         */
+        final Connection connection;
         final Map<String, List<Map<String, Object>>> byRoot = new LinkedHashMap<>();
         final Map<String, String> tenantByRoot = new LinkedHashMap<>();
 
         Buffer(CommandContext cc) {
             this.cc = cc;
+            this.connection = cc.getDbSqlSession().getSqlSession().getConnection();
         }
     }
 
@@ -117,7 +124,7 @@ public class PortsHistoryEventHandler implements HistoryEventHandler {
 
     private void flush(Buffer b) {
         try {
-            Connection c = b.cc.getDbSqlSession().getSqlSession().getConnection();
+            Connection c = b.connection;
             for (Map.Entry<String, List<Map<String, Object>>> en : b.byRoot.entrySet()) {
                 String tenant = b.tenantByRoot.get(en.getKey());
                 outbox.append(c, tenant == null ? "" : tenant, en.getKey(), EVENT_TYPE, Json.write(en.getValue()), destinations);

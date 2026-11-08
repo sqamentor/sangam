@@ -14,7 +14,7 @@ import java.util.UUID;
 
 /**
  * The A-10 lease-expiry hook backed by the operation ledger (SANGAM.md XI.10.3 A-10, A-8, VI.3.1, VI.5 rule 4;
- * fixes Operaton D-20/D-21, the measured double payment E3).
+ * fixes FLOWABLE-INTO-OPERATON D-20/FLOWABLE-INTO-OPERATON D-21, the measured double payment E3).
  *
  * <p>Installed with {@code EngineAdapter.setExpiryPolicy(...)}. Runs in the engine transaction that ends the lease,
  * before the work can be fetched again:

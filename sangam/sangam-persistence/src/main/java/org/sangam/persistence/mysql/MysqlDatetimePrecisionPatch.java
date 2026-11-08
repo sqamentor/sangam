@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <b>Engine schema patch P-1 (MySQL only; D-03, FC-30).</b> Operaton 2.2.0's MySQL create scripts declare 66 time
+ * <b>Engine schema patch P-1 (MySQL only; FLOWABLE-INTO-OPERATON D-03, FLOWABLE-INTO-OPERATON FC-30).</b> Operaton 2.2.0's MySQL create scripts declare 66 time
  * columns with whole-second precision (61 {@code datetime} + 5 {@code timestamp}), while the MariaDB scripts of the
  * same jar use precision 3. Measured effects (spike patch ledger, MySQL (2)): a lease re-offered 200 ms early, a timer
  * fired 300 ms early, start times of different instances collapsed into one second.

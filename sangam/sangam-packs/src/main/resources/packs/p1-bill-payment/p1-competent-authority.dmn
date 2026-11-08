@@ -5,7 +5,7 @@
   <decision id="p1-competent-authority" name="P1 competent authority by amount band" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="p1-competent-authority_t" hitPolicy="FIRST">
       <input id="p1-competent-authority_i0" label="Case type"><inputExpression id="p1-competent-authority_ie0" typeRef="string"><text>caseType</text></inputExpression></input>
-      <input id="p1-competent-authority_i1" label="Amount (INR)"><inputExpression id="p1-competent-authority_ie1" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="p1-competent-authority_i1" label="Amount (INR)"><inputExpression id="p1-competent-authority_ie1" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="p1-competent-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="p1-competent-authority_r0"><description>salary bills: drawing and disbursing officer</description>
         <inputEntry id="p1-competent-authority_r0_i0"><text>"SALARY"</text></inputEntry>

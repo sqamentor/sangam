@@ -4,7 +4,6 @@ package org.sangam.resources.rules;
 import org.operaton.bpm.dmn.engine.DmnDecision;
 import org.operaton.bpm.dmn.engine.DmnDecisionResult;
 import org.operaton.bpm.dmn.engine.DmnEngine;
-import org.operaton.bpm.dmn.engine.DmnEngineConfiguration;
 import org.sangam.resources.support.ResourcesException;
 
 import java.io.ByteArrayInputStream;
@@ -44,7 +43,7 @@ public final class RuleEvaluator {
 
     public RuleEvaluator(DecisionSource source, DmnEngine engine) {
         this.source = source;
-        this.engine = engine != null ? engine : DmnEngineConfiguration.createDefaultDmnEngineConfiguration().buildEngine();
+        this.engine = engine != null ? engine : org.sangam.engine.feel.SangamFeel.dmnEngineConfiguration().buildEngine();
     }
 
     public boolean has(String tenantId, String key) {

@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Sangam groups and memberships (IDM part owned by WS-SECURITY: users, groups, privileges, tokens; FC-42, A-17, R67).
+ * Sangam groups and memberships (IDM part owned by WS-SECURITY: users, groups, privileges, tokens; FLOWABLE-INTO-OPERATON FC-42, A-17, R67).
  * Memberships are mirrored into {@code AUTH_MEMBERSHIP} (source {@code grp:<group>:<member>}) and every change bumps
  * {@code policy_version} (VI.4 rule 5). Sources: {@code LOCAL} (admin), {@code LDAP} (directory sync), {@code IDP}
  * (token claims are handled by {@link MembershipIndex#syncIdp}).

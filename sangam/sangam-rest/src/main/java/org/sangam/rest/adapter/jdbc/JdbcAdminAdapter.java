@@ -70,7 +70,16 @@ public final class JdbcAdminAdapter implements AdminPort {
     private final DocMap<Policy> policies;
     private final DocMap<Tenant> tenants;
 
+    private final org.sangam.rest.support.BusinessDates dates;
+
     public JdbcAdminAdapter(DocumentStore store, TxSupport tx, AuditPort audit, RestProperties props) {
+        this(store, tx, audit, props, org.sangam.rest.support.BusinessDates.utc());
+    }
+
+    /** @param dates default validity dates (\"today\") in the tenant's business zone */
+    public JdbcAdminAdapter(DocumentStore store, TxSupport tx, AuditPort audit, RestProperties props,
+                            org.sangam.rest.support.BusinessDates dates) {
+        this.dates = java.util.Objects.requireNonNull(dates, "dates");
         this.tx = tx;
         this.audit = audit;
         this.props = props;
@@ -190,7 +199,7 @@ public final class JdbcAdminAdapter implements AdminPort {
         AdminFilter filter = filter(f);
         String t = tid(ctx);
         Set<String> seatsOfPerson = filter.personId() == null ? null
-                : activeAssignments(t, filter.activeOn() == null ? LocalDate.now() : filter.activeOn())
+                : activeAssignments(t, dates.orToday(filter.activeOn(), t))
                 .filter(a -> filter.personId().equals(a.personId())).map(Assignment::seatId)
                 .collect(java.util.stream.Collectors.toSet());
         Stream<Seat> s = seats.in(t).values().stream()
@@ -246,7 +255,7 @@ public final class JdbcAdminAdapter implements AdminPort {
         tx.runInTx(() -> {
             String t = tid(ctx);
             seat(ctx, id);
-            boolean used = activeAssignments(t, LocalDate.now()).anyMatch(a -> id.equals(a.seatId()) || id.equals(a.actedForSeatId()))
+            boolean used = activeAssignments(t, dates.today(t)).anyMatch(a -> id.equals(a.seatId()) || id.equals(a.actedForSeatId()))
                     || seats.in(t).values().stream().anyMatch(s -> id.equals(s.reportsToSeatId()));
             if (used) {
                 throw ApiProblem.conflict("IN_USE", "Seat " + id + " has active assignments or subordinate seats");
@@ -305,7 +314,7 @@ public final class JdbcAdminAdapter implements AdminPort {
             if (!seats.in(t).containsKey(in.seatId())) {
                 throw invalid("seatId", "seat " + in.seatId() + " does not exist");
             }
-            LocalDate from = in.validFrom() == null ? LocalDate.now() : in.validFrom();
+            LocalDate from = dates.orToday(in.validFrom(), t);
             if (in.validTo() != null && in.validTo().isBefore(from)) {
                 throw invalid("validTo", "validTo must not be before validFrom");
             }
@@ -342,7 +351,7 @@ public final class JdbcAdminAdapter implements AdminPort {
         return tx.inTx(() -> {
             String t = tid(ctx);
             Assignment cur = assignment(ctx, id);
-            LocalDate end = validTo == null ? LocalDate.now() : validTo;
+            LocalDate end = dates.orToday(validTo, t);
             if (end.isBefore(cur.validFrom())) {
                 throw invalid("validTo", "validTo must not be before validFrom");
             }
@@ -385,7 +394,7 @@ public final class JdbcAdminAdapter implements AdminPort {
         return tx.inTx(() -> {
             String t = tid(ctx);
             String kind = oneOf(in.kind(), "kind", DELEGATION_KINDS);
-            LocalDate from = in.validFrom() == null ? LocalDate.now() : in.validFrom();
+            LocalDate from = dates.orToday(in.validFrom(), t);
             if (in.validTo() != null && in.validTo().isBefore(from)) {
                 throw invalid("validTo", "validTo must not be before validFrom");
             }

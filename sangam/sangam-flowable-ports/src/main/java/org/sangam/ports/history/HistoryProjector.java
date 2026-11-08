@@ -13,14 +13,14 @@ import java.sql.Connection;
 import java.time.Instant;
 
 /**
- * CQRS history read model (FC-25, FC-20, D-41; tables {@code HRM_*}). Registered with the relay for destination
+ * CQRS history read model (FLOWABLE-INTO-OPERATON FC-25, FLOWABLE-INTO-OPERATON FC-20, FLOWABLE-INTO-OPERATON D-41; tables {@code HRM_*}). Registered with the relay for destination
  * {@link PortsHistoryEventHandler#DESTINATION} (ordered per root). Each outbox row is applied exactly once:
  * {@code HRM_CHECKPOINT(projector, tenant, root)} keeps the last applied {@code root_seq}; a redelivered or older row
  * is skipped in the same transaction that would have applied it.
  *
- * <p>FC-20: open activity instances are rows with {@code state='open'} in {@code HRM_ACTIVITY_INSTANCE}; Flowable's
+ * <p>FLOWABLE-INTO-OPERATON FC-20: open activity instances are rows with {@code state='open'} in {@code HRM_ACTIVITY_INSTANCE}; Flowable's
  * runtime {@code ACT_RU_ACTINST} table is deliberately not added to the engine (B-21). Instance-to-instance links
- * are in {@code INSTANCE_LINK} (written synchronously, FC-31/32), which the read model joins on.
+ * are in {@code INSTANCE_LINK} (written synchronously, FLOWABLE-INTO-OPERATON FC-31/32), which the read model joins on.
  */
 public class HistoryProjector implements Publisher {
 

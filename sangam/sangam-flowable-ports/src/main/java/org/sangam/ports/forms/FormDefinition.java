@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Form definition (FC-39 forms API; EC-02 runtime; R47 contract). JSON model, versioned in {@code FORM_DEF}.
+ * Form definition (FLOWABLE-INTO-OPERATON FC-39 forms API; EC-02 runtime; R47 contract). JSON model, versioned in {@code FORM_DEF}.
  * Flowable form JSON ({@code fields[]} with {@code id,type,name,required,params}) and form-js schemas (via
  * {@link FormJsConverter}) both map to this model.
  */
@@ -26,7 +26,7 @@ public record FormDefinition(@JsonProperty("key") String key,
 
     /**
      * One field. {@code type}: text, textarea, email, phone, integer, decimal, boolean, date, datetime, select, radio,
-     * multiselect, json, document (a content-item id, FC-40), expression (read-only, display only).
+     * multiselect, json, document (a content-item id, FLOWABLE-INTO-OPERATON FC-40), expression (read-only, display only).
      * {@code scope}: {@code process} (default) or {@code local} (task-local variable, Flowable variable-scoped forms).
      */
     @JsonIgnoreProperties(ignoreUnknown = true)

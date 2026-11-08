@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Channel adapter SPI and factory (FC-03). Broker clients are optional dependencies: an adapter type is available
+ * Channel adapter SPI and factory (FLOWABLE-INTO-OPERATON FC-03). Broker clients are optional dependencies: an adapter type is available
  * only when its client library is on the class path ({@link #available}). Air-gapped default (ARCHITECTURE §1.9):
  * outbound HTTP is allowed only to hosts in {@link Environment#egressHosts()}.
  */

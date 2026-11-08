@@ -9,7 +9,7 @@ import org.operaton.bpm.engine.impl.pvm.delegate.ActivityExecution;
 import org.operaton.bpm.engine.impl.pvm.runtime.PvmExecutionImpl;
 
 /**
- * BPMN ad-hoc sub-process on Operaton's PVM (FC-01, D-09). Logic follows Flowable's
+ * BPMN ad-hoc sub-process on Operaton's PVM (FLOWABLE-INTO-OPERATON FC-01, FLOWABLE-INTO-OPERATON D-09). Logic follows Flowable's
  * {@code AdhocSubProcessActivityBehavior} (Apache-2.0); the code is new because Flowable's agenda model does not map
  * onto the PVM (FLOWABLE-INTO-OPERATON §C caveat).
  *

@@ -19,7 +19,7 @@ import java.util.Map;
  * feed's stable id and correlation key = the operationId, as event type {@value #EVENT_TYPE}. The default
  * correlating handler delivers it to the instance waiting on message {@value #EVENT_TYPE} for that operation (the
  * BPMN waits with correlation variable {@code sangamCorrelationKey = operationId}); an early acknowledgement is
- * buffered (D-33).
+ * buffered (FLOWABLE-INTO-OPERATON D-33).
  */
 public final class PaymentAcknowledgementIngestor {
 

@@ -3,7 +3,7 @@
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <decision id="ifms-gpf-authority" name="Competent authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <decisionTable id="ifms-gpf-authority_t" hitPolicy="FIRST">
-      <input id="ifms-gpf-authority_i0" label="Amount (INR)"><inputExpression id="ifms-gpf-authority_ie0" typeRef="double"><text>amount</text></inputExpression></input>
+      <input id="ifms-gpf-authority_i0" label="Amount (INR)"><inputExpression id="ifms-gpf-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
       <output id="ifms-gpf-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
       <rule id="ifms-gpf-authority_r0"><description>Head of Office sanctions GPF withdrawals [U: department order]</description>
         <inputEntry id="ifms-gpf-authority_r0_i0"><text>-</text></inputEntry>
