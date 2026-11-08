@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+# LMMH (CGA) General Directions, illustrative list of standard minor heads; CS 1127
+code,name,directions,page
+001,Direction and Administration,"3.1, 4.1",27
+003,Training,3.1,27
+004,Research/Research & Development,,27
+005,Investigation,,27
+050,Land,,27
+051,Construction,,27
+052,Machinery and Equipment,3.7,27
+150,Assistance to I.C.A.R.,,27
+187,Assistance to Industries/Companies,3.1,27
+188,Assistance/Loans to Autonomous Bodies*,"3.1, 6.1",27
+190,Assistance to/Investments in/Loans to Public Sector and Other Undertakings*,"3.1, 4.2, 6.1",27
+191,Assistance/Loans to Municipal Corporation*,"3.1, 6.1",27
+192,Assistance/Loans to Municipalities/Municipal Councils*,"3.1, 6.1",27
+193,Assistance/Loans to Nagar Panchayats/Notified Area committees or equivalent thereof*,"3.1, 6.1",27
+194,Loans to Voluntary Organisations,6.1,27
+195,Assistance to/ Investments in/Loans to Co-operatives*,"3.1, 4.2, 6.1",27
+196,Assistance/Loans to Zila Parishads/District level Panchayats*,"3.1, 6.1",27
+197,Assistance/Loans to Block Panchayats/ Intermediate level Panchayats*,"3.1, 6.1",27
+198,Assistance/Loans to Gram Panchayats*,"3.1, 6.1",27
+199,Assistance to Other Non-Government Institutions/Loans to Trading and Other Non- Government Institutions*,"3.1, 6.1",27
+500,Receipts Awaiting Transfer to other Minor Heads (RAT),2.3,27
+501,Services and Service Fees,2.1,27
+502,Expenditure Awaiting Transfer to other Heads/Departments (EAT),3.1,27
+503,Fines and Forfeitures,2.6,27
+789,Development Action Plan for Scheduled Castes (DAPSC),3.8,27
+790,International Conference/Meeting,3.2,27
+791,Loss by Exchange/Gain by Exchange*,,27
+792/795,Irrecoverable Loans Written Off,3.3,28
+793,Special Central Assistance for Scheduled Castes Component Plan,,28
+794,Special Central Assistance for Tribal sub plan,,28
+796,Development Action Plan for Scheduled Tribes (DAPST),3.8,28
+797,Transfer to Reserve Funds/Deposits Accounts*,"3.4, 4.4",28
+798,International Co-operation,3.2,28
+799,Suspense,3.6,28
+800,Other Receipts/Other Expenditure/Other Loans/Other Deposits*,"2.3, 3.1, 4.1, 6.2",28
+801,Interest or other earnings from Grantee on unspent balances,2.5,28
+802,Interest or other payments to Grantor on unspent balances,3.11,28
+900,Code numbers from '900' onwards are always reserved for 'Deduct-Receipts' or 'Deduct-Refunds' or 'Deduct- Expenditure Heads.,"2.2, 3.4, 3.10, 4.4, 5.2, 6.4",28

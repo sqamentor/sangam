@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Re-KYC of one customer. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_rekyc_customer" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_rekyc_response" name="sangam.rekyc.response"/>
+  <process id="sangam-sec-bank-rekyc-customer" name="Re-KYC of one customer" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.rekyc</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="rkc_start" name="Customer due"></startEvent>
+    <serviceTask id="rkc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>reminderGap=P30D;reviewSeat=OPS-CHECKER;changeInDetails=false;applicantRef=@key</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rkc_intimate" name="Advance intimation" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rekyc-due</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="rkc_wait1" name="Response or reminder"></eventBasedGateway>
+    <intermediateCatchEvent id="rkc_resp1" name="Self-declaration / documents received"><messageEventDefinition messageRef="msg_sangam_rekyc_response"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="rkc_rem1" name="Reminder due"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${reminderGap}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="rkc_remind" name="Reminder after the due date" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rekyc-reminder</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email,letter</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="rkc_wait2" name="Response or notice period ends"></eventBasedGateway>
+    <intermediateCatchEvent id="rkc_resp2" name="Response received"><messageEventDefinition messageRef="msg_sangam_rekyc_response"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="rkc_noResp" name="Notice period over"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${reminderGap}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <exclusiveGateway id="rkc_respJoin" name=""></exclusiveGateway>
+    <exclusiveGateway id="rkc_changeGw" name="Change in KYC details?" default="sec_bank_rekyc_customer_f17"></exclusiveGateway>
+    <userTask id="rkc_verify" name="Verify fresh KYC documents" operaton:candidateGroups="${reviewSeat}" operaton:formKey="sangam:sec-bank-rekyc/verify"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>rekycDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="rkc_verGw" name="" default="sec_bank_rekyc_customer_f16"></exclusiveGateway>
+    <serviceTask id="rkc_update" name="Update CKYCR and risk profile" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ckycr.update</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>update</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ckycUpd</operaton:string></operaton:field><operaton:field name="step"><operaton:string>ckyc-update</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rkc_end" name="KYC updated"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="rkc_decide" name="Decide account action (not automated)" operaton:candidateGroups="${reviewSeat}" operaton:formKey="sangam:sec-bank-rekyc/decide"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>restrictDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="rkc_decGw" name="" default="sec_bank_rekyc_customer_f22"></exclusiveGateway>
+    <serviceTask id="rkc_restrict" name="Partial freeze after due notice" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.restrict</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>partial-freeze</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>restrict</operaton:string></operaton:field><operaton:field name="step"><operaton:string>restrict</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rkc_endRestricted" name="Restricted pending KYC"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>RESTRICTED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_bank_rekyc_customer_f1" sourceRef="rkc_start" targetRef="rkc_defaults"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f2" sourceRef="rkc_defaults" targetRef="rkc_intimate"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f3" sourceRef="rkc_intimate" targetRef="rkc_wait1"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f4" sourceRef="rkc_wait1" targetRef="rkc_resp1"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f5" sourceRef="rkc_wait1" targetRef="rkc_rem1"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f6" sourceRef="rkc_rem1" targetRef="rkc_remind"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f7" sourceRef="rkc_remind" targetRef="rkc_wait2"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f8" sourceRef="rkc_wait2" targetRef="rkc_resp2"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f9" sourceRef="rkc_wait2" targetRef="rkc_noResp"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f10" sourceRef="rkc_resp1" targetRef="rkc_respJoin"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f11" sourceRef="rkc_resp2" targetRef="rkc_respJoin"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f12" sourceRef="rkc_respJoin" targetRef="rkc_changeGw"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f13" name="changed: fresh KYC" sourceRef="rkc_changeGw" targetRef="rkc_verify"><conditionExpression xsi:type="tFormalExpression">${changeInDetails}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_rekyc_customer_f14" sourceRef="rkc_verify" targetRef="rkc_verGw"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f15" name="ask again" sourceRef="rkc_verGw" targetRef="rkc_wait2"><conditionExpression xsi:type="tFormalExpression">${rekycDecision == 'clarify'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_rekyc_customer_f16" name="accepted" sourceRef="rkc_verGw" targetRef="rkc_update"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f17" name="self-declaration: no change" sourceRef="rkc_changeGw" targetRef="rkc_update"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f18" sourceRef="rkc_update" targetRef="rkc_end"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f19" sourceRef="rkc_noResp" targetRef="rkc_decide"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f20" sourceRef="rkc_decide" targetRef="rkc_decGw"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f21" name="extend (customer contacted)" sourceRef="rkc_decGw" targetRef="rkc_wait2"><conditionExpression xsi:type="tFormalExpression">${restrictDecision == 'extend'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_rekyc_customer_f22" name="restrict" sourceRef="rkc_decGw" targetRef="rkc_restrict"/>
+    <sequenceFlow id="sec_bank_rekyc_customer_f23" sourceRef="rkc_restrict" targetRef="rkc_endRestricted"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_rekyc_customer_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_rekyc_customer_plane" bpmnElement="sangam-sec-bank-rekyc-customer">
+      <bpmndi:BPMNShape id="rkc_start_di" bpmnElement="rkc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_defaults_di" bpmnElement="rkc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_intimate_di" bpmnElement="rkc_intimate"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_wait1_di" bpmnElement="rkc_wait1"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_resp1_di" bpmnElement="rkc_resp1"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_rem1_di" bpmnElement="rkc_rem1"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_remind_di" bpmnElement="rkc_remind"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_wait2_di" bpmnElement="rkc_wait2"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_resp2_di" bpmnElement="rkc_resp2"><dc:Bounds x="1702" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_noResp_di" bpmnElement="rkc_noResp"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_respJoin_di" bpmnElement="rkc_respJoin"><dc:Bounds x="870" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_changeGw_di" bpmnElement="rkc_changeGw"><dc:Bounds x="1035" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_verify_di" bpmnElement="rkc_verify"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_verGw_di" bpmnElement="rkc_verGw"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_update_di" bpmnElement="rkc_update"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_end_di" bpmnElement="rkc_end"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_decide_di" bpmnElement="rkc_decide"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_decGw_di" bpmnElement="rkc_decGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_restrict_di" bpmnElement="rkc_restrict"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rkc_endRestricted_di" bpmnElement="rkc_endRestricted"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f1_di" bpmnElement="sec_bank_rekyc_customer_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f2_di" bpmnElement="sec_bank_rekyc_customer_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f3_di" bpmnElement="sec_bank_rekyc_customer_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f4_di" bpmnElement="sec_bank_rekyc_customer_f4"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f5_di" bpmnElement="sec_bank_rekyc_customer_f5"><di:waypoint x="590" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f6_di" bpmnElement="sec_bank_rekyc_customer_f6"><di:waypoint x="748" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f7_di" bpmnElement="sec_bank_rekyc_customer_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f8_di" bpmnElement="sec_bank_rekyc_customer_f8"><di:waypoint x="1580" y="70"/><di:waypoint x="1641" y="70"/><di:waypoint x="1641" y="320"/><di:waypoint x="1702" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f9_di" bpmnElement="sec_bank_rekyc_customer_f9"><di:waypoint x="1580" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f10_di" bpmnElement="sec_bank_rekyc_customer_f10"><di:waypoint x="748" y="195"/><di:waypoint x="870" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f11_di" bpmnElement="sec_bank_rekyc_customer_f11"><di:waypoint x="1720" y="338"/><di:waypoint x="1720" y="370"/><di:waypoint x="895" y="370"/><di:waypoint x="895" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f12_di" bpmnElement="sec_bank_rekyc_customer_f12"><di:waypoint x="920" y="195"/><di:waypoint x="1035" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f13_di" bpmnElement="sec_bank_rekyc_customer_f13"><di:waypoint x="1085" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f14_di" bpmnElement="sec_bank_rekyc_customer_f14"><di:waypoint x="1275" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f15_di" bpmnElement="sec_bank_rekyc_customer_f15"><di:waypoint x="1415" y="195"/><di:waypoint x="1472" y="195"/><di:waypoint x="1472" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f16_di" bpmnElement="sec_bank_rekyc_customer_f16"><di:waypoint x="1415" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f17_di" bpmnElement="sec_bank_rekyc_customer_f17"><di:waypoint x="1085" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f18_di" bpmnElement="sec_bank_rekyc_customer_f18"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f19_di" bpmnElement="sec_bank_rekyc_customer_f19"><di:waypoint x="1738" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f20_di" bpmnElement="sec_bank_rekyc_customer_f20"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f21_di" bpmnElement="sec_bank_rekyc_customer_f21"><di:waypoint x="2050" y="95"/><di:waypoint x="2050" y="113"/><di:waypoint x="1555" y="113"/><di:waypoint x="1555" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f22_di" bpmnElement="sec_bank_rekyc_customer_f22"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_rekyc_customer_f23_di" bpmnElement="sec_bank_rekyc_customer_f23"><di:waypoint x="2265" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

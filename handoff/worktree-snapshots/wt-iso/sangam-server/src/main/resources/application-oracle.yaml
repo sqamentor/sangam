@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# Oracle (Tier 1). The Oracle JDBC driver (ojdbc11) is NOT bundled (LIC-4): the customer puts it on the class path,
+# e.g. java -Dloader.path=/opt/sangam/drivers -jar sangam-server.jar (PropertiesLauncher) or a lib/ volume in the image.
+spring:
+  datasource:
+    url: ${SANGAM_DB_URL:jdbc:oracle:thin:@//localhost:1521/FREEPDB1}
+    username: ${SANGAM_DB_USER:sangam}
+    password: ${SANGAM_DB_PASSWORD:sangam}
+    driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      data-source-properties:
+        oracle.jdbc.implicitStatementCacheSize: 50
+
+operaton:
+  bpm:
+    database:
+      type: oracle
+      schema-update: ${SANGAM_ENGINE_SCHEMA_UPDATE:false}
+
+logging:
+  structured:
+    format:
+      console: ecs

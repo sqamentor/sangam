@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "LEGAL",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "LEGAL-COUNSEL",
+      "role": "COUNSEL",
+      "office": "LEGAL",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "LEGAL-HEAD",
+      "name": {
+        "en": "In-house counsel",
+        "hi": "आंतरिक अधिवक्ता"
+      }
+    },
+    {
+      "id": "LEGAL-HEAD",
+      "role": "GC",
+      "office": "LEGAL",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "General counsel",
+        "hi": "प्रधान विधि अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "LEGAL-COUNSEL",
+      "person": "llt.legal-counsel",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "LEGAL-HEAD",
+      "person": "llt.legal-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "COUNSEL",
+      "name": {
+        "en": "In-house counsel",
+        "hi": "आंतरिक अधिवक्ता"
+      }
+    },
+    {
+      "code": "GC",
+      "name": {
+        "en": "General counsel",
+        "hi": "प्रधान विधि अधिकारी"
+      }
+    }
+  ]
+}

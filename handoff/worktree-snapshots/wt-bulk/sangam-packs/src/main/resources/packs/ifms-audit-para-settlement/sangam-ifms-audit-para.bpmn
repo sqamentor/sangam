@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Audit para / ATN. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_audit_para" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_ifms_paraDecision" name="sangam.ifms.paraDecision"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-ifms-audit-para" name="Audit para / ATN" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.audit-para-settlement</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>paraNo</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ap_start" name="Para / objection received" operaton:initiator="initiator" operaton:formKey="sangam:ifms-audit-para-settlement/para"></startEvent>
+    <serviceTask id="ap_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>ownerSeat=HOO-1;faSeat=FA-1;executionConnector=audit.apms;executionStep=atn;reconcileRequired=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ap_atn_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_atn</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>80WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ap_atn" name="Prepare action taken note" operaton:candidateGroups="${ownerSeat}" operaton:formKey="sangam:ifms-audit-para-settlement/atn" operaton:dueDate="${ap_atnDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>atnDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ap_atn_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_atn</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>ownerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ap_atn_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ap_atn_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_atn</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>ownerSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>atnDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ap_atn_breachGw" name="Deemed?" default="ifms_audit_para_f6"></exclusiveGateway>
+    <exclusiveGateway id="ap_atn_done" name=""></exclusiveGateway>
+    <serviceTask id="ap_fa_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_fa</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ap_fa" name="FA vetting" operaton:candidateGroups="${faSeat}" operaton:formKey="sangam:ifms-audit-para-settlement/fa" operaton:dueDate="${ap_faDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>faDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ap_fa_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_fa</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ap_fa_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ap_fa_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_fa</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>faDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ap_fa_breachGw" name="Deemed?" default="ifms_audit_para_f14"></exclusiveGateway>
+    <exclusiveGateway id="ap_fa_done" name=""></exclusiveGateway>
+    <callActivity id="ap_submit" name="Submit ATN (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <intermediateCatchEvent id="ap_result" name="Audit decision"><messageEventDefinition messageRef="msg_sangam_ifms_paraDecision"/></intermediateCatchEvent>
+    <serviceTask id="ap_close_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_close</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ap_close" name="Record audit decision" operaton:candidateGroups="${ownerSeat}" operaton:formKey="sangam:ifms-audit-para-settlement/decision" operaton:dueDate="${ap_closeDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>paraDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ap_close_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_close</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>ownerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ap_close_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ap_close_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_close</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>ownerSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>paraDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ap_close_breachGw" name="Deemed?" default="ifms_audit_para_f22"></exclusiveGateway>
+    <exclusiveGateway id="ap_close_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="ap_faGw" name="" default="ifms_audit_para_f30"></exclusiveGateway>
+    <exclusiveGateway id="ap_decGw" name="" default="ifms_audit_para_f35"></exclusiveGateway>
+    <endEvent id="ap_end" name="Settled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ap_atn_warn" name="SLA warning (75%)" attachedToRef="ap_atn" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_atnWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_atn_breach" name="SLA breached" attachedToRef="ap_atn" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_atnDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_fa_warn" name="SLA warning (75%)" attachedToRef="ap_fa" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_faWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_fa_breach" name="SLA breached" attachedToRef="ap_fa" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_faDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_close_warn" name="SLA warning (75%)" attachedToRef="ap_close" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_closeWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_close_breach" name="SLA breached" attachedToRef="ap_close" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_closeDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_audit_para_f1" sourceRef="ap_atn_warn" targetRef="ap_atn_warnNotify"/>
+    <sequenceFlow id="ifms_audit_para_f2" sourceRef="ap_atn_warnNotify" targetRef="ap_atn_warnEnd"/>
+    <sequenceFlow id="ifms_audit_para_f3" sourceRef="ap_atn_breach" targetRef="ap_atn_breachAct"/>
+    <sequenceFlow id="ifms_audit_para_f4" sourceRef="ap_atn_breachAct" targetRef="ap_atn_breachGw"/>
+    <sequenceFlow id="ifms_audit_para_f5" name="deemed" sourceRef="ap_atn_breachGw" targetRef="ap_atn_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_audit_para_f6" name="escalated" sourceRef="ap_atn_breachGw" targetRef="ap_atn_slaPlan"/>
+    <sequenceFlow id="ifms_audit_para_f7" sourceRef="ap_atn_slaPlan" targetRef="ap_atn"/>
+    <sequenceFlow id="ifms_audit_para_f8" sourceRef="ap_atn" targetRef="ap_atn_done"/>
+    <sequenceFlow id="ifms_audit_para_f9" sourceRef="ap_fa_warn" targetRef="ap_fa_warnNotify"/>
+    <sequenceFlow id="ifms_audit_para_f10" sourceRef="ap_fa_warnNotify" targetRef="ap_fa_warnEnd"/>
+    <sequenceFlow id="ifms_audit_para_f11" sourceRef="ap_fa_breach" targetRef="ap_fa_breachAct"/>
+    <sequenceFlow id="ifms_audit_para_f12" sourceRef="ap_fa_breachAct" targetRef="ap_fa_breachGw"/>
+    <sequenceFlow id="ifms_audit_para_f13" name="deemed" sourceRef="ap_fa_breachGw" targetRef="ap_fa_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_audit_para_f14" name="escalated" sourceRef="ap_fa_breachGw" targetRef="ap_fa_slaPlan"/>
+    <sequenceFlow id="ifms_audit_para_f15" sourceRef="ap_fa_slaPlan" targetRef="ap_fa"/>
+    <sequenceFlow id="ifms_audit_para_f16" sourceRef="ap_fa" targetRef="ap_fa_done"/>
+    <sequenceFlow id="ifms_audit_para_f17" sourceRef="ap_close_warn" targetRef="ap_close_warnNotify"/>
+    <sequenceFlow id="ifms_audit_para_f18" sourceRef="ap_close_warnNotify" targetRef="ap_close_warnEnd"/>
+    <sequenceFlow id="ifms_audit_para_f19" sourceRef="ap_close_breach" targetRef="ap_close_breachAct"/>
+    <sequenceFlow id="ifms_audit_para_f20" sourceRef="ap_close_breachAct" targetRef="ap_close_breachGw"/>
+    <sequenceFlow id="ifms_audit_para_f21" name="deemed" sourceRef="ap_close_breachGw" targetRef="ap_close_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_audit_para_f22" name="escalated" sourceRef="ap_close_breachGw" targetRef="ap_close_slaPlan"/>
+    <sequenceFlow id="ifms_audit_para_f23" sourceRef="ap_close_slaPlan" targetRef="ap_close"/>
+    <sequenceFlow id="ifms_audit_para_f24" sourceRef="ap_close" targetRef="ap_close_done"/>
+    <sequenceFlow id="ifms_audit_para_f25" sourceRef="ap_start" targetRef="ap_defaults"/>
+    <sequenceFlow id="ifms_audit_para_f26" sourceRef="ap_defaults" targetRef="ap_atn_slaPlan"/>
+    <sequenceFlow id="ifms_audit_para_f27" sourceRef="ap_atn_done" targetRef="ap_fa_slaPlan"/>
+    <sequenceFlow id="ifms_audit_para_f28" sourceRef="ap_fa_done" targetRef="ap_faGw"/>
+    <sequenceFlow id="ifms_audit_para_f29" name="revise" sourceRef="ap_faGw" targetRef="ap_atn_slaPlan"><conditionExpression xsi:type="tFormalExpression">${faDecision == 'faNotConcur'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_audit_para_f30" name="vetted" sourceRef="ap_faGw" targetRef="ap_submit"/>
+    <sequenceFlow id="ifms_audit_para_f31" sourceRef="ap_submit" targetRef="ap_result"/>
+    <sequenceFlow id="ifms_audit_para_f32" sourceRef="ap_result" targetRef="ap_close_slaPlan"/>
+    <sequenceFlow id="ifms_audit_para_f33" sourceRef="ap_close_done" targetRef="ap_decGw"/>
+    <sequenceFlow id="ifms_audit_para_f34" name="further action" sourceRef="ap_decGw" targetRef="ap_atn_slaPlan"><conditionExpression xsi:type="tFormalExpression">${paraDecision == 'furtherAction'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_audit_para_f35" name="settled" sourceRef="ap_decGw" targetRef="ap_end"/>
+    <subProcess id="ap_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ap_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ap_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ap_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ap_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_audit_para_f36" sourceRef="ap_withdrawStart" targetRef="ap_withdrawKind"/>
+      <sequenceFlow id="ifms_audit_para_f37" sourceRef="ap_withdrawKind" targetRef="ap_withdrawCall"/>
+      <sequenceFlow id="ifms_audit_para_f38" sourceRef="ap_withdrawCall" targetRef="ap_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ap_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ap_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ap_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ap_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ap_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_audit_para_f39" sourceRef="ap_cancelStart" targetRef="ap_cancelKind"/>
+      <sequenceFlow id="ifms_audit_para_f40" sourceRef="ap_cancelKind" targetRef="ap_cancelCall"/>
+      <sequenceFlow id="ifms_audit_para_f41" sourceRef="ap_cancelCall" targetRef="ap_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_audit_para_diagram">
+    <bpmndi:BPMNPlane id="ifms_audit_para_plane" bpmnElement="sangam-ifms-audit-para">
+      <bpmndi:BPMNShape id="ap_start_di" bpmnElement="ap_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_defaults_di" bpmnElement="ap_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_atn_slaPlan_di" bpmnElement="ap_atn_slaPlan"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_atn_di" bpmnElement="ap_atn"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_atn_warnNotify_di" bpmnElement="ap_atn_warnNotify"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_atn_warnEnd_di" bpmnElement="ap_atn_warnEnd"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_atn_breachAct_di" bpmnElement="ap_atn_breachAct"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_atn_breachGw_di" bpmnElement="ap_atn_breachGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_atn_done_di" bpmnElement="ap_atn_done"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_fa_slaPlan_di" bpmnElement="ap_fa_slaPlan"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_fa_di" bpmnElement="ap_fa"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_fa_warnNotify_di" bpmnElement="ap_fa_warnNotify"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_fa_warnEnd_di" bpmnElement="ap_fa_warnEnd"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_fa_breachAct_di" bpmnElement="ap_fa_breachAct"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_fa_breachGw_di" bpmnElement="ap_fa_breachGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_fa_done_di" bpmnElement="ap_fa_done"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_submit_di" bpmnElement="ap_submit"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_result_di" bpmnElement="ap_result"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_close_slaPlan_di" bpmnElement="ap_close_slaPlan"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_close_di" bpmnElement="ap_close"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_close_warnNotify_di" bpmnElement="ap_close_warnNotify"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_close_warnEnd_di" bpmnElement="ap_close_warnEnd"><dc:Bounds x="3022" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_close_breachAct_di" bpmnElement="ap_close_breachAct"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_close_breachGw_di" bpmnElement="ap_close_breachGw"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_close_done_di" bpmnElement="ap_close_done"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_faGw_di" bpmnElement="ap_faGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_decGw_di" bpmnElement="ap_decGw"><dc:Bounds x="3345" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_end_di" bpmnElement="ap_end"><dc:Bounds x="3517" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_atn_warn_di" bpmnElement="ap_atn_warn"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_atn_breach_di" bpmnElement="ap_atn_breach"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_fa_warn_di" bpmnElement="ap_fa_warn"><dc:Bounds x="1348" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_fa_breach_di" bpmnElement="ap_fa_breach"><dc:Bounds x="1378" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_close_warn_di" bpmnElement="ap_close_warn"><dc:Bounds x="2668" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_close_breach_di" bpmnElement="ap_close_breach"><dc:Bounds x="2698" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_withdraw_di" bpmnElement="ap_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_withdrawStart_di" bpmnElement="ap_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_withdrawKind_di" bpmnElement="ap_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_withdrawCall_di" bpmnElement="ap_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_withdrawEnd_di" bpmnElement="ap_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_cancel_di" bpmnElement="ap_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_cancelStart_di" bpmnElement="ap_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_cancelKind_di" bpmnElement="ap_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_cancelCall_di" bpmnElement="ap_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_cancelEnd_di" bpmnElement="ap_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f1_di" bpmnElement="ifms_audit_para_f1"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f2_di" bpmnElement="ifms_audit_para_f2"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f3_di" bpmnElement="ifms_audit_para_f3"><di:waypoint x="571" y="128"/><di:waypoint x="571" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f4_di" bpmnElement="ifms_audit_para_f4"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f5_di" bpmnElement="ifms_audit_para_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f6_di" bpmnElement="ifms_audit_para_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f7_di" bpmnElement="ifms_audit_para_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f8_di" bpmnElement="ifms_audit_para_f8"><di:waypoint x="615" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f9_di" bpmnElement="ifms_audit_para_f9"><di:waypoint x="1366" y="128"/><di:waypoint x="1366" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f10_di" bpmnElement="ifms_audit_para_f10"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f11_di" bpmnElement="ifms_audit_para_f11"><di:waypoint x="1396" y="128"/><di:waypoint x="1396" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f12_di" bpmnElement="ifms_audit_para_f12"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f13_di" bpmnElement="ifms_audit_para_f13"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f14_di" bpmnElement="ifms_audit_para_f14"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="135"/><di:waypoint x="1225" y="135"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f15_di" bpmnElement="ifms_audit_para_f15"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f16_di" bpmnElement="ifms_audit_para_f16"><di:waypoint x="1440" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f17_di" bpmnElement="ifms_audit_para_f17"><di:waypoint x="2686" y="128"/><di:waypoint x="2686" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f18_di" bpmnElement="ifms_audit_para_f18"><di:waypoint x="2925" y="195"/><di:waypoint x="3022" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f19_di" bpmnElement="ifms_audit_para_f19"><di:waypoint x="2716" y="128"/><di:waypoint x="2716" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f20_di" bpmnElement="ifms_audit_para_f20"><di:waypoint x="2925" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f21_di" bpmnElement="ifms_audit_para_f21"><di:waypoint x="3065" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f22_di" bpmnElement="ifms_audit_para_f22"><di:waypoint x="3040" y="95"/><di:waypoint x="3040" y="135"/><di:waypoint x="2545" y="135"/><di:waypoint x="2545" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f23_di" bpmnElement="ifms_audit_para_f23"><di:waypoint x="2595" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f24_di" bpmnElement="ifms_audit_para_f24"><di:waypoint x="2760" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f25_di" bpmnElement="ifms_audit_para_f25"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f26_di" bpmnElement="ifms_audit_para_f26"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f27_di" bpmnElement="ifms_audit_para_f27"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f28_di" bpmnElement="ifms_audit_para_f28"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f29_di" bpmnElement="ifms_audit_para_f29"><di:waypoint x="2050" y="95"/><di:waypoint x="2050" y="128"/><di:waypoint x="400" y="128"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f30_di" bpmnElement="ifms_audit_para_f30"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f31_di" bpmnElement="ifms_audit_para_f31"><di:waypoint x="2265" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f32_di" bpmnElement="ifms_audit_para_f32"><di:waypoint x="2398" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f33_di" bpmnElement="ifms_audit_para_f33"><di:waypoint x="3230" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f34_di" bpmnElement="ifms_audit_para_f34"><di:waypoint x="3370" y="95"/><di:waypoint x="3370" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f35_di" bpmnElement="ifms_audit_para_f35"><di:waypoint x="3395" y="70"/><di:waypoint x="3517" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f36_di" bpmnElement="ifms_audit_para_f36"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f37_di" bpmnElement="ifms_audit_para_f37"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f38_di" bpmnElement="ifms_audit_para_f38"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f39_di" bpmnElement="ifms_audit_para_f39"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f40_di" bpmnElement="ifms_audit_para_f40"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_audit_para_f41_di" bpmnElement="ifms_audit_para_f41"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

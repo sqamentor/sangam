@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Sangam chart values",
+  "type": "object",
+  "required": ["database", "liquibase", "oidc", "server"],
+  "properties": {
+    "database": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "enum": ["postgres", "oracle", "sqlserver", "mysql"] },
+        "host": { "type": "string" },
+        "port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "name": { "type": "string", "minLength": 1 },
+        "jdbcUrl": { "type": "string" },
+        "params": { "type": "string" },
+        "existingSecret": { "type": "string" },
+        "usernameKey": { "type": "string", "minLength": 1 },
+        "passwordKey": { "type": "string", "minLength": 1 }
+      }
+    },
+    "liquibase": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["job", "startup", "none"] }
+      }
+    },
+    "oidc": {
+      "type": "object",
+      "properties": {
+        "issuerUri": { "type": "string" },
+        "jwkSetUri": { "type": "string" },
+        "audience": { "type": "string" }
+      }
+    },
+    "otel": {
+      "type": "object",
+      "properties": { "enabled": { "type": "boolean" }, "endpoint": { "type": "string" } }
+    },
+    "server": {
+      "type": "object",
+      "properties": {
+        "replicaCount": { "type": "integer", "minimum": 1 },
+        "preStopSleepSeconds": { "type": "integer", "minimum": 0 },
+        "terminationGracePeriodSeconds": { "type": "integer", "minimum": 30 }
+      }
+    },
+    "backup": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "retentionDays": { "type": "integer", "minimum": 1 },
+        "sqlserver": {
+          "type": "object",
+          "properties": { "destinationType": { "type": "string", "enum": ["DISK", "URL"] } }
+        }
+      }
+    }
+  }
+}

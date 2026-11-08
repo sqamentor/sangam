@@ -1,0 +1,115 @@
+{
+  "id": "sec.ins.motor-claim",
+  "version": "1.0.0",
+  "name": {
+    "en": "Motor claim: own damage, theft and third party",
+    "hi": "मोटर दावा: स्वयं क्षति, चोरी एवं तृतीय पक्ष"
+  },
+  "domain": "Insurance",
+  "description": "FNOL, cover check, fraud score, surveyor appointed within 24 hours for claims at or above the licensed-surveyor threshold, survey report within 15 days, assessment with SIU referral, settlement sanctioned and paid within the time limit after the report (cashless to the garage or reimbursement), interest for delay, salvage; theft after the untraced report with subrogation; third party to MACT; rejection with reasons and the Ombudsman route.",
+  "mainProcesses": [
+    "sangam-sec-ins-motor-claim"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ins-motor-claim/sangam-sec-ins-motor-claim.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ins-motor-claim/sec-ins-motor-triage.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ins-motor-claim/sec-ins-claim-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ins-motor-claim/sec-ins-claim-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-motor-claim/forms/fnol.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-motor-claim/forms/tp.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-motor-claim/forms/subrogation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-motor-claim/forms/appoint.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-motor-claim/forms/survey.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-motor-claim/forms/siu.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-motor-claim/forms/assess.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ins-motor-claim/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ins-motor-claim/seed.json",
+  "connectors": [
+    {
+      "id": "policy.coverCheck",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Policy in force"
+    },
+    {
+      "id": "fraud.score",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Fraud analytics"
+    },
+    {
+      "id": "claims.pay",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Claim payment"
+    },
+    {
+      "id": "salvage.auction",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Salvage disposal"
+    }
+  ],
+  "covers": [
+    "SEC-INS-005",
+    "SEC-INS-006",
+    "SEC-INS-007",
+    "GP-06",
+    "GP-12",
+    "GP-17",
+    "UP-04",
+    "UP-06",
+    "UP-09",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

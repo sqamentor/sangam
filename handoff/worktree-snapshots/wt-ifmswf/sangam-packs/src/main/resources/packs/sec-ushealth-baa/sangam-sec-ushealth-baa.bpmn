@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Business associate agreement. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_baa" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_ushealth_baBreach" name="sangam.ushealth.baBreach"/>
+  <message id="msg_sangam_ushealth_baTerminate" name="sangam.ushealth.baTerminate"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-baa" name="Business associate agreement" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.baa</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>baName,phiScope</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ba_start" name="Business associate proposed" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-baa/propose"></startEvent>
+    <serviceTask id="ba_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>baName=@supplierName;baaTerms=false;privacySeat=PRIVACY-OFFICE;securitySeat=SECURITY-OFFICE;counselSeat=COUNSEL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ba_cfg" name="BAA review policy (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-baa-config</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <userTask id="ba_security" name="Security assessment of the business associate" operaton:candidateGroups="${securitySeat}" operaton:formKey="sangam:sec-ushealth-baa/security"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="ba_terms" name="Check the required BAA terms and flow-down" operaton:candidateGroups="${privacySeat}" operaton:formKey="sangam:sec-ushealth-baa/terms"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ba_termsGw" name="Terms complete?" default="sec_ushealth_baa_f7"></exclusiveGateway>
+    <userTask id="ba_approve" name="Legal approval of the BAA" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-ushealth-baa/approve"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>ba_terms</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>baaDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ba_apGw" name="" default="sec_ushealth_baa_f10"></exclusiveGateway>
+    <endEvent id="ba_endRejected" name="Not engaged"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ba_sign" name="Sign the BAA (e-signature)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>esign.baa</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>sign</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>baName,phiScope</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>sign</operaton:string></operaton:field><operaton:field name="step"><operaton:string>sign</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ba_reviewClock" name="Due date: baaReview" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>baaReview</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>baaTermEnd</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${reviewLead}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="ba_life" name="Review due, breach report or termination"></eventBasedGateway>
+    <intermediateCatchEvent id="ba_reviewDue" name="Periodic review due"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${baaReviewDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="ba_breach" name="Breach reported by the associate"><messageEventDefinition messageRef="msg_sangam_ushealth_baBreach"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ba_terminate" name="Termination ordered"><messageEventDefinition messageRef="msg_sangam_ushealth_baTerminate"/></intermediateCatchEvent>
+    <userTask id="ba_review" name="Periodic review: renew or terminate" operaton:candidateGroups="${privacySeat}" operaton:formKey="sangam:sec-ushealth-baa/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ba_reviewGw" name="" default="sec_ushealth_baa_f23"></exclusiveGateway>
+    <serviceTask id="ba_startBreach" name="Open breach notification" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-sec-ushealth-breach</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>RELATED</operaton:string></operaton:field><operaton:field name="businessKeySuffix"><operaton:string>/breach</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>incidentSummary,phiTypes</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ba_cure" name="Material breach: cure or terminate" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-ushealth-baa/cure"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>cureDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ba_cureGw" name="" default="sec_ushealth_baa_f24"></exclusiveGateway>
+    <userTask id="ba_dispose" name="Return or destroy PHI and keep the certificate (6 years)" operaton:candidateGroups="${privacySeat}" operaton:formKey="sangam:sec-ushealth-baa/dispose"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ba_termJoin" name=""></exclusiveGateway>
+    <endEvent id="ba_end" name="BAA terminated and PHI disposed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>TERMINATED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ushealth_baa_f1" sourceRef="ba_start" targetRef="ba_defaults"/>
+    <sequenceFlow id="sec_ushealth_baa_f2" sourceRef="ba_defaults" targetRef="ba_cfg"/>
+    <sequenceFlow id="sec_ushealth_baa_f3" sourceRef="ba_cfg" targetRef="ba_security"/>
+    <sequenceFlow id="sec_ushealth_baa_f4" sourceRef="ba_security" targetRef="ba_terms"/>
+    <sequenceFlow id="sec_ushealth_baa_f5" sourceRef="ba_terms" targetRef="ba_termsGw"/>
+    <sequenceFlow id="sec_ushealth_baa_f6" name="missing terms" sourceRef="ba_termsGw" targetRef="ba_terms"><conditionExpression xsi:type="tFormalExpression">${!baaTerms}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_baa_f7" name="complete" sourceRef="ba_termsGw" targetRef="ba_approve"/>
+    <sequenceFlow id="sec_ushealth_baa_f8" sourceRef="ba_approve" targetRef="ba_apGw"/>
+    <sequenceFlow id="sec_ushealth_baa_f9" name="rejected" sourceRef="ba_apGw" targetRef="ba_endRejected"><conditionExpression xsi:type="tFormalExpression">${baaDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_baa_f10" name="approved" sourceRef="ba_apGw" targetRef="ba_sign"/>
+    <sequenceFlow id="sec_ushealth_baa_f11" sourceRef="ba_sign" targetRef="ba_reviewClock"/>
+    <sequenceFlow id="sec_ushealth_baa_f12" sourceRef="ba_reviewClock" targetRef="ba_life"/>
+    <sequenceFlow id="sec_ushealth_baa_f13" sourceRef="ba_life" targetRef="ba_reviewDue"/>
+    <sequenceFlow id="sec_ushealth_baa_f14" sourceRef="ba_life" targetRef="ba_breach"/>
+    <sequenceFlow id="sec_ushealth_baa_f15" sourceRef="ba_life" targetRef="ba_terminate"/>
+    <sequenceFlow id="sec_ushealth_baa_f16" sourceRef="ba_reviewDue" targetRef="ba_review"/>
+    <sequenceFlow id="sec_ushealth_baa_f17" sourceRef="ba_review" targetRef="ba_reviewGw"/>
+    <sequenceFlow id="sec_ushealth_baa_f18" name="renew" sourceRef="ba_reviewGw" targetRef="ba_reviewClock"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'renew'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_baa_f19" sourceRef="ba_breach" targetRef="ba_startBreach"/>
+    <sequenceFlow id="sec_ushealth_baa_f20" sourceRef="ba_startBreach" targetRef="ba_cure"/>
+    <sequenceFlow id="sec_ushealth_baa_f21" sourceRef="ba_cure" targetRef="ba_cureGw"/>
+    <sequenceFlow id="sec_ushealth_baa_f22" name="cured" sourceRef="ba_cureGw" targetRef="ba_life"><conditionExpression xsi:type="tFormalExpression">${cureDecision == 'cured'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_baa_f23" name="terminate" sourceRef="ba_reviewGw" targetRef="ba_termJoin"/>
+    <sequenceFlow id="sec_ushealth_baa_f24" name="terminate" sourceRef="ba_cureGw" targetRef="ba_termJoin"/>
+    <sequenceFlow id="sec_ushealth_baa_f25" sourceRef="ba_terminate" targetRef="ba_termJoin"/>
+    <sequenceFlow id="sec_ushealth_baa_f26" sourceRef="ba_termJoin" targetRef="ba_dispose"/>
+    <sequenceFlow id="sec_ushealth_baa_f27" sourceRef="ba_dispose" targetRef="ba_end"/>
+    <subProcess id="ba_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ba_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ba_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ba_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ba_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_baa_f28" sourceRef="ba_withdrawStart" targetRef="ba_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_baa_f29" sourceRef="ba_withdrawKind" targetRef="ba_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_baa_f30" sourceRef="ba_withdrawCall" targetRef="ba_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ba_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ba_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ba_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ba_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ba_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_baa_f31" sourceRef="ba_cancelStart" targetRef="ba_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_baa_f32" sourceRef="ba_cancelKind" targetRef="ba_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_baa_f33" sourceRef="ba_cancelCall" targetRef="ba_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_baa_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_baa_plane" bpmnElement="sangam-sec-ushealth-baa">
+      <bpmndi:BPMNShape id="ba_start_di" bpmnElement="ba_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_defaults_di" bpmnElement="ba_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_cfg_di" bpmnElement="ba_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_security_di" bpmnElement="ba_security"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_terms_di" bpmnElement="ba_terms"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_termsGw_di" bpmnElement="ba_termsGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_approve_di" bpmnElement="ba_approve"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_apGw_di" bpmnElement="ba_apGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_endRejected_di" bpmnElement="ba_endRejected"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_sign_di" bpmnElement="ba_sign"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_reviewClock_di" bpmnElement="ba_reviewClock"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_life_di" bpmnElement="ba_life"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_reviewDue_di" bpmnElement="ba_reviewDue"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_breach_di" bpmnElement="ba_breach"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_terminate_di" bpmnElement="ba_terminate"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_review_di" bpmnElement="ba_review"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_reviewGw_di" bpmnElement="ba_reviewGw"><dc:Bounds x="2190" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_startBreach_di" bpmnElement="ba_startBreach"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_cure_di" bpmnElement="ba_cure"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_cureGw_di" bpmnElement="ba_cureGw"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_dispose_di" bpmnElement="ba_dispose"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_termJoin_di" bpmnElement="ba_termJoin"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_end_di" bpmnElement="ba_end"><dc:Bounds x="2857" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_withdraw_di" bpmnElement="ba_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_withdrawStart_di" bpmnElement="ba_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_withdrawKind_di" bpmnElement="ba_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_withdrawCall_di" bpmnElement="ba_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_withdrawEnd_di" bpmnElement="ba_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_cancel_di" bpmnElement="ba_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_cancelStart_di" bpmnElement="ba_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_cancelKind_di" bpmnElement="ba_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_cancelCall_di" bpmnElement="ba_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ba_cancelEnd_di" bpmnElement="ba_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f1_di" bpmnElement="sec_ushealth_baa_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f2_di" bpmnElement="sec_ushealth_baa_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f3_di" bpmnElement="sec_ushealth_baa_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f4_di" bpmnElement="sec_ushealth_baa_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f5_di" bpmnElement="sec_ushealth_baa_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f6_di" bpmnElement="sec_ushealth_baa_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="730" y="135"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f7_di" bpmnElement="sec_ushealth_baa_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f8_di" bpmnElement="sec_ushealth_baa_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f9_di" bpmnElement="sec_ushealth_baa_f9"><di:waypoint x="1250" y="70"/><di:waypoint x="1311" y="70"/><di:waypoint x="1311" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f10_di" bpmnElement="sec_ushealth_baa_f10"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f11_di" bpmnElement="sec_ushealth_baa_f11"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f12_di" bpmnElement="sec_ushealth_baa_f12"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f13_di" bpmnElement="sec_ushealth_baa_f13"><di:waypoint x="1745" y="70"/><di:waypoint x="1806" y="70"/><di:waypoint x="1806" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f14_di" bpmnElement="sec_ushealth_baa_f14"><di:waypoint x="1745" y="70"/><di:waypoint x="1806" y="70"/><di:waypoint x="1806" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f15_di" bpmnElement="sec_ushealth_baa_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f16_di" bpmnElement="sec_ushealth_baa_f16"><di:waypoint x="1903" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f17_di" bpmnElement="sec_ushealth_baa_f17"><di:waypoint x="2100" y="320"/><di:waypoint x="2190" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f18_di" bpmnElement="sec_ushealth_baa_f18"><di:waypoint x="2215" y="345"/><di:waypoint x="2215" y="370"/><di:waypoint x="1555" y="370"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f19_di" bpmnElement="sec_ushealth_baa_f19"><di:waypoint x="1903" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f20_di" bpmnElement="sec_ushealth_baa_f20"><di:waypoint x="2100" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f21_di" bpmnElement="sec_ushealth_baa_f21"><di:waypoint x="2265" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f22_di" bpmnElement="sec_ushealth_baa_f22"><di:waypoint x="2380" y="220"/><di:waypoint x="2380" y="245"/><di:waypoint x="1720" y="245"/><di:waypoint x="1720" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f23_di" bpmnElement="sec_ushealth_baa_f23"><di:waypoint x="2240" y="320"/><di:waypoint x="2380" y="320"/><di:waypoint x="2380" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f24_di" bpmnElement="sec_ushealth_baa_f24"><di:waypoint x="2405" y="195"/><di:waypoint x="2462" y="195"/><di:waypoint x="2462" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f25_di" bpmnElement="sec_ushealth_baa_f25"><di:waypoint x="1903" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f26_di" bpmnElement="sec_ushealth_baa_f26"><di:waypoint x="2570" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f27_di" bpmnElement="sec_ushealth_baa_f27"><di:waypoint x="2760" y="70"/><di:waypoint x="2857" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f28_di" bpmnElement="sec_ushealth_baa_f28"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f29_di" bpmnElement="sec_ushealth_baa_f29"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f30_di" bpmnElement="sec_ushealth_baa_f30"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f31_di" bpmnElement="sec_ushealth_baa_f31"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f32_di" bpmnElement="sec_ushealth_baa_f32"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_baa_f33_di" bpmnElement="sec_ushealth_baa_f33"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,54 @@
+{
+  "key": "rtps/application",
+  "version": "1.0.0",
+  "pack": "gov.rtps",
+  "title": {
+    "en": "Public service application",
+    "hi": "लोक सेवा आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "serviceCode",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Notified public service",
+        "hi": "अधिसूचित लोक सेवा"
+      }
+    },
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

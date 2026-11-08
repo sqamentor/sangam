@@ -1,0 +1,18 @@
+# SCALE: server as a cell, plus control plane, gateway and national roll-up. Layer on a database example:
+#   helm template sangam deploy/helm/sangam -f examples/values-postgres.yaml -f examples/values-scale.yaml
+# Secrets (keys in values.yaml, scale.*): sangam-cell, sangam-cp, sangam-gw, sangam-ru.
+database:
+  type: postgres
+  host: pg-primary.db.svc.cluster.local
+  existingSecret: sangam-db
+oidc:
+  issuerUri: https://sso.example.gov.in/realms/sangam
+scale:
+  cell:
+    id: cell-in-rj-1
+    region: in-rj
+    publicUrl: https://cell-1.sangam.example.gov.in
+    existingSecret: sangam-cell
+  controlPlane: { enabled: true, existingSecret: sangam-cp }
+  gateway: { enabled: true, existingSecret: sangam-gw, hostSuffix: .sangam.example.gov.in }
+  rollup: { enabled: true, existingSecret: sangam-ru }

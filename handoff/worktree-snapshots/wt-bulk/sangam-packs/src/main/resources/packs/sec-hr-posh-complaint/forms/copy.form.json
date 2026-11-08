@@ -1,0 +1,27 @@
+{
+  "key": "sec-hr-posh-complaint/copy",
+  "version": "1.0.0",
+  "pack": "sec.hr.posh-complaint",
+  "title": {
+    "en": "Send copy to the respondent (7 working days)",
+    "hi": "प्रतिवादी को प्रति (7 कार्य दिवस)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "key": "sec-ushealth-claim/scrub",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "Code and scrub the claim",
+    "es": "Codificar y depurar la reclamación"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "codingNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Coding and scrub notes (NCCI, modifiers, NPI)",
+        "es": "Notas de codificación y depuración (NCCI, modificadores, NPI)"
+      }
+    },
+    {
+      "id": "priorAuthNumber",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Prior authorization number",
+        "es": "Número de autorización previa"
+      }
+    },
+    {
+      "id": "totalCharge",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Total charge (USD)",
+        "es": "Cargo total (USD)"
+      }
+    }
+  ]
+}

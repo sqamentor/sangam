@@ -1,0 +1,56 @@
+{
+  "key": "sec-bank-txn-dispute/investigate",
+  "version": "1.0.0",
+  "pack": "sec.bank.txn-dispute",
+  "title": {
+    "en": "Investigate and decide liability (90 days)",
+    "hi": "जाँच एवं दायित्व निर्णय (90 दिन)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerLiability",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Customer liability",
+        "hi": "ग्राहक का दायित्व"
+      }
+    },
+    {
+      "id": "findings",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "liabilityDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "bankLiable",
+        "label": {
+          "en": "Bank liable",
+          "hi": "बैंक उत्तरदायी"
+        }
+      },
+      {
+        "value": "customerLiable",
+        "label": {
+          "en": "Customer liable",
+          "hi": "ग्राहक उत्तरदायी"
+        }
+      }
+    ]
+  }
+}

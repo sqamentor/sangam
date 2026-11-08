@@ -1,0 +1,48 @@
+{
+  "key": "dbt-batch/review-failures",
+  "version": "1.0.0",
+  "pack": "gov.dbt.batch",
+  "title": {
+    "en": "Review failed records by reason",
+    "hi": "कारणवार विफल अभिलेखों की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "roundDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "close",
+        "label": {
+          "en": "Close",
+          "hi": "बंद करें"
+        }
+      }
+    ]
+  },
+  "help": "Shows batchFailures (item to reason) and batchOutcomes."
+}

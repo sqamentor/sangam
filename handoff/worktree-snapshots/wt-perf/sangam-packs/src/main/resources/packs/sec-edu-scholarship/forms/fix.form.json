@@ -1,0 +1,36 @@
+{
+  "key": "sec-edu-scholarship/fix",
+  "version": "1.0.0",
+  "pack": "sec.edu.scholarship",
+  "title": {
+    "en": "Correct bank / Aadhaar seeding after failure",
+    "hi": "विफलता के बाद बैंक / आधार सुधार"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "bankAccount",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Beneficiary bank account",
+        "hi": "लाभार्थी बैंक खाता"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

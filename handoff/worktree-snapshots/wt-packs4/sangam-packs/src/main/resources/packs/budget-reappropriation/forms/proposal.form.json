@@ -1,0 +1,65 @@
+{
+  "key": "budget-reappropriation/proposal",
+  "version": "1.0.0",
+  "pack": "gov.ifms.budget-reappropriation",
+  "title": {
+    "en": "Re-appropriation proposal",
+    "hi": "पुनर्विनियोजन प्रस्ताव"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fromHead",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Re-appropriate from head",
+        "hi": "किस शीर्ष से पुनर्विनियोजन"
+      }
+    },
+    {
+      "id": "toHead",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Re-appropriate to head",
+        "hi": "किस शीर्ष में पुनर्विनियोजन"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "justification",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Justification",
+        "hi": "औचित्य"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

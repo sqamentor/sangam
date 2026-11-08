@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-15 Recertify one entity. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up15_recertify" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-up15-recertify" name="UP-15 Recertify one entity" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up15-recertification</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u15c_start" name="Entity due"></startEvent>
+    <serviceTask id="u15c_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>reviewerSeat=REVIEWER;recertSla=10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u15c_review_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u15c_review</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${recertSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u15c_review" name="Recertify" operaton:candidateGroups="${reviewerSeat}" operaton:formKey="sangam:up15-recertification/review" operaton:dueDate="${u15c_reviewDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>recertDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="u15c_review_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u15c_review</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reviewerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u15c_review_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="u15c_review_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u15c_review</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>DEEMED_REFUSAL</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reviewerSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>recertDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>yes</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>no</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u15c_review_breachGw" name="Deemed?" default="up15_recertify_f6"></exclusiveGateway>
+    <exclusiveGateway id="u15c_review_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="u15c_gw" name="" default="up15_recertify_f14"></exclusiveGateway>
+    <serviceTask id="u15c_revoke" name="Revoke" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>iam.revoke</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revoke</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>revoke</operaton:string></operaton:field><operaton:field name="step"><operaton:string>revoke</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u15c_endRevoked" name="Revoked"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REVOKED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="u15c_end" name="Recertified"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="u15c_review_warn" name="SLA warning (75%)" attachedToRef="u15c_review" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${u15c_reviewWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="u15c_review_breach" name="SLA breached" attachedToRef="u15c_review" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${u15c_reviewDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="up15_recertify_f1" sourceRef="u15c_review_warn" targetRef="u15c_review_warnNotify"/>
+    <sequenceFlow id="up15_recertify_f2" sourceRef="u15c_review_warnNotify" targetRef="u15c_review_warnEnd"/>
+    <sequenceFlow id="up15_recertify_f3" sourceRef="u15c_review_breach" targetRef="u15c_review_breachAct"/>
+    <sequenceFlow id="up15_recertify_f4" sourceRef="u15c_review_breachAct" targetRef="u15c_review_breachGw"/>
+    <sequenceFlow id="up15_recertify_f5" name="deemed" sourceRef="u15c_review_breachGw" targetRef="u15c_review_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up15_recertify_f6" name="escalated" sourceRef="u15c_review_breachGw" targetRef="u15c_review_slaPlan"/>
+    <sequenceFlow id="up15_recertify_f7" sourceRef="u15c_review_slaPlan" targetRef="u15c_review"/>
+    <sequenceFlow id="up15_recertify_f8" sourceRef="u15c_review" targetRef="u15c_review_done"/>
+    <sequenceFlow id="up15_recertify_f9" sourceRef="u15c_start" targetRef="u15c_defaults"/>
+    <sequenceFlow id="up15_recertify_f10" sourceRef="u15c_defaults" targetRef="u15c_review_slaPlan"/>
+    <sequenceFlow id="up15_recertify_f11" sourceRef="u15c_review_done" targetRef="u15c_gw"/>
+    <sequenceFlow id="up15_recertify_f12" name="revoke (or no answer)" sourceRef="u15c_gw" targetRef="u15c_revoke"><conditionExpression xsi:type="tFormalExpression">${recertDecision == 'no'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up15_recertify_f13" sourceRef="u15c_revoke" targetRef="u15c_endRevoked"/>
+    <sequenceFlow id="up15_recertify_f14" name="recertified" sourceRef="u15c_gw" targetRef="u15c_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up15_recertify_diagram">
+    <bpmndi:BPMNPlane id="up15_recertify_plane" bpmnElement="sangam-up15-recertify">
+      <bpmndi:BPMNShape id="u15c_start_di" bpmnElement="u15c_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_defaults_di" bpmnElement="u15c_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_review_slaPlan_di" bpmnElement="u15c_review_slaPlan"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_review_di" bpmnElement="u15c_review"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_review_warnNotify_di" bpmnElement="u15c_review_warnNotify"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_review_warnEnd_di" bpmnElement="u15c_review_warnEnd"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_review_breachAct_di" bpmnElement="u15c_review_breachAct"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_review_breachGw_di" bpmnElement="u15c_review_breachGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_review_done_di" bpmnElement="u15c_review_done"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_gw_di" bpmnElement="u15c_gw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_revoke_di" bpmnElement="u15c_revoke"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_endRevoked_di" bpmnElement="u15c_endRevoked"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_end_di" bpmnElement="u15c_end"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_review_warn_di" bpmnElement="u15c_review_warn"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u15c_review_breach_di" bpmnElement="u15c_review_breach"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up15_recertify_f1_di" bpmnElement="up15_recertify_f1"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f2_di" bpmnElement="up15_recertify_f2"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f3_di" bpmnElement="up15_recertify_f3"><di:waypoint x="571" y="128"/><di:waypoint x="571" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f4_di" bpmnElement="up15_recertify_f4"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f5_di" bpmnElement="up15_recertify_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f6_di" bpmnElement="up15_recertify_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f7_di" bpmnElement="up15_recertify_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f8_di" bpmnElement="up15_recertify_f8"><di:waypoint x="615" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f9_di" bpmnElement="up15_recertify_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f10_di" bpmnElement="up15_recertify_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f11_di" bpmnElement="up15_recertify_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f12_di" bpmnElement="up15_recertify_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f13_di" bpmnElement="up15_recertify_f13"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up15_recertify_f14_di" bpmnElement="up15_recertify_f14"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

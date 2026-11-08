@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Eligibility and benefits. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_eligibility" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-eligibility" name="Eligibility and benefits" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.eligibility</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>patientName,memberId,payerId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="el_start" name="Patient registered" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-eligibility/register"></startEvent>
+    <serviceTask id="el_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;memberId=@customerId;payerId=SIMPAYER;providerNpi=1234567893;serviceTypes=30;visitType=SCHEDULED;eligEligibility=ACTIVE;npiStatus=COMPLETED;edSeat=ED-PHYSICIAN;regSeat=PATIENT-ACCESS;finSeat=FINANCIAL-COUNSELOR</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="el_cfg" name="Eligibility policy (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-eligibility-config</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="el_erGw" name="Emergency arrival?" default="sec_ushealth_eligibility_f5"></exclusiveGateway>
+    <userTask id="el_mse" name="Medical screening examination and stabilisation (no payment inquiry first)" operaton:candidateGroups="${edSeat}" operaton:formKey="sangam:sec-ushealth-eligibility/mse" operaton:priority="95"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="el_npi" name="Check provider NPI (NPPES)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>npi.registry</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>lookup</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>providerNpi</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>npi</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="el_270" name="Eligibility inquiry 270 / response 271" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>x12.eligibility</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>eligibility</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,payerId,providerNpi,serviceTypes,patientName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>elig</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="el_resultGw" name="Coverage?" sangam:routingPolicy="priority" default="sec_ushealth_eligibility_f13"></exclusiveGateway>
+    <userTask id="el_review" name="Review benefits and estimate patient responsibility" operaton:candidateGroups="${regSeat}" operaton:formKey="sangam:sec-ushealth-eligibility/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="el_end" name="Coverage verified"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <intermediateCatchEvent id="el_wait" name="Payer unavailable: retry later"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${eligRetryAfter}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="el_resolve" name="Resolve coverage: correct data, other coverage, self-pay" operaton:candidateGroups="${finSeat}" operaton:formKey="sangam:sec-ushealth-eligibility/resolve"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>coverageDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="el_resolveGw" name="" default="sec_ushealth_eligibility_f16"></exclusiveGateway>
+    <endEvent id="el_endSelf" name="Self-pay: good-faith estimate due"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SELF_PAY</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ushealth_eligibility_f1" sourceRef="el_start" targetRef="el_defaults"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f2" sourceRef="el_defaults" targetRef="el_cfg"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f3" sourceRef="el_cfg" targetRef="el_erGw"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f4" name="emergency (EMTALA)" sourceRef="el_erGw" targetRef="el_mse"><conditionExpression xsi:type="tFormalExpression">${visitType == 'EMERGENCY'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_eligibility_f5" name="scheduled" sourceRef="el_erGw" targetRef="el_npi"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f6" sourceRef="el_mse" targetRef="el_npi"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f7" sourceRef="el_npi" targetRef="el_270"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f8" sourceRef="el_270" targetRef="el_resultGw"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f9" name="active" sangam:priority="1" sourceRef="el_resultGw" targetRef="el_review"><conditionExpression xsi:type="tFormalExpression">${eligEligibility == 'ACTIVE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_eligibility_f10" sourceRef="el_review" targetRef="el_end"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f11" name="no answer" sangam:priority="2" sourceRef="el_resultGw" targetRef="el_wait"><conditionExpression xsi:type="tFormalExpression">${eligStatus == 'UNKNOWN' || eligStatus == 'PENDING'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_eligibility_f12" sourceRef="el_wait" targetRef="el_270"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f13" name="inactive / rejected (AAA)" sourceRef="el_resultGw" targetRef="el_resolve"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f14" sourceRef="el_resolve" targetRef="el_resolveGw"/>
+    <sequenceFlow id="sec_ushealth_eligibility_f15" name="re-check" sourceRef="el_resolveGw" targetRef="el_270"><conditionExpression xsi:type="tFormalExpression">${coverageDecision != 'selfPay'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_eligibility_f16" name="self-pay" sourceRef="el_resolveGw" targetRef="el_endSelf"/>
+    <subProcess id="el_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="el_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="el_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="el_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="el_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_eligibility_f17" sourceRef="el_withdrawStart" targetRef="el_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_eligibility_f18" sourceRef="el_withdrawKind" targetRef="el_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_eligibility_f19" sourceRef="el_withdrawCall" targetRef="el_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="el_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="el_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="el_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="el_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="el_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_eligibility_f20" sourceRef="el_cancelStart" targetRef="el_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_eligibility_f21" sourceRef="el_cancelKind" targetRef="el_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_eligibility_f22" sourceRef="el_cancelCall" targetRef="el_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_eligibility_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_eligibility_plane" bpmnElement="sangam-sec-ushealth-eligibility">
+      <bpmndi:BPMNShape id="el_start_di" bpmnElement="el_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_defaults_di" bpmnElement="el_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_cfg_di" bpmnElement="el_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_erGw_di" bpmnElement="el_erGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_mse_di" bpmnElement="el_mse"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_npi_di" bpmnElement="el_npi"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_270_di" bpmnElement="el_270"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_resultGw_di" bpmnElement="el_resultGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_review_di" bpmnElement="el_review"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_end_di" bpmnElement="el_end"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_wait_di" bpmnElement="el_wait"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_resolve_di" bpmnElement="el_resolve"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_resolveGw_di" bpmnElement="el_resolveGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_endSelf_di" bpmnElement="el_endSelf"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_withdraw_di" bpmnElement="el_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_withdrawStart_di" bpmnElement="el_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_withdrawKind_di" bpmnElement="el_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_withdrawCall_di" bpmnElement="el_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_withdrawEnd_di" bpmnElement="el_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_cancel_di" bpmnElement="el_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_cancelStart_di" bpmnElement="el_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_cancelKind_di" bpmnElement="el_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_cancelCall_di" bpmnElement="el_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="el_cancelEnd_di" bpmnElement="el_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f1_di" bpmnElement="sec_ushealth_eligibility_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f2_di" bpmnElement="sec_ushealth_eligibility_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f3_di" bpmnElement="sec_ushealth_eligibility_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f4_di" bpmnElement="sec_ushealth_eligibility_f4"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f5_di" bpmnElement="sec_ushealth_eligibility_f5"><di:waypoint x="590" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f6_di" bpmnElement="sec_ushealth_eligibility_f6"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f7_di" bpmnElement="sec_ushealth_eligibility_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f8_di" bpmnElement="sec_ushealth_eligibility_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f9_di" bpmnElement="sec_ushealth_eligibility_f9"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f10_di" bpmnElement="sec_ushealth_eligibility_f10"><di:waypoint x="1440" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f11_di" bpmnElement="sec_ushealth_eligibility_f11"><di:waypoint x="1250" y="70"/><di:waypoint x="1311" y="70"/><di:waypoint x="1311" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f12_di" bpmnElement="sec_ushealth_eligibility_f12"><di:waypoint x="1390" y="213"/><di:waypoint x="1390" y="252"/><di:waypoint x="1060" y="252"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f13_di" bpmnElement="sec_ushealth_eligibility_f13"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f14_di" bpmnElement="sec_ushealth_eligibility_f14"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f15_di" bpmnElement="sec_ushealth_eligibility_f15"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="142"/><di:waypoint x="1060" y="142"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f16_di" bpmnElement="sec_ushealth_eligibility_f16"><di:waypoint x="1580" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f17_di" bpmnElement="sec_ushealth_eligibility_f17"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f18_di" bpmnElement="sec_ushealth_eligibility_f18"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f19_di" bpmnElement="sec_ushealth_eligibility_f19"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f20_di" bpmnElement="sec_ushealth_eligibility_f20"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f21_di" bpmnElement="sec_ushealth_eligibility_f21"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_eligibility_f22_di" bpmnElement="sec_ushealth_eligibility_f22"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

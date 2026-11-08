@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_fin_complaint_tat" name="Complaint clocks by regulator scheme" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-fin-complaint-tat" name="Complaint clocks by regulator scheme" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-fin-complaint-tat_t" hitPolicy="FIRST">
+      <input id="sec-fin-complaint-tat_i0" label="Scheme"><inputExpression id="sec-fin-complaint-tat_ie0" typeRef="string"><text>regulatorScheme</text></inputExpression></input>
+      <output id="sec-fin-complaint-tat_o0" label="Resolve within" name="resolveSpec" typeRef="string"/>
+      <output id="sec-fin-complaint-tat_o1" label="Internal ombudsman before rejection" name="ioRequired" typeRef="boolean"/>
+      <output id="sec-fin-complaint-tat_o2" label="Escalation route" name="escalationRoute" typeRef="string"/>
+      <rule id="sec-fin-complaint-tat_r0"><description>RBI: IO review, RB-IOS after 30 days</description>
+        <inputEntry id="sec-fin-complaint-tat_r0_i0"><text>"RBI"</text></inputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r0_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r0_o1"><text>true</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r0_o2"><text>"RB-IOS (CMS portal) after 30 days"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-complaint-tat_r1"><description>IRDAI: 14 days</description>
+        <inputEntry id="sec-fin-complaint-tat_r1_i0"><text>"IRDAI"</text></inputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r1_o0"><text>"14D"</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r1_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r1_o2"><text>"Bima Bharosa / Insurance Ombudsman"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-complaint-tat_r2"><description>SEBI SCORES: 21 days</description>
+        <inputEntry id="sec-fin-complaint-tat_r2_i0"><text>"SEBI"</text></inputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r2_o0"><text>"21D"</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r2_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r2_o2"><text>"SCORES second level / ODR"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-complaint-tat_r3"><description>acknowledge in 48 hours, redress in one month (E-Commerce Rules r.4(5))</description>
+        <inputEntry id="sec-fin-complaint-tat_r3_i0"><text>"ECOMMERCE"</text></inputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r3_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r3_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r3_o2"><text>"National Consumer Helpline / Commission"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-complaint-tat_r4">
+        <inputEntry id="sec-fin-complaint-tat_r4_i0"><text>"TRAI"</text></inputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r4_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r4_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r4_o2"><text>"Appellate authority of the service provider"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-complaint-tat_r5"><description>DPDP Rules r.14(3)</description>
+        <inputEntry id="sec-fin-complaint-tat_r5_i0"><text>"DPDP"</text></inputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r5_o0"><text>"90D"</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r5_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r5_o2"><text>"Data Protection Board"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-complaint-tat_r6">
+        <inputEntry id="sec-fin-complaint-tat_r6_i0"><text>"ELECTRICITY"</text></inputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r6_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r6_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r6_o2"><text>"CGRF / Electricity Ombudsman"</text></outputEntry>
+      </rule>
+      <rule id="sec-fin-complaint-tat_r7">
+        <inputEntry id="sec-fin-complaint-tat_r7_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r7_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r7_o1"><text>false</text></outputEntry>
+        <outputEntry id="sec-fin-complaint-tat_r7_o2"><text>"Regulator"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

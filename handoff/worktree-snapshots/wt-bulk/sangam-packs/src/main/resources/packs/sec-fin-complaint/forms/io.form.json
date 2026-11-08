@@ -1,0 +1,47 @@
+{
+  "key": "sec-fin-complaint/io",
+  "version": "1.0.0",
+  "pack": "sec.fin.complaint",
+  "title": {
+    "en": "Internal ombudsman review before rejection",
+    "hi": "अस्वीकृति से पूर्व आंतरिक लोकपाल समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "ioDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "uphold",
+        "label": {
+          "en": "Uphold rejection",
+          "hi": "अस्वीकृति बरकरार"
+        }
+      },
+      {
+        "value": "overturn",
+        "label": {
+          "en": "Overturn",
+          "hi": "निर्णय पलटें"
+        }
+      }
+    ]
+  }
+}

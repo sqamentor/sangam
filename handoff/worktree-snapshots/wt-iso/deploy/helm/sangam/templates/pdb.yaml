@@ -1,0 +1,32 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if .Values.server.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sangam.fullname" . }}-server
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+spec:
+  minAvailable: {{ .Values.server.pdb.minAvailable }}
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 6 }}
+{{- end }}
+{{- if and .Values.ui.enabled .Values.ui.pdb.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sangam.fullname" . }}-ui
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+spec:
+  minAvailable: {{ .Values.ui.pdb.minAvailable }}
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "ui") | nindent 6 }}
+{{- end }}

@@ -1,0 +1,6 @@
+**/target/**
+!sangam-integration/target/*-simulators.jar
+**/node_modules/**
+sangam-ui/**
+deploy/airgap/out/**
+deploy/compose/data/**

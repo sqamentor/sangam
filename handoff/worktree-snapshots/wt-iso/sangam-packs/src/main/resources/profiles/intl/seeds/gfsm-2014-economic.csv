@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
+GFS,economic,,1,Revenue,level=1,,,IMF GFSM 2014 (top levels),S
+GFS,economic,1,11,Taxes,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,1,12,Social contributions,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,1,13,Grants,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,1,14,Other revenue,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,,2,Expense,level=1,,,IMF GFSM 2014 (top levels),S
+GFS,economic,2,21,Compensation of employees,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,2,22,Use of goods and services,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,2,23,Consumption of fixed capital,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,2,24,Interest,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,2,25,Subsidies,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,2,26,Grants,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,2,27,Social benefits,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,2,28,Other expense,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,,3,Transactions in assets and liabilities,level=1,,,IMF GFSM 2014 (top levels),S
+GFS,economic,3,31,Net acquisition of nonfinancial assets,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,3,32,Net acquisition of financial assets,level=2,,,IMF GFSM 2014 (top levels),S
+GFS,economic,3,33,Net incurrence of liabilities,level=2,,,IMF GFSM 2014 (top levels),S

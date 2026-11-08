@@ -1,0 +1,136 @@
+{
+  "id": "gov.works",
+  "version": "1.0.0",
+  "name": {
+    "en": "Works / WAMS project lifecycle",
+    "hi": "निर्माण कार्य / डब्ल्यूएएमएस परियोजना जीवनचक्र"
+  },
+  "domain": "Works / WAMS",
+  "description": "Estimate scrutiny, technical sanction then administrative approval with budget encumbrance (chained sanctions; the order is per tenant / department configuration, works-config), tender, work order, monthly measurement-book cycle with check measurement and running bills paid through P1, cumulative-threshold revised AA, amendments (variation, EoT, LD, price escalation) applied to the running case, final bill, completion, defect liability period and release of the performance security (D-WORKS).",
+  "mainProcesses": [
+    "sangam-works-project"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/works/sangam-works-project.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/works/works-config.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/works/works-ts-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/works/works-aa-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/works/forms/estimate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/works/forms/nit.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/works/forms/tender-failed.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/works/forms/contract-dates.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/works/forms/delay.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/works/forms/measurement.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/works/forms/check-measure.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/works/forms/completion.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/works/forms/dlp.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/works/seed.json"
+    }
+  ],
+  "seed": "packs/works/seed.json",
+  "connectors": [
+    {
+      "id": "ifms.encumber",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Encumbrance against the AA"
+    },
+    {
+      "id": "ifms.release",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Release on cancel"
+    }
+  ],
+  "covers": [
+    "D-WORKS",
+    "GP-05",
+    "GP-10",
+    "GP-11",
+    "GP-37",
+    "GP-41",
+    "GP-42",
+    "GP-43",
+    "GP-53",
+    "GP-09",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "gov.tender",
+    "gov.work-order",
+    "gov.p1.bill-payment",
+    "gov.contract-management",
+    "gov.security-instrument"
+  ],
+  "tenantOverrides": [
+    {
+      "tenant": "state-b",
+      "kind": "DMN",
+      "path": "packs/works/overrides/state-b/works-config.dmn"
+    }
+  ],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-core-scrutiny",
+    "sangam-p1-bill-payment",
+    "sangam-tender",
+    "sangam-work-order"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "estimateAmount",
+      "measuredValue"
+    ]
+  }
+}

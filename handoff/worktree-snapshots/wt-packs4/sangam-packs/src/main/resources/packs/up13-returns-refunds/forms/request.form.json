@@ -1,0 +1,65 @@
+{
+  "key": "up13-returns-refunds/request",
+  "version": "1.0.0",
+  "pack": "universal.up13-returns-refunds",
+  "title": {
+    "en": "Return request",
+    "hi": "वापसी अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "orderId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Order",
+        "hi": "आदेश"
+      }
+    },
+    {
+      "id": "returnQty",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Quantity returned",
+        "hi": "लौटाई गई मात्रा"
+      }
+    },
+    {
+      "id": "refundAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Refund (INR)",
+        "hi": "वापसी राशि (रुपये)"
+      }
+    },
+    {
+      "id": "category",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Category",
+        "hi": "श्रेणी"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    }
+  ]
+}

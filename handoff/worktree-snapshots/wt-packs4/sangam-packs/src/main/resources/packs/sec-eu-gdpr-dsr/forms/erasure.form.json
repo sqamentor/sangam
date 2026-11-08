@@ -1,0 +1,56 @@
+{
+  "key": "sec-eu-gdpr-dsr/erasure",
+  "version": "1.0.0",
+  "pack": "sec.eu.gdpr-dsr",
+  "title": {
+    "en": "Erasure: check the Art. 17(3) exceptions",
+    "hi": "मिटाना: अनु. 17(3) अपवाद"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "erasureException",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Art. 17(3) exception relied on (if any)",
+        "hi": "अनु. 17(3) अपवाद (यदि कोई)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "eraseDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "erase",
+        "label": {
+          "en": "Erase",
+          "hi": "मिटाएँ"
+        }
+      },
+      {
+        "value": "retain",
+        "label": {
+          "en": "Retain",
+          "hi": "प्रतिधारित करें"
+        }
+      }
+    ]
+  }
+}

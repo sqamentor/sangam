@@ -1,0 +1,65 @@
+{
+  "key": "rtps/decide",
+  "version": "1.0.0",
+  "pack": "gov.rtps",
+  "title": {
+    "en": "Designated officer: decide",
+    "hi": "पदाभिहित अधिकारी: निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "doDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

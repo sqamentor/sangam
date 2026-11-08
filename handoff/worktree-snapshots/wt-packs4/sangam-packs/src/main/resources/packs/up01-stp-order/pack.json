@@ -1,0 +1,69 @@
+{
+  "id": "universal.up01-stp-order",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-01 Straight-through order processing",
+    "hi": "यूपी-01 सीधा आदेश प्रसंस्करण"
+  },
+  "domain": "Universal",
+  "description": "No human step: validate, route by rule, reserve, charge, ship. Short history TTL (30 days) for high-throughput definitions (R22, R29); every effect is idempotent by operationId; no hot root.",
+  "mainProcesses": [
+    "sangam-up01-stp-order"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up01-stp-order/sangam-up01-stp-order.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up01-stp-order/up01-route.dmn"
+    }
+  ],
+  "seed": null,
+  "connectors": [
+    {
+      "id": "order.validate",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Validation"
+    },
+    {
+      "id": "inventory.reserve",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Reservation"
+    },
+    {
+      "id": "saga.charge",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Payment capture"
+    },
+    {
+      "id": "shipping.create",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Shipment"
+    }
+  ],
+  "covers": [
+    "UP-01",
+    "R22",
+    "R29",
+    "R40",
+    "GP-08"
+  ],
+  "acceptance": [],
+  "dependsOn": [],
+  "tenantOverrides": [],
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

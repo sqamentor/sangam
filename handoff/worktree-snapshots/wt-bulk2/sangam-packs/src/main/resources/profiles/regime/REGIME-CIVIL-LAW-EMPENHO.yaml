@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: REGIME-CIVIL-LAW-EMPENHO
+  layer: regime
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL-PFM
+  name:
+    en: 'Regime preset: civil-law empenho (BR / LatAm-like)'
+  source: INTERNATIONAL-PFM 4.1, 5.8
+placeholders: []
+ledgers:
+- id: BUDGET
+  kind: LIMIT
+  mode: AUTHORITATIVE
+  stages:
+  - APPROPRIATION
+  - QUOTA
+  - COMMITMENT
+  - VERIFICATION
+  - PAYMENT_ORDER
+  checks:
+    APPROPRIATION: HARD
+    QUOTA: HARD
+    COMMITMENT: HARD
+    VERIFICATION: HARD
+    PAYMENT_ORDER: HARD
+  availability:
+    type: ANNUAL
+    carryForwardCommitments: true
+  holdQueue: true
+yearEnd:
+  policy: CARRY_OVER_PAYABLES
+  payables:
+  - PROCESSED
+  - NOT_PROCESSED
+  ruleRef: Lei 4.320/1964 art. 36

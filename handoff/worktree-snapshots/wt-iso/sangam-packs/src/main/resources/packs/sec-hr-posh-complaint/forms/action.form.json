@@ -1,0 +1,27 @@
+{
+  "key": "sec-hr-posh-complaint/action",
+  "version": "1.0.0",
+  "pack": "sec.hr.posh-complaint",
+  "title": {
+    "en": "Employer acts on the report (60 days)",
+    "hi": "रिपोर्ट पर नियोक्ता की कार्रवाई (60 दिन)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "actionTaken",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Action taken report",
+        "hi": "की गई कार्रवाई की रिपोर्ट"
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+# files that differ from the main tree (changed) or exist only here (added)
+M TESTING-GAP-REGISTER.md
+M deploy/README.md
+M deploy/SUPPORT-MATRIX.md
+M sangam-config/src/main/java/org/sangam/config/api/ConfigConnector.java
+M sangam-onboarding/src/test/resources/acceptance/AT-1.json
+M sangam-packs/src/main/java/org/sangam/packs/core/ConnectorCallDelegate.java
+M sangam-packs/src/main/java/org/sangam/packs/core/Vars.java
+M sangam-packs/src/main/java/org/sangam/packs/sim/SimulatorConnectorGateway.java
+M sangam-packs/src/main/resources/packs/ifms-bill/pack.json
+M sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill.bpmn
+M sangam-packs/src/main/resources/packs/ifms-pao-chain/sangam-ifms-pao-chain.bpmn
+M sangam-packs/src/main/resources/packs/ifms-receipts/sangam-ifms-receipt.bpmn
+M sangam-packs/tools/packgen/gov_ifms.py
+M sangam-programme/src/main/java/org/sangam/programme/target/TargetService.java
+M sangam-server/src/main/java/org/sangam/server/config/SecurityConfig.java
+M sangam-server/src/test/java/org/sangam/server/acceptance/gov/E17bDomainIT.java
+M sangam-server/src/test/java/org/sangam/server/acceptance/plugandplay/PlugAndPlayIT.java
+M sangam-server/src/test/java/org/sangam/server/acceptance/resilience/T35RestoreIT.java
+M sangam-server/src/test/resources/acceptance/plugandplay/AT-1.json
+A sangam-config/src/test/java/org/sangam/config/api/BillConnectorContractTest.java
+A sangam-packs/src/test/java/org/sangam/packs/ConnectorInputRenameTest.java
+A sangam-server/src/main/java/org/sangam/server/web/ServerWebProblemHandler.java
+A sangam-server/src/test/java/org/sangam/server/web/ServerWebProblemHandlerTest.java

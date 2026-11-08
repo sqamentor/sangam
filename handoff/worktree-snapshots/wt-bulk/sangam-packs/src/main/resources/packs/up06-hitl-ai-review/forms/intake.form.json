@@ -1,0 +1,36 @@
+{
+  "key": "up06-hitl-ai-review/intake",
+  "version": "1.0.0",
+  "pack": "universal.up06-hitl-ai-review",
+  "title": {
+    "en": "Document intake",
+    "hi": "दस्तावेज़ प्राप्ति"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    }
+  ]
+}

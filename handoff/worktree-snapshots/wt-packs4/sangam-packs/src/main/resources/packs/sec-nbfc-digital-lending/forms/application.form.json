@@ -1,0 +1,74 @@
+{
+  "key": "sec-nbfc-digital-lending/application",
+  "version": "1.0.0",
+  "pack": "sec.nbfc.digital-lending",
+  "title": {
+    "en": "Digital loan application",
+    "hi": "डिजिटल ऋण आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "tenureDays",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Tenure (days)",
+        "hi": "अवधि (दिन)"
+      }
+    },
+    {
+      "id": "lspName",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Lending service provider",
+        "hi": "ऋण सेवा प्रदाता"
+      }
+    },
+    {
+      "id": "consentGiven",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Consent recorded",
+        "hi": "सहमति दर्ज"
+      }
+    },
+    {
+      "id": "dataConsentScope",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Data the borrower consented to share",
+        "hi": "उधारकर्ता द्वारा साझा करने हेतु सहमत डेटा"
+      }
+    }
+  ]
+}

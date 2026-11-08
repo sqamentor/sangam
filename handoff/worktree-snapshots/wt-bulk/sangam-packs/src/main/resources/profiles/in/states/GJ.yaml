@@ -1,0 +1,170 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: GJ
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Gujarat
+    hi: गुजरात
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources GJ1-GJ3, accessed 2026-11-04)
+placeholders:
+- path: integrations.snaSparsh.onboarded
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live'
+- path: classification.defaultScheme
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (no official
+    code structure found; Union layout used)'
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 7
+  sources: GJ1-GJ3
+locale:
+  languages:
+  - tag: gu
+    script: Gujr
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - accounts
+    - audit
+    note: accounts and audit outputs are usually English (IFMS-STATES 9.1)
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - IFMS (2009-10, 18 modules)
+  - Cyber Treasury
+  - IFMS-III (in development)
+  snaSparsh:
+    hosting: MODULE
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Accounts & Treasuries
+  unitTypes:
+    DISTRICT_TREASURY: 34
+    SUB_TREASURY: 111
+    PAO: 2
+    PENSION_TREASURY: 5
+    GST_TREASURY: 1
+  ddoCount: 5042
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: GFR_GJ_1971
+    title: Gujarat Financial Rules 1971
+  - id: GTR_2000
+    title: Gujarat Treasury Rules 2000
+  - id: GJ_BUDGET_MANUAL
+    title: Budget Manual 1983
+  - id: GJ_DFP_1998
+    title: Financial Powers (Delegation) Rules 1998
+  - id: GJ_PURCHASE_2002
+    title: Purchase manual 2002
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+acDc:
+  enabled: true
+  dcForm: Form-46
+  blockNewAcWhenOverdue: true
+works:
+  creditLimitMode: LETTER_OF_CREDIT
+  divisions:
+  - R&B
+  - IRRIGATION
+  - FOREST
+publicAccounts:
+  types:
+  - id: PD
+    controls:
+      noMinusBalance: true
+      inactivityClose: P3Y
+signatures:
+  dscMandatory: true
+pension:
+  payerClasses:
+  - STATE
+  - PANCHAYAT
+  - GIA_INSTITUTION
+  - FREEDOM_FIGHTER
+classification:
+  defaultScheme: HOA
+procurement:
+  family: RULES
+  rule: Gujarat Purchase Policy 2024 [U]
+  worksCode: '[U]'
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/GJ/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: GJ
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/GJ/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: GJ
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Gujarat Purchase Policy 2024 [U] (was: RPR 2022: DDO draws within a sanction;
+        no sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Gujarat Purchase Policy 2024 [U] (was: DFPR 2024 r.12(4) and department
+        re-delegation order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Gujarat Purchase Policy 2024 [U] (was: DFPR 2024 r.12(2) re-delegation to
+        HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Gujarat Purchase Policy 2024 [U] (was: DFPR 2024 r.11 (open / limited tender
+        up to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Gujarat Purchase Policy 2024 [U] (was: DFPR 2024 r.11: above the Secretary;
+        no upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Gujarat Purchase Policy 2024 [U] (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

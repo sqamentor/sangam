@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-eligibility/mse",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.eligibility",
+  "title": {
+    "en": "Medical screening examination and stabilisation (no payment inquiry first)",
+    "es": "Examen médico de detección y estabilización (sin consulta de pago previa)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "screeningNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Medical screening examination findings",
+        "es": "Resultados del examen médico de detección"
+      }
+    },
+    {
+      "id": "stabilised",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Emergency condition stabilised",
+        "es": "Condición de emergencia estabilizada"
+      }
+    }
+  ]
+}

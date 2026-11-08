@@ -1,0 +1,90 @@
+{
+  "key": "ifms-bill/advance",
+  "version": "1.0.0",
+  "pack": "gov.ifms.bill",
+  "title": {
+    "en": "Advance bill",
+    "hi": "अग्रिम बिल"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "billType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Bill type",
+        "hi": "बिल का प्रकार"
+      }
+    },
+    {
+      "id": "headOfAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Head of account",
+        "hi": "लेखा शीर्ष"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "payee",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "payeeAccount",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Payee bank account",
+        "hi": "आदाता का बैंक खाता"
+      }
+    },
+    {
+      "id": "sanctionRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Sanction reference",
+        "hi": "स्वीकृति संदर्भ"
+      }
+    },
+    {
+      "id": "ddoCode",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "DDO code",
+        "hi": "आहरण एवं संवितरण अधिकारी कोड"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

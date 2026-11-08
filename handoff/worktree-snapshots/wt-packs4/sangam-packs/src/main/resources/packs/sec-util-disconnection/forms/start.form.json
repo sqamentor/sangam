@@ -1,0 +1,47 @@
+{
+  "key": "sec-util-disconnection/start",
+  "version": "1.0.0",
+  "pack": "sec.util.disconnection",
+  "title": {
+    "en": "Overdue bill",
+    "hi": "अतिदेय बिल"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "consumerNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Consumer number",
+        "hi": "उपभोक्ता संख्या"
+      }
+    },
+    {
+      "id": "billAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Bill amount (INR)",
+        "hi": "बिल राशि (रुपये)"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "id": "sec.bank.loan-closure",
+  "version": "1.0.0",
+  "name": {
+    "en": "Loan closure and release of property documents",
+    "hi": "ऋण समापन एवं संपत्ति दस्तावेज़ों की वापसी"
+  },
+  "domain": "Banking",
+  "description": "On full repayment or settlement: closure check, NOC, original documents released and charges removed (CERSAI / ROC) within 30 days; compensation of Rs 5,000 per day of delay attributable to the lender, paid once by operationId; lost documents: certified copies at the lender's cost within a further 30 days (RBI, 13 September 2023).",
+  "mainProcesses": [
+    "sangam-sec-bank-loan-closure"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-loan-closure/sangam-sec-bank-loan-closure.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-loan-closure/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-loan-closure/forms/release.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-loan-closure/forms/duplicate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-loan-closure/forms/compensation.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-loan-closure/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-loan-closure/seed.json",
+  "connectors": [
+    {
+      "id": "lms.closureCheck",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Dues outstanding"
+    },
+    {
+      "id": "cersai.satisfy",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Satisfaction of charge"
+    },
+    {
+      "id": "docs.noc",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "No-dues certificate"
+    },
+    {
+      "id": "bank.credit",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Compensation credit"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-019",
+    "GP-06",
+    "GP-12",
+    "GP-53"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "compensationAmount"
+    ]
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "BROKER-DP",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "KYC-OFFICER",
+      "role": "KYC",
+      "office": "BROKER-DP",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "COMPLIANCE-OFFICER",
+      "name": {
+        "en": "KYC officer",
+        "hi": "केवाईसी अधिकारी"
+      }
+    },
+    {
+      "id": "COMPLIANCE-OFFICER",
+      "role": "COMPLIANCE",
+      "office": "BROKER-DP",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Compliance officer",
+        "hi": "अनुपालन अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "KYC-OFFICER",
+      "person": "cio.kyc-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "COMPLIANCE-OFFICER",
+      "person": "cio.compliance-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "KYC",
+      "name": {
+        "en": "KYC officer",
+        "hi": "केवाईसी अधिकारी"
+      }
+    },
+    {
+      "code": "COMPLIANCE",
+      "name": {
+        "en": "Compliance officer",
+        "hi": "अनुपालन अधिकारी"
+      }
+    }
+  ]
+}

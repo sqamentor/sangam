@@ -1,0 +1,65 @@
+{
+  "id": "universal.up05-four-eyes",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-05 Four-eyes / dual control",
+    "hi": "यूपी-05 चार-आँख / दोहरा नियंत्रण"
+  },
+  "domain": "Universal",
+  "description": "Maker submits a sensitive change (limit, master data, payment); a checker of sufficient authority approves; maker and checker differ by person and seat (no self-approval through delegation), the approval is bound to the payload hash, and the change is applied with an operationId.",
+  "mainProcesses": [
+    "sangam-up05-four-eyes"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up05-four-eyes/sangam-up05-four-eyes.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up05-four-eyes/up05-checker.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up05-four-eyes/forms/change.form.json"
+    }
+  ],
+  "seed": null,
+  "connectors": [
+    {
+      "id": "masterdata.apply",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Apply the change"
+    }
+  ],
+  "covers": [
+    "UP-05",
+    "R19",
+    "R43",
+    "VI.4",
+    "GP-01",
+    "GP-34",
+    "K4",
+    "K5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

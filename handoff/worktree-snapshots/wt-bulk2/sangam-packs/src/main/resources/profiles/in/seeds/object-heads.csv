@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
+OBJECT,object,,01,Salaries,reappGroup=OTHER_15CR;objectClass=1;salaries=true,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,02,Wages,reappGroup=OTHER_15CR;objectClass=1,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,03,Overtime Allowance,reappGroup=OTHER_15CR;objectClass=1,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,04,Pensionary Charges,reappGroup=OTHER_15CR;objectClass=1,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,05,Rewards,reappGroup=NONEST_5CR;objectClass=1,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,06,Medical Treatment,reappGroup=OTHER_15CR;objectClass=1,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,07,Allowances,reappGroup=OTHER_15CR;objectClass=1;allowances=true,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,08,Leave Travel Concession,reappGroup=NONEST_5CR;objectClass=1,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,09,Training Expenses,reappGroup=NONEST_5CR;objectClass=1,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,11,Domestic Travel Expenses,reappGroup=EST_2CR;objectClass=2,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,12,Foreign Travel Expenses,reappGroup=EST_2CR;objectClass=2,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,13,Office Expenses,reappGroup=EST_2CR;objectClass=2,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,14,"Rents, Rates and Taxes",reappGroup=OTHER_15CR;objectClass=2,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,16,Publications,reappGroup=OTHER_15CR;objectClass=2,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,20,Other Administrative Expenses,reappGroup=OTHER_15CR;objectClass=2,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,21,Supplies and Materials,reappGroup=NONEST_5CR;objectClass=3,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,22,Arms and Ammunition,reappGroup=OTHER_15CR;objectClass=3,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,23,Cost of Ration,reappGroup=NONEST_5CR;objectClass=3,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,24,Fuel and Lubricants,reappGroup=NONEST_5CR;objectClass=3,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,25,Clothing and Tentage,reappGroup=OTHER_15CR;objectClass=3,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,26,Advertising and Publicity,reappGroup=OTHER_15CR;objectClass=2,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,27,Minor Works,reappGroup=NONEST_5CR;objectClass=3,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,28,Professional Services,reappGroup=NONEST_5CR;objectClass=2,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,29,Repair and Maintenance,reappGroup=NONEST_5CR;objectClass=3,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,31,Grants-in-aid - General,reappGroup=OTHER_15CR;objectClass=4,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,32,Contributions,reappGroup=OTHER_15CR;objectClass=4,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,33,Subsidies,reappGroup=OTHER_15CR;objectClass=4,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,34,Scholarships and Stipends,reappGroup=OTHER_15CR;objectClass=4,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,35,Grants for Creation of Capital Assets,reappGroup=OTHER_15CR;objectClass=4;igas2CapitalGrant=true,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,36,Grants-in-aid - Salaries,reappGroup=OTHER_15CR;objectClass=4,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,41,Secret Service Expenditure,reappGroup=OTHER_15CR;objectClass=5;secretService=true,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,42,Lumpsum Provision,reappGroup=OTHER_15CR;objectClass=5,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,44,Loss in Exchange,reappGroup=NONEST_5CR;objectClass=5,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,45,Interest,reappGroup=OTHER_15CR;objectClass=5,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,49,Other Charges,reappGroup=OTHER_15CR;objectClass=5,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,50,Other Revenue Expenditure,reappGroup=EST_2CR;objectClass=5,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,51,Motor Vehicles,reappGroup=OTHER_15CR;objectClass=6;fixedAsset=true,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,52,Machinery and Equipment,reappGroup=OTHER_15CR;objectClass=6;fixedAsset=true,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,53,Major Works,reappGroup=OTHER_15CR;objectClass=6;buildings=true,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,54,Investments,reappGroup=OTHER_15CR;objectClass=7,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,55,Loans and Advances,reappGroup=OTHER_15CR;objectClass=7,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,60,Other Capital Expenditure,reappGroup=OTHER_15CR;objectClass=6,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,61,Depreciation,reappGroup=OTHER_15CR;objectClass=8,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,63,Inter-Account Transfers,reappGroup=OTHER_15CR;objectClass=8,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U
+OBJECT,object,,70,Deduct Recoveries,reappGroup=OTHER_15CR;objectClass=8,,2027-04-01,DFPR 2024 Annexure I (pre-2027 list; names/codes to verify),U

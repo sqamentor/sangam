@@ -1,0 +1,71 @@
+{
+  "id": "sec.util.disconnection",
+  "version": "1.0.0",
+  "name": {
+    "en": "Disconnection for non-payment and reconnection",
+    "hi": "भुगतान न होने पर विच्छेदन एवं पुनर्संयोजन"
+  },
+  "domain": "Utilities",
+  "description": "Electricity Act s.56: written notice of not less than 15 clear days before disconnecting; no disconnection while a disputed amount under appeal is deposited as provided; disconnection, then reconnection within the standard of performance after payment.",
+  "mainProcesses": [
+    "sangam-sec-util-disconnection"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-util-disconnection/sangam-sec-util-disconnection.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-util-disconnection/sec-util-reconnect.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-disconnection/forms/start.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-disconnection/forms/disconnect.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-disconnection/forms/reconnect.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-util-disconnection/seed.json"
+    }
+  ],
+  "seed": "packs/sec-util-disconnection/seed.json",
+  "connectors": [
+    {
+      "id": "docs.notice",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Disconnection notice"
+    },
+    {
+      "id": "field.disconnect",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Disconnect"
+    },
+    {
+      "id": "field.reconnect",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Reconnect"
+    }
+  ],
+  "covers": [
+    "SEC-UTIL-005",
+    "GP-06",
+    "GP-46"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

@@ -1,0 +1,56 @@
+{
+  "key": "work-order/award",
+  "version": "1.0.0",
+  "pack": "gov.work-order",
+  "title": {
+    "en": "Issue letter of acceptance",
+    "hi": "स्वीकृति पत्र जारी करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "workName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Name of work",
+        "hi": "कार्य का नाम"
+      }
+    },
+    {
+      "id": "contractorId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Contractor",
+        "hi": "ठेकेदार"
+      }
+    },
+    {
+      "id": "contractValue",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Contract value (INR)",
+        "hi": "अनुबंध मूल्य (रुपये)"
+      }
+    },
+    {
+      "id": "completionDueAt",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Stipulated date of completion",
+        "hi": "निर्धारित पूर्णता तिथि"
+      }
+    }
+  ]
+}

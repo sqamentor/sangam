@@ -1,0 +1,40 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sangam.fullname" . }}-server
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+  {{- with .Values.server.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.server.service.type }}
+  selector:
+    {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.server.service.port }}
+      targetPort: http
+      protocol: TCP
+---
+# Management port (health, Prometheus) on its own ClusterIP service: never exposed through the ingress.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sangam.fullname" . }}-server-management
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+    sangam.io/metrics: "true"
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 4 }}
+  ports:
+    - name: management
+      port: {{ .Values.server.service.managementPort }}
+      targetPort: management
+      protocol: TCP

@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "DIV-CM",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "EE-CM",
+      "role": "EE",
+      "office": "DIV-CM",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SE-CM",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "id": "SE-CM",
+      "role": "SE",
+      "office": "DIV-CM",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CE-CM",
+      "name": {
+        "en": "Superintending Engineer",
+        "hi": "अधीक्षण अभियंता"
+      }
+    },
+    {
+      "id": "CE-CM",
+      "role": "CE",
+      "office": "DIV-CM",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Chief Engineer",
+        "hi": "मुख्य अभियंता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "EE-CM",
+      "person": "cm.ee-cm",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SE-CM",
+      "person": "cm.se-cm",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CE-CM",
+      "person": "cm.ce-cm",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "EE",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "code": "SE",
+      "name": {
+        "en": "Superintending Engineer",
+        "hi": "अधीक्षण अभियंता"
+      }
+    },
+    {
+      "code": "CE",
+      "name": {
+        "en": "Chief Engineer",
+        "hi": "मुख्य अभियंता"
+      }
+    }
+  ]
+}

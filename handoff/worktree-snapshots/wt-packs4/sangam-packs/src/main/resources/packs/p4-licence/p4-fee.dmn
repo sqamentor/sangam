@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_p4_fee" name="P4 licence fee" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- SYNTHETIC fee table; fee x years is applied by the gateway mandate in the pilot. -->
+  <decision id="p4-fee" name="P4 licence fee" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="p4-fee_t" hitPolicy="FIRST">
+      <input id="p4-fee_i0" label="Licence type"><inputExpression id="p4-fee_ie0" typeRef="string"><text>licenceType</text></inputExpression></input>
+      <input id="p4-fee_i1" label="Area (sq m)"><inputExpression id="p4-fee_ie1" typeRef="number"><text>premisesArea</text></inputExpression></input>
+      <input id="p4-fee_i2" label="Years"><inputExpression id="p4-fee_ie2" typeRef="integer"><text>durationYears</text></inputExpression></input>
+      <output id="p4-fee_o0" label="Fee (INR)" name="fee" typeRef="number"/>
+      <rule id="p4-fee_r0"><description>small shop</description>
+        <inputEntry id="p4-fee_r0_i0"><text>"TRADE"</text></inputEntry>
+        <inputEntry id="p4-fee_r0_i1"><text>&lt;= 50</text></inputEntry>
+        <inputEntry id="p4-fee_r0_i2"><text>-</text></inputEntry>
+        <outputEntry id="p4-fee_r0_o0"><text>200000</text></outputEntry>
+      </rule>
+      <rule id="p4-fee_r1">
+        <inputEntry id="p4-fee_r1_i0"><text>"TRADE"</text></inputEntry>
+        <inputEntry id="p4-fee_r1_i1"><text>&lt;= 200</text></inputEntry>
+        <inputEntry id="p4-fee_r1_i2"><text>-</text></inputEntry>
+        <outputEntry id="p4-fee_r1_o0"><text>500000</text></outputEntry>
+      </rule>
+      <rule id="p4-fee_r2">
+        <inputEntry id="p4-fee_r2_i0"><text>"TRADE"</text></inputEntry>
+        <inputEntry id="p4-fee_r2_i1"><text>&gt; 200</text></inputEntry>
+        <inputEntry id="p4-fee_r2_i2"><text>-</text></inputEntry>
+        <outputEntry id="p4-fee_r2_o0"><text>1000000</text></outputEntry>
+      </rule>
+      <rule id="p4-fee_r3">
+        <inputEntry id="p4-fee_r3_i0"><text>"FOOD"</text></inputEntry>
+        <inputEntry id="p4-fee_r3_i1"><text>-</text></inputEntry>
+        <inputEntry id="p4-fee_r3_i2"><text>-</text></inputEntry>
+        <outputEntry id="p4-fee_r3_o0"><text>750000</text></outputEntry>
+      </rule>
+      <rule id="p4-fee_r4">
+        <inputEntry id="p4-fee_r4_i0"><text>"FACTORY"</text></inputEntry>
+        <inputEntry id="p4-fee_r4_i1"><text>-</text></inputEntry>
+        <inputEntry id="p4-fee_r4_i2"><text>-</text></inputEntry>
+        <outputEntry id="p4-fee_r4_o0"><text>2500000</text></outputEntry>
+      </rule>
+      <rule id="p4-fee_r5"><description>default</description>
+        <inputEntry id="p4-fee_r5_i0"><text>-</text></inputEntry>
+        <inputEntry id="p4-fee_r5_i1"><text>-</text></inputEntry>
+        <inputEntry id="p4-fee_r5_i2"><text>-</text></inputEntry>
+        <outputEntry id="p4-fee_r5_o0"><text>300000</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

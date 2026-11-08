@@ -1,0 +1,54 @@
+{
+  "key": "sec-health-pharmacy-dispense/review",
+  "version": "1.0.0",
+  "pack": "sec.health.pharmacy-dispense",
+  "title": {
+    "en": "Pharmacist review",
+    "hi": "फार्मासिस्ट समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "rxDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "dispense",
+        "label": {
+          "en": "Dispense",
+          "hi": "वितरित करें"
+        }
+      },
+      {
+        "value": "clarify",
+        "label": {
+          "en": "Seek clarification",
+          "hi": "स्पष्टीकरण मांगें"
+        }
+      },
+      {
+        "value": "refuse",
+        "label": {
+          "en": "Refuse",
+          "hi": "मना करें"
+        }
+      }
+    ]
+  }
+}

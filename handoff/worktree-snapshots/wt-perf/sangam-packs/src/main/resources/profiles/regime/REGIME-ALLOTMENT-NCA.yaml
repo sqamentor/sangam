@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: REGIME-ALLOTMENT-NCA
+  layer: regime
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL-PFM
+  name:
+    en: 'Regime preset: allotment with separate cash ceiling (PH-like)'
+  source: INTERNATIONAL-PFM 4.1, 5.8
+placeholders: []
+ledgers:
+- id: BUDGET
+  kind: LIMIT
+  mode: AUTHORITATIVE
+  stages:
+  - APPROPRIATION
+  - ALLOTMENT
+  - CASH_ALLOCATION
+  - OBLIGATION
+  - DISBURSEMENT
+  checks:
+    APPROPRIATION: HARD
+    ALLOTMENT: HARD
+    CASH_ALLOCATION: HARD
+    OBLIGATION: HARD
+    DISBURSEMENT: HARD
+  availability:
+    type: MULTI_YEAR
+    years: 2
+    carryForwardCommitments: true
+  holdQueue: true
+yearEnd:
+  policy: PER_APPROPRIATION_VALIDITY

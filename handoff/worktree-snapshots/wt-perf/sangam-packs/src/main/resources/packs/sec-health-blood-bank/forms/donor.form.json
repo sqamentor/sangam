@@ -1,0 +1,54 @@
+{
+  "key": "sec-health-blood-bank/donor",
+  "version": "1.0.0",
+  "pack": "sec.health.blood-bank",
+  "title": {
+    "en": "Blood donor registration",
+    "hi": "रक्तदाता पंजीकरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "donorName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Donor name",
+        "hi": "दाता का नाम"
+      }
+    },
+    {
+      "id": "bloodGroup",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Blood group",
+        "hi": "रक्त समूह"
+      }
+    },
+    {
+      "id": "age",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Age",
+        "hi": "आयु"
+      }
+    },
+    {
+      "id": "haemoglobin",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Haemoglobin (g/dL)",
+        "hi": "हीमोग्लोबिन (ग्रा/डेसीली)"
+      }
+    }
+  ]
+}

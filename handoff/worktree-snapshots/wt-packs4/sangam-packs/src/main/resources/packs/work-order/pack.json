@@ -1,0 +1,72 @@
+{
+  "id": "gov.work-order",
+  "version": "1.0.0",
+  "name": {
+    "en": "Work order / letter of acceptance",
+    "hi": "कार्यादेश / स्वीकृति पत्र"
+  },
+  "domain": "Works / WAMS",
+  "description": "Letter of acceptance, acceptance by the contractor within the window (else EMD forfeited), performance security as a linked instrument case, agreement signing, site handover and the work order.",
+  "mainProcesses": [
+    "sangam-work-order"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/work-order/sangam-work-order.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/work-order/forms/award.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/work-order/forms/agreement.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/work-order/forms/site-handover.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/work-order/seed.json"
+    }
+  ],
+  "seed": "packs/work-order/seed.json",
+  "connectors": [
+    {
+      "id": "emd.forfeit",
+      "capabilityClass": "c",
+      "govTag": "G-PG",
+      "purpose": "EMD forfeiture"
+    },
+    {
+      "id": "esign.sign",
+      "capabilityClass": "b",
+      "govTag": "G-SIGN",
+      "purpose": "Agreement"
+    }
+  ],
+  "covers": [
+    "D-WORKS",
+    "GP-41",
+    "GP-15",
+    "GP-34",
+    "GP-53"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "gov.security-instrument"
+  ],
+  "tenantOverrides": [],
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "contractValue"
+    ]
+  }
+}

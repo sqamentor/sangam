@@ -1,0 +1,47 @@
+{
+  "key": "sec-mfg-batch-release/qa",
+  "version": "1.0.0",
+  "pack": "sec.mfg.batch-release",
+  "title": {
+    "en": "QA review and release decision",
+    "hi": "क्यूए समीक्षा एवं निर्गमन निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "releaseDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "release",
+        "label": {
+          "en": "Release",
+          "hi": "मुक्त करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,173 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: WB
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: West Bengal
+    hi: पश्चिम बंगाल
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources WB1-WB3, accessed 2026-11-04)
+placeholders:
+- path: classification.defaultScheme
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (no official
+    code structure found; Union layout used)'
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 8
+  sources: WB1-WB3
+locale:
+  languages:
+  - tag: bn
+    script: Beng
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: ne
+    script: Deva
+    scope: districts
+    docClass:
+    - statutory
+    districts:
+    - Darjeeling
+    - Kurseong
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - accounts
+    - audit
+    note: accounts and audit outputs are usually English (IFMS-STATES 9.1)
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - WBIFMS (2014)
+  - e-Bantan
+  - e-Billing
+  - e-Pradan
+  - GRIPS 2.0
+  - HRMS
+  - AAFS
+  - SBMS
+  - WBJIT
+  snaSparsh:
+    hosting: VIRTUAL_LIMIT
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Treasuries & Accounts
+  unitTypes:
+    DISTRICT_TREASURY: 85
+    PAO: 4
+    CYBER_TREASURY_RECEIPTS: 2
+    PENSION_TREASURY: 1
+  ddoCount: null
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+  cyberTreasuryII:
+    code: CAH
+    from: '2025-09-11'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: WBTR_2005
+    title: WB Treasury Rules 2005
+  - id: WBFR
+    title: WB Financial Rules
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+accounts:
+  monthlyDueDay: 5
+budget:
+  oneDepartmentOneDemand: true
+tags:
+- GENDER
+- CHILD
+receipts:
+  portal: GRIPS
+  multiCredit: true
+  pos: true
+sanctionObject: AAFS
+dbtWindows: MONTHLY
+subStateEntities:
+- id: GTA
+  type: HILL_COUNCIL
+  via: HOME_AND_HILL_AFFAIRS
+softVouchers: true
+classification:
+  defaultScheme: HOA
+procurement:
+  family: RULES
+  rule: WB Financial Rules Vol I
+  worksCode: WB PWD Code + WBWD Manual
+  gemMandatoryFrom: '2026-09-01'
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/WB/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: WB
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/WB/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: WB
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from WB Financial Rules Vol I (was: RPR 2022: DDO draws within a sanction; no
+        sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from WB Financial Rules Vol I (was: DFPR 2024 r.12(4) and department re-delegation
+        order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from WB Financial Rules Vol I (was: DFPR 2024 r.12(2) re-delegation to HoD [U
+        value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from WB Financial Rules Vol I (was: DFPR 2024 r.11 (open / limited tender up
+        to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from WB Financial Rules Vol I (was: DFPR 2024 r.11: above the Secretary; no upper
+        limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from WB Financial Rules Vol I (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

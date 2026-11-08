@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-prior-auth/appeal-outcome",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.prior-auth",
+  "title": {
+    "en": "Record appeal outcome (external review if upheld)",
+    "es": "Registrar el resultado de la apelación (revisión externa si se confirma)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "appealOutcome",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Appeal outcome",
+        "es": "Resultado de la apelación"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Rendered by envsubst into /etc/nginx/conf.d/security-headers.inc (not *.conf, so not auto-included).
+# Included in every location that sets its own add_header (nginx does not inherit add_header then).
+add_header X-Content-Type-Options    "nosniff" always;
+add_header X-Frame-Options           "DENY" always;
+add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy        "camera=(), microphone=(), geolocation=(), payment=()" always;
+add_header Cross-Origin-Opener-Policy "same-origin" always;
+# 'unsafe-inline' for styles only: bpmn-js / dmn-js inject inline styles. connect-src must reach the OIDC issuer.
+add_header Content-Security-Policy   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${SANGAM_OIDC_ISSUER} ${SANGAM_CSP_CONNECT_EXTRA}; frame-src 'self' ${SANGAM_OIDC_ISSUER}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' ${SANGAM_OIDC_ISSUER}; object-src 'none'" always;

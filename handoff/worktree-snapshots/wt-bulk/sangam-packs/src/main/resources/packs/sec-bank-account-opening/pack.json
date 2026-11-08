@@ -1,0 +1,154 @@
+{
+  "id": "sec.bank.account-opening",
+  "version": "1.0.0",
+  "name": {
+    "en": "Account opening with KYC, V-CIP and CKYCR",
+    "hi": "केवाईसी, वी-सीआईपी एवं सीकेवाईसीआर सहित खाता खोलना"
+  },
+  "domain": "Banking",
+  "description": "Customer due diligence under the RBI KYC Master Direction: consent, CKYCR search and download, PAN verification, Aadhaar OTP e-KYC or V-CIP by an official with liveness and geo-tag, screening against the UNSC / UAPA lists and PEP, risk categorisation (re-KYC cycle 2 / 8 / 10 years), EDD for high risk, maker-checker account opening in the CBS with operationId, CKYCR upload, welcome kit.",
+  "mainProcesses": [
+    "sangam-sec-bank-account-opening"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-account-opening/sangam-sec-bank-account-opening.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-account-opening/sec-bank-kyc-risk.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-account-opening/sec-bank-ao-checker.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-account-opening/sec-bank-ao-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-account-opening/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-account-opening/forms/correct.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-account-opening/forms/vcip.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-account-opening/forms/screening.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-account-opening/forms/edd.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-account-opening/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-account-opening/seed.json",
+  "connectors": [
+    {
+      "id": "ckycr.search",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "CKYCR search (CERSAI)"
+    },
+    {
+      "id": "ckycr.download",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "CKYCR download"
+    },
+    {
+      "id": "pan.verify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "PAN verification (ITD / Protean)"
+    },
+    {
+      "id": "uidai.ekyc",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Aadhaar OTP e-KYC (AUA / KUA)"
+    },
+    {
+      "id": "sanctions.screen",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "UNSC / UAPA / PEP screening"
+    },
+    {
+      "id": "cbs.accountOpen",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Core banking: open account (core execution)"
+    },
+    {
+      "id": "ckycr.upload",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "CKYCR upload of the KYC record"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-001",
+    "SEC-BANK-002",
+    "SEC-BANK-003",
+    "SEC-BANK-004",
+    "SEC-BANK-005",
+    "SEC-BANK-006",
+    "UP-05",
+    "UP-22",
+    "GP-01",
+    "GP-16",
+    "GP-34",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [
+    {
+      "id": "SEC-BANK-AO-1",
+      "title": "V-CIP dropped call is rescheduled, not failed",
+      "refs": [
+        "SEC-BANK-002"
+      ],
+      "given": "kycMode = VCIP",
+      "when": "the official records reschedule, then pass",
+      "then": "a second V-CIP task; account opened",
+      "startVariables": {},
+      "expectState": null
+    },
+    {
+      "id": "SEC-BANK-AO-2",
+      "title": "Screening true match never opens the account",
+      "refs": [
+        "SEC-BANK-005"
+      ],
+      "given": "sim_sanctions_screen = hit=true",
+      "when": "compliance records reject",
+      "then": "rejection with SANCTIONS_MATCH",
+      "startVariables": {
+        "sim_sanctions_screen": "hit=true"
+      },
+      "expectState": null
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

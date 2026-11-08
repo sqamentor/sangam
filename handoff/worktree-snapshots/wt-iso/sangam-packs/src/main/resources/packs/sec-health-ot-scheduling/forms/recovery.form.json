@@ -1,0 +1,27 @@
+{
+  "key": "sec-health-ot-scheduling/recovery",
+  "version": "1.0.0",
+  "pack": "sec.health.ot-scheduling",
+  "title": {
+    "en": "Post-operative recovery and handover",
+    "hi": "शल्योपरांत रिकवरी एवं हस्तांतरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "clinicalNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Clinical notes",
+        "hi": "नैदानिक टिप्पणियाँ"
+      }
+    }
+  ]
+}

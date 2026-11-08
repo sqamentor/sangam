@@ -1,0 +1,45 @@
+{
+  "key": "inspection/case",
+  "version": "1.0.0",
+  "pack": "gov.inspection",
+  "title": {
+    "en": "Inspection case",
+    "hi": "निरीक्षण प्रकरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "premisesId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Establishment",
+        "hi": "प्रतिष्ठान"
+      }
+    },
+    {
+      "id": "riskScore",
+      "type": "integer",
+      "required": false,
+      "label": {
+        "en": "Risk score",
+        "hi": "जोखिम अंक"
+      }
+    },
+    {
+      "id": "district",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "District",
+        "hi": "ज़िला"
+      }
+    }
+  ]
+}

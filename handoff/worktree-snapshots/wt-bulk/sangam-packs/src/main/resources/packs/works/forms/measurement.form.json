@@ -1,0 +1,54 @@
+{
+  "key": "works/measurement",
+  "version": "1.0.0",
+  "pack": "gov.works",
+  "title": {
+    "en": "Record measurements in MB",
+    "hi": "माप पुस्तिका में माप दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "mbNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Measurement book number",
+        "hi": "माप पुस्तिका संख्या"
+      }
+    },
+    {
+      "id": "measuredValue",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Value of work measured this period (INR)",
+        "hi": "इस अवधि में मापे गए कार्य का मूल्य (रुपये)"
+      }
+    },
+    {
+      "id": "finalBill",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "This is the final bill",
+        "hi": "यह अंतिम बिल है"
+      }
+    },
+    {
+      "id": "physicalReceived",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Physical item received",
+        "hi": "भौतिक वस्तु प्राप्त हुई"
+      }
+    }
+  ]
+}

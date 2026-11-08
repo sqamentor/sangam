@@ -1,0 +1,45 @@
+{
+  "key": "sec-ushealth-baa/terms",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.baa",
+  "title": {
+    "en": "Check the required BAA terms and flow-down",
+    "es": "Verificar los términos obligatorios"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "baaTerms",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Required BAA terms present (164.504(e))",
+        "es": "Términos obligatorios del BAA presentes (164.504(e))"
+      }
+    },
+    {
+      "id": "subcontractors",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Subcontractors with flow-down BAAs",
+        "es": "Subcontratistas con BAA derivados"
+      }
+    },
+    {
+      "id": "baaTermEnd",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "BAA end date",
+        "es": "Fecha de fin del BAA"
+      }
+    }
+  ]
+}

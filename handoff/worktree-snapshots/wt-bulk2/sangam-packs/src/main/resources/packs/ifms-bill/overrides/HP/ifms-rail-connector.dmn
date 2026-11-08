@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_rail_connector" name="Payment rail to connector (Himachal Pradesh)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="ifms-rail-connector" name="Payment rail to connector (Himachal Pradesh)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-rail-connector_t" hitPolicy="FIRST">
+      <input id="ifms-rail-connector_i0" label="Payment rail"><inputExpression id="ifms-rail-connector_ie0" typeRef="string"><text>docPaymentRail</text></inputExpression></input>
+      <output id="ifms-rail-connector_o0" label="Execution connector" name="executionConnector" typeRef="string"/>
+      <rule id="ifms-rail-connector_r0"><description>cheque-drawing divisions</description>
+        <inputEntry id="ifms-rail-connector_r0_i0"><text>"LETTER_OF_CREDIT"</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r0_o0"><text>"rail.loc"</text></outputEntry>
+      </rule>
+      <rule id="ifms-rail-connector_r1"><description>cheque-drawing DDOs (IFS-HP-003)</description>
+        <inputEntry id="ifms-rail-connector_r1_i0"><text>"TREASURY_CHEQUE"</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r1_o0"><text>"rail.cheque"</text></outputEntry>
+      </rule>
+      <rule id="ifms-rail-connector_r2"><description>RBI e-payments (IFMS-RESEARCH-DELTA: all states except Sikkim)</description>
+        <inputEntry id="ifms-rail-connector_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r2_o0"><text>"rail.ekuber"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

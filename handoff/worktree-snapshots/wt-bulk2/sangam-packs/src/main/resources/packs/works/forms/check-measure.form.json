@@ -1,0 +1,56 @@
+{
+  "key": "works/check-measure",
+  "version": "1.0.0",
+  "pack": "gov.works",
+  "title": {
+    "en": "Check-measure",
+    "hi": "जाँच-माप"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "checkMeasured",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Check-measured by the higher officer",
+        "hi": "उच्च अधिकारी द्वारा जाँच-माप किया गया"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "cmDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

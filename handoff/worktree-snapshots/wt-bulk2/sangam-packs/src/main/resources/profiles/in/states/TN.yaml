@@ -1,0 +1,256 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: TN
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Tamil Nadu
+    hi: तमिलनाडु
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources TN1-TN3, accessed 2026-11-04)
+placeholders:
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 7
+  sources: TN1-TN3
+locale:
+  languages:
+  - tag: ta
+    script: Taml
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+    note: additional
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - IFHRMS Kalanjiyam
+  - Global Beneficiary Master
+  - Work ID
+  - OPPAS
+  snaSparsh:
+    hosting: MODULE
+    sls: 50
+  ekuber: true
+orgTopology:
+  directorate: Commissioner of Treasuries & Accounts
+  unitTypes:
+    DISTRICT_TREASURY: 32
+    SUB_TREASURY: 243
+    PAO: 9
+    PENSION_TREASURY: 1
+  ddoCount: 22037
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: TNTT
+    title: TN Transparency in Tenders Act 1998 / Rules 2000
+  - id: TN_TREASURY_CODE_I_7
+    title: TN Treasury Code Vol I 7th edn
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+payee:
+  globalBeneficiaryMaster: true
+receipts:
+  channelThresholds:
+  - atOrAbove: 1CR
+    channel: RBI_NEFT_RTGS
+budgetControl:
+  quarterlyCaps: true
+works:
+  workIdOnAs: true
+tags:
+- SC_COMPONENT
+- ST_COMPONENT
+- GENDER
+pension:
+  lifeProof:
+  - FACE_AUTH
+  window: P12M
+autoTdsFrom: '2025-04-01'
+bulkBills:
+  maxLines: 1000000
+utilityFetch:
+- TNPDCL
+classification:
+  schemes:
+  - id: HOA_TN
+    separator: '-'
+    segments:
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: subHead
+      width: 2
+      pattern: '[A-Z0-9]{2}'
+    - id: group
+      width: 1
+    - id: detailed
+      width: 2
+    - id: subDetailed
+      width: 2
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: 2011 02 101 AA 30101 (group 3 rev / 4 cap / 8 PA; SDH 51-99 charged)
+    evidence: V
+    source: TN FD d01 2020
+  defaultScheme: HOA_TN
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+procurement:
+  family: ACT
+  rule: TNTT Act 1998 / Rules 2000 (2024 amendments)
+  worksCode: TN PWD Code
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/TN/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: TN
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/TN/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: TN
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from TNTT Act 1998 / Rules 2000 (2024 amendments) (was: RPR 2022: DDO draws within
+        a sanction; no sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from TNTT Act 1998 / Rules 2000 (2024 amendments) (was: DFPR 2024 r.12(4) and
+        department re-delegation order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from TNTT Act 1998 / Rules 2000 (2024 amendments) (was: DFPR 2024 r.12(2) re-delegation
+        to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from TNTT Act 1998 / Rules 2000 (2024 amendments) (was: DFPR 2024 r.11 (open
+        / limited tender up to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from TNTT Act 1998 / Rules 2000 (2024 amendments) (was: DFPR 2024 r.11: above
+        the Secretary; no upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from TNTT Act 1998 / Rules 2000 (2024 amendments) (was: advice / concurrence
+        only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

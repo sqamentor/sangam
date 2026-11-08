@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_ots_authority" name="Settlement / restructuring authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- SYNTHETIC bands; replace with the board policy. -->
+  <decision id="sec-bank-ots-authority" name="Settlement / restructuring authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-bank-ots-authority_t" hitPolicy="FIRST">
+      <input id="sec-bank-ots-authority_i0" label="Amount (INR)"><inputExpression id="sec-bank-ots-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="sec-bank-ots-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="sec-bank-ots-authority_r0">
+        <inputEntry id="sec-bank-ots-authority_r0_i0"><text>&lt;= 1000000</text></inputEntry>
+        <outputEntry id="sec-bank-ots-authority_r0_o0"><text>"BRANCHMGR"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-ots-authority_r1">
+        <inputEntry id="sec-bank-ots-authority_r1_i0"><text>&lt;= 100000000</text></inputEntry>
+        <outputEntry id="sec-bank-ots-authority_r1_o0"><text>"ZONALCREDIT"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-ots-authority_r2"><description>board committee</description>
+        <inputEntry id="sec-bank-ots-authority_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-ots-authority_r2_o0"><text>"CREDITHEAD"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

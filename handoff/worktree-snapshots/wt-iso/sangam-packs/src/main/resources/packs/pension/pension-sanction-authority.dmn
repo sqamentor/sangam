@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_pension_sanction_authority" name="Pension sanction authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="pension-sanction-authority" name="Pension sanction authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="pension-sanction-authority_t" hitPolicy="FIRST">
+      <input id="pension-sanction-authority_i0" label="Amount"><inputExpression id="pension-sanction-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="pension-sanction-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="pension-sanction-authority_r0"><description>Head of Office</description>
+        <inputEntry id="pension-sanction-authority_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="pension-sanction-authority_r0_o0"><text>"HOO"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

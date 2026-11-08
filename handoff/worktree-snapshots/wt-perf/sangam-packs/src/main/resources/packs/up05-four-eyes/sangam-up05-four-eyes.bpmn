@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-05 Dual-control change. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up05_four_eyes" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <error id="err_APPROVAL_INVALIDATED" name="APPROVAL_INVALIDATED" errorCode="APPROVAL_INVALIDATED"/>
+  <process id="sangam-up05-four-eyes" name="UP-05 Dual-control change" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up05-four-eyes</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>subject,amount,description</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u5_start" name="Change proposed (maker)" operaton:initiator="initiator" operaton:formKey="sangam:up05-four-eyes/change"></startEvent>
+    <serviceTask id="u5_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=DUAL_CONTROL;routingDecisionKey=up05-checker;executionConnector=masterdata.apply;executionStep=apply;reconcileRequired=false;issueOutput=false;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="u5_check" name="Checker approval (core sanction, SoD, binding)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="u5_apply" name="Apply (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="u5_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="u5_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="u5_gw" name="sanctionOutcome?" default="up05_four_eyes_f5"></exclusiveGateway>
+    <callActivity id="u5_close" name="Close (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="u5_end" name="Applied"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="u5_inv" name="Changed after approval" attachedToRef="u5_apply" cancelActivity="true"><errorEventDefinition errorRef="err_APPROVAL_INVALIDATED"/></boundaryEvent>
+    <sequenceFlow id="up05_four_eyes_f1" sourceRef="u5_start" targetRef="u5_defaults"/>
+    <sequenceFlow id="up05_four_eyes_f2" sourceRef="u5_defaults" targetRef="u5_check"/>
+    <sequenceFlow id="up05_four_eyes_f3" sourceRef="u5_rj_reject" targetRef="u5_rj_endRejected"/>
+    <sequenceFlow id="up05_four_eyes_f4" name="SANCTIONED" sourceRef="u5_gw" targetRef="u5_apply"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up05_four_eyes_f5" name="otherwise" sourceRef="u5_gw" targetRef="u5_rj_reject"/>
+    <sequenceFlow id="up05_four_eyes_f6" sourceRef="u5_check" targetRef="u5_gw"/>
+    <sequenceFlow id="up05_four_eyes_f7" sourceRef="u5_inv" targetRef="u5_check"/>
+    <sequenceFlow id="up05_four_eyes_f8" sourceRef="u5_apply" targetRef="u5_close"/>
+    <sequenceFlow id="up05_four_eyes_f9" sourceRef="u5_close" targetRef="u5_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up05_four_eyes_diagram">
+    <bpmndi:BPMNPlane id="up05_four_eyes_plane" bpmnElement="sangam-up05-four-eyes">
+      <bpmndi:BPMNShape id="u5_start_di" bpmnElement="u5_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_defaults_di" bpmnElement="u5_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_check_di" bpmnElement="u5_check"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_apply_di" bpmnElement="u5_apply"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_rj_reject_di" bpmnElement="u5_rj_reject"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_rj_endRejected_di" bpmnElement="u5_rj_endRejected"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_gw_di" bpmnElement="u5_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_close_di" bpmnElement="u5_close"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_end_di" bpmnElement="u5_end"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u5_inv_di" bpmnElement="u5_inv"><dc:Bounds x="688" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f1_di" bpmnElement="up05_four_eyes_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f2_di" bpmnElement="up05_four_eyes_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f3_di" bpmnElement="up05_four_eyes_f3"><di:waypoint x="780" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f4_di" bpmnElement="up05_four_eyes_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f5_di" bpmnElement="up05_four_eyes_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f6_di" bpmnElement="up05_four_eyes_f6"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f7_di" bpmnElement="up05_four_eyes_f7"><di:waypoint x="706" y="253"/><di:waypoint x="706" y="285"/><di:waypoint x="400" y="285"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f8_di" bpmnElement="up05_four_eyes_f8"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up05_four_eyes_f9_di" bpmnElement="up05_four_eyes_f9"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

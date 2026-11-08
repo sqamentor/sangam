@@ -1,0 +1,523 @@
+{
+ "source": {
+  "file": "LMMH-CS1127.pdf",
+  "bytes": 9222852,
+  "sha256": "19878E4E6205B3B78F65701BA3029AD86ECE915B38231C81A631EFFC88956610",
+  "pages": 524,
+  "correctionSlip": "1127",
+  "slipDate": "2026-10-09",
+  "extractor": "pdftotext -simple -enc UTF-8 (C:\\Program Files\\Git\\mingw64\\bin\\pdftotext.EXE)"
+ },
+ "anomalies": [
+  {
+   "page": 12,
+   "issue": "TOC code has 3 digits",
+   "text": "700. Loans for Major Irrigation"
+  },
+  {
+   "page": 12,
+   "issue": "TOC code 700 resolved to 6700 from the detailed list",
+   "text": "Loans for Major Irrigation"
+  },
+  {
+   "page": 41,
+   "issue": "text without code in minor column",
+   "text": "Cess"
+  },
+  {
+   "page": 149,
+   "issue": "unplaced text, major/sub-major column",
+   "text": "Collection Charges under"
+  },
+  {
+   "page": 149,
+   "issue": "unplaced text, major/sub-major column",
+   "text": "Collection Charges under"
+  },
+  {
+   "page": 150,
+   "issue": "unplaced text, major/sub-major column",
+   "text": "Collection Charges under"
+  },
+  {
+   "page": 204,
+   "issue": "repaired: code overprinted on name",
+   "text": "111 Government's contribution towards waiver of"
+  },
+  {
+   "page": 204,
+   "issue": "repaired: code overprinted on name",
+   "text": "112 Other Charges payable to the retirees/deceased"
+  },
+  {
+   "page": 292,
+   "issue": "unplaced text, major/sub-major column",
+   "text": "Union Territory"
+  },
+  {
+   "page": 292,
+   "issue": "unplaced text, major/sub-major column",
+   "text": "Governments with"
+  },
+  {
+   "page": 292,
+   "issue": "unplaced text, major/sub-major column",
+   "text": "Legislature (1) (3)"
+  },
+  {
+   "page": 315,
+   "issue": "unplaced text, major/sub-major column",
+   "text": "and Urban Development"
+  },
+  {
+   "page": 428,
+   "issue": "repaired: minor glued to major title",
+   "text": "7466 Loans to InternationalFinancial Institutions (1) 101 Loans to African Development Fund (AfDF)"
+  },
+  {
+   "page": 516,
+   "issue": "unplaced text, major/sub-major column",
+   "text": "MHs 8790, 8791, 8792 inoperative for fresh transactions"
+  },
+  {
+   "page": 519,
+   "issue": "text without code in minor column",
+   "text": "Exchange Accounts between---- (1)"
+  },
+  {
+   "page": 519,
+   "issue": "text without code in minor column",
+   "text": "Exchange Accounts advised by---- (2)"
+  },
+  {
+   "page": 519,
+   "issue": "text without code in minor column",
+   "text": "Exchange Accounts between P.W. Division and"
+  },
+  {
+   "page": 519,
+   "issue": "text without code in minor column",
+   "text": "P.W. Division (3)"
+  },
+  {
+   "page": 519,
+   "issue": "text without code in minor column",
+   "text": "Exchange Accounts between PAO and PAO (3)"
+  }
+ ],
+ "validation": {
+  "duplicateMajorsInToc": [],
+  "duplicateCodes": [],
+  "minorsWithoutMajor": [],
+  "minorsUnderUnknownSubMajor": [],
+  "majorsMissingInDetailedList": [],
+  "majorsWithoutMinors": [
+   "0551",
+   "0552",
+   "0575",
+   "2416",
+   "2551",
+   "2575",
+   "2705",
+   "4551",
+   "4552",
+   "4575",
+   "4705",
+   "6551",
+   "6552",
+   "6575",
+   "7605",
+   "8454",
+   "8679",
+   "8786",
+   "8787",
+   "8788",
+   "8789",
+   "8793",
+   "8795",
+   "8797"
+  ],
+  "bodyMajorsNotInToc": [],
+  "emptyNames": [],
+  "nameMismatchTocVsBody": [
+   {
+    "code": "0005",
+    "toc": "Central Goods and Services Tax (CGST)",
+    "body": "Central Goods and Services Tax"
+   },
+   {
+    "code": "0006",
+    "toc": "State Goods and Services Tax (SGST)",
+    "body": "State Goods and Services Tax"
+   },
+   {
+    "code": "2042",
+    "toc": "Collection Charges under Central Goods and Services Tax & Integrated Goods and Services Tax",
+    "body": "Central Goods and Services Tax & Integrated Goods and Services Tax"
+   },
+   {
+    "code": "2043",
+    "toc": "Collection Charges under State Goods and Services Tax",
+    "body": "State Goods and Services Tax"
+   },
+   {
+    "code": "2044",
+    "toc": "Collection Charges under Union Territory Goods and Services Tax",
+    "body": "Union Territory Goods and Services Tax"
+   },
+   {
+    "code": "3602",
+    "toc": "Grants-in-aid to Union Territory Governments with Legislature",
+    "body": "Grants-in-aid to"
+   }
+  ]
+ },
+ "counts": {
+  "major": 489,
+  "minor": 5773,
+  "subMajor": 717,
+  "template": 17
+ },
+ "countsByPart": {
+  "CONSOLIDATED FUND - REVENUE / RECEIPT HEADS (REVENUE ACCOUNT)": {
+   "major": 106,
+   "subMajor": 137,
+   "minor": 1273,
+   "template": 4
+  },
+  "CONSOLIDATED FUND - REVENUE / EXPENDITURE HEADS (REVENUE ACCOUNT)": {
+   "major": 136,
+   "subMajor": 252,
+   "minor": 2236,
+   "template": 4
+  },
+  "CONSOLIDATED FUND - CAPITAL PUBLIC DEBT, LOANS, ETC. / RECEIPTS HEADS (CAPITAL ACCOUNT)": {
+   "major": 1,
+   "subMajor": 6,
+   "minor": 17,
+   "template": 0
+  },
+  "CONSOLIDATED FUND - CAPITAL PUBLIC DEBT, LOANS, ETC. / EXPENDITURE HEADS (CAPITAL ACCOUNT)": {
+   "major": 163,
+   "subMajor": 286,
+   "minor": 1640,
+   "template": 8
+  },
+  "CONTINGENCY FUND / CONTINGENCY FUND": {
+   "major": 1,
+   "subMajor": 0,
+   "minor": 1,
+   "template": 0
+  },
+  "PUBLIC ACCOUNT / PUBLIC ACCOUNT": {
+   "major": 82,
+   "subMajor": 36,
+   "minor": 606,
+   "template": 1
+  }
+ },
+ "countsByRange": {
+  "0xxx": {
+   "major": 84,
+   "subMajor": 105,
+   "minor": 905,
+   "template": 4
+  },
+  "1xxx": {
+   "major": 22,
+   "subMajor": 32,
+   "minor": 368,
+   "template": 0
+  },
+  "2xxx": {
+   "major": 96,
+   "subMajor": 153,
+   "minor": 1501,
+   "template": 4
+  },
+  "3xxx": {
+   "major": 40,
+   "subMajor": 99,
+   "minor": 735,
+   "template": 0
+  },
+  "4xxx": {
+   "major": 60,
+   "subMajor": 128,
+   "minor": 685,
+   "template": 4
+  },
+  "5xxx": {
+   "major": 24,
+   "subMajor": 47,
+   "minor": 368,
+   "template": 0
+  },
+  "6xxx": {
+   "major": 58,
+   "subMajor": 90,
+   "minor": 465,
+   "template": 4
+  },
+  "7xxx": {
+   "major": 22,
+   "subMajor": 27,
+   "minor": 139,
+   "template": 0
+  },
+  "8000": {
+   "major": 1,
+   "subMajor": 0,
+   "minor": 1,
+   "template": 0
+  },
+  "8xxx": {
+   "major": 82,
+   "subMajor": 36,
+   "minor": 606,
+   "template": 1
+  }
+ },
+ "majorsBySector": {
+  "RECEIPT HEADS (REVENUE ACCOUNT) / A. Tax Revenue": 28,
+  "RECEIPT HEADS (REVENUE ACCOUNT) / B. Non-Tax Revenue": 75,
+  "RECEIPT HEADS (REVENUE ACCOUNT) / C - Grants-In-Aid and Contributions": 3,
+  "EXPENDITURE HEADS (REVENUE ACCOUNT) / A. General Services": 44,
+  "EXPENDITURE HEADS (REVENUE ACCOUNT) / B - Social Services": 18,
+  "EXPENDITURE HEADS (REVENUE ACCOUNT) / C - Economic Services": 69,
+  "EXPENDITURE HEADS (REVENUE ACCOUNT) / D - Grants-in-aid and contributions": 5,
+  "RECEIPTS HEADS (CAPITAL ACCOUNT) / ": 1,
+  "EXPENDITURE HEADS (CAPITAL ACCOUNT) / A. Capital Account of General Services": 9,
+  "EXPENDITURE HEADS (CAPITAL ACCOUNT) / B. Capital Account of Social Services": 12,
+  "EXPENDITURE HEADS (CAPITAL ACCOUNT) / C. Capital Accounts of Economic Services": 62,
+  "EXPENDITURE HEADS (CAPITAL ACCOUNT) / E. Public Debt": 5,
+  "EXPENDITURE HEADS (CAPITAL ACCOUNT) / F. Loans and Advances": 73,
+  "EXPENDITURE HEADS (CAPITAL ACCOUNT) / G. Inter-State Settlement": 1,
+  "EXPENDITURE HEADS (CAPITAL ACCOUNT) / H. Transfer to Contingency Fund": 1,
+  "CONTINGENCY FUND / ": 1,
+  "PUBLIC ACCOUNT / I. Small Savings, Provident Funds etc.": 15,
+  "PUBLIC ACCOUNT / J. Reserve Funds": 16,
+  "PUBLIC ACCOUNT / K. Deposits and Advances": 22,
+  "PUBLIC ACCOUNT / L. Suspense and Miscellaneous": 16,
+  "PUBLIC ACCOUNT / M. Remittances": 12,
+  "PUBLIC ACCOUNT / N. Cash Balance": 1
+ },
+ "spotCheck": {
+  "seed": 1127,
+  "passed": 30,
+  "of": 30,
+  "rows": [
+   {
+    "row": "minor 3402-00-800",
+    "name": "Other expenditure",
+    "page": 276,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 0407-02-015",
+    "name": "Cess",
+    "page": 97,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 2049-01-114",
+    "name": "Interest on 12.08% Government of India Compensation (Project Exports to Iraq) Bonds, 2001.",
+    "page": 154,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 0031-03-901",
+    "name": "Share of net proceeds assigned to States",
+    "page": 54,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 0852-09-800",
+    "name": "Other Receipts",
+    "page": 108,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 2701-80-901",
+    "name": "Deduct-Amount recovered from other Governments and agencies for common works",
+    "page": 230,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "subMajor 8016-07-07",
+    "name": "Evaluation of Post Office Insurance Fund",
+    "page": 450,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 4217-03-051",
+    "name": "Construction",
+    "page": 317,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 4210-01-110",
+    "name": "Hospital and Dispensaries",
+    "page": 313,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 4076-09-101",
+    "name": "Aircraft and Aero Engines",
+    "page": 311,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 0801-05-800",
+    "name": "Other Receipts",
+    "page": 105,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 6001-00-128",
+    "name": "Special Securities issued against securitization of balances under Postal Life Insurance",
+    "page": 381,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 1605-00-201",
+    "name": "Assistance from Abu Dhabi fund for Arab Economic Development",
+    "page": 133,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "major 1003--1003",
+    "name": "Indian Railways-Strategic Lines Revenue Receipt",
+    "page": 115,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 4202-04-109",
+    "name": "Acquisition of Nizam's Jewellary",
+    "page": 312,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 8016-02-102",
+    "name": "Interest Income on Investments of RPLI funds in dated securities from net RPLI corpus at the close of 31st October, 2009",
+    "page": 449,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 3054-01-101",
+    "name": "National Highways Permanent Bridges",
+    "page": 264,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 8443-00-119",
+    "name": "Companies Liquidation Accounts",
+    "page": 473,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 0802-00-106",
+    "name": "Licence Fee and Mining Lease Rent",
+    "page": 106,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 3252-00-004",
+    "name": "Research and Development",
+    "page": 275,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 6860-60-218",
+    "name": "Salt",
+    "page": 419,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "major 0022--0022",
+    "name": "Taxes on Agricultural Income",
+    "page": 48,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 3003-02-117",
+    "name": "Establishment in offices",
+    "page": 253,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 4711-03-050",
+    "name": "Land",
+    "page": 341,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "subMajor 0407-04-04",
+    "name": "Spices",
+    "page": 97,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 3601-04-105",
+    "name": "Grants from Central Road Fund",
+    "page": 290,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "subMajor 4076-04-04",
+    "name": "Coordination & Services (Directorate of Ordnance)",
+    "page": 310,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 2235-01-112",
+    "name": "Relief and Rehabilitation of persons affected by Indo-Pak Conflict 1971",
+    "page": 203,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 2015-00-109",
+    "name": "Charges for conduct of election to Panchayats/local bodies.",
+    "page": 142,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   },
+   {
+    "row": "minor 3606-00-228",
+    "name": "Other miscellaneous Loans from the Government of U.S.A.",
+    "page": 296,
+    "codeOnPage": true,
+    "nameFollowsCode": true
+   }
+  ]
+ },
+ "standardMinors": 38
+}

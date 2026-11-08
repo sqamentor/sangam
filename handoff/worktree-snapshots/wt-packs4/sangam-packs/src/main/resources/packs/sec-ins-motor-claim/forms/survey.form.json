@@ -1,0 +1,56 @@
+{
+  "key": "sec-ins-motor-claim/survey",
+  "version": "1.0.0",
+  "pack": "sec.ins.motor-claim",
+  "title": {
+    "en": "Survey report (15 days)",
+    "hi": "सर्वेक्षण रिपोर्ट (15 दिन)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "assessedLoss",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Assessed loss (INR)",
+        "hi": "आकलित हानि (रुपये)"
+      }
+    },
+    {
+      "id": "totalLoss",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Total loss / constructive total loss",
+        "hi": "पूर्ण हानि / रचनात्मक पूर्ण हानि"
+      }
+    },
+    {
+      "id": "photos",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Photographs (geo-tagged)",
+        "hi": "फ़ोटो (जियो-टैग)"
+      }
+    },
+    {
+      "id": "findings",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    }
+  ]
+}

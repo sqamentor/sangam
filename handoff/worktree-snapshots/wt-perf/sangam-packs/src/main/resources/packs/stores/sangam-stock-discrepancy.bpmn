@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Stock discrepancy. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_stock_discrepancy" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-stock-discrepancy" name="Stock discrepancy" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.stores</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,difference,value</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="sd_start" name="Discrepancy"></startEvent>
+    <serviceTask id="sd_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>storeOfficerSeat=STORE-OFFICER;caseType=WRITE_OFF;amount=0;routingDecisionKey=stores-writeoff-authority;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sd_investigate_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sd_investigate</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="sd_investigate" name="Investigate discrepancy" operaton:candidateGroups="${storeOfficerSeat}" operaton:formKey="sangam:stores/investigate" operaton:dueDate="${sd_investigateDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>discDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="sd_investigate_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sd_investigate</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>storeOfficerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sd_investigate_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="sd_investigate_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sd_investigate</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>storeOfficerSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>discDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sd_investigate_breachGw" name="Deemed?" default="stock_discrepancy_f6"></exclusiveGateway>
+    <exclusiveGateway id="sd_investigate_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="sd_gw" name="Resolution?" default="stock_discrepancy_f20"></exclusiveGateway>
+    <serviceTask id="sd_woAmount" name="Write-off amount" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>amount=@writeOffAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="sd_sanction" name="Write-off sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="sd_adjust" name="Adjust stock" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>stores.adjust</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>adjust</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key,difference,discDecision</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>adjust</operaton:string></operaton:field><operaton:field name="step"><operaton:string>adjust</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="sd_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="sd_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="sd_sanGw" name="sanctionOutcome?" default="stock_discrepancy_f16"></exclusiveGateway>
+    <serviceTask id="sd_recover" name="Recovery order" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hr.recovery</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>recover</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>recoveryFrom,value</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>recovery</operaton:string></operaton:field><operaton:field name="step"><operaton:string>recovery</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sd_end" name="Resolved"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="sd_investigate_warn" name="SLA warning (75%)" attachedToRef="sd_investigate" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sd_investigateWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="sd_investigate_breach" name="SLA breached" attachedToRef="sd_investigate" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sd_investigateDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="stock_discrepancy_f1" sourceRef="sd_investigate_warn" targetRef="sd_investigate_warnNotify"/>
+    <sequenceFlow id="stock_discrepancy_f2" sourceRef="sd_investigate_warnNotify" targetRef="sd_investigate_warnEnd"/>
+    <sequenceFlow id="stock_discrepancy_f3" sourceRef="sd_investigate_breach" targetRef="sd_investigate_breachAct"/>
+    <sequenceFlow id="stock_discrepancy_f4" sourceRef="sd_investigate_breachAct" targetRef="sd_investigate_breachGw"/>
+    <sequenceFlow id="stock_discrepancy_f5" name="deemed" sourceRef="sd_investigate_breachGw" targetRef="sd_investigate_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="stock_discrepancy_f6" name="escalated" sourceRef="sd_investigate_breachGw" targetRef="sd_investigate_slaPlan"/>
+    <sequenceFlow id="stock_discrepancy_f7" sourceRef="sd_investigate_slaPlan" targetRef="sd_investigate"/>
+    <sequenceFlow id="stock_discrepancy_f8" sourceRef="sd_investigate" targetRef="sd_investigate_done"/>
+    <sequenceFlow id="stock_discrepancy_f9" sourceRef="sd_start" targetRef="sd_defaults"/>
+    <sequenceFlow id="stock_discrepancy_f10" sourceRef="sd_defaults" targetRef="sd_investigate_slaPlan"/>
+    <sequenceFlow id="stock_discrepancy_f11" sourceRef="sd_investigate_done" targetRef="sd_gw"/>
+    <sequenceFlow id="stock_discrepancy_f12" name="write off" sourceRef="sd_gw" targetRef="sd_woAmount"><conditionExpression xsi:type="tFormalExpression">${discDecision == 'writeOff'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="stock_discrepancy_f13" sourceRef="sd_woAmount" targetRef="sd_sanction"/>
+    <sequenceFlow id="stock_discrepancy_f14" sourceRef="sd_rj_reject" targetRef="sd_rj_endRejected"/>
+    <sequenceFlow id="stock_discrepancy_f15" name="SANCTIONED" sourceRef="sd_sanGw" targetRef="sd_adjust"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="stock_discrepancy_f16" name="otherwise" sourceRef="sd_sanGw" targetRef="sd_rj_reject"/>
+    <sequenceFlow id="stock_discrepancy_f17" sourceRef="sd_sanction" targetRef="sd_sanGw"/>
+    <sequenceFlow id="stock_discrepancy_f18" name="recover" sourceRef="sd_gw" targetRef="sd_recover"><conditionExpression xsi:type="tFormalExpression">${discDecision == 'recover'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="stock_discrepancy_f19" sourceRef="sd_recover" targetRef="sd_adjust"/>
+    <sequenceFlow id="stock_discrepancy_f20" name="adjust" sourceRef="sd_gw" targetRef="sd_adjust"/>
+    <sequenceFlow id="stock_discrepancy_f21" sourceRef="sd_adjust" targetRef="sd_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="stock_discrepancy_diagram">
+    <bpmndi:BPMNPlane id="stock_discrepancy_plane" bpmnElement="sangam-stock-discrepancy">
+      <bpmndi:BPMNShape id="sd_start_di" bpmnElement="sd_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_defaults_di" bpmnElement="sd_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_investigate_slaPlan_di" bpmnElement="sd_investigate_slaPlan"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_investigate_di" bpmnElement="sd_investigate"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_investigate_warnNotify_di" bpmnElement="sd_investigate_warnNotify"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_investigate_warnEnd_di" bpmnElement="sd_investigate_warnEnd"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_investigate_breachAct_di" bpmnElement="sd_investigate_breachAct"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_investigate_breachGw_di" bpmnElement="sd_investigate_breachGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_investigate_done_di" bpmnElement="sd_investigate_done"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_gw_di" bpmnElement="sd_gw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_woAmount_di" bpmnElement="sd_woAmount"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_sanction_di" bpmnElement="sd_sanction"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_adjust_di" bpmnElement="sd_adjust"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_rj_reject_di" bpmnElement="sd_rj_reject"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_rj_endRejected_di" bpmnElement="sd_rj_endRejected"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_sanGw_di" bpmnElement="sd_sanGw"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_recover_di" bpmnElement="sd_recover"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_end_di" bpmnElement="sd_end"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_investigate_warn_di" bpmnElement="sd_investigate_warn"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sd_investigate_breach_di" bpmnElement="sd_investigate_breach"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f1_di" bpmnElement="stock_discrepancy_f1"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f2_di" bpmnElement="stock_discrepancy_f2"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f3_di" bpmnElement="stock_discrepancy_f3"><di:waypoint x="571" y="128"/><di:waypoint x="571" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f4_di" bpmnElement="stock_discrepancy_f4"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f5_di" bpmnElement="stock_discrepancy_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f6_di" bpmnElement="stock_discrepancy_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f7_di" bpmnElement="stock_discrepancy_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f8_di" bpmnElement="stock_discrepancy_f8"><di:waypoint x="615" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f9_di" bpmnElement="stock_discrepancy_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f10_di" bpmnElement="stock_discrepancy_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f11_di" bpmnElement="stock_discrepancy_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f12_di" bpmnElement="stock_discrepancy_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f13_di" bpmnElement="stock_discrepancy_f13"><di:waypoint x="1440" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f14_di" bpmnElement="stock_discrepancy_f14"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f15_di" bpmnElement="stock_discrepancy_f15"><di:waypoint x="1745" y="195"/><di:waypoint x="1790" y="195"/><di:waypoint x="1790" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f16_di" bpmnElement="stock_discrepancy_f16"><di:waypoint x="1745" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f17_di" bpmnElement="stock_discrepancy_f17"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f18_di" bpmnElement="stock_discrepancy_f18"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f19_di" bpmnElement="stock_discrepancy_f19"><di:waypoint x="1440" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f20_di" bpmnElement="stock_discrepancy_f20"><di:waypoint x="1250" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_discrepancy_f21_di" bpmnElement="stock_discrepancy_f21"><di:waypoint x="1935" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

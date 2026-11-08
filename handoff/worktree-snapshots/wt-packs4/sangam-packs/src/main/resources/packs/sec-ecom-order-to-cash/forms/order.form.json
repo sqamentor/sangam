@@ -1,0 +1,83 @@
+{
+  "key": "sec-ecom-order-to-cash/order",
+  "version": "1.0.0",
+  "pack": "sec.ecom.order-to-cash",
+  "title": {
+    "en": "Order",
+    "hi": "आदेश"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "orderId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Order",
+        "hi": "आदेश"
+      }
+    },
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "sellerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Seller",
+        "hi": "विक्रेता"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "paymentMode",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Payment mode",
+        "hi": "भुगतान विधि"
+      }
+    },
+    {
+      "id": "category",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Category",
+        "hi": "श्रेणी"
+      }
+    },
+    {
+      "id": "pincode",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Delivery PIN code",
+        "hi": "वितरण पिन कोड"
+      }
+    }
+  ]
+}

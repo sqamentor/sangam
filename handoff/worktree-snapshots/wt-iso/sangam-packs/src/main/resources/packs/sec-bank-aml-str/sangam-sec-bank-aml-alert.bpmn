@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- AML alert to STR. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_aml_alert" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_fiu_request" name="sangam.fiu.request"/>
+  <process id="sangam-sec-bank-aml-alert" name="AML alert to STR" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.aml-str</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,alertType,alertScore</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="am_start" name="Alert raised (TMS or staff referral)" operaton:initiator="initiator" operaton:formKey="sangam:sec-bank-aml-str/alert"></startEvent>
+    <serviceTask id="am_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>alertType=STRUCTURING;alertScore=50;l1Seat=AML-L1;l2Seat=AML-L2;poSeat=PRINCIPAL-OFFICER;strSla=7D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="am_prio" name="Alert priority (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-aml-priority</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="am_l1_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_l1</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${l1Spec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="am_l1" name="L1 alert triage" operaton:candidateGroups="${l1Seat}" operaton:formKey="sangam:sec-bank-aml-str/l1" operaton:dueDate="${am_l1DueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>l1Decision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="am_l1_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_l1</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>l1Seat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="am_l1_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="am_l1_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_l1</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>l1Seat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>l1Decision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="am_l1_breachGw" name="Deemed?" default="sec_bank_aml_alert_f8"></exclusiveGateway>
+    <exclusiveGateway id="am_l1_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="am_l1Gw" name="" default="sec_bank_aml_alert_f14"></exclusiveGateway>
+    <endEvent id="am_endFalse" name="Closed as false positive (reasons recorded)"></endEvent>
+    <serviceTask id="am_history" name="Pull transaction history" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.txnHistory</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>history</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>txn</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="am_l2_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_l2</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>10WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="am_l2" name="L2 investigation" operaton:candidateGroups="${l2Seat}" operaton:formKey="sangam:sec-bank-aml-str/l2" operaton:dueDate="${am_l2DueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>l2Decision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="am_l2_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_l2</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>l2Seat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="am_l2_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="am_l2_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_l2</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>l2Seat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>l2Decision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="am_l2_breachGw" name="Deemed?" default="sec_bank_aml_alert_f20"></exclusiveGateway>
+    <exclusiveGateway id="am_l2_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="am_l2Gw" name="" default="sec_bank_aml_alert_f26"></exclusiveGateway>
+    <endEvent id="am_endClosedL2" name="Closed after investigation"></endEvent>
+    <userTask id="am_po" name="Principal Officer: suspicious? (record reasons)" operaton:candidateGroups="${poSeat}" operaton:formKey="sangam:sec-bank-aml-str/po"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>poDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="am_poGw" name="" default="sec_bank_aml_alert_f37"></exclusiveGateway>
+    <endEvent id="am_endNoStr" name="No STR (reasons recorded)"></endEvent>
+    <serviceTask id="am_prepare_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_prepare</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${strSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="am_prepare" name="Prepare STR in FINnet format (7 days)" operaton:candidateGroups="${poSeat}" operaton:formKey="sangam:sec-bank-aml-str/prepare" operaton:dueDate="${am_prepareDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="am_prepare_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_prepare</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>poSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="am_prepare_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="am_prepare_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_prepare</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>poSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="am_prepare_breachGw" name="Deemed?" default="sec_bank_aml_alert_f34"></exclusiveGateway>
+    <exclusiveGateway id="am_prepare_done" name=""></exclusiveGateway>
+    <serviceTask id="am_file" name="File STR on FINnet" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>fiu.finnet</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>str</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,strGrounds</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>str</operaton:string></operaton:field><operaton:field name="step"><operaton:string>str</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="am_fileGw" name="Accepted?" default="sec_bank_aml_alert_f41"></exclusiveGateway>
+    <serviceTask id="am_risk" name="Raise customer risk and enhanced monitoring (no tipping-off)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.riskUpdate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>raise</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>risk</operaton:string></operaton:field><operaton:field name="step"><operaton:string>risk</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="am_endFiled" name="STR filed"></endEvent>
+    <boundaryEvent id="am_l1_warn" name="SLA warning (75%)" attachedToRef="am_l1" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${am_l1WarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="am_l1_breach" name="SLA breached" attachedToRef="am_l1" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${am_l1DueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="am_l2_warn" name="SLA warning (75%)" attachedToRef="am_l2" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${am_l2WarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="am_l2_breach" name="SLA breached" attachedToRef="am_l2" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${am_l2DueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="am_prepare_warn" name="SLA warning (75%)" attachedToRef="am_prepare" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${am_prepareWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="am_prepare_breach" name="SLA breached" attachedToRef="am_prepare" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${am_prepareDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_bank_aml_alert_f1" sourceRef="am_start" targetRef="am_defaults"/>
+    <sequenceFlow id="sec_bank_aml_alert_f2" sourceRef="am_defaults" targetRef="am_prio"/>
+    <sequenceFlow id="sec_bank_aml_alert_f3" sourceRef="am_l1_warn" targetRef="am_l1_warnNotify"/>
+    <sequenceFlow id="sec_bank_aml_alert_f4" sourceRef="am_l1_warnNotify" targetRef="am_l1_warnEnd"/>
+    <sequenceFlow id="sec_bank_aml_alert_f5" sourceRef="am_l1_breach" targetRef="am_l1_breachAct"/>
+    <sequenceFlow id="sec_bank_aml_alert_f6" sourceRef="am_l1_breachAct" targetRef="am_l1_breachGw"/>
+    <sequenceFlow id="sec_bank_aml_alert_f7" name="deemed" sourceRef="am_l1_breachGw" targetRef="am_l1_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_aml_alert_f8" name="escalated" sourceRef="am_l1_breachGw" targetRef="am_l1_slaPlan"/>
+    <sequenceFlow id="sec_bank_aml_alert_f9" sourceRef="am_l1_slaPlan" targetRef="am_l1"/>
+    <sequenceFlow id="sec_bank_aml_alert_f10" sourceRef="am_l1" targetRef="am_l1_done"/>
+    <sequenceFlow id="sec_bank_aml_alert_f11" sourceRef="am_prio" targetRef="am_l1_slaPlan"/>
+    <sequenceFlow id="sec_bank_aml_alert_f12" sourceRef="am_l1_done" targetRef="am_l1Gw"/>
+    <sequenceFlow id="sec_bank_aml_alert_f13" name="close" sourceRef="am_l1Gw" targetRef="am_endFalse"><conditionExpression xsi:type="tFormalExpression">${l1Decision == 'close'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_aml_alert_f14" name="escalate" sourceRef="am_l1Gw" targetRef="am_history"/>
+    <sequenceFlow id="sec_bank_aml_alert_f15" sourceRef="am_l2_warn" targetRef="am_l2_warnNotify"/>
+    <sequenceFlow id="sec_bank_aml_alert_f16" sourceRef="am_l2_warnNotify" targetRef="am_l2_warnEnd"/>
+    <sequenceFlow id="sec_bank_aml_alert_f17" sourceRef="am_l2_breach" targetRef="am_l2_breachAct"/>
+    <sequenceFlow id="sec_bank_aml_alert_f18" sourceRef="am_l2_breachAct" targetRef="am_l2_breachGw"/>
+    <sequenceFlow id="sec_bank_aml_alert_f19" name="deemed" sourceRef="am_l2_breachGw" targetRef="am_l2_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_aml_alert_f20" name="escalated" sourceRef="am_l2_breachGw" targetRef="am_l2_slaPlan"/>
+    <sequenceFlow id="sec_bank_aml_alert_f21" sourceRef="am_l2_slaPlan" targetRef="am_l2"/>
+    <sequenceFlow id="sec_bank_aml_alert_f22" sourceRef="am_l2" targetRef="am_l2_done"/>
+    <sequenceFlow id="sec_bank_aml_alert_f23" sourceRef="am_history" targetRef="am_l2_slaPlan"/>
+    <sequenceFlow id="sec_bank_aml_alert_f24" sourceRef="am_l2_done" targetRef="am_l2Gw"/>
+    <sequenceFlow id="sec_bank_aml_alert_f25" name="close" sourceRef="am_l2Gw" targetRef="am_endClosedL2"><conditionExpression xsi:type="tFormalExpression">${l2Decision == 'close'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_aml_alert_f26" name="recommend STR" sourceRef="am_l2Gw" targetRef="am_po"/>
+    <sequenceFlow id="sec_bank_aml_alert_f27" sourceRef="am_po" targetRef="am_poGw"/>
+    <sequenceFlow id="sec_bank_aml_alert_f28" name="no STR" sourceRef="am_poGw" targetRef="am_endNoStr"><conditionExpression xsi:type="tFormalExpression">${poDecision == 'noStr'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_aml_alert_f29" sourceRef="am_prepare_warn" targetRef="am_prepare_warnNotify"/>
+    <sequenceFlow id="sec_bank_aml_alert_f30" sourceRef="am_prepare_warnNotify" targetRef="am_prepare_warnEnd"/>
+    <sequenceFlow id="sec_bank_aml_alert_f31" sourceRef="am_prepare_breach" targetRef="am_prepare_breachAct"/>
+    <sequenceFlow id="sec_bank_aml_alert_f32" sourceRef="am_prepare_breachAct" targetRef="am_prepare_breachGw"/>
+    <sequenceFlow id="sec_bank_aml_alert_f33" name="deemed" sourceRef="am_prepare_breachGw" targetRef="am_prepare_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_aml_alert_f34" name="escalated" sourceRef="am_prepare_breachGw" targetRef="am_prepare_slaPlan"/>
+    <sequenceFlow id="sec_bank_aml_alert_f35" sourceRef="am_prepare_slaPlan" targetRef="am_prepare"/>
+    <sequenceFlow id="sec_bank_aml_alert_f36" sourceRef="am_prepare" targetRef="am_prepare_done"/>
+    <sequenceFlow id="sec_bank_aml_alert_f37" name="file STR" sourceRef="am_poGw" targetRef="am_prepare_slaPlan"/>
+    <sequenceFlow id="sec_bank_aml_alert_f38" sourceRef="am_prepare_done" targetRef="am_file"/>
+    <sequenceFlow id="sec_bank_aml_alert_f39" sourceRef="am_file" targetRef="am_fileGw"/>
+    <sequenceFlow id="sec_bank_aml_alert_f40" name="validation error: correct" sourceRef="am_fileGw" targetRef="am_prepare_slaPlan"><conditionExpression xsi:type="tFormalExpression">${strStatus == 'FAILED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_aml_alert_f41" name="acknowledged" sourceRef="am_fileGw" targetRef="am_risk"/>
+    <sequenceFlow id="sec_bank_aml_alert_f42" sourceRef="am_risk" targetRef="am_endFiled"/>
+    <subProcess id="am_fiuReq" name="Request from FIU-IND" triggeredByEvent="true">
+      <startEvent id="am_fiuStart" name="FIU request" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_fiu_request"/></startEvent>
+      <serviceTask id="am_fiuReply_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_fiuReply</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>7D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+      <userTask id="am_fiuReply" name="Reply to FIU-IND" operaton:candidateGroups="${poSeat}" operaton:formKey="sangam:sec-bank-aml-str/fiu" operaton:dueDate="${am_fiuReplyDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+      <serviceTask id="am_fiuReply_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_fiuReply</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>poSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="am_fiuReply_warnEnd" name="Warned"></endEvent>
+      <serviceTask id="am_fiuReply_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>am_fiuReply</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>poSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+      <exclusiveGateway id="am_fiuReply_breachGw" name="Deemed?" default="sec_bank_aml_alert_f48"></exclusiveGateway>
+      <exclusiveGateway id="am_fiuReply_done" name=""></exclusiveGateway>
+      <endEvent id="am_fiuEnd" name="Replied"></endEvent>
+      <boundaryEvent id="am_fiuReply_warn" name="SLA warning (75%)" attachedToRef="am_fiuReply" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${am_fiuReplyWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+      <boundaryEvent id="am_fiuReply_breach" name="SLA breached" attachedToRef="am_fiuReply" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${am_fiuReplyDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+      <sequenceFlow id="sec_bank_aml_alert_f43" sourceRef="am_fiuReply_warn" targetRef="am_fiuReply_warnNotify"/>
+      <sequenceFlow id="sec_bank_aml_alert_f44" sourceRef="am_fiuReply_warnNotify" targetRef="am_fiuReply_warnEnd"/>
+      <sequenceFlow id="sec_bank_aml_alert_f45" sourceRef="am_fiuReply_breach" targetRef="am_fiuReply_breachAct"/>
+      <sequenceFlow id="sec_bank_aml_alert_f46" sourceRef="am_fiuReply_breachAct" targetRef="am_fiuReply_breachGw"/>
+      <sequenceFlow id="sec_bank_aml_alert_f47" name="deemed" sourceRef="am_fiuReply_breachGw" targetRef="am_fiuReply_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="sec_bank_aml_alert_f48" name="escalated" sourceRef="am_fiuReply_breachGw" targetRef="am_fiuReply_slaPlan"/>
+      <sequenceFlow id="sec_bank_aml_alert_f49" sourceRef="am_fiuReply_slaPlan" targetRef="am_fiuReply"/>
+      <sequenceFlow id="sec_bank_aml_alert_f50" sourceRef="am_fiuReply" targetRef="am_fiuReply_done"/>
+      <sequenceFlow id="sec_bank_aml_alert_f51" sourceRef="am_fiuStart" targetRef="am_fiuReply_slaPlan"/>
+      <sequenceFlow id="sec_bank_aml_alert_f52" sourceRef="am_fiuReply_done" targetRef="am_fiuEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_aml_alert_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_aml_alert_plane" bpmnElement="sangam-sec-bank-aml-alert">
+      <bpmndi:BPMNShape id="am_start_di" bpmnElement="am_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_defaults_di" bpmnElement="am_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prio_di" bpmnElement="am_prio"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1_slaPlan_di" bpmnElement="am_l1_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1_di" bpmnElement="am_l1"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1_warnNotify_di" bpmnElement="am_l1_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1_warnEnd_di" bpmnElement="am_l1_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1_breachAct_di" bpmnElement="am_l1_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1_breachGw_di" bpmnElement="am_l1_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1_done_di" bpmnElement="am_l1_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1Gw_di" bpmnElement="am_l1Gw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_endFalse_di" bpmnElement="am_endFalse"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_history_di" bpmnElement="am_history"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2_slaPlan_di" bpmnElement="am_l2_slaPlan"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2_di" bpmnElement="am_l2"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2_warnNotify_di" bpmnElement="am_l2_warnNotify"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2_warnEnd_di" bpmnElement="am_l2_warnEnd"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2_breachAct_di" bpmnElement="am_l2_breachAct"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2_breachGw_di" bpmnElement="am_l2_breachGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2_done_di" bpmnElement="am_l2_done"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2Gw_di" bpmnElement="am_l2Gw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_endClosedL2_di" bpmnElement="am_endClosedL2"><dc:Bounds x="2692" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_po_di" bpmnElement="am_po"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_poGw_di" bpmnElement="am_poGw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_endNoStr_di" bpmnElement="am_endNoStr"><dc:Bounds x="3022" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prepare_slaPlan_di" bpmnElement="am_prepare_slaPlan"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prepare_di" bpmnElement="am_prepare"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prepare_warnNotify_di" bpmnElement="am_prepare_warnNotify"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prepare_warnEnd_di" bpmnElement="am_prepare_warnEnd"><dc:Bounds x="3517" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prepare_breachAct_di" bpmnElement="am_prepare_breachAct"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prepare_breachGw_di" bpmnElement="am_prepare_breachGw"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prepare_done_di" bpmnElement="am_prepare_done"><dc:Bounds x="3675" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_file_di" bpmnElement="am_file"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fileGw_di" bpmnElement="am_fileGw"><dc:Bounds x="4005" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_risk_di" bpmnElement="am_risk"><dc:Bounds x="4145" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_endFiled_di" bpmnElement="am_endFiled"><dc:Bounds x="4342" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1_warn_di" bpmnElement="am_l1_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l1_breach_di" bpmnElement="am_l1_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2_warn_di" bpmnElement="am_l2_warn"><dc:Bounds x="1843" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_l2_breach_di" bpmnElement="am_l2_breach"><dc:Bounds x="1873" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prepare_warn_di" bpmnElement="am_prepare_warn"><dc:Bounds x="3163" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_prepare_breach_di" bpmnElement="am_prepare_breach"><dc:Bounds x="3193" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReq_di" bpmnElement="am_fiuReq" isExpanded="true"><dc:Bounds x="30" y="285" width="1118" height="275"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuStart_di" bpmnElement="am_fiuStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReply_slaPlan_di" bpmnElement="am_fiuReply_slaPlan"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReply_di" bpmnElement="am_fiuReply"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReply_warnNotify_di" bpmnElement="am_fiuReply_warnNotify"><dc:Bounds x="555" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReply_warnEnd_di" bpmnElement="am_fiuReply_warnEnd"><dc:Bounds x="752" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReply_breachAct_di" bpmnElement="am_fiuReply_breachAct"><dc:Bounds x="555" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReply_breachGw_di" bpmnElement="am_fiuReply_breachGw"><dc:Bounds x="745" y="340" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReply_done_di" bpmnElement="am_fiuReply_done"><dc:Bounds x="910" y="340" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuEnd_di" bpmnElement="am_fiuEnd"><dc:Bounds x="1082" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReply_warn_di" bpmnElement="am_fiuReply_warn"><dc:Bounds x="398" y="387" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="am_fiuReply_breach_di" bpmnElement="am_fiuReply_breach"><dc:Bounds x="428" y="387" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f1_di" bpmnElement="sec_bank_aml_alert_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f2_di" bpmnElement="sec_bank_aml_alert_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f3_di" bpmnElement="sec_bank_aml_alert_f3"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f4_di" bpmnElement="sec_bank_aml_alert_f4"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f5_di" bpmnElement="sec_bank_aml_alert_f5"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f6_di" bpmnElement="sec_bank_aml_alert_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f7_di" bpmnElement="sec_bank_aml_alert_f7"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f8_di" bpmnElement="sec_bank_aml_alert_f8"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f9_di" bpmnElement="sec_bank_aml_alert_f9"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f10_di" bpmnElement="sec_bank_aml_alert_f10"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f11_di" bpmnElement="sec_bank_aml_alert_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f12_di" bpmnElement="sec_bank_aml_alert_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f13_di" bpmnElement="sec_bank_aml_alert_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1476" y="70"/><di:waypoint x="1476" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f14_di" bpmnElement="sec_bank_aml_alert_f14"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f15_di" bpmnElement="sec_bank_aml_alert_f15"><di:waypoint x="1861" y="128"/><di:waypoint x="1861" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f16_di" bpmnElement="sec_bank_aml_alert_f16"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f17_di" bpmnElement="sec_bank_aml_alert_f17"><di:waypoint x="1891" y="128"/><di:waypoint x="1891" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f18_di" bpmnElement="sec_bank_aml_alert_f18"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f19_di" bpmnElement="sec_bank_aml_alert_f19"><di:waypoint x="2240" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f20_di" bpmnElement="sec_bank_aml_alert_f20"><di:waypoint x="2215" y="95"/><di:waypoint x="2215" y="149"/><di:waypoint x="1720" y="149"/><di:waypoint x="1720" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f21_di" bpmnElement="sec_bank_aml_alert_f21"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f22_di" bpmnElement="sec_bank_aml_alert_f22"><di:waypoint x="1935" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f23_di" bpmnElement="sec_bank_aml_alert_f23"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f24_di" bpmnElement="sec_bank_aml_alert_f24"><di:waypoint x="2405" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f25_di" bpmnElement="sec_bank_aml_alert_f25"><di:waypoint x="2570" y="70"/><di:waypoint x="2631" y="70"/><di:waypoint x="2631" y="195"/><di:waypoint x="2692" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f26_di" bpmnElement="sec_bank_aml_alert_f26"><di:waypoint x="2570" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f27_di" bpmnElement="sec_bank_aml_alert_f27"><di:waypoint x="2760" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f28_di" bpmnElement="sec_bank_aml_alert_f28"><di:waypoint x="2900" y="70"/><di:waypoint x="2961" y="70"/><di:waypoint x="2961" y="195"/><di:waypoint x="3022" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f29_di" bpmnElement="sec_bank_aml_alert_f29"><di:waypoint x="3181" y="128"/><di:waypoint x="3181" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f30_di" bpmnElement="sec_bank_aml_alert_f30"><di:waypoint x="3420" y="195"/><di:waypoint x="3517" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f31_di" bpmnElement="sec_bank_aml_alert_f31"><di:waypoint x="3211" y="128"/><di:waypoint x="3211" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f32_di" bpmnElement="sec_bank_aml_alert_f32"><di:waypoint x="3420" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f33_di" bpmnElement="sec_bank_aml_alert_f33"><di:waypoint x="3560" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f34_di" bpmnElement="sec_bank_aml_alert_f34"><di:waypoint x="3535" y="95"/><di:waypoint x="3535" y="135"/><di:waypoint x="3040" y="135"/><di:waypoint x="3040" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f35_di" bpmnElement="sec_bank_aml_alert_f35"><di:waypoint x="3090" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f36_di" bpmnElement="sec_bank_aml_alert_f36"><di:waypoint x="3255" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f37_di" bpmnElement="sec_bank_aml_alert_f37"><di:waypoint x="2900" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f38_di" bpmnElement="sec_bank_aml_alert_f38"><di:waypoint x="3725" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f39_di" bpmnElement="sec_bank_aml_alert_f39"><di:waypoint x="3915" y="70"/><di:waypoint x="4005" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f40_di" bpmnElement="sec_bank_aml_alert_f40"><di:waypoint x="4030" y="95"/><di:waypoint x="4030" y="149"/><di:waypoint x="3040" y="149"/><di:waypoint x="3040" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f41_di" bpmnElement="sec_bank_aml_alert_f41"><di:waypoint x="4055" y="70"/><di:waypoint x="4145" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f42_di" bpmnElement="sec_bank_aml_alert_f42"><di:waypoint x="4245" y="70"/><di:waypoint x="4342" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f43_di" bpmnElement="sec_bank_aml_alert_f43"><di:waypoint x="416" y="423"/><di:waypoint x="416" y="490"/><di:waypoint x="555" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f44_di" bpmnElement="sec_bank_aml_alert_f44"><di:waypoint x="655" y="490"/><di:waypoint x="752" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f45_di" bpmnElement="sec_bank_aml_alert_f45"><di:waypoint x="446" y="423"/><di:waypoint x="446" y="365"/><di:waypoint x="555" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f46_di" bpmnElement="sec_bank_aml_alert_f46"><di:waypoint x="655" y="365"/><di:waypoint x="745" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f47_di" bpmnElement="sec_bank_aml_alert_f47"><di:waypoint x="795" y="365"/><di:waypoint x="910" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f48_di" bpmnElement="sec_bank_aml_alert_f48"><di:waypoint x="770" y="390"/><di:waypoint x="770" y="444"/><di:waypoint x="275" y="444"/><di:waypoint x="275" y="405"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f49_di" bpmnElement="sec_bank_aml_alert_f49"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f50_di" bpmnElement="sec_bank_aml_alert_f50"><di:waypoint x="490" y="365"/><di:waypoint x="910" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f51_di" bpmnElement="sec_bank_aml_alert_f51"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_aml_alert_f52_di" bpmnElement="sec_bank_aml_alert_f52"><di:waypoint x="960" y="365"/><di:waypoint x="1082" y="365"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

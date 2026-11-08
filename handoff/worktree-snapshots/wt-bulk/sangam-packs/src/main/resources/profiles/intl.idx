@@ -1,0 +1,13 @@
+# International PFM profiles (outside profilegen; see intl/README note in sangam-config README).
+intl/INTL-PFM.yaml
+intl/countries/BGD.yaml
+intl/countries/BRA.yaml
+intl/countries/GBR.yaml
+intl/countries/IDN.yaml
+intl/countries/KEN.yaml
+intl/countries/PHL.yaml
+intl/countries/USA.yaml
+regime/REGIME-ALLOTMENT-NCA.yaml
+regime/REGIME-CIVIL-LAW-EMPENHO.yaml
+regime/REGIME-DIPA-TREASURY-OFFICE.yaml
+regime/REGIME-PRESIDENTIAL-APPORTIONMENT.yaml

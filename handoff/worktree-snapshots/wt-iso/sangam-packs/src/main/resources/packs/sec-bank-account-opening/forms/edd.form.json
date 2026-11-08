@@ -1,0 +1,56 @@
+{
+  "key": "sec-bank-account-opening/edd",
+  "version": "1.0.0",
+  "pack": "sec.bank.account-opening",
+  "title": {
+    "en": "Enhanced due diligence",
+    "hi": "संवर्धित सम्यक तत्परता"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "sourceOfFunds",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Source of funds and wealth",
+        "hi": "धन एवं संपदा का स्रोत"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "eddDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

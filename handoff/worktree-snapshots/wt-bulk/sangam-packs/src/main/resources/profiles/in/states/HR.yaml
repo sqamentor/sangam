@@ -1,0 +1,259 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: HR
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Haryana
+    hi: हरियाणा
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources HR1-HR2, accessed 2026-11-04)
+  adopt:
+  - profile: PB
+    sections:
+    - rulebooks
+placeholders:
+- path: chartOfAccounts
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (state digit
+    structure not found)'
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 7
+  sources: HR1-HR2
+locale:
+  languages:
+  - tag: hi
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+    note: additional
+  - tag: pa
+    script: Guru
+    scope: statewide
+    docClass:
+    - statutory
+    note: '[U] second'
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - IFMS
+  - e-Billing
+  - e-Pension
+  - e-GRAS
+  snaSparsh:
+    onboarded: '2025-01-25'
+    hosting: CYBER_TREASURY
+    unit: PANCHKULA
+  ekuber: true
+orgTopology:
+  directorate: DG Treasuries & Accounts
+  unitTypes:
+    DISTRICT_TREASURY: 24
+    CYBER_TREASURY_RECEIPTS: 1
+    CYBER_TREASURY_SNA: 1
+    SUB_TREASURY: 82
+  ddoCount: 13443
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+signatures:
+  sequence:
+  - TREASURY_OFFICER
+  - DDO
+publicAccounts:
+  localBodyHeads:
+  - 8448-109-98
+  - 8448-109-99
+payee:
+  ucpChangeMakerChecker: true
+classification:
+  schemes:
+  - id: HOA_HR
+    separator: '-'
+    segments:
+    - id: part
+      width: 1
+      pattern: '[A-Z0-9]{1}'
+    - id: demand
+      width: 2
+    - id: subDemand
+      width: 2
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: subHead
+      width: 2
+    - id: detailed
+      width: 2
+    - id: object
+      width: 2
+    - id: votedCharged
+      width: 1
+      pattern: '[A-Z]'
+      optional: true
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: '[P-01-01-2011-02-101-99-51] 01'
+    evidence: V
+    source: HR budget 2024
+  defaultScheme: HOA_HR
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+procurement:
+  family: RULES
+  rule: HPPC store purchase rules
+  worksCode: Haryana PWD Code 2009
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/HR/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: HR
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/HR/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: HR
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPPC store purchase rules (was: RPR 2022: DDO draws within a sanction; no
+        sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPPC store purchase rules (was: DFPR 2024 r.12(4) and department re-delegation
+        order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPPC store purchase rules (was: DFPR 2024 r.12(2) re-delegation to HoD [U
+        value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPPC store purchase rules (was: DFPR 2024 r.11 (open / limited tender up
+        to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPPC store purchase rules (was: DFPR 2024 r.11: above the Secretary; no
+        upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPPC store purchase rules (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

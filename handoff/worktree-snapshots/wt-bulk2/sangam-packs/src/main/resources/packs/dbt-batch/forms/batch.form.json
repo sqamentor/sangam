@@ -1,0 +1,36 @@
+{
+  "key": "dbt-batch/batch",
+  "version": "1.0.0",
+  "pack": "gov.dbt.batch",
+  "title": {
+    "en": "DBT batch",
+    "hi": "डीबीटी बैच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "schemeId",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Scheme",
+        "hi": "योजना"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

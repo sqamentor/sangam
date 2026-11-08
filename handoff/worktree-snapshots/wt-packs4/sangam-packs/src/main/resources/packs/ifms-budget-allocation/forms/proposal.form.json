@@ -1,0 +1,74 @@
+{
+  "key": "ifms-budget-allocation/proposal",
+  "version": "1.0.0",
+  "pack": "gov.ifms.budget-allocation",
+  "title": {
+    "en": "Distribution of budget",
+    "hi": "बजट वितरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fiscalYear",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Financial year",
+        "hi": "वित्तीय वर्ष"
+      }
+    },
+    {
+      "id": "stage",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Stage",
+        "hi": "चरण"
+      }
+    },
+    {
+      "id": "headOfAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Head of account",
+        "hi": "लेखा शीर्ष"
+      }
+    },
+    {
+      "id": "holder",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Holder (office / DDO)",
+        "hi": "धारक (कार्यालय / डीडीओ)"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

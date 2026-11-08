@@ -1,0 +1,77 @@
+{
+  "id": "sec.cap.corporate-action",
+  "version": "1.0.0",
+  "name": {
+    "en": "Corporate action: dividend to unpaid dividend account",
+    "hi": "कॉर्पोरेट कार्रवाई: लाभांश से अदत्त लाभांश खाते तक"
+  },
+  "domain": "Capital markets",
+  "description": "Board decision, intimation to the exchanges (LODR), record date notice, beneficiary positions from the depositories at the record date, one payment case per holder (GP-09) with TDS, dividend paid within 30 days of declaration (Companies Act s.127), unpaid amounts moved to the unpaid dividend account within 7 days after that (s.124), transfer to IEPF after 7 years.",
+  "mainProcesses": [
+    "sangam-sec-cap-dividend"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-cap-corporate-action/sangam-sec-cap-dividend.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-cap-corporate-action/sangam-sec-cap-dividend-holder.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-corporate-action/forms/declare.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-corporate-action/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-cap-corporate-action/seed.json"
+    }
+  ],
+  "seed": "packs/sec-cap-corporate-action/seed.json",
+  "connectors": [
+    {
+      "id": "exchange.intimate",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Exchange intimation"
+    },
+    {
+      "id": "depository.benpos",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Beneficiary positions"
+    },
+    {
+      "id": "bank.transfer",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Dividend payment"
+    },
+    {
+      "id": "bank.unpaidDividend",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Unpaid dividend account"
+    }
+  ],
+  "covers": [
+    "SEC-CAP-007",
+    "GP-08",
+    "GP-09",
+    "GP-12",
+    "GP-30"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ]
+}

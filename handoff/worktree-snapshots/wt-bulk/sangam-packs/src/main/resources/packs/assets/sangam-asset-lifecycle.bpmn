@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Asset / vehicle lifecycle. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_asset_lifecycle" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_assetLost" name="sangam.assetLost"/>
+  <message id="msg_sangam_auctionResult" name="sangam.auctionResult"/>
+  <process id="sangam-asset-lifecycle" name="Asset / vehicle lifecycle" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.assets</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>assetId,assetValue</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="as_start" name="Asset acquired" operaton:initiator="initiator" operaton:formKey="sangam:assets/register"></startEvent>
+    <serviceTask id="as_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>maintenanceCycle=P180D;assetOfficerSeat=ASSET-OFFICER;surveyBoard=BOARD-1,BOARD-2,BOARD-3;caseType=CONDEMNATION;amount=@assetValue;routingDecisionKey=assets-condemnation-authority;auctionWindow=P60D;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="as_register" name="Enter in register" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>assets.register</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>register</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>assetId,assetValue,category</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>register</operaton:string></operaton:field><operaton:field name="step"><operaton:string>register</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="as_cycle" name="Maintenance due"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${maintenanceCycle}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="as_maintain" name="Periodic maintenance / fitness" operaton:candidateGroups="${assetOfficerSeat}" operaton:formKey="sangam:assets/maintenance"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>conditionDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="as_gw" name="Fit?" default="asset_lifecycle_f7"></exclusiveGateway>
+    <serviceTask id="as_board" name="Survey board" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>committeeSeats=@surveyBoard;quorumRule=ALL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="as_survey" name="Survey / condemnation board (core committee)" calledElement="sangam-core-committee"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="as_boardGw" name="Board agrees?" default="asset_lifecycle_f11"></exclusiveGateway>
+    <callActivity id="as_sanction" name="Condemnation sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="as_list" name="List on e-auction" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>eauction.list</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>list</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>assetId,reservePrice</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>auction</operaton:string></operaton:field><operaton:field name="step"><operaton:string>auction</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="as_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="as_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="as_sanGw" name="sanctionOutcome?" default="asset_lifecycle_f14"></exclusiveGateway>
+    <serviceTask id="as_auctionWindow" name="Auction window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>auction</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${auctionWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="as_wait" name="Sold?"></eventBasedGateway>
+    <intermediateCatchEvent id="as_sold" name="Auction result"><messageEventDefinition messageRef="msg_sangam_auctionResult"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="as_unsold" name="No bid"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${auctionDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="as_relist" name="No bid: revise reserve price and relist" operaton:candidateGroups="${assetOfficerSeat}" operaton:formKey="sangam:assets/relist"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="as_remove" name="Remove from register" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>assets.remove</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>remove</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>assetId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>remove</operaton:string></operaton:field><operaton:field name="step"><operaton:string>remove</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="as_end" name="Disposed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="asset_lifecycle_f1" sourceRef="as_start" targetRef="as_defaults"/>
+    <sequenceFlow id="asset_lifecycle_f2" sourceRef="as_defaults" targetRef="as_register"/>
+    <sequenceFlow id="asset_lifecycle_f3" sourceRef="as_register" targetRef="as_cycle"/>
+    <sequenceFlow id="asset_lifecycle_f4" sourceRef="as_cycle" targetRef="as_maintain"/>
+    <sequenceFlow id="asset_lifecycle_f5" sourceRef="as_maintain" targetRef="as_gw"/>
+    <sequenceFlow id="asset_lifecycle_f6" name="fit" sourceRef="as_gw" targetRef="as_cycle"><conditionExpression xsi:type="tFormalExpression">${conditionDecision == 'fit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="asset_lifecycle_f7" name="condemn" sourceRef="as_gw" targetRef="as_board"/>
+    <sequenceFlow id="asset_lifecycle_f8" sourceRef="as_board" targetRef="as_survey"/>
+    <sequenceFlow id="asset_lifecycle_f9" sourceRef="as_survey" targetRef="as_boardGw"/>
+    <sequenceFlow id="asset_lifecycle_f10" name="keep in use" sourceRef="as_boardGw" targetRef="as_cycle"><conditionExpression xsi:type="tFormalExpression">${!committeeApproved}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="asset_lifecycle_f11" name="condemn" sourceRef="as_boardGw" targetRef="as_sanction"/>
+    <sequenceFlow id="asset_lifecycle_f12" sourceRef="as_rj_reject" targetRef="as_rj_endRejected"/>
+    <sequenceFlow id="asset_lifecycle_f13" name="SANCTIONED" sourceRef="as_sanGw" targetRef="as_list"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="asset_lifecycle_f14" name="otherwise" sourceRef="as_sanGw" targetRef="as_rj_reject"/>
+    <sequenceFlow id="asset_lifecycle_f15" sourceRef="as_sanction" targetRef="as_sanGw"/>
+    <sequenceFlow id="asset_lifecycle_f16" sourceRef="as_list" targetRef="as_auctionWindow"/>
+    <sequenceFlow id="asset_lifecycle_f17" sourceRef="as_auctionWindow" targetRef="as_wait"/>
+    <sequenceFlow id="asset_lifecycle_f18" sourceRef="as_wait" targetRef="as_sold"/>
+    <sequenceFlow id="asset_lifecycle_f19" sourceRef="as_wait" targetRef="as_unsold"/>
+    <sequenceFlow id="asset_lifecycle_f20" sourceRef="as_unsold" targetRef="as_relist"/>
+    <sequenceFlow id="asset_lifecycle_f21" sourceRef="as_relist" targetRef="as_list"/>
+    <sequenceFlow id="asset_lifecycle_f22" sourceRef="as_sold" targetRef="as_remove"/>
+    <sequenceFlow id="asset_lifecycle_f23" sourceRef="as_remove" targetRef="as_end"/>
+    <subProcess id="as_loss" name="Loss / accident report" triggeredByEvent="true">
+      <startEvent id="as_lossStart" name="Loss reported" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_assetLost"/></startEvent>
+      <userTask id="as_lossReport" name="Report loss or accident" operaton:candidateGroups="${assetOfficerSeat}" operaton:formKey="sangam:assets/loss"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+      <endEvent id="as_lossEnd" name="Reported"></endEvent>
+      <sequenceFlow id="asset_lifecycle_f24" sourceRef="as_lossStart" targetRef="as_lossReport"/>
+      <sequenceFlow id="asset_lifecycle_f25" sourceRef="as_lossReport" targetRef="as_lossEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="asset_lifecycle_diagram">
+    <bpmndi:BPMNPlane id="asset_lifecycle_plane" bpmnElement="sangam-asset-lifecycle">
+      <bpmndi:BPMNShape id="as_start_di" bpmnElement="as_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_defaults_di" bpmnElement="as_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_register_di" bpmnElement="as_register"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_cycle_di" bpmnElement="as_cycle"><dc:Bounds x="547" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_maintain_di" bpmnElement="as_maintain"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_gw_di" bpmnElement="as_gw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_board_di" bpmnElement="as_board"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_survey_di" bpmnElement="as_survey"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_boardGw_di" bpmnElement="as_boardGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_sanction_di" bpmnElement="as_sanction"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_list_di" bpmnElement="as_list"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_rj_reject_di" bpmnElement="as_rj_reject"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_rj_endRejected_di" bpmnElement="as_rj_endRejected"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_sanGw_di" bpmnElement="as_sanGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_auctionWindow_di" bpmnElement="as_auctionWindow"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_wait_di" bpmnElement="as_wait"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_sold_di" bpmnElement="as_sold"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_unsold_di" bpmnElement="as_unsold"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_relist_di" bpmnElement="as_relist"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_remove_di" bpmnElement="as_remove"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_end_di" bpmnElement="as_end"><dc:Bounds x="2692" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_loss_di" bpmnElement="as_loss" isExpanded="true"><dc:Bounds x="30" y="410" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_lossStart_di" bpmnElement="as_lossStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_lossReport_di" bpmnElement="as_lossReport"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="as_lossEnd_di" bpmnElement="as_lossEnd"><dc:Bounds x="422" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f1_di" bpmnElement="asset_lifecycle_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f2_di" bpmnElement="asset_lifecycle_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f3_di" bpmnElement="asset_lifecycle_f3"><di:waypoint x="450" y="70"/><di:waypoint x="547" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f4_di" bpmnElement="asset_lifecycle_f4"><di:waypoint x="583" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f5_di" bpmnElement="asset_lifecycle_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f6_di" bpmnElement="asset_lifecycle_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="120"/><di:waypoint x="565" y="120"/><di:waypoint x="565" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f7_di" bpmnElement="asset_lifecycle_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f8_di" bpmnElement="asset_lifecycle_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f9_di" bpmnElement="asset_lifecycle_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f10_di" bpmnElement="asset_lifecycle_f10"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="120"/><di:waypoint x="565" y="120"/><di:waypoint x="565" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f11_di" bpmnElement="asset_lifecycle_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f12_di" bpmnElement="asset_lifecycle_f12"><di:waypoint x="1935" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f13_di" bpmnElement="asset_lifecycle_f13"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f14_di" bpmnElement="asset_lifecycle_f14"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f15_di" bpmnElement="asset_lifecycle_f15"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f16_di" bpmnElement="asset_lifecycle_f16"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f17_di" bpmnElement="asset_lifecycle_f17"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f18_di" bpmnElement="asset_lifecycle_f18"><di:waypoint x="2240" y="195"/><di:waypoint x="2301" y="195"/><di:waypoint x="2301" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f19_di" bpmnElement="asset_lifecycle_f19"><di:waypoint x="2240" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f20_di" bpmnElement="asset_lifecycle_f20"><di:waypoint x="2398" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f21_di" bpmnElement="asset_lifecycle_f21"><di:waypoint x="2545" y="235"/><di:waypoint x="2545" y="253"/><di:waypoint x="1885" y="253"/><di:waypoint x="1885" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f22_di" bpmnElement="asset_lifecycle_f22"><di:waypoint x="2398" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f23_di" bpmnElement="asset_lifecycle_f23"><di:waypoint x="2595" y="320"/><di:waypoint x="2692" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f24_di" bpmnElement="asset_lifecycle_f24"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="asset_lifecycle_f25_di" bpmnElement="asset_lifecycle_f25"><di:waypoint x="325" y="490"/><di:waypoint x="422" y="490"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

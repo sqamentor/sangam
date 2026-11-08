@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "PAYER",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CLINICAL-REVIEWER",
+      "role": "REVIEWER",
+      "office": "PAYER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "MEDICAL-DIRECTOR",
+      "name": {
+        "en": "Clinical reviewer",
+        "hi": "नैदानिक समीक्षक"
+      }
+    },
+    {
+      "id": "PEER-REVIEWER",
+      "role": "PEER",
+      "office": "PAYER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "MEDICAL-DIRECTOR",
+      "name": {
+        "en": "Peer reviewer",
+        "hi": "सहकर्मी समीक्षक"
+      }
+    },
+    {
+      "id": "MEDICAL-DIRECTOR",
+      "role": "DIRECTOR",
+      "office": "PAYER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Medical director (appeals)",
+        "hi": "चिकित्सा निदेशक (अपील)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CLINICAL-REVIEWER",
+      "person": "u17.clinical-reviewer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PEER-REVIEWER",
+      "person": "u17.peer-reviewer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "MEDICAL-DIRECTOR",
+      "person": "u17.medical-director",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "REVIEWER",
+      "name": {
+        "en": "Clinical reviewer",
+        "hi": "नैदानिक समीक्षक"
+      }
+    },
+    {
+      "code": "PEER",
+      "name": {
+        "en": "Peer reviewer",
+        "hi": "सहकर्मी समीक्षक"
+      }
+    },
+    {
+      "code": "DIRECTOR",
+      "name": {
+        "en": "Medical director (appeals)",
+        "hi": "चिकित्सा निदेशक (अपील)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp41">
+  <!-- GP-41 security-instrument lifecycle: bank confirmation, validity watch with reminder and expiry timers that the
+       MODEL re-arms (event-based gateway loop on bgExtended), extension / expiry race, encashment, release. -->
+  <message id="m_bgConfirmed" name="bgConfirmed"/>
+  <message id="m_bgExtended" name="bgExtended"/>
+  <message id="m_contractClosed" name="contractClosed"/>
+  <process id="gp41-bg" name="GP-41 Bank guarantee lifecycle" isExecutable="true">
+    <startEvent id="gp41_start"/>
+    <sequenceFlow id="f1" sourceRef="gp41_start" targetRef="gp41_awaitBank"/>
+    <intermediateCatchEvent id="gp41_awaitBank" name="Bank e-verification reply"><messageEventDefinition messageRef="m_bgConfirmed"/></intermediateCatchEvent>
+    <sequenceFlow id="f2" sourceRef="gp41_awaitBank" targetRef="gp41_genuine"/>
+    <exclusiveGateway id="gp41_genuine" default="f4"/>
+    <sequenceFlow id="f3" sourceRef="gp41_genuine" targetRef="gp41_watch"><conditionExpression xsi:type="tFormalExpression">${genuine == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f4" sourceRef="gp41_genuine" targetRef="gp41_reportFake"/>
+    <userTask id="gp41_reportFake" name="Report non-genuine BG"><potentialOwner><resourceAssignmentExpression><formalExpression>group(vigilance)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f5" sourceRef="gp41_reportFake" targetRef="gp41_end_fake"/>
+    <endEvent id="gp41_end_fake"/>
+
+    <eventBasedGateway id="gp41_watch" name="BG valid"/>
+    <sequenceFlow id="f10" sourceRef="gp41_watch" targetRef="gp41_closed"/>
+    <sequenceFlow id="f11" sourceRef="gp41_watch" targetRef="gp41_extended1"/>
+    <sequenceFlow id="f12" sourceRef="gp41_watch" targetRef="gp41_reminderDue"/>
+    <intermediateCatchEvent id="gp41_closed"><messageEventDefinition messageRef="m_contractClosed"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="gp41_extended1"><messageEventDefinition messageRef="m_bgExtended"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="gp41_reminderDue"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${reminderAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <sequenceFlow id="f13" sourceRef="gp41_closed" targetRef="gp41_release"/>
+    <sequenceFlow id="f14" sourceRef="gp41_extended1" targetRef="gp41_watch"/>
+    <sequenceFlow id="f15" sourceRef="gp41_reminderDue" targetRef="gp41_requestExtension"/>
+    <userTask id="gp41_requestExtension" name="Ask contractor / bank to extend BG"><potentialOwner><resourceAssignmentExpression><formalExpression>group(contracts)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f16" sourceRef="gp41_requestExtension" targetRef="gp41_watch2"/>
+
+    <eventBasedGateway id="gp41_watch2" name="Extension requested"/>
+    <sequenceFlow id="f20" sourceRef="gp41_watch2" targetRef="gp41_extended2"/>
+    <sequenceFlow id="f21" sourceRef="gp41_watch2" targetRef="gp41_closed2"/>
+    <sequenceFlow id="f22" sourceRef="gp41_watch2" targetRef="gp41_expiryDue"/>
+    <intermediateCatchEvent id="gp41_extended2"><messageEventDefinition messageRef="m_bgExtended"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="gp41_closed2"><messageEventDefinition messageRef="m_contractClosed"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="gp41_expiryDue"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${bgExpiry}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <sequenceFlow id="f23" sourceRef="gp41_extended2" targetRef="gp41_watch"/>
+    <sequenceFlow id="f24" sourceRef="gp41_closed2" targetRef="gp41_release"/>
+    <sequenceFlow id="f25" sourceRef="gp41_expiryDue" targetRef="gp41_encash"/>
+    <userTask id="gp41_encash" name="Encash BG before expiry"><potentialOwner><resourceAssignmentExpression><formalExpression>group(accounts)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f26" sourceRef="gp41_encash" targetRef="gp41_end_encashed"/>
+    <endEvent id="gp41_end_encashed"/>
+    <userTask id="gp41_release" name="Release BG"><potentialOwner><resourceAssignmentExpression><formalExpression>group(accounts)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f27" sourceRef="gp41_release" targetRef="gp41_end_released"/>
+    <endEvent id="gp41_end_released"/>
+  </process>
+</definitions>

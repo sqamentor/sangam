@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-engine</artifactId>
+  <name>Operaton process-engine plugins (fencing, L2, DST guard, expiry, MySQL, history)</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-persistence</artifactId>
+    </dependency>
+    <!-- WS-PACKS ports LedgerStore / BatchLedger are implemented here (sangam-packs depends only on core + Operaton) -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-packs</artifactId>
+    </dependency>
+
+    <!-- SG-28: SangamProcessEnginePlugin (and sangam-cell) use Operaton's StrongUuidGenerator, which needs
+         java-uuid-generator at run time. operaton-engine 2.2.0 declares it "provided", so it must be declared here;
+         before, it arrived only by chance through org.camunda.feel:feel-engine. Version = the one operaton-engine
+         2.2.0 is built against (version.java-uuid-generator in the root pom, also pinned in sangam-bom). -->
+    <dependency>
+      <groupId>com.fasterxml.uuid</groupId>
+      <artifactId>java-uuid-generator</artifactId>
+      <version>${version.java-uuid-generator}</version>
+    </dependency>
+
+    <!-- Operaton 2.2.0 (Apache-2.0), versions from operaton-bom. BPMN + CMMN; DMN/FEEL come with the engine. -->
+    <dependency>
+      <groupId>org.operaton.bpm</groupId>
+      <artifactId>operaton-engine</artifactId>
+      <exclusions>
+        <!-- LIC-1: never bundle GraalJS (2.2.0 declares it test scope only; guard) -->
+        <exclusion>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>js</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>polyglot</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.js</groupId>
+          <artifactId>js</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.js</groupId>
+          <artifactId>js-scriptengine</artifactId>
+        </exclusion>
+        <!-- D-38: Spring is a compile dependency of operaton-engine, used only for XML (beans) configuration,
+             which Sangam never uses. sangam-server brings its own Spring. -->
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-beans</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.operaton.bpm.dmn</groupId>
+      <artifactId>operaton-engine-dmn</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.operaton.bpm.dmn</groupId>
+      <artifactId>operaton-engine-feel-scala</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

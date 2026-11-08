@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_rail_connector" name="Payment rail to connector (Sikkim)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="ifms-rail-connector" name="Payment rail to connector (Sikkim)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-rail-connector_t" hitPolicy="FIRST">
+      <input id="ifms-rail-connector_i0" label="Payment rail"><inputExpression id="ifms-rail-connector_ie0" typeRef="string"><text>docPaymentRail</text></inputExpression></input>
+      <output id="ifms-rail-connector_o0" label="Execution connector" name="executionConnector" typeRef="string"/>
+      <rule id="ifms-rail-connector_r0"><description>State Bank of Sikkim, cheques (IFS-SK-001)</description>
+        <inputEntry id="ifms-rail-connector_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r0_o0"><text>"rail.stateBank"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

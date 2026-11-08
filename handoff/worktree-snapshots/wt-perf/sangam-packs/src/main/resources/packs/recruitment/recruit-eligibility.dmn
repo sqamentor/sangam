@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_recruit_eligibility" name="Eligibility (age, qualification; synthetic)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="recruit-eligibility" name="Eligibility (age, qualification; synthetic)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="recruit-eligibility_t" hitPolicy="FIRST">
+      <input id="recruit-eligibility_i0" label="Qualification"><inputExpression id="recruit-eligibility_ie0" typeRef="string"><text>qualification</text></inputExpression></input>
+      <output id="recruit-eligibility_o0" label="Eligible" name="eligible" typeRef="boolean"/>
+      <rule id="recruit-eligibility_r0">
+        <inputEntry id="recruit-eligibility_r0_i0"><text>"BELOW_10TH"</text></inputEntry>
+        <outputEntry id="recruit-eligibility_r0_o0"><text>false</text></outputEntry>
+      </rule>
+      <rule id="recruit-eligibility_r1">
+        <inputEntry id="recruit-eligibility_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="recruit-eligibility_r1_o0"><text>true</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

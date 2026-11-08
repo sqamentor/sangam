@@ -1,0 +1,172 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: OD
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Odisha
+    hi: ओडिशा
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources OD1-OD3, accessed 2026-11-04)
+placeholders:
+- path: documentTypes
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (20 types / ~70
+    sub-types: names to load from IFMS 3.0 RFP)'
+- path: classification.defaultScheme
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (no official
+    code structure found; Union layout used)'
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 8
+  sources: OD1-OD3
+locale:
+  languages:
+  - tag: or
+    script: Orya
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - accounts
+    - audit
+    note: accounts and audit outputs are usually English (IFMS-STATES 9.1)
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - IFMS (ex-iOTMS)
+  - IFMS 3.0
+  - BETA
+  - CePC
+  - SBMS
+  - JiT-FS
+  - CSS-JiT
+  snaSparsh:
+    hosting: MODULE
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Treasuries & Inspection
+  unitTypes:
+    DISTRICT_TREASURY: 30
+    SPECIAL_TREASURY: 9
+    CYBER_TREASURY_RECEIPTS: 1
+    PENSION_TREASURY: 1
+    SUB_TREASURY: 128
+  ddoCount: null
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: OGFR_2023
+    title: OGFR 2023 (to 04-06-2025)
+  - id: OTC
+    title: Odisha Treasury Code
+  - id: OBM
+    title: Odisha Budget Manual
+  - id: OD_DFPR_1978
+    title: DFPR 1978 (amended 16-03-2024)
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+  centralisedPaymentCell: true
+  batching: PT30M
+treasury:
+  scrutinyDepth: 4
+  scrutinyRoles:
+  - FRONT_DESK
+  - DEALING_ASSISTANT
+  - ACCOUNTANT
+  - TO
+  bookOfDrawal: true
+stateJit:
+  enabled: true
+  api: true
+gem:
+  fundBlock: true
+sanctionOrderMandatorySince: '2018'
+billTypes: 20
+billSubTypes: 70
+sbms:
+- ULB
+- GP
+- NHM
+- OLM
+classification:
+  defaultScheme: HOA
+procurement:
+  family: RULES
+  rule: OGFR 2023 (amended 04-06-2025, 16-03-2026)
+  worksCode: OPWD Code
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/OD/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: OD
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/OD/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: OD
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from OGFR 2023 (amended 04-06-2025, 16-03-2026) (was: RPR 2022: DDO draws within
+        a sanction; no sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from OGFR 2023 (amended 04-06-2025, 16-03-2026) (was: DFPR 2024 r.12(4) and department
+        re-delegation order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from OGFR 2023 (amended 04-06-2025, 16-03-2026) (was: DFPR 2024 r.12(2) re-delegation
+        to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from OGFR 2023 (amended 04-06-2025, 16-03-2026) (was: DFPR 2024 r.11 (open /
+        limited tender up to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from OGFR 2023 (amended 04-06-2025, 16-03-2026) (was: DFPR 2024 r.11: above the
+        Secretary; no upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from OGFR 2023 (amended 04-06-2025, 16-03-2026) (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

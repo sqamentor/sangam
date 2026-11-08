@@ -1,0 +1,72 @@
+{
+  "key": "sec-ushealth-eligibility/resolve",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.eligibility",
+  "title": {
+    "en": "Resolve coverage: correct data, other coverage, self-pay",
+    "es": "Resolver la cobertura: corregir datos, otra cobertura, pago propio"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "memberId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Member ID",
+        "es": "Número de afiliado"
+      }
+    },
+    {
+      "id": "payerId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Payer ID",
+        "es": "Identificador del pagador"
+      }
+    },
+    {
+      "id": "coverageResolution",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Coverage resolution notes",
+        "es": "Notas de resolución de cobertura"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "coverageDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "retry",
+        "label": {
+          "en": "Retry",
+          "es": "Reintentar"
+        }
+      },
+      {
+        "value": "otherCoverage",
+        "label": {
+          "en": "Other coverage found",
+          "es": "Otra cobertura encontrada"
+        }
+      },
+      {
+        "value": "selfPay",
+        "label": {
+          "en": "Self-pay / financial assistance",
+          "es": "Pago propio / asistencia financiera"
+        }
+      }
+    ]
+  }
+}

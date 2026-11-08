@@ -1,0 +1,95 @@
+{
+  "id": "sec.legal.litigation",
+  "version": "1.0.0",
+  "name": {
+    "en": "Private litigation and legal notices",
+    "hi": "निजी मुकदमे एवं विधिक नोटिस"
+  },
+  "domain": "Legal / privacy",
+  "description": "Legal notice or suit received: limitation and reply period by rule, assessment, counsel engaged with fee approval, reply / written statement within the period (CPC: 30 days, extendable to 90), hearings tracked from the court portal, judgment, appeal decision within the appeal period, compliance; or outward suit before limitation expires.",
+  "mainProcesses": [
+    "sangam-sec-legal-litigation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-legal-litigation/sangam-sec-legal-litigation.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-legal-litigation/sec-legal-periods.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-litigation/forms/intake.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-litigation/forms/assess.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-litigation/forms/settle.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-litigation/forms/reply.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-litigation/forms/hearing.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-litigation/forms/decide.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-litigation/forms/comply.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-legal-litigation/seed.json"
+    }
+  ],
+  "seed": "packs/sec-legal-litigation/seed.json",
+  "connectors": [
+    {
+      "id": "court.ecourts",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "e-Courts case status"
+    },
+    {
+      "id": "docs.reply",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Reply / pleading"
+    }
+  ],
+  "covers": [
+    "SEC-LEGAL-004",
+    "GP-21",
+    "GP-22",
+    "GP-35",
+    "GP-51",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

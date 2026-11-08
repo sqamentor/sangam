@@ -1,0 +1,45 @@
+{
+  "key": "up02-saga/order",
+  "version": "1.0.0",
+  "pack": "universal.up02-saga",
+  "title": {
+    "en": "Order",
+    "hi": "आदेश"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "orderId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Order",
+        "hi": "आदेश"
+      }
+    },
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "sec.tel.mnp-port-in",
+  "version": "1.0.0",
+  "name": {
+    "en": "Mobile number portability (port-in)",
+    "hi": "मोबाइल नंबर पोर्टेबिलिटी (पोर्ट-इन)"
+  },
+  "domain": "Telecom",
+  "description": "Port-in request with a valid UPC, subscriber KYC (e-KYC / D-KYC), request to the MNP service provider, donor acceptance or rejection with the coded reason, porting window and activation within the TRAI timeline (intra / inter service area, corporate), escalation when late.",
+  "mainProcesses": [
+    "sangam-sec-tel-mnp"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-tel-mnp-port-in/sangam-sec-tel-mnp.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-tel-mnp-port-in/sec-tel-mnp-timeline.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-tel-mnp-port-in/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-tel-mnp-port-in/forms/escalate.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-tel-mnp-port-in/seed.json"
+    }
+  ],
+  "seed": "packs/sec-tel-mnp-port-in/seed.json",
+  "connectors": [
+    {
+      "id": "dot.kyc",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Subscriber e-KYC"
+    },
+    {
+      "id": "mnpsp.port",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "MNP service provider"
+    },
+    {
+      "id": "hlr.activate",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Network activation"
+    }
+  ],
+  "covers": [
+    "SEC-TEL-001",
+    "SEC-TEL-002",
+    "UP-12",
+    "GP-15"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-rejection"
+  ]
+}

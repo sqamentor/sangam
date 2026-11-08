@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Monthly payroll. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_hr_payroll" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-hr-payroll" name="Monthly payroll" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.hr.payroll</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pr_timer" name="25th of the month"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 6 25 * ?</timeCycle></timerEventDefinition></startEvent>
+    <serviceTask id="pr_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>period=CURRENT;grossWages=1000000;pfWages=600000;esiWages=200000;amount=@grossWages;caseType=PAYROLL;routingDecisionKey=sec-hr-payroll-authority;powersDecisionKey=sec-hr-payroll-powers;executionConnector=bank.transfer;executionStep=salary;reconcileRequired=true;executionPayloadFields=period,grossWages;appealAllowed=false;payrollSeat=PAYROLL-MAKER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pr_inputs" name="Freeze attendance and inputs" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hris.inputs</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>freeze</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>inputs</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="pr_rates" name="PF / ESI rates (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-hr-statutory</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="pr_compute" name="Contributions" operaton:expression="${execution.setVariable('pfAmount', pfWages * (pfEmployeePct + pfEmployerPct) / 100)}"></serviceTask>
+    <serviceTask id="pr_esiCalc" name="ESI" operaton:expression="${execution.setVariable('esiAmount', esiWages * (esiEmployeePct + esiEmployerPct) / 100)}"></serviceTask>
+    <userTask id="pr_make" name="Review payroll register (maker)" operaton:candidateGroups="${payrollSeat}" operaton:formKey="sangam:sec-hr-payroll/make"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <callActivity id="pr_approve" name="Approve payroll (core sanction)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="pr_pay" name="Pay salaries by the 7th (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="pr_sanGw" name="sanctionOutcome?" default="sec_hr_payroll_f9"></exclusiveGateway>
+    <parallelGateway id="pr_fork" name="Returns by the 15th"></parallelGateway>
+    <parallelGateway id="pr_join" name=""></parallelGateway>
+    <serviceTask id="pr_pf_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pr_pf</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>15D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pr_pf" name="File PF ECR and pay" operaton:candidateGroups="${payrollSeat}" operaton:formKey="sangam:sec-hr-payroll/pf" operaton:dueDate="${pr_pfDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pr_pf_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pr_pf</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>payrollSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pr_pf_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="pr_pf_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pr_pf</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>payrollSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pr_pf_breachGw" name="Deemed?" default="sec_hr_payroll_f17"></exclusiveGateway>
+    <exclusiveGateway id="pr_pf_done" name=""></exclusiveGateway>
+    <serviceTask id="pr_pfFile" name="File PF ECR and pay" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>epfo.ecr</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>file</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>period,pfAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>pfRet</operaton:string></operaton:field><operaton:field name="step"><operaton:string>pf</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pr_esi_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pr_esi</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>15D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pr_esi" name="File ESI contribution and pay" operaton:candidateGroups="${payrollSeat}" operaton:formKey="sangam:sec-hr-payroll/esi" operaton:dueDate="${pr_esiDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pr_esi_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pr_esi</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>payrollSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pr_esi_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="pr_esi_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pr_esi</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>payrollSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pr_esi_breachGw" name="Deemed?" default="sec_hr_payroll_f28"></exclusiveGateway>
+    <exclusiveGateway id="pr_esi_done" name=""></exclusiveGateway>
+    <serviceTask id="pr_esiFile" name="File ESI contribution and pay" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>esic.contribution</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>file</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>period,esiAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>esiRet</operaton:string></operaton:field><operaton:field name="step"><operaton:string>esi</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pr_payslips" name="Issue payslips" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.payslip</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>issue</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>period</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>slips</operaton:string></operaton:field><operaton:field name="step"><operaton:string>payslips</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pr_end" name="Payroll closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="pr_pf_warn" name="SLA warning (75%)" attachedToRef="pr_pf" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pr_pfWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pr_pf_breach" name="SLA breached" attachedToRef="pr_pf" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pr_pfDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pr_esi_warn" name="SLA warning (75%)" attachedToRef="pr_esi" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pr_esiWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pr_esi_breach" name="SLA breached" attachedToRef="pr_esi" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pr_esiDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_hr_payroll_f1" sourceRef="pr_timer" targetRef="pr_defaults"/>
+    <sequenceFlow id="sec_hr_payroll_f2" sourceRef="pr_defaults" targetRef="pr_inputs"/>
+    <sequenceFlow id="sec_hr_payroll_f3" sourceRef="pr_inputs" targetRef="pr_rates"/>
+    <sequenceFlow id="sec_hr_payroll_f4" sourceRef="pr_rates" targetRef="pr_compute"/>
+    <sequenceFlow id="sec_hr_payroll_f5" sourceRef="pr_compute" targetRef="pr_esiCalc"/>
+    <sequenceFlow id="sec_hr_payroll_f6" sourceRef="pr_esiCalc" targetRef="pr_make"/>
+    <sequenceFlow id="sec_hr_payroll_f7" sourceRef="pr_make" targetRef="pr_approve"/>
+    <sequenceFlow id="sec_hr_payroll_f8" name="SANCTIONED" sourceRef="pr_sanGw" targetRef="pr_pay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_payroll_f9" name="otherwise" sourceRef="pr_sanGw" targetRef="pr_make"/>
+    <sequenceFlow id="sec_hr_payroll_f10" sourceRef="pr_approve" targetRef="pr_sanGw"/>
+    <sequenceFlow id="sec_hr_payroll_f11" sourceRef="pr_pay" targetRef="pr_fork"/>
+    <sequenceFlow id="sec_hr_payroll_f12" sourceRef="pr_pf_warn" targetRef="pr_pf_warnNotify"/>
+    <sequenceFlow id="sec_hr_payroll_f13" sourceRef="pr_pf_warnNotify" targetRef="pr_pf_warnEnd"/>
+    <sequenceFlow id="sec_hr_payroll_f14" sourceRef="pr_pf_breach" targetRef="pr_pf_breachAct"/>
+    <sequenceFlow id="sec_hr_payroll_f15" sourceRef="pr_pf_breachAct" targetRef="pr_pf_breachGw"/>
+    <sequenceFlow id="sec_hr_payroll_f16" name="deemed" sourceRef="pr_pf_breachGw" targetRef="pr_pf_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_payroll_f17" name="escalated" sourceRef="pr_pf_breachGw" targetRef="pr_pf_slaPlan"/>
+    <sequenceFlow id="sec_hr_payroll_f18" sourceRef="pr_pf_slaPlan" targetRef="pr_pf"/>
+    <sequenceFlow id="sec_hr_payroll_f19" sourceRef="pr_pf" targetRef="pr_pf_done"/>
+    <sequenceFlow id="sec_hr_payroll_f20" sourceRef="pr_fork" targetRef="pr_pf_slaPlan"/>
+    <sequenceFlow id="sec_hr_payroll_f21" sourceRef="pr_pf_done" targetRef="pr_pfFile"/>
+    <sequenceFlow id="sec_hr_payroll_f22" sourceRef="pr_pfFile" targetRef="pr_join"/>
+    <sequenceFlow id="sec_hr_payroll_f23" sourceRef="pr_esi_warn" targetRef="pr_esi_warnNotify"/>
+    <sequenceFlow id="sec_hr_payroll_f24" sourceRef="pr_esi_warnNotify" targetRef="pr_esi_warnEnd"/>
+    <sequenceFlow id="sec_hr_payroll_f25" sourceRef="pr_esi_breach" targetRef="pr_esi_breachAct"/>
+    <sequenceFlow id="sec_hr_payroll_f26" sourceRef="pr_esi_breachAct" targetRef="pr_esi_breachGw"/>
+    <sequenceFlow id="sec_hr_payroll_f27" name="deemed" sourceRef="pr_esi_breachGw" targetRef="pr_esi_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_payroll_f28" name="escalated" sourceRef="pr_esi_breachGw" targetRef="pr_esi_slaPlan"/>
+    <sequenceFlow id="sec_hr_payroll_f29" sourceRef="pr_esi_slaPlan" targetRef="pr_esi"/>
+    <sequenceFlow id="sec_hr_payroll_f30" sourceRef="pr_esi" targetRef="pr_esi_done"/>
+    <sequenceFlow id="sec_hr_payroll_f31" sourceRef="pr_fork" targetRef="pr_esi_slaPlan"/>
+    <sequenceFlow id="sec_hr_payroll_f32" sourceRef="pr_esi_done" targetRef="pr_esiFile"/>
+    <sequenceFlow id="sec_hr_payroll_f33" sourceRef="pr_esiFile" targetRef="pr_join"/>
+    <sequenceFlow id="sec_hr_payroll_f34" sourceRef="pr_join" targetRef="pr_payslips"/>
+    <sequenceFlow id="sec_hr_payroll_f35" sourceRef="pr_payslips" targetRef="pr_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_hr_payroll_diagram">
+    <bpmndi:BPMNPlane id="sec_hr_payroll_plane" bpmnElement="sangam-sec-hr-payroll">
+      <bpmndi:BPMNShape id="pr_timer_di" bpmnElement="pr_timer"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_defaults_di" bpmnElement="pr_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_inputs_di" bpmnElement="pr_inputs"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_rates_di" bpmnElement="pr_rates"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_compute_di" bpmnElement="pr_compute"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esiCalc_di" bpmnElement="pr_esiCalc"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_make_di" bpmnElement="pr_make"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_approve_di" bpmnElement="pr_approve"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pay_di" bpmnElement="pr_pay"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_sanGw_di" bpmnElement="pr_sanGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_fork_di" bpmnElement="pr_fork"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_join_di" bpmnElement="pr_join"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pf_slaPlan_di" bpmnElement="pr_pf_slaPlan"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pf_di" bpmnElement="pr_pf"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pf_warnNotify_di" bpmnElement="pr_pf_warnNotify"><dc:Bounds x="2165" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pf_warnEnd_di" bpmnElement="pr_pf_warnEnd"><dc:Bounds x="2362" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pf_breachAct_di" bpmnElement="pr_pf_breachAct"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pf_breachGw_di" bpmnElement="pr_pf_breachGw"><dc:Bounds x="2355" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pf_done_di" bpmnElement="pr_pf_done"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pfFile_di" bpmnElement="pr_pfFile"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esi_slaPlan_di" bpmnElement="pr_esi_slaPlan"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esi_di" bpmnElement="pr_esi"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esi_warnNotify_di" bpmnElement="pr_esi_warnNotify"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esi_warnEnd_di" bpmnElement="pr_esi_warnEnd"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esi_breachAct_di" bpmnElement="pr_esi_breachAct"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esi_breachGw_di" bpmnElement="pr_esi_breachGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esi_done_di" bpmnElement="pr_esi_done"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esiFile_di" bpmnElement="pr_esiFile"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_payslips_di" bpmnElement="pr_payslips"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_end_di" bpmnElement="pr_end"><dc:Bounds x="3187" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pf_warn_di" bpmnElement="pr_pf_warn"><dc:Bounds x="2008" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_pf_breach_di" bpmnElement="pr_pf_breach"><dc:Bounds x="2038" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esi_warn_di" bpmnElement="pr_esi_warn"><dc:Bounds x="2008" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_esi_breach_di" bpmnElement="pr_esi_breach"><dc:Bounds x="2038" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f1_di" bpmnElement="sec_hr_payroll_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f2_di" bpmnElement="sec_hr_payroll_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f3_di" bpmnElement="sec_hr_payroll_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f4_di" bpmnElement="sec_hr_payroll_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f5_di" bpmnElement="sec_hr_payroll_f5"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f6_di" bpmnElement="sec_hr_payroll_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f7_di" bpmnElement="sec_hr_payroll_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f8_di" bpmnElement="sec_hr_payroll_f8"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f9_di" bpmnElement="sec_hr_payroll_f9"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="128"/><di:waypoint x="1060" y="128"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f10_di" bpmnElement="sec_hr_payroll_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f11_di" bpmnElement="sec_hr_payroll_f11"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f12_di" bpmnElement="sec_hr_payroll_f12"><di:waypoint x="2026" y="253"/><di:waypoint x="2026" y="445"/><di:waypoint x="2165" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f13_di" bpmnElement="sec_hr_payroll_f13"><di:waypoint x="2265" y="445"/><di:waypoint x="2362" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f14_di" bpmnElement="sec_hr_payroll_f14"><di:waypoint x="2056" y="253"/><di:waypoint x="2056" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f15_di" bpmnElement="sec_hr_payroll_f15"><di:waypoint x="2265" y="320"/><di:waypoint x="2355" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f16_di" bpmnElement="sec_hr_payroll_f16"><di:waypoint x="2405" y="320"/><di:waypoint x="2462" y="320"/><di:waypoint x="2462" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f17_di" bpmnElement="sec_hr_payroll_f17"><di:waypoint x="2380" y="345"/><di:waypoint x="2380" y="363"/><di:waypoint x="1885" y="363"/><di:waypoint x="1885" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f18_di" bpmnElement="sec_hr_payroll_f18"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f19_di" bpmnElement="sec_hr_payroll_f19"><di:waypoint x="2100" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f20_di" bpmnElement="sec_hr_payroll_f20"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f21_di" bpmnElement="sec_hr_payroll_f21"><di:waypoint x="2570" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f22_di" bpmnElement="sec_hr_payroll_f22"><di:waypoint x="2760" y="195"/><di:waypoint x="2805" y="195"/><di:waypoint x="2805" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f23_di" bpmnElement="sec_hr_payroll_f23"><di:waypoint x="2026" y="128"/><di:waypoint x="2026" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f24_di" bpmnElement="sec_hr_payroll_f24"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f25_di" bpmnElement="sec_hr_payroll_f25"><di:waypoint x="2056" y="128"/><di:waypoint x="2056" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f26_di" bpmnElement="sec_hr_payroll_f26"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f27_di" bpmnElement="sec_hr_payroll_f27"><di:waypoint x="2405" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f28_di" bpmnElement="sec_hr_payroll_f28"><di:waypoint x="2380" y="95"/><di:waypoint x="2380" y="149"/><di:waypoint x="1885" y="149"/><di:waypoint x="1885" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f29_di" bpmnElement="sec_hr_payroll_f29"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f30_di" bpmnElement="sec_hr_payroll_f30"><di:waypoint x="2100" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f31_di" bpmnElement="sec_hr_payroll_f31"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f32_di" bpmnElement="sec_hr_payroll_f32"><di:waypoint x="2570" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f33_di" bpmnElement="sec_hr_payroll_f33"><di:waypoint x="2760" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f34_di" bpmnElement="sec_hr_payroll_f34"><di:waypoint x="2900" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_payroll_f35_di" bpmnElement="sec_hr_payroll_f35"><di:waypoint x="3090" y="70"/><di:waypoint x="3187" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

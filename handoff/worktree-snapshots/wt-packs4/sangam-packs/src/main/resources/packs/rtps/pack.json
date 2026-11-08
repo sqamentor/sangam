@@ -1,0 +1,81 @@
+{
+  "id": "gov.rtps",
+  "version": "1.0.0",
+  "name": {
+    "en": "Right to public services (time-bound delivery)",
+    "hi": "लोक सेवा अधिकार (समयबद्ध प्रदाय)"
+  },
+  "domain": "Right to public services",
+  "description": "A notified service is decided by the designated officer within the notified time; on delay or refusal the first appellate authority decides; on unjustified delay the second appellate authority imposes a penalty on the designated officer and compensation to the applicant (state RTPS Acts, synthetic timelines).",
+  "mainProcesses": [
+    "sangam-rtps-service"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/rtps/sangam-rtps-service.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/rtps/rtps-timeline.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/rtps/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/rtps/forms/decide.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/rtps/forms/penalty.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/rtps/seed.json"
+    }
+  ],
+  "seed": "packs/rtps/seed.json",
+  "connectors": [
+    {
+      "id": "hr.penaltyRecovery",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Recovery of the penalty from salary"
+    },
+    {
+      "id": "pfms.payment",
+      "capabilityClass": "c",
+      "govTag": "G-PFMS",
+      "purpose": "Compensation to the applicant"
+    }
+  ],
+  "covers": [
+    "GP-06",
+    "GP-22",
+    "GP-35",
+    "GP-44",
+    "GP-12",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-rejection"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "officerPenalty"
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "id": "universal.up22-external-collaboration",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-22 External-party collaboration (supplier onboarding)",
+    "hi": "यूपी-22 बाह्य पक्ष सहयोग (आपूर्तिकर्ता पंजीकरण)"
+  },
+  "domain": "Universal",
+  "description": "A supplier without an internal account is invited with a scoped one-time link (external principal), submits documents in a portal task, internal review with clarification rounds, vendor creation (R19, R67, R76; the citizen screens C01-C06 are the government analogue).",
+  "mainProcesses": [
+    "sangam-up22-supplier-onboarding"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up22-external-collaboration/sangam-up22-supplier-onboarding.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up22-external-collaboration/forms/nominate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up22-external-collaboration/forms/supplier.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up22-external-collaboration/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up22-external-collaboration/seed.json"
+    }
+  ],
+  "seed": "packs/up22-external-collaboration/seed.json",
+  "connectors": [
+    {
+      "id": "portal.inviteExternal",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Magic-link invitation"
+    },
+    {
+      "id": "vendor.create",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Vendor master"
+    }
+  ],
+  "covers": [
+    "UP-22",
+    "R19",
+    "R67",
+    "R76",
+    "GP-16"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

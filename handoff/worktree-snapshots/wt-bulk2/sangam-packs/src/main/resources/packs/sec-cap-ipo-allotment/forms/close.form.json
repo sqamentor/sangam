@@ -1,0 +1,45 @@
+{
+  "key": "sec-cap-ipo-allotment/close",
+  "version": "1.0.0",
+  "pack": "sec.cap.ipo-allotment",
+  "title": {
+    "en": "Issue closure",
+    "hi": "निर्गम समापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "issueName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Issue",
+        "hi": "निर्गम"
+      }
+    },
+    {
+      "id": "issueCloseDate",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Issue closing date (T)",
+        "hi": "निर्गम समापन तिथि (टी)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

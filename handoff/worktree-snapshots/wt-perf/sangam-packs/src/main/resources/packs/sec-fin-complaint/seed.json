@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "GRIEVANCE",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "GRO",
+      "role": "GRO",
+      "office": "GRIEVANCE",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "NODAL-OFFICER",
+      "name": {
+        "en": "Grievance redressal officer",
+        "hi": "शिकायत निवारण अधिकारी"
+      }
+    },
+    {
+      "id": "NODAL-OFFICER",
+      "role": "NODAL",
+      "office": "GRIEVANCE",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Principal nodal officer",
+        "hi": "प्रधान नोडल अधिकारी"
+      }
+    },
+    {
+      "id": "INTERNAL-OMBUDSMAN",
+      "role": "IO",
+      "office": "GRIEVANCE",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Internal ombudsman",
+        "hi": "आंतरिक लोकपाल"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "GRO",
+      "person": "fco.gro",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "NODAL-OFFICER",
+      "person": "fco.nodal-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "INTERNAL-OMBUDSMAN",
+      "person": "fco.internal-ombudsman",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "GRO",
+      "name": {
+        "en": "Grievance redressal officer",
+        "hi": "शिकायत निवारण अधिकारी"
+      }
+    },
+    {
+      "code": "NODAL",
+      "name": {
+        "en": "Principal nodal officer",
+        "hi": "प्रधान नोडल अधिकारी"
+      }
+    },
+    {
+      "code": "IO",
+      "name": {
+        "en": "Internal ombudsman",
+        "hi": "आंतरिक लोकपाल"
+      }
+    }
+  ]
+}

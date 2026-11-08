@@ -1,0 +1,63 @@
+{
+  "key": "sec-hr-employee-exit/initiate",
+  "version": "1.0.0",
+  "pack": "sec.hr.employee-exit",
+  "title": {
+    "en": "Exit",
+    "hi": "निकास"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "employeeId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Employee",
+        "hi": "कर्मचारी"
+      }
+    },
+    {
+      "id": "employeeName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Employee name",
+        "hi": "कर्मचारी का नाम"
+      }
+    },
+    {
+      "id": "exitType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Exit type",
+        "hi": "निकास का प्रकार"
+      }
+    },
+    {
+      "id": "lastWorkingDay",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Last working day",
+        "hi": "अंतिम कार्य दिवस"
+      }
+    },
+    {
+      "id": "qualifyingService",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Qualifying service (years)",
+        "hi": "अर्हक सेवा (वर्ष)"
+      }
+    }
+  ]
+}

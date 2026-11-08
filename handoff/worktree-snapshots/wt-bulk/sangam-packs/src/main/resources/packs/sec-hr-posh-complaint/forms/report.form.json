@@ -1,0 +1,27 @@
+{
+  "key": "sec-hr-posh-complaint/report",
+  "version": "1.0.0",
+  "pack": "sec.hr.posh-complaint",
+  "title": {
+    "en": "Inquiry report to the employer (10 days)",
+    "hi": "नियोक्ता को जाँच रिपोर्ट (10 दिन)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "findings",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    }
+  ]
+}

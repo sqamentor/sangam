@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_allocation_authority" name="Competent authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Allocation approval; a State replaces this table by tenant override. -->
+  <decision id="ifms-allocation-authority" name="Competent authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-allocation-authority_t" hitPolicy="FIRST">
+      <input id="ifms-allocation-authority_i0" label="Amount (INR)"><inputExpression id="ifms-allocation-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="ifms-allocation-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="ifms-allocation-authority_r0"><description>Pr.AO approves DDO-wise allocation entered by the PAO (CAM 2.2.4)</description>
+        <inputEntry id="ifms-allocation-authority_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="ifms-allocation-authority_r0_o0"><text>"PR_AO"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

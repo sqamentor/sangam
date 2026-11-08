@@ -1,0 +1,47 @@
+{
+  "key": "ifms-monthly-accounts/consolidate",
+  "version": "1.0.0",
+  "pack": "gov.ifms.monthly-accounts",
+  "title": {
+    "en": "Consolidate and approve",
+    "hi": "समेकन और अनुमोदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "consDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "returnBill",
+        "label": {
+          "en": "Return to DDO",
+          "hi": "डीडीओ को वापस करें"
+        }
+      }
+    ]
+  }
+}

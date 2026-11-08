@@ -1,0 +1,48 @@
+{
+  "jurisdiction": "US",
+  "identifierTypes": [
+    {
+      "typeKey": "NPI",
+      "label": "National Provider Identifier",
+      "pattern": "[0-9]{10}",
+      "normalise": [
+        "DIGITS_ONLY"
+      ],
+      "unique": true,
+      "matchWeight": 12
+    },
+    {
+      "typeKey": "EIN",
+      "label": "Employer Identification Number",
+      "pattern": "[0-9]{9}",
+      "normalise": [
+        "DIGITS_ONLY"
+      ],
+      "unique": true,
+      "matchWeight": 12,
+      "appliesTo": "ORGANISATION"
+    },
+    {
+      "typeKey": "MEMBER_ID",
+      "label": "Health plan member id",
+      "normalise": [
+        "UPPER",
+        "STRIP_SPACES"
+      ],
+      "sensitive": true,
+      "matchWeight": 8,
+      "appliesTo": "PERSON"
+    },
+    {
+      "typeKey": "MRN",
+      "label": "Medical record number",
+      "normalise": [
+        "UPPER",
+        "STRIP_SPACES"
+      ],
+      "sensitive": true,
+      "matchWeight": 8,
+      "appliesTo": "PERSON"
+    }
+  ]
+}

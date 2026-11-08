@@ -1,0 +1,73 @@
+{
+  "id": "sec.hr.appraisal",
+  "version": "1.0.0",
+  "name": {
+    "en": "Annual performance appraisal",
+    "hi": "वार्षिक कार्य-निष्पादन मूल्यांकन"
+  },
+  "domain": "HR",
+  "description": "Annual cycle with one case per employee (GP-09): goals, self-appraisal, manager rating, reviewer with SoD, calibration committee, communication, employee appeal to HR within the window.",
+  "mainProcesses": [
+    "sangam-sec-hr-appraisal-cycle"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-hr-appraisal/sangam-sec-hr-appraisal-cycle.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-hr-appraisal/sangam-sec-hr-appraisal.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-appraisal/forms/self.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-appraisal/forms/manager.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-appraisal/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-hr-appraisal/forms/appeal.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-hr-appraisal/seed.json"
+    }
+  ],
+  "seed": "packs/sec-hr-appraisal/seed.json",
+  "connectors": [
+    {
+      "id": "hris.employees",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Employees in scope"
+    },
+    {
+      "id": "hris.rating",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Record rating"
+    }
+  ],
+  "covers": [
+    "SEC-HR-006",
+    "GP-02",
+    "GP-03",
+    "GP-09",
+    "GP-22"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-committee"
+  ]
+}

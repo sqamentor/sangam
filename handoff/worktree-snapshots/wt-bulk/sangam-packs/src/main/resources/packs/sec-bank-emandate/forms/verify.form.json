@@ -1,0 +1,36 @@
+{
+  "key": "sec-bank-emandate/verify",
+  "version": "1.0.0",
+  "pack": "sec.bank.emandate",
+  "title": {
+    "en": "Verify signed NACH form (maker)",
+    "hi": "हस्ताक्षरित एनएसीएच प्रपत्र का सत्यापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

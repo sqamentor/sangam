@@ -1,0 +1,69 @@
+{
+  "id": "sec.mfg.mrp-planning",
+  "version": "1.0.0",
+  "name": {
+    "en": "Material requirements planning run",
+    "hi": "सामग्री आवश्यकता नियोजन"
+  },
+  "domain": "Manufacturing",
+  "description": "Weekly MRP run: net requirements from demand, stock and open orders; the planner reviews exception messages; each planned order becomes its own case (GP-09) that is converted to a purchase requisition (procure-to-pay) or a production order after approval.",
+  "mainProcesses": [
+    "sangam-sec-mfg-mrp"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-mfg-mrp-planning/sangam-sec-mfg-mrp.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-mfg-mrp-planning/sangam-sec-mfg-planned-order.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-mfg-mrp-planning/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-mfg-mrp-planning/forms/firm.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-mfg-mrp-planning/seed.json"
+    }
+  ],
+  "seed": "packs/sec-mfg-mrp-planning/seed.json",
+  "connectors": [
+    {
+      "id": "erp.mrpRun",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "MRP run"
+    },
+    {
+      "id": "erp.plannedOrders",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Planned orders"
+    },
+    {
+      "id": "erp.productionOrder",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Production order"
+    }
+  ],
+  "covers": [
+    "SEC-MFG-003",
+    "GP-08",
+    "GP-09",
+    "GP-30"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "sec.scm.procure-to-pay"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

@@ -1,0 +1,75 @@
+{
+  "id": "gov.inspection",
+  "version": "1.0.0",
+  "name": {
+    "en": "Inspection and enforcement",
+    "hi": "निरीक्षण एवं प्रवर्तन"
+  },
+  "domain": "Inspection",
+  "description": "Risk-based monthly inspection programme (timer start, one case per establishment, GP-09), least-loaded assignment and reassignment on reschedule (GP-17, R82), inspection with geo-tagged evidence, compliance notice with window, re-inspection, penalty order by the competent authority.",
+  "mainProcesses": [
+    "sangam-inspection-programme"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/inspection/sangam-inspection-programme.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/inspection/sangam-inspection.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/inspection/inspection-penalty-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/inspection/forms/case.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/inspection/forms/inspect.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/inspection/seed.json"
+    }
+  ],
+  "seed": "packs/inspection/seed.json",
+  "connectors": [
+    {
+      "id": "inspection.establishments",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Establishments due (risk-ranked)"
+    }
+  ],
+  "covers": [
+    "GP-17",
+    "GP-06",
+    "GP-30",
+    "GP-09",
+    "GP-33",
+    "UP-04",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

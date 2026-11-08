@@ -1,0 +1,6 @@
+# BuildKit per-Dockerfile ignore file (context = sangam/): only the UI sources and the deploy/docker/ui files.
+**
+!sangam-ui/**
+sangam-ui/node_modules/**
+sangam-ui/coverage/**
+!deploy/docker/ui/**

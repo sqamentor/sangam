@@ -1,0 +1,94 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if .Values.backup.enabled }}
+{{- $type := include "sangam.db.type" . -}}
+{{- $b := .Values.backup -}}
+{{- if and $b.persistence.create (not $b.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "sangam.backup.claim" . }}
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backup
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    {{- toYaml $b.persistence.accessModes | nindent 4 }}
+  {{- with $b.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $b.persistence.size }}
+{{- end }}
+{{- if eq $type "postgres" }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "pg-full" "schedule" $b.postgres.fullSchedule "image" $b.postgres.image "command" "sh /scripts/pg-full.sh") }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "pg-logical" "schedule" $b.postgres.logicalSchedule "image" $b.postgres.image "command" "sh /scripts/pg-logical.sh") }}
+{{- if $b.postgres.walReceiver.enabled }}
+---
+# Continuous WAL archive (RPO = seconds) with a physical replication slot. The backup user needs REPLICATION.
+# Watch the slot: if this pod stops for long, WAL accumulates on the primary (pg_replication_slots).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sangam.fullname" . }}-pg-receivewal
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backup
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "backup") | nindent 6 }}
+      sangam.io/backup: pg-receivewal
+  template:
+    metadata:
+      labels:
+        {{- include "sangam.selectorLabels" (dict "ctx" . "component" "backup") | nindent 8 }}
+        sangam.io/backup: pg-receivewal
+    spec:
+      {{- include "sangam.imagePullSecrets" . | nindent 6 }}
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml $b.podSecurityContext | nindent 8 }}
+      containers:
+        - name: pg-receivewal
+          image: {{ include "sangam.toolImage" (dict "ctx" . "image" $b.postgres.image) | quote }}
+          command: ["sh", "/scripts/pg-receivewal.sh"]
+          env:
+            {{- include "sangam.backup.env" . | nindent 12 }}
+            - { name: WAL_SLOT, value: {{ $b.postgres.walReceiver.slot | quote }} }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          resources:
+            {{- toYaml $b.resources | nindent 12 }}
+          volumeMounts:
+            - { name: scripts, mountPath: /scripts, readOnly: true }
+            - { name: backup, mountPath: /backup }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: scripts
+          configMap: { name: {{ include "sangam.fullname" . }}-backup-scripts }
+        - name: backup
+          persistentVolumeClaim: { claimName: {{ include "sangam.backup.claim" . }} }
+        - name: tmp
+          emptyDir: { sizeLimit: 64Mi }
+{{- end }}
+{{- else if eq $type "oracle" }}
+{{- $img := required "backup.oracle.image is required: an image with the Oracle client and rman (not redistributable, LIC-2)" $b.oracle.image }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "ora-level0" "schedule" $b.oracle.fullSchedule "image" $img "command" "sh /scripts/oracle-rman.sh full") }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "ora-level1" "schedule" $b.oracle.incrementalSchedule "image" $img "command" "sh /scripts/oracle-rman.sh incremental") }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "ora-archlog" "schedule" $b.oracle.archivelogSchedule "image" $img "command" "sh /scripts/oracle-rman.sh archivelog") }}
+{{- else if eq $type "sqlserver" }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mssql-full" "schedule" $b.sqlserver.fullSchedule "image" $b.sqlserver.image "command" "bash /scripts/mssql-backup.sh full" "runAsUser" 10001) }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mssql-diff" "schedule" $b.sqlserver.diffSchedule "image" $b.sqlserver.image "command" "bash /scripts/mssql-backup.sh diff" "runAsUser" 10001) }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mssql-log" "schedule" $b.sqlserver.logSchedule "image" $b.sqlserver.image "command" "bash /scripts/mssql-backup.sh log" "runAsUser" 10001) }}
+{{- else if eq $type "mysql" }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mysql-full" "schedule" $b.mysql.fullSchedule "image" $b.mysql.image "command" "bash /scripts/mysql-full.sh") }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mysql-binlog" "schedule" $b.mysql.binlogSchedule "image" $b.mysql.image "command" "bash /scripts/mysql-binlog.sh") }}
+{{- end }}
+{{- end }}

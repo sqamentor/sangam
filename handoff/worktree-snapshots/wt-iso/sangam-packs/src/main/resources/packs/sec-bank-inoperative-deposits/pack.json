@@ -1,0 +1,95 @@
+{
+  "id": "sec.bank.inoperative-deposits",
+  "version": "1.0.0",
+  "name": {
+    "en": "Inoperative accounts and unclaimed deposits (DEA Fund)",
+    "hi": "निष्क्रिय खाते एवं अदावी जमा (डीईए निधि)"
+  },
+  "domain": "Banking",
+  "description": "Monthly review, one case per account: no customer-induced transaction for 2 years makes the account inoperative (customer told in advance, no charge for activation); balances unclaimed for 10 years are transferred to the RBI DEA Fund; reactivation or claim with KYC updated, no fee, claim refunded from the DEA Fund with interest where payable.",
+  "mainProcesses": [
+    "sangam-sec-bank-dormancy-review"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-inoperative-deposits/sangam-sec-bank-dormancy-review.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-inoperative-deposits/sangam-sec-bank-dormancy-account.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-inoperative-deposits/sangam-sec-bank-dea-claim.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-inoperative-deposits/sec-bank-dormancy.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-inoperative-deposits/forms/approve.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-inoperative-deposits/forms/claim.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-inoperative-deposits/forms/verify.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-inoperative-deposits/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-inoperative-deposits/seed.json",
+  "connectors": [
+    {
+      "id": "cbs.dormancyDue",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Accounts by inactivity"
+    },
+    {
+      "id": "cbs.markInoperative",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Flag"
+    },
+    {
+      "id": "rbi.deaTransfer",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Transfer to DEA Fund"
+    },
+    {
+      "id": "rbi.deaClaim",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Claim from DEA Fund"
+    },
+    {
+      "id": "cbs.credit",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Credit the claimant"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-009",
+    "UP-15",
+    "GP-08",
+    "GP-09",
+    "GP-30"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-rejection"
+  ]
+}

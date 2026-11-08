@@ -1,0 +1,38 @@
+{
+  "key": "sec-ins-health-claim/documents",
+  "version": "1.0.0",
+  "pack": "sec.ins.health-claim",
+  "title": {
+    "en": "Submit claim documents",
+    "hi": "दावा दस्तावेज़ प्रस्तुत करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "estimatedCost",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Estimated cost (INR)",
+        "hi": "अनुमानित व्यय (रुपये)"
+      }
+    }
+  ]
+}

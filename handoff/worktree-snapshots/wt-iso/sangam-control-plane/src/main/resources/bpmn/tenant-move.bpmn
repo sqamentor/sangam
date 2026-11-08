@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Tenant move between cells: prepare -> freeze -> drain (poll loop) -> copy -> verify -> cut-over -> retain -> purge.
+     Copy/verify failures (BPMN error MOVE_FAILED) roll back: drop the target import, unfreeze the source.
+     Every service task is asyncBefore with a retry cycle, so a control-plane restart resumes the move. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="sangam-tenant-move-defs" targetNamespace="https://sangam.org/scale">
+
+  <bpmn:error id="err_move_failed" name="Move failed" errorCode="MOVE_FAILED"/>
+
+  <bpmn:process id="sangam-tenant-move" name="Sangam tenant move" isExecutable="true" operaton:historyTimeToLive="P3650D">
+    <bpmn:startEvent id="start"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="start" targetRef="prepare"/>
+
+    <bpmn:serviceTask id="prepare" name="Prepare target" operaton:asyncBefore="true" operaton:expression="${moveSteps.prepare(execution)}">
+      <bpmn:extensionElements><operaton:failedJobRetryTimeCycle>R5/PT1M</operaton:failedJobRetryTimeCycle></bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="f2" sourceRef="prepare" targetRef="freeze"/>
+
+    <bpmn:serviceTask id="freeze" name="Freeze source" operaton:asyncBefore="true" operaton:expression="${moveSteps.freeze(execution)}">
+      <bpmn:extensionElements><operaton:failedJobRetryTimeCycle>R5/PT1M</operaton:failedJobRetryTimeCycle></bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="f3" sourceRef="freeze" targetRef="checkDrained"/>
+
+    <bpmn:serviceTask id="checkDrained" name="Check drained" operaton:asyncBefore="true" operaton:expression="${moveSteps.checkDrained(execution)}">
+      <bpmn:extensionElements><operaton:failedJobRetryTimeCycle>R10/PT30S</operaton:failedJobRetryTimeCycle></bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="f4" sourceRef="checkDrained" targetRef="gwDrained"/>
+
+    <bpmn:exclusiveGateway id="gwDrained" name="Drained?" default="fNotDrained"/>
+    <bpmn:sequenceFlow id="fDrained" sourceRef="gwDrained" targetRef="copy">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${drained}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="fNotDrained" sourceRef="gwDrained" targetRef="waitDrain"/>
+
+    <bpmn:intermediateCatchEvent id="waitDrain" name="Wait 15 s">
+      <bpmn:timerEventDefinition><bpmn:timeDuration>PT15S</bpmn:timeDuration></bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="f5" sourceRef="waitDrain" targetRef="checkDrained"/>
+
+    <bpmn:serviceTask id="copy" name="Copy tenant" operaton:asyncBefore="true" operaton:expression="${moveSteps.copy(execution)}">
+      <bpmn:extensionElements><operaton:failedJobRetryTimeCycle>R3/PT5M</operaton:failedJobRetryTimeCycle></bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:boundaryEvent id="copyFailed" attachedToRef="copy">
+      <bpmn:errorEventDefinition errorRef="err_move_failed" operaton:errorMessageVariable="moveError"/>
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="f6" sourceRef="copy" targetRef="verify"/>
+
+    <bpmn:serviceTask id="verify" name="Verify checksums" operaton:asyncBefore="true" operaton:expression="${moveSteps.verify(execution)}">
+      <bpmn:extensionElements><operaton:failedJobRetryTimeCycle>R5/PT1M</operaton:failedJobRetryTimeCycle></bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:boundaryEvent id="verifyFailed" attachedToRef="verify">
+      <bpmn:errorEventDefinition errorRef="err_move_failed" operaton:errorMessageVariable="moveError"/>
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="f7" sourceRef="verify" targetRef="cutover"/>
+
+    <bpmn:serviceTask id="cutover" name="Cut over route" operaton:asyncBefore="true" operaton:expression="${moveSteps.cutover(execution)}">
+      <bpmn:extensionElements><operaton:failedJobRetryTimeCycle>R10/PT1M</operaton:failedJobRetryTimeCycle></bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="f8" sourceRef="cutover" targetRef="retain"/>
+
+    <bpmn:intermediateCatchEvent id="retain" name="Retain source (rollback window)">
+      <bpmn:timerEventDefinition><bpmn:timeDuration>${retention}</bpmn:timeDuration></bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="f9" sourceRef="retain" targetRef="purge"/>
+
+    <bpmn:serviceTask id="purge" name="Purge source copy" operaton:asyncBefore="true" operaton:expression="${moveSteps.purgeSource(execution)}">
+      <bpmn:extensionElements><operaton:failedJobRetryTimeCycle>R10/PT1H</operaton:failedJobRetryTimeCycle></bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="f10" sourceRef="purge" targetRef="endOk"/>
+    <bpmn:endEvent id="endOk" name="Moved"/>
+
+    <bpmn:sequenceFlow id="fr1" sourceRef="copyFailed" targetRef="rollback"/>
+    <bpmn:sequenceFlow id="fr2" sourceRef="verifyFailed" targetRef="rollback"/>
+    <bpmn:serviceTask id="rollback" name="Roll back" operaton:asyncBefore="true" operaton:expression="${moveSteps.rollback(execution)}">
+      <bpmn:extensionElements><operaton:failedJobRetryTimeCycle>R10/PT1M</operaton:failedJobRetryTimeCycle></bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="fr3" sourceRef="rollback" targetRef="endRolledBack"/>
+    <bpmn:endEvent id="endRolledBack" name="Rolled back"/>
+  </bpmn:process>
+</bpmn:definitions>

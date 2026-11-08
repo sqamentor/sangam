@@ -1,0 +1,97 @@
+{
+  "key": "grievance/examine",
+  "version": "1.0.0",
+  "pack": "gov.grievance",
+  "title": {
+    "en": "Examine grievance",
+    "hi": "शिकायत की जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "actionTaken",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Action taken report",
+        "hi": "की गई कार्रवाई की रिपोर्ट"
+      }
+    },
+    {
+      "id": "interimReply",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Interim reply",
+        "hi": "अंतरिम उत्तर"
+      }
+    },
+    {
+      "id": "subordinateOffice",
+      "type": "office",
+      "required": false,
+      "label": {
+        "en": "Forward to subordinate office",
+        "hi": "अधीनस्थ कार्यालय को अग्रेषित"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "groDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resolve",
+        "label": {
+          "en": "Resolve / dispose",
+          "hi": "निपटारा करें"
+        }
+      },
+      {
+        "value": "forward",
+        "label": {
+          "en": "Forward",
+          "hi": "अग्रेषित करें"
+        }
+      },
+      {
+        "value": "interim",
+        "label": {
+          "en": "Interim reply",
+          "hi": "अंतरिम उत्तर"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

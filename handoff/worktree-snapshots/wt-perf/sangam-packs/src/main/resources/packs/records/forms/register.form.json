@@ -1,0 +1,63 @@
+{
+  "key": "records/register",
+  "version": "1.0.0",
+  "pack": "gov.records",
+  "title": {
+    "en": "Register closed record",
+    "hi": "बंद अभिलेख पंजीकृत करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fileNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "File number",
+        "hi": "फ़ाइल संख्या"
+      }
+    },
+    {
+      "id": "subject",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Subject",
+        "hi": "विषय"
+      }
+    },
+    {
+      "id": "retentionCategory",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Retention category (A / C)",
+        "hi": "अभिलेख श्रेणी (क / ग)"
+      }
+    },
+    {
+      "id": "retentionYears",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Retention years",
+        "hi": "प्रतिधारण अवधि (वर्ष)"
+      }
+    },
+    {
+      "id": "legalHold",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Legal hold",
+        "hi": "विधिक रोक"
+      }
+    }
+  ]
+}

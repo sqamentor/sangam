@@ -1,0 +1,45 @@
+{
+  "key": "sec-ushealth-access-request/deny",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.access-request",
+  "title": {
+    "en": "Written denial with basis, review rights and complaint route",
+    "es": "Denegación por escrito"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "denialBasis",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Basis of the denial (45 CFR 164.524(a))",
+        "es": "Fundamento de la denegación (45 CFR 164.524(a))"
+      }
+    },
+    {
+      "id": "infoBlockingException",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Information-blocking exception (45 CFR 171)",
+        "es": "Excepción de bloqueo de información (45 CFR 171)"
+      }
+    },
+    {
+      "id": "reviewRequested",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Individual requested a review of the denial",
+        "es": "La persona solicitó la revisión de la denegación"
+      }
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Annual stock verification. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_stock_verification" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_stockCheck" name="sangam.stockCheck"/>
+  <process id="sangam-stock-verification" name="Annual stock verification" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.stores</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="sv_timer" name="1 April"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 4 1 4 ?</timeCycle></timerEventDefinition></startEvent>
+    <startEvent id="sv_manual" name="Surprise check (message)"><messageEventDefinition messageRef="msg_sangam_stockCheck"/></startEvent>
+    <exclusiveGateway id="sv_join" name=""></exclusiveGateway>
+    <serviceTask id="sv_book" name="Book balances" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>stores.ledger</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>balances</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>period</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ledger</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="sv_count" name="Physical verification count" operaton:candidateGroups="VERIFY-BOARD" operaton:formKey="sangam:stores/count"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="sv_match" name="Book against physical" operaton:class="org.sangam.packs.gov.ReconciliationMatchDelegate"><extensionElements><operaton:field name="mode"><operaton:string>STOCK</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sv_gw" name="Discrepancies?" default="stock_verification_f15"></exclusiveGateway>
+    <serviceTask id="sv_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sv_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-stock-discrepancy</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>period</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sv_fanGw" name="All started?" default="stock_verification_f10"></exclusiveGateway>
+    <intermediateCatchEvent id="sv_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT5M</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="sv_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sv_doneGw" name="Round complete?" default="stock_verification_f16"></exclusiveGateway>
+    <serviceTask id="sv_report" name="Verification report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>stock-verification-report</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sv_end" name="Verified"></endEvent>
+    <sequenceFlow id="stock_verification_f1" sourceRef="sv_timer" targetRef="sv_join"/>
+    <sequenceFlow id="stock_verification_f2" sourceRef="sv_manual" targetRef="sv_join"/>
+    <sequenceFlow id="stock_verification_f3" sourceRef="sv_join" targetRef="sv_book"/>
+    <sequenceFlow id="stock_verification_f4" sourceRef="sv_book" targetRef="sv_count"/>
+    <sequenceFlow id="stock_verification_f5" sourceRef="sv_count" targetRef="sv_match"/>
+    <sequenceFlow id="stock_verification_f6" sourceRef="sv_match" targetRef="sv_gw"/>
+    <sequenceFlow id="stock_verification_f7" sourceRef="sv_open" targetRef="sv_fanOut"/>
+    <sequenceFlow id="stock_verification_f8" sourceRef="sv_fanOut" targetRef="sv_fanGw"/>
+    <sequenceFlow id="stock_verification_f9" name="next chunk" sourceRef="sv_fanGw" targetRef="sv_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="stock_verification_f10" name="all started" sourceRef="sv_fanGw" targetRef="sv_poll"/>
+    <sequenceFlow id="stock_verification_f11" sourceRef="sv_poll" targetRef="sv_aggregate"/>
+    <sequenceFlow id="stock_verification_f12" sourceRef="sv_aggregate" targetRef="sv_doneGw"/>
+    <sequenceFlow id="stock_verification_f13" name="not yet" sourceRef="sv_doneGw" targetRef="sv_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="stock_verification_f14" name="yes" sourceRef="sv_gw" targetRef="sv_open"><conditionExpression xsi:type="tFormalExpression">${discrepancyCount &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="stock_verification_f15" name="none" sourceRef="sv_gw" targetRef="sv_report"/>
+    <sequenceFlow id="stock_verification_f16" name="resolved" sourceRef="sv_doneGw" targetRef="sv_report"/>
+    <sequenceFlow id="stock_verification_f17" sourceRef="sv_report" targetRef="sv_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="stock_verification_diagram">
+    <bpmndi:BPMNPlane id="stock_verification_plane" bpmnElement="sangam-stock-verification">
+      <bpmndi:BPMNShape id="sv_timer_di" bpmnElement="sv_timer"><dc:Bounds x="52" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_manual_di" bpmnElement="sv_manual"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_join_di" bpmnElement="sv_join"><dc:Bounds x="210" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_book_di" bpmnElement="sv_book"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_count_di" bpmnElement="sv_count"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_match_di" bpmnElement="sv_match"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_gw_di" bpmnElement="sv_gw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_open_di" bpmnElement="sv_open"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_fanOut_di" bpmnElement="sv_fanOut"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_fanGw_di" bpmnElement="sv_fanGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_poll_di" bpmnElement="sv_poll"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_aggregate_di" bpmnElement="sv_aggregate"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_doneGw_di" bpmnElement="sv_doneGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_report_di" bpmnElement="sv_report"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sv_end_di" bpmnElement="sv_end"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="stock_verification_f1_di" bpmnElement="stock_verification_f1"><di:waypoint x="88" y="195"/><di:waypoint x="149" y="195"/><di:waypoint x="149" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f2_di" bpmnElement="stock_verification_f2"><di:waypoint x="88" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f3_di" bpmnElement="stock_verification_f3"><di:waypoint x="260" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f4_di" bpmnElement="stock_verification_f4"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f5_di" bpmnElement="stock_verification_f5"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f6_di" bpmnElement="stock_verification_f6"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f7_di" bpmnElement="stock_verification_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f8_di" bpmnElement="stock_verification_f8"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f9_di" bpmnElement="stock_verification_f9"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="128"/><di:waypoint x="1225" y="128"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f10_di" bpmnElement="stock_verification_f10"><di:waypoint x="1415" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f11_di" bpmnElement="stock_verification_f11"><di:waypoint x="1573" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f12_di" bpmnElement="stock_verification_f12"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f13_di" bpmnElement="stock_verification_f13"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="113"/><di:waypoint x="1555" y="113"/><di:waypoint x="1555" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f14_di" bpmnElement="stock_verification_f14"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f15_di" bpmnElement="stock_verification_f15"><di:waypoint x="920" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f16_di" bpmnElement="stock_verification_f16"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="stock_verification_f17_di" bpmnElement="stock_verification_f17"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

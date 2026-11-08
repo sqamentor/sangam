@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# PostgreSQL (Tier 1). Product schema: Liquibase changelog from sangam-persistence. Engine schema: managed by operations.
+spring:
+  datasource:
+    url: ${SANGAM_DB_URL:jdbc:postgresql://localhost:5432/sangam}
+    username: ${SANGAM_DB_USER:sangam}
+    password: ${SANGAM_DB_PASSWORD:sangam}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      data-source-properties:
+        reWriteBatchedInserts: true
+        ApplicationName: sangam
+
+operaton:
+  bpm:
+    database:
+      type: postgres
+      schema-update: ${SANGAM_ENGINE_SCHEMA_UPDATE:false}
+
+logging:
+  structured:
+    format:
+      console: ecs

@@ -1,0 +1,72 @@
+{
+  "key": "core/referral-inbound",
+  "version": "1.0.0",
+  "pack": "sangam.core",
+  "title": {
+    "en": "Examine referral and advise",
+    "hi": "संदर्भ की जाँच एवं परामर्श"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "referralQuestion",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Point on which advice / concurrence is sought",
+        "hi": "जिस बिंदु पर परामर्श / सहमति मांगी गई"
+      }
+    },
+    {
+      "id": "referralReply",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Advice / concurrence",
+        "hi": "परामर्श / सहमति"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "referralDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "concur",
+        "label": {
+          "en": "Concur",
+          "hi": "सहमत"
+        }
+      },
+      {
+        "value": "notConcur",
+        "label": {
+          "en": "Do not concur",
+          "hi": "असहमत"
+        }
+      },
+      {
+        "value": "advise",
+        "label": {
+          "en": "Advise",
+          "hi": "परामर्श दें"
+        }
+      }
+    ]
+  }
+}

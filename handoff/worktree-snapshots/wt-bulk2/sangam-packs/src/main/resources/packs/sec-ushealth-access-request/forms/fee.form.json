@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-access-request/fee",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.access-request",
+  "title": {
+    "en": "Reasonable cost-based fee",
+    "es": "Tarifa razonable basada en costos"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "copyFee",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Reasonable cost-based fee (USD)",
+        "es": "Tarifa razonable basada en costos (USD)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "key": "records/review",
+  "version": "1.0.0",
+  "pack": "gov.records",
+  "title": {
+    "en": "Record review (Public Records Rules r.9)",
+    "hi": "अभिलेख समीक्षा (लोक अभिलेख नियम 9)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reviewDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "retain",
+        "label": {
+          "en": "Retain",
+          "hi": "प्रतिधारित करें"
+        }
+      },
+      {
+        "value": "transferNai",
+        "label": {
+          "en": "Transfer to National Archives",
+          "hi": "राष्ट्रीय अभिलेखागार को अंतरित करें"
+        }
+      },
+      {
+        "value": "destroy",
+        "label": {
+          "en": "Destroy (Form 6 list)",
+          "hi": "नष्ट करें (प्रपत्र 6 सूची)"
+        }
+      }
+    ]
+  }
+}

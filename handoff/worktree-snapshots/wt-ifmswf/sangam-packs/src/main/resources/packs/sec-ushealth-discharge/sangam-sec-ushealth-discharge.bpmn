@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Discharge planning. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_discharge" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_ushealth_dischargeOrder" name="sangam.ushealth.dischargeOrder"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-discharge" name="Discharge planning" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.discharge</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>patientName,medicareBeneficiary</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="dc_start" name="Patient admitted or placed in observation" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-discharge/admit"></startEvent>
+    <serviceTask id="dc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;medicareBeneficiary=true;observationStatus=false;cmSeat=CASE-MANAGER;nurseSeat=CHARGE-NURSE;swSeat=SOCIAL-WORKER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="dc_cfg" name="Discharge notice timeframes (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-discharge-clocks</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="dc_obsGw" name="Observation?" default="sec_ushealth_discharge_f14"></exclusiveGateway>
+    <serviceTask id="dc_moon_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_moon</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${moonSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dc_moon" name="Deliver the MOON notice (observation)" operaton:candidateGroups="${nurseSeat}" operaton:formKey="sangam:sec-ushealth-discharge/moon" operaton:dueDate="${dc_moonDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dc_moon_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_moon</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>nurseSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dc_moon_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="dc_moon_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_moon</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>nurseSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dc_moon_breachGw" name="Deemed?" default="sec_ushealth_discharge_f9"></exclusiveGateway>
+    <exclusiveGateway id="dc_moon_done" name=""></exclusiveGateway>
+    <endEvent id="dc_endObs" name="Observation notice given"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>OBSERVATION</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="dc_imGw" name="Medicare beneficiary?" default="sec_ushealth_discharge_f24"></exclusiveGateway>
+    <serviceTask id="dc_im_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_im</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${imAdmissionSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dc_im" name="Deliver the Important Message from Medicare" operaton:candidateGroups="${nurseSeat}" operaton:formKey="sangam:sec-ushealth-discharge/im" operaton:dueDate="${dc_imDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dc_im_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_im</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>nurseSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dc_im_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="dc_im_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_im</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>nurseSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dc_im_breachGw" name="Deemed?" default="sec_ushealth_discharge_f20"></exclusiveGateway>
+    <exclusiveGateway id="dc_im_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="dc_screenMerge" name=""></exclusiveGateway>
+    <serviceTask id="dc_screen_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_screen</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${screenSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dc_screen" name="Discharge planning screen" operaton:candidateGroups="${cmSeat}" operaton:formKey="sangam:sec-ushealth-discharge/screen" operaton:dueDate="${dc_screenDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>screenDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dc_screen_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_screen</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>cmSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dc_screen_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="dc_screen_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_screen</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>cmSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>screenDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dc_screen_breachGw" name="Deemed?" default="sec_ushealth_discharge_f31"></exclusiveGateway>
+    <exclusiveGateway id="dc_screen_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="dc_planGw" name="" default="sec_ushealth_discharge_f39"></exclusiveGateway>
+    <userTask id="dc_eval" name="Discharge planning evaluation with patient and caregiver" operaton:candidateGroups="${cmSeat}" operaton:formKey="sangam:sec-ushealth-discharge/evaluation"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="dc_choice" name="Patient choice of post-acute provider (list with quality data)" operaton:candidateGroups="${swSeat}" operaton:formKey="sangam:sec-ushealth-discharge/choice"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="dc_orderMerge" name=""></exclusiveGateway>
+    <intermediateCatchEvent id="dc_order" name="Discharge order written"><messageEventDefinition messageRef="msg_sangam_ushealth_dischargeOrder"/></intermediateCatchEvent>
+    <userTask id="dc_imFollow" name="Follow-up copy of the Important Message (no more than 2 days before discharge)" operaton:candidateGroups="${nurseSeat}" operaton:formKey="sangam:sec-ushealth-discharge/im-followup"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="dc_followOptGw" name="Medicare follow-up copy?" default="sec_ushealth_discharge_f42"></exclusiveGateway>
+    <exclusiveGateway id="dc_followOptMerge" name=""></exclusiveGateway>
+    <serviceTask id="dc_transfer" name="Send the necessary medical information to the next provider" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>fhir.transition</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>transaction</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName,postAcuteProvider</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>toc</operaton:string></operaton:field><operaton:field name="step"><operaton:string>transition</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dc_adt" name="ADT discharge notification to the PCP and post-acute provider" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>fhir.adt</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>create</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName,postAcuteProvider</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>adt</operaton:string></operaton:field><operaton:field name="step"><operaton:string>adt</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dc_end" name="Discharged with plan"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>DISCHARGED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="dc_moon_warn" name="SLA warning (75%)" attachedToRef="dc_moon" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_moonWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dc_moon_breach" name="SLA breached" attachedToRef="dc_moon" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_moonDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dc_im_warn" name="SLA warning (75%)" attachedToRef="dc_im" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_imWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dc_im_breach" name="SLA breached" attachedToRef="dc_im" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_imDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dc_screen_warn" name="SLA warning (75%)" attachedToRef="dc_screen" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_screenWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dc_screen_breach" name="SLA breached" attachedToRef="dc_screen" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_screenDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_ushealth_discharge_f1" sourceRef="dc_start" targetRef="dc_defaults"/>
+    <sequenceFlow id="sec_ushealth_discharge_f2" sourceRef="dc_defaults" targetRef="dc_cfg"/>
+    <sequenceFlow id="sec_ushealth_discharge_f3" sourceRef="dc_cfg" targetRef="dc_obsGw"/>
+    <sequenceFlow id="sec_ushealth_discharge_f4" sourceRef="dc_moon_warn" targetRef="dc_moon_warnNotify"/>
+    <sequenceFlow id="sec_ushealth_discharge_f5" sourceRef="dc_moon_warnNotify" targetRef="dc_moon_warnEnd"/>
+    <sequenceFlow id="sec_ushealth_discharge_f6" sourceRef="dc_moon_breach" targetRef="dc_moon_breachAct"/>
+    <sequenceFlow id="sec_ushealth_discharge_f7" sourceRef="dc_moon_breachAct" targetRef="dc_moon_breachGw"/>
+    <sequenceFlow id="sec_ushealth_discharge_f8" name="deemed" sourceRef="dc_moon_breachGw" targetRef="dc_moon_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_discharge_f9" name="escalated" sourceRef="dc_moon_breachGw" targetRef="dc_moon_slaPlan"/>
+    <sequenceFlow id="sec_ushealth_discharge_f10" sourceRef="dc_moon_slaPlan" targetRef="dc_moon"/>
+    <sequenceFlow id="sec_ushealth_discharge_f11" sourceRef="dc_moon" targetRef="dc_moon_done"/>
+    <sequenceFlow id="sec_ushealth_discharge_f12" name="observation" sourceRef="dc_obsGw" targetRef="dc_moon_slaPlan"><conditionExpression xsi:type="tFormalExpression">${observationStatus}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_discharge_f13" sourceRef="dc_moon_done" targetRef="dc_endObs"/>
+    <sequenceFlow id="sec_ushealth_discharge_f14" name="inpatient" sourceRef="dc_obsGw" targetRef="dc_imGw"/>
+    <sequenceFlow id="sec_ushealth_discharge_f15" sourceRef="dc_im_warn" targetRef="dc_im_warnNotify"/>
+    <sequenceFlow id="sec_ushealth_discharge_f16" sourceRef="dc_im_warnNotify" targetRef="dc_im_warnEnd"/>
+    <sequenceFlow id="sec_ushealth_discharge_f17" sourceRef="dc_im_breach" targetRef="dc_im_breachAct"/>
+    <sequenceFlow id="sec_ushealth_discharge_f18" sourceRef="dc_im_breachAct" targetRef="dc_im_breachGw"/>
+    <sequenceFlow id="sec_ushealth_discharge_f19" name="deemed" sourceRef="dc_im_breachGw" targetRef="dc_im_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_discharge_f20" name="escalated" sourceRef="dc_im_breachGw" targetRef="dc_im_slaPlan"/>
+    <sequenceFlow id="sec_ushealth_discharge_f21" sourceRef="dc_im_slaPlan" targetRef="dc_im"/>
+    <sequenceFlow id="sec_ushealth_discharge_f22" sourceRef="dc_im" targetRef="dc_im_done"/>
+    <sequenceFlow id="sec_ushealth_discharge_f23" name="Medicare" sourceRef="dc_imGw" targetRef="dc_im_slaPlan"><conditionExpression xsi:type="tFormalExpression">${medicareBeneficiary}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_discharge_f24" name="other payer" sourceRef="dc_imGw" targetRef="dc_screenMerge"/>
+    <sequenceFlow id="sec_ushealth_discharge_f25" sourceRef="dc_im_done" targetRef="dc_screenMerge"/>
+    <sequenceFlow id="sec_ushealth_discharge_f26" sourceRef="dc_screen_warn" targetRef="dc_screen_warnNotify"/>
+    <sequenceFlow id="sec_ushealth_discharge_f27" sourceRef="dc_screen_warnNotify" targetRef="dc_screen_warnEnd"/>
+    <sequenceFlow id="sec_ushealth_discharge_f28" sourceRef="dc_screen_breach" targetRef="dc_screen_breachAct"/>
+    <sequenceFlow id="sec_ushealth_discharge_f29" sourceRef="dc_screen_breachAct" targetRef="dc_screen_breachGw"/>
+    <sequenceFlow id="sec_ushealth_discharge_f30" name="deemed" sourceRef="dc_screen_breachGw" targetRef="dc_screen_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_discharge_f31" name="escalated" sourceRef="dc_screen_breachGw" targetRef="dc_screen_slaPlan"/>
+    <sequenceFlow id="sec_ushealth_discharge_f32" sourceRef="dc_screen_slaPlan" targetRef="dc_screen"/>
+    <sequenceFlow id="sec_ushealth_discharge_f33" sourceRef="dc_screen" targetRef="dc_screen_done"/>
+    <sequenceFlow id="sec_ushealth_discharge_f34" sourceRef="dc_screenMerge" targetRef="dc_screen_slaPlan"/>
+    <sequenceFlow id="sec_ushealth_discharge_f35" sourceRef="dc_screen_done" targetRef="dc_planGw"/>
+    <sequenceFlow id="sec_ushealth_discharge_f36" name="plan needed" sourceRef="dc_planGw" targetRef="dc_eval"><conditionExpression xsi:type="tFormalExpression">${screenDecision == 'needsPlan'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_discharge_f37" sourceRef="dc_eval" targetRef="dc_choice"/>
+    <sequenceFlow id="sec_ushealth_discharge_f38" sourceRef="dc_choice" targetRef="dc_orderMerge"/>
+    <sequenceFlow id="sec_ushealth_discharge_f39" name="no plan needed" sourceRef="dc_planGw" targetRef="dc_orderMerge"/>
+    <sequenceFlow id="sec_ushealth_discharge_f40" sourceRef="dc_orderMerge" targetRef="dc_order"/>
+    <sequenceFlow id="sec_ushealth_discharge_f41" name="yes" sourceRef="dc_followOptGw" targetRef="dc_imFollow"><conditionExpression xsi:type="tFormalExpression">${medicareBeneficiary}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_discharge_f42" name="no" sourceRef="dc_followOptGw" targetRef="dc_followOptMerge"/>
+    <sequenceFlow id="sec_ushealth_discharge_f43" sourceRef="dc_imFollow" targetRef="dc_followOptMerge"/>
+    <sequenceFlow id="sec_ushealth_discharge_f44" sourceRef="dc_order" targetRef="dc_followOptGw"/>
+    <sequenceFlow id="sec_ushealth_discharge_f45" sourceRef="dc_followOptMerge" targetRef="dc_transfer"/>
+    <sequenceFlow id="sec_ushealth_discharge_f46" sourceRef="dc_transfer" targetRef="dc_adt"/>
+    <sequenceFlow id="sec_ushealth_discharge_f47" sourceRef="dc_adt" targetRef="dc_end"/>
+    <subProcess id="dc_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="dc_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="dc_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dc_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dc_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_discharge_f48" sourceRef="dc_withdrawStart" targetRef="dc_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_discharge_f49" sourceRef="dc_withdrawKind" targetRef="dc_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_discharge_f50" sourceRef="dc_withdrawCall" targetRef="dc_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="dc_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="dc_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="dc_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dc_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dc_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_discharge_f51" sourceRef="dc_cancelStart" targetRef="dc_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_discharge_f52" sourceRef="dc_cancelKind" targetRef="dc_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_discharge_f53" sourceRef="dc_cancelCall" targetRef="dc_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_discharge_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_discharge_plane" bpmnElement="sangam-sec-ushealth-discharge">
+      <bpmndi:BPMNShape id="dc_start_di" bpmnElement="dc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_defaults_di" bpmnElement="dc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cfg_di" bpmnElement="dc_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_obsGw_di" bpmnElement="dc_obsGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_moon_slaPlan_di" bpmnElement="dc_moon_slaPlan"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_moon_di" bpmnElement="dc_moon"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_moon_warnNotify_di" bpmnElement="dc_moon_warnNotify"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_moon_warnEnd_di" bpmnElement="dc_moon_warnEnd"><dc:Bounds x="1207" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_moon_breachAct_di" bpmnElement="dc_moon_breachAct"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_moon_breachGw_di" bpmnElement="dc_moon_breachGw"><dc:Bounds x="1200" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_moon_done_di" bpmnElement="dc_moon_done"><dc:Bounds x="1365" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_endObs_di" bpmnElement="dc_endObs"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_imGw_di" bpmnElement="dc_imGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_im_slaPlan_di" bpmnElement="dc_im_slaPlan"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_im_di" bpmnElement="dc_im"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_im_warnNotify_di" bpmnElement="dc_im_warnNotify"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_im_warnEnd_di" bpmnElement="dc_im_warnEnd"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_im_breachAct_di" bpmnElement="dc_im_breachAct"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_im_breachGw_di" bpmnElement="dc_im_breachGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_im_done_di" bpmnElement="dc_im_done"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screenMerge_di" bpmnElement="dc_screenMerge"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screen_slaPlan_di" bpmnElement="dc_screen_slaPlan"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screen_di" bpmnElement="dc_screen"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screen_warnNotify_di" bpmnElement="dc_screen_warnNotify"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screen_warnEnd_di" bpmnElement="dc_screen_warnEnd"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screen_breachAct_di" bpmnElement="dc_screen_breachAct"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screen_breachGw_di" bpmnElement="dc_screen_breachGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screen_done_di" bpmnElement="dc_screen_done"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_planGw_di" bpmnElement="dc_planGw"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_eval_di" bpmnElement="dc_eval"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_choice_di" bpmnElement="dc_choice"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_orderMerge_di" bpmnElement="dc_orderMerge"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_order_di" bpmnElement="dc_order"><dc:Bounds x="3352" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_imFollow_di" bpmnElement="dc_imFollow"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_followOptGw_di" bpmnElement="dc_followOptGw"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_followOptMerge_di" bpmnElement="dc_followOptMerge"><dc:Bounds x="3840" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_transfer_di" bpmnElement="dc_transfer"><dc:Bounds x="3980" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_adt_di" bpmnElement="dc_adt"><dc:Bounds x="4145" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_end_di" bpmnElement="dc_end"><dc:Bounds x="4342" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_moon_warn_di" bpmnElement="dc_moon_warn"><dc:Bounds x="853" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_moon_breach_di" bpmnElement="dc_moon_breach"><dc:Bounds x="883" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_im_warn_di" bpmnElement="dc_im_warn"><dc:Bounds x="1018" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_im_breach_di" bpmnElement="dc_im_breach"><dc:Bounds x="1048" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screen_warn_di" bpmnElement="dc_screen_warn"><dc:Bounds x="2008" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_screen_breach_di" bpmnElement="dc_screen_breach"><dc:Bounds x="2038" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdraw_di" bpmnElement="dc_withdraw" isExpanded="true"><dc:Bounds x="30" y="513" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdrawStart_di" bpmnElement="dc_withdrawStart"><dc:Bounds x="92" y="575" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdrawKind_di" bpmnElement="dc_withdrawKind"><dc:Bounds x="225" y="553" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdrawCall_di" bpmnElement="dc_withdrawCall"><dc:Bounds x="390" y="553" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdrawEnd_di" bpmnElement="dc_withdrawEnd"><dc:Bounds x="587" y="575" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancel_di" bpmnElement="dc_cancel" isExpanded="true"><dc:Bounds x="30" y="703" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancelStart_di" bpmnElement="dc_cancelStart"><dc:Bounds x="92" y="765" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancelKind_di" bpmnElement="dc_cancelKind"><dc:Bounds x="225" y="743" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancelCall_di" bpmnElement="dc_cancelCall"><dc:Bounds x="390" y="743" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancelEnd_di" bpmnElement="dc_cancelEnd"><dc:Bounds x="587" y="765" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f1_di" bpmnElement="sec_ushealth_discharge_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f2_di" bpmnElement="sec_ushealth_discharge_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f3_di" bpmnElement="sec_ushealth_discharge_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f4_di" bpmnElement="sec_ushealth_discharge_f4"><di:waypoint x="871" y="253"/><di:waypoint x="871" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f5_di" bpmnElement="sec_ushealth_discharge_f5"><di:waypoint x="1110" y="320"/><di:waypoint x="1158" y="320"/><di:waypoint x="1158" y="445"/><di:waypoint x="1207" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f6_di" bpmnElement="sec_ushealth_discharge_f6"><di:waypoint x="901" y="253"/><di:waypoint x="901" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f7_di" bpmnElement="sec_ushealth_discharge_f7"><di:waypoint x="1110" y="195"/><di:waypoint x="1155" y="195"/><di:waypoint x="1155" y="320"/><di:waypoint x="1200" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f8_di" bpmnElement="sec_ushealth_discharge_f8"><di:waypoint x="1250" y="320"/><di:waypoint x="1365" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f9_di" bpmnElement="sec_ushealth_discharge_f9"><di:waypoint x="1225" y="345"/><di:waypoint x="1225" y="363"/><di:waypoint x="730" y="363"/><di:waypoint x="730" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f10_di" bpmnElement="sec_ushealth_discharge_f10"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f11_di" bpmnElement="sec_ushealth_discharge_f11"><di:waypoint x="945" y="195"/><di:waypoint x="1155" y="195"/><di:waypoint x="1155" y="320"/><di:waypoint x="1365" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f12_di" bpmnElement="sec_ushealth_discharge_f12"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f13_di" bpmnElement="sec_ushealth_discharge_f13"><di:waypoint x="1415" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f14_di" bpmnElement="sec_ushealth_discharge_f14"><di:waypoint x="590" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f15_di" bpmnElement="sec_ushealth_discharge_f15"><di:waypoint x="1036" y="128"/><di:waypoint x="1036" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f16_di" bpmnElement="sec_ushealth_discharge_f16"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f17_di" bpmnElement="sec_ushealth_discharge_f17"><di:waypoint x="1066" y="128"/><di:waypoint x="1066" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f18_di" bpmnElement="sec_ushealth_discharge_f18"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f19_di" bpmnElement="sec_ushealth_discharge_f19"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f20_di" bpmnElement="sec_ushealth_discharge_f20"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="149"/><di:waypoint x="895" y="149"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f21_di" bpmnElement="sec_ushealth_discharge_f21"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f22_di" bpmnElement="sec_ushealth_discharge_f22"><di:waypoint x="1110" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f23_di" bpmnElement="sec_ushealth_discharge_f23"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f24_di" bpmnElement="sec_ushealth_discharge_f24"><di:waypoint x="755" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f25_di" bpmnElement="sec_ushealth_discharge_f25"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f26_di" bpmnElement="sec_ushealth_discharge_f26"><di:waypoint x="2026" y="128"/><di:waypoint x="2026" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f27_di" bpmnElement="sec_ushealth_discharge_f27"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f28_di" bpmnElement="sec_ushealth_discharge_f28"><di:waypoint x="2056" y="128"/><di:waypoint x="2056" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f29_di" bpmnElement="sec_ushealth_discharge_f29"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f30_di" bpmnElement="sec_ushealth_discharge_f30"><di:waypoint x="2405" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f31_di" bpmnElement="sec_ushealth_discharge_f31"><di:waypoint x="2380" y="95"/><di:waypoint x="2380" y="142"/><di:waypoint x="1885" y="142"/><di:waypoint x="1885" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f32_di" bpmnElement="sec_ushealth_discharge_f32"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f33_di" bpmnElement="sec_ushealth_discharge_f33"><di:waypoint x="2100" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f34_di" bpmnElement="sec_ushealth_discharge_f34"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f35_di" bpmnElement="sec_ushealth_discharge_f35"><di:waypoint x="2570" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f36_di" bpmnElement="sec_ushealth_discharge_f36"><di:waypoint x="2735" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f37_di" bpmnElement="sec_ushealth_discharge_f37"><di:waypoint x="2925" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f38_di" bpmnElement="sec_ushealth_discharge_f38"><di:waypoint x="3090" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f39_di" bpmnElement="sec_ushealth_discharge_f39"><di:waypoint x="2735" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f40_di" bpmnElement="sec_ushealth_discharge_f40"><di:waypoint x="3230" y="70"/><di:waypoint x="3352" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f41_di" bpmnElement="sec_ushealth_discharge_f41"><di:waypoint x="3560" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f42_di" bpmnElement="sec_ushealth_discharge_f42"><di:waypoint x="3560" y="70"/><di:waypoint x="3840" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f43_di" bpmnElement="sec_ushealth_discharge_f43"><di:waypoint x="3750" y="70"/><di:waypoint x="3840" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f44_di" bpmnElement="sec_ushealth_discharge_f44"><di:waypoint x="3388" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f45_di" bpmnElement="sec_ushealth_discharge_f45"><di:waypoint x="3890" y="70"/><di:waypoint x="3980" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f46_di" bpmnElement="sec_ushealth_discharge_f46"><di:waypoint x="4080" y="70"/><di:waypoint x="4145" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f47_di" bpmnElement="sec_ushealth_discharge_f47"><di:waypoint x="4245" y="70"/><di:waypoint x="4342" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f48_di" bpmnElement="sec_ushealth_discharge_f48"><di:waypoint x="128" y="593"/><di:waypoint x="225" y="593"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f49_di" bpmnElement="sec_ushealth_discharge_f49"><di:waypoint x="325" y="593"/><di:waypoint x="390" y="593"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f50_di" bpmnElement="sec_ushealth_discharge_f50"><di:waypoint x="490" y="593"/><di:waypoint x="587" y="593"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f51_di" bpmnElement="sec_ushealth_discharge_f51"><di:waypoint x="128" y="783"/><di:waypoint x="225" y="783"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f52_di" bpmnElement="sec_ushealth_discharge_f52"><di:waypoint x="325" y="783"/><di:waypoint x="390" y="783"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_discharge_f53_di" bpmnElement="sec_ushealth_discharge_f53"><di:waypoint x="490" y="783"/><di:waypoint x="587" y="783"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

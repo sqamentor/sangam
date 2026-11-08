@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Death claim. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ins_death_claim" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ins-death-claim" name="Death claim" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ins.death-claim</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>policyNo,claimantName,sumAssured</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="dc_start" name="Death intimated" operaton:initiator="initiator" operaton:formKey="sangam:sec-ins-death-claim/intimation"></startEvent>
+    <serviceTask id="dc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>claimantName=@policyNo;claimantType=NOMINEE;sumAssured=1000000;policyAgeYears=5;coverActive=true;amount=@sumAssured;caseType=DEATH_CLAIM;routingDecisionKey=sec-ins-death-authority;powersDecisionKey=sec-ins-death-powers;executionConnector=claims.pay;executionStep=death-claim;reconcileRequired=true;executionPayloadFields=policyNo,claimantName,amount;appellateSeat=CLAIMS-REVIEW-COMMITTEE;handlerSeat=LIFE-CLAIMS;investigatorSeat=INVESTIGATOR</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dc_cover" name="Policy status" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>policy.coverCheck</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>policyNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cover</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="dc_rule" name="Early claim and timeline (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ins-death-rules</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="dc_coverGw" name="In force / within grace?" default="sec_ins_death_claim_f8"></exclusiveGateway>
+    <serviceTask id="dc_rjLapse_code" name="Reason: POLICY_LAPSED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=POLICY_LAPSED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="dc_rjLapse_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="dc_rjLapse_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="dc_invGw" name="Investigation warranted?" default="sec_ins_death_claim_f26"></exclusiveGateway>
+    <serviceTask id="dc_investigate_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_investigate</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${investigationSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dc_investigate" name="Claim investigation" operaton:candidateGroups="${investigatorSeat}" operaton:formKey="sangam:sec-ins-death-claim/investigate" operaton:dueDate="${dc_investigateDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>invDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dc_investigate_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_investigate</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>investigatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dc_investigate_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="dc_investigate_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_investigate</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>investigatorSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>invDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dc_investigate_breachGw" name="Deemed?" default="sec_ins_death_claim_f14"></exclusiveGateway>
+    <exclusiveGateway id="dc_investigate_done" name=""></exclusiveGateway>
+    <serviceTask id="dc_assess_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_assess</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${settlementSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dc_assess" name="Assess and recommend" operaton:candidateGroups="${handlerSeat}" operaton:formKey="sangam:sec-ins-death-claim/assess" operaton:dueDate="${dc_assessDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>assessDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dc_assess_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_assess</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>handlerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dc_assess_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="dc_assess_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dc_assess</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>handlerSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>assessDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dc_assess_breachGw" name="Deemed?" default="sec_ins_death_claim_f23"></exclusiveGateway>
+    <exclusiveGateway id="dc_assess_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="dc_invRes" name="" default="sec_ins_death_claim_f30"></exclusiveGateway>
+    <callActivity id="dc_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="dc_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="dc_assGw" name="" default="sec_ins_death_claim_f33"></exclusiveGateway>
+    <callActivity id="dc_sanction" name="Settlement sanction (core sanction)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="dc_pay" name="Pay the nominee / legal heir (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="dc_sanGw" name="sanctionOutcome?" default="sec_ins_death_claim_f36"></exclusiveGateway>
+    <callActivity id="dc_close" name="Settlement letter and closure (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="dc_end" name="Settled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="dc_investigate_warn" name="SLA warning (75%)" attachedToRef="dc_investigate" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_investigateWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dc_investigate_breach" name="SLA breached" attachedToRef="dc_investigate" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_investigateDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dc_assess_warn" name="SLA warning (75%)" attachedToRef="dc_assess" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_assessWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dc_assess_breach" name="SLA breached" attachedToRef="dc_assess" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dc_assessDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_ins_death_claim_f1" sourceRef="dc_start" targetRef="dc_defaults"/>
+    <sequenceFlow id="sec_ins_death_claim_f2" sourceRef="dc_defaults" targetRef="dc_cover"/>
+    <sequenceFlow id="sec_ins_death_claim_f3" sourceRef="dc_cover" targetRef="dc_rule"/>
+    <sequenceFlow id="sec_ins_death_claim_f4" sourceRef="dc_rule" targetRef="dc_coverGw"/>
+    <sequenceFlow id="sec_ins_death_claim_f5" sourceRef="dc_rjLapse_reject" targetRef="dc_rjLapse_endRejected"/>
+    <sequenceFlow id="sec_ins_death_claim_f6" sourceRef="dc_rjLapse_code" targetRef="dc_rjLapse_reject"/>
+    <sequenceFlow id="sec_ins_death_claim_f7" name="lapsed" sourceRef="dc_coverGw" targetRef="dc_rjLapse_code"><conditionExpression xsi:type="tFormalExpression">${!coverActive}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_death_claim_f8" name="yes" sourceRef="dc_coverGw" targetRef="dc_invGw"/>
+    <sequenceFlow id="sec_ins_death_claim_f9" sourceRef="dc_investigate_warn" targetRef="dc_investigate_warnNotify"/>
+    <sequenceFlow id="sec_ins_death_claim_f10" sourceRef="dc_investigate_warnNotify" targetRef="dc_investigate_warnEnd"/>
+    <sequenceFlow id="sec_ins_death_claim_f11" sourceRef="dc_investigate_breach" targetRef="dc_investigate_breachAct"/>
+    <sequenceFlow id="sec_ins_death_claim_f12" sourceRef="dc_investigate_breachAct" targetRef="dc_investigate_breachGw"/>
+    <sequenceFlow id="sec_ins_death_claim_f13" name="deemed" sourceRef="dc_investigate_breachGw" targetRef="dc_investigate_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_death_claim_f14" name="escalated" sourceRef="dc_investigate_breachGw" targetRef="dc_investigate_slaPlan"/>
+    <sequenceFlow id="sec_ins_death_claim_f15" sourceRef="dc_investigate_slaPlan" targetRef="dc_investigate"/>
+    <sequenceFlow id="sec_ins_death_claim_f16" sourceRef="dc_investigate" targetRef="dc_investigate_done"/>
+    <sequenceFlow id="sec_ins_death_claim_f17" name="early claim" sourceRef="dc_invGw" targetRef="dc_investigate_slaPlan"><conditionExpression xsi:type="tFormalExpression">${investigationAllowed}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_death_claim_f18" sourceRef="dc_assess_warn" targetRef="dc_assess_warnNotify"/>
+    <sequenceFlow id="sec_ins_death_claim_f19" sourceRef="dc_assess_warnNotify" targetRef="dc_assess_warnEnd"/>
+    <sequenceFlow id="sec_ins_death_claim_f20" sourceRef="dc_assess_breach" targetRef="dc_assess_breachAct"/>
+    <sequenceFlow id="sec_ins_death_claim_f21" sourceRef="dc_assess_breachAct" targetRef="dc_assess_breachGw"/>
+    <sequenceFlow id="sec_ins_death_claim_f22" name="deemed" sourceRef="dc_assess_breachGw" targetRef="dc_assess_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_death_claim_f23" name="escalated" sourceRef="dc_assess_breachGw" targetRef="dc_assess_slaPlan"/>
+    <sequenceFlow id="sec_ins_death_claim_f24" sourceRef="dc_assess_slaPlan" targetRef="dc_assess"/>
+    <sequenceFlow id="sec_ins_death_claim_f25" sourceRef="dc_assess" targetRef="dc_assess_done"/>
+    <sequenceFlow id="sec_ins_death_claim_f26" name="no" sourceRef="dc_invGw" targetRef="dc_assess_slaPlan"/>
+    <sequenceFlow id="sec_ins_death_claim_f27" sourceRef="dc_investigate_done" targetRef="dc_invRes"/>
+    <sequenceFlow id="sec_ins_death_claim_f28" sourceRef="dc_rj_reject" targetRef="dc_rj_endRejected"/>
+    <sequenceFlow id="sec_ins_death_claim_f29" name="genuine" sourceRef="dc_invRes" targetRef="dc_assess_slaPlan"><conditionExpression xsi:type="tFormalExpression">${invDecision == 'genuine'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_death_claim_f30" name="fraud / non-disclosure" sourceRef="dc_invRes" targetRef="dc_rj_reject"/>
+    <sequenceFlow id="sec_ins_death_claim_f31" sourceRef="dc_assess_done" targetRef="dc_assGw"/>
+    <sequenceFlow id="sec_ins_death_claim_f32" name="approve" sourceRef="dc_assGw" targetRef="dc_sanction"><conditionExpression xsi:type="tFormalExpression">${assessDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_death_claim_f33" name="reject" sourceRef="dc_assGw" targetRef="dc_rj_reject"/>
+    <sequenceFlow id="sec_ins_death_claim_f34" name="SANCTIONED" sourceRef="dc_sanGw" targetRef="dc_pay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_death_claim_f35" name="RETURNED" sourceRef="dc_sanGw" targetRef="dc_assess_slaPlan"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_death_claim_f36" name="otherwise" sourceRef="dc_sanGw" targetRef="dc_rj_reject"/>
+    <sequenceFlow id="sec_ins_death_claim_f37" sourceRef="dc_sanction" targetRef="dc_sanGw"/>
+    <sequenceFlow id="sec_ins_death_claim_f38" sourceRef="dc_pay" targetRef="dc_close"/>
+    <sequenceFlow id="sec_ins_death_claim_f39" sourceRef="dc_close" targetRef="dc_end"/>
+    <subProcess id="dc_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="dc_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="dc_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dc_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dc_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_death_claim_f40" sourceRef="dc_withdrawStart" targetRef="dc_withdrawKind"/>
+      <sequenceFlow id="sec_ins_death_claim_f41" sourceRef="dc_withdrawKind" targetRef="dc_withdrawCall"/>
+      <sequenceFlow id="sec_ins_death_claim_f42" sourceRef="dc_withdrawCall" targetRef="dc_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="dc_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="dc_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="dc_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dc_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dc_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_death_claim_f43" sourceRef="dc_cancelStart" targetRef="dc_cancelKind"/>
+      <sequenceFlow id="sec_ins_death_claim_f44" sourceRef="dc_cancelKind" targetRef="dc_cancelCall"/>
+      <sequenceFlow id="sec_ins_death_claim_f45" sourceRef="dc_cancelCall" targetRef="dc_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ins_death_claim_diagram">
+    <bpmndi:BPMNPlane id="sec_ins_death_claim_plane" bpmnElement="sangam-sec-ins-death-claim">
+      <bpmndi:BPMNShape id="dc_start_di" bpmnElement="dc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_defaults_di" bpmnElement="dc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cover_di" bpmnElement="dc_cover"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_rule_di" bpmnElement="dc_rule"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_coverGw_di" bpmnElement="dc_coverGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_rjLapse_code_di" bpmnElement="dc_rjLapse_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_rjLapse_reject_di" bpmnElement="dc_rjLapse_reject"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_rjLapse_endRejected_di" bpmnElement="dc_rjLapse_endRejected"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_invGw_di" bpmnElement="dc_invGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_investigate_slaPlan_di" bpmnElement="dc_investigate_slaPlan"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_investigate_di" bpmnElement="dc_investigate"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_investigate_warnNotify_di" bpmnElement="dc_investigate_warnNotify"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_investigate_warnEnd_di" bpmnElement="dc_investigate_warnEnd"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_investigate_breachAct_di" bpmnElement="dc_investigate_breachAct"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_investigate_breachGw_di" bpmnElement="dc_investigate_breachGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_investigate_done_di" bpmnElement="dc_investigate_done"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assess_slaPlan_di" bpmnElement="dc_assess_slaPlan"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assess_di" bpmnElement="dc_assess"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assess_warnNotify_di" bpmnElement="dc_assess_warnNotify"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assess_warnEnd_di" bpmnElement="dc_assess_warnEnd"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assess_breachAct_di" bpmnElement="dc_assess_breachAct"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assess_breachGw_di" bpmnElement="dc_assess_breachGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assess_done_di" bpmnElement="dc_assess_done"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_invRes_di" bpmnElement="dc_invRes"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_rj_reject_di" bpmnElement="dc_rj_reject"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_rj_endRejected_di" bpmnElement="dc_rj_endRejected"><dc:Bounds x="3517" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assGw_di" bpmnElement="dc_assGw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_sanction_di" bpmnElement="dc_sanction"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_pay_di" bpmnElement="dc_pay"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_sanGw_di" bpmnElement="dc_sanGw"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_close_di" bpmnElement="dc_close"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_end_di" bpmnElement="dc_end"><dc:Bounds x="3682" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_investigate_warn_di" bpmnElement="dc_investigate_warn"><dc:Bounds x="1183" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_investigate_breach_di" bpmnElement="dc_investigate_breach"><dc:Bounds x="1213" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assess_warn_di" bpmnElement="dc_assess_warn"><dc:Bounds x="2173" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_assess_breach_di" bpmnElement="dc_assess_breach"><dc:Bounds x="2203" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdraw_di" bpmnElement="dc_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdrawStart_di" bpmnElement="dc_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdrawKind_di" bpmnElement="dc_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdrawCall_di" bpmnElement="dc_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_withdrawEnd_di" bpmnElement="dc_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancel_di" bpmnElement="dc_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancelStart_di" bpmnElement="dc_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancelKind_di" bpmnElement="dc_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancelCall_di" bpmnElement="dc_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_cancelEnd_di" bpmnElement="dc_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f1_di" bpmnElement="sec_ins_death_claim_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f2_di" bpmnElement="sec_ins_death_claim_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f3_di" bpmnElement="sec_ins_death_claim_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f4_di" bpmnElement="sec_ins_death_claim_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f5_di" bpmnElement="sec_ins_death_claim_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f6_di" bpmnElement="sec_ins_death_claim_f6"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f7_di" bpmnElement="sec_ins_death_claim_f7"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f8_di" bpmnElement="sec_ins_death_claim_f8"><di:waypoint x="755" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f9_di" bpmnElement="sec_ins_death_claim_f9"><di:waypoint x="1201" y="128"/><di:waypoint x="1201" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f10_di" bpmnElement="sec_ins_death_claim_f10"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f11_di" bpmnElement="sec_ins_death_claim_f11"><di:waypoint x="1231" y="128"/><di:waypoint x="1231" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f12_di" bpmnElement="sec_ins_death_claim_f12"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f13_di" bpmnElement="sec_ins_death_claim_f13"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f14_di" bpmnElement="sec_ins_death_claim_f14"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="135"/><di:waypoint x="1060" y="135"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f15_di" bpmnElement="sec_ins_death_claim_f15"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f16_di" bpmnElement="sec_ins_death_claim_f16"><di:waypoint x="1275" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f17_di" bpmnElement="sec_ins_death_claim_f17"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f18_di" bpmnElement="sec_ins_death_claim_f18"><di:waypoint x="2191" y="128"/><di:waypoint x="2191" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f19_di" bpmnElement="sec_ins_death_claim_f19"><di:waypoint x="2430" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f20_di" bpmnElement="sec_ins_death_claim_f20"><di:waypoint x="2221" y="128"/><di:waypoint x="2221" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f21_di" bpmnElement="sec_ins_death_claim_f21"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f22_di" bpmnElement="sec_ins_death_claim_f22"><di:waypoint x="2570" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f23_di" bpmnElement="sec_ins_death_claim_f23"><di:waypoint x="2545" y="95"/><di:waypoint x="2545" y="142"/><di:waypoint x="2050" y="142"/><di:waypoint x="2050" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f24_di" bpmnElement="sec_ins_death_claim_f24"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f25_di" bpmnElement="sec_ins_death_claim_f25"><di:waypoint x="2265" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f26_di" bpmnElement="sec_ins_death_claim_f26"><di:waypoint x="920" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f27_di" bpmnElement="sec_ins_death_claim_f27"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f28_di" bpmnElement="sec_ins_death_claim_f28"><di:waypoint x="3420" y="70"/><di:waypoint x="3517" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f29_di" bpmnElement="sec_ins_death_claim_f29"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f30_di" bpmnElement="sec_ins_death_claim_f30"><di:waypoint x="1910" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f31_di" bpmnElement="sec_ins_death_claim_f31"><di:waypoint x="2735" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f32_di" bpmnElement="sec_ins_death_claim_f32"><di:waypoint x="2900" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f33_di" bpmnElement="sec_ins_death_claim_f33"><di:waypoint x="2900" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f34_di" bpmnElement="sec_ins_death_claim_f34"><di:waypoint x="3230" y="70"/><di:waypoint x="3275" y="70"/><di:waypoint x="3275" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f35_di" bpmnElement="sec_ins_death_claim_f35"><di:waypoint x="3205" y="95"/><di:waypoint x="3205" y="142"/><di:waypoint x="2050" y="142"/><di:waypoint x="2050" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f36_di" bpmnElement="sec_ins_death_claim_f36"><di:waypoint x="3230" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f37_di" bpmnElement="sec_ins_death_claim_f37"><di:waypoint x="3090" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f38_di" bpmnElement="sec_ins_death_claim_f38"><di:waypoint x="3420" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f39_di" bpmnElement="sec_ins_death_claim_f39"><di:waypoint x="3585" y="195"/><di:waypoint x="3682" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f40_di" bpmnElement="sec_ins_death_claim_f40"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f41_di" bpmnElement="sec_ins_death_claim_f41"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f42_di" bpmnElement="sec_ins_death_claim_f42"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f43_di" bpmnElement="sec_ins_death_claim_f43"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f44_di" bpmnElement="sec_ins_death_claim_f44"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_death_claim_f45_di" bpmnElement="sec_ins_death_claim_f45"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

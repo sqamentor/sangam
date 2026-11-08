@@ -1,0 +1,56 @@
+{
+  "key": "assets/register",
+  "version": "1.0.0",
+  "pack": "gov.assets",
+  "title": {
+    "en": "Register asset",
+    "hi": "परिसंपत्ति पंजीकृत करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "assetId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Asset / vehicle",
+        "hi": "परिसंपत्ति / वाहन"
+      }
+    },
+    {
+      "id": "assetValue",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Book value (INR)",
+        "hi": "बही मूल्य (रुपये)"
+      }
+    },
+    {
+      "id": "category",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Category",
+        "hi": "श्रेणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

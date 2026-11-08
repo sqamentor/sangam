@@ -1,0 +1,47 @@
+{
+  "key": "sec-ins-reinsurance/risk",
+  "version": "1.0.0",
+  "pack": "sec.ins.reinsurance",
+  "title": {
+    "en": "Risk for reinsurance",
+    "hi": "पुनर्बीमा हेतु जोखिम"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "policyNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Policy / subscription",
+        "hi": "पॉलिसी / सदस्यता"
+      }
+    },
+    {
+      "id": "sumInsured",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Sum insured (INR)",
+        "hi": "बीमित राशि (रुपये)"
+      }
+    },
+    {
+      "id": "lineOfBusiness",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Line of business",
+        "hi": "व्यवसाय श्रेणी"
+      }
+    }
+  ]
+}

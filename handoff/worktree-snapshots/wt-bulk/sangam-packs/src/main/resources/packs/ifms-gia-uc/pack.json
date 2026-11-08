@@ -1,0 +1,131 @@
+{
+  "id": "gov.ifms.gia-uc",
+  "version": "1.0.0",
+  "name": {
+    "en": "Grant-in-aid release and utilisation certificates",
+    "hi": "सहायता अनुदान विमुक्ति और उपयोगिता प्रमाण पत्र"
+  },
+  "domain": "IFMS",
+  "description": "Release check by DMN (unspent balance, recurring grant 75 % rule, UC status, EAT use), FA, sanction, release bill through gov.ifms.bill, then a UC case per grant with the profile deadline (12 months after the year), reminders and blacklisting; UC form by grantee type (12-A / 12-B / 12-C); assets register flag.",
+  "mainProcesses": [
+    "sangam-ifms-gia-release"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-gia-uc/sangam-ifms-gia-release.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-gia-uc/sangam-ifms-uc.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-gia-uc/ifms-gia-release.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-gia-uc/ifms-gia-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-gia-uc/forms/release.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-gia-uc/forms/fa.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-gia-uc/forms/uc-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-gia-uc/forms/uc-default.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-gia-uc/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-gia-uc/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "ledger.available",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Unspent balance and funds (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "grantee.registry",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Implementing-agency register (EAT)"
+    }
+  ],
+  "covers": [
+    "IFC-145",
+    "IFC-146",
+    "IFC-147",
+    "IFC-148",
+    "IFC-149",
+    "IFC-150",
+    "IFC-151",
+    "IFC-152",
+    "IFC-153",
+    "IFC-154",
+    "IFC-155",
+    "IFC-156",
+    "IFC-163",
+    "IFC-164",
+    "IFC-165",
+    "IFC-012",
+    "IFS-050",
+    "IFS-PB-002",
+    "IFS-CH-004",
+    "IFS-AN-004",
+    "IFS-DH-003",
+    "GA-08",
+    "GP-05",
+    "GP-22",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "gov.ifms.pao-chain",
+    "gov.ifms.bill"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-ifms-bill"
+  ]
+}

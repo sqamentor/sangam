@@ -1,0 +1,47 @@
+{
+  "key": "up10-incident-swarming/resolve",
+  "version": "1.0.0",
+  "pack": "universal.up10-incident-swarming",
+  "title": {
+    "en": "Resolve incident",
+    "hi": "घटना का समाधान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "resolutionNotes",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Resolution notes",
+        "hi": "समाधान टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "incidentDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "fixed",
+        "label": {
+          "en": "Fixed",
+          "hi": "ठीक किया गया"
+        }
+      },
+      {
+        "value": "swarm",
+        "label": {
+          "en": "Major incident: swarm",
+          "hi": "प्रमुख घटना: सामूहिक प्रयास"
+        }
+      }
+    ]
+  }
+}

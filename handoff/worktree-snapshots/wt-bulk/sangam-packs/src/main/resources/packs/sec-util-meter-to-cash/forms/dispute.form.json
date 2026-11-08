@@ -1,0 +1,56 @@
+{
+  "key": "sec-util-meter-to-cash/dispute",
+  "version": "1.0.0",
+  "pack": "sec.util.meter-to-cash",
+  "title": {
+    "en": "Examine dispute and revise bill",
+    "hi": "विवाद की जाँच एवं बिल संशोधन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "units",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Units consumed",
+        "hi": "उपभुक्त इकाइयाँ"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "disputeDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "customer",
+        "label": {
+          "en": "In favour of the customer",
+          "hi": "ग्राहक के पक्ष में"
+        }
+      },
+      {
+        "value": "seller",
+        "label": {
+          "en": "In favour of the seller",
+          "hi": "विक्रेता के पक्ष में"
+        }
+      }
+    ]
+  }
+}

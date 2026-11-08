@@ -1,0 +1,27 @@
+{
+  "key": "sec-edu-examination/conduct",
+  "version": "1.0.0",
+  "pack": "sec.edu.examination",
+  "title": {
+    "en": "Conduct examination",
+    "hi": "परीक्षा संचालन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

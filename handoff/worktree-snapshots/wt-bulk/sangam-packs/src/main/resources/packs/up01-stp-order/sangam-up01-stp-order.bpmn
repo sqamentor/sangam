@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-01 Straight-through order. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up01_stp_order" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_order_received" name="sangam.order.received"/>
+  <error id="err_STP_FAILED" name="STP_FAILED" errorCode="STP_FAILED"/>
+  <process id="sangam-up01-stp-order" name="UP-01 Straight-through order" isExecutable="true" operaton:historyTimeToLive="30" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up01-stp-order</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>orderId,customerId,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u1_start" name="Order received"><messageEventDefinition messageRef="msg_sangam_order_received"/></startEvent>
+    <serviceTask id="u1_validate" name="Validate" operaton:class="org.sangam.packs.core.ConnectorCallDelegate"><extensionElements><operaton:field name="connector"><operaton:string>order.validate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>validate</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,customerId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>validate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="u1_route" name="Fulfilment route (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>up01-route</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="u1_reserve" name="Reserve stock" operaton:class="org.sangam.packs.core.ConnectorCallDelegate"><extensionElements><operaton:field name="connector"><operaton:string>inventory.reserve</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>reserve</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>reserve</operaton:string></operaton:field><operaton:field name="step"><operaton:string>reserve</operaton:string></operaton:field><operaton:field name="errorOnFailure"><operaton:string>STP_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u1_charge" name="Capture payment" operaton:class="org.sangam.packs.core.ConnectorCallDelegate"><extensionElements><operaton:field name="connector"><operaton:string>saga.charge</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>capture</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>charge</operaton:string></operaton:field><operaton:field name="step"><operaton:string>charge</operaton:string></operaton:field><operaton:field name="errorOnFailure"><operaton:string>STP_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u1_ship" name="Create shipment" operaton:class="org.sangam.packs.core.ConnectorCallDelegate"><extensionElements><operaton:field name="connector"><operaton:string>shipping.create</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>create</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId,fulfilmentChannel</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ship</operaton:string></operaton:field><operaton:field name="step"><operaton:string>ship</operaton:string></operaton:field><operaton:field name="errorOnFailure"><operaton:string>STP_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u1_end" name="Fulfilled"></endEvent>
+    <endEvent id="u1_reserve_failEnd" name="Failed (exception queue)"></endEvent>
+    <endEvent id="u1_charge_failEnd" name="Failed (exception queue)"></endEvent>
+    <endEvent id="u1_ship_failEnd" name="Failed (exception queue)"></endEvent>
+    <boundaryEvent id="u1_reserve_err" name="Failed" attachedToRef="u1_reserve" cancelActivity="true"><errorEventDefinition errorRef="err_STP_FAILED"/></boundaryEvent>
+    <boundaryEvent id="u1_charge_err" name="Failed" attachedToRef="u1_charge" cancelActivity="true"><errorEventDefinition errorRef="err_STP_FAILED"/></boundaryEvent>
+    <boundaryEvent id="u1_ship_err" name="Failed" attachedToRef="u1_ship" cancelActivity="true"><errorEventDefinition errorRef="err_STP_FAILED"/></boundaryEvent>
+    <sequenceFlow id="up01_stp_order_f1" sourceRef="u1_start" targetRef="u1_validate"/>
+    <sequenceFlow id="up01_stp_order_f2" sourceRef="u1_validate" targetRef="u1_route"/>
+    <sequenceFlow id="up01_stp_order_f3" sourceRef="u1_route" targetRef="u1_reserve"/>
+    <sequenceFlow id="up01_stp_order_f4" sourceRef="u1_reserve" targetRef="u1_charge"/>
+    <sequenceFlow id="up01_stp_order_f5" sourceRef="u1_charge" targetRef="u1_ship"/>
+    <sequenceFlow id="up01_stp_order_f6" sourceRef="u1_ship" targetRef="u1_end"/>
+    <sequenceFlow id="up01_stp_order_f7" sourceRef="u1_reserve_err" targetRef="u1_reserve_failEnd"/>
+    <sequenceFlow id="up01_stp_order_f8" sourceRef="u1_charge_err" targetRef="u1_charge_failEnd"/>
+    <sequenceFlow id="up01_stp_order_f9" sourceRef="u1_ship_err" targetRef="u1_ship_failEnd"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up01_stp_order_diagram">
+    <bpmndi:BPMNPlane id="up01_stp_order_plane" bpmnElement="sangam-up01-stp-order">
+      <bpmndi:BPMNShape id="u1_start_di" bpmnElement="u1_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_validate_di" bpmnElement="u1_validate"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_route_di" bpmnElement="u1_route"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_reserve_di" bpmnElement="u1_reserve"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_charge_di" bpmnElement="u1_charge"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_ship_di" bpmnElement="u1_ship"><dc:Bounds x="845" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_end_di" bpmnElement="u1_end"><dc:Bounds x="1042" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_reserve_failEnd_di" bpmnElement="u1_reserve_failEnd"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_charge_failEnd_di" bpmnElement="u1_charge_failEnd"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_ship_failEnd_di" bpmnElement="u1_ship_failEnd"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_reserve_err_di" bpmnElement="u1_reserve_err"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_charge_err_di" bpmnElement="u1_charge_err"><dc:Bounds x="688" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u1_ship_err_di" bpmnElement="u1_ship_err"><dc:Bounds x="853" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up01_stp_order_f1_di" bpmnElement="up01_stp_order_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up01_stp_order_f2_di" bpmnElement="up01_stp_order_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up01_stp_order_f3_di" bpmnElement="up01_stp_order_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up01_stp_order_f4_di" bpmnElement="up01_stp_order_f4"><di:waypoint x="615" y="70"/><di:waypoint x="647" y="70"/><di:waypoint x="647" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up01_stp_order_f5_di" bpmnElement="up01_stp_order_f5"><di:waypoint x="780" y="195"/><di:waypoint x="812" y="195"/><di:waypoint x="812" y="320"/><di:waypoint x="845" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up01_stp_order_f6_di" bpmnElement="up01_stp_order_f6"><di:waypoint x="945" y="320"/><di:waypoint x="993" y="320"/><di:waypoint x="993" y="445"/><di:waypoint x="1042" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up01_stp_order_f7_di" bpmnElement="up01_stp_order_f7"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up01_stp_order_f8_di" bpmnElement="up01_stp_order_f8"><di:waypoint x="706" y="253"/><di:waypoint x="706" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up01_stp_order_f9_di" bpmnElement="up01_stp_order_f9"><di:waypoint x="871" y="378"/><di:waypoint x="871" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

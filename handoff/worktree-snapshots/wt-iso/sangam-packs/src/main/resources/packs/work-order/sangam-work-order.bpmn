@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Work order. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_work_order" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_loaAccepted" name="sangam.loaAccepted"/>
+  <message id="msg_sangam_securityVerified" name="sangam.securityVerified"/>
+  <process id="sangam-work-order" name="Work order" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.work-order</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>contractorId,contractValue,workName</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="wo_start" name="Award received" operaton:initiator="initiator" operaton:formKey="sangam:work-order/award"></startEvent>
+    <serviceTask id="wo_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>acceptanceWindow=P15D;securityWindow=P21D;eeSeat=EE-WO;aeSeat=AE-WO</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wo_loa" name="Letter of acceptance" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>letter-of-acceptance</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wo_tell" name="Send LoA to contractor" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>loa-issued</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>contractorId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wo_window" name="Acceptance window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>acceptance</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${acceptanceWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="wo_wait" name="Accepted?"></eventBasedGateway>
+    <intermediateCatchEvent id="wo_accepted" name="LoA accepted"><messageEventDefinition messageRef="msg_sangam_loaAccepted"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="wo_lapsed" name="Not accepted in time"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${acceptanceDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="wo_forfeit" name="Forfeit EMD" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>emd.forfeit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>forfeit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>contractorId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>forfeit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>forfeit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wo_notAccepted" name="Not accepted" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>workOrderOutcome=NOT_ACCEPTED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="wo_endNotAccepted" name="Not accepted"></endEvent>
+    <serviceTask id="wo_security" name="Performance security case (linked)" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-security-instrument</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>performance-security</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>contractorId,contractValue</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wo_secWindow" name="Security due" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>security</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${securityWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="wo_secWait" name="Security verified?"></eventBasedGateway>
+    <intermediateCatchEvent id="wo_secVerified" name="Security verified"><messageEventDefinition messageRef="msg_sangam_securityVerified"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="wo_secLapsed" name="Security not furnished"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${securityDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="wo_forfeit2" name="Forfeit EMD (no security)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>emd.forfeit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>forfeit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>contractorId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>forfeit2</operaton:string></operaton:field><operaton:field name="step"><operaton:string>forfeit-security</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wo_noSecurity" name="No security" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>workOrderOutcome=NO_SECURITY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="wo_endNoSecurity" name="Cancelled: no security"></endEvent>
+    <userTask id="wo_agreement" name="Sign agreement" operaton:candidateGroups="${eeSeat}" operaton:formKey="sangam:work-order/agreement"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="wo_sign" name="Sign agreement" operaton:class="org.sangam.packs.core.SignatureDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>REQUEST</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>agreement</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="wo_site" name="Hand over site" operaton:candidateGroups="${aeSeat}" operaton:formKey="sangam:work-order/site-handover"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="wo_order" name="Work order" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>work-order</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="wo_issued" name="Issued" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>workOrderOutcome=ISSUED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="wo_end" name="Work order issued"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="work_order_f1" sourceRef="wo_start" targetRef="wo_defaults"/>
+    <sequenceFlow id="work_order_f2" sourceRef="wo_defaults" targetRef="wo_loa"/>
+    <sequenceFlow id="work_order_f3" sourceRef="wo_loa" targetRef="wo_tell"/>
+    <sequenceFlow id="work_order_f4" sourceRef="wo_tell" targetRef="wo_window"/>
+    <sequenceFlow id="work_order_f5" sourceRef="wo_window" targetRef="wo_wait"/>
+    <sequenceFlow id="work_order_f6" sourceRef="wo_wait" targetRef="wo_accepted"/>
+    <sequenceFlow id="work_order_f7" sourceRef="wo_wait" targetRef="wo_lapsed"/>
+    <sequenceFlow id="work_order_f8" sourceRef="wo_lapsed" targetRef="wo_forfeit"/>
+    <sequenceFlow id="work_order_f9" sourceRef="wo_forfeit" targetRef="wo_notAccepted"/>
+    <sequenceFlow id="work_order_f10" sourceRef="wo_notAccepted" targetRef="wo_endNotAccepted"/>
+    <sequenceFlow id="work_order_f11" sourceRef="wo_accepted" targetRef="wo_security"/>
+    <sequenceFlow id="work_order_f12" sourceRef="wo_security" targetRef="wo_secWindow"/>
+    <sequenceFlow id="work_order_f13" sourceRef="wo_secWindow" targetRef="wo_secWait"/>
+    <sequenceFlow id="work_order_f14" sourceRef="wo_secWait" targetRef="wo_secVerified"/>
+    <sequenceFlow id="work_order_f15" sourceRef="wo_secWait" targetRef="wo_secLapsed"/>
+    <sequenceFlow id="work_order_f16" sourceRef="wo_secLapsed" targetRef="wo_forfeit2"/>
+    <sequenceFlow id="work_order_f17" sourceRef="wo_forfeit2" targetRef="wo_noSecurity"/>
+    <sequenceFlow id="work_order_f18" sourceRef="wo_noSecurity" targetRef="wo_endNoSecurity"/>
+    <sequenceFlow id="work_order_f19" sourceRef="wo_secVerified" targetRef="wo_agreement"/>
+    <sequenceFlow id="work_order_f20" sourceRef="wo_agreement" targetRef="wo_sign"/>
+    <sequenceFlow id="work_order_f21" sourceRef="wo_sign" targetRef="wo_site"/>
+    <sequenceFlow id="work_order_f22" sourceRef="wo_site" targetRef="wo_order"/>
+    <sequenceFlow id="work_order_f23" sourceRef="wo_order" targetRef="wo_issued"/>
+    <sequenceFlow id="work_order_f24" sourceRef="wo_issued" targetRef="wo_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="work_order_diagram">
+    <bpmndi:BPMNPlane id="work_order_plane" bpmnElement="sangam-work-order">
+      <bpmndi:BPMNShape id="wo_start_di" bpmnElement="wo_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_defaults_di" bpmnElement="wo_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_loa_di" bpmnElement="wo_loa"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_tell_di" bpmnElement="wo_tell"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_window_di" bpmnElement="wo_window"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_wait_di" bpmnElement="wo_wait"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_accepted_di" bpmnElement="wo_accepted"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_lapsed_di" bpmnElement="wo_lapsed"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_forfeit_di" bpmnElement="wo_forfeit"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_notAccepted_di" bpmnElement="wo_notAccepted"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_endNotAccepted_di" bpmnElement="wo_endNotAccepted"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_security_di" bpmnElement="wo_security"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_secWindow_di" bpmnElement="wo_secWindow"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_secWait_di" bpmnElement="wo_secWait"><dc:Bounds x="1530" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_secVerified_di" bpmnElement="wo_secVerified"><dc:Bounds x="1702" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_secLapsed_di" bpmnElement="wo_secLapsed"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_forfeit2_di" bpmnElement="wo_forfeit2"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_noSecurity_di" bpmnElement="wo_noSecurity"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_endNoSecurity_di" bpmnElement="wo_endNoSecurity"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_agreement_di" bpmnElement="wo_agreement"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_sign_di" bpmnElement="wo_sign"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_site_di" bpmnElement="wo_site"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_order_di" bpmnElement="wo_order"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_issued_di" bpmnElement="wo_issued"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="wo_end_di" bpmnElement="wo_end"><dc:Bounds x="2692" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="work_order_f1_di" bpmnElement="work_order_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f2_di" bpmnElement="work_order_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f3_di" bpmnElement="work_order_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f4_di" bpmnElement="work_order_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f5_di" bpmnElement="work_order_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f6_di" bpmnElement="work_order_f6"><di:waypoint x="920" y="70"/><di:waypoint x="981" y="70"/><di:waypoint x="981" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f7_di" bpmnElement="work_order_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f8_di" bpmnElement="work_order_f8"><di:waypoint x="1078" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f9_di" bpmnElement="work_order_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f10_di" bpmnElement="work_order_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f11_di" bpmnElement="work_order_f11"><di:waypoint x="1078" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f12_di" bpmnElement="work_order_f12"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f13_di" bpmnElement="work_order_f13"><di:waypoint x="1440" y="195"/><di:waypoint x="1530" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f14_di" bpmnElement="work_order_f14"><di:waypoint x="1580" y="195"/><di:waypoint x="1641" y="195"/><di:waypoint x="1641" y="320"/><di:waypoint x="1702" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f15_di" bpmnElement="work_order_f15"><di:waypoint x="1580" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f16_di" bpmnElement="work_order_f16"><di:waypoint x="1738" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f17_di" bpmnElement="work_order_f17"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f18_di" bpmnElement="work_order_f18"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f19_di" bpmnElement="work_order_f19"><di:waypoint x="1738" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f20_di" bpmnElement="work_order_f20"><di:waypoint x="1935" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f21_di" bpmnElement="work_order_f21"><di:waypoint x="2100" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f22_di" bpmnElement="work_order_f22"><di:waypoint x="2265" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f23_di" bpmnElement="work_order_f23"><di:waypoint x="2430" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="work_order_f24_di" bpmnElement="work_order_f24"><di:waypoint x="2595" y="320"/><di:waypoint x="2692" y="320"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

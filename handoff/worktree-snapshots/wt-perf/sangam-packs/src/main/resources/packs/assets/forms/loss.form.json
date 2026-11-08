@@ -1,0 +1,36 @@
+{
+  "key": "assets/loss",
+  "version": "1.0.0",
+  "pack": "gov.assets",
+  "title": {
+    "en": "Report loss or accident",
+    "hi": "हानि या दुर्घटना की रिपोर्ट"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "description",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

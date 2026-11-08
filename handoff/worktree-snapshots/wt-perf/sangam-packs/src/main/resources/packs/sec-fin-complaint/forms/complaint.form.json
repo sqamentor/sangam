@@ -1,0 +1,72 @@
+{
+  "key": "sec-fin-complaint/complaint",
+  "version": "1.0.0",
+  "pack": "sec.fin.complaint",
+  "title": {
+    "en": "Complaint",
+    "hi": "शिकायत"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "regulatorScheme",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Regulator / scheme",
+        "hi": "नियामक / योजना"
+      }
+    },
+    {
+      "id": "category",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Category",
+        "hi": "श्रेणी"
+      }
+    },
+    {
+      "id": "grievanceText",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Grievance",
+        "hi": "शिकायत"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

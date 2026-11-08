@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# OIDC JWT resource server (Keycloak, Parichay/state SSO bridge, Entra ID ...). Combine with a database profile:
+#   --spring.profiles.active=postgres,oidc   with SANGAM_OIDC_ISSUER=https://idp.example/realms/sangam
+# The tenant comes from the token claim SANGAM_SECURITY_OIDC_TENANT_CLAIM (default "tenant"); the aud claim must contain
+# SANGAM_SECURITY_OIDC_AUDIENCE (default "sangam-server"). OidcConfig builds the decoder lazily (issuer + aud validation).
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SANGAM_OIDC_ISSUER}

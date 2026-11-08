@@ -1,0 +1,36 @@
+{
+  "key": "security-instrument/return-original",
+  "version": "1.0.0",
+  "pack": "gov.security-instrument",
+  "title": {
+    "en": "Return the original instrument",
+    "hi": "मूल लिखत लौटाएँ"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "physicalReceived",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Physical item received",
+        "hi": "भौतिक वस्तु प्राप्त हुई"
+      }
+    },
+    {
+      "id": "custodian",
+      "type": "seat",
+      "required": false,
+      "label": {
+        "en": "Custodian (seat)",
+        "hi": "अभिरक्षक (पद)"
+      }
+    }
+  ]
+}

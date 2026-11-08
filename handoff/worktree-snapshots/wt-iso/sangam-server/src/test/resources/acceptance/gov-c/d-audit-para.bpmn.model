@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_dap">
+  <!-- D-AUDIT-PARA: ATN due within 3 months of the report being laid; reminder at 2 months and escalation at 3 months
+       run against the whole draft / vetting cycle (audit may return the ATN to the same para, same identity). -->
+  <process id="d-audit-para" name="D-AUDIT-PARA Action taken note" isExecutable="true">
+    <startEvent id="dap_start"/>
+    <sequenceFlow id="f1" sourceRef="dap_start" targetRef="dap_cycle"/>
+    <subProcess id="dap_cycle" name="ATN draft and vetting">
+      <startEvent id="dap_cStart"/>
+      <sequenceFlow id="c1" sourceRef="dap_cStart" targetRef="dap_draftAtn"/>
+      <userTask id="dap_draftAtn" name="Department drafts ATN"><potentialOwner><resourceAssignmentExpression><formalExpression>group(department)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="c2" sourceRef="dap_draftAtn" targetRef="dap_vet"/>
+      <userTask id="dap_vet" name="Audit vets ATN"><potentialOwner><resourceAssignmentExpression><formalExpression>group(audit)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="c3" sourceRef="dap_vet" targetRef="dap_gw"/>
+      <exclusiveGateway id="dap_gw" default="c5"/>
+      <sequenceFlow id="c4" sourceRef="dap_gw" targetRef="dap_cEnd"><conditionExpression xsi:type="tFormalExpression">${vetted == true}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="c5" sourceRef="dap_gw" targetRef="dap_count"/>
+      <serviceTask id="dap_count" name="Count return" @@expr|${execution.setVariable('returnCount', returnCount + 1)}@@/>
+      <sequenceFlow id="c6" sourceRef="dap_count" targetRef="dap_draftAtn"/>
+      <endEvent id="dap_cEnd"/>
+    </subProcess>
+    <boundaryEvent id="dap_reminder" attachedToRef="dap_cycle" cancelActivity="false">
+      <timerEventDefinition><timeDuration xsi:type="tFormalExpression">P2M</timeDuration></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f2" sourceRef="dap_reminder" targetRef="dap_remind"/>
+    <userTask id="dap_remind" name="Reminder: ATN due in one month"><potentialOwner><resourceAssignmentExpression><formalExpression>group(department-head)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="dap_remind" targetRef="dap_remEnd"/>
+    <endEvent id="dap_remEnd"/>
+    <boundaryEvent id="dap_due" attachedToRef="dap_cycle" cancelActivity="false">
+      <timerEventDefinition><timeDuration xsi:type="tFormalExpression">P3M</timeDuration></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f4" sourceRef="dap_due" targetRef="dap_escalate"/>
+    <userTask id="dap_escalate" name="ATN overdue: escalate to Secretary"><potentialOwner><resourceAssignmentExpression><formalExpression>group(secretary)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f5" sourceRef="dap_escalate" targetRef="dap_escEnd"/>
+    <endEvent id="dap_escEnd"/>
+    <sequenceFlow id="f6" sourceRef="dap_cycle" targetRef="dap_pac"/>
+    <userTask id="dap_pac" name="Submit vetted ATN to PAC / settle para"><potentialOwner><resourceAssignmentExpression><formalExpression>group(pac-cell)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f7" sourceRef="dap_pac" targetRef="dap_end"/>
+    <endEvent id="dap_end"/>
+  </process>
+</definitions>

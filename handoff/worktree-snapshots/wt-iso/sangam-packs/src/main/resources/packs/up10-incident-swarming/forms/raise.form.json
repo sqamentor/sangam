@@ -1,0 +1,45 @@
+{
+  "key": "up10-incident-swarming/raise",
+  "version": "1.0.0",
+  "pack": "universal.up10-incident-swarming",
+  "title": {
+    "en": "Raise incident",
+    "hi": "घटना दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "incidentSummary",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Incident summary",
+        "hi": "घटना सारांश"
+      }
+    },
+    {
+      "id": "priority",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Priority",
+        "hi": "प्राथमिकता"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    }
+  ]
+}

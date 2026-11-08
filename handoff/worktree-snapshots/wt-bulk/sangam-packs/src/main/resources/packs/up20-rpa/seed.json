@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "RPA",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "BOT-OPERATOR",
+      "role": "OPERATOR",
+      "office": "RPA",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Bot operator",
+        "hi": "बॉट संचालक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "BOT-OPERATOR",
+      "person": "u20.bot-operator",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "OPERATOR",
+      "name": {
+        "en": "Bot operator",
+        "hi": "बॉट संचालक"
+      }
+    }
+  ]
+}

@@ -1,0 +1,292 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: HP
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-NE-HIMALAYAN
+  name:
+    en: Himachal Pradesh
+    hi: हिमाचल प्रदेश
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources HP1-HP2, accessed 2026-11-04)
+placeholders:
+- path: chartOfAccounts
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (state digit
+    structure not found)'
+- path: classification.schemes
+  reason: partially verified code structure (delta P)
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 8
+  sources: HP1-HP2
+locale:
+  languages:
+  - tag: hi
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: sa
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+    note: '[U] 2019'
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - accounts
+    - audit
+    note: accounts and audit outputs are usually English (IFMS-STATES 9.1)
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - HIMKOSH
+  - eSalary
+  - ePension
+  - eVitran
+  - eBudget
+  - eChallan
+  - SNA
+  snaSparsh:
+    hosting: SNA_TREASURY
+  ekuber: true
+orgTopology:
+  directorate: Department of Treasuries, Accounts & Lotteries
+  unitTypes:
+    DISTRICT_TREASURY: 12
+    HQ_TREASURY: 1
+    CYBER_TREASURY_RECEIPTS: 1
+    GST_TREASURY: 1
+    CYBER_TREASURY_SNA: 1
+    SPECIAL_TREASURY: 3
+    SUB_TREASURY: 90
+  ddoCount: 5600
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: HPFR_2009
+    title: HP Financial Rules 2009
+  - id: HPTR_2017
+    title: HP Treasury Rules 2017
+  - id: CCS_CPS_2006
+    title: CCS (CPS) Rules 2006
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+  noCentralBankLink: false
+  byUnitType:
+    CDDO: TREASURY_CHEQUE
+  note: 'delta 2026-11-05: all states on RBI e-payments except Sikkim; cheque-drawing DDOs keep cheques'
+documentTypes:
+- id: HP_HPTR_5
+  formNumber: HPTR-5
+  family: DBT
+  approvalChain: TREASURY_STD
+  sanction: REFERENCE
+  integrations:
+    sourceSystem: E_KALYAN
+approvalChains:
+- id: TREASURY_STD
+  steps:
+  - role: DEALING_ASSISTANT
+  - role: ACCOUNTANT
+  - role: TREASURY_OFFICER
+    sign: true
+  returnBy:
+  - TREASURY_OFFICER
+  mayEdit: false
+  queue:
+    token: true
+    tokenSeries: TOKEN
+    fifo: true
+budgetControl:
+  controlDimension: DDO_X_SOE
+  ruleRef: HPTR 2017 r.110
+  stages:
+  - ALLOCATION
+  - E_VITRAN
+payBillSplit:
+  by: PENSION_SCHEME
+  npsJoinedOnOrAfter: '2003-05-15'
+ddoMapsToOneTreasury: true
+treasuryFunctions:
+- LOTTERIES
+- STAMPS
+- OPIUM
+remoteUnits:
+- PANGI
+- KAZA
+classification:
+  schemes:
+  - id: HOA_HP
+    separator: '-'
+    segments:
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: subHead
+      width: 2
+    - id: scheme
+      width: 4
+      pattern: '[A-Z0-9]{4}'
+    - id: soe
+      width: 2
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: 2202-02-796-01-S00N / SOE 01
+    evidence: P
+    source: HP TADP 2022-23
+  defaultScheme: HOA_HP
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+procurement:
+  family: RULES
+  rule: HPFR 2009 procurement chapter
+  worksCode: '[U]'
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/HP/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: HP
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/HP/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: HP
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPFR 2009 procurement chapter (was: RPR 2022: DDO draws within a sanction;
+        no sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPFR 2009 procurement chapter (was: DFPR 2024 r.12(4) and department re-delegation
+        order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPFR 2009 procurement chapter (was: DFPR 2024 r.12(2) re-delegation to HoD
+        [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPFR 2009 procurement chapter (was: DFPR 2024 r.11 (open / limited tender
+        up to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPFR 2009 procurement chapter (was: DFPR 2024 r.11: above the Secretary;
+        no upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from HPFR 2009 procurement chapter (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

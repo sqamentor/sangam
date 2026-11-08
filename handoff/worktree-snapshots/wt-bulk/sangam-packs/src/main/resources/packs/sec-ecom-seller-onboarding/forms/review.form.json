@@ -1,0 +1,63 @@
+{
+  "key": "sec-ecom-seller-onboarding/review",
+  "version": "1.0.0",
+  "pack": "sec.ecom.seller-onboarding",
+  "title": {
+    "en": "Review licences and agreement",
+    "hi": "अनुज्ञप्ति एवं अनुबंध की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "docsRequired",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Licences required",
+        "hi": "आवश्यक अनुज्ञप्तियाँ"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "sellerDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "clarify",
+        "label": {
+          "en": "Seek clarification",
+          "hi": "स्पष्टीकरण मांगें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet: open in the Sangam modeller and auto-layout. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_dsr_erasure" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
+  <process id="sangam-dsr-erasure" name="Data-subject erasure request" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Erasure right (IN: DPDP s.12(3)). Erasure runs through sangam-integration ErasureService; legal holds and retention required by law are respected; the records officer approves.</documentation>
+    <startEvent id="start" name="Request received"/>
+    <serviceTask id="s_start" name="Mark in progress" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.start</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u_approve" name="Check retention obligations and approve erasure" operaton:candidateGroups="RECORDS-OFFICER" operaton:formKey="sangam:compliance/erasure-approve"></userTask>
+    <boundaryEvent id="t_due" name="Due date" attachedToRef="u_approve" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <exclusiveGateway id="g_decision" name="Approved?" default="f_reject"/>
+    <serviceTask id="s_erase" name="Erase (holds and legal retention respected)" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.erase</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="s_reject" name="Reject with reason" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end" name="Erased"/>
+    <endEvent id="end_rej" name="Rejected"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="s_start"/>
+    <sequenceFlow id="f2" sourceRef="s_start" targetRef="u_approve"/>
+    <sequenceFlow id="f3" sourceRef="u_approve" targetRef="g_decision"/>
+    <sequenceFlow id="f_ok" sourceRef="g_decision" targetRef="s_erase"><conditionExpression xsi:type="tFormalExpression">${decision == 'APPROVE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f_reject" sourceRef="g_decision" targetRef="s_reject"/>
+    <sequenceFlow id="f4" sourceRef="s_erase" targetRef="end"/>
+    <sequenceFlow id="f5" sourceRef="s_reject" targetRef="end_rej"/>
+    <serviceTask id="esc" name="Escalate overdue request" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.escalate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end_esc" name="Escalated"/>
+    <sequenceFlow id="f_esc1" sourceRef="t_due" targetRef="esc"/>
+    <sequenceFlow id="f_esc2" sourceRef="esc" targetRef="end_esc"/>
+  </process>
+</definitions>

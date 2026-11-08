@@ -1,0 +1,29 @@
+{
+  "key": "consultancy/financial",
+  "version": "1.0.0",
+  "pack": "gov.consultancy",
+  "title": {
+    "en": "Open financial proposals of the qualified",
+    "hi": "योग्य के वित्तीय प्रस्ताव खोलें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "financialQuote",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Financial quote (INR)",
+        "hi": "वित्तीय प्रस्ताव (रुपये)"
+      }
+    }
+  ]
+}

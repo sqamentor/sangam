@@ -1,0 +1,45 @@
+{
+  "key": "p2-file-movement/close",
+  "version": "1.0.0",
+  "pack": "gov.p2.file-movement",
+  "title": {
+    "en": "Close file: retention category",
+    "hi": "फ़ाइल बंद करें: अभिलेख श्रेणी"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "retentionCategory",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Retention category (A / C)",
+        "hi": "अभिलेख श्रेणी (क / ग)"
+      }
+    },
+    {
+      "id": "retentionYears",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Retention years",
+        "hi": "प्रतिधारण अवधि (वर्ष)"
+      }
+    },
+    {
+      "id": "legalHold",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Legal hold",
+        "hi": "विधिक रोक"
+      }
+    }
+  ]
+}

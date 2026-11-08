@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-ai</artifactId>
+  <name>Sangam AI: provider-neutral LLM port, agent runtime, RAG, MCP, A2A, reviewed drafts</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-core</artifactId>
+    </dependency>
+    <!-- ADR-D-26: standalone DMN engines use Sangam's FEEL policies (SangamFeel); supplied at runtime by sangam-server -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-engine</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-integration</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <!-- Draft validation only. Apache-2.0. -->
+    <dependency>
+      <groupId>org.operaton.bpm.model</groupId>
+      <artifactId>operaton-bpmn-model</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.operaton.bpm.model</groupId>
+      <artifactId>operaton-dmn-model</artifactId>
+    </dependency>
+    <!-- Expression playground: FEEL has no side effects. Apache-2.0. -->
+    <dependency>
+      <groupId>org.operaton.bpm.dmn</groupId>
+      <artifactId>operaton-engine-feel-scala</artifactId>
+    </dependency>
+    <!-- Tests only: the production visibility binding (PolicyCompiler) for the A-13 deny test. -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-security</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,81 @@
+{
+  "key": "p2-file-movement/file-open",
+  "version": "1.0.0",
+  "pack": "gov.p2.file-movement",
+  "title": {
+    "en": "Open e-file",
+    "hi": "ई-फ़ाइल खोलें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fileNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "File number",
+        "hi": "फ़ाइल संख्या"
+      }
+    },
+    {
+      "id": "subject",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Subject",
+        "hi": "विषय"
+      }
+    },
+    {
+      "id": "subjectHead",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Subject head",
+        "hi": "विषय शीर्ष"
+      }
+    },
+    {
+      "id": "receiptNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Receipt (dak) number",
+        "hi": "प्राप्ति (डाक) संख्या"
+      }
+    },
+    {
+      "id": "noting",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Note",
+        "hi": "टिप्पणी (नोटिंग)"
+      }
+    },
+    {
+      "id": "draftLetter",
+      "type": "richtext",
+      "required": false,
+      "label": {
+        "en": "Draft for approval (DFA)",
+        "hi": "अनुमोदन हेतु प्रारूप"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

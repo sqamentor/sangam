@@ -1,0 +1,47 @@
+{
+  "key": "sec-ushealth-breach/low-probability",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.breach",
+  "title": {
+    "en": "Approve the low-probability determination (kept 6 years)",
+    "es": "Aprobar la determinación"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "lowDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "es": "Aprobar"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "es": "Rechazar"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_breach_clocks" name="Breach notification rules (45 CFR 164.404-408; state law overrides)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- US-HLT-022, US-HLT-026, US-HLT-027. Add tenant overrides for shorter state deadlines (US-HLT-031). -->
+  <decision id="sec-ushealth-breach-clocks" name="Breach notification rules (45 CFR 164.404-408; state law overrides)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ushealth-breach-clocks_t" hitPolicy="FIRST">
+      <input id="sec-ushealth-breach-clocks_i0" label="Individuals affected"><inputExpression id="sec-ushealth-breach-clocks_ie0" typeRef="integer"><text>affectedCount</text></inputExpression></input>
+      <input id="sec-ushealth-breach-clocks_i1" label="Largest count in one state"><inputExpression id="sec-ushealth-breach-clocks_ie1" typeRef="integer"><text>maxStateCount</text></inputExpression></input>
+      <output id="sec-ushealth-breach-clocks_o0" label="Individuals: from discovery (negative lead = after)" name="individualLead" typeRef="string"/>
+      <output id="sec-ushealth-breach-clocks_o1" label="HHS notice" name="hhsMode" typeRef="string"/>
+      <output id="sec-ushealth-breach-clocks_o2" label="Media notice" name="mediaRequired" typeRef="boolean"/>
+      <output id="sec-ushealth-breach-clocks_o3" label="Annual HHS report: after year end" name="annualLead" typeRef="string"/>
+      <rule id="sec-ushealth-breach-clocks_r0"><description>500+ and &gt;500 in a state</description>
+        <inputEntry id="sec-ushealth-breach-clocks_r0_i0"><text>&gt;= 500</text></inputEntry>
+        <inputEntry id="sec-ushealth-breach-clocks_r0_i1"><text>&gt; 500</text></inputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r0_o0"><text>"-P60D"</text></outputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r0_o1"><text>"IMMEDIATE"</text></outputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r0_o2"><text>true</text></outputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r0_o3"><text>"-P60D"</text></outputEntry>
+      </rule>
+      <rule id="sec-ushealth-breach-clocks_r1"><description>500+ spread across states</description>
+        <inputEntry id="sec-ushealth-breach-clocks_r1_i0"><text>&gt;= 500</text></inputEntry>
+        <inputEntry id="sec-ushealth-breach-clocks_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r1_o0"><text>"-P60D"</text></outputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r1_o1"><text>"IMMEDIATE"</text></outputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r1_o2"><text>false</text></outputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r1_o3"><text>"-P60D"</text></outputEntry>
+      </rule>
+      <rule id="sec-ushealth-breach-clocks_r2"><description>fewer than 500: annual log</description>
+        <inputEntry id="sec-ushealth-breach-clocks_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-ushealth-breach-clocks_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r2_o0"><text>"-P60D"</text></outputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r2_o1"><text>"ANNUAL"</text></outputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r2_o2"><text>false</text></outputEntry>
+        <outputEntry id="sec-ushealth-breach-clocks_r2_o3"><text>"-P60D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

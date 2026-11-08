@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: GOI.REVENUE
+  layer: department
+  version: 2026.11.0
+  effectiveFrom: '2024-04-01'
+  name:
+    en: Department of Revenue (CBDT / CBIC)
+    hi: राजस्व विभाग
+  source: IFMS-CENTRAL section O
+receipts:
+  taxAccounting: true
+  refunds:
+  - GST_REFUND
+writeOff:
+  revenueFullPower: true

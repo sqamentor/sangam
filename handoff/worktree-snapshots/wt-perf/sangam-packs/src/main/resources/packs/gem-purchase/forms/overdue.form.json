@@ -1,0 +1,47 @@
+{
+  "key": "gem-purchase/overdue",
+  "version": "1.0.0",
+  "pack": "gov.gem-purchase",
+  "title": {
+    "en": "Delivery overdue: extend or cancel",
+    "hi": "आपूर्ति विलंबित: विस्तार या रद्द"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "lateDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "extend",
+        "label": {
+          "en": "Extend",
+          "hi": "विस्तार करें"
+        }
+      },
+      {
+        "value": "terminate",
+        "label": {
+          "en": "Terminate",
+          "hi": "समाप्त करें"
+        }
+      }
+    ]
+  }
+}

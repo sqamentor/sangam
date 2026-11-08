@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_edu_refund" name="Fee refund on withdrawal (UGC refund policy)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-edu-refund" name="Fee refund on withdrawal (UGC refund policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-edu-refund_t" hitPolicy="FIRST">
+      <input id="sec-edu-refund_i0" label="Days before the last date of admission (negative after)"><inputExpression id="sec-edu-refund_ie0" typeRef="integer"><text>daysBeforeLastDate</text></inputExpression></input>
+      <output id="sec-edu-refund_o0" label="Refund %" name="refundPct" typeRef="integer"/>
+      <rule id="sec-edu-refund_r0"><description>100 % less processing fee (capped)</description>
+        <inputEntry id="sec-edu-refund_r0_i0"><text>&gt;= 15</text></inputEntry>
+        <outputEntry id="sec-edu-refund_r0_o0"><text>100</text></outputEntry>
+      </rule>
+      <rule id="sec-edu-refund_r1"><description>less than 15 days before</description>
+        <inputEntry id="sec-edu-refund_r1_i0"><text>&gt;= 0</text></inputEntry>
+        <outputEntry id="sec-edu-refund_r1_o0"><text>90</text></outputEntry>
+      </rule>
+      <rule id="sec-edu-refund_r2"><description>within 15 days after</description>
+        <inputEntry id="sec-edu-refund_r2_i0"><text>&gt;= -15</text></inputEntry>
+        <outputEntry id="sec-edu-refund_r2_o0"><text>80</text></outputEntry>
+      </rule>
+      <rule id="sec-edu-refund_r3"><description>16-30 days after</description>
+        <inputEntry id="sec-edu-refund_r3_i0"><text>&gt;= -30</text></inputEntry>
+        <outputEntry id="sec-edu-refund_r3_o0"><text>50</text></outputEntry>
+      </rule>
+      <rule id="sec-edu-refund_r4"><description>beyond 30 days</description>
+        <inputEntry id="sec-edu-refund_r4_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-edu-refund_r4_o0"><text>0</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

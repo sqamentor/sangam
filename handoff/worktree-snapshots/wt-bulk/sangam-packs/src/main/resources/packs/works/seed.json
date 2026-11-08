@@ -1,0 +1,182 @@
+{
+  "offices": [
+    {
+      "id": "DIV-WK",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "DA-WK",
+      "role": "DA",
+      "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "AE-WK",
+      "name": {
+        "en": "Divisional accountant",
+        "hi": "मंडलीय लेखाकार"
+      }
+    },
+    {
+      "id": "AE-WK",
+      "role": "AE",
+      "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "EE-WK",
+      "name": {
+        "en": "Assistant Engineer",
+        "hi": "सहायक अभियंता"
+      }
+    },
+    {
+      "id": "EE-WK",
+      "role": "EE",
+      "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SE-WK",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "id": "SE-WK",
+      "role": "SE",
+      "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CE-WK",
+      "name": {
+        "en": "Superintending Engineer",
+        "hi": "अधीक्षण अभियंता"
+      }
+    },
+    {
+      "id": "CE-WK",
+      "role": "CE",
+      "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HOD-WK",
+      "name": {
+        "en": "Chief Engineer",
+        "hi": "मुख्य अभियंता"
+      }
+    },
+    {
+      "id": "HOD-WK",
+      "role": "HOD",
+      "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SECY-WK",
+      "name": {
+        "en": "Engineer-in-Chief (HoD)",
+        "hi": "प्रमुख अभियंता (विभागाध्यक्ष)"
+      }
+    },
+    {
+      "id": "SECY-WK",
+      "role": "SECRETARY",
+      "office": "DIV-WK",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Secretary, PWD",
+        "hi": "सचिव, लोक निर्माण विभाग"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DA-WK",
+      "person": "wk.da-wk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AE-WK",
+      "person": "wk.ae-wk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EE-WK",
+      "person": "wk.ee-wk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SE-WK",
+      "person": "wk.se-wk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CE-WK",
+      "person": "wk.ce-wk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HOD-WK",
+      "person": "wk.hod-wk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SECY-WK",
+      "person": "wk.secy-wk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DA",
+      "name": {
+        "en": "Divisional accountant",
+        "hi": "मंडलीय लेखाकार"
+      }
+    },
+    {
+      "code": "AE",
+      "name": {
+        "en": "Assistant Engineer",
+        "hi": "सहायक अभियंता"
+      }
+    },
+    {
+      "code": "EE",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "code": "SE",
+      "name": {
+        "en": "Superintending Engineer",
+        "hi": "अधीक्षण अभियंता"
+      }
+    },
+    {
+      "code": "CE",
+      "name": {
+        "en": "Chief Engineer",
+        "hi": "मुख्य अभियंता"
+      }
+    },
+    {
+      "code": "HOD",
+      "name": {
+        "en": "Engineer-in-Chief (HoD)",
+        "hi": "प्रमुख अभियंता (विभागाध्यक्ष)"
+      }
+    },
+    {
+      "code": "SECRETARY",
+      "name": {
+        "en": "Secretary, PWD",
+        "hi": "सचिव, लोक निर्माण विभाग"
+      }
+    }
+  ]
+}

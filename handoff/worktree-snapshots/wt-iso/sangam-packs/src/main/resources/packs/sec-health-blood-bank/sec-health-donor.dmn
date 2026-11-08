@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_health_donor" name="Donor eligibility (verify against the current blood donor selection criteria)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-health-donor" name="Donor eligibility (verify against the current blood donor selection criteria)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-health-donor_t" hitPolicy="FIRST">
+      <input id="sec-health-donor_i0" label="Age"><inputExpression id="sec-health-donor_ie0" typeRef="integer"><text>age</text></inputExpression></input>
+      <input id="sec-health-donor_i1" label="Haemoglobin g/dL"><inputExpression id="sec-health-donor_ie1" typeRef="number"><text>haemoglobin</text></inputExpression></input>
+      <output id="sec-health-donor_o0" label="Eligible" name="donorEligible" typeRef="boolean"/>
+      <rule id="sec-health-donor_r0">
+        <inputEntry id="sec-health-donor_r0_i0"><text>&lt; 18</text></inputEntry>
+        <inputEntry id="sec-health-donor_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-health-donor_r0_o0"><text>false</text></outputEntry>
+      </rule>
+      <rule id="sec-health-donor_r1">
+        <inputEntry id="sec-health-donor_r1_i0"><text>&gt; 65</text></inputEntry>
+        <inputEntry id="sec-health-donor_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-health-donor_r1_o0"><text>false</text></outputEntry>
+      </rule>
+      <rule id="sec-health-donor_r2"><description>Hb below 12.5</description>
+        <inputEntry id="sec-health-donor_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-health-donor_r2_i1"><text>&lt; 12.5</text></inputEntry>
+        <outputEntry id="sec-health-donor_r2_o0"><text>false</text></outputEntry>
+      </rule>
+      <rule id="sec-health-donor_r3">
+        <inputEntry id="sec-health-donor_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-health-donor_r3_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-health-donor_r3_o0"><text>true</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

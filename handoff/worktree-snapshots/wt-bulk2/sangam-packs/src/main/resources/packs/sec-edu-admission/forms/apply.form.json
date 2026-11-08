@@ -1,0 +1,81 @@
+{
+  "key": "sec-edu-admission/apply",
+  "version": "1.0.0",
+  "pack": "sec.edu.admission",
+  "title": {
+    "en": "Admission application",
+    "hi": "प्रवेश आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "programme",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Programme",
+        "hi": "कार्यक्रम"
+      }
+    },
+    {
+      "id": "qualification",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Educational qualification",
+        "hi": "शैक्षिक योग्यता"
+      }
+    },
+    {
+      "id": "score",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Score",
+        "hi": "अंक"
+      }
+    },
+    {
+      "id": "socialCategory",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Social category",
+        "hi": "सामाजिक श्रेणी"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "key": "up18-capa/investigate",
+  "version": "1.0.0",
+  "pack": "universal.up18-capa",
+  "title": {
+    "en": "Investigate root cause",
+    "hi": "मूल कारण की जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "rootCause",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Root cause",
+        "hi": "मूल कारण"
+      }
+    },
+    {
+      "id": "capaActions",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Corrective and preventive actions",
+        "hi": "सुधारात्मक एवं निवारक कार्रवाई"
+      }
+    }
+  ]
+}

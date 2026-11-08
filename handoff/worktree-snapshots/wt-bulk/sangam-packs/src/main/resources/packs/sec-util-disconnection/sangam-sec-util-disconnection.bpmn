@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Disconnection. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_util_disconnection" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_util_appeal" name="sangam.util.appeal"/>
+  <message id="msg_sangam_util_paid" name="sangam.util.paid"/>
+  <process id="sangam-sec-util-disconnection" name="Disconnection" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.util.disconnection</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,billAmount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ds_start" name="Overdue bill" operaton:initiator="initiator" operaton:formKey="sangam:sec-util-disconnection/start"></startEvent>
+    <serviceTask id="ds_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>consumerNo=@key;billAmount=0;areaType=MUNICIPAL;applicantRef=@consumerNo</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ds_notice" name="Serve 15 clear days notice (s.56)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.notice</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>s56</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>consumerNo,billAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>notice</operaton:string></operaton:field><operaton:field name="step"><operaton:string>notice</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="ds_wait" name="Payment, appeal or notice period"></eventBasedGateway>
+    <intermediateCatchEvent id="ds_paid" name="Paid"><messageEventDefinition messageRef="msg_sangam_util_paid"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ds_appeal" name="Dispute / appeal with deposit"><messageEventDefinition messageRef="msg_sangam_util_appeal"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ds_15d" name="15 clear days"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P16D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="ds_endPaid" name="Paid before disconnection"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="ds_endAppeal" name="Held: dispute before the forum"></endEvent>
+    <userTask id="ds_disconnect" name="Disconnect supply" operaton:candidateGroups="LINEMAN" operaton:formKey="sangam:sec-util-disconnection/disconnect"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <intermediateCatchEvent id="ds_paidAfter" name="Paid with reconnection charges"><messageEventDefinition messageRef="msg_sangam_util_paid"/></intermediateCatchEvent>
+    <businessRuleTask id="ds_rule" name="Reconnection standard (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-util-reconnect</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="ds_reconnect_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ds_reconnect</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${reconnectSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ds_reconnect" name="Reconnect supply" operaton:candidateGroups="${reconnectSeat}" operaton:formKey="sangam:sec-util-disconnection/reconnect" operaton:dueDate="${ds_reconnectDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ds_reconnect_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ds_reconnect</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reconnectSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ds_reconnect_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ds_reconnect_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ds_reconnect</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reconnectSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ds_reconnect_breachGw" name="Deemed?" default="sec_util_disconnection_f17"></exclusiveGateway>
+    <exclusiveGateway id="ds_reconnect_done" name=""></exclusiveGateway>
+    <serviceTask id="ds_seat" name="Lineman" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>reconnectSeat=LINEMAN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ds_end" name="Reconnected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ds_reconnect_warn" name="SLA warning (75%)" attachedToRef="ds_reconnect" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ds_reconnectWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ds_reconnect_breach" name="SLA breached" attachedToRef="ds_reconnect" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ds_reconnectDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_util_disconnection_f1" sourceRef="ds_start" targetRef="ds_defaults"/>
+    <sequenceFlow id="sec_util_disconnection_f2" sourceRef="ds_defaults" targetRef="ds_notice"/>
+    <sequenceFlow id="sec_util_disconnection_f3" sourceRef="ds_notice" targetRef="ds_wait"/>
+    <sequenceFlow id="sec_util_disconnection_f4" sourceRef="ds_wait" targetRef="ds_paid"/>
+    <sequenceFlow id="sec_util_disconnection_f5" sourceRef="ds_wait" targetRef="ds_appeal"/>
+    <sequenceFlow id="sec_util_disconnection_f6" sourceRef="ds_wait" targetRef="ds_15d"/>
+    <sequenceFlow id="sec_util_disconnection_f7" sourceRef="ds_paid" targetRef="ds_endPaid"/>
+    <sequenceFlow id="sec_util_disconnection_f8" sourceRef="ds_appeal" targetRef="ds_endAppeal"/>
+    <sequenceFlow id="sec_util_disconnection_f9" sourceRef="ds_15d" targetRef="ds_disconnect"/>
+    <sequenceFlow id="sec_util_disconnection_f10" sourceRef="ds_disconnect" targetRef="ds_paidAfter"/>
+    <sequenceFlow id="sec_util_disconnection_f11" sourceRef="ds_paidAfter" targetRef="ds_rule"/>
+    <sequenceFlow id="sec_util_disconnection_f12" sourceRef="ds_reconnect_warn" targetRef="ds_reconnect_warnNotify"/>
+    <sequenceFlow id="sec_util_disconnection_f13" sourceRef="ds_reconnect_warnNotify" targetRef="ds_reconnect_warnEnd"/>
+    <sequenceFlow id="sec_util_disconnection_f14" sourceRef="ds_reconnect_breach" targetRef="ds_reconnect_breachAct"/>
+    <sequenceFlow id="sec_util_disconnection_f15" sourceRef="ds_reconnect_breachAct" targetRef="ds_reconnect_breachGw"/>
+    <sequenceFlow id="sec_util_disconnection_f16" name="deemed" sourceRef="ds_reconnect_breachGw" targetRef="ds_reconnect_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_util_disconnection_f17" name="escalated" sourceRef="ds_reconnect_breachGw" targetRef="ds_reconnect_slaPlan"/>
+    <sequenceFlow id="sec_util_disconnection_f18" sourceRef="ds_reconnect_slaPlan" targetRef="ds_reconnect"/>
+    <sequenceFlow id="sec_util_disconnection_f19" sourceRef="ds_reconnect" targetRef="ds_reconnect_done"/>
+    <sequenceFlow id="sec_util_disconnection_f20" sourceRef="ds_rule" targetRef="ds_seat"/>
+    <sequenceFlow id="sec_util_disconnection_f21" sourceRef="ds_seat" targetRef="ds_reconnect_slaPlan"/>
+    <sequenceFlow id="sec_util_disconnection_f22" sourceRef="ds_reconnect_done" targetRef="ds_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_util_disconnection_diagram">
+    <bpmndi:BPMNPlane id="sec_util_disconnection_plane" bpmnElement="sangam-sec-util-disconnection">
+      <bpmndi:BPMNShape id="ds_start_di" bpmnElement="ds_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_defaults_di" bpmnElement="ds_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_notice_di" bpmnElement="ds_notice"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_wait_di" bpmnElement="ds_wait"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_paid_di" bpmnElement="ds_paid"><dc:Bounds x="712" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_appeal_di" bpmnElement="ds_appeal"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_15d_di" bpmnElement="ds_15d"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_endPaid_di" bpmnElement="ds_endPaid"><dc:Bounds x="877" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_endAppeal_di" bpmnElement="ds_endAppeal"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_disconnect_di" bpmnElement="ds_disconnect"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_paidAfter_di" bpmnElement="ds_paidAfter"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_rule_di" bpmnElement="ds_rule"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_reconnect_slaPlan_di" bpmnElement="ds_reconnect_slaPlan"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_reconnect_di" bpmnElement="ds_reconnect"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_reconnect_warnNotify_di" bpmnElement="ds_reconnect_warnNotify"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_reconnect_warnEnd_di" bpmnElement="ds_reconnect_warnEnd"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_reconnect_breachAct_di" bpmnElement="ds_reconnect_breachAct"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_reconnect_breachGw_di" bpmnElement="ds_reconnect_breachGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_reconnect_done_di" bpmnElement="ds_reconnect_done"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_seat_di" bpmnElement="ds_seat"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_end_di" bpmnElement="ds_end"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_reconnect_warn_di" bpmnElement="ds_reconnect_warn"><dc:Bounds x="1678" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ds_reconnect_breach_di" bpmnElement="ds_reconnect_breach"><dc:Bounds x="1708" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f1_di" bpmnElement="sec_util_disconnection_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f2_di" bpmnElement="sec_util_disconnection_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f3_di" bpmnElement="sec_util_disconnection_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f4_di" bpmnElement="sec_util_disconnection_f4"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="320"/><di:waypoint x="712" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f5_di" bpmnElement="sec_util_disconnection_f5"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f6_di" bpmnElement="sec_util_disconnection_f6"><di:waypoint x="590" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f7_di" bpmnElement="sec_util_disconnection_f7"><di:waypoint x="748" y="320"/><di:waypoint x="877" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f8_di" bpmnElement="sec_util_disconnection_f8"><di:waypoint x="748" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f9_di" bpmnElement="sec_util_disconnection_f9"><di:waypoint x="748" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f10_di" bpmnElement="sec_util_disconnection_f10"><di:waypoint x="945" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f11_di" bpmnElement="sec_util_disconnection_f11"><di:waypoint x="1078" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f12_di" bpmnElement="sec_util_disconnection_f12"><di:waypoint x="1696" y="128"/><di:waypoint x="1696" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f13_di" bpmnElement="sec_util_disconnection_f13"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f14_di" bpmnElement="sec_util_disconnection_f14"><di:waypoint x="1726" y="128"/><di:waypoint x="1726" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f15_di" bpmnElement="sec_util_disconnection_f15"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f16_di" bpmnElement="sec_util_disconnection_f16"><di:waypoint x="2075" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f17_di" bpmnElement="sec_util_disconnection_f17"><di:waypoint x="2050" y="95"/><di:waypoint x="2050" y="128"/><di:waypoint x="1555" y="128"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f18_di" bpmnElement="sec_util_disconnection_f18"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f19_di" bpmnElement="sec_util_disconnection_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f20_di" bpmnElement="sec_util_disconnection_f20"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f21_di" bpmnElement="sec_util_disconnection_f21"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_util_disconnection_f22_di" bpmnElement="sec_util_disconnection_f22"><di:waypoint x="2240" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

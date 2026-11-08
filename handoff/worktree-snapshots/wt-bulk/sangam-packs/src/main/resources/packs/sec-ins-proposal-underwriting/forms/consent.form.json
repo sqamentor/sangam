@@ -1,0 +1,47 @@
+{
+  "key": "sec-ins-proposal-underwriting/consent",
+  "version": "1.0.0",
+  "pack": "sec.ins.proposal-underwriting",
+  "title": {
+    "en": "Proposer accepts revised terms",
+    "hi": "प्रस्तावक द्वारा संशोधित शर्तों की स्वीकृति"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "counterDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "declined",
+        "label": {
+          "en": "Declined",
+          "hi": "अस्वीकार किया"
+        }
+      }
+    ]
+  }
+}

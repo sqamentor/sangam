@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Scheme appraisal. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_scheme_appraisal" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-ifms-scheme-appraisal" name="Scheme appraisal" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.scheme-appraisal</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>schemeName,totalOutlay</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="sa_start" name="Proposal (DPR / memo)" operaton:initiator="initiator" operaton:formKey="sangam:ifms-scheme-appraisal/proposal"></startEvent>
+    <serviceTask id="sa_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>totalOutlay=0;amount=0;faSeat=FA-1;committeeSeats=FA-1,SECY-1;quorumRule=MAJORITY;committeeWindow=P10D;caseType=SCHEME;routingDecisionKey=ifms-scheme-approval;powersDecisionKey=ifms-scheme-powers;scrutinySeat=FA-1;outputTemplate=scheme-approval;appealAllowed=false;appraisalForum=FA</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="sa_ladder" name="Appraisal forum and approval authority (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>ifms-scheme-appraisal</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="sa_amount" name="Amount" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>amount=@totalOutlay</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sa_comments_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sa_comments</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>20WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="sa_comments" name="Comments of DoE / NITI / ministries" operaton:candidateGroups="${faSeat}" operaton:formKey="sangam:ifms-scheme-appraisal/comments" operaton:dueDate="${sa_commentsDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>commentsDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="sa_comments_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sa_comments</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sa_comments_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="sa_comments_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sa_comments</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>commentsDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sa_comments_breachGw" name="Deemed?" default="ifms_scheme_appraisal_f9"></exclusiveGateway>
+    <exclusiveGateway id="sa_comments_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="sa_forumGw" name="Committee (SFC / EFC)?" default="ifms_scheme_appraisal_f15"></exclusiveGateway>
+    <callActivity id="sa_committee" name="Appraisal committee (core)" calledElement="sangam-core-committee"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="sa_sanction" name="Approval by the authority (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="sa_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="sa_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="sa_close" name="Approval order (core closure)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="sa_sanGw" name="sanctionOutcome?" default="ifms_scheme_appraisal_f19"></exclusiveGateway>
+    <endEvent id="sa_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="sa_comments_warn" name="SLA warning (75%)" attachedToRef="sa_comments" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sa_commentsWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="sa_comments_breach" name="SLA breached" attachedToRef="sa_comments" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sa_commentsDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_scheme_appraisal_f1" sourceRef="sa_start" targetRef="sa_defaults"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f2" sourceRef="sa_defaults" targetRef="sa_ladder"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f3" sourceRef="sa_ladder" targetRef="sa_amount"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f4" sourceRef="sa_comments_warn" targetRef="sa_comments_warnNotify"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f5" sourceRef="sa_comments_warnNotify" targetRef="sa_comments_warnEnd"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f6" sourceRef="sa_comments_breach" targetRef="sa_comments_breachAct"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f7" sourceRef="sa_comments_breachAct" targetRef="sa_comments_breachGw"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f8" name="deemed" sourceRef="sa_comments_breachGw" targetRef="sa_comments_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_scheme_appraisal_f9" name="escalated" sourceRef="sa_comments_breachGw" targetRef="sa_comments_slaPlan"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f10" sourceRef="sa_comments_slaPlan" targetRef="sa_comments"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f11" sourceRef="sa_comments" targetRef="sa_comments_done"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f12" sourceRef="sa_amount" targetRef="sa_comments_slaPlan"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f13" sourceRef="sa_comments_done" targetRef="sa_forumGw"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f14" name="committee" sourceRef="sa_forumGw" targetRef="sa_committee"><conditionExpression xsi:type="tFormalExpression">${appraisalForum != 'FA'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_scheme_appraisal_f15" name="FA appraisal" sourceRef="sa_forumGw" targetRef="sa_sanction"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f16" sourceRef="sa_committee" targetRef="sa_sanction"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f17" sourceRef="sa_rj_reject" targetRef="sa_rj_endRejected"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f18" name="SANCTIONED" sourceRef="sa_sanGw" targetRef="sa_close"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_scheme_appraisal_f19" name="otherwise" sourceRef="sa_sanGw" targetRef="sa_rj_reject"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f20" sourceRef="sa_sanction" targetRef="sa_sanGw"/>
+    <sequenceFlow id="ifms_scheme_appraisal_f21" sourceRef="sa_close" targetRef="sa_end"/>
+    <subProcess id="sa_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="sa_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="sa_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="sa_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="sa_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_scheme_appraisal_f22" sourceRef="sa_withdrawStart" targetRef="sa_withdrawKind"/>
+      <sequenceFlow id="ifms_scheme_appraisal_f23" sourceRef="sa_withdrawKind" targetRef="sa_withdrawCall"/>
+      <sequenceFlow id="ifms_scheme_appraisal_f24" sourceRef="sa_withdrawCall" targetRef="sa_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="sa_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="sa_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="sa_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="sa_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="sa_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_scheme_appraisal_f25" sourceRef="sa_cancelStart" targetRef="sa_cancelKind"/>
+      <sequenceFlow id="ifms_scheme_appraisal_f26" sourceRef="sa_cancelKind" targetRef="sa_cancelCall"/>
+      <sequenceFlow id="ifms_scheme_appraisal_f27" sourceRef="sa_cancelCall" targetRef="sa_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_scheme_appraisal_diagram">
+    <bpmndi:BPMNPlane id="ifms_scheme_appraisal_plane" bpmnElement="sangam-ifms-scheme-appraisal">
+      <bpmndi:BPMNShape id="sa_start_di" bpmnElement="sa_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_defaults_di" bpmnElement="sa_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_ladder_di" bpmnElement="sa_ladder"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_amount_di" bpmnElement="sa_amount"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_comments_slaPlan_di" bpmnElement="sa_comments_slaPlan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_comments_di" bpmnElement="sa_comments"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_comments_warnNotify_di" bpmnElement="sa_comments_warnNotify"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_comments_warnEnd_di" bpmnElement="sa_comments_warnEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_comments_breachAct_di" bpmnElement="sa_comments_breachAct"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_comments_breachGw_di" bpmnElement="sa_comments_breachGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_comments_done_di" bpmnElement="sa_comments_done"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_forumGw_di" bpmnElement="sa_forumGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_committee_di" bpmnElement="sa_committee"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_sanction_di" bpmnElement="sa_sanction"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_rj_reject_di" bpmnElement="sa_rj_reject"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_rj_endRejected_di" bpmnElement="sa_rj_endRejected"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_close_di" bpmnElement="sa_close"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_sanGw_di" bpmnElement="sa_sanGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_end_di" bpmnElement="sa_end"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_comments_warn_di" bpmnElement="sa_comments_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_comments_breach_di" bpmnElement="sa_comments_breach"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_withdraw_di" bpmnElement="sa_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_withdrawStart_di" bpmnElement="sa_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_withdrawKind_di" bpmnElement="sa_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_withdrawCall_di" bpmnElement="sa_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_withdrawEnd_di" bpmnElement="sa_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_cancel_di" bpmnElement="sa_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_cancelStart_di" bpmnElement="sa_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_cancelKind_di" bpmnElement="sa_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_cancelCall_di" bpmnElement="sa_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sa_cancelEnd_di" bpmnElement="sa_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f1_di" bpmnElement="ifms_scheme_appraisal_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f2_di" bpmnElement="ifms_scheme_appraisal_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f3_di" bpmnElement="ifms_scheme_appraisal_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f4_di" bpmnElement="ifms_scheme_appraisal_f4"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f5_di" bpmnElement="ifms_scheme_appraisal_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f6_di" bpmnElement="ifms_scheme_appraisal_f6"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f7_di" bpmnElement="ifms_scheme_appraisal_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f8_di" bpmnElement="ifms_scheme_appraisal_f8"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f9_di" bpmnElement="ifms_scheme_appraisal_f9"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="128"/><di:waypoint x="730" y="128"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f10_di" bpmnElement="ifms_scheme_appraisal_f10"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f11_di" bpmnElement="ifms_scheme_appraisal_f11"><di:waypoint x="945" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f12_di" bpmnElement="ifms_scheme_appraisal_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f13_di" bpmnElement="ifms_scheme_appraisal_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f14_di" bpmnElement="ifms_scheme_appraisal_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f15_di" bpmnElement="ifms_scheme_appraisal_f15"><di:waypoint x="1580" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f16_di" bpmnElement="ifms_scheme_appraisal_f16"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f17_di" bpmnElement="ifms_scheme_appraisal_f17"><di:waypoint x="2265" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f18_di" bpmnElement="ifms_scheme_appraisal_f18"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f19_di" bpmnElement="ifms_scheme_appraisal_f19"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f20_di" bpmnElement="ifms_scheme_appraisal_f20"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f21_di" bpmnElement="ifms_scheme_appraisal_f21"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f22_di" bpmnElement="ifms_scheme_appraisal_f22"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f23_di" bpmnElement="ifms_scheme_appraisal_f23"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f24_di" bpmnElement="ifms_scheme_appraisal_f24"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f25_di" bpmnElement="ifms_scheme_appraisal_f25"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f26_di" bpmnElement="ifms_scheme_appraisal_f26"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_scheme_appraisal_f27_di" bpmnElement="ifms_scheme_appraisal_f27"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

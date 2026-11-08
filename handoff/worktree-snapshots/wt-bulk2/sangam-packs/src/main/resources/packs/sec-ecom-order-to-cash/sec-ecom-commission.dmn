@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ecom_commission" name="Marketplace commission (SYNTHETIC)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-ecom-commission" name="Marketplace commission (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ecom-commission_t" hitPolicy="FIRST">
+      <input id="sec-ecom-commission_i0" label="Category"><inputExpression id="sec-ecom-commission_ie0" typeRef="string"><text>category</text></inputExpression></input>
+      <output id="sec-ecom-commission_o0" label="Commission %" name="commissionPct" typeRef="integer"/>
+      <rule id="sec-ecom-commission_r0">
+        <inputEntry id="sec-ecom-commission_r0_i0"><text>"ELECTRONICS"</text></inputEntry>
+        <outputEntry id="sec-ecom-commission_r0_o0"><text>8</text></outputEntry>
+      </rule>
+      <rule id="sec-ecom-commission_r1">
+        <inputEntry id="sec-ecom-commission_r1_i0"><text>"FASHION"</text></inputEntry>
+        <outputEntry id="sec-ecom-commission_r1_o0"><text>18</text></outputEntry>
+      </rule>
+      <rule id="sec-ecom-commission_r2">
+        <inputEntry id="sec-ecom-commission_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-ecom-commission_r2_o0"><text>12</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

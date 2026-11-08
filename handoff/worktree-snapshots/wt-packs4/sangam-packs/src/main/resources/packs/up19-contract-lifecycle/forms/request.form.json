@@ -1,0 +1,47 @@
+{
+  "key": "up19-contract-lifecycle/request",
+  "version": "1.0.0",
+  "pack": "universal.up19-contract-lifecycle",
+  "title": {
+    "en": "Contract request",
+    "hi": "अनुबंध अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "counterpartyName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Counterparty",
+        "hi": "प्रतिपक्ष"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    }
+  ]
+}

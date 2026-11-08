@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Admission. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_edu_admission" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_edu_meritPublished" name="sangam.edu.meritPublished"/>
+  <message id="msg_sangam_edu_withdraw" name="sangam.edu.withdraw"/>
+  <process id="sangam-sec-edu-admission" name="Admission" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.edu.admission</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>applicantName,programme,score</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ed_start" name="Application submitted" operaton:initiator="initiator" operaton:formKey="sangam:sec-edu-admission/apply"></startEvent>
+    <serviceTask id="ed_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>programme=BA;score=60;offered=true;daysBeforeLastDate=20;scrutinySeat=ADMISSION-OFFICE;executionConnector=pg.collect;executionStep=fee;verifyApproval=false;reconcileRequired=false;executionPayloadFields=applicantName,feeAmount;feeAmount=50000</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ed_pull" name="Pull marksheets (DigiLocker / APAAR)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>digilocker.pull</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>pull</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>applicantName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>dl</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ed_elig" name="Eligibility (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-edu-eligibility</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="ed_eligGw" name="Eligible?" default="sec_edu_admission_f8"></exclusiveGateway>
+    <serviceTask id="ed_rjElig_code" name="Reason: NOT_ELIGIBLE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=NOT_ELIGIBLE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ed_rjElig_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ed_rjElig_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="ed_scrutiny" name="Document scrutiny (core)" calledElement="sangam-core-scrutiny"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="ed_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ed_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <intermediateCatchEvent id="ed_merit" name="Merit list published"><messageEventDefinition messageRef="msg_sangam_edu_meritPublished"/></intermediateCatchEvent>
+    <exclusiveGateway id="ed_scrGw" name="scrutinyOutcome?" default="sec_edu_admission_f11"></exclusiveGateway>
+    <exclusiveGateway id="ed_offerGw" name="Offered a seat?" default="sec_edu_admission_f23"></exclusiveGateway>
+    <endEvent id="ed_endNotOffered" name="Not offered (waitlist)"></endEvent>
+    <serviceTask id="ed_group" name="Applicant group" operaton:expression="${execution.setVariable('applicantGroup', 'external:'.concat(applicantName))}"></serviceTask>
+    <serviceTask id="ed_accept_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ed_accept</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>7D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ed_accept" name="Accept offer and pay fee" operaton:candidateGroups="${applicantGroup}" operaton:formKey="sangam:sec-edu-admission/accept" operaton:dueDate="${ed_acceptDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>offerDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ed_accept_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ed_accept</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>applicantGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ed_accept_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ed_accept_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ed_accept</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>DEEMED_REFUSAL</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>applicantGroup</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>offerDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>accept</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>declined</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ed_accept_breachGw" name="Deemed?" default="sec_edu_admission_f20"></exclusiveGateway>
+    <exclusiveGateway id="ed_accept_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="ed_accGw" name="" default="sec_edu_admission_f27"></exclusiveGateway>
+    <endEvent id="ed_endLapsed" name="Offer lapsed: seat released"></endEvent>
+    <callActivity id="ed_fee" name="Collect fee (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="ed_enrol" name="Enrol and register on ABC" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>sis.enrol</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>enrol</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>applicantName,programme</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>sis</operaton:string></operaton:field><operaton:field name="step"><operaton:string>enrol</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ed_end" name="Enrolled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ed_accept_warn" name="SLA warning (75%)" attachedToRef="ed_accept" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ed_acceptWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ed_accept_breach" name="SLA breached" attachedToRef="ed_accept" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ed_acceptDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_edu_admission_f1" sourceRef="ed_start" targetRef="ed_defaults"/>
+    <sequenceFlow id="sec_edu_admission_f2" sourceRef="ed_defaults" targetRef="ed_pull"/>
+    <sequenceFlow id="sec_edu_admission_f3" sourceRef="ed_pull" targetRef="ed_elig"/>
+    <sequenceFlow id="sec_edu_admission_f4" sourceRef="ed_elig" targetRef="ed_eligGw"/>
+    <sequenceFlow id="sec_edu_admission_f5" sourceRef="ed_rjElig_reject" targetRef="ed_rjElig_endRejected"/>
+    <sequenceFlow id="sec_edu_admission_f6" sourceRef="ed_rjElig_code" targetRef="ed_rjElig_reject"/>
+    <sequenceFlow id="sec_edu_admission_f7" name="no" sourceRef="ed_eligGw" targetRef="ed_rjElig_code"><conditionExpression xsi:type="tFormalExpression">${!eligible}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_admission_f8" name="yes" sourceRef="ed_eligGw" targetRef="ed_scrutiny"/>
+    <sequenceFlow id="sec_edu_admission_f9" sourceRef="ed_rj_reject" targetRef="ed_rj_endRejected"/>
+    <sequenceFlow id="sec_edu_admission_f10" name="ACCEPTED" sourceRef="ed_scrGw" targetRef="ed_merit"><conditionExpression xsi:type="tFormalExpression">${scrutinyOutcome == 'ACCEPTED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_admission_f11" name="otherwise" sourceRef="ed_scrGw" targetRef="ed_rj_reject"/>
+    <sequenceFlow id="sec_edu_admission_f12" sourceRef="ed_scrutiny" targetRef="ed_scrGw"/>
+    <sequenceFlow id="sec_edu_admission_f13" sourceRef="ed_merit" targetRef="ed_offerGw"/>
+    <sequenceFlow id="sec_edu_admission_f14" name="no" sourceRef="ed_offerGw" targetRef="ed_endNotOffered"><conditionExpression xsi:type="tFormalExpression">${!offered}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_admission_f15" sourceRef="ed_accept_warn" targetRef="ed_accept_warnNotify"/>
+    <sequenceFlow id="sec_edu_admission_f16" sourceRef="ed_accept_warnNotify" targetRef="ed_accept_warnEnd"/>
+    <sequenceFlow id="sec_edu_admission_f17" sourceRef="ed_accept_breach" targetRef="ed_accept_breachAct"/>
+    <sequenceFlow id="sec_edu_admission_f18" sourceRef="ed_accept_breachAct" targetRef="ed_accept_breachGw"/>
+    <sequenceFlow id="sec_edu_admission_f19" name="deemed" sourceRef="ed_accept_breachGw" targetRef="ed_accept_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_admission_f20" name="escalated" sourceRef="ed_accept_breachGw" targetRef="ed_accept_slaPlan"/>
+    <sequenceFlow id="sec_edu_admission_f21" sourceRef="ed_accept_slaPlan" targetRef="ed_accept"/>
+    <sequenceFlow id="sec_edu_admission_f22" sourceRef="ed_accept" targetRef="ed_accept_done"/>
+    <sequenceFlow id="sec_edu_admission_f23" name="yes" sourceRef="ed_offerGw" targetRef="ed_group"/>
+    <sequenceFlow id="sec_edu_admission_f24" sourceRef="ed_group" targetRef="ed_accept_slaPlan"/>
+    <sequenceFlow id="sec_edu_admission_f25" sourceRef="ed_accept_done" targetRef="ed_accGw"/>
+    <sequenceFlow id="sec_edu_admission_f26" name="no" sourceRef="ed_accGw" targetRef="ed_endLapsed"><conditionExpression xsi:type="tFormalExpression">${offerDecision != 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_admission_f27" name="accept" sourceRef="ed_accGw" targetRef="ed_fee"/>
+    <sequenceFlow id="sec_edu_admission_f28" sourceRef="ed_fee" targetRef="ed_enrol"/>
+    <sequenceFlow id="sec_edu_admission_f29" sourceRef="ed_enrol" targetRef="ed_end"/>
+    <subProcess id="ed_withdraw" name="Withdrawal of admission" triggeredByEvent="true">
+      <startEvent id="ed_wdStart" name="Withdrawal" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_edu_withdraw"/></startEvent>
+      <businessRuleTask id="ed_wdRule" name="Refund under the UGC schedule (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-edu-refund</operaton:string></operaton:field></extensionElements></businessRuleTask>
+      <serviceTask id="ed_wdCfg" name="Refund settings" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionConnector=pg.refund;executionStep=withdrawal-refund;executionPayloadFields=applicantName,refundPct,feeAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ed_wdRefund" name="Refund (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ed_wdEnd" name="Withdrawn with refund"></endEvent>
+      <sequenceFlow id="sec_edu_admission_f30" sourceRef="ed_wdStart" targetRef="ed_wdRule"/>
+      <sequenceFlow id="sec_edu_admission_f31" sourceRef="ed_wdRule" targetRef="ed_wdCfg"/>
+      <sequenceFlow id="sec_edu_admission_f32" sourceRef="ed_wdCfg" targetRef="ed_wdRefund"/>
+      <sequenceFlow id="sec_edu_admission_f33" sourceRef="ed_wdRefund" targetRef="ed_wdEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_edu_admission_diagram">
+    <bpmndi:BPMNPlane id="sec_edu_admission_plane" bpmnElement="sangam-sec-edu-admission">
+      <bpmndi:BPMNShape id="ed_start_di" bpmnElement="ed_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_defaults_di" bpmnElement="ed_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_pull_di" bpmnElement="ed_pull"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_elig_di" bpmnElement="ed_elig"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_eligGw_di" bpmnElement="ed_eligGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_rjElig_code_di" bpmnElement="ed_rjElig_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_rjElig_reject_di" bpmnElement="ed_rjElig_reject"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_rjElig_endRejected_di" bpmnElement="ed_rjElig_endRejected"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_scrutiny_di" bpmnElement="ed_scrutiny"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_rj_reject_di" bpmnElement="ed_rj_reject"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_rj_endRejected_di" bpmnElement="ed_rj_endRejected"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_merit_di" bpmnElement="ed_merit"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_scrGw_di" bpmnElement="ed_scrGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_offerGw_di" bpmnElement="ed_offerGw"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_endNotOffered_di" bpmnElement="ed_endNotOffered"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_group_di" bpmnElement="ed_group"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accept_slaPlan_di" bpmnElement="ed_accept_slaPlan"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accept_di" bpmnElement="ed_accept"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accept_warnNotify_di" bpmnElement="ed_accept_warnNotify"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accept_warnEnd_di" bpmnElement="ed_accept_warnEnd"><dc:Bounds x="2197" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accept_breachAct_di" bpmnElement="ed_accept_breachAct"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accept_breachGw_di" bpmnElement="ed_accept_breachGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accept_done_di" bpmnElement="ed_accept_done"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accGw_di" bpmnElement="ed_accGw"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_endLapsed_di" bpmnElement="ed_endLapsed"><dc:Bounds x="2692" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_fee_di" bpmnElement="ed_fee"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_enrol_di" bpmnElement="ed_enrol"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_end_di" bpmnElement="ed_end"><dc:Bounds x="3022" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accept_warn_di" bpmnElement="ed_accept_warn"><dc:Bounds x="1843" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_accept_breach_di" bpmnElement="ed_accept_breach"><dc:Bounds x="1873" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_withdraw_di" bpmnElement="ed_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="788" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_wdStart_di" bpmnElement="ed_wdStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_wdRule_di" bpmnElement="ed_wdRule"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_wdCfg_di" bpmnElement="ed_wdCfg"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_wdRefund_di" bpmnElement="ed_wdRefund"><dc:Bounds x="555" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ed_wdEnd_di" bpmnElement="ed_wdEnd"><dc:Bounds x="752" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f1_di" bpmnElement="sec_edu_admission_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f2_di" bpmnElement="sec_edu_admission_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f3_di" bpmnElement="sec_edu_admission_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f4_di" bpmnElement="sec_edu_admission_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f5_di" bpmnElement="sec_edu_admission_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1158" y="195"/><di:waypoint x="1158" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f6_di" bpmnElement="sec_edu_admission_f6"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f7_di" bpmnElement="sec_edu_admission_f7"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f8_di" bpmnElement="sec_edu_admission_f8"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f9_di" bpmnElement="sec_edu_admission_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f10_di" bpmnElement="sec_edu_admission_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1146" y="70"/><di:waypoint x="1146" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f11_di" bpmnElement="sec_edu_admission_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f12_di" bpmnElement="sec_edu_admission_f12"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f13_di" bpmnElement="sec_edu_admission_f13"><di:waypoint x="1243" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f14_di" bpmnElement="sec_edu_admission_f14"><di:waypoint x="1415" y="195"/><di:waypoint x="1476" y="195"/><di:waypoint x="1476" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f15_di" bpmnElement="sec_edu_admission_f15"><di:waypoint x="1861" y="253"/><di:waypoint x="1861" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f16_di" bpmnElement="sec_edu_admission_f16"><di:waypoint x="2100" y="320"/><di:waypoint x="2197" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f17_di" bpmnElement="sec_edu_admission_f17"><di:waypoint x="1891" y="253"/><di:waypoint x="1891" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f18_di" bpmnElement="sec_edu_admission_f18"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f19_di" bpmnElement="sec_edu_admission_f19"><di:waypoint x="2240" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f20_di" bpmnElement="sec_edu_admission_f20"><di:waypoint x="2215" y="220"/><di:waypoint x="2215" y="274"/><di:waypoint x="1720" y="274"/><di:waypoint x="1720" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f21_di" bpmnElement="sec_edu_admission_f21"><di:waypoint x="1770" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f22_di" bpmnElement="sec_edu_admission_f22"><di:waypoint x="1935" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f23_di" bpmnElement="sec_edu_admission_f23"><di:waypoint x="1415" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f24_di" bpmnElement="sec_edu_admission_f24"><di:waypoint x="1605" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f25_di" bpmnElement="sec_edu_admission_f25"><di:waypoint x="2405" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f26_di" bpmnElement="sec_edu_admission_f26"><di:waypoint x="2570" y="195"/><di:waypoint x="2631" y="195"/><di:waypoint x="2631" y="320"/><di:waypoint x="2692" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f27_di" bpmnElement="sec_edu_admission_f27"><di:waypoint x="2570" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f28_di" bpmnElement="sec_edu_admission_f28"><di:waypoint x="2760" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f29_di" bpmnElement="sec_edu_admission_f29"><di:waypoint x="2925" y="195"/><di:waypoint x="3022" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f30_di" bpmnElement="sec_edu_admission_f30"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f31_di" bpmnElement="sec_edu_admission_f31"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f32_di" bpmnElement="sec_edu_admission_f32"><di:waypoint x="490" y="490"/><di:waypoint x="555" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_admission_f33_di" bpmnElement="sec_edu_admission_f33"><di:waypoint x="655" y="490"/><di:waypoint x="752" y="490"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

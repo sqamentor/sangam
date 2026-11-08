@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Monthly accounts. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_monthly_accounts" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_ifms_compileNow" name="sangam.ifms.compileNow"/>
+  <process id="sangam-ifms-monthly-accounts" name="Monthly accounts" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.monthly-accounts</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>accountsMonth</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ma_timer" name="Monthly on the 1st"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 6 1 * ?</timeCycle></timerEventDefinition></startEvent>
+    <startEvent id="ma_manual" name="Run now (message)"><messageEventDefinition messageRef="msg_sangam_ifms_compileNow"/></startEvent>
+    <exclusiveGateway id="ma_join" name=""></exclusiveGateway>
+    <serviceTask id="ma_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>accountsMonth=previous;paoSeat=PAO-1;prAoSeat=PRAO-1;dueSpec=8D;executionConnector=accounts.render;executionStep=render;reconcileRequired=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ma_compile_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ma_compile</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ma_compile" name="Compile and check the monthly account" operaton:candidateGroups="${paoSeat}" operaton:formKey="sangam:ifms-monthly-accounts/compile" operaton:dueDate="${ma_compileDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>compileDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ma_compile_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ma_compile</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ma_compile_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ma_compile_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ma_compile</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paoSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>compileDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ma_compile_breachGw" name="Deemed?" default="ifms_monthly_accounts_f8"></exclusiveGateway>
+    <exclusiveGateway id="ma_compile_done" name=""></exclusiveGateway>
+    <serviceTask id="ma_consolidate_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ma_consolidate</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>2WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ma_consolidate" name="Consolidate and approve" operaton:candidateGroups="${prAoSeat}" operaton:formKey="sangam:ifms-monthly-accounts/consolidate" operaton:dueDate="${ma_consolidateDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>consDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ma_consolidate_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ma_consolidate</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>prAoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ma_consolidate_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ma_consolidate_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ma_consolidate</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>prAoSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>consDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ma_consolidate_breachGw" name="Deemed?" default="ifms_monthly_accounts_f16"></exclusiveGateway>
+    <exclusiveGateway id="ma_consolidate_done" name=""></exclusiveGateway>
+    <callActivity id="ma_render" name="Render to CGA / AG (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ma_consGw" name="" default="ifms_monthly_accounts_f24"></exclusiveGateway>
+    <endEvent id="ma_end" name="Rendered"></endEvent>
+    <boundaryEvent id="ma_compile_warn" name="SLA warning (75%)" attachedToRef="ma_compile" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ma_compileWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ma_compile_breach" name="SLA breached" attachedToRef="ma_compile" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ma_compileDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ma_consolidate_warn" name="SLA warning (75%)" attachedToRef="ma_consolidate" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ma_consolidateWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ma_consolidate_breach" name="SLA breached" attachedToRef="ma_consolidate" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ma_consolidateDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_monthly_accounts_f1" sourceRef="ma_timer" targetRef="ma_join"/>
+    <sequenceFlow id="ifms_monthly_accounts_f2" sourceRef="ma_manual" targetRef="ma_join"/>
+    <sequenceFlow id="ifms_monthly_accounts_f3" sourceRef="ma_compile_warn" targetRef="ma_compile_warnNotify"/>
+    <sequenceFlow id="ifms_monthly_accounts_f4" sourceRef="ma_compile_warnNotify" targetRef="ma_compile_warnEnd"/>
+    <sequenceFlow id="ifms_monthly_accounts_f5" sourceRef="ma_compile_breach" targetRef="ma_compile_breachAct"/>
+    <sequenceFlow id="ifms_monthly_accounts_f6" sourceRef="ma_compile_breachAct" targetRef="ma_compile_breachGw"/>
+    <sequenceFlow id="ifms_monthly_accounts_f7" name="deemed" sourceRef="ma_compile_breachGw" targetRef="ma_compile_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_monthly_accounts_f8" name="escalated" sourceRef="ma_compile_breachGw" targetRef="ma_compile_slaPlan"/>
+    <sequenceFlow id="ifms_monthly_accounts_f9" sourceRef="ma_compile_slaPlan" targetRef="ma_compile"/>
+    <sequenceFlow id="ifms_monthly_accounts_f10" sourceRef="ma_compile" targetRef="ma_compile_done"/>
+    <sequenceFlow id="ifms_monthly_accounts_f11" sourceRef="ma_consolidate_warn" targetRef="ma_consolidate_warnNotify"/>
+    <sequenceFlow id="ifms_monthly_accounts_f12" sourceRef="ma_consolidate_warnNotify" targetRef="ma_consolidate_warnEnd"/>
+    <sequenceFlow id="ifms_monthly_accounts_f13" sourceRef="ma_consolidate_breach" targetRef="ma_consolidate_breachAct"/>
+    <sequenceFlow id="ifms_monthly_accounts_f14" sourceRef="ma_consolidate_breachAct" targetRef="ma_consolidate_breachGw"/>
+    <sequenceFlow id="ifms_monthly_accounts_f15" name="deemed" sourceRef="ma_consolidate_breachGw" targetRef="ma_consolidate_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_monthly_accounts_f16" name="escalated" sourceRef="ma_consolidate_breachGw" targetRef="ma_consolidate_slaPlan"/>
+    <sequenceFlow id="ifms_monthly_accounts_f17" sourceRef="ma_consolidate_slaPlan" targetRef="ma_consolidate"/>
+    <sequenceFlow id="ifms_monthly_accounts_f18" sourceRef="ma_consolidate" targetRef="ma_consolidate_done"/>
+    <sequenceFlow id="ifms_monthly_accounts_f19" sourceRef="ma_join" targetRef="ma_defaults"/>
+    <sequenceFlow id="ifms_monthly_accounts_f20" sourceRef="ma_defaults" targetRef="ma_compile_slaPlan"/>
+    <sequenceFlow id="ifms_monthly_accounts_f21" sourceRef="ma_compile_done" targetRef="ma_consolidate_slaPlan"/>
+    <sequenceFlow id="ifms_monthly_accounts_f22" sourceRef="ma_consolidate_done" targetRef="ma_consGw"/>
+    <sequenceFlow id="ifms_monthly_accounts_f23" name="returned" sourceRef="ma_consGw" targetRef="ma_compile_slaPlan"><conditionExpression xsi:type="tFormalExpression">${consDecision == 'returnBill'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_monthly_accounts_f24" name="approved" sourceRef="ma_consGw" targetRef="ma_render"/>
+    <sequenceFlow id="ifms_monthly_accounts_f25" sourceRef="ma_render" targetRef="ma_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_monthly_accounts_diagram">
+    <bpmndi:BPMNPlane id="ifms_monthly_accounts_plane" bpmnElement="sangam-ifms-monthly-accounts">
+      <bpmndi:BPMNShape id="ma_timer_di" bpmnElement="ma_timer"><dc:Bounds x="52" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_manual_di" bpmnElement="ma_manual"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_join_di" bpmnElement="ma_join"><dc:Bounds x="210" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_defaults_di" bpmnElement="ma_defaults"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_compile_slaPlan_di" bpmnElement="ma_compile_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_compile_di" bpmnElement="ma_compile"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_compile_warnNotify_di" bpmnElement="ma_compile_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_compile_warnEnd_di" bpmnElement="ma_compile_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_compile_breachAct_di" bpmnElement="ma_compile_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_compile_breachGw_di" bpmnElement="ma_compile_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_compile_done_di" bpmnElement="ma_compile_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consolidate_slaPlan_di" bpmnElement="ma_consolidate_slaPlan"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consolidate_di" bpmnElement="ma_consolidate"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consolidate_warnNotify_di" bpmnElement="ma_consolidate_warnNotify"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consolidate_warnEnd_di" bpmnElement="ma_consolidate_warnEnd"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consolidate_breachAct_di" bpmnElement="ma_consolidate_breachAct"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consolidate_breachGw_di" bpmnElement="ma_consolidate_breachGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consolidate_done_di" bpmnElement="ma_consolidate_done"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_render_di" bpmnElement="ma_render"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consGw_di" bpmnElement="ma_consGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_end_di" bpmnElement="ma_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_compile_warn_di" bpmnElement="ma_compile_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_compile_breach_di" bpmnElement="ma_compile_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consolidate_warn_di" bpmnElement="ma_consolidate_warn"><dc:Bounds x="1513" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ma_consolidate_breach_di" bpmnElement="ma_consolidate_breach"><dc:Bounds x="1543" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f1_di" bpmnElement="ifms_monthly_accounts_f1"><di:waypoint x="88" y="195"/><di:waypoint x="149" y="195"/><di:waypoint x="149" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f2_di" bpmnElement="ifms_monthly_accounts_f2"><di:waypoint x="88" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f3_di" bpmnElement="ifms_monthly_accounts_f3"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f4_di" bpmnElement="ifms_monthly_accounts_f4"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f5_di" bpmnElement="ifms_monthly_accounts_f5"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f6_di" bpmnElement="ifms_monthly_accounts_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f7_di" bpmnElement="ifms_monthly_accounts_f7"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f8_di" bpmnElement="ifms_monthly_accounts_f8"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f9_di" bpmnElement="ifms_monthly_accounts_f9"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f10_di" bpmnElement="ifms_monthly_accounts_f10"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f11_di" bpmnElement="ifms_monthly_accounts_f11"><di:waypoint x="1531" y="128"/><di:waypoint x="1531" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f12_di" bpmnElement="ifms_monthly_accounts_f12"><di:waypoint x="1770" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f13_di" bpmnElement="ifms_monthly_accounts_f13"><di:waypoint x="1561" y="128"/><di:waypoint x="1561" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f14_di" bpmnElement="ifms_monthly_accounts_f14"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f15_di" bpmnElement="ifms_monthly_accounts_f15"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f16_di" bpmnElement="ifms_monthly_accounts_f16"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="149"/><di:waypoint x="1390" y="149"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f17_di" bpmnElement="ifms_monthly_accounts_f17"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f18_di" bpmnElement="ifms_monthly_accounts_f18"><di:waypoint x="1605" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f19_di" bpmnElement="ifms_monthly_accounts_f19"><di:waypoint x="260" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f20_di" bpmnElement="ifms_monthly_accounts_f20"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f21_di" bpmnElement="ifms_monthly_accounts_f21"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f22_di" bpmnElement="ifms_monthly_accounts_f22"><di:waypoint x="2075" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f23_di" bpmnElement="ifms_monthly_accounts_f23"><di:waypoint x="2215" y="95"/><di:waypoint x="2215" y="142"/><di:waypoint x="565" y="142"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f24_di" bpmnElement="ifms_monthly_accounts_f24"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_monthly_accounts_f25_di" bpmnElement="ifms_monthly_accounts_f25"><di:waypoint x="2430" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

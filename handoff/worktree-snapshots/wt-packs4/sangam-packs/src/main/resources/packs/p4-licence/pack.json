@@ -1,0 +1,208 @@
+{
+  "id": "gov.p4.licence",
+  "version": "1.0.0",
+  "name": {
+    "en": "P4 Licence / permit (time-bound service)",
+    "hi": "पी4 अनुज्ञप्ति / परमिट (समयबद्ध सेवा)"
+  },
+  "domain": "Licence / permit",
+  "description": "Application and fee through the payment gateway (callback via the inbox, lookup when lost), scrutiny with clarification that pauses the statutory clock, inspection with rescheduling, approval with SLA escalation or deemed approval where the law provides it, signed certificate from the approved data, DigiLocker push, rejection with appeal (IX.4 P4, X.4.6). CMMN case variant included.",
+  "mainProcesses": [
+    "sangam-p4-licence"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/p4-licence/sangam-p4-licence.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/p4-licence/sangam-p4-case-sla.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p4-licence/p4-fee.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p4-licence/p4-service-timeline.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p4-licence/p4-inspection-required.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p4-licence/p4-approving-authority.dmn"
+    },
+    {
+      "kind": "CMMN",
+      "path": "packs/p4-licence/sangam-p4-licence-case.cmmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p4-licence/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p4-licence/forms/pay-again.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p4-licence/forms/inspection.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p4-licence/forms/case-overdue.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/p4-licence/seed.json"
+    }
+  ],
+  "seed": "packs/p4-licence/seed.json",
+  "connectors": [
+    {
+      "id": "paygov.fee",
+      "capabilityClass": "b",
+      "govTag": "G-PG",
+      "purpose": "Fee with merchant reference = operationId, status query"
+    },
+    {
+      "id": "paygov.refund",
+      "capabilityClass": "a",
+      "govTag": "G-PG",
+      "purpose": "Refund of an excess or withdrawn fee"
+    },
+    {
+      "id": "esign.sign",
+      "capabilityClass": "b",
+      "govTag": "G-SIGN",
+      "purpose": "Certificate signature"
+    },
+    {
+      "id": "digilocker.push",
+      "capabilityClass": "a",
+      "govTag": "G-DL",
+      "purpose": "Issuer push of the certificate"
+    },
+    {
+      "id": "notify.sms",
+      "capabilityClass": "b",
+      "govTag": "G-DLT",
+      "purpose": "Applicant SMS with whitelisted URL"
+    }
+  ],
+  "covers": [
+    "AC-06",
+    "GP-06",
+    "GP-15",
+    "GP-16",
+    "GP-17",
+    "GP-21",
+    "GP-22",
+    "GP-24",
+    "GP-34",
+    "GP-44",
+    "GP-45",
+    "J-P4-H",
+    "J-P4-E01",
+    "J-P4-E02",
+    "J-P4-E03",
+    "J-P4-E04",
+    "J-P4-E05",
+    "J-P4-E06",
+    "J-P4-E07",
+    "J-P4-E08",
+    "J-P4-E09",
+    "J-P4-E10",
+    "R31",
+    "R57",
+    "R59",
+    "D-LICENCE",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [
+    {
+      "id": "AC-06",
+      "title": "SLA breach escalates; lost fee callback reconciled; signed certificate issued",
+      "refs": [
+        "T22",
+        "T47"
+      ],
+      "given": "trade licence, sim_paygov_fee = UNKNOWN_THEN_COMPLETED",
+      "when": "callback lost; approval stage overdue",
+      "then": "fee confirmed by status lookup, SLA_BREACHED then ESCALATED or DEEMED_DECISION, signed certificate, DigiLocker push",
+      "startVariables": {
+        "applicantName": "Ramesh Traders",
+        "applicantRef": "mobile:97XXXXXX21",
+        "licenceType": "TRADE",
+        "tradeName": "Ramesh General Store",
+        "premisesAddress": "Shop 4, Ward 7",
+        "premisesArea": 35.0,
+        "durationYears": 1,
+        "officeId": "WARD-7",
+        "initiator": "citizen.ramesh",
+        "sim_paygov_fee": "UNKNOWN_THEN_COMPLETED"
+      },
+      "expectState": "CLOSED",
+      "run": {
+        "manual": "needs a clock driver: the payment status lookup and the overdue approval stage"
+      }
+    },
+    {
+      "id": "J-P4-E08",
+      "title": "DigiLocker push fails: partial success",
+      "refs": [
+        "TP-07"
+      ],
+      "given": "sim_digilocker_push = FAILED:ISSUER_DOWN",
+      "when": "push fails",
+      "then": "certificate issued; applicant told the DigiLocker copy is pending",
+      "startVariables": {
+        "applicantName": "Ramesh Traders",
+        "applicantRef": "mobile:97XXXXXX21",
+        "licenceType": "TRADE",
+        "tradeName": "Ramesh General Store",
+        "premisesAddress": "Shop 4, Ward 7",
+        "premisesArea": 35.0,
+        "durationYears": 1,
+        "officeId": "WARD-7",
+        "initiator": "citizen.ramesh",
+        "sim_digilocker_push": "FAILED:ISSUER_DOWN"
+      },
+      "expectState": "CLOSED",
+      "run": {
+        "expect": {
+          "audit": [
+            "EXT_OP_FAILED",
+            "DOCUMENT_ISSUED",
+            "CASE_CLOSED"
+          ]
+        }
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-core-scrutiny"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "fee"
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "key": "up04-skills-routing/resolve",
+  "version": "1.0.0",
+  "pack": "universal.up04-skills-routing",
+  "title": {
+    "en": "Resolve request",
+    "hi": "अनुरोध का समाधान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "resolutionNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Resolution notes",
+        "hi": "समाधान टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "resolveDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resolve",
+        "label": {
+          "en": "Resolve / dispose",
+          "hi": "निपटारा करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

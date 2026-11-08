@@ -1,0 +1,27 @@
+{
+  "key": "up10-incident-swarming/swarm-incident-mgr",
+  "version": "1.0.0",
+  "pack": "universal.up10-incident-swarming",
+  "title": {
+    "en": "Major incident bridge",
+    "hi": "प्रमुख घटना ब्रिज"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "resolutionNotes",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Resolution notes",
+        "hi": "समाधान टिप्पणी"
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Compensation to one awardee. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_land_compensation_paymen" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-land-compensation-payment" name="Compensation to one awardee" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.land-acquisition</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="lp_start" name="Awardee"></startEvent>
+    <serviceTask id="lp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>executionConnector=pfms.payment;executionStep=compensation;verifyApproval=false;reconcileRequired=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="lp_pay" name="Compensation (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="lp_endPaid" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="lp_endFailed" name="Failed (deposit with authority)"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="lp_gw" name="executionOutcome?" default="land_compensation_paymen_f4"></exclusiveGateway>
+    <sequenceFlow id="land_compensation_paymen_f1" sourceRef="lp_start" targetRef="lp_defaults"/>
+    <sequenceFlow id="land_compensation_paymen_f2" sourceRef="lp_defaults" targetRef="lp_pay"/>
+    <sequenceFlow id="land_compensation_paymen_f3" name="DONE" sourceRef="lp_gw" targetRef="lp_endPaid"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="land_compensation_paymen_f4" name="otherwise" sourceRef="lp_gw" targetRef="lp_endFailed"/>
+    <sequenceFlow id="land_compensation_paymen_f5" sourceRef="lp_pay" targetRef="lp_gw"/>
+  </process>
+  <bpmndi:BPMNDiagram id="land_compensation_paymen_diagram">
+    <bpmndi:BPMNPlane id="land_compensation_paymen_plane" bpmnElement="sangam-land-compensation-payment">
+      <bpmndi:BPMNShape id="lp_start_di" bpmnElement="lp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_defaults_di" bpmnElement="lp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_pay_di" bpmnElement="lp_pay"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_endPaid_di" bpmnElement="lp_endPaid"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_endFailed_di" bpmnElement="lp_endFailed"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lp_gw_di" bpmnElement="lp_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="land_compensation_paymen_f1_di" bpmnElement="land_compensation_paymen_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_compensation_paymen_f2_di" bpmnElement="land_compensation_paymen_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_compensation_paymen_f3_di" bpmnElement="land_compensation_paymen_f3"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_compensation_paymen_f4_di" bpmnElement="land_compensation_paymen_f4"><di:waypoint x="590" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="land_compensation_paymen_f5_di" bpmnElement="land_compensation_paymen_f5"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

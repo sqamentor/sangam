@@ -1,0 +1,79 @@
+{
+  "id": "gov.court-case",
+  "version": "1.0.0",
+  "name": {
+    "en": "Court case (LIMBS-style)",
+    "hi": "न्यायालय वाद (लिम्ब्स-शैली)"
+  },
+  "domain": "Court cases",
+  "description": "Notice received, nodal officer engages counsel, para-wise comments and counter affidavit, hearing series with dates set by the court (GP-51), stay order suspending the impugned case (GP-40), judgment, compliance or appeal within limitation (linked case).",
+  "mainProcesses": [
+    "sangam-court-case"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/court-case/sangam-court-case.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/court-case/forms/notice.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/court-case/forms/counsel.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/court-case/forms/comments.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/court-case/forms/affidavit.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/court-case/forms/outcome.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/court-case/forms/decide.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/court-case/forms/file-appeal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/court-case/forms/comply.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/court-case/seed.json"
+    }
+  ],
+  "seed": "packs/court-case/seed.json",
+  "connectors": [
+    {
+      "id": "court.limbs",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "LIMBS case status / next date"
+    }
+  ],
+  "covers": [
+    "GP-51",
+    "GP-40",
+    "GP-21",
+    "GP-22",
+    "GP-54"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-closure"
+  ]
+}

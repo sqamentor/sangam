@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: REGIME-DIPA-TREASURY-OFFICE
+  layer: regime
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL-PFM
+  name:
+    en: 'Regime preset: DIPA with treasury-office disbursement (ID-like)'
+  source: INTERNATIONAL-PFM 4.1, 5.8
+placeholders: []
+ledgers:
+- id: BUDGET
+  kind: LIMIT
+  mode: AUTHORITATIVE
+  stages:
+  - APPROPRIATION
+  - DIPA
+  - PAYMENT_REQUEST
+  - PAYMENT_ORDER
+  - DISBURSEMENT_ORDER
+  checks:
+    APPROPRIATION: HARD
+    DIPA: HARD
+    PAYMENT_REQUEST: HARD
+    PAYMENT_ORDER: HARD
+    DISBURSEMENT_ORDER: HARD
+  availability:
+    type: ANNUAL
+    carryForwardCommitments: false
+  holdQueue: true
+yearEnd:
+  policy: LAPSE
+paymentModel:
+  ordering: SPENDING_UNIT
+  disbursing: TREASURY_OFFICE

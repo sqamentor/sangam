@@ -1,0 +1,78 @@
+{
+  "id": "gov.grievance",
+  "version": "1.0.0",
+  "name": {
+    "en": "Public grievance (CPGRAMS-style)",
+    "hi": "लोक शिकायत (सीपीग्राम्स-शैली)"
+  },
+  "domain": "Grievance",
+  "description": "Lodged grievance routed by category to the grievance officer, forwarded to subordinate offices, interim reply extending the clock, tiered escalation on SLA breach, disposal with action taken report, citizen rating, appeal and reopen on a poor rating (GP-22); CMMN case variant with ad-hoc field report, forwarding and hearing (GP-21).",
+  "mainProcesses": [
+    "sangam-grievance"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/grievance/sangam-grievance.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/grievance/sangam-grievance-sla.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/grievance/grievance-routing.dmn"
+    },
+    {
+      "kind": "CMMN",
+      "path": "packs/grievance/sangam-grievance-case.cmmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/grievance/forms/lodge.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/grievance/forms/examine.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/grievance/forms/delayed-review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/grievance/seed.json"
+    }
+  ],
+  "seed": "packs/grievance/seed.json",
+  "connectors": [
+    {
+      "id": "notify.sms",
+      "capabilityClass": "b",
+      "govTag": "G-DLT",
+      "purpose": "Citizen updates"
+    }
+  ],
+  "covers": [
+    "D-GRIEVANCE",
+    "GP-06",
+    "GP-21",
+    "GP-22",
+    "GP-33",
+    "GP-45",
+    "UP-10",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-appeal",
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-rejection"
+  ]
+}

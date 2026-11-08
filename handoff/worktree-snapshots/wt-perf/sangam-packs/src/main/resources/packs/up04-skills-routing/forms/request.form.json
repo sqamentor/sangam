@@ -1,0 +1,54 @@
+{
+  "key": "up04-skills-routing/request",
+  "version": "1.0.0",
+  "pack": "universal.up04-skills-routing",
+  "title": {
+    "en": "Service request",
+    "hi": "सेवा अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "subject",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Subject",
+        "hi": "विषय"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    },
+    {
+      "id": "priority",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Priority",
+        "hi": "प्राथमिकता"
+      }
+    },
+    {
+      "id": "skillsRequired",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Skills required",
+        "hi": "आवश्यक कौशल"
+      }
+    }
+  ]
+}

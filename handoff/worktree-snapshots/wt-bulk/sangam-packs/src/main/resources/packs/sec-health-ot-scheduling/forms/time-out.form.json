@@ -1,0 +1,47 @@
+{
+  "key": "sec-health-ot-scheduling/time-out",
+  "version": "1.0.0",
+  "pack": "sec.health.ot-scheduling",
+  "title": {
+    "en": "Time out (before incision)",
+    "hi": "टाइम आउट (चीरे से पहले)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "checklistDone",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Checklist completed",
+        "hi": "जाँच-सूची पूर्ण"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "timeOutDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "proceed",
+        "label": {
+          "en": "Proceed",
+          "hi": "आगे बढ़ें"
+        }
+      },
+      {
+        "value": "abort",
+        "label": {
+          "en": "Abort",
+          "hi": "रोकें"
+        }
+      }
+    ]
+  }
+}

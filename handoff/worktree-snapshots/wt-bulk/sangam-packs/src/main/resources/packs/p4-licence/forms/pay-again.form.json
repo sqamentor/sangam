@@ -1,0 +1,37 @@
+{
+  "key": "p4-licence/pay-again",
+  "version": "1.0.0",
+  "pack": "gov.p4.licence",
+  "title": {
+    "en": "Payment failed: pay again",
+    "hi": "भुगतान विफल: पुनः भुगतान करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [],
+  "decision": {
+    "variable": "payDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "REINSURANCE",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "RI-DESK",
+      "role": "RI",
+      "office": "REINSURANCE",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Reinsurance desk",
+        "hi": "पुनर्बीमा डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "RI-DESK",
+      "person": "iri.ri-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "RI",
+      "name": {
+        "en": "Reinsurance desk",
+        "hi": "पुनर्बीमा डेस्क"
+      }
+    }
+  ]
+}

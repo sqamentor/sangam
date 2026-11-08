@@ -1,0 +1,74 @@
+{
+  "key": "sec-ins-death-claim/intimation",
+  "version": "1.0.0",
+  "pack": "sec.ins.death-claim",
+  "title": {
+    "en": "Death claim intimation",
+    "hi": "मृत्यु दावा सूचना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "policyNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Policy / subscription",
+        "hi": "पॉलिसी / सदस्यता"
+      }
+    },
+    {
+      "id": "claimantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Claimant",
+        "hi": "दावेदार"
+      }
+    },
+    {
+      "id": "claimantType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Claimant (holder, nominee, legal heir)",
+        "hi": "दावेदार (धारक, नामिती, विधिक उत्तराधिकारी)"
+      }
+    },
+    {
+      "id": "sumAssured",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Sum assured (INR)",
+        "hi": "बीमित राशि (रुपये)"
+      }
+    },
+    {
+      "id": "dateOfDeath",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Date of death",
+        "hi": "मृत्यु की तिथि"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "offices": [
+    {
+      "id": "HR",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "LINE-MANAGER",
+      "role": "MANAGER",
+      "office": "HR",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HR-PAYROLL",
+      "name": {
+        "en": "Line manager",
+        "hi": "प्रबंधक"
+      }
+    },
+    {
+      "id": "IT-ASSETS",
+      "role": "IT",
+      "office": "HR",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HR-PAYROLL",
+      "name": {
+        "en": "IT asset desk",
+        "hi": "आईटी परिसंपत्ति डेस्क"
+      }
+    },
+    {
+      "id": "FINANCE-DUES",
+      "role": "FINANCE",
+      "office": "HR",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HR-PAYROLL",
+      "name": {
+        "en": "Finance",
+        "hi": "वित्त"
+      }
+    },
+    {
+      "id": "HR-PAYROLL",
+      "role": "HR",
+      "office": "HR",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "HR payroll",
+        "hi": "मानव संसाधन वेतन"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "LINE-MANAGER",
+      "person": "hex.line-manager",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "IT-ASSETS",
+      "person": "hex.it-assets",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "FINANCE-DUES",
+      "person": "hex.finance-dues",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HR-PAYROLL",
+      "person": "hex.hr-payroll",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "MANAGER",
+      "name": {
+        "en": "Line manager",
+        "hi": "प्रबंधक"
+      }
+    },
+    {
+      "code": "IT",
+      "name": {
+        "en": "IT asset desk",
+        "hi": "आईटी परिसंपत्ति डेस्क"
+      }
+    },
+    {
+      "code": "FINANCE",
+      "name": {
+        "en": "Finance",
+        "hi": "वित्त"
+      }
+    },
+    {
+      "code": "HR",
+      "name": {
+        "en": "HR payroll",
+        "hi": "मानव संसाधन वेतन"
+      }
+    }
+  ]
+}

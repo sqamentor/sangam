@@ -1,0 +1,92 @@
+{
+  "key": "sec-ins-motor-claim/fnol",
+  "version": "1.0.0",
+  "pack": "sec.ins.motor-claim",
+  "title": {
+    "en": "Motor claim intimation",
+    "hi": "मोटर दावा सूचना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "policyNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Policy / subscription",
+        "hi": "पॉलिसी / सदस्यता"
+      }
+    },
+    {
+      "id": "vehicleRegNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Vehicle registration number",
+        "hi": "वाहन पंजीकरण संख्या"
+      }
+    },
+    {
+      "id": "lossType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Loss type",
+        "hi": "हानि का प्रकार"
+      }
+    },
+    {
+      "id": "claimAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Claim amount",
+        "hi": "दावा राशि"
+      }
+    },
+    {
+      "id": "lossDate",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Date of loss",
+        "hi": "हानि की तिथि"
+      }
+    },
+    {
+      "id": "garageId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Network garage",
+        "hi": "नेटवर्क गैराज"
+      }
+    },
+    {
+      "id": "firNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "FIR number",
+        "hi": "प्राथमिकी संख्या"
+      }
+    },
+    {
+      "id": "photos",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Photographs (geo-tagged)",
+        "hi": "फ़ोटो (जियो-टैग)"
+      }
+    }
+  ]
+}

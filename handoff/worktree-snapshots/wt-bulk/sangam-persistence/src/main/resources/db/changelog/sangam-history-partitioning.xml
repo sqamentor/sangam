@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  IR-8 (SCALE-ARCHITECTURE): OPTIONAL partitioning of the high-volume Operaton history tables ACT_HI_* by REMOVAL_TIME_
+  (R29 removal-time cleanup). This is an engine SCHEMA patch (PATCHES.md P-3).
+
+  * NOT included in sangam-master.xml: Liquibase runs context-tagged changesets when no context is given, so a plain
+    `update` of the master must never reach these. Run it explicitly, AFTER the engine created its tables:
+      SangamSchema.applyHistoryPartitioning(dataSource)   (or engine setting partitionedHistory=true / env
+      SANGAM_PARTITIONED_HISTORY=true), or
+      liquibase update -changelog-file=db/changelog/sangam-history-partitioning.xml -contexts=partitioned-history
+  * Every changeset also carries context partitioned-history and is idempotent (an already partitioned table is skipped).
+  * Dialects: PostgreSQL (declarative range partitions + DEFAULT), Oracle (range partitions + MAXVALUE, online
+    conversion), SQL Server (partition function/scheme, clustered index on REMOVAL_TIME_). MySQL: not provided (see
+    sangam-persistence/README.md "History partitioning" for the reason); H2: not applicable.
+  * Tables: ACT_HI_ACTINST, ACT_HI_TASKINST, ACT_HI_VARINST, ACT_HI_DETAIL, ACT_HI_IDENTITYLINK, ACT_HI_OP_LOG,
+    ACT_HI_INCIDENT, ACT_HI_JOB_LOG, ACT_HI_EXT_TASK_LOG. ACT_HI_PROCINST is not partitioned (its unique key on
+    PROC_INST_ID_ cannot include the partition key).
+  * Monthly partitions are created 1 month back and 24 months ahead; run the maintenance routine monthly
+    (PostgreSQL: SELECT sangam_hi_maintain(24); Oracle: EXEC SANGAM_HI_MAINTAIN(24); SQL Server: EXEC SANGAM_HI_MAINTAIN 24).
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.33.xsd">
+
+  <preConditions onFail="HALT" onFailMessage="IR-8: build the Operaton engine first (ACT_HI_ACTINST missing)">
+    <or>
+      <dbms type="mysql"/>
+      <dbms type="h2"/>
+      <tableExists tableName="ACT_HI_ACTINST"/>
+    </or>
+  </preConditions>
+
+  <include file="history-partitioning/postgresql.sql" relativeToChangelogFile="true" context="partitioned-history"/>
+  <include file="history-partitioning/oracle.sql" relativeToChangelogFile="true" context="partitioned-history"/>
+  <include file="history-partitioning/mssql.sql" relativeToChangelogFile="true" context="partitioned-history"/>
+
+</databaseChangeLog>

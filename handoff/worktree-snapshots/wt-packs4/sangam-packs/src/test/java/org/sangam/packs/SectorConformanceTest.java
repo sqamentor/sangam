@@ -1,0 +1,460 @@
+// SPDX-License-Identifier: Apache-2.0
+package org.sangam.packs;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.operaton.bpm.engine.ProcessEngine;
+import org.operaton.bpm.engine.impl.cfg.StandaloneInMemProcessEngineConfiguration;
+
+import org.sangam.packs.port.PackAuditEvent;
+import org.sangam.packs.port.PackRuntime;
+import org.sangam.packs.sim.LoggingAuditSink;
+import org.sangam.packs.sim.SimulatorConnectorGateway;
+import org.sangam.packs.spi.PackDeployer;
+import org.sangam.packs.spi.PackDescriptor;
+import org.sangam.packs.spi.PackRegistry;
+
+/**
+ * Sector conformance (sangam/SECTOR-CONFORMANCE.md): for one representative workflow per sector, a tenant set up by
+ * pack configuration alone (BPMN, DMN, forms, seed seats) runs from start to the end event on H2 with the simulator.
+ * Every task is answered by {@link FormAnswers} (seat holder from the seed, affirmative decision of the form), so no
+ * scenario carries sector Java. Each run must show: end reached with no incident, every task completed by the seed
+ * holder of its seat, a {@code TASK_COMPLETED} audit event per task, {@code RULE_EVALUATED} when the pack ships DMN,
+ * a journaled connector call when the pack declares connectors, and a finished history record (the report source).
+ */
+class SectorConformanceTest {
+
+    static ProcessEngine engine;
+    static PackDriver driver;
+    static PackRegistry registry;
+
+    @BeforeAll
+    static void setUp() {
+        PackRuntime.reset();
+        StandaloneInMemProcessEngineConfiguration cfg = new StandaloneInMemProcessEngineConfiguration();
+        cfg.setJdbcUrl("jdbc:h2:mem:sangam-sector;DB_CLOSE_DELAY=-1");
+        cfg.setDatabaseSchemaUpdate("create-drop");
+        cfg.setJobExecutorActivate(false);
+        cfg.setHistory("full");
+        engine = cfg.buildProcessEngine();
+        registry = PackRegistry.discover();
+        new PackDeployer(engine, registry).deployAll(null);
+        driver = new PackDriver(engine);
+    }
+
+    @AfterAll
+    static void tearDown() {
+        engine.close();
+    }
+
+    record Run(String bk, List<String> done, PackDescriptor pack) {
+    }
+
+    static PackDescriptor pack(String id) {
+        return registry.find(id).orElseThrow(() -> new AssertionError("pack not shipped: " + id)).descriptor();
+    }
+
+    /** Runs {@code key} of pack {@code packId} to its end by configuration only and checks the common evidence. */
+    static Run conform(String packId, String key, FormAnswers answers, Object... startKv) {
+        PackDescriptor p = pack(packId);
+        assertTrue(p.mainProcesses().contains(key), packId + " main processes " + p.mainProcesses());
+        String bk = "CONF/" + key;
+        Map<String, Object> vars = AllPacksSmokeTest.bag();
+        p.acceptance().stream().findFirst().map(PackDescriptor.AcceptanceScenario::startVariables)
+                .ifPresent(vars::putAll);
+        for (int i = 0; i + 1 < startKv.length; i += 2) {
+            vars.put(startKv[i].toString(), startKv[i + 1]);
+        }
+        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(vars)
+                .processDefinitionWithoutTenantId().execute();
+        List<String> done = driver.run(bk, answers::answer, 80);
+        assertTrue(driver.ended(bk), key + " did not reach its end; open tasks "
+                + engine.getTaskService().createTaskQuery().processInstanceBusinessKeyLike(bk + "%").list().stream()
+                        .map(t -> t.getTaskDefinitionKey()).toList() + ", done " + done);
+        assertEquals(0, engine.getRuntimeService().createIncidentQuery().count(), "incidents");
+        assertFalse(done.isEmpty(), key + ": no human step ran");
+        List<PackAuditEvent> audit = ((LoggingAuditSink) PackRuntime.audit()).timeline(bk);
+        Set<String> types = new HashSet<>();
+        audit.forEach(e -> types.add(e.type()));
+        long completions = audit.stream().filter(e -> "TASK_COMPLETED".equals(e.type())).count();
+        assertTrue(completions >= done.size(), key + ": " + completions + " TASK_COMPLETED for " + done.size() + " tasks");
+        assertTrue(audit.stream().filter(e -> "TASK_COMPLETED".equals(e.type()))
+                .allMatch(e -> e.actorPersonId() != null && e.actorSeatId() != null), "actor person and seat on audit");
+        assertTrue(audit.stream().filter(e -> "TASK_COMPLETED".equals(e.type()))
+                .filter(e -> PackRuntime.seats().roleOf(null, e.actorSeatId()).isPresent())
+                .noneMatch(e -> e.actorPersonId().startsWith("user.")), key + ": a seed seat has no holder today");
+        if (!p.resources(PackDescriptor.PackResource.Kind.DMN).isEmpty()) {
+            assertTrue(types.contains("RULE_EVALUATED"), key + ": DMN shipped but no RULE_EVALUATED; " + types);
+        }
+        assertNotNull(engine.getHistoryService().createHistoricProcessInstanceQuery().processInstanceBusinessKey(bk)
+                .finished().list().stream().findFirst().orElse(null), "history record for reports");
+        return new Run(bk, done, p);
+    }
+
+    static SimulatorConnectorGateway sim() {
+        return (SimulatorConnectorGateway) PackRuntime.gateway();
+    }
+
+    static boolean called(String bk, String connector) {
+        return sim().journal().stream().anyMatch(r -> bk.equals(r.businessKey()) && connector.equals(r.connector()));
+    }
+
+    FormAnswers answers() {
+        return new FormAnswers(engine);
+    }
+
+    // ---- priority 1: IFMS, central and state government -----------------------------------------------------------
+
+    @Test
+    void ifmsCentralPaoBillChain() {
+        Run r = conform("gov.ifms.pao-chain", "sangam-ifms-pao-chain", answers());
+        assertEquals(List.of("pc_distribute", "pc_dealing", "pc_aao", "pc_pao", "pc_second"), r.done());
+    }
+
+    @Test
+    void ifmsYearEndClosing() {
+        Run r = conform("gov.ifms.year-end-closing", "sangam-ifms-year-end-closing", answers());
+        assertEquals(List.of("yc_compile", "yc_sign"), r.done());
+    }
+
+    @Test
+    void ifmsMonthlyAccounts() {
+        conform("gov.ifms.monthly-accounts", "sangam-ifms-monthly-accounts", answers());
+    }
+
+    @Test
+    void stateTreasuryBillPaymentWithPayment() {
+        Run r = conform("gov.p1.bill-payment", "sangam-p1-bill-payment", answers(),
+                "amount", 47_500_000L, "officeId", "DPW-X", "actingSeat", "CLERK-DDO", "initiator", "p1.clerk",
+                "selectedSeat", "AO-2");
+        assertEquals("CLOSED", driver.var(r.bk(), "caseState"));
+        assertTrue(called(r.bk(), "pfms.payment") || called(r.bk(), "ifms.payment"), "payment rail");
+    }
+
+    @Test
+    void stateGrantSanctionDbtInstalments() {
+        Run r = conform("gov.p3.grant-sanction", "sangam-p3-grant-application", answers(), "income", 12_000_000L,
+                "socialCategory", "SC", "officeId", "BLOCK-A1", "actingSeat", "DEO-A1", "initiator", "p3.deo-a1");
+        assertEquals("CLOSED", driver.var(r.bk(), "caseState"));
+    }
+
+    @Test
+    void stateFileMovementEOffice() {
+        conform("gov.p2.file-movement", "sangam-p2-file-movement", answers(), "officeId", "SEC-B2",
+                "actingSeat", "DA-B2", "initiator", "p2.da");
+    }
+
+    @Test
+    void stateRightToPublicServices() {
+        conform("gov.rtps", "sangam-rtps-service", answers());
+    }
+
+    @Test
+    void statePensionSanction() {
+        // SL-30: the Head of Office had no row in the powers table, so every pension sanction was refused (power 0)
+        Run r = conform("gov.pension", "sangam-pension-sanction", answers());
+        assertTrue(r.done().contains("ps_verify"), "service verified: " + r.done());
+        assertSanctionedWithinPower(r.bk(), "pension-powers");
+        assertEquals("CLOSED", driver.var(r.bk(), "caseState"));
+        assertTrue(called(r.bk(), "ag.pensionCase"), "AG / PAO authorisation");
+    }
+
+    // ---- SL-31: delegated powers of the IFMS roles (CAA, HOO) by configuration ------------------------------------
+
+    @Test
+    void ifmsReappropriationByTheChiefAccountingAuthority() {
+        Run r = conform("gov.ifms.reappropriation", "sangam-ifms-reappropriation", answers(), "amount", 15_000_000L,
+                "fromHead", "2052-00-090-01", "toHead", "2052-00-090-02");
+        assertSanctionedWithinPower(r.bk(), "ifms-reapp-powers");
+    }
+
+    @Test
+    void ifmsSurrenderOfSavings() {
+        Run r = conform("gov.ifms.surrender-lapse", "sangam-ifms-surrender", answers(), "surrenderAmount", 250_000_000L);
+        assertSanctionedWithinPower(r.bk(), "ifms-surrender-powers");
+    }
+
+    @Test
+    void ifmsSchemeAppraisalWithinTheSecretaryBand() {
+        Run r = conform("gov.ifms.scheme-appraisal", "sangam-ifms-scheme-appraisal", answers(), "totalOutlay", 80_000_000_000L);
+        assertSanctionedWithinPower(r.bk(), "ifms-scheme-powers");
+    }
+
+    @Test
+    void ifmsBudgetFormulationThroughSecretaryApproval() {
+        String bk = throughSanction("sangam-ifms-budget-formulation", answers(), "beAmount", 1_250_000_000L);
+        assertSanctionedWithinPower(bk, "ifms-formulation-powers");
+    }
+
+    @Test
+    void ifmsSupplementaryThroughApproval() {
+        String bk = "CONF/sangam-ifms-supplementary";
+        Map<String, Object> vars = AllPacksSmokeTest.bag();
+        vars.put("amount", 400_000_000L);
+        engine.getRuntimeService().createProcessInstanceByKey("sangam-ifms-supplementary").businessKey(bk)
+                .setVariables(vars).processDefinitionWithoutTenantId().execute();
+        List<String> done = new java.util.ArrayList<>(driver.run(bk, answers()::answer, 40));
+        // the budget division includes the proposal in its batch: its reply comes back through the referral inbox
+        reply(bk, "sangam.referralReply", "referralDecision", "faConcur");
+        done.addAll(driver.run(bk, answers()::answer, 40));
+        assertTrue(done.contains("sn_sanction"), "sanction reached: " + done);
+        assertSanctionedWithinPower(bk, "ifms-supplementary-powers");
+    }
+
+    /** Delivers {@code message} to the execution of case {@code bk} that waits for it. */
+    static void reply(String bk, String message, Object... kv) {
+        Map<String, Object> v = new java.util.HashMap<>();
+        for (int i = 0; i + 1 < kv.length; i += 2) {
+            v.put(kv[i].toString(), kv[i + 1]);
+        }
+        var rt = engine.getRuntimeService();
+        Set<String> mine = new HashSet<>();
+        rt.createProcessInstanceQuery().processInstanceBusinessKeyLike(bk + "%").list().forEach(p -> mine.add(p.getId()));
+        var waiting = rt.createExecutionQuery().messageEventSubscriptionName(message).list().stream()
+                .filter(e -> mine.contains(e.getProcessInstanceId())).toList();
+        assertEquals(1, waiting.size(), bk + " waits once for " + message);
+        rt.messageEventReceived(message, waiting.get(0).getId(), v);
+    }
+
+    @Test
+    void ifmsGrantInAidReleaseHasNoMonetaryCeiling() {
+        // DFPR r.17: full powers; a release far above every banded power still passes the power check
+        String bk = throughSanction("sangam-ifms-gia-release", answers(), "amount", 5_000_000_000_000L);
+        assertSanctionedWithinPower(bk, "ifms-gia-powers");
+    }
+
+    @Test
+    void ifmsEmployeeAdvanceByTheHeadOfOffice() {
+        String bk = throughSanction("sangam-ifms-advance", answers(), "amount", 4_000_000L, "advanceKind", "COMPUTER");
+        assertSanctionedWithinPower(bk, "ifms-advance-powers");
+    }
+
+    @Test
+    void ifmsGpfWithdrawalByTheHeadOfOffice() {
+        String bk = throughSanction("sangam-ifms-gpf", answers(), "amount", 5_000_000L, "gpfBalance", 40_000_000L,
+                "gpfPurpose", "ADVANCE");
+        assertSanctionedWithinPower(bk, "ifms-gpf-powers");
+    }
+
+    /** Drives a case until it ends or waits for scenario data; the sanction step must have completed. */
+    static String throughSanction(String key, FormAnswers answers, Object... startKv) {
+        String bk = "CONF/" + key;
+        Map<String, Object> vars = AllPacksSmokeTest.bag();
+        for (int i = 0; i + 1 < startKv.length; i += 2) {
+            vars.put(startKv[i].toString(), startKv[i + 1]);
+        }
+        engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(vars)
+                .processDefinitionWithoutTenantId().execute();
+        List<String> done = driver.run(bk, answers::answer, 80);
+        assertTrue(done.contains("sn_sanction"), key + ": sanction not reached; done " + done);
+        assertEquals(0, engine.getRuntimeService().createIncidentQuery().count(), "incidents");
+        return bk;
+    }
+
+    /** The sanction passed the delegated-power check of {@code table}, and no POWER_LIMIT_EXCEEDED was recorded. */
+    static void assertSanctionedWithinPower(String bk, String table) {
+        List<PackAuditEvent> audit = ((LoggingAuditSink) PackRuntime.audit()).timeline(bk);
+        assertTrue(audit.stream().noneMatch(e -> "POWER_LIMIT_EXCEEDED".equals(e.type())), bk + ": power refused");
+        assertTrue(audit.stream().anyMatch(e -> "RULE_EVALUATED".equals(e.type())
+                && table.equals(e.details().get("decision")) && Boolean.TRUE.equals(e.details().get("result"))),
+                bk + ": no passing power check against " + table);
+    }
+
+    // ---- SL-33: worldwide PFM and EU GDPR ----------------------------------------------------------------------------
+
+    @Test
+    void worldwidePfmCommitmentVerifiedCertifiedAndPaid() {
+        // PFM-CH-2 / CH-3: commitment within authority, verifier and certifying officer differ from the approver
+        Run r = conform("gov.intl.pfm-execution", "sangam-intl-pfm-execution", answers(), "amount", 5_000_000L,
+                "fundsAvailable", 100_000_000L, "payee", "SUPPLIER-1");
+        assertEquals("CLOSED", driver.var(r.bk(), "caseState"));
+        assertTrue(r.done().containsAll(List.of("sn_sanction", "pe_verify", "pe_certify")), "chain: " + r.done());
+        assertTrue(called(r.bk(), "ledger.encumber"), "commitment recorded against authority");
+        assertTrue(called(r.bk(), "treasury.pay"), "class (c) payment rail");
+        List<PackAuditEvent> acts = ((LoggingAuditSink) PackRuntime.audit()).timeline(r.bk()).stream()
+                .filter(e -> "TASK_COMPLETED".equals(e.type()) && List.of("sn_sanction", "pe_verify", "pe_certify")
+                        .contains(e.details().get("task"))).toList();
+        assertEquals(3, acts.stream().map(PackAuditEvent::actorPersonId).distinct().count(), "three persons");
+    }
+
+    @Test
+    void worldwidePfmShortfallOfAuthorityOpensTheBreachReport() {
+        // PFM-034 / PFM-039: no commitment without available released authority
+        String bk = "CONF/pfm-breach";
+        Map<String, Object> vars = AllPacksSmokeTest.bag();
+        vars.put("amount", 5_000_000L);
+        vars.put("fundsAvailable", 4_999_999L); // one minor unit short
+        engine.getRuntimeService().createProcessInstanceByKey("sangam-intl-pfm-execution").businessKey(bk)
+                .setVariables(vars).processDefinitionWithoutTenantId().execute();
+        List<String> done = driver.run(bk, answers()::answer, 40);
+        assertEquals(List.of("pe_breach"), done, "breach report only");
+        assertTrue(driver.ended(bk));
+        assertTrue(!called(bk, "ledger.encumber"), "no commitment recorded");
+    }
+
+    @Test
+    void euGdprErasureWithinOneMonthAndRecipientsNotified() {
+        Run r = conform("sec.eu.gdpr-dsr", "sangam-sec-eu-gdpr-dsr", answers(), "dsrRight", "ERASURE");
+        assertTrue(r.done().containsAll(List.of("gd_verify", "gd_decide", "gd_erasure", "gd_respond")), "" + r.done());
+        assertTrue(called(r.bk(), "records.erase") && called(r.bk(), "recipients.notify"), "Art. 17 + Art. 19");
+        Object due = driver.var(r.bk(), "gdprDueAt");
+        assertTrue(due instanceof java.util.Date d && d.toInstant().isAfter(java.time.Instant.now().plus(java.time.Duration.ofDays(27)))
+                && d.toInstant().isBefore(java.time.Instant.now().plus(java.time.Duration.ofDays(32))), "Art. 12(3) one month: " + due);
+    }
+
+    @Test
+    void euGdprExtensionIsUsedOnceAndAddsTwoMonths() {
+        String bk = "CONF/gdpr-ext";
+        Map<String, Object> vars = AllPacksSmokeTest.bag();
+        vars.put("dsrRight", "ACCESS");
+        engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-eu-gdpr-dsr").businessKey(bk)
+                .setVariables(vars).processDefinitionWithoutTenantId().execute();
+        FormAnswers a = answers();
+        int[] n = {0};
+        List<String> done = driver.run(bk, t -> {
+            PackDriver.Answer x = a.answer(t);
+            if ("gd_decide".equals(t.getTaskDefinitionKey())) {
+                java.util.Map<String, Object> v = new java.util.HashMap<>(x.vars());
+                v.put("dsrDecision", ++n[0] == 1 ? "extend" : "fulfil");
+                return new PackDriver.Answer(x.person(), x.seat(), v);
+            }
+            return x;
+        }, 40);
+        assertEquals(List.of("gd_verify", "gd_decide", "gd_extend", "gd_decide", "gd_respond"), done);
+        assertEquals(Boolean.TRUE, driver.var(bk, "gdprExtended"));
+        assertTrue(called(bk, "records.summary"), "Art. 15 copy");
+    }
+
+    // ---- priority 2/3: India sectors ------------------------------------------------------------------------------
+
+    @Test
+    void bankPaymentAboveBandNeedsCheckerAndAuthoriser() {
+        Run r = conform("sec.bank.payment-dual-auth", "sangam-sec-bank-payment", answers(), "amount", 300_000_000L);
+        assertEquals(2, ((Number) driver.var(r.bk(), "authLevels")).intValue());
+        assertEquals(2, r.done().stream().filter("sn_sanction"::equals).count(), "checker then authoriser");
+        List<PackAuditEvent> approvals = ((LoggingAuditSink) PackRuntime.audit()).timeline(r.bk()).stream()
+                .filter(e -> "TASK_COMPLETED".equals(e.type()) && "sn_sanction".equals(e.details().get("task")))
+                .toList();
+        assertEquals(2, approvals.stream().map(PackAuditEvent::actorPersonId).distinct().count(), "two persons");
+        assertEquals(2, approvals.stream().map(PackAuditEvent::actorSeatId).distinct().count(), "two seats");
+        assertTrue(called(r.bk(), "bank.transfer"), "class (c) payment rail");
+    }
+
+    @Test
+    void bankLoanOrigination() {
+        conform("sec.bank.loan-origination", "sangam-sec-bank-loan-origination", answers());
+    }
+
+    @Test
+    void capitalMarketInvestorOnboarding() {
+        conform("sec.cap.investor-onboarding", "sangam-sec-cap-investor-onboarding", answers());
+    }
+
+    @Test
+    void insuranceMotorClaim() {
+        Run r = conform("sec.ins.motor-claim", "sangam-sec-ins-motor-claim", answers());
+        assertEquals("CLOSED", driver.var(r.bk(), "caseState"));
+    }
+
+    @Test
+    void insuranceDeathClaim() {
+        Run r = conform("sec.ins.death-claim", "sangam-sec-ins-death-claim", answers());
+        assertEquals("CLOSED", driver.var(r.bk(), "caseState"));
+    }
+
+    @Test
+    void ecommerceGstTcsReconciliation() {
+        conform("sec.ecom.gst-tcs", "sangam-sec-ecom-gst-tcs", answers());
+    }
+
+    @Test
+    void ecommerceSellerOnboarding() {
+        conform("sec.ecom.seller-onboarding", "sangam-sec-ecom-seller-onboarding", answers());
+    }
+
+    @Test
+    void manufacturingBatchRelease() {
+        Run r = conform("sec.mfg.batch-release", "sangam-sec-mfg-batch-release", answers());
+        assertEquals(List.of("br_qc", "br_qa"), r.done());
+    }
+
+    @Test
+    void healthIndiaLabOrder() {
+        conform("sec.health.lab-order", "sangam-sec-health-lab-order", answers());
+    }
+
+    @Test
+    void healthIndiaAdmissionToDischarge() {
+        conform("sec.health.admission-discharge", "sangam-sec-health-admission", answers());
+    }
+
+    @Test
+    void dpdpDataPrincipalRequest() {
+        conform("sec.legal.dpdp-rights", "sangam-sec-legal-dpdp-request", answers());
+    }
+
+    // ---- priority 4: USA health (HIPAA) ---------------------------------------------------------------------------
+
+    @Test
+    void usHealthHipaaRightOfAccess() {
+        conform("sec.ushealth.access-request", "sangam-sec-ushealth-access-request", answers());
+    }
+
+    @Test
+    void usHealthBusinessAssociateAgreement() {
+        String bk = "CONF/sangam-sec-ushealth-baa";
+        engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-ushealth-baa").businessKey(bk)
+                .setVariables(AllPacksSmokeTest.bag()).processDefinitionWithoutTenantId().execute();
+        List<String> done = driver.run(bk, answers().with("ba_terms", "baaTerms", true)::answer, 40);
+        assertEquals(List.of("ba_security", "ba_terms", "ba_approve"), done);
+        assertActiveAgreement(bk);
+    }
+
+    /** An approved agreement lives on: no open task, no incident, waiting on its review clock or a breach event. */
+    static void assertActiveAgreement(String bk) {
+        assertFalse(driver.ended(bk), "an executed BAA stays active for its term");
+        assertEquals(0, engine.getTaskService().createTaskQuery().processInstanceBusinessKey(bk).count());
+        assertEquals(0, engine.getRuntimeService().createIncidentQuery().count(), "incidents");
+        String root = engine.getRuntimeService().createProcessInstanceQuery().processInstanceBusinessKey(bk)
+                .singleResult().getId();
+        assertFalse(engine.getRuntimeService().getActiveActivityIds(root).isEmpty(), "waiting in its lifecycle");
+        assertTrue(((LoggingAuditSink) PackRuntime.audit()).timeline(bk).stream()
+                .filter(e -> "TASK_COMPLETED".equals(e.type())).count() >= 3);
+    }
+
+    @Test
+    void longCaseActorLogBeyondTheEngineStringColumn() {
+        // regression: 40 rounds of "missing terms" grew actorLog past 4000 characters (JdbcBatchUpdateException)
+        int[] rounds = {0};
+        FormAnswers base = answers();
+        String bk = "CONF/LONG/baa";
+        java.util.Map<String, Object> v = AllPacksSmokeTest.bag();
+        engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-ushealth-baa").businessKey(bk).setVariables(v)
+                .processDefinitionWithoutTenantId().execute();
+        driver.run(bk, t -> {
+            PackDriver.Answer a = base.answer(t);
+            if ("ba_terms".equals(t.getTaskDefinitionKey())) {
+                a.vars().put("baaTerms", ++rounds[0] > 40);
+            }
+            return a;
+        }, 120);
+        assertEquals(41, rounds[0], "every round persisted");
+        assertActiveAgreement(bk);
+        Run r = new Run(bk, List.of(), pack("sec.ushealth.baa"));
+        // regression: the actor log of a long case exceeded the 4000-character engine string column
+        Object log = engine.getHistoryService().createHistoricVariableInstanceQuery().variableName("actorLog")
+                .processInstanceId(driver.rootId(r.bk())).singleResult().getValue();
+        assertTrue(log instanceof byte[] b && b.length > 4000, "actor log stored as a document");
+    }
+}

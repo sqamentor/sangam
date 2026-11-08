@@ -1,0 +1,146 @@
+{
+  "key": "p3-grant-sanction/application",
+  "version": "1.0.0",
+  "pack": "gov.p3.grant-sanction",
+  "title": {
+    "en": "Scheme application",
+    "hi": "योजना आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "schemeId",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Scheme",
+        "hi": "योजना"
+      }
+    },
+    {
+      "id": "beneficiaryId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Beneficiary ID (vault token)",
+        "hi": "लाभार्थी आईडी (वॉल्ट टोकन)"
+      }
+    },
+    {
+      "id": "bankAccount",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Beneficiary bank account",
+        "hi": "लाभार्थी बैंक खाता"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "income",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Annual family income (INR)",
+        "hi": "वार्षिक पारिवारिक आय (रुपये)"
+      }
+    },
+    {
+      "id": "age",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Age",
+        "hi": "आयु"
+      }
+    },
+    {
+      "id": "socialCategory",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Social category",
+        "hi": "सामाजिक श्रेणी"
+      }
+    },
+    {
+      "id": "landHolding",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Land holding (hectares)",
+        "hi": "भू-धारिता (हेक्टेयर)"
+      }
+    },
+    {
+      "id": "district",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "District",
+        "hi": "ज़िला"
+      }
+    },
+    {
+      "id": "guardianName",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Guardian name (for a child applicant)",
+        "hi": "अभिभावक का नाम (बाल आवेदक हेतु)"
+      }
+    },
+    {
+      "id": "consentNoticeVersion",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Privacy notice version accepted",
+        "hi": "स्वीकृत गोपनीयता सूचना संस्करण"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

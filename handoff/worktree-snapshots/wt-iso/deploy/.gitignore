@@ -1,0 +1,8 @@
+# local secrets / data / vendor drivers / build outputs - never commit
+compose/.env
+compose/data/
+compose/drivers/*.jar
+docker/lib-ext/*.jar
+airgap/out/
+helm/sangam/examples/*.local.yaml
+*.rendered.yaml

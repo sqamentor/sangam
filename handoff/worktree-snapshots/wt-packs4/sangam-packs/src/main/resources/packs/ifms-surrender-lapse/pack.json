@@ -1,0 +1,121 @@
+{
+  "id": "gov.ifms.surrender-lapse",
+  "version": "1.0.0",
+  "name": {
+    "en": "Surrender of savings and year-end lapse",
+    "hi": "बचत का समर्पण और वर्षांत व्यपगत"
+  },
+  "domain": "IFMS",
+  "description": "Savings foreseen -> controlling officer -> FA -> CAA -> Finance Ministry by the profile date (WITHDRAW up the stages); at the year-end cut-off (timer from the profile) the ledger closes the period: ANNUAL funds lapse, non-lapsable / multi-year funds and carried-forward commitments follow the ledger availability policy.",
+  "mainProcesses": [
+    "sangam-ifms-surrender"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-surrender-lapse/sangam-ifms-surrender.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-surrender-lapse/sangam-ifms-year-end-lapse.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-surrender-lapse/ifms-surrender-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-surrender-lapse/ifms-surrender-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-surrender-lapse/forms/surrender.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-surrender-lapse/forms/fa.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-surrender-lapse/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-surrender-lapse/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "ledger.withdraw",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Surrender up the stages (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "ledger.closePeriod",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Year-end lapse / carry-forward (sangam-ledger, idempotent by operationId)"
+    }
+  ],
+  "covers": [
+    "IFC-069",
+    "IFC-070",
+    "IFC-074",
+    "IFC-213",
+    "IFS-RJ-006",
+    "GA-03",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-surrender-powers",
+      "rule": "CAA SURRENDER no monetary limit",
+      "reason": "GFR 62(1)-(2) (corpus IFC-069) requires the surrender but does not name the CAA as the approving authority; confirm from the delegation order and deploy it as a tenant DMN override"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit",
+      "surrenderAmount"
+    ]
+  }
+}

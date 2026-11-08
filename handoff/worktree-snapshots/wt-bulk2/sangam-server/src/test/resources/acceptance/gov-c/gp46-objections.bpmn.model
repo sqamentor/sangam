@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp46">
+  <!-- GP-46 third-party objection window: one parallel branch per party, each waits for that party's objection or for
+       the window to close; the decision waits for all branches. -->
+  <message id="m_objection" name="thirdPartyObjection"/>
+  <process id="gp46-objections" name="GP-46 Objection window" isExecutable="true">
+    <startEvent id="gp46_start"/>
+    <sequenceFlow id="f1" sourceRef="gp46_start" targetRef="gp46_notice"/>
+    <userTask id="gp46_notice" name="Issue notices to third parties"><potentialOwner><resourceAssignmentExpression><formalExpression>group(pio)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp46_notice" targetRef="gp46_window"/>
+    <subProcess id="gp46_window" name="Objection window per party">
+      <multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">${partyCount}</loopCardinality></multiInstanceLoopCharacteristics>
+      <startEvent id="gp46_wStart"/>
+      <sequenceFlow id="w1" sourceRef="gp46_wStart" targetRef="gp46_await"/>
+      <eventBasedGateway id="gp46_await"/>
+      <sequenceFlow id="w2" sourceRef="gp46_await" targetRef="gp46_objected"/>
+      <sequenceFlow id="w3" sourceRef="gp46_await" targetRef="gp46_closed"/>
+      <intermediateCatchEvent id="gp46_objected"><messageEventDefinition messageRef="m_objection"/></intermediateCatchEvent>
+      <intermediateCatchEvent id="gp46_closed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${windowEnd}</timeDate></timerEventDefinition></intermediateCatchEvent>
+      <sequenceFlow id="w4" sourceRef="gp46_objected" targetRef="gp46_endObjected"/>
+      <sequenceFlow id="w5" sourceRef="gp46_closed" targetRef="gp46_endSilent"/>
+      <endEvent id="gp46_endObjected"/>
+      <endEvent id="gp46_endSilent"/>
+    </subProcess>
+    <sequenceFlow id="f3" sourceRef="gp46_window" targetRef="gp46_decide"/>
+    <userTask id="gp46_decide" name="Decide after objections"><potentialOwner><resourceAssignmentExpression><formalExpression>group(pio)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f4" sourceRef="gp46_decide" targetRef="gp46_end"/>
+    <endEvent id="gp46_end"/>
+  </process>
+</definitions>

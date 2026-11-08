@@ -1,0 +1,36 @@
+{
+  "key": "sec-util-new-connection/install",
+  "version": "1.0.0",
+  "pack": "sec.util.new-connection",
+  "title": {
+    "en": "Install meter and energise",
+    "hi": "मीटर स्थापना एवं विद्युत आपूर्ति"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "meterNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Meter number",
+        "hi": "मीटर संख्या"
+      }
+    },
+    {
+      "id": "photos",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Photographs (geo-tagged)",
+        "hi": "फ़ोटो (जियो-टैग)"
+      }
+    }
+  ]
+}

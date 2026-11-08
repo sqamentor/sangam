@@ -1,0 +1,157 @@
+{
+  "id": "gov.intl.pfm-execution",
+  "version": "1.0.0",
+  "name": {
+    "en": "Commitment, verification and payment (worldwide PFM)",
+    "hi": "प्रतिबद्धता, सत्यापन एवं भुगतान (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "Generic expenditure chain: commitment only against available released authority (encumbered), commitment approver by delegation (DMN); verification of receipt by a person other than the committer; certifying officer with liability recorded; payee integrity check; payment on the profile rail with operationId, UNKNOWN_OUTCOME and reconciliation; a shortfall of authority opens the breach report.",
+  "mainProcesses": [
+    "sangam-intl-pfm-execution"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-execution/sangam-intl-pfm-execution.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-execution/intl-pfm-commitment-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-execution/intl-pfm-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-execution/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-execution/forms/breach.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-execution/forms/verify.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-execution/forms/certify.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-execution/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-execution/seed.json",
+  "connectors": [
+    {
+      "id": "ledger.available",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Available released authority"
+    },
+    {
+      "id": "ledger.encumber",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Record the commitment"
+    },
+    {
+      "id": "payee.integrity",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Payee checks (exclusion / deceased / duplicate)"
+    },
+    {
+      "id": "treasury.pay",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Payment rail"
+    },
+    {
+      "id": "bank.statement",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Bank / TSA statement"
+    }
+  ],
+  "covers": [
+    "SL-33",
+    "PFM-030",
+    "PFM-034",
+    "PFM-039",
+    "PFM-041",
+    "PFM-048",
+    "PFM-049",
+    "PFM-050",
+    "PFM-051",
+    "PFM-CH-2",
+    "PFM-CH-3",
+    "GP-01",
+    "GP-11",
+    "GP-34"
+  ],
+  "acceptance": [
+    {
+      "id": "PFM-CH-3",
+      "title": "Commitment within authority is verified, certified and paid by three persons",
+      "refs": [
+        "PFM-CH-2",
+        "PFM-CH-3",
+        "PFM-041"
+      ],
+      "given": "amount = 50,000 with authority available",
+      "when": "commitment approved, receipt verified, order certified",
+      "then": "paid and reconciled; three different persons",
+      "startVariables": {
+        "amount": 5000000,
+        "fundsAvailable": 100000000
+      },
+      "expectState": null,
+      "run": {
+        "expect": {
+          "audit": [
+            "CASE_CLOSED"
+          ],
+          "ended": true
+        }
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-core-scrutiny"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-commitment-authority",
+      "rule": "SYNTHETIC delegation (100000 / 10000000, major units)",
+      "reason": "country delegation of commitment powers not verified: deploy the confirmed table as a tenant override (INTERNATIONAL-PFM-REQUIREMENTS section 5)"
+    },
+    {
+      "decision": "intl-pfm-powers",
+      "rule": "SYNTHETIC delegation (100000 / 10000000, major units)",
+      "reason": "country delegation of commitment powers not verified: deploy the confirmed table as a tenant override (INTERNATIONAL-PFM-REQUIREMENTS section 5)"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "fundsAvailable",
+      "powerLimit"
+    ]
+  }
+}

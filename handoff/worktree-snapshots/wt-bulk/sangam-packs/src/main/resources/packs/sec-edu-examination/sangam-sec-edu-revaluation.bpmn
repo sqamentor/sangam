@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Revaluation request. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_edu_revaluation" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-edu-revaluation" name="Revaluation request" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.edu.examination</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>applicantName,examName,subject</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="rv_start" name="Revaluation requested" operaton:initiator="initiator" operaton:formKey="sangam:sec-edu-examination/revaluation"></startEvent>
+    <serviceTask id="rv_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>examName=X;executionConnector=pg.collect;executionStep=reval-fee;verifyApproval=false;reconcileRequired=false;executionPayloadFields=applicantName,subject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="rv_fee" name="Collect fee (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="rv_eval_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rv_eval</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>15D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="rv_eval" name="Re-evaluate by a different evaluator" operaton:candidateGroups="${revaluatorSeat}" operaton:formKey="sangam:sec-edu-examination/re-evaluate" operaton:dueDate="${rv_evalDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>ex_evaluate</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="rv_eval_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rv_eval</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>revaluatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rv_eval_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="rv_eval_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rv_eval</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>revaluatorSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rv_eval_breachGw" name="Deemed?" default="sec_edu_revaluation_f6"></exclusiveGateway>
+    <exclusiveGateway id="rv_eval_done" name=""></exclusiveGateway>
+    <serviceTask id="rv_seat" name="Evaluator" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>revaluatorSeat=EVALUATOR-2</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rv_publish" name="Publish the revised result" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>exam.publish</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revise</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>applicantName,subject</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rpub</operaton:string></operaton:field><operaton:field name="step"><operaton:string>revised</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rv_end" name="Revaluation done"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="rv_eval_warn" name="SLA warning (75%)" attachedToRef="rv_eval" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rv_evalWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="rv_eval_breach" name="SLA breached" attachedToRef="rv_eval" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rv_evalDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_edu_revaluation_f1" sourceRef="rv_eval_warn" targetRef="rv_eval_warnNotify"/>
+    <sequenceFlow id="sec_edu_revaluation_f2" sourceRef="rv_eval_warnNotify" targetRef="rv_eval_warnEnd"/>
+    <sequenceFlow id="sec_edu_revaluation_f3" sourceRef="rv_eval_breach" targetRef="rv_eval_breachAct"/>
+    <sequenceFlow id="sec_edu_revaluation_f4" sourceRef="rv_eval_breachAct" targetRef="rv_eval_breachGw"/>
+    <sequenceFlow id="sec_edu_revaluation_f5" name="deemed" sourceRef="rv_eval_breachGw" targetRef="rv_eval_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_revaluation_f6" name="escalated" sourceRef="rv_eval_breachGw" targetRef="rv_eval_slaPlan"/>
+    <sequenceFlow id="sec_edu_revaluation_f7" sourceRef="rv_eval_slaPlan" targetRef="rv_eval"/>
+    <sequenceFlow id="sec_edu_revaluation_f8" sourceRef="rv_eval" targetRef="rv_eval_done"/>
+    <sequenceFlow id="sec_edu_revaluation_f9" sourceRef="rv_start" targetRef="rv_defaults"/>
+    <sequenceFlow id="sec_edu_revaluation_f10" sourceRef="rv_defaults" targetRef="rv_fee"/>
+    <sequenceFlow id="sec_edu_revaluation_f11" sourceRef="rv_fee" targetRef="rv_seat"/>
+    <sequenceFlow id="sec_edu_revaluation_f12" sourceRef="rv_seat" targetRef="rv_eval_slaPlan"/>
+    <sequenceFlow id="sec_edu_revaluation_f13" sourceRef="rv_eval_done" targetRef="rv_publish"/>
+    <sequenceFlow id="sec_edu_revaluation_f14" sourceRef="rv_publish" targetRef="rv_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_edu_revaluation_diagram">
+    <bpmndi:BPMNPlane id="sec_edu_revaluation_plane" bpmnElement="sangam-sec-edu-revaluation">
+      <bpmndi:BPMNShape id="rv_start_di" bpmnElement="rv_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_defaults_di" bpmnElement="rv_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_fee_di" bpmnElement="rv_fee"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_eval_slaPlan_di" bpmnElement="rv_eval_slaPlan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_eval_di" bpmnElement="rv_eval"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_eval_warnNotify_di" bpmnElement="rv_eval_warnNotify"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_eval_warnEnd_di" bpmnElement="rv_eval_warnEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_eval_breachAct_di" bpmnElement="rv_eval_breachAct"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_eval_breachGw_di" bpmnElement="rv_eval_breachGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_eval_done_di" bpmnElement="rv_eval_done"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_seat_di" bpmnElement="rv_seat"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_publish_di" bpmnElement="rv_publish"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_end_di" bpmnElement="rv_end"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_eval_warn_di" bpmnElement="rv_eval_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rv_eval_breach_di" bpmnElement="rv_eval_breach"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f1_di" bpmnElement="sec_edu_revaluation_f1"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f2_di" bpmnElement="sec_edu_revaluation_f2"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f3_di" bpmnElement="sec_edu_revaluation_f3"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f4_di" bpmnElement="sec_edu_revaluation_f4"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f5_di" bpmnElement="sec_edu_revaluation_f5"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f6_di" bpmnElement="sec_edu_revaluation_f6"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="135"/><di:waypoint x="730" y="135"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f7_di" bpmnElement="sec_edu_revaluation_f7"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f8_di" bpmnElement="sec_edu_revaluation_f8"><di:waypoint x="945" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f9_di" bpmnElement="sec_edu_revaluation_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f10_di" bpmnElement="sec_edu_revaluation_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f11_di" bpmnElement="sec_edu_revaluation_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f12_di" bpmnElement="sec_edu_revaluation_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f13_di" bpmnElement="sec_edu_revaluation_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_revaluation_f14_di" bpmnElement="sec_edu_revaluation_f14"><di:waypoint x="1605" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

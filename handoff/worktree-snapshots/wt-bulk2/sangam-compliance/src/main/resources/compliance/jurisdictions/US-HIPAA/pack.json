@@ -1,0 +1,230 @@
+{
+  "code": "US-HIPAA",
+  "name": "United States: HIPAA Privacy, Security and Breach Notification Rules (health)",
+  "homeCountry": "US",
+  "timeZone": "America/New_York",
+  "_verification": "Values marked [V] were read in the official CFR text on govinfo.gov (CFR 2024 edition) on 2026-11-05; [S] come from spike/results/US-HEALTH-WORKFLOWS.md and the sec.ushealth DMN tables; [U] are not verified. hhs.gov and ecfr.gov returned 403/redirect during research.",
+  "terminology": {
+    "dataSubject": "Individual",
+    "controller": "Covered entity",
+    "processor": "Business associate",
+    "supervisoryAuthority": "HHS Office for Civil Rights",
+    "personalData": "Protected health information (PHI)"
+  },
+  "instruments": [
+    {"id": "HIPAA-PRIVACY", "title": "Privacy of Individually Identifiable Health Information", "issuer": "HHS", "reference": "45 CFR Part 164 Subpart E", "url": "https://www.govinfo.gov/app/collection/cfr"},
+    {"id": "HIPAA-SECURITY", "title": "Security Standards for the Protection of Electronic PHI", "issuer": "HHS", "reference": "45 CFR Part 164 Subpart C", "url": "https://www.govinfo.gov/app/collection/cfr"},
+    {"id": "HIPAA-BREACH", "title": "Notification in the Case of Breach of Unsecured PHI", "issuer": "HHS", "reference": "45 CFR 164.400-414", "url": "https://www.govinfo.gov/content/pkg/CFR-2024-title45-vol2/xml/CFR-2024-title45-vol2-sec164-404.xml"},
+    {"id": "HIPAA-ENFORCEMENT", "title": "Compliance and Enforcement (civil money penalties)", "issuer": "HHS", "reference": "45 CFR Part 160 Subparts C-E; HITECH s.13410", "url": "https://www.govinfo.gov/app/collection/cfr"},
+    {"id": "INFO-BLOCKING", "title": "Information Blocking", "issuer": "HHS ONC (ASTP)", "reference": "45 CFR Part 171 (21st Century Cures Act s.4004)", "url": "https://www.govinfo.gov/app/collection/cfr"},
+    {"id": "EMTALA", "title": "Examination and treatment for emergency medical conditions", "issuer": "CMS", "reference": "42 USC 1395dd; 42 CFR 489.20, 489.24", "url": "https://www.govinfo.gov/content/pkg/CFR-2024-title42-vol5/xml/CFR-2024-title42-vol5-sec489-20.xml"}
+  ],
+  "commencement": {
+    "phases": [
+      {"id": "OMNIBUS", "from": "2013-09-23", "provisions": ["45 CFR 164", "45 CFR 160", "HITECH", "42 CFR 489"]},
+      {"id": "EHI_FULL", "from": "2022-10-06", "provisions": ["45 CFR 171"]}
+    ],
+    "defaultPhase": "OMNIBUS"
+  },
+  "languages": [
+    {"code": "en", "name": "English", "nativeName": "English", "script": "Latn"},
+    {"code": "es", "name": "Spanish", "nativeName": "Español", "script": "Latn"}
+  ],
+  "defaultLanguage": "en",
+  "limits": {
+    "logRetentionMinDays": {"value": 2190, "citation": "45 CFR 164.316(b)(2), 164.530(j)(2): documentation kept 6 years [V for documentation; applying it to audit logs is an interpretation, U]"},
+    "accountingLookbackDays": {"value": 2190, "citation": "45 CFR 164.528(a)(1): disclosures in the six years prior to the request [V]"}
+  },
+  "conditionalLimits": [],
+  "defaults": {
+    "languages": "en",
+    "ntp.servers": "time.nist.gov"
+  },
+  "legalBases": [
+    {"code": "TREATMENT", "citation": "45 CFR 164.506(c) [S]", "excludedFromAccounting": true, "description": "Treatment (minimum necessary does not apply, 164.502(b)(2)(i))"},
+    {"code": "PAYMENT", "citation": "45 CFR 164.506(c) [S]", "excludedFromAccounting": true, "requiresMinimumNecessary": true, "description": "Payment"},
+    {"code": "HEALTH_CARE_OPERATIONS", "citation": "45 CFR 164.506(c) [S]", "excludedFromAccounting": true, "requiresMinimumNecessary": true, "description": "Health care operations"},
+    {"code": "AUTHORIZATION", "citation": "45 CFR 164.508 [S]", "kind": "CONSENT", "excludedFromAccounting": true, "description": "Valid written authorisation of the individual (revocable in writing)"},
+    {"code": "OPPORTUNITY_TO_AGREE_OR_OBJECT", "citation": "45 CFR 164.510 [S]", "objectable": true, "requiresMinimumNecessary": true, "excludedFromAccounting": true, "description": "Facility directory; persons involved in care"},
+    {"code": "REQUIRED_BY_LAW", "citation": "45 CFR 164.512(a) [S]", "requiresLegalRef": true, "impliesRetentionByLaw": true, "description": "Required by law"},
+    {"code": "PUBLIC_HEALTH", "citation": "45 CFR 164.512(b) [S]", "requiresLegalRef": true, "requiresMinimumNecessary": true, "description": "Public health activities"},
+    {"code": "HEALTH_OVERSIGHT", "citation": "45 CFR 164.512(d) [S]", "requiresLegalRef": true, "requiresMinimumNecessary": true, "description": "Health oversight activities"},
+    {"code": "JUDICIAL_PROCEEDINGS", "citation": "45 CFR 164.512(e) [S]", "requiresLegalRef": true, "requiresMinimumNecessary": true, "impliesRetentionByLaw": true, "description": "Judicial and administrative proceedings"},
+    {"code": "LAW_ENFORCEMENT", "citation": "45 CFR 164.512(f) [S]", "requiresLegalRef": true, "requiresMinimumNecessary": true, "description": "Law enforcement purposes"},
+    {"code": "RESEARCH_WAIVER", "citation": "45 CFR 164.512(i) [S]", "requiresStandardsAttestation": true, "requiresMinimumNecessary": true, "description": "Research with IRB / privacy board waiver"},
+    {"code": "SERIOUS_THREAT", "citation": "45 CFR 164.512(j) [S]", "requiresMinimumNecessary": true, "description": "Averting a serious threat to health or safety"}
+  ],
+  "exemptions": [
+    {"code": "DE_IDENTIFIED", "citation": "45 CFR 164.514(a)-(b) [S]", "disappliesNoticeAndConsent": true, "disappliesErasure": true, "requiresStandardsAttestation": true, "description": "De-identified information is not PHI (safe harbour or expert determination)"},
+    {"code": "LIMITED_DATA_SET", "citation": "45 CFR 164.514(e) [S]", "requiresStandardsAttestation": true, "description": "Limited data set under a data use agreement (excluded from accounting)"}
+  ],
+  "childExemptions": [],
+  "verification": {
+    "child": [
+      {"code": "PERSONAL_REPRESENTATIVE", "citation": "45 CFR 164.502(g) [S]", "description": "Parent or guardian acting as personal representative under state law"}
+    ],
+    "guardian": [
+      {"code": "PERSONAL_REPRESENTATIVE", "citation": "45 CFR 164.502(g) [S]", "description": "Person with authority under applicable law (guardian, health-care power of attorney)"}
+    ]
+  },
+  "rights": [
+    {"code": "ACCESS", "category": "ACCESS", "citation": "45 CFR 164.524(b)(2): 30 days, one 30-day extension with written notice [V]", "processKey": "sangam-dsr-access", "slaKey": "access", "defaultDays": 30, "maxDays": 30, "extensionDays": 30},
+    {"code": "AMENDMENT", "category": "RECTIFICATION", "citation": "45 CFR 164.526(b)(2): 60 days, one 30-day extension [S]", "processKey": "sangam-dsr-rectification", "slaKey": "amendment", "defaultDays": 60, "maxDays": 60, "extensionDays": 30},
+    {"code": "ACCOUNTING", "category": "ACCOUNTING", "citation": "45 CFR 164.528(c)(1): 60 days, one 30-day extension; six-year look-back [V]", "processKey": "sangam-dsr-accounting", "slaKey": "accounting", "defaultDays": 60, "maxDays": 60, "extensionDays": 30},
+    {"code": "RESTRICTION", "category": "RESTRICTION", "citation": "45 CFR 164.522(a); (a)(1)(vi) mandatory for items paid out of pocket in full [S]; no regulatory deadline, 30 days is a Sangam default [U]", "processKey": "sangam-dsr-restriction", "slaKey": "restriction", "defaultDays": 30},
+    {"code": "CONFIDENTIAL_COMMUNICATIONS", "category": "RESTRICTION", "citation": "45 CFR 164.522(b) [S]; no regulatory deadline [U]", "processKey": "sangam-dsr-restriction", "slaKey": "restriction", "defaultDays": 30},
+    {"code": "COMPLAINT", "category": "GRIEVANCE", "citation": "45 CFR 164.530(d) [S]; no regulatory deadline [U]", "processKey": "sangam-dsr-grievance", "slaKey": "complaint", "defaultDays": 30}
+  ],
+  "accessExceptions": [
+    {"code": "PREVENTING_HARM", "citation": "45 CFR 171.201 [S]", "description": "Preventing harm"},
+    {"code": "PRIVACY", "citation": "45 CFR 171.202 [S]", "description": "Privacy"},
+    {"code": "SECURITY", "citation": "45 CFR 171.203 [S]", "description": "Security"},
+    {"code": "INFEASIBILITY", "citation": "45 CFR 171.204(b): written response within 10 business days [S]", "responseBusinessDays": 10, "description": "Infeasibility"},
+    {"code": "HEALTH_IT_PERFORMANCE", "citation": "45 CFR 171.205 [S]", "description": "Health IT performance"},
+    {"code": "MANNER", "citation": "45 CFR 171.301 [S]", "description": "Manner (alternative manner of fulfilment)"},
+    {"code": "FEES", "citation": "45 CFR 171.302 [S]", "description": "Fees"},
+    {"code": "LICENSING", "citation": "45 CFR 171.303 [S]", "description": "Licensing of interoperability elements"},
+    {"code": "TEFCA_MANNER", "citation": "45 CFR 171.403 (HTI-1, 2024) [S]", "description": "TEFCA manner"},
+    {"code": "HIPAA_DENIAL_UNREVIEWABLE", "citation": "45 CFR 164.524(a)(2) [S]", "description": "Unreviewable grounds for denial of access"},
+    {"code": "HIPAA_DENIAL_REVIEWABLE", "citation": "45 CFR 164.524(a)(3), (a)(4) [S]", "description": "Reviewable grounds; review by a licensed health care professional not involved in the original decision"}
+  ],
+  "retentionClasses": [
+    {"code": "EMTALA_TRANSFER_RECORDS", "citation": "42 CFR 489.20(r)(1): 5 years from the date of the transfer [V]", "periodDays": 1826, "description": "Medical and other records of individuals transferred to or from the hospital"},
+    {"code": "HIPAA_DOCUMENTATION", "citation": "45 CFR 164.530(j)(2): 6 years from creation or last effective date [S]", "periodDays": 2192, "description": "Policies, notices, authorisations, BAAs, breach and access records"}
+  ],
+  "authorities": [
+    {"code": "HHS-OCR", "role": "DATA_PROTECTION", "name": "U.S. Department of Health and Human Services, Office for Civil Rights", "citation": "45 CFR 164.408; breach portal [S]"},
+    {"code": "CMS-SA", "role": "INCIDENT", "name": "CMS or the State survey agency (EMTALA)", "citation": "42 CFR 489.20(m): report when there is reason to believe an individual was transferred in an unstable condition [V]; the regulation sets no hour limit [V]; 72 hours per the CMS State Operations Manual, Appendix V [U]",
+      "recipients": [], "deadlineHours": 72, "warnHours": 48,
+      "catalogue": [
+        {"code": "EMTALA_INAPPROPRIATE_TRANSFER", "label": "Receipt of an individual with an emergency medical condition transferred in violation of 42 CFR 489.24(e)"},
+        {"code": "EMTALA_SCREENING_REFUSAL", "label": "Suspected failure to provide a medical screening examination or stabilising treatment (42 CFR 489.24(a), (d))"}
+      ],
+      "formItems": [
+        {"key": "organisation", "label": "Receiving hospital"},
+        {"key": "pointOfContact", "label": "Hospital contact"},
+        {"key": "incidentType", "label": "Type"},
+        {"key": "occurredAt", "label": "Date and time of arrival"},
+        {"key": "noticedAt", "label": "Date and time the hospital had reason to believe"},
+        {"key": "timeZone", "label": "Time zone"},
+        {"key": "description", "label": "Facts (transferring hospital, condition on arrival)"},
+        {"key": "actionsTaken", "label": "Actions taken"}
+      ]},
+    {"code": "STATE-AG", "role": "INCIDENT_SECONDARY", "name": "State attorney general / state regulator (state breach laws)", "citation": "State statutes [U]"}
+  ],
+  "breach": {
+    "authority": "HHS-OCR",
+    "citation": "45 CFR 164.400-414",
+    "initialTiming": "PLAN",
+    "initialItems": [
+      {"key": "description", "citation": "HHS breach portal [U]", "label": "Brief description of the breach"},
+      {"key": "timing", "citation": "HHS breach portal [U]", "label": "Date of breach and date of discovery"},
+      {"key": "extent", "citation": "HHS breach portal [U]", "label": "Number of individuals affected"},
+      {"key": "nature", "citation": "HHS breach portal [U]", "label": "Type of breach and location of the information"},
+      {"key": "safeguards", "citation": "HHS breach portal [U]", "label": "Safeguards in place and actions taken"}
+    ],
+    "detailedReportHours": 0,
+    "detailedItems": [],
+    "subjectTiming": "PLAN",
+    "subjectItems": [
+      {"key": "description", "citation": "164.404(c)(1)(A) [V]", "label": "What happened, with the date of the breach and of discovery"},
+      {"key": "phiTypes", "citation": "164.404(c)(1)(B) [V]", "label": "Types of unsecured PHI involved"},
+      {"key": "safetySteps", "citation": "164.404(c)(1)(C) [V]", "label": "Steps individuals should take to protect themselves"},
+      {"key": "mitigation", "citation": "164.404(c)(1)(D) [V]", "label": "What the entity is doing to investigate, mitigate and protect"},
+      {"key": "contact", "citation": "164.404(c)(1)(E) [V]", "label": "Contact procedures: toll-free number, e-mail, website or postal address"}
+    ],
+    "riskAssessment": {
+      "presumption": "NOTIFIABLE_UNLESS_LOW_PROBABILITY",
+      "factors": [
+        {"key": "natureAndExtent", "citation": "164.402(2)(i) [S]", "label": "Nature and extent of the PHI, including identifiers and likelihood of re-identification"},
+        {"key": "unauthorisedPerson", "citation": "164.402(2)(ii) [S]", "label": "The unauthorised person who used the PHI or to whom it was disclosed"},
+        {"key": "acquiredOrViewed", "citation": "164.402(2)(iii) [S]", "label": "Whether the PHI was actually acquired or viewed"},
+        {"key": "mitigationExtent", "citation": "164.402(2)(iv) [S]", "label": "Extent to which the risk has been mitigated"}
+      ]
+    },
+    "lawEnforcementDelay": {"oralMaxDays": 30, "citation": "45 CFR 164.412(b) [S]"},
+    "notifications": [
+      {"code": "INDIVIDUALS", "recipient": "SUBJECTS", "deadlineMode": "FROM_AWARENESS", "deadlineHours": 1440, "citation": "45 CFR 164.404(b): without unreasonable delay, no later than 60 calendar days after discovery [V]; substitute notice 164.404(d)(2) (fewer than 10 / 10 or more: 90-day web posting or major media and a toll-free number active 90 days) [V]; urgent telephone notice 164.404(d)(3) [V]"},
+      {"code": "MEDIA", "recipient": "MEDIA", "minAffectedInRegion": 501, "deadlineMode": "FROM_AWARENESS", "deadlineHours": 1440, "citation": "45 CFR 164.406: more than 500 residents of a State or jurisdiction [S]"},
+      {"code": "HHS_500_OR_MORE", "recipient": "AUTHORITY", "authority": "HHS-OCR", "minAffected": 500, "deadlineMode": "FROM_AWARENESS", "deadlineHours": 1440, "citation": "45 CFR 164.408(b): contemporaneously with the individual notice [V]"},
+      {"code": "HHS_ANNUAL_LOG", "recipient": "AUTHORITY", "authority": "HHS-OCR", "maxAffected": 499, "deadlineMode": "AFTER_YEAR_END", "deadlineHours": 1440, "citation": "45 CFR 164.408(c): not later than 60 days after the end of each calendar year [V]"},
+      {"code": "BA_TO_COVERED_ENTITY", "recipient": "CONTROLLER", "whenAttribute": "business-associate", "deadlineMode": "FROM_AWARENESS", "deadlineHours": 1440, "citation": "45 CFR 164.410(b): without unreasonable delay, no later than 60 days after discovery, identity of each individual [S]"}
+    ]
+  },
+  "contactRoles": [
+    {"code": "PRIVACY_OFFICER", "citation": "45 CFR 164.530(a)(1)(i) [S]", "published": true, "description": "Privacy official"},
+    {"code": "CONTACT_PERSON", "citation": "45 CFR 164.530(a)(1)(ii) [S]", "published": true, "description": "Contact person or office for complaints and the notice of privacy practices"},
+    {"code": "SECURITY_OFFICER", "citation": "45 CFR 164.308(a)(2) [S]", "description": "Security official"},
+    {"code": "CMS_SA_POC", "citation": "42 CFR 489.20(m) [V]", "description": "Hospital contact for EMTALA reports"}
+  ],
+  "accountability": {
+    "elevatedTierName": "Covered entity",
+    "impactAssessmentMonths": 12,
+    "evidence": [
+      {"code": "RISK_ANALYSIS", "citation": "45 CFR 164.308(a)(1)(ii)(A)-(B) [S]; the rule says accurate and thorough, period not fixed: 12 months is a Sangam default [U]", "months": 12, "description": "Security risk analysis and risk management plan"},
+      {"code": "ACTIVITY_REVIEW", "citation": "45 CFR 164.308(a)(1)(ii)(D) [S]; frequency is a Sangam default [U]", "months": 1, "description": "Information system activity review (audit logs, access reports)"},
+      {"code": "SECURITY_EVALUATION", "citation": "45 CFR 164.308(a)(8) periodic evaluation [S]; 12 months default [U]", "months": 12, "description": "Technical and non-technical evaluation"},
+      {"code": "CONTINGENCY_PLAN_TEST", "citation": "45 CFR 164.308(a)(7) [S]; 12 months default [U]", "months": 12, "description": "Data backup, disaster recovery and emergency mode test"},
+      {"code": "WORKFORCE_TRAINING", "citation": "45 CFR 164.530(b), 164.308(a)(5) [S]; 12 months default [U]", "months": 12, "description": "Privacy and security awareness training"},
+      {"code": "BAA_REVIEW", "citation": "45 CFR 164.502(e), 164.504(e) [S]; HHS OCR audit protocol, 12-month cycle is SYNTHETIC [U]", "months": 12, "description": "Business associate inventory and agreement review"},
+      {"code": "INFORMATION_BLOCKING_REVIEW", "citation": "45 CFR 171 [S]; review cycle is a Sangam default [U]", "months": 12, "description": "Review of practices and exception documentation (information blocking)"},
+      {"code": "SECURITY_INCIDENT_PROCEDURE_REVIEW", "citation": "45 CFR 164.308(a)(6) [S]; 12 months default [U]", "months": 12, "description": "Security incident procedures: identify, respond, mitigate, document"}
+    ]
+  },
+  "hosting": {
+    "categories": [
+      {"code": "CLOUD_WITH_BAA", "acceptableForPublicSector": true, "citation": "45 CFR 164.502(e), 164.308(b) [S]"},
+      {"code": "ON_PREMISES", "acceptableForPublicSector": true, "citation": ""},
+      {"code": "OTHER", "acceptableForPublicSector": false, "citation": "no business associate agreement"}
+    ],
+    "localisedCategories": []
+  },
+  "transfer": {"mode": "NONE"},
+  "nationalIdentifiers": [
+    {"code": "SSN", "regex": "(?<![0-9])[0-9]{3}-[0-9]{2}-[0-9]{4}(?![0-9])", "checksum": "NONE", "keepLast": 4, "citation": "HIPAA identifier 164.514(b)(2)(i)(G) [S]; masking is good practice [U]"}
+  ],
+  "lawfulRequestBases": [
+    {"code": "LAW_ENFORCEMENT_164_512F", "citation": "45 CFR 164.512(f) [S]", "recipientKind": "LAW_ENFORCEMENT"},
+    {"code": "JUDICIAL_164_512E", "citation": "45 CFR 164.512(e) [S]", "recipientKind": "COURT"},
+    {"code": "HEALTH_OVERSIGHT_164_512D", "citation": "45 CFR 164.512(d) [S]", "recipientKind": "STATE_AGENCY"},
+    {"code": "HHS_COMPLIANCE_REVIEW", "citation": "45 CFR 160.310 [S]", "recipientKind": "STATE_AGENCY"},
+    {"code": "REPRODUCTIVE_HEALTH_ATTESTATION", "citation": "45 CFR 164.509 (2024 rule) vacated nationally by N.D. Tex. in June 2025 [U]; attestation off. Set requiresAttestation=true in a pack overlay if reinstated", "recipientKind": "STATE_AGENCY", "requiresAttestation": false}
+  ],
+  "securityChecklist": [
+    {"id": "HIPAA-UNIQUE-ID", "citation": "45 CFR 164.312(a)(2)(i) [S]", "description": "Unique user identification", "fact": "identity.unique-users", "expected": "true"},
+    {"id": "HIPAA-EMERGENCY-ACCESS", "citation": "45 CFR 164.312(a)(2)(ii) [S]", "description": "Emergency access procedure (break-glass)", "fact": "access.break-glass", "expected": "set"},
+    {"id": "HIPAA-AUTO-LOGOFF", "citation": "45 CFR 164.312(a)(2)(iii) addressable [S]; 15 minutes is a Sangam default [U]", "description": "Automatic logoff", "fact": "session.idle-minutes", "expected": "<=15"},
+    {"id": "HIPAA-ENCRYPTION", "citation": "45 CFR 164.312(a)(2)(iv), (e)(2)(ii) addressable [S]", "description": "Encryption of ePHI at rest", "fact": "encryption.at-rest", "expected": "true"},
+    {"id": "HIPAA-AUDIT-CONTROLS", "citation": "45 CFR 164.312(b) [S]", "description": "Audit controls (tamper-evident audit chain)", "fact": "audit.chain", "expected": "true"},
+    {"id": "HIPAA-INTEGRITY", "citation": "45 CFR 164.312(c) [S]", "description": "Integrity controls", "fact": "integrity.controls", "expected": "true"},
+    {"id": "HIPAA-TRANSMISSION", "citation": "45 CFR 164.312(e) [S]", "description": "Transmission security (TLS on every connector)", "fact": "tls.enabled", "expected": "true"},
+    {"id": "HIPAA-RISK-ANALYSIS", "citation": "45 CFR 164.308(a)(1)(ii)(A) [S]", "description": "Risk analysis within 12 months", "activity": "risk-analysis", "maxAgeMonths": 12},
+    {"id": "HIPAA-ACTIVITY-REVIEW", "citation": "45 CFR 164.308(a)(1)(ii)(D) [S]", "description": "Information system activity review within a month", "activity": "activity-review", "maxAgeMonths": 1},
+    {"id": "NPRM-MFA", "citation": "90 FR 898 (6 Jan 2025) proposed, not final [U]", "description": "Mandatory MFA (proposed)", "fact": "mfa.enforced", "expected": "true", "enforced": false},
+    {"id": "NPRM-ENCRYPTION", "citation": "90 FR 898 proposed [U]", "description": "Mandatory encryption at rest and in transit (proposed)", "fact": "encryption.at-rest", "expected": "true", "enforced": false},
+    {"id": "NPRM-RESTORE-72H", "citation": "90 FR 898 proposed [U]", "description": "Restore systems within 72 hours (proposed)", "activity": "restore-test", "maxAgeMonths": 12, "enforced": false},
+    {"id": "NPRM-ANNUAL-AUDIT", "citation": "90 FR 898 proposed [U]", "description": "Annual compliance audit (proposed)", "activity": "compliance-audit", "maxAgeMonths": 12, "enforced": false}
+  ],
+  "regions": [
+    {"code": "US-CA", "name": "California", "verified": false, "citation": "Cal. Civ. Code 1798.82 (most expedient time); Health & Safety Code 1280.15 (licensed clinics and facilities: 15 business days) [U]",
+      "limits": {"breach.INDIVIDUALS.deadlineHours": 360},
+      "breachNotifications": [{"code": "STATE_AG", "recipient": "AUTHORITY", "authority": "STATE-AG", "minAffectedInRegion": 501, "deadlineMode": "FROM_AWARENESS", "deadlineHours": 360, "citation": "Cal. Civ. Code 1798.82(f): AG sample copy when more than 500 residents [U]"}]},
+    {"code": "US-TX", "name": "Texas", "verified": false, "citation": "Tex. Bus. & Com. Code 521.053: individuals within 60 days; AG within 30 days when 250 or more residents [U]",
+      "breachNotifications": [{"code": "STATE_AG", "recipient": "AUTHORITY", "authority": "STATE-AG", "minAffectedInRegion": 250, "deadlineMode": "FROM_AWARENESS", "deadlineHours": 720, "citation": "Tex. Bus. & Com. Code 521.053(i) [U]"}]},
+    {"code": "US-FL", "name": "Florida", "verified": false, "citation": "Fla. Stat. 501.171: individuals within 30 days; Department of Legal Affairs within 30 days when 500 or more [U]",
+      "limits": {"breach.INDIVIDUALS.deadlineHours": 720},
+      "breachNotifications": [{"code": "STATE_AG", "recipient": "AUTHORITY", "authority": "STATE-AG", "minAffectedInRegion": 500, "deadlineMode": "FROM_AWARENESS", "deadlineHours": 720, "citation": "Fla. Stat. 501.171(3) [U]"}]},
+    {"code": "US-NY", "name": "New York", "verified": false, "citation": "N.Y. Gen. Bus. Law 899-aa: individuals within 30 days (2024 amendment); AG, Department of State and State Police notice [U]",
+      "limits": {"breach.INDIVIDUALS.deadlineHours": 720},
+      "breachNotifications": [{"code": "STATE_AG", "recipient": "AUTHORITY", "authority": "STATE-AG", "deadlineMode": "FROM_AWARENESS", "deadlineHours": 720, "citation": "N.Y. Gen. Bus. Law 899-aa(8) [U]"}]},
+    {"code": "US-CO", "name": "Colorado", "verified": false, "citation": "C.R.S. 6-1-716: individuals within 30 days; AG when 500 or more residents [U]",
+      "limits": {"breach.INDIVIDUALS.deadlineHours": 720},
+      "breachNotifications": [{"code": "STATE_AG", "recipient": "AUTHORITY", "authority": "STATE-AG", "minAffectedInRegion": 500, "deadlineMode": "FROM_AWARENESS", "deadlineHours": 720, "citation": "C.R.S. 6-1-716(2)(f) [U]"}]},
+    {"code": "US-WA", "name": "Washington", "verified": false, "citation": "RCW 19.255.010: individuals within 30 days; AG when more than 500 residents [U]",
+      "limits": {"breach.INDIVIDUALS.deadlineHours": 720},
+      "breachNotifications": [{"code": "STATE_AG", "recipient": "AUTHORITY", "authority": "STATE-AG", "minAffectedInRegion": 501, "deadlineMode": "FROM_AWARENESS", "deadlineHours": 720, "citation": "RCW 19.255.010(7) [U]"}]}
+  ],
+  "noticeLint": ["waive your right", "cannot revoke", "may not complain", "irrevocable"],
+  "noticeTemplates": "compliance/jurisdictions/US-HIPAA/notices",
+  "obligations": "compliance/jurisdictions/US-HIPAA/obligations.tsv"
+}

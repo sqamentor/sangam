@@ -1,0 +1,56 @@
+{
+  "key": "sec-bank-aml-str/l2",
+  "version": "1.0.0",
+  "pack": "sec.bank.aml-str",
+  "title": {
+    "en": "L2 investigation",
+    "hi": "एल2 अन्वेषण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "findings",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "l2Decision",
+    "required": true,
+    "options": [
+      {
+        "value": "recommendStr",
+        "label": {
+          "en": "Recommend STR",
+          "hi": "एसटीआर की अनुशंसा"
+        }
+      },
+      {
+        "value": "close",
+        "label": {
+          "en": "Close",
+          "hi": "बंद करें"
+        }
+      }
+    ]
+  }
+}

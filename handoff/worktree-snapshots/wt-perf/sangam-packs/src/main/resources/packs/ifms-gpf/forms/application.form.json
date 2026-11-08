@@ -1,0 +1,72 @@
+{
+  "key": "ifms-gpf/application",
+  "version": "1.0.0",
+  "pack": "gov.ifms.gpf",
+  "title": {
+    "en": "GPF application",
+    "hi": "जीपीएफ आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "gpfAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "GPF account number",
+        "hi": "जीपीएफ खाता संख्या"
+      }
+    },
+    {
+      "id": "gpfPurpose",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Purpose of advance / withdrawal",
+        "hi": "अग्रिम / आहरण का प्रयोजन"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "gpfBalance",
+      "type": "money",
+      "required": false,
+      "label": {
+        "en": "GPF balance",
+        "hi": "जीपीएफ शेष"
+      }
+    },
+    {
+      "id": "qualifyingService",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Qualifying service (years)",
+        "hi": "अर्हक सेवा (वर्ष)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

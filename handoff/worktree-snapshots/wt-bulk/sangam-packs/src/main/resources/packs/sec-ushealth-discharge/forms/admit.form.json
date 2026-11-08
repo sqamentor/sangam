@@ -1,0 +1,45 @@
+{
+  "key": "sec-ushealth-discharge/admit",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.discharge",
+  "title": {
+    "en": "Admission",
+    "es": "Ingreso"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "es": "Nombre del paciente"
+      }
+    },
+    {
+      "id": "medicareBeneficiary",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Medicare beneficiary",
+        "es": "Beneficiario de Medicare"
+      }
+    },
+    {
+      "id": "observationStatus",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Outpatient in observation",
+        "es": "Paciente ambulatorio en observación"
+      }
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "id": "gov.ifms.budget-formulation",
+  "version": "1.0.0",
+  "name": {
+    "en": "Budget estimates (BE / RE)",
+    "hi": "बजट अनुमान (बीई / आरई)"
+  },
+  "domain": "IFMS",
+  "description": "Budget circular to divisions, estimates per head (BE next year, RE current year, actuals), FA scrutiny, Secretary approval, submission to the budget system (adapter), then the approved detailed demands loaded into the ledger as APPROPRIATION (ALLOCATE).",
+  "mainProcesses": [
+    "sangam-ifms-budget-formulation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-budget-formulation/sangam-ifms-budget-formulation.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-budget-formulation/ifms-formulation-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-budget-formulation/ifms-formulation-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-budget-formulation/forms/estimates.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-budget-formulation/forms/fa.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-budget-formulation/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-budget-formulation/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "ledger.allocate",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Load the approved appropriation (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "budget.submit",
+      "capabilityClass": "b",
+      "govTag": "G-BUDGET",
+      "purpose": "Budget information system (UBIS / state system)"
+    }
+  ],
+  "covers": [
+    "IFC-043",
+    "IFC-044",
+    "IFC-045",
+    "IFC-046",
+    "IFC-052",
+    "IFC-053",
+    "IFC-054",
+    "IFC-055",
+    "IFS-005",
+    "IFS-009",
+    "IFS-CT-005",
+    "IFS-UP-002",
+    "IFS-DL-005",
+    "GA-29",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-formulation-powers",
+      "rule": "CAA BUDGET_ESTIMATE no monetary limit",
+      "reason": "the approving authority of the estimates and the absence of a money ceiling are not read from the rule text (corpus IFC-043 to IFC-053 are not verified for powers); confirm from the budget circular / delegation order and deploy it as a tenant DMN override"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "beAmount",
+      "powerLimit",
+      "reAmount"
+    ]
+  }
+}

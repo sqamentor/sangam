@@ -1,0 +1,47 @@
+{
+  "key": "sec-ins-motor-claim/siu",
+  "version": "1.0.0",
+  "pack": "sec.ins.motor-claim",
+  "title": {
+    "en": "SIU investigation",
+    "hi": "विशेष जाँच इकाई जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "findings",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "siuDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "genuine",
+        "label": {
+          "en": "Genuine",
+          "hi": "वास्तविक"
+        }
+      },
+      {
+        "value": "fraud",
+        "label": {
+          "en": "Fraud",
+          "hi": "धोखाधड़ी"
+        }
+      }
+    ]
+  }
+}

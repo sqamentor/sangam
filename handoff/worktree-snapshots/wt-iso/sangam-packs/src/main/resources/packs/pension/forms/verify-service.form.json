@@ -1,0 +1,56 @@
+{
+  "key": "pension/verify-service",
+  "version": "1.0.0",
+  "pack": "gov.pension",
+  "title": {
+    "en": "Verify service record",
+    "hi": "सेवा अभिलेख का सत्यापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "qualifyingService",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Qualifying service (years)",
+        "hi": "अर्हक सेवा (वर्ष)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "serviceVerdict",
+    "required": true,
+    "options": [
+      {
+        "value": "verified",
+        "label": {
+          "en": "Verified",
+          "hi": "सत्यापित"
+        }
+      },
+      {
+        "value": "failed",
+        "label": {
+          "en": "Not verified",
+          "hi": "असत्यापित"
+        }
+      }
+    ]
+  }
+}

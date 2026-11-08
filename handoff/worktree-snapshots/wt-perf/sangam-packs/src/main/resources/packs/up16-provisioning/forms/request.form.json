@@ -1,0 +1,45 @@
+{
+  "key": "up16-provisioning/request",
+  "version": "1.0.0",
+  "pack": "universal.up16-provisioning",
+  "title": {
+    "en": "Joiner / leaver",
+    "hi": "नवागत / प्रस्थानकर्ता"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "employeeId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Employee",
+        "hi": "कर्मचारी"
+      }
+    },
+    {
+      "id": "employeeName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Employee name",
+        "hi": "कर्मचारी का नाम"
+      }
+    },
+    {
+      "id": "joiningDate",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Date of joining",
+        "hi": "कार्यग्रहण तिथि"
+      }
+    }
+  ]
+}

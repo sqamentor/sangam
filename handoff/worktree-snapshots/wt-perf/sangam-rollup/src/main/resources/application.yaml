@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+# National roll-up read model. Its own database; only counts and identifiers (no personal data, section 9).
+server:
+  port: ${SANGAM_RU_PORT:8095}
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+
+spring:
+  application:
+    name: sangam-rollup
+  datasource:
+    url: ${SANGAM_RU_DB_URL:jdbc:h2:file:./data/rollup;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SANGAM_RU_DB_USER:sa}
+    password: ${SANGAM_RU_DB_PASSWORD:}
+    hikari:
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+      maximum-pool-size: ${SANGAM_RU_DB_POOL_SIZE:30}
+      pool-name: sangam-rollup
+
+sangam:
+  rollup:
+    tokens: ${SANGAM_RU_TOKENS:}
+    shards: 16
+    dedup-retention: 30d
+    per-definition-metrics: true
+    max-batch: 500
+
+management:
+  server:
+    port: ${SANGAM_RU_MANAGEMENT_PORT:8096}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+        add-additional-paths: true

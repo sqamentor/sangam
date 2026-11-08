@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: GOI.DAE
+  layer: department
+  version: 2026.11.0
+  effectiveFrom: '2024-04-01'
+  name:
+    en: Department of Atomic Energy
+    hi: परमाणु ऊर्जा विभाग
+  source: IFMS-CENTRAL section O
+placeholders:
+- path: regime.delegationBook
+  reason: '[U] DAE book not read'
+regime:
+  dfprApplies: false
+  delegationBook: DAE_BOOK
+  ruleRef: DFPR 2024 r.21(2)(c)
+  concurrenceBy: MEMBER_FINANCE
+procurement:
+  scientificDepartment: true

@@ -1,0 +1,158 @@
+{
+  "id": "gov.recruitment",
+  "version": "1.0.0",
+  "name": {
+    "en": "e-Recruitment",
+    "hi": "ई-भर्ती"
+  },
+  "domain": "e-Recruitment",
+  "description": "Notification approved and published; every application is its own case that joins the campaign (GP-08/09) with fee through the gateway (GP-15); eligibility; admit cards in bulk (GP-27); provisional scores, paid challenges to the answer key, expert review and bulk recompute (GP-47); merit list with reservation (GP-26) and roster carried forward (GP-48); document verification; waitlist promotion when a selected candidate declines or fails DV (GP-28) (D-RECRUIT).",
+  "mainProcesses": [
+    "sangam-recruitment-campaign"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/recruitment/sangam-recruitment-campaign.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/recruitment/sangam-recruitment-application.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/recruitment/recruit-fee.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/recruitment/recruit-eligibility.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/recruitment/recruit-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/recruitment/forms/requisition.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/recruitment/forms/provisional-key.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/recruitment/forms/expert-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/recruitment/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/recruitment/forms/dv.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/recruitment/seed.json"
+    }
+  ],
+  "seed": "packs/recruitment/seed.json",
+  "connectors": [
+    {
+      "id": "recruit.publish",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Notification on the recruitment portal"
+    },
+    {
+      "id": "paygov.fee",
+      "capabilityClass": "b",
+      "govTag": "G-PG",
+      "purpose": "Application fee"
+    },
+    {
+      "id": "exam.score",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Score of a candidate for a key version"
+    },
+    {
+      "id": "docs.render",
+      "capabilityClass": "a",
+      "govTag": "G-LANG",
+      "purpose": "Admit cards and offer letters (external task)"
+    }
+  ],
+  "covers": [
+    "D-RECRUIT",
+    "GP-08",
+    "GP-09",
+    "GP-15",
+    "GP-24",
+    "GP-26",
+    "GP-27",
+    "GP-28",
+    "GP-47",
+    "GP-48",
+    "GP-33",
+    "GP-39",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [
+    {
+      "id": "GP-47",
+      "title": "Answer-key challenge and bulk recompute",
+      "refs": [
+        "GP-47",
+        "GP-09"
+      ],
+      "given": "provisional scores in round 1",
+      "when": "challenges accepted by the expert panel",
+      "then": "every application re-fetches its score into round 2; the merit list uses round 2",
+      "startVariables": {
+        "postName": "Junior Assistant",
+        "vacancies": "{\"UR\":3,\"OBC\":1,\"SC\":1}"
+      },
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: challenges accepted by the expert panel (round 2 scores)"
+      }
+    },
+    {
+      "id": "GP-28",
+      "title": "Waitlist promotion on decline",
+      "refs": [
+        "GP-28",
+        "GP-26"
+      ],
+      "given": "merit list published",
+      "when": "a selected OBC candidate declines the offer",
+      "then": "the next waitlisted OBC candidate receives the offer",
+      "startVariables": {},
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: a selected candidate declines the offer"
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "fee"
+    ]
+  }
+}

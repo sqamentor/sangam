@@ -1,0 +1,92 @@
+{
+  "key": "billing-cycle/decide",
+  "version": "1.0.0",
+  "pack": "universal.billing-cycle",
+  "title": {
+    "en": "Arrears: waive or recover",
+    "hi": "बकाया: माफ़ करें या वसूली"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "consumer",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Account / consumer",
+        "hi": "खाता / उपभोक्ता"
+      }
+    },
+    {
+      "id": "arrears",
+      "type": "money",
+      "required": false,
+      "label": {
+        "en": "Arrears",
+        "hi": "बकाया"
+      }
+    },
+    {
+      "id": "waiverAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount to waive / write off",
+        "hi": "माफ़ / बट्टे खाते की राशि"
+      }
+    },
+    {
+      "id": "orderRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Order reference",
+        "hi": "आदेश संदर्भ"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "arrearsDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "recover",
+        "label": {
+          "en": "Recover from responsible person",
+          "hi": "उत्तरदायी व्यक्ति से वसूली"
+        }
+      },
+      {
+        "value": "waive",
+        "label": {
+          "en": "Waive / write off",
+          "hi": "माफ़ / बट्टे खाते में डालें"
+        }
+      },
+      {
+        "value": "remindAgain",
+        "label": {
+          "en": "Remind again",
+          "hi": "पुनः स्मरण कराएँ"
+        }
+      }
+    ]
+  }
+}

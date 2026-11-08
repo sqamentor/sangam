@@ -1,0 +1,36 @@
+{
+  "key": "sec-bank-loan-origination/legal-officer",
+  "version": "1.0.0",
+  "pack": "sec.bank.loan-origination",
+  "title": {
+    "en": "Legal scrutiny of title",
+    "hi": "स्वत्व की विधिक संवीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "titleClear",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Title clear and marketable",
+        "hi": "स्वत्व स्पष्ट एवं विक्रय योग्य"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

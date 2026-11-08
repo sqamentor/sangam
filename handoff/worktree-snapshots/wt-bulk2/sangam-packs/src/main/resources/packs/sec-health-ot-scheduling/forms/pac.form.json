@@ -1,0 +1,47 @@
+{
+  "key": "sec-health-ot-scheduling/pac",
+  "version": "1.0.0",
+  "pack": "sec.health.ot-scheduling",
+  "title": {
+    "en": "Pre-anaesthetic check",
+    "hi": "पूर्व-निश्चेतना जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "clinicalNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Clinical notes",
+        "hi": "नैदानिक टिप्पणियाँ"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "pacDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "fit",
+        "label": {
+          "en": "Fit for use",
+          "hi": "उपयोग योग्य"
+        }
+      },
+      {
+        "value": "defer",
+        "label": {
+          "en": "Defer",
+          "hi": "स्थगित करें"
+        }
+      }
+    ]
+  }
+}

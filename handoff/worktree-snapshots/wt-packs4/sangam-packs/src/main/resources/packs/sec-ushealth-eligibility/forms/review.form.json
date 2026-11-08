@@ -1,0 +1,47 @@
+{
+  "key": "sec-ushealth-eligibility/review",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.eligibility",
+  "title": {
+    "en": "Review benefits and estimate patient responsibility",
+    "es": "Revisar beneficios y estimar la responsabilidad del paciente"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "benefitSummary",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Benefits (271)",
+        "es": "Beneficios (271)"
+      }
+    },
+    {
+      "id": "estimatedPatientShare",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Estimated patient responsibility (USD)",
+        "es": "Responsabilidad estimada del paciente (USD)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

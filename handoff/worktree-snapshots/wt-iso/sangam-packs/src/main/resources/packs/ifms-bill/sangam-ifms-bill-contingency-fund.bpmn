@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Contingency Fund withdrawal. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_bill_contingency_fu" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-ifms-bill-contingency-fund" name="Contingency Fund withdrawal" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.bill</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>billType,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="bf_contingencyfund_start" name="Contingency Fund withdrawal started" operaton:initiator="initiator" operaton:formKey="sangam:ifms-bill/contingency-fund"></startEvent>
+    <serviceTask id="bf_contingencyfund_family" name="Family defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>billFamily=CONTINGENCY_FUND</operaton:string></operaton:field><operaton:field name="defaults"><operaton:string>billType=CF_WITHDRAWAL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="bf_contingencyfund_bill" name="Bill (catalogue-driven)" calledElement="sangam-ifms-bill"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="bf_contingencyfund_end" name="Done"></endEvent>
+    <sequenceFlow id="ifms_bill_contingency_fu_f1" sourceRef="bf_contingencyfund_start" targetRef="bf_contingencyfund_family"/>
+    <sequenceFlow id="ifms_bill_contingency_fu_f2" sourceRef="bf_contingencyfund_family" targetRef="bf_contingencyfund_bill"/>
+    <sequenceFlow id="ifms_bill_contingency_fu_f3" sourceRef="bf_contingencyfund_bill" targetRef="bf_contingencyfund_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_bill_contingency_fu_diagram">
+    <bpmndi:BPMNPlane id="ifms_bill_contingency_fu_plane" bpmnElement="sangam-ifms-bill-contingency-fund">
+      <bpmndi:BPMNShape id="bf_contingencyfund_start_di" bpmnElement="bf_contingencyfund_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bf_contingencyfund_family_di" bpmnElement="bf_contingencyfund_family"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bf_contingencyfund_bill_di" bpmnElement="bf_contingencyfund_bill"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bf_contingencyfund_end_di" bpmnElement="bf_contingencyfund_end"><dc:Bounds x="547" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_bill_contingency_fu_f1_di" bpmnElement="ifms_bill_contingency_fu_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_contingency_fu_f2_di" bpmnElement="ifms_bill_contingency_fu_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_contingency_fu_f3_di" bpmnElement="ifms_bill_contingency_fu_f3"><di:waypoint x="450" y="70"/><di:waypoint x="547" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

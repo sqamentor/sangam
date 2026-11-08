@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GAP set (SANGAM.md XI.3, CF-13 / R34): message end event. SHARED, standard BPMN 2.0.2.
+  No implementation is attached on purpose (an implementation would be a vendor extension: an
+  external task / delegate on Operaton; Flowable has no message-send semantics on end events).
+  Pass criterion for E11: the model deploys, the instance reaches gap_msgEnd_end and ends, and the
+  experiment records what the engine did with the message (nothing / error / hook available).
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="gap-message-end-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <message id="gap_msgEnd_message" name="gapMessageEnd"/>
+
+  <process id="gap-message-end" name="GAP message end event" isExecutable="true">
+    <startEvent id="gap_msgEnd_start"/>
+    <sequenceFlow id="gap_msgEnd_f1" sourceRef="gap_msgEnd_start" targetRef="gap_msgEnd_end"/>
+    <endEvent id="gap_msgEnd_end" name="Send gapMessageEnd">
+      <messageEventDefinition id="gap_msgEnd_endDef" messageRef="gap_msgEnd_message"/>
+    </endEvent>
+  </process>
+</definitions>

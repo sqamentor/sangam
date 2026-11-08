@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: n-level recommendation by seat. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_recommendation" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-core-recommendation" name="Core: n-level recommendation by seat" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>RECOMMENDATION 1..n by seat without multi-instance (GP-02): the chain is recommendationSeats; any level may recommend, return to any earlier level or to the initiator, reject, seek parallel comments (J-P2-E05) or mark out of hierarchy with a reason (J-P2-E01). SoD by person and seat per level (K5, J-P2-E04). Output: recOutcome RECOMMENDED / RETURNED / REJECTED.</documentation>
+    <startEvent id="rc_start" name="Recommendation requested"></startEvent>
+    <serviceTask id="rc_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>recommendationSla=3WD;recOnBreach=ESCALATE;resubmitTo=START;outOfHierarchyAllowed=true;commentsWindow=P7D;recommendationSeats=;signEachLevel=false;signMethod=esign;espId=ESP-1</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rc_state" name="State: RECOMMENDATION" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>RECOMMENDATION</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rc_init" name="First level" operaton:class="org.sangam.packs.core.RecommendationLevelDelegate"><extensionElements><operaton:field name="op"><operaton:string>INIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rc_doneGw" name="All levels done?" default="core_recommendation_f15"></exclusiveGateway>
+    <serviceTask id="rc_recommended" name="Recommended" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>recOutcome=RECOMMENDED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rc_endRecommended" name="Recommended"></endEvent>
+    <serviceTask id="rc_level_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rc_level</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${recommendationSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="rc_level" name="Recommendation" operaton:candidateGroups="${currentSeat}" operaton:formKey="sangam:core/recommendation" operaton:dueDate="${rc_levelDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="stepSuffixVar"><operaton:string>recLevel</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>recDecision</operaton:string></operaton:field><operaton:field name="stepSuffixVar"><operaton:string>recLevel</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="rc_level_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rc_level</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>currentSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rc_level_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="rc_level_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>rc_level</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:expression>${recOnBreach}</operaton:expression></operaton:field><operaton:field name="seatVar"><operaton:string>currentSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>recDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rc_level_breachGw" name="Deemed?" default="core_recommendation_f12"></exclusiveGateway>
+    <exclusiveGateway id="rc_level_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="rc_decGw" name="Decision?" default="core_recommendation_f36"></exclusiveGateway>
+    <serviceTask id="rc_advance" name="Next level" operaton:class="org.sangam.packs.core.RecommendationLevelDelegate"><extensionElements><operaton:field name="op"><operaton:string>ADVANCE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rc_signGw" name="Sign noting?" default="core_recommendation_f19"></exclusiveGateway>
+    <serviceTask id="rc_sign" name="Sign noting (DSC / eSign)" operaton:class="org.sangam.packs.core.SignatureDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>REQUEST</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>noting</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rc_signRes" name="Signed?" default="core_recommendation_f22"></exclusiveGateway>
+    <serviceTask id="rc_signFailed" name="Signature not applied: the file has not moved" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>signature-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>currentSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rc_return" name="Return" operaton:class="org.sangam.packs.core.RecommendationLevelDelegate"><extensionElements><operaton:field name="op"><operaton:string>RETURN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rc_retGw" name="To initiator?" default="core_recommendation_f28"></exclusiveGateway>
+    <serviceTask id="rc_returned" name="Returned" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>recOutcome=RETURNED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rc_endReturned" name="Returned to initiator"></endEvent>
+    <serviceTask id="rc_mark" name="Out-of-hierarchy marking" operaton:class="org.sangam.packs.core.RecommendationLevelDelegate"><extensionElements><operaton:field name="op"><operaton:string>MARK</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rc_commentsPrep" name="Seek comments" operaton:class="org.sangam.packs.core.RecommendationLevelDelegate"><extensionElements><operaton:field name="op"><operaton:string>COMMENTS</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="rc_comments" name="Comments" operaton:candidateGroups="${commentSeats.split(',')[loopCounter]}" operaton:formKey="sangam:core/comments"><extensionElements><operaton:properties><operaton:property name="sangam.maxCardinality" value="10"/></operaton:properties><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements><multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">${commentCount}</loopCardinality></multiInstanceLoopCharacteristics></userTask>
+    <serviceTask id="rc_rejected" name="Rejected" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>recOutcome=REJECTED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rc_endRejected" name="Rejected"></endEvent>
+    <boundaryEvent id="rc_level_warn" name="SLA warning (75%)" attachedToRef="rc_level" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rc_levelWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="rc_level_breach" name="SLA breached" attachedToRef="rc_level" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${rc_levelDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="rc_commentsDeadline" name="Comment deadline" attachedToRef="rc_comments" cancelActivity="true"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${commentsWindow}</timeDuration></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="core_recommendation_f1" sourceRef="rc_start" targetRef="rc_defaults"/>
+    <sequenceFlow id="core_recommendation_f2" sourceRef="rc_defaults" targetRef="rc_state"/>
+    <sequenceFlow id="core_recommendation_f3" sourceRef="rc_state" targetRef="rc_init"/>
+    <sequenceFlow id="core_recommendation_f4" sourceRef="rc_init" targetRef="rc_doneGw"/>
+    <sequenceFlow id="core_recommendation_f5" name="done" sourceRef="rc_doneGw" targetRef="rc_recommended"><conditionExpression xsi:type="tFormalExpression">${recDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_recommendation_f6" sourceRef="rc_recommended" targetRef="rc_endRecommended"/>
+    <sequenceFlow id="core_recommendation_f7" sourceRef="rc_level_warn" targetRef="rc_level_warnNotify"/>
+    <sequenceFlow id="core_recommendation_f8" sourceRef="rc_level_warnNotify" targetRef="rc_level_warnEnd"/>
+    <sequenceFlow id="core_recommendation_f9" sourceRef="rc_level_breach" targetRef="rc_level_breachAct"/>
+    <sequenceFlow id="core_recommendation_f10" sourceRef="rc_level_breachAct" targetRef="rc_level_breachGw"/>
+    <sequenceFlow id="core_recommendation_f11" name="deemed" sourceRef="rc_level_breachGw" targetRef="rc_level_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_recommendation_f12" name="escalated" sourceRef="rc_level_breachGw" targetRef="rc_level_slaPlan"/>
+    <sequenceFlow id="core_recommendation_f13" sourceRef="rc_level_slaPlan" targetRef="rc_level"/>
+    <sequenceFlow id="core_recommendation_f14" sourceRef="rc_level" targetRef="rc_level_done"/>
+    <sequenceFlow id="core_recommendation_f15" name="next level" sourceRef="rc_doneGw" targetRef="rc_level_slaPlan"/>
+    <sequenceFlow id="core_recommendation_f16" sourceRef="rc_level_done" targetRef="rc_decGw"/>
+    <sequenceFlow id="core_recommendation_f17" name="recommend" sourceRef="rc_decGw" targetRef="rc_signGw"><conditionExpression xsi:type="tFormalExpression">${recDecision == 'recommend'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_recommendation_f18" name="CSMOP: sign before forwarding" sourceRef="rc_signGw" targetRef="rc_sign"><conditionExpression xsi:type="tFormalExpression">${signEachLevel}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_recommendation_f19" name="no signature" sourceRef="rc_signGw" targetRef="rc_advance"/>
+    <sequenceFlow id="core_recommendation_f20" sourceRef="rc_sign" targetRef="rc_signRes"/>
+    <sequenceFlow id="core_recommendation_f21" name="signed" sourceRef="rc_signRes" targetRef="rc_advance"><conditionExpression xsi:type="tFormalExpression">${signatureStatus == 'COMPLETED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_recommendation_f22" name="not signed" sourceRef="rc_signRes" targetRef="rc_signFailed"/>
+    <sequenceFlow id="core_recommendation_f23" sourceRef="rc_signFailed" targetRef="rc_level_slaPlan"/>
+    <sequenceFlow id="core_recommendation_f24" sourceRef="rc_advance" targetRef="rc_doneGw"/>
+    <sequenceFlow id="core_recommendation_f25" name="return" sourceRef="rc_decGw" targetRef="rc_return"><conditionExpression xsi:type="tFormalExpression">${recDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_recommendation_f26" sourceRef="rc_return" targetRef="rc_retGw"/>
+    <sequenceFlow id="core_recommendation_f27" name="initiator" sourceRef="rc_retGw" targetRef="rc_returned"><conditionExpression xsi:type="tFormalExpression">${recReturnedToInitiator}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_recommendation_f28" name="earlier level" sourceRef="rc_retGw" targetRef="rc_doneGw"/>
+    <sequenceFlow id="core_recommendation_f29" sourceRef="rc_returned" targetRef="rc_endReturned"/>
+    <sequenceFlow id="core_recommendation_f30" name="mark" sourceRef="rc_decGw" targetRef="rc_mark"><conditionExpression xsi:type="tFormalExpression">${recDecision == 'markTo'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_recommendation_f31" sourceRef="rc_mark" targetRef="rc_doneGw"/>
+    <sequenceFlow id="core_recommendation_f32" name="comments" sourceRef="rc_decGw" targetRef="rc_commentsPrep"><conditionExpression xsi:type="tFormalExpression">${recDecision == 'seekComments'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_recommendation_f33" sourceRef="rc_commentsPrep" targetRef="rc_comments"/>
+    <sequenceFlow id="core_recommendation_f34" sourceRef="rc_comments" targetRef="rc_level_slaPlan"/>
+    <sequenceFlow id="core_recommendation_f35" sourceRef="rc_commentsDeadline" targetRef="rc_level_slaPlan"/>
+    <sequenceFlow id="core_recommendation_f36" name="reject" sourceRef="rc_decGw" targetRef="rc_rejected"/>
+    <sequenceFlow id="core_recommendation_f37" sourceRef="rc_rejected" targetRef="rc_endRejected"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_recommendation_diagram">
+    <bpmndi:BPMNPlane id="core_recommendation_plane" bpmnElement="sangam-core-recommendation">
+      <bpmndi:BPMNShape id="rc_start_di" bpmnElement="rc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_defaults_di" bpmnElement="rc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_state_di" bpmnElement="rc_state"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_init_di" bpmnElement="rc_init"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_doneGw_di" bpmnElement="rc_doneGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_recommended_di" bpmnElement="rc_recommended"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_endRecommended_di" bpmnElement="rc_endRecommended"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_level_slaPlan_di" bpmnElement="rc_level_slaPlan"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_level_di" bpmnElement="rc_level"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_level_warnNotify_di" bpmnElement="rc_level_warnNotify"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_level_warnEnd_di" bpmnElement="rc_level_warnEnd"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_level_breachAct_di" bpmnElement="rc_level_breachAct"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_level_breachGw_di" bpmnElement="rc_level_breachGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_level_done_di" bpmnElement="rc_level_done"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_decGw_di" bpmnElement="rc_decGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_advance_di" bpmnElement="rc_advance"><dc:Bounds x="2330" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_signGw_di" bpmnElement="rc_signGw"><dc:Bounds x="1860" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_sign_di" bpmnElement="rc_sign"><dc:Bounds x="2000" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_signRes_di" bpmnElement="rc_signRes"><dc:Bounds x="2190" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_signFailed_di" bpmnElement="rc_signFailed"><dc:Bounds x="2330" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_return_di" bpmnElement="rc_return"><dc:Bounds x="1835" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_retGw_di" bpmnElement="rc_retGw"><dc:Bounds x="2025" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_returned_di" bpmnElement="rc_returned"><dc:Bounds x="2165" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_endReturned_di" bpmnElement="rc_endReturned"><dc:Bounds x="2362" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_mark_di" bpmnElement="rc_mark"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_commentsPrep_di" bpmnElement="rc_commentsPrep"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_comments_di" bpmnElement="rc_comments"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_rejected_di" bpmnElement="rc_rejected"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_endRejected_di" bpmnElement="rc_endRejected"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_level_warn_di" bpmnElement="rc_level_warn"><dc:Bounds x="1018" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_level_breach_di" bpmnElement="rc_level_breach"><dc:Bounds x="1048" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rc_commentsDeadline_di" bpmnElement="rc_commentsDeadline"><dc:Bounds x="2008" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_recommendation_f1_di" bpmnElement="core_recommendation_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f2_di" bpmnElement="core_recommendation_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f3_di" bpmnElement="core_recommendation_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f4_di" bpmnElement="core_recommendation_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f5_di" bpmnElement="core_recommendation_f5"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f6_di" bpmnElement="core_recommendation_f6"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f7_di" bpmnElement="core_recommendation_f7"><di:waypoint x="1036" y="128"/><di:waypoint x="1036" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f8_di" bpmnElement="core_recommendation_f8"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f9_di" bpmnElement="core_recommendation_f9"><di:waypoint x="1066" y="128"/><di:waypoint x="1066" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f10_di" bpmnElement="core_recommendation_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f11_di" bpmnElement="core_recommendation_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f12_di" bpmnElement="core_recommendation_f12"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="149"/><di:waypoint x="895" y="149"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f13_di" bpmnElement="core_recommendation_f13"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f14_di" bpmnElement="core_recommendation_f14"><di:waypoint x="1110" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f15_di" bpmnElement="core_recommendation_f15"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f16_di" bpmnElement="core_recommendation_f16"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f17_di" bpmnElement="core_recommendation_f17"><di:waypoint x="1745" y="70"/><di:waypoint x="1802" y="70"/><di:waypoint x="1802" y="570"/><di:waypoint x="1860" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f18_di" bpmnElement="core_recommendation_f18"><di:waypoint x="1910" y="570"/><di:waypoint x="2000" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f19_di" bpmnElement="core_recommendation_f19"><di:waypoint x="1910" y="570"/><di:waypoint x="2120" y="570"/><di:waypoint x="2120" y="695"/><di:waypoint x="2330" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f20_di" bpmnElement="core_recommendation_f20"><di:waypoint x="2100" y="570"/><di:waypoint x="2190" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f21_di" bpmnElement="core_recommendation_f21"><di:waypoint x="2240" y="570"/><di:waypoint x="2285" y="570"/><di:waypoint x="2285" y="695"/><di:waypoint x="2330" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f22_di" bpmnElement="core_recommendation_f22"><di:waypoint x="2240" y="570"/><di:waypoint x="2330" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f23_di" bpmnElement="core_recommendation_f23"><di:waypoint x="2380" y="610"/><di:waypoint x="2380" y="642"/><di:waypoint x="895" y="642"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f24_di" bpmnElement="core_recommendation_f24"><di:waypoint x="2380" y="735"/><di:waypoint x="2380" y="774"/><di:waypoint x="730" y="774"/><di:waypoint x="730" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f25_di" bpmnElement="core_recommendation_f25"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="445"/><di:waypoint x="1835" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f26_di" bpmnElement="core_recommendation_f26"><di:waypoint x="1935" y="445"/><di:waypoint x="2025" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f27_di" bpmnElement="core_recommendation_f27"><di:waypoint x="2075" y="445"/><di:waypoint x="2165" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f28_di" bpmnElement="core_recommendation_f28"><di:waypoint x="2050" y="470"/><di:waypoint x="2050" y="509"/><di:waypoint x="730" y="509"/><di:waypoint x="730" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f29_di" bpmnElement="core_recommendation_f29"><di:waypoint x="2265" y="445"/><di:waypoint x="2362" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f30_di" bpmnElement="core_recommendation_f30"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f31_di" bpmnElement="core_recommendation_f31"><di:waypoint x="1885" y="360"/><di:waypoint x="1885" y="392"/><di:waypoint x="730" y="392"/><di:waypoint x="730" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f32_di" bpmnElement="core_recommendation_f32"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f33_di" bpmnElement="core_recommendation_f33"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f34_di" bpmnElement="core_recommendation_f34"><di:waypoint x="2050" y="235"/><di:waypoint x="2050" y="260"/><di:waypoint x="895" y="260"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f35_di" bpmnElement="core_recommendation_f35"><di:waypoint x="2026" y="253"/><di:waypoint x="2026" y="285"/><di:waypoint x="895" y="285"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f36_di" bpmnElement="core_recommendation_f36"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_recommendation_f37_di" bpmnElement="core_recommendation_f37"><di:waypoint x="1935" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

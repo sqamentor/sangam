@@ -1,0 +1,84 @@
+{
+  "id": "gov.consultancy",
+  "version": "1.0.0",
+  "name": {
+    "en": "Consultancy procurement (QCBS)",
+    "hi": "परामर्श सेवा प्रापण (क्यूसीबीएस)"
+  },
+  "domain": "Procurement",
+  "description": "Expression of interest, shortlist by committee, RFP, technical evaluation, financial opening of the qualified only, combined quality-and-cost score by rule, negotiation and award (GFR consultancy chapter, synthetic weights).",
+  "mainProcesses": [
+    "sangam-consultancy"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/consultancy/sangam-consultancy.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/consultancy/forms/requirement.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/consultancy/forms/technical-scores.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/consultancy/forms/financial.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/consultancy/forms/negotiation.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/consultancy/seed.json"
+    }
+  ],
+  "seed": "packs/consultancy/seed.json",
+  "connectors": [
+    {
+      "id": "cppp.publish",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "EOI / RFP publication"
+    },
+    {
+      "id": "eproc.qcbs",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Combined score ranking"
+    }
+  ],
+  "covers": [
+    "GP-03",
+    "GP-04",
+    "GP-23",
+    "GP-24",
+    "GP-25",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-committee",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "estimateAmount",
+      "financialQuote",
+      "negotiatedAmount"
+    ]
+  }
+}

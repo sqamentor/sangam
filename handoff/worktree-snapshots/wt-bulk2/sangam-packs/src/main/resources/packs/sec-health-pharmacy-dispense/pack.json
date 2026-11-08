@@ -1,0 +1,74 @@
+{
+  "id": "sec.health.pharmacy-dispense",
+  "version": "1.0.0",
+  "name": {
+    "en": "Pharmacy dispensing with schedule controls",
+    "hi": "अनुसूची नियंत्रण सहित औषधि वितरण"
+  },
+  "domain": "Healthcare",
+  "description": "Prescription check by schedule (Drugs and Cosmetics Rules: H, H1, X; NDPS): prescriber verified on the National Medical Register, pharmacist review (dose, interactions, allergy) with clarification from the prescriber, second pharmacist for X / NDPS, issue by batch and expiry, Schedule H1 register entry retained for three years.",
+  "mainProcesses": [
+    "sangam-sec-health-pharmacy"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-health-pharmacy-dispense/sangam-sec-health-pharmacy.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-health-pharmacy-dispense/sec-health-drug-control.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-pharmacy-dispense/forms/prescription.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-pharmacy-dispense/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-pharmacy-dispense/forms/second.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-health-pharmacy-dispense/seed.json"
+    }
+  ],
+  "seed": "packs/sec-health-pharmacy-dispense/seed.json",
+  "connectors": [
+    {
+      "id": "nmr.verify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "National Medical Register"
+    },
+    {
+      "id": "inventory.issue",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Stock issue (FEFO)"
+    },
+    {
+      "id": "docs.register",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "H1 / X register entry"
+    }
+  ],
+  "covers": [
+    "SEC-HEALTH-011",
+    "SEC-HEALTH-012",
+    "UP-05",
+    "GP-16"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-rejection"
+  ]
+}

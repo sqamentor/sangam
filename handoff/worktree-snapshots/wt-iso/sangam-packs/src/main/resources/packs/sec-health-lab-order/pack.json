@@ -1,0 +1,89 @@
+{
+  "id": "sec.health.lab-order",
+  "version": "1.0.0",
+  "name": {
+    "en": "Laboratory order to report",
+    "hi": "प्रयोगशाला आदेश से रिपोर्ट तक"
+  },
+  "domain": "Healthcare",
+  "description": "Order (CPOE) with TAT by priority, sample collection and barcode, accession with rejection and re-collection, analysis and technical validation, pathologist authorisation, critical values called to the clinician with read-back within the policy time (NABH), report released as a FHIR DiagnosticReport and linked to ABHA; amended reports with reason.",
+  "mainProcesses": [
+    "sangam-sec-health-lab-order"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-health-lab-order/sangam-sec-health-lab-order.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-health-lab-order/sec-health-lab-tat.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-lab-order/forms/order.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-lab-order/forms/collect.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-lab-order/forms/check.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-lab-order/forms/run.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-lab-order/forms/authorise.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-lab-order/forms/critical.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-lab-order/forms/amend.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-health-lab-order/seed.json"
+    }
+  ],
+  "seed": "packs/sec-health-lab-order/seed.json",
+  "connectors": [
+    {
+      "id": "lis.accession",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "LIS accession"
+    },
+    {
+      "id": "lis.report",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Report release"
+    },
+    {
+      "id": "abdm.linkCareContext",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Link to ABHA"
+    }
+  ],
+  "covers": [
+    "SEC-HEALTH-009",
+    "SEC-HEALTH-010",
+    "GP-06",
+    "UP-04",
+    "UP-18"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

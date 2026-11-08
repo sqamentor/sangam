@@ -1,0 +1,65 @@
+{
+  "key": "p1-bill-payment/treasury-rejection",
+  "version": "1.0.0",
+  "pack": "gov.p1.bill-payment",
+  "title": {
+    "en": "Rejected by treasury: correct the bill",
+    "hi": "कोषागार द्वारा अस्वीकृत: बिल सुधारें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "correctedAccount",
+      "type": "masked",
+      "required": false,
+      "label": {
+        "en": "Corrected bank account",
+        "hi": "संशोधित बैंक खाता"
+      }
+    },
+    {
+      "id": "correctedIfsc",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Corrected IFSC",
+        "hi": "संशोधित आईएफएससी"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "correctDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "correct",
+        "label": {
+          "en": "Correct and resubmit",
+          "hi": "सुधार कर पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

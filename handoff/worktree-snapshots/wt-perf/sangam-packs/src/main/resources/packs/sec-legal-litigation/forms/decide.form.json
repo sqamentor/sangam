@@ -1,0 +1,56 @@
+{
+  "key": "sec-legal-litigation/decide",
+  "version": "1.0.0",
+  "pack": "sec.legal.litigation",
+  "title": {
+    "en": "Comply or appeal (within the appeal period)",
+    "hi": "अनुपालन या अपील (अपील अवधि में)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "judgment",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Judgment / final order",
+        "hi": "निर्णय / अंतिम आदेश"
+      }
+    },
+    {
+      "id": "appealRecommended",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Appeal recommended",
+        "hi": "अपील की अनुशंसा"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "judgmentDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "comply",
+        "label": {
+          "en": "Comply with judgment",
+          "hi": "निर्णय का अनुपालन करें"
+        }
+      },
+      {
+        "value": "appeal",
+        "label": {
+          "en": "File appeal",
+          "hi": "अपील दायर करें"
+        }
+      }
+    ]
+  }
+}

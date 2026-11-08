@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Tender. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_tender" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_corrigendum" name="sangam.corrigendum"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-tender" name="Tender" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.tender</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>tenderId,nitText,estimateAmount,bidDueAt</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="td_start" name="Tender initiated" operaton:initiator="initiator" operaton:formKey="sangam:tender/nit"></startEvent>
+    <serviceTask id="td_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=TENDER_NIT;amount=@estimateAmount;routingDecisionKey=tender-authority;bidOpeningSeats=BOC-1,BOC-2;tecSeats=TEC-1,TEC-2,TEC-3;financialOpeningGap=P1D;negotiationRounds=0;maxNegotiationRounds=2;retenderCount=0;maxRetenders=2;tpcSeat=TPC-CHAIR;eprocBidsCount=1;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="td_nitApproval" name="NIT approval (core sanction)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="td_publish" name="Publish NIT" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cppp.publish</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>publishNit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>tenderId,nitText,bidDueAt,openingAt</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>publish</operaton:string></operaton:field><operaton:field name="step"><operaton:string>publish</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="td_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="td_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="td_nitGw" name="sanctionOutcome?" default="tender_f5"></exclusiveGateway>
+    <eventBasedGateway id="td_window" name="Bid window (corrigendum allowed)"></eventBasedGateway>
+    <intermediateCatchEvent id="td_close" name="Bids close"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${bidDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="td_corrigendum" name="Corrigendum"><messageEventDefinition messageRef="msg_sangam_corrigendum"/></intermediateCatchEvent>
+    <serviceTask id="td_applyCorr" name="New dates on the running case (GP-07)" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>bidDueAt=@newBidDueAt;openingAt=@newOpeningAt</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="td_publishCorr" name="Publish corrigendum" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cppp.publish</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>publishCorrigendum</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>tenderId,corrigendumText,bidDueAt</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>corrigendum</operaton:string></operaton:field><operaton:field name="step"><operaton:string>corrigendum</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="td_bids" name="Bids received (EMD held)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>eproc.bidsReceived</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>count</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>tenderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>eproc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="td_refundEmd" name="Refund EMD (compensation)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true" isForCompensation="true"><extensionElements><operaton:field name="connector"><operaton:string>emd.refund</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>refundAll</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>tenderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>emdRefund</operaton:string></operaton:field><operaton:field name="step"><operaton:string>emd-refund-all</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="td_bidsGw" name="Any bids?" default="tender_f17"></exclusiveGateway>
+    <intermediateCatchEvent id="td_openingLock" name="Not before opening time (GP-24)"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${openingAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="td_retenderCount" name="Retender" operaton:expression="${execution.setVariable('retenderCount', retenderCount + 1)}"></serviceTask>
+    <serviceTask id="td_openCommittee" name="Bid opening committee" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>committeeSeats=@bidOpeningSeats;quorumRule=ALL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="td_techOpening" name="Technical bid opening (core committee)" calledElement="sangam-core-committee"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="td_tecCommittee" name="Technical evaluation committee" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>committeeSeats=@tecSeats;quorumRule=MAJORITY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="td_techEval" name="Technical evaluation (core committee, quorum)" calledElement="sangam-core-committee"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <userTask id="td_qualified" name="Record technically qualified bidders" operaton:candidateGroups="TEC-1" operaton:formKey="sangam:tender/qualified"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="td_finLockSet" name="Financial opening time" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>financialOpening</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${financialOpeningGap}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="td_finLock" name="Financial opening time lock"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${financialOpeningDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="td_finCommittee" name="Financial opening committee" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>committeeSeats=@bidOpeningSeats;quorumRule=ALL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="td_finOpening" name="Financial bid opening (core committee)" calledElement="sangam-core-committee"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="td_evaluate" name="Comparative statement, L1" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>eproc.evaluate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>compare</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>tenderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>evaluate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="td_l1Rule" name="L1 acceptability (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>tender-l1-acceptability</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <userTask id="td_negotiate" name="Negotiate with L1" operaton:candidateGroups="${tpcSeat}" operaton:formKey="sangam:tender/negotiation"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>negDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="td_awardVars" name="Award values" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>contractorId=@evaluateL1BidderId;contractValue=@evaluateL1Amount;amount=@evaluateL1Amount;caseType=TENDER_AWARD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="td_l1Gw" name="l1Action?" default="tender_f31"></exclusiveGateway>
+    <exclusiveGateway id="td_negGw" name="" default="tender_f36"></exclusiveGateway>
+    <serviceTask id="td_negotiated" name="Negotiated price" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>evaluateL1Amount=@negotiatedAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="td_retenderGw" name="Retender allowed?" default="tender_f40"></exclusiveGateway>
+    <userTask id="td_reissue" name="Re-issue NIT with new dates" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:tender/reissue"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <intermediateThrowEvent id="td_compensate" name="Refund all EMDs"><compensateEventDefinition/></intermediateThrowEvent>
+    <serviceTask id="td_failed" name="Tender failed" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>tenderOutcome=FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="td_endFailed" name="Tender failed"></endEvent>
+    <callActivity id="td_award" name="Award sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="td_emdUnsuccessful" name="Refund EMD of unsuccessful bidders" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>emd.refund</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>refundUnsuccessful</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>tenderId,contractorId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>emdUnsuccessful</operaton:string></operaton:field><operaton:field name="step"><operaton:string>emd-refund-unsuccessful</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="td_awardGw" name="sanctionOutcome?" default="tender_f45"></exclusiveGateway>
+    <serviceTask id="td_awarded" name="Awarded" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>tenderOutcome=AWARDED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="td_end" name="Awarded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="td_bidsComp" name="Refund EMD on failure" attachedToRef="td_bids" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
+    <sequenceFlow id="tender_f1" sourceRef="td_start" targetRef="td_defaults"/>
+    <sequenceFlow id="tender_f2" sourceRef="td_defaults" targetRef="td_nitApproval"/>
+    <sequenceFlow id="tender_f3" sourceRef="td_rj_reject" targetRef="td_rj_endRejected"/>
+    <sequenceFlow id="tender_f4" name="SANCTIONED" sourceRef="td_nitGw" targetRef="td_publish"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="tender_f5" name="otherwise" sourceRef="td_nitGw" targetRef="td_rj_reject"/>
+    <sequenceFlow id="tender_f6" sourceRef="td_nitApproval" targetRef="td_nitGw"/>
+    <sequenceFlow id="tender_f7" sourceRef="td_publish" targetRef="td_window"/>
+    <sequenceFlow id="tender_f8" sourceRef="td_window" targetRef="td_close"/>
+    <sequenceFlow id="tender_f9" sourceRef="td_window" targetRef="td_corrigendum"/>
+    <sequenceFlow id="tender_f10" sourceRef="td_corrigendum" targetRef="td_applyCorr"/>
+    <sequenceFlow id="tender_f11" sourceRef="td_applyCorr" targetRef="td_publishCorr"/>
+    <sequenceFlow id="tender_f12" sourceRef="td_publishCorr" targetRef="td_window"/>
+    <sequenceFlow id="tender_f13" sourceRef="td_close" targetRef="td_bids"/>
+    <sequenceFlow id="tender_f15" sourceRef="td_bids" targetRef="td_bidsGw"/>
+    <sequenceFlow id="tender_f16" name="bids received" sourceRef="td_bidsGw" targetRef="td_openingLock"><conditionExpression xsi:type="tFormalExpression">${eprocBidsCount &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="tender_f17" name="no bids" sourceRef="td_bidsGw" targetRef="td_retenderCount"/>
+    <sequenceFlow id="tender_f18" sourceRef="td_openingLock" targetRef="td_openCommittee"/>
+    <sequenceFlow id="tender_f19" sourceRef="td_openCommittee" targetRef="td_techOpening"/>
+    <sequenceFlow id="tender_f20" sourceRef="td_techOpening" targetRef="td_tecCommittee"/>
+    <sequenceFlow id="tender_f21" sourceRef="td_tecCommittee" targetRef="td_techEval"/>
+    <sequenceFlow id="tender_f22" sourceRef="td_techEval" targetRef="td_qualified"/>
+    <sequenceFlow id="tender_f23" sourceRef="td_qualified" targetRef="td_finLockSet"/>
+    <sequenceFlow id="tender_f24" sourceRef="td_finLockSet" targetRef="td_finLock"/>
+    <sequenceFlow id="tender_f25" sourceRef="td_finLock" targetRef="td_finCommittee"/>
+    <sequenceFlow id="tender_f26" sourceRef="td_finCommittee" targetRef="td_finOpening"/>
+    <sequenceFlow id="tender_f27" sourceRef="td_finOpening" targetRef="td_evaluate"/>
+    <sequenceFlow id="tender_f28" sourceRef="td_evaluate" targetRef="td_l1Rule"/>
+    <sequenceFlow id="tender_f29" name="ACCEPT" sourceRef="td_l1Gw" targetRef="td_awardVars"><conditionExpression xsi:type="tFormalExpression">${l1Action == 'ACCEPT'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="tender_f30" name="NEGOTIATE" sourceRef="td_l1Gw" targetRef="td_negotiate"><conditionExpression xsi:type="tFormalExpression">${l1Action == 'NEGOTIATE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="tender_f31" name="otherwise" sourceRef="td_l1Gw" targetRef="td_retenderCount"/>
+    <sequenceFlow id="tender_f32" sourceRef="td_l1Rule" targetRef="td_l1Gw"/>
+    <sequenceFlow id="tender_f33" sourceRef="td_negotiate" targetRef="td_negGw"/>
+    <sequenceFlow id="tender_f34" name="accepted" sourceRef="td_negGw" targetRef="td_negotiated"><conditionExpression xsi:type="tFormalExpression">${negDecision == 'accepted'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="tender_f35" sourceRef="td_negotiated" targetRef="td_awardVars"/>
+    <sequenceFlow id="tender_f36" name="declined (GP-25)" sourceRef="td_negGw" targetRef="td_retenderCount"/>
+    <sequenceFlow id="tender_f37" sourceRef="td_retenderCount" targetRef="td_retenderGw"/>
+    <sequenceFlow id="tender_f38" name="retender" sourceRef="td_retenderGw" targetRef="td_reissue"><conditionExpression xsi:type="tFormalExpression">${retenderCount &lt;= maxRetenders}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="tender_f39" sourceRef="td_reissue" targetRef="td_publish"/>
+    <sequenceFlow id="tender_f40" name="give up" sourceRef="td_retenderGw" targetRef="td_compensate"/>
+    <sequenceFlow id="tender_f41" sourceRef="td_compensate" targetRef="td_failed"/>
+    <sequenceFlow id="tender_f42" sourceRef="td_failed" targetRef="td_endFailed"/>
+    <sequenceFlow id="tender_f43" sourceRef="td_awardVars" targetRef="td_award"/>
+    <sequenceFlow id="tender_f44" name="SANCTIONED" sourceRef="td_awardGw" targetRef="td_emdUnsuccessful"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="tender_f45" name="otherwise" sourceRef="td_awardGw" targetRef="td_retenderCount"/>
+    <sequenceFlow id="tender_f46" sourceRef="td_award" targetRef="td_awardGw"/>
+    <sequenceFlow id="tender_f47" sourceRef="td_emdUnsuccessful" targetRef="td_awarded"/>
+    <sequenceFlow id="tender_f48" sourceRef="td_awarded" targetRef="td_end"/>
+    <subProcess id="td_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="td_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="td_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="td_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="td_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="tender_f49" sourceRef="td_withdrawStart" targetRef="td_withdrawKind"/>
+      <sequenceFlow id="tender_f50" sourceRef="td_withdrawKind" targetRef="td_withdrawCall"/>
+      <sequenceFlow id="tender_f51" sourceRef="td_withdrawCall" targetRef="td_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="td_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="td_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="td_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="td_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="td_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="tender_f52" sourceRef="td_cancelStart" targetRef="td_cancelKind"/>
+      <sequenceFlow id="tender_f53" sourceRef="td_cancelKind" targetRef="td_cancelCall"/>
+      <sequenceFlow id="tender_f54" sourceRef="td_cancelCall" targetRef="td_cancelEnd"/>
+    </subProcess>
+    <association id="tender_a14" associationDirection="One" sourceRef="td_bidsComp" targetRef="td_refundEmd"/>
+  </process>
+  <bpmndi:BPMNDiagram id="tender_diagram">
+    <bpmndi:BPMNPlane id="tender_plane" bpmnElement="sangam-tender">
+      <bpmndi:BPMNShape id="td_start_di" bpmnElement="td_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_defaults_di" bpmnElement="td_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_nitApproval_di" bpmnElement="td_nitApproval"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_publish_di" bpmnElement="td_publish"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_rj_reject_di" bpmnElement="td_rj_reject"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_rj_endRejected_di" bpmnElement="td_rj_endRejected"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_nitGw_di" bpmnElement="td_nitGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_window_di" bpmnElement="td_window"><dc:Bounds x="870" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_close_di" bpmnElement="td_close"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_corrigendum_di" bpmnElement="td_corrigendum"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_applyCorr_di" bpmnElement="td_applyCorr"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_publishCorr_di" bpmnElement="td_publishCorr"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_bids_di" bpmnElement="td_bids"><dc:Bounds x="1175" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_refundEmd_di" bpmnElement="td_refundEmd"><dc:Bounds x="1215" y="400" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_bidsGw_di" bpmnElement="td_bidsGw"><dc:Bounds x="1365" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_openingLock_di" bpmnElement="td_openingLock"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_retenderCount_di" bpmnElement="td_retenderCount"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_openCommittee_di" bpmnElement="td_openCommittee"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_techOpening_di" bpmnElement="td_techOpening"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_tecCommittee_di" bpmnElement="td_tecCommittee"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_techEval_di" bpmnElement="td_techEval"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_qualified_di" bpmnElement="td_qualified"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_finLockSet_di" bpmnElement="td_finLockSet"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_finLock_di" bpmnElement="td_finLock"><dc:Bounds x="2692" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_finCommittee_di" bpmnElement="td_finCommittee"><dc:Bounds x="2825" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_finOpening_di" bpmnElement="td_finOpening"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_evaluate_di" bpmnElement="td_evaluate"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_l1Rule_di" bpmnElement="td_l1Rule"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_negotiate_di" bpmnElement="td_negotiate"><dc:Bounds x="3650" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_awardVars_di" bpmnElement="td_awardVars"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_l1Gw_di" bpmnElement="td_l1Gw"><dc:Bounds x="3510" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_negGw_di" bpmnElement="td_negGw"><dc:Bounds x="3840" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_negotiated_di" bpmnElement="td_negotiated"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_retenderGw_di" bpmnElement="td_retenderGw"><dc:Bounds x="4830" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_reissue_di" bpmnElement="td_reissue"><dc:Bounds x="4970" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_compensate_di" bpmnElement="td_compensate"><dc:Bounds x="5002" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_failed_di" bpmnElement="td_failed"><dc:Bounds x="5135" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_endFailed_di" bpmnElement="td_endFailed"><dc:Bounds x="5332" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_award_di" bpmnElement="td_award"><dc:Bounds x="4310" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_emdUnsuccessful_di" bpmnElement="td_emdUnsuccessful"><dc:Bounds x="4640" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_awardGw_di" bpmnElement="td_awardGw"><dc:Bounds x="4500" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_awarded_di" bpmnElement="td_awarded"><dc:Bounds x="4805" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_end_di" bpmnElement="td_end"><dc:Bounds x="5002" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_bidsComp_di" bpmnElement="td_bidsComp"><dc:Bounds x="1183" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdraw_di" bpmnElement="td_withdraw" isExpanded="true"><dc:Bounds x="30" y="638" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdrawStart_di" bpmnElement="td_withdrawStart"><dc:Bounds x="92" y="700" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdrawKind_di" bpmnElement="td_withdrawKind"><dc:Bounds x="225" y="678" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdrawCall_di" bpmnElement="td_withdrawCall"><dc:Bounds x="390" y="678" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdrawEnd_di" bpmnElement="td_withdrawEnd"><dc:Bounds x="587" y="700" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancel_di" bpmnElement="td_cancel" isExpanded="true"><dc:Bounds x="30" y="828" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancelStart_di" bpmnElement="td_cancelStart"><dc:Bounds x="92" y="890" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancelKind_di" bpmnElement="td_cancelKind"><dc:Bounds x="225" y="868" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancelCall_di" bpmnElement="td_cancelCall"><dc:Bounds x="390" y="868" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancelEnd_di" bpmnElement="td_cancelEnd"><dc:Bounds x="587" y="890" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="tender_f1_di" bpmnElement="tender_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f2_di" bpmnElement="tender_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f3_di" bpmnElement="tender_f3"><di:waypoint x="780" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f4_di" bpmnElement="tender_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f5_di" bpmnElement="tender_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f6_di" bpmnElement="tender_f6"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f7_di" bpmnElement="tender_f7"><di:waypoint x="780" y="195"/><di:waypoint x="870" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f8_di" bpmnElement="tender_f8"><di:waypoint x="920" y="195"/><di:waypoint x="981" y="195"/><di:waypoint x="981" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f9_di" bpmnElement="tender_f9"><di:waypoint x="920" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f10_di" bpmnElement="tender_f10"><di:waypoint x="1078" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f11_di" bpmnElement="tender_f11"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f12_di" bpmnElement="tender_f12"><di:waypoint x="1390" y="235"/><di:waypoint x="1390" y="274"/><di:waypoint x="895" y="274"/><di:waypoint x="895" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f13_di" bpmnElement="tender_f13"><di:waypoint x="1078" y="320"/><di:waypoint x="1175" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f15_di" bpmnElement="tender_f15"><di:waypoint x="1275" y="320"/><di:waypoint x="1365" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f16_di" bpmnElement="tender_f16"><di:waypoint x="1415" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f17_di" bpmnElement="tender_f17"><di:waypoint x="1415" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f18_di" bpmnElement="tender_f18"><di:waypoint x="1573" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f19_di" bpmnElement="tender_f19"><di:waypoint x="1770" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f20_di" bpmnElement="tender_f20"><di:waypoint x="1935" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f21_di" bpmnElement="tender_f21"><di:waypoint x="2100" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f22_di" bpmnElement="tender_f22"><di:waypoint x="2265" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f23_di" bpmnElement="tender_f23"><di:waypoint x="2430" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f24_di" bpmnElement="tender_f24"><di:waypoint x="2595" y="320"/><di:waypoint x="2692" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f25_di" bpmnElement="tender_f25"><di:waypoint x="2728" y="320"/><di:waypoint x="2825" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f26_di" bpmnElement="tender_f26"><di:waypoint x="2925" y="320"/><di:waypoint x="2990" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f27_di" bpmnElement="tender_f27"><di:waypoint x="3090" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f28_di" bpmnElement="tender_f28"><di:waypoint x="3255" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f29_di" bpmnElement="tender_f29"><di:waypoint x="3560" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f30_di" bpmnElement="tender_f30"><di:waypoint x="3560" y="320"/><di:waypoint x="3650" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f31_di" bpmnElement="tender_f31"><di:waypoint x="3560" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f32_di" bpmnElement="tender_f32"><di:waypoint x="3420" y="320"/><di:waypoint x="3510" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f33_di" bpmnElement="tender_f33"><di:waypoint x="3750" y="320"/><di:waypoint x="3840" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f34_di" bpmnElement="tender_f34"><di:waypoint x="3890" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f35_di" bpmnElement="tender_f35"><di:waypoint x="4080" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f36_di" bpmnElement="tender_f36"><di:waypoint x="3890" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f37_di" bpmnElement="tender_f37"><di:waypoint x="4740" y="320"/><di:waypoint x="4830" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f38_di" bpmnElement="tender_f38"><di:waypoint x="4880" y="320"/><di:waypoint x="4925" y="320"/><di:waypoint x="4925" y="445"/><di:waypoint x="4970" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f39_di" bpmnElement="tender_f39"><di:waypoint x="5020" y="485"/><di:waypoint x="5020" y="510"/><di:waypoint x="730" y="510"/><di:waypoint x="730" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f40_di" bpmnElement="tender_f40"><di:waypoint x="4880" y="320"/><di:waypoint x="5002" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f41_di" bpmnElement="tender_f41"><di:waypoint x="5038" y="320"/><di:waypoint x="5135" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f42_di" bpmnElement="tender_f42"><di:waypoint x="5235" y="320"/><di:waypoint x="5332" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f43_di" bpmnElement="tender_f43"><di:waypoint x="4245" y="320"/><di:waypoint x="4310" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f44_di" bpmnElement="tender_f44"><di:waypoint x="4550" y="320"/><di:waypoint x="4595" y="320"/><di:waypoint x="4595" y="445"/><di:waypoint x="4640" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f45_di" bpmnElement="tender_f45"><di:waypoint x="4550" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f46_di" bpmnElement="tender_f46"><di:waypoint x="4410" y="320"/><di:waypoint x="4500" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f47_di" bpmnElement="tender_f47"><di:waypoint x="4740" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f48_di" bpmnElement="tender_f48"><di:waypoint x="4905" y="445"/><di:waypoint x="4953" y="445"/><di:waypoint x="4953" y="570"/><di:waypoint x="5002" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f49_di" bpmnElement="tender_f49"><di:waypoint x="128" y="718"/><di:waypoint x="225" y="718"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f50_di" bpmnElement="tender_f50"><di:waypoint x="325" y="718"/><di:waypoint x="390" y="718"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f51_di" bpmnElement="tender_f51"><di:waypoint x="490" y="718"/><di:waypoint x="587" y="718"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f52_di" bpmnElement="tender_f52"><di:waypoint x="128" y="908"/><di:waypoint x="225" y="908"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f53_di" bpmnElement="tender_f53"><di:waypoint x="325" y="908"/><di:waypoint x="390" y="908"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_f54_di" bpmnElement="tender_f54"><di:waypoint x="490" y="908"/><di:waypoint x="587" y="908"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="tender_a14_di" bpmnElement="tender_a14"><di:waypoint x="1201" y="378"/><di:waypoint x="1265" y="400"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

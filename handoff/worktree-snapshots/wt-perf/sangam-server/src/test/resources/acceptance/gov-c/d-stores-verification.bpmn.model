@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_dsv">
+  <!-- D-STORES-VERIFICATION: annual physical verification (GFR 213) over the stock register; each discrepancy opens a
+       d-stores-discrepancy case (survey board, write-off against the stock ledger or recovery, GFR 217). -->
+  <process id="d-stores-verification" name="D-STORES-VERIFICATION Annual stock verification" isExecutable="true">
+    <startEvent id="dsv_start"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">R/2027-03-31T04:30:00Z/P1Y</timeCycle></timerEventDefinition></startEvent>
+    <sequenceFlow id="f1" sourceRef="dsv_start" targetRef="dsv_load"/>
+    <serviceTask id="dsv_load" name="Load stock register" @@ext|stock-register@@/>
+    <sequenceFlow id="f2" sourceRef="dsv_load" targetRef="dsv_items"/>
+    <subProcess id="dsv_items" name="Verify item">
+      <multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">${itemCount}</loopCardinality></multiInstanceLoopCharacteristics>
+      <startEvent id="dsv_iStart"/>
+      <sequenceFlow id="i1" sourceRef="dsv_iStart" targetRef="dsv_verify"/>
+      <userTask id="dsv_verify" name="Physically verify item"><potentialOwner><resourceAssignmentExpression><formalExpression>group(verification-board)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="i2" sourceRef="dsv_verify" targetRef="dsv_gw"/>
+      <exclusiveGateway id="dsv_gw" default="i4"/>
+      <sequenceFlow id="i3" sourceRef="dsv_gw" targetRef="dsv_iEndOk"><conditionExpression xsi:type="tFormalExpression">${physicalQty == bookQty}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="i4" sourceRef="dsv_gw" targetRef="dsv_open"/>
+      <serviceTask id="dsv_open" name="Open discrepancy case" @@ext|open-discrepancy;nonexclusive@@/>
+      <sequenceFlow id="i5" sourceRef="dsv_open" targetRef="dsv_iEndCase"/>
+      <endEvent id="dsv_iEndOk"/>
+      <endEvent id="dsv_iEndCase"/>
+    </subProcess>
+    <sequenceFlow id="f3" sourceRef="dsv_items" targetRef="dsv_report"/>
+    <userTask id="dsv_report" name="Verification report to HoD"><potentialOwner><resourceAssignmentExpression><formalExpression>group(hod)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f4" sourceRef="dsv_report" targetRef="dsv_end"/>
+    <endEvent id="dsv_end"/>
+  </process>
+</definitions>

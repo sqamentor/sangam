@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Contract amendment. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_contract_amendment" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-contract-amendment" name="Contract amendment" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.contract-management</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>amendmentType,amendmentAmount,extensionDays,ldAmount,escalationAmount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ca_start" name="Amendment proposed" operaton:initiator="initiator" operaton:formKey="sangam:contract-management/proposal"></startEvent>
+    <serviceTask id="ca_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>amendmentAmount=0;extensionDays=0;delayDays=0;escalationIndex=0;contractValue=0;ldAmount=0;escalationAmount=0;caseType=VARIATION;routingDecisionKey=contract-amendment-authority;scrutinySeat=EE-CM;appealAllowed=false;outputTemplate=amendment-order</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ca_ld" name="Liquidated damages (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>contract-ld</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <businessRuleTask id="ca_escalation" name="Price escalation (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>contract-price-escalation</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="ca_amount" name="Amount for sanction" operaton:expression="${execution.setVariable('amount', amendmentAmount + escalationAmount)}"></serviceTask>
+    <callActivity id="ca_scrutiny" name="Scrutiny (core)" calledElement="sangam-core-scrutiny" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="ca_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ca_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="ca_sanction" name="Sanction by amendment power (core)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ca_scrGw" name="scrutinyOutcome?" default="contract_amendment_f8"></exclusiveGateway>
+    <serviceTask id="ca_apply" name="Apply to the running contract" operaton:class="org.sangam.packs.core.CorrelationDelegate"><extensionElements><operaton:field name="messageName"><operaton:string>sangam.amendmentApproved</operaton:string></operaton:field><operaton:field name="optional"><operaton:string>true</operaton:string></operaton:field><operaton:field name="variables"><operaton:string>amendmentType,amendmentAmount,extensionDays,ldAmount,escalationAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ca_sanGw" name="sanctionOutcome?" default="contract_amendment_f12"></exclusiveGateway>
+    <callActivity id="ca_close" name="Amendment order and closure (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ca_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="contract_amendment_f1" sourceRef="ca_start" targetRef="ca_defaults"/>
+    <sequenceFlow id="contract_amendment_f2" sourceRef="ca_defaults" targetRef="ca_ld"/>
+    <sequenceFlow id="contract_amendment_f3" sourceRef="ca_ld" targetRef="ca_escalation"/>
+    <sequenceFlow id="contract_amendment_f4" sourceRef="ca_escalation" targetRef="ca_amount"/>
+    <sequenceFlow id="contract_amendment_f5" sourceRef="ca_amount" targetRef="ca_scrutiny"/>
+    <sequenceFlow id="contract_amendment_f6" sourceRef="ca_rj_reject" targetRef="ca_rj_endRejected"/>
+    <sequenceFlow id="contract_amendment_f7" name="ACCEPTED" sourceRef="ca_scrGw" targetRef="ca_sanction"><conditionExpression xsi:type="tFormalExpression">${scrutinyOutcome == 'ACCEPTED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="contract_amendment_f8" name="otherwise" sourceRef="ca_scrGw" targetRef="ca_rj_reject"/>
+    <sequenceFlow id="contract_amendment_f9" sourceRef="ca_scrutiny" targetRef="ca_scrGw"/>
+    <sequenceFlow id="contract_amendment_f10" name="SANCTIONED" sourceRef="ca_sanGw" targetRef="ca_apply"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="contract_amendment_f11" name="RETURNED" sourceRef="ca_sanGw" targetRef="ca_scrutiny"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="contract_amendment_f12" name="otherwise" sourceRef="ca_sanGw" targetRef="ca_rj_reject"/>
+    <sequenceFlow id="contract_amendment_f13" sourceRef="ca_sanction" targetRef="ca_sanGw"/>
+    <sequenceFlow id="contract_amendment_f14" sourceRef="ca_apply" targetRef="ca_close"/>
+    <sequenceFlow id="contract_amendment_f15" sourceRef="ca_close" targetRef="ca_end"/>
+    <subProcess id="ca_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ca_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ca_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ca_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ca_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="contract_amendment_f16" sourceRef="ca_withdrawStart" targetRef="ca_withdrawKind"/>
+      <sequenceFlow id="contract_amendment_f17" sourceRef="ca_withdrawKind" targetRef="ca_withdrawCall"/>
+      <sequenceFlow id="contract_amendment_f18" sourceRef="ca_withdrawCall" targetRef="ca_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ca_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ca_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ca_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ca_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ca_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="contract_amendment_f19" sourceRef="ca_cancelStart" targetRef="ca_cancelKind"/>
+      <sequenceFlow id="contract_amendment_f20" sourceRef="ca_cancelKind" targetRef="ca_cancelCall"/>
+      <sequenceFlow id="contract_amendment_f21" sourceRef="ca_cancelCall" targetRef="ca_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="contract_amendment_diagram">
+    <bpmndi:BPMNPlane id="contract_amendment_plane" bpmnElement="sangam-contract-amendment">
+      <bpmndi:BPMNShape id="ca_start_di" bpmnElement="ca_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_defaults_di" bpmnElement="ca_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_ld_di" bpmnElement="ca_ld"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_escalation_di" bpmnElement="ca_escalation"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_amount_di" bpmnElement="ca_amount"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_scrutiny_di" bpmnElement="ca_scrutiny"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_rj_reject_di" bpmnElement="ca_rj_reject"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_rj_endRejected_di" bpmnElement="ca_rj_endRejected"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_sanction_di" bpmnElement="ca_sanction"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_scrGw_di" bpmnElement="ca_scrGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_apply_di" bpmnElement="ca_apply"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_sanGw_di" bpmnElement="ca_sanGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_close_di" bpmnElement="ca_close"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_end_di" bpmnElement="ca_end"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_withdraw_di" bpmnElement="ca_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_withdrawStart_di" bpmnElement="ca_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_withdrawKind_di" bpmnElement="ca_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_withdrawCall_di" bpmnElement="ca_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_withdrawEnd_di" bpmnElement="ca_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_cancel_di" bpmnElement="ca_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_cancelStart_di" bpmnElement="ca_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_cancelKind_di" bpmnElement="ca_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_cancelCall_di" bpmnElement="ca_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ca_cancelEnd_di" bpmnElement="ca_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="contract_amendment_f1_di" bpmnElement="contract_amendment_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f2_di" bpmnElement="contract_amendment_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f3_di" bpmnElement="contract_amendment_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f4_di" bpmnElement="contract_amendment_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f5_di" bpmnElement="contract_amendment_f5"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f6_di" bpmnElement="contract_amendment_f6"><di:waypoint x="1605" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f7_di" bpmnElement="contract_amendment_f7"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f8_di" bpmnElement="contract_amendment_f8"><di:waypoint x="1085" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f9_di" bpmnElement="contract_amendment_f9"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f10_di" bpmnElement="contract_amendment_f10"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f11_di" bpmnElement="contract_amendment_f11"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="142"/><di:waypoint x="895" y="142"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f12_di" bpmnElement="contract_amendment_f12"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f13_di" bpmnElement="contract_amendment_f13"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f14_di" bpmnElement="contract_amendment_f14"><di:waypoint x="1605" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f15_di" bpmnElement="contract_amendment_f15"><di:waypoint x="1770" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f16_di" bpmnElement="contract_amendment_f16"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f17_di" bpmnElement="contract_amendment_f17"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f18_di" bpmnElement="contract_amendment_f18"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f19_di" bpmnElement="contract_amendment_f19"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f20_di" bpmnElement="contract_amendment_f20"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="contract_amendment_f21_di" bpmnElement="contract_amendment_f21"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

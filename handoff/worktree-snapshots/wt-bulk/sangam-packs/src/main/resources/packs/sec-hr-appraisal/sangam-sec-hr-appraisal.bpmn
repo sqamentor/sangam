@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Appraisal of one employee. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_hr_appraisal" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_appealFiled" name="sangam.appealFiled"/>
+  <process id="sangam-sec-hr-appraisal" name="Appraisal of one employee" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.hr.appraisal</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ap_start" name="Employee in scope"></startEvent>
+    <serviceTask id="ap_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>employeeGroup=EMPLOYEE;managerSeat=LINE-MANAGER;reviewerSeat=REVIEWER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ap_self_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_self</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>10WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ap_self" name="Self-appraisal" operaton:candidateGroups="${employeeGroup}" operaton:formKey="sangam:sec-hr-appraisal/self" operaton:dueDate="${ap_selfDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ap_self_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_self</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>employeeGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ap_self_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ap_self_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_self</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>employeeGroup</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ap_self_breachGw" name="Deemed?" default="sec_hr_appraisal_f6"></exclusiveGateway>
+    <exclusiveGateway id="ap_self_done" name=""></exclusiveGateway>
+    <serviceTask id="ap_manager_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_manager</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>10WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ap_manager" name="Manager rating" operaton:candidateGroups="${managerSeat}" operaton:formKey="sangam:sec-hr-appraisal/manager" operaton:dueDate="${ap_managerDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ap_manager_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_manager</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>managerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ap_manager_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ap_manager_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_manager</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>managerSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ap_manager_breachGw" name="Deemed?" default="sec_hr_appraisal_f14"></exclusiveGateway>
+    <exclusiveGateway id="ap_manager_done" name=""></exclusiveGateway>
+    <serviceTask id="ap_review_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_review</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>5WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ap_review" name="Reviewer" operaton:candidateGroups="${reviewerSeat}" operaton:formKey="sangam:sec-hr-appraisal/review" operaton:dueDate="${ap_reviewDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ap_review_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_review</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reviewerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ap_review_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ap_review_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap_review</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reviewerSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ap_review_breachGw" name="Deemed?" default="sec_hr_appraisal_f22"></exclusiveGateway>
+    <exclusiveGateway id="ap_review_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="ap_gw" name="" default="sec_hr_appraisal_f31"></exclusiveGateway>
+    <serviceTask id="ap_record" name="Record rating and communicate" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hris.rating</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>record</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key,rating</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rate</operaton:string></operaton:field><operaton:field name="step"><operaton:string>rating</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="ap_appealWait" name="Appeal window"></eventBasedGateway>
+    <intermediateCatchEvent id="ap_appeal" name="Employee appeals"><messageEventDefinition messageRef="msg_sangam_appealFiled"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ap_lapse" name="Window over"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P15D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="ap_hr" name="HR decides the appeal" operaton:candidateGroups="HR-BP" operaton:formKey="sangam:sec-hr-appraisal/appeal"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>appealDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="ap_end" name="Appraised"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ap_self_warn" name="SLA warning (75%)" attachedToRef="ap_self" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_selfWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_self_breach" name="SLA breached" attachedToRef="ap_self" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_selfDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_manager_warn" name="SLA warning (75%)" attachedToRef="ap_manager" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_managerWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_manager_breach" name="SLA breached" attachedToRef="ap_manager" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_managerDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_review_warn" name="SLA warning (75%)" attachedToRef="ap_review" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_reviewWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap_review_breach" name="SLA breached" attachedToRef="ap_review" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap_reviewDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_hr_appraisal_f1" sourceRef="ap_self_warn" targetRef="ap_self_warnNotify"/>
+    <sequenceFlow id="sec_hr_appraisal_f2" sourceRef="ap_self_warnNotify" targetRef="ap_self_warnEnd"/>
+    <sequenceFlow id="sec_hr_appraisal_f3" sourceRef="ap_self_breach" targetRef="ap_self_breachAct"/>
+    <sequenceFlow id="sec_hr_appraisal_f4" sourceRef="ap_self_breachAct" targetRef="ap_self_breachGw"/>
+    <sequenceFlow id="sec_hr_appraisal_f5" name="deemed" sourceRef="ap_self_breachGw" targetRef="ap_self_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_appraisal_f6" name="escalated" sourceRef="ap_self_breachGw" targetRef="ap_self_slaPlan"/>
+    <sequenceFlow id="sec_hr_appraisal_f7" sourceRef="ap_self_slaPlan" targetRef="ap_self"/>
+    <sequenceFlow id="sec_hr_appraisal_f8" sourceRef="ap_self" targetRef="ap_self_done"/>
+    <sequenceFlow id="sec_hr_appraisal_f9" sourceRef="ap_manager_warn" targetRef="ap_manager_warnNotify"/>
+    <sequenceFlow id="sec_hr_appraisal_f10" sourceRef="ap_manager_warnNotify" targetRef="ap_manager_warnEnd"/>
+    <sequenceFlow id="sec_hr_appraisal_f11" sourceRef="ap_manager_breach" targetRef="ap_manager_breachAct"/>
+    <sequenceFlow id="sec_hr_appraisal_f12" sourceRef="ap_manager_breachAct" targetRef="ap_manager_breachGw"/>
+    <sequenceFlow id="sec_hr_appraisal_f13" name="deemed" sourceRef="ap_manager_breachGw" targetRef="ap_manager_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_appraisal_f14" name="escalated" sourceRef="ap_manager_breachGw" targetRef="ap_manager_slaPlan"/>
+    <sequenceFlow id="sec_hr_appraisal_f15" sourceRef="ap_manager_slaPlan" targetRef="ap_manager"/>
+    <sequenceFlow id="sec_hr_appraisal_f16" sourceRef="ap_manager" targetRef="ap_manager_done"/>
+    <sequenceFlow id="sec_hr_appraisal_f17" sourceRef="ap_review_warn" targetRef="ap_review_warnNotify"/>
+    <sequenceFlow id="sec_hr_appraisal_f18" sourceRef="ap_review_warnNotify" targetRef="ap_review_warnEnd"/>
+    <sequenceFlow id="sec_hr_appraisal_f19" sourceRef="ap_review_breach" targetRef="ap_review_breachAct"/>
+    <sequenceFlow id="sec_hr_appraisal_f20" sourceRef="ap_review_breachAct" targetRef="ap_review_breachGw"/>
+    <sequenceFlow id="sec_hr_appraisal_f21" name="deemed" sourceRef="ap_review_breachGw" targetRef="ap_review_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_appraisal_f22" name="escalated" sourceRef="ap_review_breachGw" targetRef="ap_review_slaPlan"/>
+    <sequenceFlow id="sec_hr_appraisal_f23" sourceRef="ap_review_slaPlan" targetRef="ap_review"/>
+    <sequenceFlow id="sec_hr_appraisal_f24" sourceRef="ap_review" targetRef="ap_review_done"/>
+    <sequenceFlow id="sec_hr_appraisal_f25" sourceRef="ap_start" targetRef="ap_defaults"/>
+    <sequenceFlow id="sec_hr_appraisal_f26" sourceRef="ap_defaults" targetRef="ap_self_slaPlan"/>
+    <sequenceFlow id="sec_hr_appraisal_f27" sourceRef="ap_self_done" targetRef="ap_manager_slaPlan"/>
+    <sequenceFlow id="sec_hr_appraisal_f28" sourceRef="ap_manager_done" targetRef="ap_review_slaPlan"/>
+    <sequenceFlow id="sec_hr_appraisal_f29" sourceRef="ap_review_done" targetRef="ap_gw"/>
+    <sequenceFlow id="sec_hr_appraisal_f30" name="return" sourceRef="ap_gw" targetRef="ap_manager_slaPlan"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_appraisal_f31" name="accept" sourceRef="ap_gw" targetRef="ap_record"/>
+    <sequenceFlow id="sec_hr_appraisal_f32" sourceRef="ap_record" targetRef="ap_appealWait"/>
+    <sequenceFlow id="sec_hr_appraisal_f33" sourceRef="ap_appealWait" targetRef="ap_appeal"/>
+    <sequenceFlow id="sec_hr_appraisal_f34" sourceRef="ap_appealWait" targetRef="ap_lapse"/>
+    <sequenceFlow id="sec_hr_appraisal_f35" sourceRef="ap_appeal" targetRef="ap_hr"/>
+    <sequenceFlow id="sec_hr_appraisal_f36" sourceRef="ap_hr" targetRef="ap_end"/>
+    <sequenceFlow id="sec_hr_appraisal_f37" sourceRef="ap_lapse" targetRef="ap_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_hr_appraisal_diagram">
+    <bpmndi:BPMNPlane id="sec_hr_appraisal_plane" bpmnElement="sangam-sec-hr-appraisal">
+      <bpmndi:BPMNShape id="ap_start_di" bpmnElement="ap_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_defaults_di" bpmnElement="ap_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_self_slaPlan_di" bpmnElement="ap_self_slaPlan"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_self_di" bpmnElement="ap_self"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_self_warnNotify_di" bpmnElement="ap_self_warnNotify"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_self_warnEnd_di" bpmnElement="ap_self_warnEnd"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_self_breachAct_di" bpmnElement="ap_self_breachAct"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_self_breachGw_di" bpmnElement="ap_self_breachGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_self_done_di" bpmnElement="ap_self_done"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_manager_slaPlan_di" bpmnElement="ap_manager_slaPlan"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_manager_di" bpmnElement="ap_manager"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_manager_warnNotify_di" bpmnElement="ap_manager_warnNotify"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_manager_warnEnd_di" bpmnElement="ap_manager_warnEnd"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_manager_breachAct_di" bpmnElement="ap_manager_breachAct"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_manager_breachGw_di" bpmnElement="ap_manager_breachGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_manager_done_di" bpmnElement="ap_manager_done"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_review_slaPlan_di" bpmnElement="ap_review_slaPlan"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_review_di" bpmnElement="ap_review"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_review_warnNotify_di" bpmnElement="ap_review_warnNotify"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_review_warnEnd_di" bpmnElement="ap_review_warnEnd"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_review_breachAct_di" bpmnElement="ap_review_breachAct"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_review_breachGw_di" bpmnElement="ap_review_breachGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_review_done_di" bpmnElement="ap_review_done"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_gw_di" bpmnElement="ap_gw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_record_di" bpmnElement="ap_record"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_appealWait_di" bpmnElement="ap_appealWait"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_appeal_di" bpmnElement="ap_appeal"><dc:Bounds x="3352" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_lapse_di" bpmnElement="ap_lapse"><dc:Bounds x="3352" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_hr_di" bpmnElement="ap_hr"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_end_di" bpmnElement="ap_end"><dc:Bounds x="3682" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_self_warn_di" bpmnElement="ap_self_warn"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_self_breach_di" bpmnElement="ap_self_breach"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_manager_warn_di" bpmnElement="ap_manager_warn"><dc:Bounds x="1348" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_manager_breach_di" bpmnElement="ap_manager_breach"><dc:Bounds x="1378" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_review_warn_di" bpmnElement="ap_review_warn"><dc:Bounds x="2173" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap_review_breach_di" bpmnElement="ap_review_breach"><dc:Bounds x="2203" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f1_di" bpmnElement="sec_hr_appraisal_f1"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f2_di" bpmnElement="sec_hr_appraisal_f2"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f3_di" bpmnElement="sec_hr_appraisal_f3"><di:waypoint x="571" y="128"/><di:waypoint x="571" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f4_di" bpmnElement="sec_hr_appraisal_f4"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f5_di" bpmnElement="sec_hr_appraisal_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f6_di" bpmnElement="sec_hr_appraisal_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f7_di" bpmnElement="sec_hr_appraisal_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f8_di" bpmnElement="sec_hr_appraisal_f8"><di:waypoint x="615" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f9_di" bpmnElement="sec_hr_appraisal_f9"><di:waypoint x="1366" y="128"/><di:waypoint x="1366" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f10_di" bpmnElement="sec_hr_appraisal_f10"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f11_di" bpmnElement="sec_hr_appraisal_f11"><di:waypoint x="1396" y="128"/><di:waypoint x="1396" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f12_di" bpmnElement="sec_hr_appraisal_f12"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f13_di" bpmnElement="sec_hr_appraisal_f13"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f14_di" bpmnElement="sec_hr_appraisal_f14"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="135"/><di:waypoint x="1225" y="135"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f15_di" bpmnElement="sec_hr_appraisal_f15"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f16_di" bpmnElement="sec_hr_appraisal_f16"><di:waypoint x="1440" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f17_di" bpmnElement="sec_hr_appraisal_f17"><di:waypoint x="2191" y="128"/><di:waypoint x="2191" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f18_di" bpmnElement="sec_hr_appraisal_f18"><di:waypoint x="2430" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f19_di" bpmnElement="sec_hr_appraisal_f19"><di:waypoint x="2221" y="128"/><di:waypoint x="2221" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f20_di" bpmnElement="sec_hr_appraisal_f20"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f21_di" bpmnElement="sec_hr_appraisal_f21"><di:waypoint x="2570" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f22_di" bpmnElement="sec_hr_appraisal_f22"><di:waypoint x="2545" y="95"/><di:waypoint x="2545" y="135"/><di:waypoint x="2050" y="135"/><di:waypoint x="2050" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f23_di" bpmnElement="sec_hr_appraisal_f23"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f24_di" bpmnElement="sec_hr_appraisal_f24"><di:waypoint x="2265" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f25_di" bpmnElement="sec_hr_appraisal_f25"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f26_di" bpmnElement="sec_hr_appraisal_f26"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f27_di" bpmnElement="sec_hr_appraisal_f27"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f28_di" bpmnElement="sec_hr_appraisal_f28"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f29_di" bpmnElement="sec_hr_appraisal_f29"><di:waypoint x="2735" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f30_di" bpmnElement="sec_hr_appraisal_f30"><di:waypoint x="2875" y="95"/><di:waypoint x="2875" y="135"/><di:waypoint x="1225" y="135"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f31_di" bpmnElement="sec_hr_appraisal_f31"><di:waypoint x="2900" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f32_di" bpmnElement="sec_hr_appraisal_f32"><di:waypoint x="3090" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f33_di" bpmnElement="sec_hr_appraisal_f33"><di:waypoint x="3230" y="70"/><di:waypoint x="3291" y="70"/><di:waypoint x="3291" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f34_di" bpmnElement="sec_hr_appraisal_f34"><di:waypoint x="3230" y="70"/><di:waypoint x="3352" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f35_di" bpmnElement="sec_hr_appraisal_f35"><di:waypoint x="3388" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f36_di" bpmnElement="sec_hr_appraisal_f36"><di:waypoint x="3585" y="195"/><di:waypoint x="3633" y="195"/><di:waypoint x="3633" y="70"/><di:waypoint x="3682" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_appraisal_f37_di" bpmnElement="sec_hr_appraisal_f37"><di:waypoint x="3388" y="70"/><di:waypoint x="3682" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

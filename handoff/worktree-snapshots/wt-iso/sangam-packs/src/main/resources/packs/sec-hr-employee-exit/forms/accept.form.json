@@ -1,0 +1,56 @@
+{
+  "key": "sec-hr-employee-exit/accept",
+  "version": "1.0.0",
+  "pack": "sec.hr.employee-exit",
+  "title": {
+    "en": "Accept resignation",
+    "hi": "त्यागपत्र स्वीकार करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "lastWorkingDay",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Last working day",
+        "hi": "अंतिम कार्य दिवस"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "resignDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

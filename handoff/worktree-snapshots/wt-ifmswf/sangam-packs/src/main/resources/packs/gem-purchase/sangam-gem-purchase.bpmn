@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Purchase of goods. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_gem_purchase" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_goodsDelivered" name="sangam.goodsDelivered"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-gem-purchase" name="Purchase of goods" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.gem-purchase</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>itemDescription,quantity,unitPrice,budgetHead,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="gm_start" name="Indent raised" operaton:initiator="initiator" operaton:formKey="sangam:gem-purchase/indent"></startEvent>
+    <serviceTask id="gm_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=PURCHASE;routingDecisionKey=gem-purchase-authority;deliveryPeriod=P30D;consigneeSeat=STORE-GM;executionConnector=gem.order;executionStep=gem-order;executionOperation=placeOrder;reconcileRequired=false;releaseConnector=ifms.release;budgetAvailable=0;appealAllowed=false;supplierAccount=;supplierIfsc=;supplierName=GeM seller</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gm_amount" name="Value" operaton:expression="${execution.setVariable('amount', quantity * unitPrice)}"></serviceTask>
+    <businessRuleTask id="gm_mode" name="Mode of procurement (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>gem-procurement-mode</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="gm_budget" name="Budget available" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ifms.budget</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>available</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>budgetHead,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>budget</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="gm_budgetGw" name="Budget?" default="gem_purchase_f9"></exclusiveGateway>
+    <serviceTask id="gm_encumber" name="Encumber" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ifms.encumber</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>encumber</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>budgetHead,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>encumber</operaton:string></operaton:field><operaton:field name="step"><operaton:string>encumber</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gm_rjBudget_code" name="Reason: BUDGET_NOT_AVAILABLE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=BUDGET_NOT_AVAILABLE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="gm_rjBudget_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gm_rjBudget_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="gm_autoGw" name="Auto-approve (GP-29)?" default="gem_purchase_f12"></exclusiveGateway>
+    <serviceTask id="gm_autoApprove" name="Auto-approval below threshold" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>BIND_DEEMED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="gm_sanction" name="Purchase sanction (core)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="gm_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gm_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="gm_modeGw" name="Mode?" default="gem_purchase_f20"></exclusiveGateway>
+    <exclusiveGateway id="gm_sanGw" name="sanctionOutcome?" default="gem_purchase_f16"></exclusiveGateway>
+    <callActivity id="gm_bid" name="Bid / outside-GeM tender (gov.tender)" calledElement="sangam-tender" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}/BID"/><operaton:in source="itemDescription" target="itemDescription"/><operaton:in source="amount" target="estimateAmount"/><operaton:in source="initiatorSeat" target="actingSeat"/><operaton:in source="initiatorPerson" target="initiator"/><operaton:in source="officeId" target="officeId"/><operaton:in source="tenderId" target="tenderId"/><operaton:in source="nitText" target="nitText"/><operaton:in source="bidDueAt" target="bidDueAt"/><operaton:in source="openingAt" target="openingAt"/><operaton:out source="tenderOutcome" target="tenderOutcome"/><operaton:out source="contractorId" target="supplierName"/></extensionElements></callActivity>
+    <callActivity id="gm_order" name="GeM order (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <userTask id="gm_bidDoc" name="Prepare bid document" operaton:candidateGroups="SO-GM" operaton:formKey="sangam:gem-purchase/bid-document"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="gm_tenderGw" name="" default="gem_purchase_f23"></exclusiveGateway>
+    <serviceTask id="gm_deliveryDue" name="Delivery period" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>delivery</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${deliveryPeriod}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="gm_orderGw" name="executionOutcome?" default="gem_purchase_f25"></exclusiveGateway>
+    <eventBasedGateway id="gm_wait" name="Delivered?"></eventBasedGateway>
+    <intermediateCatchEvent id="gm_delivered" name="Goods delivered"><messageEventDefinition messageRef="msg_sangam_goodsDelivered"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="gm_late" name="Delivery overdue"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${deliveryDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="gm_overdue" name="Delivery overdue: extend or cancel" operaton:candidateGroups="${consigneeSeat}" operaton:formKey="sangam:gem-purchase/overdue"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>lateDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="gm_lateGw" name="" default="gem_purchase_f35"></exclusiveGateway>
+    <serviceTask id="gm_terminate_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="gm_terminate_call" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gm_terminate_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="gm_inspect_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gm_inspect</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="gm_inspect" name="Inspect and accept (CRAC)" operaton:candidateGroups="${consigneeSeat}" operaton:formKey="sangam:gem-purchase/crac" operaton:dueDate="${gm_inspectDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>cracDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="gm_inspect_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gm_inspect</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>consigneeSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="gm_inspect_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="gm_inspect_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gm_inspect</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>consigneeSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>cracDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="gm_inspect_breachGw" name="Deemed?" default="gem_purchase_f41"></exclusiveGateway>
+    <exclusiveGateway id="gm_inspect_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="gm_cracGw" name="" default="gem_purchase_f48"></exclusiveGateway>
+    <serviceTask id="gm_rejectGoods" name="Reject goods on GeM" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>gem.rejectGoods</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>reject</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>acceptedQty,receivedQty</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>gemReject</operaton:string></operaton:field><operaton:field name="step"><operaton:string>reject-goods</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gm_cracDoc" name="CRAC" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>crac</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="gm_bill" name="Bill within the payment SLA (P1)" calledElement="sangam-p1-bill-payment" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}/BILL"/><operaton:in source="supplierName" target="payee"/><operaton:in source="supplierAccount" target="account"/><operaton:in source="supplierIfsc" target="ifsc"/><operaton:in source="amount" target="amount"/><operaton:in source="budgetHead" target="budgetHead"/><operaton:in source="approvedPayloadHash" target="sanctionRef"/><operaton:in source="initiatorSeat" target="actingSeat"/><operaton:in source="initiatorPerson" target="initiator"/><operaton:in source="officeId" target="officeId"/><operaton:in sourceExpression="${'3WD'}" target="scrutinySla"/><operaton:in sourceExpression="${'3WD'}" target="sanctionSla"/><operaton:out source="caseState" target="billState"/></extensionElements></callActivity>
+    <callActivity id="gm_close" name="Closure (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gm_end" name="Purchased and paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="gm_inspect_warn" name="SLA warning (75%)" attachedToRef="gm_inspect" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gm_inspectWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="gm_inspect_breach" name="SLA breached" attachedToRef="gm_inspect" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gm_inspectDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="gem_purchase_f1" sourceRef="gm_start" targetRef="gm_defaults"/>
+    <sequenceFlow id="gem_purchase_f2" sourceRef="gm_defaults" targetRef="gm_amount"/>
+    <sequenceFlow id="gem_purchase_f3" sourceRef="gm_amount" targetRef="gm_mode"/>
+    <sequenceFlow id="gem_purchase_f4" sourceRef="gm_mode" targetRef="gm_budget"/>
+    <sequenceFlow id="gem_purchase_f5" sourceRef="gm_budget" targetRef="gm_budgetGw"/>
+    <sequenceFlow id="gem_purchase_f6" name="yes" sourceRef="gm_budgetGw" targetRef="gm_encumber"><conditionExpression xsi:type="tFormalExpression">${budgetAvailable &gt;= amount}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f7" sourceRef="gm_rjBudget_reject" targetRef="gm_rjBudget_endRejected"/>
+    <sequenceFlow id="gem_purchase_f8" sourceRef="gm_rjBudget_code" targetRef="gm_rjBudget_reject"/>
+    <sequenceFlow id="gem_purchase_f9" name="no" sourceRef="gm_budgetGw" targetRef="gm_rjBudget_code"/>
+    <sequenceFlow id="gem_purchase_f10" sourceRef="gm_encumber" targetRef="gm_autoGw"/>
+    <sequenceFlow id="gem_purchase_f11" name="yes" sourceRef="gm_autoGw" targetRef="gm_autoApprove"><conditionExpression xsi:type="tFormalExpression">${autoApprove}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f12" name="no" sourceRef="gm_autoGw" targetRef="gm_sanction"/>
+    <sequenceFlow id="gem_purchase_f13" sourceRef="gm_rj_reject" targetRef="gm_rj_endRejected"/>
+    <sequenceFlow id="gem_purchase_f14" sourceRef="gm_autoApprove" targetRef="gm_modeGw"/>
+    <sequenceFlow id="gem_purchase_f15" name="SANCTIONED" sourceRef="gm_sanGw" targetRef="gm_modeGw"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f16" name="otherwise" sourceRef="gm_sanGw" targetRef="gm_rj_reject"/>
+    <sequenceFlow id="gem_purchase_f17" sourceRef="gm_sanction" targetRef="gm_sanGw"/>
+    <sequenceFlow id="gem_purchase_f18" name="bid" sourceRef="gm_modeGw" targetRef="gm_bidDoc"><conditionExpression xsi:type="tFormalExpression">${procurementMode == 'BID' || procurementMode == 'OUTSIDE_GEM'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f19" sourceRef="gm_bidDoc" targetRef="gm_bid"/>
+    <sequenceFlow id="gem_purchase_f20" name="direct / L1" sourceRef="gm_modeGw" targetRef="gm_order"/>
+    <sequenceFlow id="gem_purchase_f21" sourceRef="gm_bid" targetRef="gm_tenderGw"/>
+    <sequenceFlow id="gem_purchase_f22" name="awarded" sourceRef="gm_tenderGw" targetRef="gm_order"><conditionExpression xsi:type="tFormalExpression">${tenderOutcome == 'AWARDED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f23" name="failed" sourceRef="gm_tenderGw" targetRef="gm_rj_reject"/>
+    <sequenceFlow id="gem_purchase_f24" name="DONE" sourceRef="gm_orderGw" targetRef="gm_deliveryDue"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f25" name="otherwise" sourceRef="gm_orderGw" targetRef="gm_rj_reject"/>
+    <sequenceFlow id="gem_purchase_f26" sourceRef="gm_order" targetRef="gm_orderGw"/>
+    <sequenceFlow id="gem_purchase_f27" sourceRef="gm_deliveryDue" targetRef="gm_wait"/>
+    <sequenceFlow id="gem_purchase_f28" sourceRef="gm_wait" targetRef="gm_delivered"/>
+    <sequenceFlow id="gem_purchase_f29" sourceRef="gm_wait" targetRef="gm_late"/>
+    <sequenceFlow id="gem_purchase_f30" sourceRef="gm_late" targetRef="gm_overdue"/>
+    <sequenceFlow id="gem_purchase_f31" sourceRef="gm_overdue" targetRef="gm_lateGw"/>
+    <sequenceFlow id="gem_purchase_f32" name="extend" sourceRef="gm_lateGw" targetRef="gm_deliveryDue"><conditionExpression xsi:type="tFormalExpression">${lateDecision == 'extend'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f33" sourceRef="gm_terminate_kind" targetRef="gm_terminate_call"/>
+    <sequenceFlow id="gem_purchase_f34" sourceRef="gm_terminate_call" targetRef="gm_terminate_end"/>
+    <sequenceFlow id="gem_purchase_f35" name="terminate" sourceRef="gm_lateGw" targetRef="gm_terminate_kind"/>
+    <sequenceFlow id="gem_purchase_f36" sourceRef="gm_inspect_warn" targetRef="gm_inspect_warnNotify"/>
+    <sequenceFlow id="gem_purchase_f37" sourceRef="gm_inspect_warnNotify" targetRef="gm_inspect_warnEnd"/>
+    <sequenceFlow id="gem_purchase_f38" sourceRef="gm_inspect_breach" targetRef="gm_inspect_breachAct"/>
+    <sequenceFlow id="gem_purchase_f39" sourceRef="gm_inspect_breachAct" targetRef="gm_inspect_breachGw"/>
+    <sequenceFlow id="gem_purchase_f40" name="deemed" sourceRef="gm_inspect_breachGw" targetRef="gm_inspect_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f41" name="escalated" sourceRef="gm_inspect_breachGw" targetRef="gm_inspect_slaPlan"/>
+    <sequenceFlow id="gem_purchase_f42" sourceRef="gm_inspect_slaPlan" targetRef="gm_inspect"/>
+    <sequenceFlow id="gem_purchase_f43" sourceRef="gm_inspect" targetRef="gm_inspect_done"/>
+    <sequenceFlow id="gem_purchase_f44" sourceRef="gm_delivered" targetRef="gm_inspect_slaPlan"/>
+    <sequenceFlow id="gem_purchase_f45" sourceRef="gm_inspect_done" targetRef="gm_cracGw"/>
+    <sequenceFlow id="gem_purchase_f46" name="reject" sourceRef="gm_cracGw" targetRef="gm_rejectGoods"><conditionExpression xsi:type="tFormalExpression">${cracDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="gem_purchase_f47" sourceRef="gm_rejectGoods" targetRef="gm_deliveryDue"/>
+    <sequenceFlow id="gem_purchase_f48" name="accept" sourceRef="gm_cracGw" targetRef="gm_cracDoc"/>
+    <sequenceFlow id="gem_purchase_f49" sourceRef="gm_cracDoc" targetRef="gm_bill"/>
+    <sequenceFlow id="gem_purchase_f50" sourceRef="gm_bill" targetRef="gm_close"/>
+    <sequenceFlow id="gem_purchase_f51" sourceRef="gm_close" targetRef="gm_end"/>
+    <subProcess id="gm_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="gm_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="gm_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gm_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gm_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="gem_purchase_f52" sourceRef="gm_withdrawStart" targetRef="gm_withdrawKind"/>
+      <sequenceFlow id="gem_purchase_f53" sourceRef="gm_withdrawKind" targetRef="gm_withdrawCall"/>
+      <sequenceFlow id="gem_purchase_f54" sourceRef="gm_withdrawCall" targetRef="gm_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="gm_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="gm_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="gm_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gm_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gm_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="gem_purchase_f55" sourceRef="gm_cancelStart" targetRef="gm_cancelKind"/>
+      <sequenceFlow id="gem_purchase_f56" sourceRef="gm_cancelKind" targetRef="gm_cancelCall"/>
+      <sequenceFlow id="gem_purchase_f57" sourceRef="gm_cancelCall" targetRef="gm_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="gem_purchase_diagram">
+    <bpmndi:BPMNPlane id="gem_purchase_plane" bpmnElement="sangam-gem-purchase">
+      <bpmndi:BPMNShape id="gm_start_di" bpmnElement="gm_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_defaults_di" bpmnElement="gm_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_amount_di" bpmnElement="gm_amount"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_mode_di" bpmnElement="gm_mode"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_budget_di" bpmnElement="gm_budget"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_budgetGw_di" bpmnElement="gm_budgetGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_encumber_di" bpmnElement="gm_encumber"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rjBudget_code_di" bpmnElement="gm_rjBudget_code"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rjBudget_reject_di" bpmnElement="gm_rjBudget_reject"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rjBudget_endRejected_di" bpmnElement="gm_rjBudget_endRejected"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_autoGw_di" bpmnElement="gm_autoGw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_autoApprove_di" bpmnElement="gm_autoApprove"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_sanction_di" bpmnElement="gm_sanction"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rj_reject_di" bpmnElement="gm_rj_reject"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rj_endRejected_di" bpmnElement="gm_rj_endRejected"><dc:Bounds x="2857" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_modeGw_di" bpmnElement="gm_modeGw"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_sanGw_di" bpmnElement="gm_sanGw"><dc:Bounds x="1530" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_bid_di" bpmnElement="gm_bid"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_order_di" bpmnElement="gm_order"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_bidDoc_di" bpmnElement="gm_bidDoc"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_tenderGw_di" bpmnElement="gm_tenderGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_deliveryDue_di" bpmnElement="gm_deliveryDue"><dc:Bounds x="2660" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_orderGw_di" bpmnElement="gm_orderGw"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_wait_di" bpmnElement="gm_wait"><dc:Bounds x="2850" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_delivered_di" bpmnElement="gm_delivered"><dc:Bounds x="3022" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_late_di" bpmnElement="gm_late"><dc:Bounds x="3022" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_overdue_di" bpmnElement="gm_overdue"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_lateGw_di" bpmnElement="gm_lateGw"><dc:Bounds x="3345" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_terminate_kind_di" bpmnElement="gm_terminate_kind"><dc:Bounds x="3485" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_terminate_call_di" bpmnElement="gm_terminate_call"><dc:Bounds x="3650" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_terminate_end_di" bpmnElement="gm_terminate_end"><dc:Bounds x="3847" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_slaPlan_di" bpmnElement="gm_inspect_slaPlan"><dc:Bounds x="3155" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_di" bpmnElement="gm_inspect"><dc:Bounds x="3320" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_warnNotify_di" bpmnElement="gm_inspect_warnNotify"><dc:Bounds x="3485" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_warnEnd_di" bpmnElement="gm_inspect_warnEnd"><dc:Bounds x="3682" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_breachAct_di" bpmnElement="gm_inspect_breachAct"><dc:Bounds x="3485" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_breachGw_di" bpmnElement="gm_inspect_breachGw"><dc:Bounds x="3675" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_done_di" bpmnElement="gm_inspect_done"><dc:Bounds x="3840" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_cracGw_di" bpmnElement="gm_cracGw"><dc:Bounds x="4005" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_rejectGoods_di" bpmnElement="gm_rejectGoods"><dc:Bounds x="4145" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_cracDoc_di" bpmnElement="gm_cracDoc"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_bill_di" bpmnElement="gm_bill"><dc:Bounds x="4310" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_close_di" bpmnElement="gm_close"><dc:Bounds x="4475" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_end_di" bpmnElement="gm_end"><dc:Bounds x="4672" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_warn_di" bpmnElement="gm_inspect_warn"><dc:Bounds x="3328" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_inspect_breach_di" bpmnElement="gm_inspect_breach"><dc:Bounds x="3358" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_withdraw_di" bpmnElement="gm_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_withdrawStart_di" bpmnElement="gm_withdrawStart"><dc:Bounds x="92" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_withdrawKind_di" bpmnElement="gm_withdrawKind"><dc:Bounds x="225" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_withdrawCall_di" bpmnElement="gm_withdrawCall"><dc:Bounds x="390" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_withdrawEnd_di" bpmnElement="gm_withdrawEnd"><dc:Bounds x="587" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_cancel_di" bpmnElement="gm_cancel" isExpanded="true"><dc:Bounds x="30" y="850" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_cancelStart_di" bpmnElement="gm_cancelStart"><dc:Bounds x="92" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_cancelKind_di" bpmnElement="gm_cancelKind"><dc:Bounds x="225" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_cancelCall_di" bpmnElement="gm_cancelCall"><dc:Bounds x="390" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gm_cancelEnd_di" bpmnElement="gm_cancelEnd"><dc:Bounds x="587" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="gem_purchase_f1_di" bpmnElement="gem_purchase_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f2_di" bpmnElement="gem_purchase_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f3_di" bpmnElement="gem_purchase_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f4_di" bpmnElement="gem_purchase_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f5_di" bpmnElement="gem_purchase_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f6_di" bpmnElement="gem_purchase_f6"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f7_di" bpmnElement="gem_purchase_f7"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f8_di" bpmnElement="gem_purchase_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f9_di" bpmnElement="gem_purchase_f9"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f10_di" bpmnElement="gem_purchase_f10"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f11_di" bpmnElement="gem_purchase_f11"><di:waypoint x="1250" y="195"/><di:waypoint x="1295" y="195"/><di:waypoint x="1295" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f12_di" bpmnElement="gem_purchase_f12"><di:waypoint x="1250" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f13_di" bpmnElement="gem_purchase_f13"><di:waypoint x="2760" y="195"/><di:waypoint x="2857" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f14_di" bpmnElement="gem_purchase_f14"><di:waypoint x="1440" y="320"/><di:waypoint x="1567" y="320"/><di:waypoint x="1567" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f15_di" bpmnElement="gem_purchase_f15"><di:waypoint x="1580" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f16_di" bpmnElement="gem_purchase_f16"><di:waypoint x="1580" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f17_di" bpmnElement="gem_purchase_f17"><di:waypoint x="1440" y="195"/><di:waypoint x="1530" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f18_di" bpmnElement="gem_purchase_f18"><di:waypoint x="1745" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f19_di" bpmnElement="gem_purchase_f19"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f20_di" bpmnElement="gem_purchase_f20"><di:waypoint x="1745" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f21_di" bpmnElement="gem_purchase_f21"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f22_di" bpmnElement="gem_purchase_f22"><di:waypoint x="2240" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f23_di" bpmnElement="gem_purchase_f23"><di:waypoint x="2240" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f24_di" bpmnElement="gem_purchase_f24"><di:waypoint x="2570" y="195"/><di:waypoint x="2615" y="195"/><di:waypoint x="2615" y="320"/><di:waypoint x="2660" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f25_di" bpmnElement="gem_purchase_f25"><di:waypoint x="2570" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f26_di" bpmnElement="gem_purchase_f26"><di:waypoint x="2430" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f27_di" bpmnElement="gem_purchase_f27"><di:waypoint x="2760" y="320"/><di:waypoint x="2850" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f28_di" bpmnElement="gem_purchase_f28"><di:waypoint x="2900" y="320"/><di:waypoint x="2961" y="320"/><di:waypoint x="2961" y="445"/><di:waypoint x="3022" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f29_di" bpmnElement="gem_purchase_f29"><di:waypoint x="2900" y="320"/><di:waypoint x="3022" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f30_di" bpmnElement="gem_purchase_f30"><di:waypoint x="3058" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f31_di" bpmnElement="gem_purchase_f31"><di:waypoint x="3255" y="320"/><di:waypoint x="3345" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f32_di" bpmnElement="gem_purchase_f32"><di:waypoint x="3370" y="345"/><di:waypoint x="3370" y="399"/><di:waypoint x="2710" y="399"/><di:waypoint x="2710" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f33_di" bpmnElement="gem_purchase_f33"><di:waypoint x="3585" y="320"/><di:waypoint x="3650" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f34_di" bpmnElement="gem_purchase_f34"><di:waypoint x="3750" y="320"/><di:waypoint x="3847" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f35_di" bpmnElement="gem_purchase_f35"><di:waypoint x="3395" y="320"/><di:waypoint x="3485" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f36_di" bpmnElement="gem_purchase_f36"><di:waypoint x="3346" y="503"/><di:waypoint x="3346" y="570"/><di:waypoint x="3485" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f37_di" bpmnElement="gem_purchase_f37"><di:waypoint x="3585" y="570"/><di:waypoint x="3682" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f38_di" bpmnElement="gem_purchase_f38"><di:waypoint x="3376" y="503"/><di:waypoint x="3376" y="445"/><di:waypoint x="3485" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f39_di" bpmnElement="gem_purchase_f39"><di:waypoint x="3585" y="445"/><di:waypoint x="3675" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f40_di" bpmnElement="gem_purchase_f40"><di:waypoint x="3725" y="445"/><di:waypoint x="3840" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f41_di" bpmnElement="gem_purchase_f41"><di:waypoint x="3700" y="470"/><di:waypoint x="3700" y="503"/><di:waypoint x="3205" y="503"/><di:waypoint x="3205" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f42_di" bpmnElement="gem_purchase_f42"><di:waypoint x="3255" y="445"/><di:waypoint x="3320" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f43_di" bpmnElement="gem_purchase_f43"><di:waypoint x="3420" y="445"/><di:waypoint x="3840" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f44_di" bpmnElement="gem_purchase_f44"><di:waypoint x="3058" y="445"/><di:waypoint x="3155" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f45_di" bpmnElement="gem_purchase_f45"><di:waypoint x="3890" y="445"/><di:waypoint x="4005" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f46_di" bpmnElement="gem_purchase_f46"><di:waypoint x="4055" y="445"/><di:waypoint x="4100" y="445"/><di:waypoint x="4100" y="570"/><di:waypoint x="4145" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f47_di" bpmnElement="gem_purchase_f47"><di:waypoint x="4195" y="610"/><di:waypoint x="4195" y="642"/><di:waypoint x="2710" y="642"/><di:waypoint x="2710" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f48_di" bpmnElement="gem_purchase_f48"><di:waypoint x="4055" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f49_di" bpmnElement="gem_purchase_f49"><di:waypoint x="4245" y="445"/><di:waypoint x="4310" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f50_di" bpmnElement="gem_purchase_f50"><di:waypoint x="4410" y="445"/><di:waypoint x="4475" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f51_di" bpmnElement="gem_purchase_f51"><di:waypoint x="4575" y="445"/><di:waypoint x="4672" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f52_di" bpmnElement="gem_purchase_f52"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f53_di" bpmnElement="gem_purchase_f53"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f54_di" bpmnElement="gem_purchase_f54"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f55_di" bpmnElement="gem_purchase_f55"><di:waypoint x="128" y="930"/><di:waypoint x="225" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f56_di" bpmnElement="gem_purchase_f56"><di:waypoint x="325" y="930"/><di:waypoint x="390" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="gem_purchase_f57_di" bpmnElement="gem_purchase_f57"><di:waypoint x="490" y="930"/><di:waypoint x="587" y="930"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

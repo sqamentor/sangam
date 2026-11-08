@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: GOI.MEA
+  layer: department
+  version: 2026.11.0
+  effectiveFrom: '2024-04-01'
+  name:
+    en: Ministry of External Affairs (missions abroad)
+    hi: विदेश मंत्रालय
+  source: IFMS-CENTRAL section O
+placeholders:
+- path: locale.exchangeRates
+  reason: '[U] sample rate; load the official monthly rates'
+regime:
+  dfprApplies: false
+  delegationBook: MISSIONS_RULES
+  ruleRef: DFPR 2024 r.21(2)(e)
+locale:
+  exchangeRates:
+  - from: USD
+    to: INR
+    rate: 83.0
+    effectiveFrom: '2026-10-01'
+    status: U
+ledgers:
+- id: BUDGET
+  currency: INR
+  exchangeDifferenceAccount: 791-LOSS-GAIN-BY-EXCHANGE
+missions:
+  count: 161
+  rpos: 30
+  accounting: I-MAS
+  foreignCurrencyAccountsWithCga: true
+  ruleRefs:
+  - RPR 2022 r.13(7)-(8)
+  - r.17(4)
+  - r.16(3)

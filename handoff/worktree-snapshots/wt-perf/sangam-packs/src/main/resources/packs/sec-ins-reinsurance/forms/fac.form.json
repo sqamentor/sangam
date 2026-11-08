@@ -1,0 +1,36 @@
+{
+  "key": "sec-ins-reinsurance/fac",
+  "version": "1.0.0",
+  "pack": "sec.ins.reinsurance",
+  "title": {
+    "en": "Place facultative (Indian reinsurers first)",
+    "hi": "ऐच्छिक पुनर्बीमा प्लेसमेंट"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "reinsurerPanel",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Reinsurers offered (in order of preference)",
+        "hi": "प्रस्तावित पुनर्बीमाकर्ता (वरीयता क्रम में)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

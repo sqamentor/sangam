@@ -1,0 +1,27 @@
+{
+  "identifierTypes": [
+    {
+      "typeKey": "BANK_ACCOUNT",
+      "label": "Bank account",
+      "pattern": "[0-9A-Z]{6,34}",
+      "normalise": [
+        "UPPER",
+        "STRIP_SPACES",
+        "STRIP_PUNCT"
+      ],
+      "sensitive": true,
+      "matchWeight": 6
+    },
+    {
+      "typeKey": "MOBILE",
+      "label": "Mobile number",
+      "normalise": [
+        "DIGITS_ONLY"
+      ],
+      "pattern": "[0-9]{10,15}",
+      "sensitive": true,
+      "matchWeight": 4,
+      "appliesTo": "PERSON"
+    }
+  ]
+}

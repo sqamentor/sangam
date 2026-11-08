@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-baa/security",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.baa",
+  "title": {
+    "en": "Security assessment of the business associate",
+    "es": "Evaluación de seguridad"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "securityReview",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Security assessment of the business associate",
+        "es": "Evaluación de seguridad del socio comercial"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "es": "Documentos"
+      }
+    }
+  ]
+}

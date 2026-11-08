@@ -1,0 +1,45 @@
+{
+  "key": "p2-file-movement/physical-receipt",
+  "version": "1.0.0",
+  "pack": "gov.p2.file-movement",
+  "title": {
+    "en": "Acknowledge receipt of the physical file",
+    "hi": "भौतिक फ़ाइल की प्राप्ति स्वीकार करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "physicalReceived",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Physical item received",
+        "hi": "भौतिक वस्तु प्राप्त हुई"
+      }
+    },
+    {
+      "id": "custodian",
+      "type": "seat",
+      "required": false,
+      "label": {
+        "en": "Custodian (seat)",
+        "hi": "अभिरक्षक (पद)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "key": "consultancy/requirement",
+  "version": "1.0.0",
+  "pack": "gov.consultancy",
+  "title": {
+    "en": "Consultancy requirement",
+    "hi": "परामर्श आवश्यकता"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "itemDescription",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Item / service",
+        "hi": "वस्तु / सेवा"
+      }
+    },
+    {
+      "id": "estimateAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Estimated cost (INR)",
+        "hi": "अनुमानित लागत (रुपये)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

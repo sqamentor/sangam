@@ -1,0 +1,56 @@
+{
+  "key": "ifms-sna-sparsh/authorise",
+  "version": "1.0.0",
+  "pack": "gov.ifms.sna-sparsh",
+  "title": {
+    "en": "Payment authorisation (DSC)",
+    "hi": "भुगतान प्राधिकार"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "dscSerial",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "DSC serial",
+        "hi": "डीएससी क्रमांक"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "praoDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "signed",
+        "label": {
+          "en": "Signed (DSC)",
+          "hi": "हस्ताक्षरित (डीएससी)"
+        }
+      },
+      {
+        "value": "returnBill",
+        "label": {
+          "en": "Return to DDO",
+          "hi": "डीडीओ को वापस करें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_pay_authoriser" name="Payment authoriser" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- SYNTHETIC bands; replace with the board policy. -->
+  <decision id="sec-bank-pay-authoriser" name="Payment authoriser" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-bank-pay-authoriser_t" hitPolicy="FIRST">
+      <input id="sec-bank-pay-authoriser_i0" label="Amount (INR)"><inputExpression id="sec-bank-pay-authoriser_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="sec-bank-pay-authoriser_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="sec-bank-pay-authoriser_r0">
+        <inputEntry id="sec-bank-pay-authoriser_r0_i0"><text>&lt;= 100000000</text></inputEntry>
+        <outputEntry id="sec-bank-pay-authoriser_r0_o0"><text>"PAYAUTH"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-pay-authoriser_r1">
+        <inputEntry id="sec-bank-pay-authoriser_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-pay-authoriser_r1_o0"><text>"TREASURYHEAD"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

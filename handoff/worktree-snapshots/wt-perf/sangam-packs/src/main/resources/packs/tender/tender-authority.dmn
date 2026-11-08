@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_tender_authority" name="Tender NIT / award authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="tender-authority" name="Tender NIT / award authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="tender-authority_t" hitPolicy="FIRST">
+      <input id="tender-authority_i0" label="Case type"><inputExpression id="tender-authority_ie0" typeRef="string"><text>caseType</text></inputExpression></input>
+      <input id="tender-authority_i1" label="Amount"><inputExpression id="tender-authority_ie1" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="tender-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="tender-authority_r0">
+        <inputEntry id="tender-authority_r0_i0"><text>-</text></inputEntry>
+        <inputEntry id="tender-authority_r0_i1"><text>&lt;= 2500000</text></inputEntry>
+        <outputEntry id="tender-authority_r0_o0"><text>"EE"</text></outputEntry>
+      </rule>
+      <rule id="tender-authority_r1">
+        <inputEntry id="tender-authority_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="tender-authority_r1_i1"><text>&lt;= 100000000</text></inputEntry>
+        <outputEntry id="tender-authority_r1_o0"><text>"SE"</text></outputEntry>
+      </rule>
+      <rule id="tender-authority_r2">
+        <inputEntry id="tender-authority_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="tender-authority_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="tender-authority_r2_o0"><text>"CE"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

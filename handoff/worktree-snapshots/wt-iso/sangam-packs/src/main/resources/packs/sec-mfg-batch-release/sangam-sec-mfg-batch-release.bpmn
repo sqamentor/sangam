@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Batch release. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_mfg_batch_release" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-mfg-batch-release" name="Batch release" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.mfg.batch-release</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>batchNo,productCode</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="br_start" name="Batch completed" operaton:initiator="initiator" operaton:formKey="sangam:sec-mfg-batch-release/batch"></startEvent>
+    <serviceTask id="br_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>batchNo=@customerId;productCode=P-1;deviationFound=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="br_record" name="Fetch batch manufacturing record" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>mes.batchRecord</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>record</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>batchNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bmr</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="br_qc" name="Finished-product QC" operaton:candidateGroups="QC-ANALYST" operaton:formKey="sangam:sec-mfg-batch-release/qc"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>qcDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="br_qcGw" name="" default="sec_mfg_batch_release_f8"></exclusiveGateway>
+    <serviceTask id="br_deviation" name="Open deviation as a CAPA case (UP-18)" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-up18-capa</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>deviation</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>batchNo,productCode</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="br_devOptGw" name="Deviation?" default="sec_mfg_batch_release_f6"></exclusiveGateway>
+    <exclusiveGateway id="br_devOptMerge" name=""></exclusiveGateway>
+    <userTask id="br_qa" name="QA review and release decision" operaton:candidateGroups="QA-HEAD" operaton:formKey="sangam:sec-mfg-batch-release/qa"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ApprovalBindingListener"><operaton:field name="decisionVar"><operaton:string>releaseDecision</operaton:string></operaton:field><operaton:field name="approveValues"><operaton:string>release</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>releaseDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="br_relGw" name="" default="sec_mfg_batch_release_f14"></exclusiveGateway>
+    <serviceTask id="br_sign" name="E-sign release over the batch record" operaton:class="org.sangam.packs.core.SignatureDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>REQUEST</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>batch-release</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="br_wms" name="Release to warehouse" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>wms.release</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>release</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>batchNo,quantity</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>wms</operaton:string></operaton:field><operaton:field name="step"><operaton:string>release</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="br_end" name="Released"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="br_endRejected" name="Batch rejected"></endEvent>
+    <sequenceFlow id="sec_mfg_batch_release_f1" sourceRef="br_start" targetRef="br_defaults"/>
+    <sequenceFlow id="sec_mfg_batch_release_f2" sourceRef="br_defaults" targetRef="br_record"/>
+    <sequenceFlow id="sec_mfg_batch_release_f3" sourceRef="br_record" targetRef="br_qc"/>
+    <sequenceFlow id="sec_mfg_batch_release_f4" sourceRef="br_qc" targetRef="br_qcGw"/>
+    <sequenceFlow id="sec_mfg_batch_release_f5" name="yes" sourceRef="br_devOptGw" targetRef="br_deviation"><conditionExpression xsi:type="tFormalExpression">${deviationFound}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_mfg_batch_release_f6" name="no" sourceRef="br_devOptGw" targetRef="br_devOptMerge"/>
+    <sequenceFlow id="sec_mfg_batch_release_f7" sourceRef="br_deviation" targetRef="br_devOptMerge"/>
+    <sequenceFlow id="sec_mfg_batch_release_f8" name="accept" sourceRef="br_qcGw" targetRef="br_devOptGw"/>
+    <sequenceFlow id="sec_mfg_batch_release_f9" sourceRef="br_devOptMerge" targetRef="br_qa"/>
+    <sequenceFlow id="sec_mfg_batch_release_f10" sourceRef="br_qa" targetRef="br_relGw"/>
+    <sequenceFlow id="sec_mfg_batch_release_f11" name="release" sourceRef="br_relGw" targetRef="br_sign"><conditionExpression xsi:type="tFormalExpression">${releaseDecision == 'release'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_mfg_batch_release_f12" sourceRef="br_sign" targetRef="br_wms"/>
+    <sequenceFlow id="sec_mfg_batch_release_f13" sourceRef="br_wms" targetRef="br_end"/>
+    <sequenceFlow id="sec_mfg_batch_release_f14" name="reject" sourceRef="br_relGw" targetRef="br_endRejected"/>
+    <sequenceFlow id="sec_mfg_batch_release_f15" name="QC failed" sourceRef="br_qcGw" targetRef="br_endRejected"><conditionExpression xsi:type="tFormalExpression">${qcDecision == 'reject'}</conditionExpression></sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_mfg_batch_release_diagram">
+    <bpmndi:BPMNPlane id="sec_mfg_batch_release_plane" bpmnElement="sangam-sec-mfg-batch-release">
+      <bpmndi:BPMNShape id="br_start_di" bpmnElement="br_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_defaults_di" bpmnElement="br_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_record_di" bpmnElement="br_record"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_qc_di" bpmnElement="br_qc"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_qcGw_di" bpmnElement="br_qcGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_deviation_di" bpmnElement="br_deviation"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_devOptGw_di" bpmnElement="br_devOptGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_devOptMerge_di" bpmnElement="br_devOptMerge"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_qa_di" bpmnElement="br_qa"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_relGw_di" bpmnElement="br_relGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_sign_di" bpmnElement="br_sign"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_wms_di" bpmnElement="br_wms"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_end_di" bpmnElement="br_end"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_endRejected_di" bpmnElement="br_endRejected"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f1_di" bpmnElement="sec_mfg_batch_release_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f2_di" bpmnElement="sec_mfg_batch_release_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f3_di" bpmnElement="sec_mfg_batch_release_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f4_di" bpmnElement="sec_mfg_batch_release_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f5_di" bpmnElement="sec_mfg_batch_release_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f6_di" bpmnElement="sec_mfg_batch_release_f6"><di:waypoint x="920" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f7_di" bpmnElement="sec_mfg_batch_release_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f8_di" bpmnElement="sec_mfg_batch_release_f8"><di:waypoint x="755" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f9_di" bpmnElement="sec_mfg_batch_release_f9"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f10_di" bpmnElement="sec_mfg_batch_release_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f11_di" bpmnElement="sec_mfg_batch_release_f11"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f12_di" bpmnElement="sec_mfg_batch_release_f12"><di:waypoint x="1770" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f13_di" bpmnElement="sec_mfg_batch_release_f13"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f14_di" bpmnElement="sec_mfg_batch_release_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_batch_release_f15_di" bpmnElement="sec_mfg_batch_release_f15"><di:waypoint x="755" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

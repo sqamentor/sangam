@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_up05_checker" name="Checker by amount" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="up05-checker" name="Checker by amount" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="up05-checker_t" hitPolicy="FIRST">
+      <input id="up05-checker_i0" label="Amount"><inputExpression id="up05-checker_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="up05-checker_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="up05-checker_r0"><description>checker</description>
+        <inputEntry id="up05-checker_r0_i0"><text>&lt;= 100000000</text></inputEntry>
+        <outputEntry id="up05-checker_r0_o0"><text>"DS"</text></outputEntry>
+      </rule>
+      <rule id="up05-checker_r1"><description>senior checker</description>
+        <inputEntry id="up05-checker_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="up05-checker_r1_o0"><text>"JS"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

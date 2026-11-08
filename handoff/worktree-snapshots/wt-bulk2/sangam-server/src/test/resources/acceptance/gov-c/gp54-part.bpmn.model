@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp54p">
+  <process id="gp54-part" name="GP-54 Part file" isExecutable="true">
+    <startEvent id="gp54p_start"/>
+    <sequenceFlow id="f1" sourceRef="gp54p_start" targetRef="gp54p_noting"/>
+    <userTask id="gp54p_noting" name="Noting on part file"><potentialOwner><resourceAssignmentExpression><formalExpression>group(section)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp54p_noting" targetRef="gp54p_decide"/>
+    <userTask id="gp54p_decide" name="Decide part file"><potentialOwner><resourceAssignmentExpression><formalExpression>group(so)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="gp54p_decide" targetRef="gp54p_end"/>
+    <endEvent id="gp54p_end"/>
+  </process>
+</definitions>

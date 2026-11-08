@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "HR-IT",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SECURITY-OFFICER",
+      "role": "SECURITY",
+      "office": "HR-IT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Security officer",
+        "hi": "सुरक्षा अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SECURITY-OFFICER",
+      "person": "u16.security-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "SECURITY",
+      "name": {
+        "en": "Security officer",
+        "hi": "सुरक्षा अधिकारी"
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp53">
+  <!-- GP-53 physical artefact custody: the check of measurements is gated on the measurement book being with the AE;
+       custody changes are variable updates (history); loss of the MB interrupts and is reconstructed. -->
+  <message id="m_lost" name="mbLost"/>
+  <process id="gp53-custody" name="GP-53 Measurement book custody" isExecutable="true">
+    <startEvent id="gp53_start"/>
+    <sequenceFlow id="f1" sourceRef="gp53_start" targetRef="gp53_custody"/>
+    <subProcess id="gp53_custody" name="Measurement and check">
+      <startEvent id="gp53_cStart"/>
+      <sequenceFlow id="c1" sourceRef="gp53_cStart" targetRef="gp53_record"/>
+      <userTask id="gp53_record" name="Record measurements in MB"><potentialOwner><resourceAssignmentExpression><formalExpression>group(je)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="c2" sourceRef="gp53_record" targetRef="gp53_gate"/>
+      <exclusiveGateway id="gp53_gate" default="c4"/>
+      <sequenceFlow id="c3" sourceRef="gp53_gate" targetRef="gp53_check"><conditionExpression xsi:type="tFormalExpression">${mbCustodian == 'AE'}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="c4" sourceRef="gp53_gate" targetRef="gp53_transfer"/>
+      <userTask id="gp53_transfer" name="Hand over MB to AE"><potentialOwner><resourceAssignmentExpression><formalExpression>group(je)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="c5" sourceRef="gp53_transfer" targetRef="gp53_gate"/>
+      <userTask id="gp53_check" name="Check measurements"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ae)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="c6" sourceRef="gp53_check" targetRef="gp53_cEnd"/>
+      <endEvent id="gp53_cEnd"/>
+    </subProcess>
+    <boundaryEvent id="gp53_lost" attachedToRef="gp53_custody" cancelActivity="true"><messageEventDefinition messageRef="m_lost"/></boundaryEvent>
+    <sequenceFlow id="f2" sourceRef="gp53_lost" targetRef="gp53_reportLoss"/>
+    <userTask id="gp53_reportLoss" name="Report loss of MB"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="gp53_reportLoss" targetRef="gp53_reconstruct"/>
+    <userTask id="gp53_reconstruct" name="Reconstruct MB"><potentialOwner><resourceAssignmentExpression><formalExpression>group(je)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f4" sourceRef="gp53_reconstruct" targetRef="gp53_custody"/>
+    <sequenceFlow id="f5" sourceRef="gp53_custody" targetRef="gp53_end"/>
+    <endEvent id="gp53_end"/>
+  </process>
+</definitions>

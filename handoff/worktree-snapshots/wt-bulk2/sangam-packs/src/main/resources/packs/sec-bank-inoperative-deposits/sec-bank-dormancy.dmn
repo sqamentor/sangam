@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_dormancy" name="Inoperative and unclaimed thresholds" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-bank-dormancy" name="Inoperative and unclaimed thresholds" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-bank-dormancy_t" hitPolicy="FIRST">
+      <input id="sec-bank-dormancy_i0" label="Years without customer-induced transaction"><inputExpression id="sec-bank-dormancy_ie0" typeRef="integer"><text>yearsInactive</text></inputExpression></input>
+      <output id="sec-bank-dormancy_o0" label="Action" name="dormancyAction" typeRef="string"/>
+      <rule id="sec-bank-dormancy_r0"><description>DEA Fund Scheme 2014: unclaimed for 10 years</description>
+        <inputEntry id="sec-bank-dormancy_r0_i0"><text>&gt;= 10</text></inputEntry>
+        <outputEntry id="sec-bank-dormancy_r0_o0"><text>"DEA"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-dormancy_r1"><description>inoperative after 2 years</description>
+        <inputEntry id="sec-bank-dormancy_r1_i0"><text>&gt;= 2</text></inputEntry>
+        <outputEntry id="sec-bank-dormancy_r1_o0"><text>"INOPERATIVE"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-dormancy_r2">
+        <inputEntry id="sec-bank-dormancy_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-dormancy_r2_o0"><text>"NONE"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-prior-auth/appeal",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.prior-auth",
+  "title": {
+    "en": "Prepare and file the appeal (reconsideration)",
+    "es": "Preparar y presentar la apelación"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "appealGrounds",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Grounds of appeal",
+        "es": "Fundamentos de la apelación"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "es": "Documentos"
+      }
+    }
+  ]
+}

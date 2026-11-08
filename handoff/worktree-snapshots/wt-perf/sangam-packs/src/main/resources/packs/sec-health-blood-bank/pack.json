@@ -1,0 +1,85 @@
+{
+  "id": "sec.health.blood-bank",
+  "version": "1.0.0",
+  "name": {
+    "en": "Blood centre: donation, testing and transfusion",
+    "hi": "रक्त केंद्र: दान, परीक्षण एवं आधान"
+  },
+  "domain": "Healthcare",
+  "description": "Donation: donor screening and deferral, collection, mandatory TTI tests (HIV, HBV, HCV, syphilis, malaria), release to inventory or discard. Transfusion: request, grouping and cross-match, issue, bedside identity check, monitoring, reaction reported to haemovigilance (HvPI) (Drugs and Cosmetics Rules Part XII-B, NBTC guidelines).",
+  "mainProcesses": [
+    "sangam-sec-health-blood-donation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-health-blood-bank/sangam-sec-health-blood-donation.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-health-blood-bank/sangam-sec-health-transfusion.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-health-blood-bank/sec-health-donor.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-blood-bank/forms/donor.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-blood-bank/forms/collect.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-blood-bank/forms/tti.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-blood-bank/forms/discard.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-blood-bank/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-blood-bank/forms/xmatch.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-blood-bank/forms/bedside.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-health-blood-bank/seed.json"
+    }
+  ],
+  "seed": "packs/sec-health-blood-bank/seed.json",
+  "connectors": [
+    {
+      "id": "bbms.inventory",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Blood inventory (e-RaktKosh)"
+    },
+    {
+      "id": "hvpi.report",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Haemovigilance report"
+    }
+  ],
+  "covers": [
+    "SEC-HEALTH-014",
+    "GP-16",
+    "UP-18"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

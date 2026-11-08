@@ -1,0 +1,73 @@
+{
+  "id": "sec.ecom.gst-tcs",
+  "version": "1.0.0",
+  "name": {
+    "en": "GST tax collected at source by the marketplace",
+    "hi": "मार्केटप्लेस द्वारा स्रोत पर जीएसटी संग्रह"
+  },
+  "domain": "E-commerce",
+  "description": "Monthly: TCS on the net taxable supplies made through the platform by each seller (rate by rule, CGST Act s.52), reviewed by the tax team, deposited by the 10th of the next month, GSTR-8 filed by the 10th, amendments in later returns; annual GSTR-9B.",
+  "mainProcesses": [
+    "sangam-sec-ecom-gst-tcs"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ecom-gst-tcs/sangam-sec-ecom-gst-tcs.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ecom-gst-tcs/sec-ecom-tcs-rate.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-gst-tcs/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ecom-gst-tcs/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ecom-gst-tcs/seed.json",
+  "connectors": [
+    {
+      "id": "erp.netSupplies",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Net taxable supplies by seller"
+    },
+    {
+      "id": "gstn.payment",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Tax deposit"
+    },
+    {
+      "id": "gstn.gstr8",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "GSTR-8 filing"
+    }
+  ],
+  "covers": [
+    "SEC-ECOM-009",
+    "GP-30",
+    "GP-12"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "netSupplies"
+    ]
+  }
+}

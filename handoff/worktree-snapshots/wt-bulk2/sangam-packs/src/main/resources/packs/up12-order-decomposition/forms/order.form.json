@@ -1,0 +1,36 @@
+{
+  "key": "up12-order-decomposition/order",
+  "version": "1.0.0",
+  "pack": "universal.up12-order-decomposition",
+  "title": {
+    "en": "Order capture",
+    "hi": "आदेश ग्रहण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "orderId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Order",
+        "hi": "आदेश"
+      }
+    },
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    }
+  ]
+}

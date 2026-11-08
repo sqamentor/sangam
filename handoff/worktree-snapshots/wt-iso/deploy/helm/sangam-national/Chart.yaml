@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: v2
+name: sangam-national
+description: >-
+  Sangam national umbrella (SCALE-ARCHITECTURE.md section 12): control plane, routing gateway and national roll-up,
+  plus N cells. Each cell is one release of the `sangam` chart with its own database. The two cells declared below
+  are the example; for N cells use helmfile.yaml.gotmpl (one release per cell, same chart) so cells can be upgraded,
+  drained and rolled back independently (a cell is the blast radius, ADR-D-21).
+type: application
+version: 0.1.0
+appVersion: "0.1.0-SNAPSHOT"
+kubeVersion: ">=1.30.0-0"
+dependencies:
+  - name: sangam
+    alias: cell-a
+    version: 0.1.0
+    repository: file://../sangam
+    condition: cell-a.enabled
+  - name: sangam
+    alias: cell-b
+    version: 0.1.0
+    repository: file://../sangam
+    condition: cell-b.enabled
+annotations:
+  sangam.io/license: Apache-2.0

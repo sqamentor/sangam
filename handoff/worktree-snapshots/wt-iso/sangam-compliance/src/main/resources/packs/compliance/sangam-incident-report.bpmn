@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet: open in the Sangam modeller and auto-layout. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_incident_report" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
+  <process id="sangam-incident-report" name="Cyber incident report to an incident authority" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Incident reporting with the authority deadline from the pack (IN: CERT-In 6 hours from noticing, Annexure I types). Unknown details are reported as such and followed up.</documentation>
+    <startEvent id="start" name="Incident registered"/>
+    <userTask id="u_prepare" name="Prepare and approve incident report" operaton:candidateGroups="CISO" operaton:formKey="sangam:compliance/incident-prepare"></userTask>
+    <boundaryEvent id="t_warn" name="Deadline approaching" attachedToRef="u_prepare" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${incidentWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <userTask id="u_warn" name="Escalation: incident report deadline approaching" operaton:candidateGroups="CISO-HEAD" operaton:formKey="sangam:compliance/incident-escalation"></userTask>
+    <endEvent id="end_warn" name="Escalated"/>
+    <boundaryEvent id="t_due" name="Deadline" attachedToRef="u_prepare" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${incidentDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <serviceTask id="s_overdue" name="Record overdue report" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>incident.overdue</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end_due" name="Overdue recorded"/>
+    <serviceTask id="s_submit" name="Submit to the authority and secondary recipients" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>incident.submit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u_follow" name="Follow up with remaining details or close" operaton:candidateGroups="CISO" operaton:formKey="sangam:compliance/incident-follow-up"></userTask>
+    <exclusiveGateway id="g_follow" name="Follow-up needed?" default="f_close"/>
+    <serviceTask id="s_follow" name="Send follow-up" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>incident.followUp</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="s_close" name="Close incident" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>incident.close</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end" name="Closed"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="u_prepare"/>
+    <sequenceFlow id="f2" sourceRef="u_prepare" targetRef="s_submit"/>
+    <sequenceFlow id="f3" sourceRef="s_submit" targetRef="u_follow"/>
+    <sequenceFlow id="f4" sourceRef="u_follow" targetRef="g_follow"/>
+    <sequenceFlow id="f_more" sourceRef="g_follow" targetRef="s_follow"><conditionExpression xsi:type="tFormalExpression">${followUpNeeded == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f5" sourceRef="s_follow" targetRef="u_follow"/>
+    <sequenceFlow id="f_close" sourceRef="g_follow" targetRef="s_close"/>
+    <sequenceFlow id="f6" sourceRef="s_close" targetRef="end"/>
+    <sequenceFlow id="f_w1" sourceRef="t_warn" targetRef="u_warn"/>
+    <sequenceFlow id="f_w2" sourceRef="u_warn" targetRef="end_warn"/>
+    <sequenceFlow id="f_d1" sourceRef="t_due" targetRef="s_overdue"/>
+    <sequenceFlow id="f_d2" sourceRef="s_overdue" targetRef="end_due"/>
+  </process>
+</definitions>

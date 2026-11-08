@@ -1,0 +1,121 @@
+{
+  "id": "sec.health.admission-discharge",
+  "version": "1.0.0",
+  "name": {
+    "en": "Patient admission to discharge",
+    "hi": "रोगी भर्ती से डिस्चार्ज तक"
+  },
+  "domain": "Healthcare",
+  "description": "Registration with ABHA verification, triage for emergencies (stabilisation is never held up for payment), estimate of charges, informed consent, payer route (self, insurance pre-authorisation, PM-JAY beneficiary identification), inpatient care, discharge with summary and final bill in parallel, LAMA, transfer or death (MCCD and civil registration), discharge summary linked to the ABHA as an ABDM care context (FHIR R4).",
+  "mainProcesses": [
+    "sangam-sec-health-admission"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-health-admission-discharge/sangam-sec-health-admission.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-admission-discharge/forms/register.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-admission-discharge/forms/triage.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-admission-discharge/forms/admit.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-admission-discharge/forms/care.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-admission-discharge/forms/doctor.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-admission-discharge/forms/billing.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-admission-discharge/forms/lama.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-admission-discharge/forms/transfer.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-admission-discharge/forms/death.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-health-admission-discharge/seed.json"
+    }
+  ],
+  "seed": "packs/sec-health-admission-discharge/seed.json",
+  "connectors": [
+    {
+      "id": "abdm.abhaVerify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "ABHA verification"
+    },
+    {
+      "id": "tpa.preauthRequest",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Pre-authorisation"
+    },
+    {
+      "id": "pmjay.bis",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "PM-JAY beneficiary identification"
+    },
+    {
+      "id": "abdm.linkCareContext",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Link care context (HIP)"
+    },
+    {
+      "id": "crs.report",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Death report (CRS)"
+    }
+  ],
+  "covers": [
+    "SEC-HEALTH-001",
+    "SEC-HEALTH-002",
+    "SEC-HEALTH-003",
+    "SEC-HEALTH-004",
+    "GP-06",
+    "GP-15",
+    "UP-04",
+    "UP-17",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "estimatedCost",
+      "finalBillAmount"
+    ]
+  }
+}

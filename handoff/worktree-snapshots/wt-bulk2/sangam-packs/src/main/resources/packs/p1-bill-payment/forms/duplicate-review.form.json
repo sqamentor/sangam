@@ -1,0 +1,56 @@
+{
+  "key": "p1-bill-payment/duplicate-review",
+  "version": "1.0.0",
+  "pack": "gov.p1.bill-payment",
+  "title": {
+    "en": "Similar bill exists: pass with reason or reject",
+    "hi": "समान बिल विद्यमान: कारण सहित पारित करें या अस्वीकार करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "duplicateOverrideReason",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Reason to pass despite a similar bill",
+        "hi": "समान बिल होते हुए भी पारित करने का कारण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "dupDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "proceed",
+        "label": {
+          "en": "Proceed",
+          "hi": "आगे बढ़ें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

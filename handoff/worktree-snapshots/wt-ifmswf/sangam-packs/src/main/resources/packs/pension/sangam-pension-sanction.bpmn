@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Pension sanction and PPO. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_pension_sanction" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-pension-sanction" name="Pension sanction and PPO" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.pension</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>employeeId,qualifyingService,lastPay,pensionAmount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ps_start" name="Pension papers initiated" operaton:initiator="initiator" operaton:formKey="sangam:pension/papers"></startEvent>
+    <serviceTask id="ps_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=PENSION;scrutinySeat=PENSION-CLERK;routingDecisionKey=pension-sanction-authority;powersDecisionKey=pension-powers;executionConnector=ag.pensionCase;executionStep=ag;executionOperation=submitPensionCase;reconcileRequired=false;ackWindow=P7D;outputTemplate=ppo;appealAllowed=true;appellateSeat=HOD-P;verifySeat=HOO-P;amount=0;averageEmoluments=0;ageNextBirthday=61</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ps_compute" name="Pension computation (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>pension-computation</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="ps_amount" name="Amount for power check" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>amount=@pensionAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ps_scrutiny" name="Pension section scrutiny (core)" calledElement="sangam-core-scrutiny" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="ps_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ps_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="ps_rj_appealGw" name="Appeal allowed?" default="pension_sanction_f7"></exclusiveGateway>
+    <serviceTask id="ps_verify_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ps_verify</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ps_verify" name="Verify service record" operaton:candidateGroups="${verifySeat}" operaton:formKey="sangam:pension/verify-service" operaton:dueDate="${ps_verifyDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>serviceVerdict</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ps_verify_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ps_verify</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>verifySeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ps_verify_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ps_verify_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ps_verify</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>verifySeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>serviceVerdict</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ps_verify_breachGw" name="Deemed?" default="pension_sanction_f13"></exclusiveGateway>
+    <exclusiveGateway id="ps_verify_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="ps_scrGw" name="scrutinyOutcome?" default="pension_sanction_f17"></exclusiveGateway>
+    <callActivity id="ps_sanction" name="Head of Office sanction (core)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ps_verGw" name="" default="pension_sanction_f20"></exclusiveGateway>
+    <serviceTask id="ps_verified" name="Service verified" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>serviceVerified=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ps_ag" name="Authorisation by AG / PAO (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ps_sanGw" name="sanctionOutcome?" default="pension_sanction_f25"></exclusiveGateway>
+    <userTask id="ps_objection" name="Reply to AG objection" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:pension/objection"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>objDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ps_ppo" name="Issue PPO" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>ppo</operaton:string></operaton:field><operaton:field name="resultVar"><operaton:string>ppoNo</operaton:string></operaton:field><operaton:field name="requireApproval"><operaton:string>true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ps_agGw" name="executionOutcome?" default="pension_sanction_f28"></exclusiveGateway>
+    <exclusiveGateway id="ps_objGw" name="" default="pension_sanction_f35"></exclusiveGateway>
+    <serviceTask id="ps_objVersion" name="Same case, new version (GP-50)" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUBMIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ps_wd_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ps_wd_call" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ps_wd_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ps_roll" name="Enter in pension roll" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>pension.rollAdd</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>add</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId,ppoNo,pensionAmount,bankAccount,ifsc</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>roll</operaton:string></operaton:field><operaton:field name="step"><operaton:string>roll</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ps_close" name="Notify and close (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ps_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ps_verify_warn" name="SLA warning (75%)" attachedToRef="ps_verify" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ps_verifyWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ps_verify_breach" name="SLA breached" attachedToRef="ps_verify" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ps_verifyDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="pension_sanction_f1" sourceRef="ps_start" targetRef="ps_defaults"/>
+    <sequenceFlow id="pension_sanction_f2" sourceRef="ps_defaults" targetRef="ps_compute"/>
+    <sequenceFlow id="pension_sanction_f3" sourceRef="ps_compute" targetRef="ps_amount"/>
+    <sequenceFlow id="pension_sanction_f4" sourceRef="ps_amount" targetRef="ps_scrutiny"/>
+    <sequenceFlow id="pension_sanction_f5" sourceRef="ps_rj_reject" targetRef="ps_rj_appealGw"/>
+    <sequenceFlow id="pension_sanction_f6" name="appeal allowed: re-verify" sourceRef="ps_rj_appealGw" targetRef="ps_scrutiny"><conditionExpression xsi:type="tFormalExpression">${rejectionOutcome == 'APPEAL_ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_sanction_f7" name="final" sourceRef="ps_rj_appealGw" targetRef="ps_rj_endRejected"/>
+    <sequenceFlow id="pension_sanction_f8" sourceRef="ps_verify_warn" targetRef="ps_verify_warnNotify"/>
+    <sequenceFlow id="pension_sanction_f9" sourceRef="ps_verify_warnNotify" targetRef="ps_verify_warnEnd"/>
+    <sequenceFlow id="pension_sanction_f10" sourceRef="ps_verify_breach" targetRef="ps_verify_breachAct"/>
+    <sequenceFlow id="pension_sanction_f11" sourceRef="ps_verify_breachAct" targetRef="ps_verify_breachGw"/>
+    <sequenceFlow id="pension_sanction_f12" name="deemed" sourceRef="ps_verify_breachGw" targetRef="ps_verify_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_sanction_f13" name="escalated" sourceRef="ps_verify_breachGw" targetRef="ps_verify_slaPlan"/>
+    <sequenceFlow id="pension_sanction_f14" sourceRef="ps_verify_slaPlan" targetRef="ps_verify"/>
+    <sequenceFlow id="pension_sanction_f15" sourceRef="ps_verify" targetRef="ps_verify_done"/>
+    <sequenceFlow id="pension_sanction_f16" name="ACCEPTED" sourceRef="ps_scrGw" targetRef="ps_verify_slaPlan"><conditionExpression xsi:type="tFormalExpression">${scrutinyOutcome == 'ACCEPTED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_sanction_f17" name="otherwise" sourceRef="ps_scrGw" targetRef="ps_rj_reject"/>
+    <sequenceFlow id="pension_sanction_f18" sourceRef="ps_scrutiny" targetRef="ps_scrGw"/>
+    <sequenceFlow id="pension_sanction_f19" sourceRef="ps_verify_done" targetRef="ps_verGw"/>
+    <sequenceFlow id="pension_sanction_f20" name="not verified" sourceRef="ps_verGw" targetRef="ps_rj_reject"/>
+    <sequenceFlow id="pension_sanction_f21" name="verified" sourceRef="ps_verGw" targetRef="ps_verified"><conditionExpression xsi:type="tFormalExpression">${serviceVerdict == 'verified'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_sanction_f22" sourceRef="ps_verified" targetRef="ps_sanction"/>
+    <sequenceFlow id="pension_sanction_f23" name="SANCTIONED" sourceRef="ps_sanGw" targetRef="ps_ag"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_sanction_f24" name="RETURNED" sourceRef="ps_sanGw" targetRef="ps_scrutiny"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_sanction_f25" name="otherwise" sourceRef="ps_sanGw" targetRef="ps_rj_reject"/>
+    <sequenceFlow id="pension_sanction_f26" sourceRef="ps_sanction" targetRef="ps_sanGw"/>
+    <sequenceFlow id="pension_sanction_f27" name="DONE" sourceRef="ps_agGw" targetRef="ps_ppo"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_sanction_f28" name="otherwise" sourceRef="ps_agGw" targetRef="ps_objection"/>
+    <sequenceFlow id="pension_sanction_f29" sourceRef="ps_ag" targetRef="ps_agGw"/>
+    <sequenceFlow id="pension_sanction_f30" sourceRef="ps_objection" targetRef="ps_objGw"/>
+    <sequenceFlow id="pension_sanction_f31" name="resubmit to AG" sourceRef="ps_objGw" targetRef="ps_objVersion"><conditionExpression xsi:type="tFormalExpression">${objDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_sanction_f32" sourceRef="ps_objVersion" targetRef="ps_sanction"/>
+    <sequenceFlow id="pension_sanction_f33" sourceRef="ps_wd_kind" targetRef="ps_wd_call"/>
+    <sequenceFlow id="pension_sanction_f34" sourceRef="ps_wd_call" targetRef="ps_wd_end"/>
+    <sequenceFlow id="pension_sanction_f35" name="withdraw" sourceRef="ps_objGw" targetRef="ps_wd_kind"/>
+    <sequenceFlow id="pension_sanction_f36" sourceRef="ps_ppo" targetRef="ps_roll"/>
+    <sequenceFlow id="pension_sanction_f37" sourceRef="ps_roll" targetRef="ps_close"/>
+    <sequenceFlow id="pension_sanction_f38" sourceRef="ps_close" targetRef="ps_end"/>
+    <subProcess id="ps_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ps_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ps_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ps_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ps_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="pension_sanction_f39" sourceRef="ps_withdrawStart" targetRef="ps_withdrawKind"/>
+      <sequenceFlow id="pension_sanction_f40" sourceRef="ps_withdrawKind" targetRef="ps_withdrawCall"/>
+      <sequenceFlow id="pension_sanction_f41" sourceRef="ps_withdrawCall" targetRef="ps_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ps_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ps_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ps_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ps_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ps_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="pension_sanction_f42" sourceRef="ps_cancelStart" targetRef="ps_cancelKind"/>
+      <sequenceFlow id="pension_sanction_f43" sourceRef="ps_cancelKind" targetRef="ps_cancelCall"/>
+      <sequenceFlow id="pension_sanction_f44" sourceRef="ps_cancelCall" targetRef="ps_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="pension_sanction_diagram">
+    <bpmndi:BPMNPlane id="pension_sanction_plane" bpmnElement="sangam-pension-sanction">
+      <bpmndi:BPMNShape id="ps_start_di" bpmnElement="ps_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_defaults_di" bpmnElement="ps_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_compute_di" bpmnElement="ps_compute"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_amount_di" bpmnElement="ps_amount"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_scrutiny_di" bpmnElement="ps_scrutiny"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_rj_reject_di" bpmnElement="ps_rj_reject"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_rj_endRejected_di" bpmnElement="ps_rj_endRejected"><dc:Bounds x="2857" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_rj_appealGw_di" bpmnElement="ps_rj_appealGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verify_slaPlan_di" bpmnElement="ps_verify_slaPlan"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verify_di" bpmnElement="ps_verify"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verify_warnNotify_di" bpmnElement="ps_verify_warnNotify"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verify_warnEnd_di" bpmnElement="ps_verify_warnEnd"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verify_breachAct_di" bpmnElement="ps_verify_breachAct"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verify_breachGw_di" bpmnElement="ps_verify_breachGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verify_done_di" bpmnElement="ps_verify_done"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_scrGw_di" bpmnElement="ps_scrGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_sanction_di" bpmnElement="ps_sanction"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verGw_di" bpmnElement="ps_verGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verified_di" bpmnElement="ps_verified"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_ag_di" bpmnElement="ps_ag"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_sanGw_di" bpmnElement="ps_sanGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_objection_di" bpmnElement="ps_objection"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_ppo_di" bpmnElement="ps_ppo"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_agGw_di" bpmnElement="ps_agGw"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_objGw_di" bpmnElement="ps_objGw"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_objVersion_di" bpmnElement="ps_objVersion"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_wd_kind_di" bpmnElement="ps_wd_kind"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_wd_call_di" bpmnElement="ps_wd_call"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_wd_end_di" bpmnElement="ps_wd_end"><dc:Bounds x="3517" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_roll_di" bpmnElement="ps_roll"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_close_di" bpmnElement="ps_close"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_end_di" bpmnElement="ps_end"><dc:Bounds x="3352" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verify_warn_di" bpmnElement="ps_verify_warn"><dc:Bounds x="1183" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_verify_breach_di" bpmnElement="ps_verify_breach"><dc:Bounds x="1213" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_withdraw_di" bpmnElement="ps_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_withdrawStart_di" bpmnElement="ps_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_withdrawKind_di" bpmnElement="ps_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_withdrawCall_di" bpmnElement="ps_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_withdrawEnd_di" bpmnElement="ps_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_cancel_di" bpmnElement="ps_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_cancelStart_di" bpmnElement="ps_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_cancelKind_di" bpmnElement="ps_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_cancelCall_di" bpmnElement="ps_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ps_cancelEnd_di" bpmnElement="ps_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="pension_sanction_f1_di" bpmnElement="pension_sanction_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f2_di" bpmnElement="pension_sanction_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f3_di" bpmnElement="pension_sanction_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f4_di" bpmnElement="pension_sanction_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f5_di" bpmnElement="pension_sanction_f5"><di:waypoint x="2595" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f6_di" bpmnElement="pension_sanction_f6"><di:waypoint x="2710" y="220"/><di:waypoint x="2710" y="245"/><di:waypoint x="730" y="245"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f7_di" bpmnElement="pension_sanction_f7"><di:waypoint x="2735" y="195"/><di:waypoint x="2796" y="195"/><di:waypoint x="2796" y="320"/><di:waypoint x="2857" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f8_di" bpmnElement="pension_sanction_f8"><di:waypoint x="1201" y="128"/><di:waypoint x="1201" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f9_di" bpmnElement="pension_sanction_f9"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f10_di" bpmnElement="pension_sanction_f10"><di:waypoint x="1231" y="128"/><di:waypoint x="1231" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f11_di" bpmnElement="pension_sanction_f11"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f12_di" bpmnElement="pension_sanction_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f13_di" bpmnElement="pension_sanction_f13"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="128"/><di:waypoint x="1060" y="128"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f14_di" bpmnElement="pension_sanction_f14"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f15_di" bpmnElement="pension_sanction_f15"><di:waypoint x="1275" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f16_di" bpmnElement="pension_sanction_f16"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f17_di" bpmnElement="pension_sanction_f17"><di:waypoint x="920" y="70"/><di:waypoint x="1707" y="70"/><di:waypoint x="1707" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f18_di" bpmnElement="pension_sanction_f18"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f19_di" bpmnElement="pension_sanction_f19"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f20_di" bpmnElement="pension_sanction_f20"><di:waypoint x="1910" y="70"/><di:waypoint x="2202" y="70"/><di:waypoint x="2202" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f21_di" bpmnElement="pension_sanction_f21"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f22_di" bpmnElement="pension_sanction_f22"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f23_di" bpmnElement="pension_sanction_f23"><di:waypoint x="2405" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f24_di" bpmnElement="pension_sanction_f24"><di:waypoint x="2380" y="95"/><di:waypoint x="2380" y="149"/><di:waypoint x="730" y="149"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f25_di" bpmnElement="pension_sanction_f25"><di:waypoint x="2405" y="70"/><di:waypoint x="2450" y="70"/><di:waypoint x="2450" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f26_di" bpmnElement="pension_sanction_f26"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f27_di" bpmnElement="pension_sanction_f27"><di:waypoint x="2735" y="70"/><di:waypoint x="2780" y="70"/><di:waypoint x="2780" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f28_di" bpmnElement="pension_sanction_f28"><di:waypoint x="2735" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f29_di" bpmnElement="pension_sanction_f29"><di:waypoint x="2595" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f30_di" bpmnElement="pension_sanction_f30"><di:waypoint x="2925" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f31_di" bpmnElement="pension_sanction_f31"><di:waypoint x="3065" y="70"/><di:waypoint x="3110" y="70"/><di:waypoint x="3110" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f32_di" bpmnElement="pension_sanction_f32"><di:waypoint x="3205" y="235"/><di:waypoint x="3205" y="274"/><di:waypoint x="2215" y="274"/><di:waypoint x="2215" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f33_di" bpmnElement="pension_sanction_f33"><di:waypoint x="3255" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f34_di" bpmnElement="pension_sanction_f34"><di:waypoint x="3420" y="70"/><di:waypoint x="3517" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f35_di" bpmnElement="pension_sanction_f35"><di:waypoint x="3065" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f36_di" bpmnElement="pension_sanction_f36"><di:waypoint x="2925" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f37_di" bpmnElement="pension_sanction_f37"><di:waypoint x="3090" y="195"/><di:waypoint x="3122" y="195"/><di:waypoint x="3122" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f38_di" bpmnElement="pension_sanction_f38"><di:waypoint x="3255" y="320"/><di:waypoint x="3352" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f39_di" bpmnElement="pension_sanction_f39"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f40_di" bpmnElement="pension_sanction_f40"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f41_di" bpmnElement="pension_sanction_f41"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f42_di" bpmnElement="pension_sanction_f42"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f43_di" bpmnElement="pension_sanction_f43"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_sanction_f44_di" bpmnElement="pension_sanction_f44"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

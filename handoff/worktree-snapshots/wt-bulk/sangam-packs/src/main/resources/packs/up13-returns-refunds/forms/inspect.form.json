@@ -1,0 +1,56 @@
+{
+  "key": "up13-returns-refunds/inspect",
+  "version": "1.0.0",
+  "pack": "universal.up13-returns-refunds",
+  "title": {
+    "en": "Inspect returned goods",
+    "hi": "लौटाई गई वस्तु का निरीक्षण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "acceptedQty",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Quantity accepted",
+        "hi": "स्वीकृत मात्रा"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "returnDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

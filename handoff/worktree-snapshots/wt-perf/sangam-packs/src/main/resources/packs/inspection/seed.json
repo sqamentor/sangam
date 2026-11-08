@@ -1,0 +1,134 @@
+{
+  "offices": [
+    {
+      "id": "DIST-I",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "INSP-1",
+      "role": "INSPECTOR",
+      "office": "DIST-I",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "DC-I",
+      "name": {
+        "en": "Inspector 1",
+        "hi": "निरीक्षक 1"
+      }
+    },
+    {
+      "id": "INSP-2",
+      "role": "INSPECTOR",
+      "office": "DIST-I",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "DC-I",
+      "name": {
+        "en": "Inspector 2",
+        "hi": "निरीक्षक 2"
+      }
+    },
+    {
+      "id": "INSP-3",
+      "role": "INSPECTOR",
+      "office": "DIST-I",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "DC-I",
+      "name": {
+        "en": "Inspector 3",
+        "hi": "निरीक्षक 3"
+      }
+    },
+    {
+      "id": "DC-I",
+      "role": "DC",
+      "office": "DIST-I",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "APPELLATE-INSP",
+      "name": {
+        "en": "Deputy Commissioner",
+        "hi": "उपायुक्त"
+      }
+    },
+    {
+      "id": "APPELLATE-INSP",
+      "role": "APPELLATE",
+      "office": "DIST-I",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Appellate authority",
+        "hi": "अपीलीय प्राधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "INSP-1",
+      "person": "in.insp-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "INSP-2",
+      "person": "in.insp-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "INSP-3",
+      "person": "in.insp-3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DC-I",
+      "person": "in.dc-i",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "APPELLATE-INSP",
+      "person": "in.appellate-insp",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "INSPECTOR",
+      "name": {
+        "en": "Inspector 1",
+        "hi": "निरीक्षक 1"
+      }
+    },
+    {
+      "code": "INSPECTOR",
+      "name": {
+        "en": "Inspector 2",
+        "hi": "निरीक्षक 2"
+      }
+    },
+    {
+      "code": "INSPECTOR",
+      "name": {
+        "en": "Inspector 3",
+        "hi": "निरीक्षक 3"
+      }
+    },
+    {
+      "code": "DC",
+      "name": {
+        "en": "Deputy Commissioner",
+        "hi": "उपायुक्त"
+      }
+    },
+    {
+      "code": "APPELLATE",
+      "name": {
+        "en": "Appellate authority",
+        "hi": "अपीलीय प्राधिकारी"
+      }
+    }
+  ]
+}

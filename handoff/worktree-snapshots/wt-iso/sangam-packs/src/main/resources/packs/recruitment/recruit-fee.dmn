@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_recruit_fee" name="Application fee and exemptions (synthetic)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="recruit-fee" name="Application fee and exemptions (synthetic)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="recruit-fee_t" hitPolicy="FIRST">
+      <input id="recruit-fee_i0" label="Category"><inputExpression id="recruit-fee_ie0" typeRef="string"><text>socialCategory</text></inputExpression></input>
+      <input id="recruit-fee_i1" label="PwD"><inputExpression id="recruit-fee_ie1" typeRef="boolean"><text>pwd</text></inputExpression></input>
+      <output id="recruit-fee_o0" label="Fee" name="fee" typeRef="number"/>
+      <rule id="recruit-fee_r0"><description>PwBD exempt</description>
+        <inputEntry id="recruit-fee_r0_i0"><text>-</text></inputEntry>
+        <inputEntry id="recruit-fee_r0_i1"><text>true</text></inputEntry>
+        <outputEntry id="recruit-fee_r0_o0"><text>0</text></outputEntry>
+      </rule>
+      <rule id="recruit-fee_r1"><description>SC exempt</description>
+        <inputEntry id="recruit-fee_r1_i0"><text>"SC"</text></inputEntry>
+        <inputEntry id="recruit-fee_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="recruit-fee_r1_o0"><text>0</text></outputEntry>
+      </rule>
+      <rule id="recruit-fee_r2"><description>ST exempt</description>
+        <inputEntry id="recruit-fee_r2_i0"><text>"ST"</text></inputEntry>
+        <inputEntry id="recruit-fee_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="recruit-fee_r2_o0"><text>0</text></outputEntry>
+      </rule>
+      <rule id="recruit-fee_r3"><description>others</description>
+        <inputEntry id="recruit-fee_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="recruit-fee_r3_i1"><text>-</text></inputEntry>
+        <outputEntry id="recruit-fee_r3_o0"><text>100</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

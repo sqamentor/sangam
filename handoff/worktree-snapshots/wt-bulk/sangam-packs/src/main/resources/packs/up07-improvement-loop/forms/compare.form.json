@@ -1,0 +1,47 @@
+{
+  "key": "up07-improvement-loop/compare",
+  "version": "1.0.0",
+  "pack": "universal.up07-improvement-loop",
+  "title": {
+    "en": "Compare before and after",
+    "hi": "पहले और बाद की तुलना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "experimentResult",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Comparison result",
+        "hi": "तुलना परिणाम"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "keepDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accepted",
+        "label": {
+          "en": "Accepted",
+          "hi": "स्वीकृत"
+        }
+      },
+      {
+        "value": "rollback",
+        "label": {
+          "en": "Roll back",
+          "hi": "वापस लें (रोलबैक)"
+        }
+      }
+    ]
+  }
+}

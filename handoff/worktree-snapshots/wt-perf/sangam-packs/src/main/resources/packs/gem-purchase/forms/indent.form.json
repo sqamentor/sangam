@@ -1,0 +1,81 @@
+{
+  "key": "gem-purchase/indent",
+  "version": "1.0.0",
+  "pack": "gov.gem-purchase",
+  "title": {
+    "en": "Indent",
+    "hi": "मांग पत्र"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "itemDescription",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Item / service",
+        "hi": "वस्तु / सेवा"
+      }
+    },
+    {
+      "id": "quantity",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Quantity",
+        "hi": "मात्रा"
+      }
+    },
+    {
+      "id": "unitPrice",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Unit price (INR)",
+        "hi": "इकाई मूल्य (रुपये)"
+      }
+    },
+    {
+      "id": "gemAvailable",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Available on GeM",
+        "hi": "जेम पर उपलब्ध"
+      }
+    },
+    {
+      "id": "budgetHead",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Budget head",
+        "hi": "बजट शीर्ष"
+      }
+    },
+    {
+      "id": "justification",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Justification",
+        "hi": "औचित्य"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

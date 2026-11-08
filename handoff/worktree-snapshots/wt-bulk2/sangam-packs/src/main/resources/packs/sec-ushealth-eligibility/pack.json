@@ -1,0 +1,76 @@
+{
+  "id": "sec.ushealth.eligibility",
+  "version": "1.0.0",
+  "name": {
+    "en": "Eligibility and benefits verification",
+    "es": "Verificación de elegibilidad y beneficios"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "Registration with NPI check, real-time 270/271 eligibility through the clearinghouse (CAQH CORE 20 s), benefit review and estimated patient responsibility, coverage resolution (other coverage, self-pay, financial assistance). Emergency arrivals get the medical screening examination first: no payment or insurance inquiry may delay screening or stabilisation (EMTALA).",
+  "mainProcesses": [
+    "sangam-sec-ushealth-eligibility"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-eligibility/sangam-sec-ushealth-eligibility.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-eligibility/sec-ushealth-eligibility-config.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-eligibility/forms/register.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-eligibility/forms/mse.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-eligibility/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-eligibility/forms/resolve.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-eligibility/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-eligibility/seed.json",
+  "connectors": [
+    {
+      "id": "npi.registry",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "NPPES NPI lookup"
+    },
+    {
+      "id": "x12.eligibility",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "270/271 eligibility"
+    }
+  ],
+  "covers": [
+    "US-HLT-085",
+    "US-HLT-092",
+    "US-HLT-095",
+    "US-HLT-096",
+    "US-HLT-120",
+    "US-HLT-121",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

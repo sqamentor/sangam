@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Monthly cash transaction report. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_ctr" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-bank-ctr" name="Monthly cash transaction report" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.aml-str</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ctr_timer" name="First of the month"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 6 1 * ?</timeCycle></timerEventDefinition></startEvent>
+    <serviceTask id="ctr_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>poSeat=PRINCIPAL-OFFICER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ctr_pull" name="Cash transactions of the month" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.cashTxns</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>month</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cash</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ctr_review_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ctr_review</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>10D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ctr_review" name="Review CTR (file by the 15th)" operaton:candidateGroups="${poSeat}" operaton:formKey="sangam:sec-bank-aml-str/ctr" operaton:dueDate="${ctr_reviewDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ctr_review_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ctr_review</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>poSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ctr_review_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ctr_review_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ctr_review</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>poSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ctr_review_breachGw" name="Deemed?" default="sec_bank_ctr_f6"></exclusiveGateway>
+    <exclusiveGateway id="ctr_review_done" name=""></exclusiveGateway>
+    <serviceTask id="ctr_file" name="File CTR on FINnet" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>fiu.finnet</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>ctr</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ctr</operaton:string></operaton:field><operaton:field name="step"><operaton:string>ctr</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ctr_end" name="CTR filed"></endEvent>
+    <boundaryEvent id="ctr_review_warn" name="SLA warning (75%)" attachedToRef="ctr_review" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ctr_reviewWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ctr_review_breach" name="SLA breached" attachedToRef="ctr_review" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ctr_reviewDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_bank_ctr_f1" sourceRef="ctr_review_warn" targetRef="ctr_review_warnNotify"/>
+    <sequenceFlow id="sec_bank_ctr_f2" sourceRef="ctr_review_warnNotify" targetRef="ctr_review_warnEnd"/>
+    <sequenceFlow id="sec_bank_ctr_f3" sourceRef="ctr_review_breach" targetRef="ctr_review_breachAct"/>
+    <sequenceFlow id="sec_bank_ctr_f4" sourceRef="ctr_review_breachAct" targetRef="ctr_review_breachGw"/>
+    <sequenceFlow id="sec_bank_ctr_f5" name="deemed" sourceRef="ctr_review_breachGw" targetRef="ctr_review_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_ctr_f6" name="escalated" sourceRef="ctr_review_breachGw" targetRef="ctr_review_slaPlan"/>
+    <sequenceFlow id="sec_bank_ctr_f7" sourceRef="ctr_review_slaPlan" targetRef="ctr_review"/>
+    <sequenceFlow id="sec_bank_ctr_f8" sourceRef="ctr_review" targetRef="ctr_review_done"/>
+    <sequenceFlow id="sec_bank_ctr_f9" sourceRef="ctr_timer" targetRef="ctr_defaults"/>
+    <sequenceFlow id="sec_bank_ctr_f10" sourceRef="ctr_defaults" targetRef="ctr_pull"/>
+    <sequenceFlow id="sec_bank_ctr_f11" sourceRef="ctr_pull" targetRef="ctr_review_slaPlan"/>
+    <sequenceFlow id="sec_bank_ctr_f12" sourceRef="ctr_review_done" targetRef="ctr_file"/>
+    <sequenceFlow id="sec_bank_ctr_f13" sourceRef="ctr_file" targetRef="ctr_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_ctr_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_ctr_plane" bpmnElement="sangam-sec-bank-ctr">
+      <bpmndi:BPMNShape id="ctr_timer_di" bpmnElement="ctr_timer"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_defaults_di" bpmnElement="ctr_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_pull_di" bpmnElement="ctr_pull"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_review_slaPlan_di" bpmnElement="ctr_review_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_review_di" bpmnElement="ctr_review"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_review_warnNotify_di" bpmnElement="ctr_review_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_review_warnEnd_di" bpmnElement="ctr_review_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_review_breachAct_di" bpmnElement="ctr_review_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_review_breachGw_di" bpmnElement="ctr_review_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_review_done_di" bpmnElement="ctr_review_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_file_di" bpmnElement="ctr_file"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_end_di" bpmnElement="ctr_end"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_review_warn_di" bpmnElement="ctr_review_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ctr_review_breach_di" bpmnElement="ctr_review_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f1_di" bpmnElement="sec_bank_ctr_f1"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f2_di" bpmnElement="sec_bank_ctr_f2"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f3_di" bpmnElement="sec_bank_ctr_f3"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f4_di" bpmnElement="sec_bank_ctr_f4"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f5_di" bpmnElement="sec_bank_ctr_f5"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f6_di" bpmnElement="sec_bank_ctr_f6"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="135"/><di:waypoint x="565" y="135"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f7_di" bpmnElement="sec_bank_ctr_f7"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f8_di" bpmnElement="sec_bank_ctr_f8"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f9_di" bpmnElement="sec_bank_ctr_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f10_di" bpmnElement="sec_bank_ctr_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f11_di" bpmnElement="sec_bank_ctr_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f12_di" bpmnElement="sec_bank_ctr_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_ctr_f13_di" bpmnElement="sec_bank_ctr_f13"><di:waypoint x="1440" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

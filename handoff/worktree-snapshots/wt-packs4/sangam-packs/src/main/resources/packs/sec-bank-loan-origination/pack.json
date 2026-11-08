@@ -1,0 +1,129 @@
+{
+  "id": "sec.bank.loan-origination",
+  "version": "1.0.0",
+  "name": {
+    "en": "Loan origination to disbursal",
+    "hi": "ऋण आवेदन से संवितरण तक"
+  },
+  "domain": "Banking",
+  "description": "Retail / MSME loan: consent, KYC status, bureau pull, indicative FOIR, credit policy by rule (auto decline with reasons), appraisal with clarification, legal and valuation in parallel for secured loans, committee above the band, sanction by delegated power with SoD and payload binding, Key Facts Statement with APR and a validity window, e-signed agreement, disbursal to the borrower account with operationId, loan booked in the LMS.",
+  "mainProcesses": [
+    "sangam-sec-bank-loan-origination"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-loan-origination/sangam-sec-bank-loan-origination.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-loan-origination/sec-bank-credit-policy.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-loan-origination/sec-bank-loan-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-loan-origination/sec-bank-loan-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-loan-origination/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-loan-origination/forms/appraisal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-loan-origination/forms/legal-officer.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-loan-origination/forms/valuer.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-loan-origination/forms/accept.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-loan-origination/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-loan-origination/seed.json",
+  "connectors": [
+    {
+      "id": "cbs.kycStatus",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "KYC status of the customer"
+    },
+    {
+      "id": "bureau.pull",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Credit bureau (CIC)"
+    },
+    {
+      "id": "docs.kfs",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Key Facts Statement with APR"
+    },
+    {
+      "id": "bank.transfer",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Disbursal"
+    },
+    {
+      "id": "lms.book",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Book the loan in the LMS"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-010",
+    "SEC-BANK-011",
+    "SEC-BANK-012",
+    "SEC-BANK-013",
+    "SEC-BANK-014",
+    "GP-01",
+    "GP-03",
+    "GP-05",
+    "GP-12",
+    "GP-34",
+    "UP-02",
+    "UP-05",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-committee",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "collateralValue",
+      "existingEmi",
+      "monthlyIncome",
+      "powerLimit"
+    ]
+  }
+}

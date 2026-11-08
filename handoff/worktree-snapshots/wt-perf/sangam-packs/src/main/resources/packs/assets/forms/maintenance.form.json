@@ -1,0 +1,56 @@
+{
+  "key": "assets/maintenance",
+  "version": "1.0.0",
+  "pack": "gov.assets",
+  "title": {
+    "en": "Periodic maintenance / fitness",
+    "hi": "आवधिक रखरखाव / फ़िटनेस"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "condition",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Condition",
+        "hi": "स्थिति"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "conditionDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "fit",
+        "label": {
+          "en": "Fit for use",
+          "hi": "उपयोग योग्य"
+        }
+      },
+      {
+        "value": "condemn",
+        "label": {
+          "en": "Condemn",
+          "hi": "निष्प्रयोज्य घोषित करें"
+        }
+      }
+    ]
+  }
+}

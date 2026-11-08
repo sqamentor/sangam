@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+             targetNamespace="http://sangam.org/onboarding" id="onboarding-definitions">
+  <process id="sangam-onboarding" name="Tenant onboarding" isExecutable="true" operaton:historyTimeToLive="P3650D">
+    <startEvent id="start"/>
+    <sequenceFlow id="f0" sourceRef="start" targetRef="join_steps"/>
+    <exclusiveGateway id="join_steps"/>
+    <sequenceFlow id="f1" sourceRef="join_steps" targetRef="step_TENANT"/>
+
+    <serviceTask id="step_TENANT" name="Create tenant" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f2" sourceRef="step_TENANT" targetRef="step_PLACEMENT"/>
+    <serviceTask id="step_PLACEMENT" name="Place on a cell" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f3" sourceRef="step_PLACEMENT" targetRef="step_PROFILE"/>
+    <serviceTask id="step_PROFILE" name="Profile drafts" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f4" sourceRef="step_PROFILE" targetRef="step_PACKS"/>
+    <serviceTask id="step_PACKS" name="Resolve and deploy packs" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f5" sourceRef="step_PACKS" targetRef="step_CONNECTORS"/>
+    <serviceTask id="step_CONNECTORS" name="Bind and test connectors" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f6" sourceRef="step_CONNECTORS" targetRef="step_SECURITY"/>
+    <serviceTask id="step_SECURITY" name="Security defaults and roles" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f7" sourceRef="step_SECURITY" targetRef="step_SEEDS"/>
+    <serviceTask id="step_SEEDS" name="Load seeds" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f8" sourceRef="step_SEEDS" targetRef="step_COMPLIANCE"/>
+    <serviceTask id="step_COMPLIANCE" name="Compliance jurisdictions" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f9" sourceRef="step_COMPLIANCE" targetRef="step_READINESS"/>
+    <serviceTask id="step_READINESS" name="Go-live readiness" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f10" sourceRef="step_READINESS" targetRef="gw_ready"/>
+    <exclusiveGateway id="gw_ready" default="f12"/>
+    <sequenceFlow id="f11" sourceRef="gw_ready" targetRef="task_go_live_approval">
+      <conditionExpression>${readinessOk}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f12" sourceRef="gw_ready" targetRef="task_readiness_fix"/>
+
+    <userTask id="task_readiness_fix" name="Fix readiness problems" operaton:candidateGroups="sangam-tenant-admin,sangam-admin"/>
+    <sequenceFlow id="f13" sourceRef="task_readiness_fix" targetRef="join_steps"/>
+
+    <userTask id="task_go_live_approval" name="Approve go-live (checker)" operaton:candidateGroups="sangam-admin"/>
+    <sequenceFlow id="f14" sourceRef="task_go_live_approval" targetRef="gw_approved"/>
+    <exclusiveGateway id="gw_approved" default="f16"/>
+    <sequenceFlow id="f15" sourceRef="gw_approved" targetRef="step_GO_LIVE">
+      <conditionExpression>${approved}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f16" sourceRef="gw_approved" targetRef="end_rejected"/>
+    <serviceTask id="step_GO_LIVE" name="Go live" operaton:asyncBefore="true" operaton:delegateExpression="${sangamOnboardingStep}">
+      <extensionElements><operaton:failedJobRetryTimeCycle>R3/PT1M</operaton:failedJobRetryTimeCycle></extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f17" sourceRef="step_GO_LIVE" targetRef="end_live"/>
+    <endEvent id="end_live" name="Live"/>
+    <endEvent id="end_rejected" name="Rejected"/>
+  </process>
+</definitions>

@@ -1,0 +1,36 @@
+{
+  "key": "up19-contract-lifecycle/draft",
+  "version": "1.0.0",
+  "pack": "universal.up19-contract-lifecycle",
+  "title": {
+    "en": "Draft contract",
+    "hi": "अनुबंध का प्रारूप"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "redline",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Redlined draft",
+        "hi": "संशोधित प्रारूप"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- DBT payment for one beneficiary. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_dbt_beneficiary_payment" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-dbt-beneficiary-payment" name="DBT payment for one beneficiary" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Child of the GP-09 pattern: one record, its own operationId and state; failures are corrected at the desk chosen by the reason code (GP-49) and recorded for the next round.</documentation>
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.dbt.batch</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,bankAccount,ifsc,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="dp_start" name="Item started"></startEvent>
+    <serviceTask id="dp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>executionConnector=pfms.dbt;executionOperation=submitDbtRecord;executionStep=dbt;verifyApproval=false;reconcileRequired=true;bankAccount=;ifsc=;amount=0;correctedAccount=null;correctedIfsc=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dp_corrGw" name="Corrected in a previous round?" default="dbt_beneficiary_payment_f4"></exclusiveGateway>
+    <serviceTask id="dp_applyFix" name="Use corrected account" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>bankAccount=@correctedAccount;ifsc=@correctedIfsc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="dp_execute" name="DBT record (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="dp_endPaid" name="Credited"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <businessRuleTask id="dp_route" name="Route failure by reason (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>dbt-failure-routing</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="dp_exGw" name="executionOutcome?" default="dbt_beneficiary_payment_f7"></exclusiveGateway>
+    <userTask id="dp_fix" name="Correct failed record" operaton:candidateGroups="${failureDesk}" operaton:formKey="sangam:dbt-batch/fix-record"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>fixDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="dp_fixGw" name="" default="dbt_beneficiary_payment_f12"></exclusiveGateway>
+    <endEvent id="dp_endFailed" name="Failed, corrected for resend"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>correctedAccount,correctedIfsc</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="dp_endDropped" name="Dropped"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>DROPPED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="dbt_beneficiary_payment_f1" sourceRef="dp_start" targetRef="dp_defaults"/>
+    <sequenceFlow id="dbt_beneficiary_payment_f2" sourceRef="dp_defaults" targetRef="dp_corrGw"/>
+    <sequenceFlow id="dbt_beneficiary_payment_f3" name="corrected" sourceRef="dp_corrGw" targetRef="dp_applyFix"><conditionExpression xsi:type="tFormalExpression">${correctedAccount != null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dbt_beneficiary_payment_f4" sourceRef="dp_corrGw" targetRef="dp_execute"/>
+    <sequenceFlow id="dbt_beneficiary_payment_f5" sourceRef="dp_applyFix" targetRef="dp_execute"/>
+    <sequenceFlow id="dbt_beneficiary_payment_f6" name="DONE" sourceRef="dp_exGw" targetRef="dp_endPaid"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dbt_beneficiary_payment_f7" name="otherwise" sourceRef="dp_exGw" targetRef="dp_route"/>
+    <sequenceFlow id="dbt_beneficiary_payment_f8" sourceRef="dp_execute" targetRef="dp_exGw"/>
+    <sequenceFlow id="dbt_beneficiary_payment_f9" sourceRef="dp_route" targetRef="dp_fix"/>
+    <sequenceFlow id="dbt_beneficiary_payment_f10" sourceRef="dp_fix" targetRef="dp_fixGw"/>
+    <sequenceFlow id="dbt_beneficiary_payment_f11" name="correct" sourceRef="dp_fixGw" targetRef="dp_endFailed"><conditionExpression xsi:type="tFormalExpression">${fixDecision == 'correct'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="dbt_beneficiary_payment_f12" name="drop" sourceRef="dp_fixGw" targetRef="dp_endDropped"/>
+  </process>
+  <bpmndi:BPMNDiagram id="dbt_beneficiary_payment_diagram">
+    <bpmndi:BPMNPlane id="dbt_beneficiary_payment_plane" bpmnElement="sangam-dbt-beneficiary-payment">
+      <bpmndi:BPMNShape id="dp_start_di" bpmnElement="dp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_defaults_di" bpmnElement="dp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_corrGw_di" bpmnElement="dp_corrGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_applyFix_di" bpmnElement="dp_applyFix"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_execute_di" bpmnElement="dp_execute"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endPaid_di" bpmnElement="dp_endPaid"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_route_di" bpmnElement="dp_route"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_exGw_di" bpmnElement="dp_exGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_fix_di" bpmnElement="dp_fix"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_fixGw_di" bpmnElement="dp_fixGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endFailed_di" bpmnElement="dp_endFailed"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endDropped_di" bpmnElement="dp_endDropped"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f1_di" bpmnElement="dbt_beneficiary_payment_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f2_di" bpmnElement="dbt_beneficiary_payment_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f3_di" bpmnElement="dbt_beneficiary_payment_f3"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f4_di" bpmnElement="dbt_beneficiary_payment_f4"><di:waypoint x="425" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f5_di" bpmnElement="dbt_beneficiary_payment_f5"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f6_di" bpmnElement="dbt_beneficiary_payment_f6"><di:waypoint x="920" y="70"/><di:waypoint x="981" y="70"/><di:waypoint x="981" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f7_di" bpmnElement="dbt_beneficiary_payment_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f8_di" bpmnElement="dbt_beneficiary_payment_f8"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f9_di" bpmnElement="dbt_beneficiary_payment_f9"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f10_di" bpmnElement="dbt_beneficiary_payment_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f11_di" bpmnElement="dbt_beneficiary_payment_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1476" y="70"/><di:waypoint x="1476" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="dbt_beneficiary_payment_f12_di" bpmnElement="dbt_beneficiary_payment_f12"><di:waypoint x="1415" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

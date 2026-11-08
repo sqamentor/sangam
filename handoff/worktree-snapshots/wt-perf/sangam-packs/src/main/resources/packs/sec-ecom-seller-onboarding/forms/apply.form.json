@@ -1,0 +1,90 @@
+{
+  "key": "sec-ecom-seller-onboarding/apply",
+  "version": "1.0.0",
+  "pack": "sec.ecom.seller-onboarding",
+  "title": {
+    "en": "Seller registration",
+    "hi": "विक्रेता पंजीकरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "sellerName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Seller name",
+        "hi": "विक्रेता का नाम"
+      }
+    },
+    {
+      "id": "gstin",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "GSTIN",
+        "hi": "जीएसटीआईएन"
+      }
+    },
+    {
+      "id": "pan",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "PAN",
+        "hi": "पैन"
+      }
+    },
+    {
+      "id": "bankAccount",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Beneficiary bank account",
+        "hi": "लाभार्थी बैंक खाता"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "grievanceOfficerName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Grievance officer (name and contact)",
+        "hi": "शिकायत अधिकारी (नाम एवं संपर्क)"
+      }
+    },
+    {
+      "id": "category",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Category",
+        "hi": "श्रेणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "key": "sec-ecom-return-refund/request",
+  "version": "1.0.0",
+  "pack": "sec.ecom.return-refund",
+  "title": {
+    "en": "Return request",
+    "hi": "वापसी अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "orderId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Order",
+        "hi": "आदेश"
+      }
+    },
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "returnReason",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Reason for return",
+        "hi": "वापसी का कारण"
+      }
+    },
+    {
+      "id": "refundAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Refund (INR)",
+        "hi": "वापसी राशि (रुपये)"
+      }
+    },
+    {
+      "id": "resolutionPref",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Refund or replacement",
+        "hi": "धनवापसी या प्रतिस्थापन"
+      }
+    },
+    {
+      "id": "photos",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Photographs (geo-tagged)",
+        "hi": "फ़ोटो (जियो-टैग)"
+      }
+    }
+  ]
+}

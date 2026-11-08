@@ -1,0 +1,65 @@
+{
+  "key": "sec-ushealth-breach/risk",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.breach",
+  "title": {
+    "en": "Four-factor risk assessment",
+    "es": "Evaluación de riesgos de cuatro factores"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "riskFactors",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Four-factor risk assessment (164.402)",
+        "es": "Evaluación de riesgos de cuatro factores (164.402)"
+      }
+    },
+    {
+      "id": "phiTypes",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Types of PHI involved",
+        "es": "Tipos de PHI involucrada"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "es": "Documentos"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "riskDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "breach",
+        "label": {
+          "en": "Breach: notify",
+          "es": "Violación: notificar"
+        }
+      },
+      {
+        "value": "lowProbability",
+        "label": {
+          "en": "Low probability of compromise (documented)",
+          "es": "Baja probabilidad de compromiso (documentada)"
+        }
+      }
+    ]
+  }
+}

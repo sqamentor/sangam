@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "PLANNING",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PLANNER",
+      "role": "PLANNER",
+      "office": "PLANNING",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Material planner",
+        "hi": "सामग्री नियोजक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PLANNER",
+      "person": "mmr.planner",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PLANNER",
+      "name": {
+        "en": "Material planner",
+        "hi": "सामग्री नियोजक"
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-discharge/im-followup",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.discharge",
+  "title": {
+    "en": "Follow-up copy of the Important Message (no more than 2 days before discharge)",
+    "es": "Copia de seguimiento del Mensaje Importante"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "noticeSigned",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Notice signed or refusal documented",
+        "es": "Aviso firmado o negativa documentada"
+      }
+    }
+  ]
+}

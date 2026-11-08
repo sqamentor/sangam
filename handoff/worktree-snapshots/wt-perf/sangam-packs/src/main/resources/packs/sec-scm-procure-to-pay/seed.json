@@ -1,0 +1,158 @@
+{
+  "offices": [
+    {
+      "id": "PROCUREMENT",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "BUYER",
+      "role": "BUYER",
+      "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "PROC-HEAD",
+      "name": {
+        "en": "Buyer",
+        "hi": "क्रेता"
+      }
+    },
+    {
+      "id": "QC-INSPECTOR",
+      "role": "QC",
+      "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "PROC-HEAD",
+      "name": {
+        "en": "Quality inspector",
+        "hi": "गुणवत्ता निरीक्षक"
+      }
+    },
+    {
+      "id": "AP-TREASURY",
+      "role": "TREASURY",
+      "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CFO",
+      "name": {
+        "en": "Accounts payable / treasury",
+        "hi": "देय लेखा / कोष"
+      }
+    },
+    {
+      "id": "DEPT-HEAD",
+      "role": "DEPTHEAD",
+      "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "PROC-HEAD",
+      "name": {
+        "en": "Department head",
+        "hi": "विभाग प्रमुख"
+      }
+    },
+    {
+      "id": "PROC-HEAD",
+      "role": "PROCHEAD",
+      "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CFO",
+      "name": {
+        "en": "Head of procurement",
+        "hi": "क्रय प्रमुख"
+      }
+    },
+    {
+      "id": "CFO",
+      "role": "CFO",
+      "office": "PROCUREMENT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Chief financial officer",
+        "hi": "मुख्य वित्त अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "BUYER",
+      "person": "spp.buyer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "QC-INSPECTOR",
+      "person": "spp.qc-inspector",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AP-TREASURY",
+      "person": "spp.ap-treasury",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DEPT-HEAD",
+      "person": "spp.dept-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PROC-HEAD",
+      "person": "spp.proc-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CFO",
+      "person": "spp.cfo",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "BUYER",
+      "name": {
+        "en": "Buyer",
+        "hi": "क्रेता"
+      }
+    },
+    {
+      "code": "QC",
+      "name": {
+        "en": "Quality inspector",
+        "hi": "गुणवत्ता निरीक्षक"
+      }
+    },
+    {
+      "code": "TREASURY",
+      "name": {
+        "en": "Accounts payable / treasury",
+        "hi": "देय लेखा / कोष"
+      }
+    },
+    {
+      "code": "DEPTHEAD",
+      "name": {
+        "en": "Department head",
+        "hi": "विभाग प्रमुख"
+      }
+    },
+    {
+      "code": "PROCHEAD",
+      "name": {
+        "en": "Head of procurement",
+        "hi": "क्रय प्रमुख"
+      }
+    },
+    {
+      "code": "CFO",
+      "name": {
+        "en": "Chief financial officer",
+        "hi": "मुख्य वित्त अधिकारी"
+      }
+    }
+  ]
+}

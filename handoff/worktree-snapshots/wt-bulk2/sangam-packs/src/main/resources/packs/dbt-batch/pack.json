@@ -1,0 +1,100 @@
+{
+  "id": "gov.dbt.batch",
+  "version": "1.0.0",
+  "name": {
+    "en": "DBT batch with partial failure",
+    "hi": "आंशिक विफलता सहित डीबीटी बैच"
+  },
+  "domain": "Scheme / DBT",
+  "description": "A sanctioned beneficiary list is paid as one instance per beneficiary (GP-09), the parent aggregates the outcomes, each failure is routed by reason code to its desk and only the failures are resent in the next round (GP-49).",
+  "mainProcesses": [
+    "sangam-dbt-batch"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/dbt-batch/sangam-dbt-batch.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/dbt-batch/sangam-dbt-beneficiary-payment.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/dbt-batch/dbt-failure-routing.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/dbt-batch/forms/batch.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/dbt-batch/forms/review-failures.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/dbt-batch/forms/fix-record.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/dbt-batch/seed.json"
+    }
+  ],
+  "seed": "packs/dbt-batch/seed.json",
+  "connectors": [
+    {
+      "id": "dbt.beneficiaryList",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Sanctioned list for the period"
+    },
+    {
+      "id": "pfms.dbt",
+      "capabilityClass": "c",
+      "govTag": "G-PFMS",
+      "purpose": "DBT record"
+    },
+    {
+      "id": "bank.statement",
+      "capabilityClass": "b",
+      "govTag": "G-PFMS",
+      "purpose": "Credit confirmation"
+    }
+  ],
+  "covers": [
+    "GP-08",
+    "GP-09",
+    "GP-12",
+    "GP-49",
+    "D-DBT-SCHEME",
+    "R58"
+  ],
+  "acceptance": [
+    {
+      "id": "GP-49",
+      "title": "Partial batch failure resends only the failures",
+      "refs": [
+        "GP-09",
+        "GP-49"
+      ],
+      "given": "five beneficiaries, two fail with ACCOUNT_CLOSED",
+      "when": "the bank desk corrects; the cell resends",
+      "then": "round 2 has exactly the two corrected items",
+      "startVariables": {
+        "schemeId": "PM-KISAN-LIKE"
+      },
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: the bank desk corrects items and the cell resends round 2"
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution",
+    "sangam-core-sanction"
+  ]
+}

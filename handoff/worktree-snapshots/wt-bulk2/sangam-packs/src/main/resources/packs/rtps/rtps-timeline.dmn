@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_rtps_timeline" name="Notified services and timelines (synthetic)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="rtps-timeline" name="Notified services and timelines (synthetic)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="rtps-timeline_t" hitPolicy="FIRST">
+      <input id="rtps-timeline_i0" label="Service"><inputExpression id="rtps-timeline_ie0" typeRef="string"><text>serviceCode</text></inputExpression></input>
+      <output id="rtps-timeline_o0" label="Time limit" name="caseSla" typeRef="string"/>
+      <output id="rtps-timeline_o1" label="Designated officer" name="designatedRole" typeRef="string"/>
+      <output id="rtps-timeline_o2" label="First appellate authority" name="appellateRole" typeRef="string"/>
+      <rule id="rtps-timeline_r0">
+        <inputEntry id="rtps-timeline_r0_i0"><text>"INCOME-CERT"</text></inputEntry>
+        <outputEntry id="rtps-timeline_r0_o0"><text>"7WD"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r0_o1"><text>"TEHSILDAR"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r0_o2"><text>"SDM"</text></outputEntry>
+      </rule>
+      <rule id="rtps-timeline_r1">
+        <inputEntry id="rtps-timeline_r1_i0"><text>"CASTE-CERT"</text></inputEntry>
+        <outputEntry id="rtps-timeline_r1_o0"><text>"15WD"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r1_o1"><text>"TEHSILDAR"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r1_o2"><text>"SDM"</text></outputEntry>
+      </rule>
+      <rule id="rtps-timeline_r2">
+        <inputEntry id="rtps-timeline_r2_i0"><text>"BIRTH-CERT"</text></inputEntry>
+        <outputEntry id="rtps-timeline_r2_o0"><text>"7WD"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r2_o1"><text>"REGISTRAR"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r2_o2"><text>"SDM"</text></outputEntry>
+      </rule>
+      <rule id="rtps-timeline_r3">
+        <inputEntry id="rtps-timeline_r3_i0"><text>"WATER-CONNECTION"</text></inputEntry>
+        <outputEntry id="rtps-timeline_r3_o0"><text>"15WD"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r3_o1"><text>"JE"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r3_o2"><text>"EE"</text></outputEntry>
+      </rule>
+      <rule id="rtps-timeline_r4">
+        <inputEntry id="rtps-timeline_r4_i0"><text>-</text></inputEntry>
+        <outputEntry id="rtps-timeline_r4_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r4_o1"><text>"TEHSILDAR"</text></outputEntry>
+        <outputEntry id="rtps-timeline_r4_o2"><text>"SDM"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

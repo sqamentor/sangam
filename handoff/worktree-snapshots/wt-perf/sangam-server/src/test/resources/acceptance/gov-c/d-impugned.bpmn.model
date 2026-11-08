@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_dimp">
+  <!-- The departmental action challenged in court (for example a recovery order); stayed by suspension. -->
+  <process id="d-impugned" name="D-COURT-CASE Impugned departmental action" isExecutable="true">
+    <startEvent id="dimp_start"/>
+    <sequenceFlow id="f1" sourceRef="dimp_start" targetRef="dimp_implement"/>
+    <userTask id="dimp_implement" name="Implement order"><potentialOwner><resourceAssignmentExpression><formalExpression>group(department)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="dimp_implement" targetRef="dimp_end"/>
+    <endEvent id="dimp_end"/>
+  </process>
+</definitions>

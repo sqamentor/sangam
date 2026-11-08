@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: inter-department referral / concurrence. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_referral" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_referralReply" name="sangam.referralReply"/>
+  <process id="sangam-core-referral" name="Core: inter-department referral / concurrence" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>GP-32: the question goes to the other department's inbox through the referral connector (no shared rows, AC-09, J-P2-E09); the reply comes back as a message; reminders at the SLA.</documentation>
+    <startEvent id="rf_start" name="Refer"></startEvent>
+    <serviceTask id="rf_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>referralSla=P15D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rf_send" name="Send referral" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>referral.send</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>send</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>referToTenant,referralQuestion,fileNo,subject</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>referral</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rf_deadline" name="Reply due" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>referral</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${referralSla}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="rf_wait" name="Reply or reminder"></eventBasedGateway>
+    <intermediateCatchEvent id="rf_reply" name="Reply received"><messageEventDefinition messageRef="msg_sangam_referralReply"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="rf_due" name="Reply overdue"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${referralDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="rf_remind" name="Reminder" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>referral-reminder</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>referToTenant</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rf_done" name="Replied" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>referralOutcome=REPLIED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rf_end" name="Replied"></endEvent>
+    <sequenceFlow id="core_referral_f1" sourceRef="rf_start" targetRef="rf_defaults"/>
+    <sequenceFlow id="core_referral_f2" sourceRef="rf_defaults" targetRef="rf_send"/>
+    <sequenceFlow id="core_referral_f3" sourceRef="rf_send" targetRef="rf_deadline"/>
+    <sequenceFlow id="core_referral_f4" sourceRef="rf_deadline" targetRef="rf_wait"/>
+    <sequenceFlow id="core_referral_f5" sourceRef="rf_wait" targetRef="rf_reply"/>
+    <sequenceFlow id="core_referral_f6" sourceRef="rf_wait" targetRef="rf_due"/>
+    <sequenceFlow id="core_referral_f7" sourceRef="rf_due" targetRef="rf_remind"/>
+    <sequenceFlow id="core_referral_f8" sourceRef="rf_remind" targetRef="rf_deadline"/>
+    <sequenceFlow id="core_referral_f9" sourceRef="rf_reply" targetRef="rf_done"/>
+    <sequenceFlow id="core_referral_f10" sourceRef="rf_done" targetRef="rf_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_referral_diagram">
+    <bpmndi:BPMNPlane id="core_referral_plane" bpmnElement="sangam-core-referral">
+      <bpmndi:BPMNShape id="rf_start_di" bpmnElement="rf_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rf_defaults_di" bpmnElement="rf_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rf_send_di" bpmnElement="rf_send"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rf_deadline_di" bpmnElement="rf_deadline"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rf_wait_di" bpmnElement="rf_wait"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rf_reply_di" bpmnElement="rf_reply"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rf_due_di" bpmnElement="rf_due"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rf_remind_di" bpmnElement="rf_remind"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rf_done_di" bpmnElement="rf_done"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rf_end_di" bpmnElement="rf_end"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_referral_f1_di" bpmnElement="core_referral_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_f2_di" bpmnElement="core_referral_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_f3_di" bpmnElement="core_referral_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_f4_di" bpmnElement="core_referral_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_f5_di" bpmnElement="core_referral_f5"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_f6_di" bpmnElement="core_referral_f6"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_f7_di" bpmnElement="core_referral_f7"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_f8_di" bpmnElement="core_referral_f8"><di:waypoint x="1060" y="110"/><di:waypoint x="1060" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_f9_di" bpmnElement="core_referral_f9"><di:waypoint x="913" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_f10_di" bpmnElement="core_referral_f10"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

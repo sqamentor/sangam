@@ -1,0 +1,47 @@
+{
+  "key": "sec-hr-posh-complaint/conciliation",
+  "version": "1.0.0",
+  "pack": "sec.hr.posh-complaint",
+  "title": {
+    "en": "Conciliation (no monetary settlement)",
+    "hi": "सुलह (मौद्रिक समझौता नहीं)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "concDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "settled",
+        "label": {
+          "en": "Settled",
+          "hi": "निपटाया गया"
+        }
+      },
+      {
+        "value": "failed",
+        "label": {
+          "en": "Not verified",
+          "hi": "असत्यापित"
+        }
+      }
+    ]
+  }
+}

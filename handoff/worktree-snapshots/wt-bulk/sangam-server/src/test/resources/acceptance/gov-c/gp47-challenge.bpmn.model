@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp47c">
+  <message id="m_fee" name="challengeFeePaid"/>
+  <process id="gp47-challenge" name="GP-47 Answer key challenge" isExecutable="true">
+    <startEvent id="gp47c_start"/>
+    <sequenceFlow id="f1" sourceRef="gp47c_start" targetRef="gp47c_await"/>
+    <eventBasedGateway id="gp47c_await"/>
+    <sequenceFlow id="f2" sourceRef="gp47c_await" targetRef="gp47c_paid"/>
+    <sequenceFlow id="f3" sourceRef="gp47c_await" targetRef="gp47c_windowClosed"/>
+    <intermediateCatchEvent id="gp47c_paid"><messageEventDefinition messageRef="m_fee"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="gp47c_windowClosed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${windowEnd}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <sequenceFlow id="f4" sourceRef="gp47c_paid" targetRef="gp47c_admitted"/>
+    <sequenceFlow id="f5" sourceRef="gp47c_windowClosed" targetRef="gp47c_lapsed"/>
+    <endEvent id="gp47c_admitted"/>
+    <endEvent id="gp47c_lapsed"/>
+  </process>
+</definitions>

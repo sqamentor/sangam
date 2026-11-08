@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: standalone reconciliation item. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_reconciliation" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_reconciliationResolved" name="sangam.reconciliationResolved"/>
+  <process id="sangam-core-reconciliation" name="Core: standalone reconciliation item" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>An UNKNOWN_OUTCOME or mismatch item raised outside a running execution (restore from backup with known downstream effects J-P1-E14, late result after delete, statement exceptions): the operator confirms success with evidence, confirms failure, or retries the same operationId (class a/b only), OJ-02.</documentation>
+    <startEvent id="rn_start" name="Item raised"></startEvent>
+    <serviceTask id="rn_open" name="Open item" operaton:class="org.sangam.packs.core.ExternalOperationDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN_RECON</operaton:string></operaton:field><operaton:field name="kind"><operaton:expression>${reconKind}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rn_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>reconKind=UNKNOWN_OUTCOME</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="rn_resolved" name="Resolved"><messageEventDefinition messageRef="msg_sangam_reconciliationResolved"/></intermediateCatchEvent>
+    <serviceTask id="rn_apply" name="Apply resolution" operaton:class="org.sangam.packs.core.ExternalOperationDelegate"><extensionElements><operaton:field name="op"><operaton:string>APPLY_RESOLUTION</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rn_gw" name="Retry?" default="core_reconciliation_f8"></exclusiveGateway>
+    <serviceTask id="rn_retry" name="Retry same operationId" operaton:class="org.sangam.packs.core.ExternalOperationDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>SUBMIT</operaton:string></operaton:field><operaton:field name="connector"><operaton:expression>${opConnector}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <endEvent id="rn_end" name="Resolved"></endEvent>
+    <sequenceFlow id="core_reconciliation_f1" sourceRef="rn_start" targetRef="rn_defaults"/>
+    <sequenceFlow id="core_reconciliation_f2" sourceRef="rn_defaults" targetRef="rn_open"/>
+    <sequenceFlow id="core_reconciliation_f3" sourceRef="rn_open" targetRef="rn_resolved"/>
+    <sequenceFlow id="core_reconciliation_f4" sourceRef="rn_resolved" targetRef="rn_apply"/>
+    <sequenceFlow id="core_reconciliation_f5" sourceRef="rn_apply" targetRef="rn_gw"/>
+    <sequenceFlow id="core_reconciliation_f6" name="retry" sourceRef="rn_gw" targetRef="rn_retry"><conditionExpression xsi:type="tFormalExpression">${opStatus == 'RETRY'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_reconciliation_f7" sourceRef="rn_retry" targetRef="rn_gw"/>
+    <sequenceFlow id="core_reconciliation_f8" name="resolved" sourceRef="rn_gw" targetRef="rn_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_reconciliation_diagram">
+    <bpmndi:BPMNPlane id="core_reconciliation_plane" bpmnElement="sangam-core-reconciliation">
+      <bpmndi:BPMNShape id="rn_start_di" bpmnElement="rn_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rn_open_di" bpmnElement="rn_open"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rn_defaults_di" bpmnElement="rn_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rn_resolved_di" bpmnElement="rn_resolved"><dc:Bounds x="547" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rn_apply_di" bpmnElement="rn_apply"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rn_gw_di" bpmnElement="rn_gw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rn_retry_di" bpmnElement="rn_retry"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rn_end_di" bpmnElement="rn_end"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_reconciliation_f1_di" bpmnElement="core_reconciliation_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_reconciliation_f2_di" bpmnElement="core_reconciliation_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_reconciliation_f3_di" bpmnElement="core_reconciliation_f3"><di:waypoint x="450" y="70"/><di:waypoint x="547" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_reconciliation_f4_di" bpmnElement="core_reconciliation_f4"><di:waypoint x="583" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_reconciliation_f5_di" bpmnElement="core_reconciliation_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_reconciliation_f6_di" bpmnElement="core_reconciliation_f6"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_reconciliation_f7_di" bpmnElement="core_reconciliation_f7"><di:waypoint x="1060" y="235"/><di:waypoint x="1060" y="267"/><di:waypoint x="895" y="267"/><di:waypoint x="895" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_reconciliation_f8_di" bpmnElement="core_reconciliation_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

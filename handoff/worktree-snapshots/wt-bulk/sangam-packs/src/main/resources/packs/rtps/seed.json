@@ -1,0 +1,158 @@
+{
+  "offices": [
+    {
+      "id": "TEHSIL",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "TEHSILDAR-1",
+      "role": "TEHSILDAR",
+      "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SDM-1",
+      "name": {
+        "en": "Tehsildar",
+        "hi": "तहसीलदार"
+      }
+    },
+    {
+      "id": "REGISTRAR-1",
+      "role": "REGISTRAR",
+      "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SDM-1",
+      "name": {
+        "en": "Registrar of births and deaths",
+        "hi": "जन्म-मृत्यु रजिस्ट्रार"
+      }
+    },
+    {
+      "id": "JE-1",
+      "role": "JE",
+      "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "EE-1",
+      "name": {
+        "en": "Junior Engineer",
+        "hi": "कनिष्ठ अभियंता"
+      }
+    },
+    {
+      "id": "EE-1",
+      "role": "EE",
+      "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SECOND-APPELLATE",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "id": "SDM-1",
+      "role": "SDM",
+      "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SECOND-APPELLATE",
+      "name": {
+        "en": "Sub-divisional magistrate",
+        "hi": "उपखंड मजिस्ट्रेट"
+      }
+    },
+    {
+      "id": "SECOND-APPELLATE",
+      "role": "COLLECTOR",
+      "office": "TEHSIL",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Second appellate authority (Collector)",
+        "hi": "द्वितीय अपीलीय प्राधिकारी (कलेक्टर)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "TEHSILDAR-1",
+      "person": "rs.tehsildar-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "REGISTRAR-1",
+      "person": "rs.registrar-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "JE-1",
+      "person": "rs.je-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EE-1",
+      "person": "rs.ee-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SDM-1",
+      "person": "rs.sdm-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SECOND-APPELLATE",
+      "person": "rs.second-appellate",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "TEHSILDAR",
+      "name": {
+        "en": "Tehsildar",
+        "hi": "तहसीलदार"
+      }
+    },
+    {
+      "code": "REGISTRAR",
+      "name": {
+        "en": "Registrar of births and deaths",
+        "hi": "जन्म-मृत्यु रजिस्ट्रार"
+      }
+    },
+    {
+      "code": "JE",
+      "name": {
+        "en": "Junior Engineer",
+        "hi": "कनिष्ठ अभियंता"
+      }
+    },
+    {
+      "code": "EE",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "code": "SDM",
+      "name": {
+        "en": "Sub-divisional magistrate",
+        "hi": "उपखंड मजिस्ट्रेट"
+      }
+    },
+    {
+      "code": "COLLECTOR",
+      "name": {
+        "en": "Second appellate authority (Collector)",
+        "hi": "द्वितीय अपीलीय प्राधिकारी (कलेक्टर)"
+      }
+    }
+  ]
+}

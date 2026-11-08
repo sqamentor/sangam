@@ -1,0 +1,27 @@
+{
+  "key": "sec-bank-aml-str/ctr",
+  "version": "1.0.0",
+  "pack": "sec.bank.aml-str",
+  "title": {
+    "en": "Review CTR (file by the 15th)",
+    "hi": "सीटीआर की समीक्षा (15 तारीख तक)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

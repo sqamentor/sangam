@@ -1,0 +1,83 @@
+{
+  "key": "sec-bank-emandate/register",
+  "version": "1.0.0",
+  "pack": "sec.bank.emandate",
+  "title": {
+    "en": "Mandate registration",
+    "hi": "अधिदेश पंजीकरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "account",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Bank account number",
+        "hi": "बैंक खाता संख्या"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "frequency",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Frequency",
+        "hi": "आवृत्ति"
+      }
+    },
+    {
+      "id": "mandateType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Mandate type",
+        "hi": "अधिदेश का प्रकार"
+      }
+    },
+    {
+      "id": "merchantCategory",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Merchant category",
+        "hi": "व्यापारी श्रेणी"
+      }
+    }
+  ]
+}

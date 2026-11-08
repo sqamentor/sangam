@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: referral received from another department. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_referral_inbound" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_referralReceived" name="sangam.referralReceived"/>
+  <process id="sangam-core-referral-inbound" name="Core: referral received from another department" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Receiving side of GP-32: a referral arrives in this tenant's inbox, is examined by the referral desk and answered through the connector.</documentation>
+    <startEvent id="ri_start" name="Referral received"><messageEventDefinition messageRef="msg_sangam_referralReceived"/></startEvent>
+    <serviceTask id="ri_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>referralDeskSeat=referral-desk;referralReplySla=10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ri_examine_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ri_examine</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${referralReplySla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ri_examine" name="Examine referral and advise" operaton:candidateGroups="${referralDeskSeat}" operaton:formKey="sangam:core/referral-inbound" operaton:dueDate="${ri_examineDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>referralDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ri_examine_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ri_examine</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>referralDeskSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ri_examine_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ri_examine_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ri_examine</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>referralDeskSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>referralDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ri_examine_breachGw" name="Deemed?" default="core_referral_inbound_f6"></exclusiveGateway>
+    <exclusiveGateway id="ri_examine_done" name=""></exclusiveGateway>
+    <serviceTask id="ri_reply" name="Send reply" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>referral.reply</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>reply</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>referralDecision,referralReply,parentBusinessKey</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>reply</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ri_end" name="Replied"></endEvent>
+    <boundaryEvent id="ri_examine_warn" name="SLA warning (75%)" attachedToRef="ri_examine" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ri_examineWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ri_examine_breach" name="SLA breached" attachedToRef="ri_examine" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ri_examineDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="core_referral_inbound_f1" sourceRef="ri_examine_warn" targetRef="ri_examine_warnNotify"/>
+    <sequenceFlow id="core_referral_inbound_f2" sourceRef="ri_examine_warnNotify" targetRef="ri_examine_warnEnd"/>
+    <sequenceFlow id="core_referral_inbound_f3" sourceRef="ri_examine_breach" targetRef="ri_examine_breachAct"/>
+    <sequenceFlow id="core_referral_inbound_f4" sourceRef="ri_examine_breachAct" targetRef="ri_examine_breachGw"/>
+    <sequenceFlow id="core_referral_inbound_f5" name="deemed" sourceRef="ri_examine_breachGw" targetRef="ri_examine_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_referral_inbound_f6" name="escalated" sourceRef="ri_examine_breachGw" targetRef="ri_examine_slaPlan"/>
+    <sequenceFlow id="core_referral_inbound_f7" sourceRef="ri_examine_slaPlan" targetRef="ri_examine"/>
+    <sequenceFlow id="core_referral_inbound_f8" sourceRef="ri_examine" targetRef="ri_examine_done"/>
+    <sequenceFlow id="core_referral_inbound_f9" sourceRef="ri_start" targetRef="ri_defaults"/>
+    <sequenceFlow id="core_referral_inbound_f10" sourceRef="ri_defaults" targetRef="ri_examine_slaPlan"/>
+    <sequenceFlow id="core_referral_inbound_f11" sourceRef="ri_examine_done" targetRef="ri_reply"/>
+    <sequenceFlow id="core_referral_inbound_f12" sourceRef="ri_reply" targetRef="ri_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_referral_inbound_diagram">
+    <bpmndi:BPMNPlane id="core_referral_inbound_plane" bpmnElement="sangam-core-referral-inbound">
+      <bpmndi:BPMNShape id="ri_start_di" bpmnElement="ri_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_defaults_di" bpmnElement="ri_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_examine_slaPlan_di" bpmnElement="ri_examine_slaPlan"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_examine_di" bpmnElement="ri_examine"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_examine_warnNotify_di" bpmnElement="ri_examine_warnNotify"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_examine_warnEnd_di" bpmnElement="ri_examine_warnEnd"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_examine_breachAct_di" bpmnElement="ri_examine_breachAct"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_examine_breachGw_di" bpmnElement="ri_examine_breachGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_examine_done_di" bpmnElement="ri_examine_done"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_reply_di" bpmnElement="ri_reply"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_end_di" bpmnElement="ri_end"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_examine_warn_di" bpmnElement="ri_examine_warn"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ri_examine_breach_di" bpmnElement="ri_examine_breach"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f1_di" bpmnElement="core_referral_inbound_f1"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f2_di" bpmnElement="core_referral_inbound_f2"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f3_di" bpmnElement="core_referral_inbound_f3"><di:waypoint x="571" y="128"/><di:waypoint x="571" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f4_di" bpmnElement="core_referral_inbound_f4"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f5_di" bpmnElement="core_referral_inbound_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f6_di" bpmnElement="core_referral_inbound_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f7_di" bpmnElement="core_referral_inbound_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f8_di" bpmnElement="core_referral_inbound_f8"><di:waypoint x="615" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f9_di" bpmnElement="core_referral_inbound_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f10_di" bpmnElement="core_referral_inbound_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f11_di" bpmnElement="core_referral_inbound_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_referral_inbound_f12_di" bpmnElement="core_referral_inbound_f12"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

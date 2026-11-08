@@ -1,0 +1,47 @@
+{
+  "key": "up10-incident-swarming/confirm",
+  "version": "1.0.0",
+  "pack": "universal.up10-incident-swarming",
+  "title": {
+    "en": "Confirm resolution",
+    "hi": "समाधान की पुष्टि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "feedback",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Feedback",
+        "hi": "प्रतिक्रिया"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "confirmDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "close",
+        "label": {
+          "en": "Close",
+          "hi": "बंद करें"
+        }
+      },
+      {
+        "value": "reopen",
+        "label": {
+          "en": "Reopen",
+          "hi": "पुनः खोलें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet: open in the Sangam modeller and auto-layout. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_breach_incident" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
+  <process id="sangam-breach-incident" name="Personal data breach" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Breach handling: initial notification to the supervisory authority and notice to each affected data subject without delay (parallel), detailed report by the pack deadline (IN: DPDP r.7, 72 hours) with warning and overdue timers. The linked incident report runs in sangam-incident-report.</documentation>
+    <startEvent id="start" name="Breach registered"/>
+    <parallelGateway id="fork"/>
+    <userTask id="u_facts" name="Confirm facts for the authority notification" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/breach-facts"></userTask>
+    <serviceTask id="s_authority" name="Notify supervisory authority" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.notifyAuthority</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u_notice" name="Approve notice to affected data subjects" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/breach-subject-notice"></userTask>
+    <serviceTask id="s_subjects" name="Notify affected data subjects" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.notifySubjects</operaton:string></operaton:field></extensionElements></serviceTask>
+    <parallelGateway id="join"/>
+    <userTask id="u_report" name="Prepare detailed report" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/breach-report"></userTask>
+    <boundaryEvent id="t_warn" name="Report deadline approaching" attachedToRef="u_report" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${reportWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <userTask id="u_warn" name="Escalation: detailed report deadline approaching" operaton:candidateGroups="CISO" operaton:formKey="sangam:compliance/breach-escalation"></userTask>
+    <endEvent id="end_warn" name="Escalated"/>
+    <boundaryEvent id="t_due" name="Report deadline" attachedToRef="u_report" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${reportDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <serviceTask id="s_overdue" name="Record overdue report" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.overdue</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end_due" name="Overdue recorded"/>
+    <serviceTask id="s_report" name="Submit detailed report" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.submitReport</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u_close" name="Close breach after remediation" operaton:candidateGroups="CISO" operaton:formKey="sangam:compliance/breach-close"></userTask>
+    <serviceTask id="s_close" name="Close breach and release evidence holds" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.close</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end" name="Closed"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="fork"/>
+    <sequenceFlow id="f2" sourceRef="fork" targetRef="u_facts"/>
+    <sequenceFlow id="f3" sourceRef="u_facts" targetRef="s_authority"/>
+    <sequenceFlow id="f4" sourceRef="s_authority" targetRef="join"/>
+    <sequenceFlow id="f5" sourceRef="fork" targetRef="u_notice"/>
+    <sequenceFlow id="f6" sourceRef="u_notice" targetRef="s_subjects"/>
+    <sequenceFlow id="f7" sourceRef="s_subjects" targetRef="join"/>
+    <sequenceFlow id="f8" sourceRef="join" targetRef="u_report"/>
+    <sequenceFlow id="f9" sourceRef="u_report" targetRef="s_report"/>
+    <sequenceFlow id="f10" sourceRef="s_report" targetRef="u_close"/>
+    <sequenceFlow id="f11" sourceRef="u_close" targetRef="s_close"/>
+    <sequenceFlow id="f12" sourceRef="s_close" targetRef="end"/>
+    <sequenceFlow id="f_w1" sourceRef="t_warn" targetRef="u_warn"/>
+    <sequenceFlow id="f_w2" sourceRef="u_warn" targetRef="end_warn"/>
+    <sequenceFlow id="f_d1" sourceRef="t_due" targetRef="s_overdue"/>
+    <sequenceFlow id="f_d2" sourceRef="s_overdue" targetRef="end_due"/>
+  </process>
+</definitions>

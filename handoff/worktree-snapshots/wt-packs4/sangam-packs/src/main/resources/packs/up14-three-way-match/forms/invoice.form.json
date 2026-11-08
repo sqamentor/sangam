@@ -1,0 +1,76 @@
+{
+  "key": "up14-three-way-match/invoice",
+  "version": "1.0.0",
+  "pack": "universal.up14-three-way-match",
+  "title": {
+    "en": "Supplier invoice",
+    "hi": "आपूर्तिकर्ता बीजक"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "supplierName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Supplier",
+        "hi": "आपूर्तिकर्ता"
+      }
+    },
+    {
+      "id": "poQty",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "PO quantity",
+        "hi": "क्रय आदेश मात्रा"
+      }
+    },
+    {
+      "id": "grnQty",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Goods received quantity",
+        "hi": "प्राप्त माल मात्रा"
+      }
+    },
+    {
+      "id": "invoiceQty",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Invoiced quantity",
+        "hi": "बीजक मात्रा"
+      }
+    },
+    {
+      "id": "poPrice",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "PO unit price",
+        "hi": "क्रय आदेश इकाई मूल्य"
+      }
+    },
+    {
+      "id": "invoicePrice",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Invoiced unit price",
+        "hi": "बीजक इकाई मूल्य"
+      }
+    }
+  ]
+}

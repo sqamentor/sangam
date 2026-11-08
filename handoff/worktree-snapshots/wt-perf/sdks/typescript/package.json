@@ -1,0 +1,39 @@
+{
+  "name": "@sangam/sdk",
+  "version": "0.1.0",
+  "description": "Sangam workflow platform SDK: typed REST client for /api/v1 and an external-worker runtime (lease fencing, heartbeats, idempotency).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.3"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p examples/tsconfig.json --noEmit",
+    "example:bill-payment": "tsc -p examples/tsconfig.json && node build-examples/examples/bill-payment-worker.js"
+  },
+  "keywords": [
+    "sangam",
+    "workflow",
+    "bpmn",
+    "operaton",
+    "external-worker"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "typescript": "^5.6.3"
+  }
+}

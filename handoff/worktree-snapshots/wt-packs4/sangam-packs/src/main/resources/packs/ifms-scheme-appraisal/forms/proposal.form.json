@@ -1,0 +1,56 @@
+{
+  "key": "ifms-scheme-appraisal/proposal",
+  "version": "1.0.0",
+  "pack": "gov.ifms.scheme-appraisal",
+  "title": {
+    "en": "Scheme proposal",
+    "hi": "योजना प्रस्ताव"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "schemeName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Scheme / project",
+        "hi": "योजना / परियोजना"
+      }
+    },
+    {
+      "id": "totalOutlay",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Total outlay (incl. EBR, external aid, state share)",
+        "hi": "कुल परिव्यय"
+      }
+    },
+    {
+      "id": "justification",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Justification",
+        "hi": "औचित्य"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

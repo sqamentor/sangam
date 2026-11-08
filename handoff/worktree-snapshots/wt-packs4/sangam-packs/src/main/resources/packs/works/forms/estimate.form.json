@@ -1,0 +1,65 @@
+{
+  "key": "works/estimate",
+  "version": "1.0.0",
+  "pack": "gov.works",
+  "title": {
+    "en": "Estimate",
+    "hi": "प्राक्कलन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "workName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Name of work",
+        "hi": "कार्य का नाम"
+      }
+    },
+    {
+      "id": "estimateAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Estimated cost (INR)",
+        "hi": "अनुमानित लागत (रुपये)"
+      }
+    },
+    {
+      "id": "budgetHead",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Budget head",
+        "hi": "बजट शीर्ष"
+      }
+    },
+    {
+      "id": "district",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "District",
+        "hi": "ज़िला"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

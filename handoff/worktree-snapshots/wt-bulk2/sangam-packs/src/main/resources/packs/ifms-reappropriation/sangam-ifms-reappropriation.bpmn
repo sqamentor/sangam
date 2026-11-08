@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Re-appropriation. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_reappropriation" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-ifms-reappropriation" name="Re-appropriation" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.reappropriation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>fromHead,toHead,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ra_start" name="Proposal" operaton:initiator="initiator" operaton:formKey="sangam:ifms-reappropriation/proposal"></startEvent>
+    <serviceTask id="ra_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>ledgerId=BUDGET;amount=0;objectGroup=OTHER_15CR;quarter=2;chargedToVoted=false;capitalRevenue=false;betweenGrants=false;newService=false;fromSupplementary=false;fromCfAdvance=false;worksWithoutAaTs=false;secretServicePercent=0;mofCase=false;percentOfBe=0;afterLastBatch=false;nerTechnical=false;fundsAvailable=999999999999.0;faSeat=FA-1;caseType=REAPPROPRIATION;routingDecisionKey=ifms-reapp-authority;powersDecisionKey=ifms-reapp-powers;scrutinySeat=PRAO-1;referToTenant=finance;referralQuestion=Concurrence for re-appropriation;executionConnector=ledger.transfer;executionStep=transfer;reconcileRequired=false;outputTemplate=reappropriation-order;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ra_savings" name="Savings in the source line" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.available</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>available</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,fromHead</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>funds</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ra_rules" name="Re-appropriation rules (DMN, cited)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>ifms-reapp-rules</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="ra_allowedGw" name="Allowed?" sangam:routingPolicy="priority" default="ifms_reappropriation_f19"></exclusiveGateway>
+    <serviceTask id="ra_rjRule_code" name="Reason: REAPP_RULE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=REAPP_RULE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ra_rjRule_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ra_rjRule_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ra_rjSav_code" name="Reason: SAVINGS_NOT_AVAILABLE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=SAVINGS_NOT_AVAILABLE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ra_rjSav_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ra_rjSav_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ra_fa_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ra_fa</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ra_fa" name="FA consultation" operaton:candidateGroups="${faSeat}" operaton:formKey="sangam:ifms-reappropriation/fa" operaton:dueDate="${ra_faDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>faDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ra_fa_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ra_fa</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ra_fa_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ra_fa_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ra_fa</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>faDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ra_fa_breachGw" name="Deemed?" default="ifms_reappropriation_f16"></exclusiveGateway>
+    <exclusiveGateway id="ra_fa_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="ra_faGw" name="" default="ifms_reappropriation_f24"></exclusiveGateway>
+    <serviceTask id="ra_rjFa_code" name="Reason: FA_NOT_CONCURRED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=FA_NOT_CONCURRED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ra_rjFa_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ra_rjFa_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="ra_mofGw" name="Finance Ministry case?" default="ifms_reappropriation_f26"></exclusiveGateway>
+    <callActivity id="ra_mof" name="Budget Division / DoE referral (core)" calledElement="sangam-core-referral"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="ra_sanction" name="Sanction by CAA (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ra_concurGw" name="" default="ifms_reappropriation_f31"></exclusiveGateway>
+    <serviceTask id="ra_rjMof_code" name="Reason: MOF_NOT_APPROVED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=MOF_NOT_APPROVED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ra_rjMof_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ra_rjMof_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="ra_post" name="Post TRANSFER in the ledger (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="ra_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ra_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="ra_sanGw" name="sanctionOutcome?" default="ifms_reappropriation_f34"></exclusiveGateway>
+    <serviceTask id="ra_report" name="Parliament report list (if reportable)" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>parliamentListed=@parliamentReport</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ra_close" name="Order to Pr.AO / PAO and closure (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ra_exGw" name="executionOutcome?" default="ifms_reappropriation_f37"></exclusiveGateway>
+    <endEvent id="ra_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ra_fa_warn" name="SLA warning (75%)" attachedToRef="ra_fa" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ra_faWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ra_fa_breach" name="SLA breached" attachedToRef="ra_fa" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ra_faDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_reappropriation_f1" sourceRef="ra_start" targetRef="ra_defaults"/>
+    <sequenceFlow id="ifms_reappropriation_f2" sourceRef="ra_defaults" targetRef="ra_savings"/>
+    <sequenceFlow id="ifms_reappropriation_f3" sourceRef="ra_savings" targetRef="ra_rules"/>
+    <sequenceFlow id="ifms_reappropriation_f4" sourceRef="ra_rules" targetRef="ra_allowedGw"/>
+    <sequenceFlow id="ifms_reappropriation_f5" sourceRef="ra_rjRule_reject" targetRef="ra_rjRule_endRejected"/>
+    <sequenceFlow id="ifms_reappropriation_f6" sourceRef="ra_rjRule_code" targetRef="ra_rjRule_reject"/>
+    <sequenceFlow id="ifms_reappropriation_f7" name="refused (rule cited)" sangam:priority="1" sourceRef="ra_allowedGw" targetRef="ra_rjRule_code"><conditionExpression xsi:type="tFormalExpression">${reappAllowed == false}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_reappropriation_f8" sourceRef="ra_rjSav_reject" targetRef="ra_rjSav_endRejected"/>
+    <sequenceFlow id="ifms_reappropriation_f9" sourceRef="ra_rjSav_code" targetRef="ra_rjSav_reject"/>
+    <sequenceFlow id="ifms_reappropriation_f10" name="no savings" sangam:priority="2" sourceRef="ra_allowedGw" targetRef="ra_rjSav_code"><conditionExpression xsi:type="tFormalExpression">${fundsAvailable &lt; amount}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_reappropriation_f11" sourceRef="ra_fa_warn" targetRef="ra_fa_warnNotify"/>
+    <sequenceFlow id="ifms_reappropriation_f12" sourceRef="ra_fa_warnNotify" targetRef="ra_fa_warnEnd"/>
+    <sequenceFlow id="ifms_reappropriation_f13" sourceRef="ra_fa_breach" targetRef="ra_fa_breachAct"/>
+    <sequenceFlow id="ifms_reappropriation_f14" sourceRef="ra_fa_breachAct" targetRef="ra_fa_breachGw"/>
+    <sequenceFlow id="ifms_reappropriation_f15" name="deemed" sourceRef="ra_fa_breachGw" targetRef="ra_fa_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_reappropriation_f16" name="escalated" sourceRef="ra_fa_breachGw" targetRef="ra_fa_slaPlan"/>
+    <sequenceFlow id="ifms_reappropriation_f17" sourceRef="ra_fa_slaPlan" targetRef="ra_fa"/>
+    <sequenceFlow id="ifms_reappropriation_f18" sourceRef="ra_fa" targetRef="ra_fa_done"/>
+    <sequenceFlow id="ifms_reappropriation_f19" name="allowed" sourceRef="ra_allowedGw" targetRef="ra_fa_slaPlan"/>
+    <sequenceFlow id="ifms_reappropriation_f20" sourceRef="ra_fa_done" targetRef="ra_faGw"/>
+    <sequenceFlow id="ifms_reappropriation_f21" sourceRef="ra_rjFa_reject" targetRef="ra_rjFa_endRejected"/>
+    <sequenceFlow id="ifms_reappropriation_f22" sourceRef="ra_rjFa_code" targetRef="ra_rjFa_reject"/>
+    <sequenceFlow id="ifms_reappropriation_f23" name="not concurred" sourceRef="ra_faGw" targetRef="ra_rjFa_code"><conditionExpression xsi:type="tFormalExpression">${faDecision == 'faNotConcur'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_reappropriation_f24" name="concurred" sourceRef="ra_faGw" targetRef="ra_mofGw"/>
+    <sequenceFlow id="ifms_reappropriation_f25" name="MoF approval needed" sourceRef="ra_mofGw" targetRef="ra_mof"><conditionExpression xsi:type="tFormalExpression">${mofCase}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_reappropriation_f26" name="within delegation" sourceRef="ra_mofGw" targetRef="ra_sanction"/>
+    <sequenceFlow id="ifms_reappropriation_f27" sourceRef="ra_mof" targetRef="ra_concurGw"/>
+    <sequenceFlow id="ifms_reappropriation_f28" name="approved" sourceRef="ra_concurGw" targetRef="ra_sanction"><conditionExpression xsi:type="tFormalExpression">${referralDecision == 'faConcur'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_reappropriation_f29" sourceRef="ra_rjMof_reject" targetRef="ra_rjMof_endRejected"/>
+    <sequenceFlow id="ifms_reappropriation_f30" sourceRef="ra_rjMof_code" targetRef="ra_rjMof_reject"/>
+    <sequenceFlow id="ifms_reappropriation_f31" name="not approved" sourceRef="ra_concurGw" targetRef="ra_rjMof_code"/>
+    <sequenceFlow id="ifms_reappropriation_f32" sourceRef="ra_rj_reject" targetRef="ra_rj_endRejected"/>
+    <sequenceFlow id="ifms_reappropriation_f33" name="SANCTIONED" sourceRef="ra_sanGw" targetRef="ra_post"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_reappropriation_f34" name="otherwise" sourceRef="ra_sanGw" targetRef="ra_rj_reject"/>
+    <sequenceFlow id="ifms_reappropriation_f35" sourceRef="ra_sanction" targetRef="ra_sanGw"/>
+    <sequenceFlow id="ifms_reappropriation_f36" name="DONE" sourceRef="ra_exGw" targetRef="ra_report"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_reappropriation_f37" name="otherwise" sourceRef="ra_exGw" targetRef="ra_rj_reject"/>
+    <sequenceFlow id="ifms_reappropriation_f38" sourceRef="ra_post" targetRef="ra_exGw"/>
+    <sequenceFlow id="ifms_reappropriation_f39" sourceRef="ra_report" targetRef="ra_close"/>
+    <sequenceFlow id="ifms_reappropriation_f40" sourceRef="ra_close" targetRef="ra_end"/>
+    <subProcess id="ra_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ra_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ra_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ra_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ra_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_reappropriation_f41" sourceRef="ra_withdrawStart" targetRef="ra_withdrawKind"/>
+      <sequenceFlow id="ifms_reappropriation_f42" sourceRef="ra_withdrawKind" targetRef="ra_withdrawCall"/>
+      <sequenceFlow id="ifms_reappropriation_f43" sourceRef="ra_withdrawCall" targetRef="ra_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ra_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ra_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ra_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ra_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ra_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_reappropriation_f44" sourceRef="ra_cancelStart" targetRef="ra_cancelKind"/>
+      <sequenceFlow id="ifms_reappropriation_f45" sourceRef="ra_cancelKind" targetRef="ra_cancelCall"/>
+      <sequenceFlow id="ifms_reappropriation_f46" sourceRef="ra_cancelCall" targetRef="ra_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_reappropriation_diagram">
+    <bpmndi:BPMNPlane id="ifms_reappropriation_plane" bpmnElement="sangam-ifms-reappropriation">
+      <bpmndi:BPMNShape id="ra_start_di" bpmnElement="ra_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_defaults_di" bpmnElement="ra_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_savings_di" bpmnElement="ra_savings"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rules_di" bpmnElement="ra_rules"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_allowedGw_di" bpmnElement="ra_allowedGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjRule_code_di" bpmnElement="ra_rjRule_code"><dc:Bounds x="845" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjRule_reject_di" bpmnElement="ra_rjRule_reject"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjRule_endRejected_di" bpmnElement="ra_rjRule_endRejected"><dc:Bounds x="1207" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjSav_code_di" bpmnElement="ra_rjSav_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjSav_reject_di" bpmnElement="ra_rjSav_reject"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjSav_endRejected_di" bpmnElement="ra_rjSav_endRejected"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_fa_slaPlan_di" bpmnElement="ra_fa_slaPlan"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_fa_di" bpmnElement="ra_fa"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_fa_warnNotify_di" bpmnElement="ra_fa_warnNotify"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_fa_warnEnd_di" bpmnElement="ra_fa_warnEnd"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_fa_breachAct_di" bpmnElement="ra_fa_breachAct"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_fa_breachGw_di" bpmnElement="ra_fa_breachGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_fa_done_di" bpmnElement="ra_fa_done"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_faGw_di" bpmnElement="ra_faGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjFa_code_di" bpmnElement="ra_rjFa_code"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjFa_reject_di" bpmnElement="ra_rjFa_reject"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjFa_endRejected_di" bpmnElement="ra_rjFa_endRejected"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_mofGw_di" bpmnElement="ra_mofGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_mof_di" bpmnElement="ra_mof"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_sanction_di" bpmnElement="ra_sanction"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_concurGw_di" bpmnElement="ra_concurGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjMof_code_di" bpmnElement="ra_rjMof_code"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjMof_reject_di" bpmnElement="ra_rjMof_reject"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rjMof_endRejected_di" bpmnElement="ra_rjMof_endRejected"><dc:Bounds x="2692" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_post_di" bpmnElement="ra_post"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rj_reject_di" bpmnElement="ra_rj_reject"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_rj_endRejected_di" bpmnElement="ra_rj_endRejected"><dc:Bounds x="3187" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_sanGw_di" bpmnElement="ra_sanGw"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_report_di" bpmnElement="ra_report"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_close_di" bpmnElement="ra_close"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_exGw_di" bpmnElement="ra_exGw"><dc:Bounds x="2850" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_end_di" bpmnElement="ra_end"><dc:Bounds x="3352" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_fa_warn_di" bpmnElement="ra_fa_warn"><dc:Bounds x="1018" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_fa_breach_di" bpmnElement="ra_fa_breach"><dc:Bounds x="1048" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_withdraw_di" bpmnElement="ra_withdraw" isExpanded="true"><dc:Bounds x="30" y="513" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_withdrawStart_di" bpmnElement="ra_withdrawStart"><dc:Bounds x="92" y="575" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_withdrawKind_di" bpmnElement="ra_withdrawKind"><dc:Bounds x="225" y="553" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_withdrawCall_di" bpmnElement="ra_withdrawCall"><dc:Bounds x="390" y="553" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_withdrawEnd_di" bpmnElement="ra_withdrawEnd"><dc:Bounds x="587" y="575" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_cancel_di" bpmnElement="ra_cancel" isExpanded="true"><dc:Bounds x="30" y="703" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_cancelStart_di" bpmnElement="ra_cancelStart"><dc:Bounds x="92" y="765" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_cancelKind_di" bpmnElement="ra_cancelKind"><dc:Bounds x="225" y="743" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_cancelCall_di" bpmnElement="ra_cancelCall"><dc:Bounds x="390" y="743" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ra_cancelEnd_di" bpmnElement="ra_cancelEnd"><dc:Bounds x="587" y="765" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f1_di" bpmnElement="ifms_reappropriation_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f2_di" bpmnElement="ifms_reappropriation_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f3_di" bpmnElement="ifms_reappropriation_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f4_di" bpmnElement="ifms_reappropriation_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f5_di" bpmnElement="ifms_reappropriation_f5"><di:waypoint x="1110" y="320"/><di:waypoint x="1158" y="320"/><di:waypoint x="1158" y="445"/><di:waypoint x="1207" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f6_di" bpmnElement="ifms_reappropriation_f6"><di:waypoint x="945" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f7_di" bpmnElement="ifms_reappropriation_f7"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="320"/><di:waypoint x="845" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f8_di" bpmnElement="ifms_reappropriation_f8"><di:waypoint x="1110" y="195"/><di:waypoint x="1158" y="195"/><di:waypoint x="1158" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f9_di" bpmnElement="ifms_reappropriation_f9"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f10_di" bpmnElement="ifms_reappropriation_f10"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f11_di" bpmnElement="ifms_reappropriation_f11"><di:waypoint x="1036" y="128"/><di:waypoint x="1036" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f12_di" bpmnElement="ifms_reappropriation_f12"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f13_di" bpmnElement="ifms_reappropriation_f13"><di:waypoint x="1066" y="128"/><di:waypoint x="1066" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f14_di" bpmnElement="ifms_reappropriation_f14"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f15_di" bpmnElement="ifms_reappropriation_f15"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f16_di" bpmnElement="ifms_reappropriation_f16"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="149"/><di:waypoint x="895" y="149"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f17_di" bpmnElement="ifms_reappropriation_f17"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f18_di" bpmnElement="ifms_reappropriation_f18"><di:waypoint x="1110" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f19_di" bpmnElement="ifms_reappropriation_f19"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f20_di" bpmnElement="ifms_reappropriation_f20"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f21_di" bpmnElement="ifms_reappropriation_f21"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f22_di" bpmnElement="ifms_reappropriation_f22"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f23_di" bpmnElement="ifms_reappropriation_f23"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f24_di" bpmnElement="ifms_reappropriation_f24"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f25_di" bpmnElement="ifms_reappropriation_f25"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f26_di" bpmnElement="ifms_reappropriation_f26"><di:waypoint x="1910" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f27_di" bpmnElement="ifms_reappropriation_f27"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f28_di" bpmnElement="ifms_reappropriation_f28"><di:waypoint x="2240" y="70"/><di:waypoint x="2285" y="70"/><di:waypoint x="2285" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f29_di" bpmnElement="ifms_reappropriation_f29"><di:waypoint x="2595" y="70"/><di:waypoint x="2692" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f30_di" bpmnElement="ifms_reappropriation_f30"><di:waypoint x="2430" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f31_di" bpmnElement="ifms_reappropriation_f31"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f32_di" bpmnElement="ifms_reappropriation_f32"><di:waypoint x="3090" y="195"/><di:waypoint x="3187" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f33_di" bpmnElement="ifms_reappropriation_f33"><di:waypoint x="2570" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f34_di" bpmnElement="ifms_reappropriation_f34"><di:waypoint x="2570" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f35_di" bpmnElement="ifms_reappropriation_f35"><di:waypoint x="2430" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f36_di" bpmnElement="ifms_reappropriation_f36"><di:waypoint x="2900" y="195"/><di:waypoint x="2945" y="195"/><di:waypoint x="2945" y="320"/><di:waypoint x="2990" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f37_di" bpmnElement="ifms_reappropriation_f37"><di:waypoint x="2900" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f38_di" bpmnElement="ifms_reappropriation_f38"><di:waypoint x="2760" y="195"/><di:waypoint x="2850" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f39_di" bpmnElement="ifms_reappropriation_f39"><di:waypoint x="3090" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f40_di" bpmnElement="ifms_reappropriation_f40"><di:waypoint x="3255" y="320"/><di:waypoint x="3352" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f41_di" bpmnElement="ifms_reappropriation_f41"><di:waypoint x="128" y="593"/><di:waypoint x="225" y="593"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f42_di" bpmnElement="ifms_reappropriation_f42"><di:waypoint x="325" y="593"/><di:waypoint x="390" y="593"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f43_di" bpmnElement="ifms_reappropriation_f43"><di:waypoint x="490" y="593"/><di:waypoint x="587" y="593"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f44_di" bpmnElement="ifms_reappropriation_f44"><di:waypoint x="128" y="783"/><di:waypoint x="225" y="783"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f45_di" bpmnElement="ifms_reappropriation_f45"><di:waypoint x="325" y="783"/><di:waypoint x="390" y="783"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_reappropriation_f46_di" bpmnElement="ifms_reappropriation_f46"><di:waypoint x="490" y="783"/><di:waypoint x="587" y="783"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

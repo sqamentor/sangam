@@ -1,0 +1,27 @@
+{
+  "key": "work-order/agreement",
+  "version": "1.0.0",
+  "pack": "gov.work-order",
+  "title": {
+    "en": "Sign agreement",
+    "hi": "अनुबंध पर हस्ताक्षर"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

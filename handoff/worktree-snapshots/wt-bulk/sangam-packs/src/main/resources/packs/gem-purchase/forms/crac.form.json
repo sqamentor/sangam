@@ -1,0 +1,65 @@
+{
+  "key": "gem-purchase/crac",
+  "version": "1.0.0",
+  "pack": "gov.gem-purchase",
+  "title": {
+    "en": "Inspect and accept (CRAC)",
+    "hi": "निरीक्षण एवं स्वीकृति (सीआरएसी)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "receivedQty",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Quantity received",
+        "hi": "प्राप्त मात्रा"
+      }
+    },
+    {
+      "id": "acceptedQty",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Quantity accepted",
+        "hi": "स्वीकृत मात्रा"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "cracDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

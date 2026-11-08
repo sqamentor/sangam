@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Data subject rights request. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_eu_gdpr_dsr" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-eu-gdpr-dsr" name="Data subject rights request" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.eu.gdpr-dsr</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>dataSubjectName,dsrRight</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="gd_start" name="Request received" operaton:initiator="initiator" operaton:formKey="sangam:sec-eu-gdpr-dsr/request"></startEvent>
+    <serviceTask id="gd_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>dsrRight=ACCESS;dataSubjectName=@customerId;dpoSeat=DPO-EU;gdprExtended=false;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="gd_cfg" name="Response periods (DMN, Art. 12(3))" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-eu-gdpr-periods</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="gd_clock" name="Regulatory clock: gdpr" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gdpr</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${responseSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <userTask id="gd_verify" name="Confirm identity (Art. 12(6))" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-eu-gdpr-dsr/verify" operaton:dueDate="${gdprDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>verifyDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="gd_verifyGw" name="" default="sec_eu_gdpr_dsr_f6"></exclusiveGateway>
+    <userTask id="gd_decide" name="Decide the request" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-eu-gdpr-dsr/decide" operaton:dueDate="${gdprDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>dsrDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <userTask id="gd_noAction" name="No action: reasons, complaint and remedy (Art. 12(4))" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-eu-gdpr-dsr/no-action" operaton:dueDate="${gdprDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="gd_decGw" name="" default="sec_eu_gdpr_dsr_f14"></exclusiveGateway>
+    <userTask id="gd_extend" name="Tell the data subject of the extension and why" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-eu-gdpr-dsr/extend" operaton:dueDate="${gdprDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="gd_extClock" name="Extend by two further months (once)" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gdpr</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${extensionSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gd_extended" name="Extension used" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>gdprExtended=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="gd_rightGw" name="Which right?" default="sec_eu_gdpr_dsr_f27"></exclusiveGateway>
+    <exclusiveGateway id="gd_join" name=""></exclusiveGateway>
+    <serviceTask id="gd_access" name="Art. right: access" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.summary</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>summary</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,dsrRight</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>access</operaton:string></operaton:field><operaton:field name="step"><operaton:string>access</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gd_rectify" name="Art. right: rectification" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.rectify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>rectify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,dsrRight</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rectify</operaton:string></operaton:field><operaton:field name="step"><operaton:string>rectify</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gd_rectifyRcp" name="Notify recipients (Art. 19)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>recipients.notify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>notify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,dsrRight</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rectifyRcp</operaton:string></operaton:field><operaton:field name="step"><operaton:string>rectify-recipients</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gd_restrict" name="Art. right: restriction" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.restrict</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>restrict</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,dsrRight</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>restrict</operaton:string></operaton:field><operaton:field name="step"><operaton:string>restrict</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gd_restrictRcp" name="Notify recipients (Art. 19)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>recipients.notify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>notify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,dsrRight</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>restrictRcp</operaton:string></operaton:field><operaton:field name="step"><operaton:string>restrict-recipients</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gd_export" name="Art. right: portability" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.export</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>export</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,dsrRight</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>export</operaton:string></operaton:field><operaton:field name="step"><operaton:string>export</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gd_object" name="Art. right: objection" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.restrict</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>object</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,dsrRight</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>object</operaton:string></operaton:field><operaton:field name="step"><operaton:string>object</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="gd_erasure" name="Erasure: check the Art. 17(3) exceptions" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-eu-gdpr-dsr/erasure" operaton:dueDate="${gdprDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>eraseDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="gd_eraseGw" name="" default="sec_eu_gdpr_dsr_f32"></exclusiveGateway>
+    <serviceTask id="gd_erase" name="Erase" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.erase</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>erase</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>erase</operaton:string></operaton:field><operaton:field name="step"><operaton:string>erase</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gd_eraseRcp" name="Notify recipients (Art. 19)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>recipients.notify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>notify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,dsrRight</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>eraseRcp</operaton:string></operaton:field><operaton:field name="step"><operaton:string>erase-recipients</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="gd_respond" name="Respond to the data subject" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-eu-gdpr-dsr/respond" operaton:dueDate="${gdprDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="gd_end" name="Answered"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="gd_endNoAction" name="No action (reasons and remedies given)"></endEvent>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f1" sourceRef="gd_start" targetRef="gd_defaults"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f2" sourceRef="gd_defaults" targetRef="gd_cfg"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f3" sourceRef="gd_cfg" targetRef="gd_clock"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f4" sourceRef="gd_clock" targetRef="gd_verify"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f5" sourceRef="gd_verify" targetRef="gd_verifyGw"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f6" name="verified" sourceRef="gd_verifyGw" targetRef="gd_decide"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f7" name="identity not confirmed" sourceRef="gd_verifyGw" targetRef="gd_noAction"><conditionExpression xsi:type="tFormalExpression">${verifyDecision == 'notVerified'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f8" sourceRef="gd_decide" targetRef="gd_decGw"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f9" name="extend (once)" sourceRef="gd_decGw" targetRef="gd_extend"><conditionExpression xsi:type="tFormalExpression">${dsrDecision == 'extend' &amp;&amp; !gdprExtended}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f10" sourceRef="gd_extend" targetRef="gd_extClock"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f11" sourceRef="gd_extClock" targetRef="gd_extended"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f12" sourceRef="gd_extended" targetRef="gd_decide"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f13" name="no action" sourceRef="gd_decGw" targetRef="gd_noAction"><conditionExpression xsi:type="tFormalExpression">${dsrDecision == 'noAction'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f14" name="fulfil" sourceRef="gd_decGw" targetRef="gd_rightGw"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f15" name="access" sourceRef="gd_rightGw" targetRef="gd_access"><conditionExpression xsi:type="tFormalExpression">${dsrRight == 'ACCESS'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f16" sourceRef="gd_access" targetRef="gd_join"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f17" name="rectification" sourceRef="gd_rightGw" targetRef="gd_rectify"><conditionExpression xsi:type="tFormalExpression">${dsrRight == 'RECTIFICATION'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f18" sourceRef="gd_rectify" targetRef="gd_rectifyRcp"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f19" sourceRef="gd_rectifyRcp" targetRef="gd_join"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f20" name="restriction" sourceRef="gd_rightGw" targetRef="gd_restrict"><conditionExpression xsi:type="tFormalExpression">${dsrRight == 'RESTRICTION'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f21" sourceRef="gd_restrict" targetRef="gd_restrictRcp"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f22" sourceRef="gd_restrictRcp" targetRef="gd_join"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f23" name="portability" sourceRef="gd_rightGw" targetRef="gd_export"><conditionExpression xsi:type="tFormalExpression">${dsrRight == 'PORTABILITY'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f24" sourceRef="gd_export" targetRef="gd_join"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f25" name="objection" sourceRef="gd_rightGw" targetRef="gd_object"><conditionExpression xsi:type="tFormalExpression">${dsrRight == 'OBJECTION'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f26" sourceRef="gd_object" targetRef="gd_join"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f27" name="erasure" sourceRef="gd_rightGw" targetRef="gd_erasure"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f28" sourceRef="gd_erasure" targetRef="gd_eraseGw"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f29" name="erase" sourceRef="gd_eraseGw" targetRef="gd_erase"><conditionExpression xsi:type="tFormalExpression">${eraseDecision == 'erase'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f30" sourceRef="gd_erase" targetRef="gd_eraseRcp"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f31" sourceRef="gd_eraseRcp" targetRef="gd_join"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f32" name="exception applies: reasons" sourceRef="gd_eraseGw" targetRef="gd_noAction"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f33" sourceRef="gd_join" targetRef="gd_respond"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f34" sourceRef="gd_respond" targetRef="gd_end"/>
+    <sequenceFlow id="sec_eu_gdpr_dsr_f35" sourceRef="gd_noAction" targetRef="gd_endNoAction"/>
+    <subProcess id="gd_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="gd_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="gd_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gd_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gd_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_eu_gdpr_dsr_f36" sourceRef="gd_withdrawStart" targetRef="gd_withdrawKind"/>
+      <sequenceFlow id="sec_eu_gdpr_dsr_f37" sourceRef="gd_withdrawKind" targetRef="gd_withdrawCall"/>
+      <sequenceFlow id="sec_eu_gdpr_dsr_f38" sourceRef="gd_withdrawCall" targetRef="gd_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="gd_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="gd_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="gd_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gd_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gd_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_eu_gdpr_dsr_f39" sourceRef="gd_cancelStart" targetRef="gd_cancelKind"/>
+      <sequenceFlow id="sec_eu_gdpr_dsr_f40" sourceRef="gd_cancelKind" targetRef="gd_cancelCall"/>
+      <sequenceFlow id="sec_eu_gdpr_dsr_f41" sourceRef="gd_cancelCall" targetRef="gd_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_eu_gdpr_dsr_diagram">
+    <bpmndi:BPMNPlane id="sec_eu_gdpr_dsr_plane" bpmnElement="sangam-sec-eu-gdpr-dsr">
+      <bpmndi:BPMNShape id="gd_start_di" bpmnElement="gd_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_defaults_di" bpmnElement="gd_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_cfg_di" bpmnElement="gd_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_clock_di" bpmnElement="gd_clock"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_verify_di" bpmnElement="gd_verify"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_verifyGw_di" bpmnElement="gd_verifyGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_decide_di" bpmnElement="gd_decide"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_noAction_di" bpmnElement="gd_noAction"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_decGw_di" bpmnElement="gd_decGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_extend_di" bpmnElement="gd_extend"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_extClock_di" bpmnElement="gd_extClock"><dc:Bounds x="1505" y="780" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_extended_di" bpmnElement="gd_extended"><dc:Bounds x="1670" y="780" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_rightGw_di" bpmnElement="gd_rightGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_join_di" bpmnElement="gd_join"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_access_di" bpmnElement="gd_access"><dc:Bounds x="1505" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_rectify_di" bpmnElement="gd_rectify"><dc:Bounds x="1505" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_rectifyRcp_di" bpmnElement="gd_rectifyRcp"><dc:Bounds x="1670" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_restrict_di" bpmnElement="gd_restrict"><dc:Bounds x="1505" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_restrictRcp_di" bpmnElement="gd_restrictRcp"><dc:Bounds x="1670" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_export_di" bpmnElement="gd_export"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_object_di" bpmnElement="gd_object"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_erasure_di" bpmnElement="gd_erasure"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_eraseGw_di" bpmnElement="gd_eraseGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_erase_di" bpmnElement="gd_erase"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_eraseRcp_di" bpmnElement="gd_eraseRcp"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_respond_di" bpmnElement="gd_respond"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_end_di" bpmnElement="gd_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_endNoAction_di" bpmnElement="gd_endNoAction"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_withdraw_di" bpmnElement="gd_withdraw" isExpanded="true"><dc:Bounds x="30" y="910" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_withdrawStart_di" bpmnElement="gd_withdrawStart"><dc:Bounds x="92" y="972" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_withdrawKind_di" bpmnElement="gd_withdrawKind"><dc:Bounds x="225" y="950" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_withdrawCall_di" bpmnElement="gd_withdrawCall"><dc:Bounds x="390" y="950" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_withdrawEnd_di" bpmnElement="gd_withdrawEnd"><dc:Bounds x="587" y="972" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_cancel_di" bpmnElement="gd_cancel" isExpanded="true"><dc:Bounds x="30" y="1100" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_cancelStart_di" bpmnElement="gd_cancelStart"><dc:Bounds x="92" y="1162" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_cancelKind_di" bpmnElement="gd_cancelKind"><dc:Bounds x="225" y="1140" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_cancelCall_di" bpmnElement="gd_cancelCall"><dc:Bounds x="390" y="1140" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gd_cancelEnd_di" bpmnElement="gd_cancelEnd"><dc:Bounds x="587" y="1162" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f1_di" bpmnElement="sec_eu_gdpr_dsr_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f2_di" bpmnElement="sec_eu_gdpr_dsr_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f3_di" bpmnElement="sec_eu_gdpr_dsr_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f4_di" bpmnElement="sec_eu_gdpr_dsr_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f5_di" bpmnElement="sec_eu_gdpr_dsr_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f6_di" bpmnElement="sec_eu_gdpr_dsr_f6"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f7_di" bpmnElement="sec_eu_gdpr_dsr_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1377" y="70"/><di:waypoint x="1377" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f8_di" bpmnElement="sec_eu_gdpr_dsr_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f9_di" bpmnElement="sec_eu_gdpr_dsr_f9"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f10_di" bpmnElement="sec_eu_gdpr_dsr_f10"><di:waypoint x="1440" y="195"/><di:waypoint x="1472" y="195"/><di:waypoint x="1472" y="820"/><di:waypoint x="1505" y="820"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f11_di" bpmnElement="sec_eu_gdpr_dsr_f11"><di:waypoint x="1605" y="820"/><di:waypoint x="1670" y="820"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f12_di" bpmnElement="sec_eu_gdpr_dsr_f12"><di:waypoint x="1720" y="860"/><di:waypoint x="1720" y="899"/><di:waypoint x="1060" y="899"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f13_di" bpmnElement="sec_eu_gdpr_dsr_f13"><di:waypoint x="1250" y="70"/><di:waypoint x="1542" y="70"/><di:waypoint x="1542" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f14_di" bpmnElement="sec_eu_gdpr_dsr_f14"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f15_di" bpmnElement="sec_eu_gdpr_dsr_f15"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="695"/><di:waypoint x="1505" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f16_di" bpmnElement="sec_eu_gdpr_dsr_f16"><di:waypoint x="1605" y="695"/><di:waypoint x="1897" y="695"/><di:waypoint x="1897" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f17_di" bpmnElement="sec_eu_gdpr_dsr_f17"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="570"/><di:waypoint x="1505" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f18_di" bpmnElement="sec_eu_gdpr_dsr_f18"><di:waypoint x="1605" y="570"/><di:waypoint x="1670" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f19_di" bpmnElement="sec_eu_gdpr_dsr_f19"><di:waypoint x="1770" y="570"/><di:waypoint x="1980" y="570"/><di:waypoint x="1980" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f20_di" bpmnElement="sec_eu_gdpr_dsr_f20"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="445"/><di:waypoint x="1505" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f21_di" bpmnElement="sec_eu_gdpr_dsr_f21"><di:waypoint x="1605" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f22_di" bpmnElement="sec_eu_gdpr_dsr_f22"><di:waypoint x="1770" y="445"/><di:waypoint x="1980" y="445"/><di:waypoint x="1980" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f23_di" bpmnElement="sec_eu_gdpr_dsr_f23"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f24_di" bpmnElement="sec_eu_gdpr_dsr_f24"><di:waypoint x="1605" y="320"/><di:waypoint x="1897" y="320"/><di:waypoint x="1897" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f25_di" bpmnElement="sec_eu_gdpr_dsr_f25"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f26_di" bpmnElement="sec_eu_gdpr_dsr_f26"><di:waypoint x="1605" y="195"/><di:waypoint x="1897" y="195"/><di:waypoint x="1897" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f27_di" bpmnElement="sec_eu_gdpr_dsr_f27"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f28_di" bpmnElement="sec_eu_gdpr_dsr_f28"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f29_di" bpmnElement="sec_eu_gdpr_dsr_f29"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f30_di" bpmnElement="sec_eu_gdpr_dsr_f30"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f31_di" bpmnElement="sec_eu_gdpr_dsr_f31"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f32_di" bpmnElement="sec_eu_gdpr_dsr_f32"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f33_di" bpmnElement="sec_eu_gdpr_dsr_f33"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f34_di" bpmnElement="sec_eu_gdpr_dsr_f34"><di:waypoint x="2430" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f35_di" bpmnElement="sec_eu_gdpr_dsr_f35"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f36_di" bpmnElement="sec_eu_gdpr_dsr_f36"><di:waypoint x="128" y="990"/><di:waypoint x="225" y="990"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f37_di" bpmnElement="sec_eu_gdpr_dsr_f37"><di:waypoint x="325" y="990"/><di:waypoint x="390" y="990"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f38_di" bpmnElement="sec_eu_gdpr_dsr_f38"><di:waypoint x="490" y="990"/><di:waypoint x="587" y="990"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f39_di" bpmnElement="sec_eu_gdpr_dsr_f39"><di:waypoint x="128" y="1180"/><di:waypoint x="225" y="1180"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f40_di" bpmnElement="sec_eu_gdpr_dsr_f40"><di:waypoint x="325" y="1180"/><di:waypoint x="390" y="1180"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_eu_gdpr_dsr_f41_di" bpmnElement="sec_eu_gdpr_dsr_f41"><di:waypoint x="490" y="1180"/><di:waypoint x="587" y="1180"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "FIELD",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "FIELD-CREW",
+      "role": "CREW",
+      "office": "FIELD",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Field crew",
+        "hi": "क्षेत्रीय दल"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "FIELD-CREW",
+      "person": "u21.field-crew",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CREW",
+      "name": {
+        "en": "Field crew",
+        "hi": "क्षेत्रीय दल"
+      }
+    }
+  ]
+}

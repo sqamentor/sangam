@@ -1,0 +1,61 @@
+{
+  "id": "sec.tel.sim-swap",
+  "version": "1.0.0",
+  "name": {
+    "en": "SIM replacement with re-verification",
+    "hi": "पुनः सत्यापन सहित सिम प्रतिस्थापन"
+  },
+  "domain": "Telecom",
+  "description": "SIM swap / replacement: subscriber re-verified (e-KYC or biometric at the point of sale), fraud checks, new SIM activated, SMS barred for 24 hours after the swap (DoT), alert to the old SIM and registered e-mail, unbarred after the period.",
+  "mainProcesses": [
+    "sangam-sec-tel-sim-swap"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-tel-sim-swap/sangam-sec-tel-sim-swap.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-tel-sim-swap/forms/request.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-tel-sim-swap/seed.json"
+    }
+  ],
+  "seed": "packs/sec-tel-sim-swap/seed.json",
+  "connectors": [
+    {
+      "id": "dot.kyc",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Re-verification"
+    },
+    {
+      "id": "hlr.swap",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Swap"
+    },
+    {
+      "id": "hlr.smsBar",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "SMS barring"
+    }
+  ],
+  "covers": [
+    "SEC-TEL-005",
+    "GP-24",
+    "UP-21"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-rejection"
+  ]
+}

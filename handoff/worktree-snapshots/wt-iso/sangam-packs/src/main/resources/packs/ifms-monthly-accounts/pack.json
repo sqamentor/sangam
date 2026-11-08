@@ -1,0 +1,94 @@
+{
+  "id": "gov.ifms.monthly-accounts",
+  "version": "1.0.0",
+  "name": {
+    "en": "Monthly accounts compilation and rendition",
+    "hi": "मासिक लेखा संकलन और प्रस्तुति"
+  },
+  "domain": "IFMS",
+  "description": "Monthly on the profile day: PAO compiles (period lock on the ledger), pre-submission checks (expenditure without budget, suspense, mixed heads), Pr.AO consolidates and renders to the target (CGA / AG) by the profile due day (8th GOI, 5th WB / ML), e-DO by the 12th; DDO-level reconciliation.",
+  "mainProcesses": [
+    "sangam-ifms-monthly-accounts"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-monthly-accounts/sangam-ifms-monthly-accounts.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-monthly-accounts/forms/compile.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-monthly-accounts/forms/consolidate.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-monthly-accounts/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-monthly-accounts/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "accounts.render",
+      "capabilityClass": "a",
+      "govTag": "G-AG",
+      "purpose": "Render accounts (CGA / AG VLC / e-voucher / SFTP)"
+    }
+  ],
+  "covers": [
+    "IFC-140",
+    "IFC-199",
+    "IFC-200",
+    "IFC-201",
+    "IFC-206",
+    "IFC-207",
+    "IFC-208",
+    "IFC-209",
+    "IFC-211",
+    "IFC-212",
+    "IFC-214",
+    "IFS-074",
+    "IFS-036",
+    "IFS-WB-005",
+    "IFS-WB-009",
+    "IFS-ML-008",
+    "IFS-CT-004",
+    "IFS-DL-002",
+    "GA-24",
+    "GP-30"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "universal.up08-entity-lifecycle",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-08 Long-lived entity lifecycle",
+    "hi": "यूपी-08 दीर्घकालिक इकाई जीवनचक्र"
+  },
+  "domain": "Universal",
+  "description": "A policy / subscription / contract lives for years: endorsements arrive as messages, an anniversary timer drives renewal, and after N cycles the case continues as a new linked instance (continue-as-new) so history stays bounded (R49, R38, GP-10).",
+  "mainProcesses": [
+    "sangam-up08-entity-lifecycle"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up08-entity-lifecycle/sangam-up08-entity-lifecycle.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up08-entity-lifecycle/forms/create.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up08-entity-lifecycle/forms/endorsement.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up08-entity-lifecycle/forms/renew.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up08-entity-lifecycle/seed.json"
+    }
+  ],
+  "seed": "packs/up08-entity-lifecycle/seed.json",
+  "connectors": [],
+  "covers": [
+    "UP-08",
+    "R38",
+    "R49",
+    "GP-10"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

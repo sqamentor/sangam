@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: IN-PRESET-GENERAL
+  layer: category
+  version: 2026.11.0
+  effectiveFrom: '2017-04-01'
+  name:
+    en: General-category State
+  source: IFMS-STATES 6.1 L1 category preset
+regime:
+  category: GENERAL
+  budgetMode: OWN_CONSOLIDATED_FUND
+  accountsRenderedTo: AG_AE
+  cssSharing: GENERAL
+integrations:
+  pfms:
+    model: 4
+  snaSparsh:
+    enabled: true

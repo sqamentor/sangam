@@ -1,0 +1,95 @@
+{
+  "id": "gov.ifms.audit-para-settlement",
+  "version": "1.0.0",
+  "name": {
+    "en": "Audit para settlement (ATN / internal audit)",
+    "hi": "लेखापरीक्षा पैरा निपटान (एटीएन / आंतरिक लेखापरीक्षा)"
+  },
+  "domain": "IFMS",
+  "description": "C&AG para / internal-audit objection / e-bill post-check finding: action taken note within the profile deadline (4 months [U]), FA vetting, submission (APMS adapter), settlement or further action; recoveries ordered are linked to the next bill.",
+  "mainProcesses": [
+    "sangam-ifms-audit-para"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-audit-para-settlement/sangam-ifms-audit-para.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-audit-para-settlement/forms/para.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-audit-para-settlement/forms/atn.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-audit-para-settlement/forms/fa.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-audit-para-settlement/forms/decision.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-audit-para-settlement/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-audit-para-settlement/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "audit.apms",
+      "capabilityClass": "b",
+      "govTag": "G-CAG",
+      "purpose": "Audit para monitoring system"
+    }
+  ],
+  "covers": [
+    "IFC-113",
+    "IFC-215",
+    "IFC-216",
+    "IFC-217",
+    "IFC-218",
+    "IFC-219",
+    "IFC-220",
+    "IFC-221",
+    "IFC-109",
+    "GP-21",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-execution"
+  ]
+}

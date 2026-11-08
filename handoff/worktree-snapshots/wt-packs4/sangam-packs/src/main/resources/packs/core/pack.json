@@ -1,0 +1,288 @@
+{
+  "id": "sangam.core",
+  "version": "1.0.0",
+  "name": {
+    "en": "Government approval core",
+    "hi": "सरकारी अनुमोदन मूल ढाँचा"
+  },
+  "domain": "Core",
+  "description": "Shared lifecycle DRAFT > SUBMITTED > SCRUTINY <> CLARIFICATION_SOUGHT > RECOMMENDATION (1..n) > SANCTION > EXECUTION > ACKNOWLEDGED > RECONCILED > CLOSED with side exits REJECTED, WITHDRAWN, CANCELLED and UNKNOWN_OUTCOME, as call activities every pack composes (IX.3).",
+  "mainProcesses": [
+    "sangam-core-scrutiny"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-scrutiny.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-recommendation.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-sanction.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-execution.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-closure.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-rejection.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-appeal.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-cancellation.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-reconciliation.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-committee.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-referral.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/core/sangam-core-referral-inbound.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/core/sangam-core-competent-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/core/sangam-core-powers.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/core/sangam-core-retention.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/core/forms/scrutiny.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/core/forms/recommendation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/core/forms/comments.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/core/forms/sanction.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/core/forms/appeal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/core/forms/committee-member.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/core/forms/referral-inbound.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/core/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/core/registry/identifier-types-in.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/core/registry/identifier-types.json"
+    }
+  ],
+  "seed": "packs/core/seed.json",
+  "connectors": [
+    {
+      "id": "esign.sign",
+      "capabilityClass": "b",
+      "govTag": "G-SIGN",
+      "purpose": "Signature over the approved payload hash"
+    },
+    {
+      "id": "dsc.sign",
+      "capabilityClass": "a",
+      "govTag": "G-SIGN",
+      "purpose": "DSC signer agent"
+    },
+    {
+      "id": "docs.issue",
+      "capabilityClass": "a",
+      "govTag": "G-LANG",
+      "purpose": "Bilingual output documents"
+    },
+    {
+      "id": "notify.sms",
+      "capabilityClass": "b",
+      "govTag": "G-DLT",
+      "purpose": "SMS on DLT templates"
+    },
+    {
+      "id": "notify.email",
+      "capabilityClass": "b",
+      "govTag": "G-MAIL",
+      "purpose": "Official e-mail"
+    },
+    {
+      "id": "notify.inapp",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "In-app notification"
+    },
+    {
+      "id": "referral.send",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Referral to another department inbox (AC-09)"
+    },
+    {
+      "id": "referral.reply",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Reply to a referral"
+    },
+    {
+      "id": "bank.statement",
+      "capabilityClass": "b",
+      "govTag": "G-PFMS",
+      "purpose": "Statement / status match for reconciliation"
+    }
+  ],
+  "covers": [
+    "IX.3",
+    "IX.5",
+    "R31",
+    "R41",
+    "R42",
+    "R43",
+    "R19",
+    "R57",
+    "R61",
+    "VI.3",
+    "VI.5",
+    "A-2",
+    "GP-01",
+    "GP-02",
+    "GP-03",
+    "GP-04",
+    "GP-06",
+    "GP-14",
+    "GP-16",
+    "GP-18",
+    "GP-22",
+    "GP-32",
+    "GP-33",
+    "GP-34",
+    "GP-44",
+    "GP-45",
+    "GP-20",
+    "GP-38",
+    "UP-05",
+    "CX-1",
+    "CX-2",
+    "CX-4",
+    "CX-5",
+    "CX-8",
+    "K4",
+    "K5",
+    "K6",
+    "K7",
+    "K8",
+    "K10",
+    "K13",
+    "AC-07",
+    "AC-08",
+    "AC-09",
+    "AC-10",
+    "AC-11",
+    "R54"
+  ],
+  "acceptance": [
+    {
+      "id": "CORE-1",
+      "title": "Return to any earlier level and resubmission",
+      "refs": [
+        "GP-02",
+        "R43",
+        "T19"
+      ],
+      "given": "a chain of three recommendation seats",
+      "when": "level 3 returns to level 1, then all recommend",
+      "then": "caseVersion is unchanged, the case passes levels 1..3 again, CASE_RETURNED is audited",
+      "startVariables": {},
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: level 3 returns the case to level 1 inside the core blocks"
+      }
+    },
+    {
+      "id": "CORE-2",
+      "title": "Deemed approval keeps the state machine",
+      "refs": [
+        "GP-44",
+        "J-P4-E07",
+        "IX.5 rule 6"
+      ],
+      "given": "sanctionOnBreach = DEEMED_APPROVAL",
+      "when": "the sanction SLA lapses",
+      "then": "DEEMED_DECISION by system on behalf of the seat, approval bound to the payload hash",
+      "startVariables": {},
+      "expectState": null,
+      "run": {
+        "manual": "needs a clock driver: the sanction SLA lapses (deemed decision)"
+      }
+    },
+    {
+      "id": "CORE-3",
+      "title": "Unknown outcome is never repeated for class (c)",
+      "refs": [
+        "AC-03",
+        "VI.3",
+        "T02"
+      ],
+      "given": "executionConnector = pfms.payment, sim_pfms_payment = UNKNOWN_THEN_COMPLETED",
+      "when": "the operator tries RETRY_SAME_OPERATION",
+      "then": "the retry is refused; CONFIRMED_SUCCESS with evidence closes",
+      "startVariables": {},
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: an operator action on an unknown-outcome item"
+      }
+    }
+  ],
+  "dependsOn": [],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-appeal"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
+}

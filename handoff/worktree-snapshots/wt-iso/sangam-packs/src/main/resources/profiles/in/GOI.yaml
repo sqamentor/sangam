@@ -1,0 +1,1329 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: GOI
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2024-04-01'
+  extends:
+  - IN
+  - IN-PRESET-UNION
+  name:
+    en: Government of India (Union)
+    hi: भारत सरकार (संघ)
+  source: GFR 2017 (to 31-01-2026); DFPR 2024 (S.O. 1543(E), 22-03-2024); RPR 2022; CAM 2024; IFMS-CENTRAL
+placeholders:
+- path: budgetControl.rushOfExpenditure
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (33%/15% or 25%/10%
+    ceilings; current-year OM not read)'
+- path: accounts.marchCuts
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (CGA OM 03-03-2026
+    OCR-garbled)'
+- path: audit.atnDeadlineMonths
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (4 vs 6 months
+    in sources)'
+- path: grants.cna.model1Threshold
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (>= 100 cr OM
+    05-02-2024 vs TSA > 500 cr in another source)'
+- path: budgetControl.rushOfExpenditure.q4MaxPercent
+  reason: 'percentages still [U]: keep unset'
+- path: accounts.marchCuts
+  reason: '[U] March Prelim and Sy-II dates'
+- path: worksManual.cpwdAfter2022
+  reason: '[U]'
+- path: deductions.rates
+  reason: '[U] TDS / GST-TDS rates'
+regime:
+  nonCivil: false
+  delegationBook: DFPR_2024
+  cddoDesignatedBy: CGA
+  pdApprovedBy: CGA
+delegationAmendment:
+  om: DoE OM 09-06-2026
+  status: NOT_READ
+rulebooks:
+  base:
+  - id: GFR2017
+    version: '2026-01-31'
+    source: DoE GFR 2017 consolidated to 31-01-2026
+  - id: DFPR2024
+    version: '2024-04-01'
+    source: S.O. 1543(E) 22-03-2024
+  - id: RPR2022
+    version: '2022-08-20'
+    source: G.S.R. 644(E) 20-08-2022; CS 02-01-2024, 15-01-2025
+  - id: CAM2024
+    version: '2025-03-25'
+    source: Civil Accounts Manual rev. 4th ed. 2024, CS-1, CS-2
+  - id: CCS_PENSION_2021
+    source: CCS (Pension) Rules 2021
+  - id: GPF_CS_1960
+    source: GPF (CS) Rules 1960; G.S.R. 96 of 15-06-2022
+  citationsOnValidation: true
+orgModel:
+  administrative:
+  - MINISTRY
+  - DEPARTMENT
+  - ATTACHED_OFFICE
+  - SUBORDINATE_OFFICE
+  - HOD
+  - HOO
+  - DDO
+  accounting:
+  - HOAO
+  - PRINCIPAL_PAO
+  - PAO
+  - CDDO
+  - DDO
+  roles:
+  - CAA
+  - FA
+  - HOAO
+  - PR_AO
+  - PAO
+  - AAO
+  - DEALING_HAND
+  - BILL_DISTRIBUTOR
+  - DDO
+  - CDDO
+  - HOD
+  - HOO
+  - PD_MAKER
+  - PD_CHECKER
+  - SANCTION_MAKER
+  - SANCTION_CHECKER
+  - CONTROLLING_OFFICER
+  - SECOND_SIGNATORY
+  rules:
+    hodMinRank: DEPUTY_SECRETARY
+    oneHooPerOffice: true
+    ddoMapsToOnePao: true
+    nonDelegable:
+    - REAPPROPRIATION
+    - OVERPAYMENT_WAIVER
+    - SCHEME_APPRAISAL
+    userApproval:
+      PAO: PR_AO
+      AAO: PR_AO
+      DEALING_HAND: PR_AO
+      DDO: NEXT_TWO_LEVELS
+      PD_MAKER: NEXT_TWO_LEVELS
+    relievingDeactivatesDsc: true
+    residuaryPowersTo: FINANCE_MINISTRY
+    ruleRefs:
+      hod: DFPR 3(1)(g)
+      hoo: DFPR 3(1)(h), 12(4)
+      nonDelegable: DFPR 12(2) proviso
+      residuary: DFPR r.6
+  registry:
+    source: AoBR to Amendment Series 386 (22-07-2026)
+    effectiveDatedEvents:
+    - CREATE
+    - MERGE
+    - RENAME
+    - ABOLISH
+    ministries: 53
+    ministriesWithoutDepartments: 34
+    departments: 53
+    standaloneUnits:
+    - DAE
+    - DOS
+    - CABINET_SECRETARIAT
+    - PRESIDENT_SECRETARIAT
+    - PMO
+    - NITI
+    - NSCS
+    businessUnits: 94
+    addNotInIgod:
+    - MHA_INTERNAL_SECURITY
+    - MHA_STATES
+    - MHA_JK_LADAKH_AFFAIRS
+    events:
+    - unit: CAPITAL_DEVELOPMENT
+      event: MOVE
+      to: MOHUA
+      date: '2026-07-22'
+    - unit: URBAN_DEVELOPMENT
+      event: MOVE
+      to: MOHUA
+      date: '2026-07-22'
+    vicePresidentSecretariat: DFPR 3(1)(e) only
+budgetControl:
+  ledger: BUDGET
+  controlDimension: DDO_X_OBJECT_HEAD
+  holdForBudgetQueue: true
+  hardBlock: true
+  caaOverrideAboveAllotment: true
+  stages:
+    APPROPRIATION: Appropriation Act (DFPR r.4)
+    ALLOCATION: Distribution to controlling officers (r.9)
+    RELEASE: Release
+    AUTHORISATION: DDO-wise allocation by the PAO
+    SUB_ALLOTMENT: Sub-allotment
+  reappropriation:
+    restrictions:
+    - NEW_SERVICE
+    - UNSANCTIONED
+    - WORKS_WITHOUT_AA_TS
+    - CHARGED_VOTED
+    - BETWEEN_GRANTS
+    - CAPITAL_REVENUE
+    - FROM_SUPPLEMENTARY_HEAD
+    - FROM_CF_ADVANCE_ACTIVITY
+    ruleRefs:
+      NEW_SERVICE: DFPR 2024 r.10(1)
+      UNSANCTIONED: r.10(2)
+      WORKS_WITHOUT_AA_TS: r.10(3)
+      CHARGED_VOTED: r.10(4)
+      BETWEEN_GRANTS: r.10(5)
+      CAPITAL_REVENUE: r.10(6)
+      FROM_SUPPLEMENTARY_HEAD: r.10(7)
+      FROM_CF_ADVANCE_ACTIVITY: r.10(8)
+    objectGroupLimits:
+      EST_2CR: 2CR
+      NONEST_5CR: 5CR
+      OTHER_15CR: 15CR
+      ruleRef: DFPR 2024 GoI decision (1) para 3(v) (DoE OM 01-04-2024)
+    q1Ban:
+      enabled: true
+      quarter: 1
+      exceptNerTechnical: true
+      ruleRef: DoE OM 01-04-2024
+    financeMinistryCases:
+    - GIA_STATES_TO_REVENUE
+    - CAPITAL_LOANS
+    - FROM_SALARIES_ALLOWANCES
+    - EAP_TO_NON_EAP
+    - SECRET_SERVICE
+    - FROM_BUILDINGS_INFRA_ASSETS
+    - WORKS_EXCESS_ABOVE_20
+    - BEYOND_MOF_LIMITS
+    - BACK_TO_HEAD_REAPPROPRIATED_FROM
+    - CS_CSS_TO_ESTABLISHMENT
+    cagCase:
+      flag: SECRET_SERVICE
+      percentAtOrAbove: 25
+      ruleRef: DFPR 2024 r.10(10)(v)
+    parliamentReport:
+      percentOfBeAbove: 20
+      amountAbove: 100CR
+      whicheverMore: true
+      afterLastBatch: PRIOR_DOE_APPROVAL
+      ruleRef: DFPR 2024 GoI decision (1) para 4
+    worksExcessByCaa:
+      percentUpTo: 20
+      ruleRef: DFPR 2024 r.10(9)(v)
+    faConsultation: MANDATORY
+    decisionKey: ifms-reapp-rules
+  supplementary:
+    kinds:
+    - CASH
+    - TECHNICAL
+    - TOKEN
+    batches: 3
+    callBy: DEA_BUDGET_DIVISION
+  newService:
+    decisionKey: ifms-new-service
+    om: F.1(22)-B(AC)/2022 of 23-02-2024
+    routes:
+    - PRIOR_PARLIAMENT
+    - REPORT_WITH_NEXT_BATCH
+  contingencyFund:
+    major: '8000'
+    recoupBy: SUPPLEMENTARY
+    ruleRef: Art. 267(1)
+  surrender:
+    dueDates:
+    - fy: 2025-26
+      date: '2026-02-10'
+      example: MHA Grant 51
+    ruleRef: GFR 2017 r.62(1)-(2)
+  lapse:
+    atYearEnd: true
+    ruleRef: GFR 2017 r.62(1)
+  rushOfExpenditure:
+    q4MaxPercent: null
+    marchMaxPercent: null
+    ruleRef: GFR 62(3)-(4); DEA OM 25-05-2022 (MEP/QEP in UBIS); percentages [U], default unset
+  expenditurePlan:
+    kinds:
+    - MEP
+    - QEP
+    beyondQepNeeds: BUDGET_DIVISION
+  liability:
+    register: GFR-3
+    statement: GFR-3A
+    fromMonth: 10
+  yearEndCutoff:
+    assignmentAdviceValidTo: 24:00 on 31 March
+    source: CGA OM 25-03-2026
+  voteOnAccount:
+    newServiceBarred: GFR 55
+    cfAdvanceBeyondProvision: GFR 67(2)
+appraisal:
+  decisionKey: ifms-scheme-appraisal
+  ladder:
+  - upTo: 100CR
+    appraisal: FA
+    approval: SECRETARY
+  - upTo: 500CR
+    appraisal: SFC
+    approval: MINISTER
+  - upTo: 1000CR
+    appraisal: EFC
+    approval: MINISTER_AND_FM
+  - appraisal: EFC
+    approval: CABINET
+  includes:
+  - GBS
+  - EBR
+  - EXTERNAL_AID
+  - STATE_SHARE
+  timeline:
+    comments: P28D
+    finalMemo: P14D
+  preInvestmentUpTo: 100CR
+  ruleRef: DoE OM 24(35)/PF-II/2012 of 05-08-2016 (DFPR 2024 App. III)
+treasury:
+  model: PAO
+  scrutinyChain: PAO_3
+  tokenless: false
+  tokenReset: DAILY
+  objectionCodes:
+  - code: NO_FUNDS
+    ruleRef: CAM 2.1.3
+  - code: NO_SANCTION
+    ruleRef: CAM 2.1.3
+  - code: WRONG_CLASSIFICATION
+    ruleRef: CAM 2.1.3
+  - code: MIXED_MAJOR_HEADS
+    ruleRef: RPR SI 2.2(5)(g)
+  - code: ARITHMETIC
+    ruleRef: CAM 2.1.5
+  - code: TIME_BARRED
+    ruleRef: GFR 295-297
+  tokenVerificationDay: 20
+paymentRails:
+  default: PFMS
+  byDocumentFamily:
+    TRANSFER: CENTRAL_BANK_SETTLEMENT
+  accreditedBank: PER_MINISTRY
+receipts:
+  portal: BHARATKOSH
+  identifiers:
+  - CPIN
+  - UTR
+  settlementRail: CENTRAL_BANK_SETTLEMENT
+  cardSettlementDays: 3
+  unaccountedSop: CGA OM 342 of 31-12-2024
+  cashBalanceHead: '8675'
+  channels:
+  - NETBANKING
+  - CARD
+  - NEFT_RTGS
+  - CHEQUE
+  - DD
+  - CASH
+grants:
+  seventyFivePercentRule:
+    percent: 75
+    ruleRef: GFR 2017 r.238(2)
+  ucForms:
+    INSTITUTION: GFR-12A
+    LOAN: GFR-12B
+    STATE: GFR-12C
+  ucDueMonthsAfterFy: 12
+  blacklistOnDefault: true
+  eatMandatory: true
+  unspentBalanceCheck: true
+  abCalendar:
+    accountsToAudit: 06-30
+    sar: 10-31
+    toNodalMinistry: 12-31
+  tsa:
+    universalFrom: '2023-04-01'
+    head: '8454'
+  cna:
+    model1Threshold: 100CR
+    models:
+    - TSA
+    - SCB_ACCOUNT
+  assetRegister:
+    gfrForm: null
+    ruleRef: 'GFR 230(9): no disposal without approval; GFR 21 grants register; GFR 22 fixed assets'
+  ngoDarpan:
+    source: NITI Aayog
+    pfmsField: DARPAN_UID
+  snaReturnOms:
+  - '2022-05-20'
+  - '2022-07-07'
+  - '2022-09-14'
+  - '2022-11-30'
+  cnaMasterCircular: 2024-05-21 paras 47, 52-53
+establishment:
+  pension:
+    rules: CCS_PENSION_2021
+    decisionKey: ccs-pension-2021
+    formOnline: 6-A
+    stagesMonthsBeforeRetirement:
+      form6A: 6
+      hooToPao: 4
+      paoToCpao: 1
+    disburser: CPAO
+    timersMonthsBeforeRetirement:
+      start: 12
+      verification: 8
+      forms4_6_6A: 6
+      form7: 4
+      toAo: 4
+      ppo: 2
+    aoToCpaoMonths: 2
+    cpaoToBankDays: 21
+    ruleRef: CCS (Pension) Rules 2021 r.56-63
+    lifeProof:
+    - JEEVAN_PRAMAAN
+    - FACE_AUTH
+    minimum: '9000'
+    maximum: '125000'
+    commutationPercent: 40
+  gpf:
+    annualCeiling: 5L
+    minPercent: 6
+    withdrawalSlaDays: 15
+    ruleRef: G.S.R. 96 of 15-06-2022
+  nps:
+    nilBill: NPS_NIL
+  ups:
+    from: '2025-04-01'
+    switchToNpsLatestMonthsBefore: 12
+    fullPayoutYears: 25
+    proRataFromYears: 10
+    minimumAfter10Years: '10000'
+    basisPercentOf12MonthAverageBasic: 50
+  payCommission:
+    id: 8CPC
+    constituted: '2025-11-03'
+    reportDue: 2027-05
+accounts:
+  monthlyDueDay: 8
+  eDoDueDay: 12
+  marchCuts:
+  - id: MARCH_PRELIM
+    closes: null
+  - id: MARCH_SUPPL_1
+    closes: '2026-04-30'
+    lateAdjustments: '2026-05-06'
+  - id: MARCH_SUPPL_2
+    closes: null
+  sct: true
+  renderTo: CGA
+  ddoReconciliation:
+    certificate: CAM-90
+    due: LAST_DAY_OF_NEXT_MONTH
+    ruleRef: CAM 2.19.12; GFR 57(5)
+  nonCivilFollowCgaCalendar: true
+audit:
+  atnDeadlineMonths: 4
+  internalAuditPlan: RISK_BASED_ANNUAL
+  ebillPostCheck:
+    samplingPercent: null
+    paoPassDays: 3
+    system: IAOS
+procurement:
+  gemMandatory: true
+  directPurchaseUpTo: '50000'
+  lpcUpTo: 5L
+  scientificDepartments:
+  - DST
+  - DBT
+  - DSIR
+  - DAE
+  - DOS
+  - MOES
+  - DRDO
+  - ICAR
+  - DHR
+  limitedTenderUpTo:
+    general: 50L
+    scientificDepartments: 1CR
+  ruleRef: 'IFMS-RESEARCH-DELTA IFC-188 (corrected): 1 cr only for scientific departments'
+writeOff:
+  decisionKey: ifms-write-off
+overpaymentWaiver:
+  departmentUpTo: 2L
+  ruleRef: DFPR r.15
+documentTypes:
+- id: PAY
+  family: ESTABLISHMENT_PAY
+  formNumber: RPR-13
+  name:
+    en: Pay bill (gazetted / non-gazetted)
+  approvalChain: PAO_3
+  sanction: NONE
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  legacyForms:
+  - GAR-14
+  certificates:
+  - ABSENTEE_STATEMENT
+  - INCREMENT_CERTIFICATE
+  integrations:
+    sourceSystem: HRMS_EIS
+- id: PAY_ARREAR
+  family: ESTABLISHMENT_PAY
+  formNumber: RPR-13A
+  name:
+    en: Arrear pay bill
+  approvalChain: PAO_3
+  sanction: REFERENCE
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+- id: NPS_NIL
+  family: NIL_BILL
+  formNumber: RPR-13B
+  name:
+    en: NPS Government contribution nil bill
+  approvalChain: PAO_3
+  sanction: NONE
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: true
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+- id: PAY_PRESIDENT_VP
+  family: ESTABLISHMENT_PAY
+  formNumber: RPR-15
+  name:
+    en: Pay of the President / Vice-President
+  approvalChain: PAO_3
+  sanction: NONE
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+- id: PAY_MINISTERS
+  family: ESTABLISHMENT_PAY
+  formNumber: RPR-16
+  name:
+    en: Pay and allowances of Ministers
+  approvalChain: PAO_3
+  sanction: NONE
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+- id: TA_CONSOLIDATED
+  family: PERSONAL_CLAIM
+  formNumber: RPR-14
+  name:
+    en: Consolidated TA bill
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+- id: TA_TOUR
+  family: PERSONAL_CLAIM
+  formNumber: RPR-14A
+  name:
+    en: 'TA claim-cum-bill: tour'
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  attachments:
+  - id: TICKETS
+    required: true
+- id: TA_TRANSFER
+  family: PERSONAL_CLAIM
+  formNumber: RPR-14B
+  name:
+    en: 'TA claim-cum-bill: transfer'
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  attachments:
+  - id: TRANSFER_ORDER
+    required: true
+- id: LTC
+  family: PERSONAL_CLAIM
+  formNumber: RPR-14C
+  name:
+    en: LTC claim-cum-bill
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  attachments:
+  - id: TICKETS
+    required: true
+- id: MEDICAL_CGHS
+  family: PERSONAL_CLAIM
+  formNumber: RPR-MED-CGHS
+  name:
+    en: Medical reimbursement (CGHS)
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+- id: MEDICAL_CSMA
+  family: PERSONAL_CLAIM
+  formNumber: RPR-MED-CSMA
+  name:
+    en: Medical reimbursement (CS(MA))
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+- id: CEA_OTHER_PERSONAL
+  family: PERSONAL_CLAIM
+  formNumber: RPR-48
+  name:
+    en: Children Education Allowance / other personal claims
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+- id: CONTINGENT
+  family: CONTINGENT
+  formNumber: RPR-29
+  name:
+    en: Contingent bill (advance / adjustment / fully vouched)
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  legacyForms:
+  - GAR-47
+- id: IMPREST_RECOUPMENT
+  family: CONTINGENT
+  formNumber: RPR-29A
+  name:
+    en: Imprest recoupment bill
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  attachments:
+  - id: RPR-28_STATEMENT
+    required: true
+- id: GEM_EBILL
+  family: VENDOR
+  formNumber: RPR-GEM
+  name:
+    en: GeM purchase e-bill
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  attachments:
+  - id: GEM_ORDER
+    required: true
+  - id: CRAC
+    required: true
+  - id: INVOICE
+    required: true
+  formNumberStatus: U
+  threeWayMatch: true
+- id: VENDOR_INVOICE
+  family: VENDOR
+  formNumber: RPR-29
+  name:
+    en: Supplier / contractor bill
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  attachments:
+  - id: INVOICE
+    required: true
+  - id: RECEIPT_CERTIFICATE
+    required: true
+- id: REFUND_REVENUE
+  family: REFUND
+  formNumber: RPR-33
+  name:
+    en: Refund of revenue
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 r.22; Subsidiary Instructions (RPR-33)
+  attachments:
+  - id: ORIGINAL_CHALLAN
+    required: true
+- id: REFUND_GST
+  family: REFUND
+  formNumber: RPR-GST-REFUND
+  name:
+    en: GST refund e-bill
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+- id: REFUND_DEPOSIT
+  family: REFUND
+  formNumber: RPR-DEP-REFUND
+  name:
+    en: Refund of deposit / lapsed deposit
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+- id: GIA
+  family: GRANT
+  formNumber: RPR-34
+  name:
+    en: Grant-in-aid / subsidy / contribution / investment / loan bill
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: DFPR 2024 r.17; GFR 2017 r.230, 238
+  certificates:
+  - SCHEME_RULES_FIN_CONSENT
+  - UC_STATUS
+- id: HBA
+  family: ADVANCE
+  formNumber: RPR-HBA
+  name:
+    en: House building advance
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+- id: COMPUTER_ADVANCE
+  family: ADVANCE
+  formNumber: RPR-COMP
+  name:
+    en: Computer advance
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+- id: SHORT_ADVANCE
+  family: ADVANCE
+  formNumber: RPR-ADV
+  name:
+    en: Short-term advances (TA, LTC, medical)
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+- id: GPF_WITHDRAWAL
+  family: PROVIDENT_FUND
+  formNumber: RPR-GPF-W
+  name:
+    en: GPF / CPF advance or withdrawal
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+  slaDays: 15
+  slaStatus: U
+- id: GPF_FINAL
+  family: PROVIDENT_FUND
+  formNumber: RPR-GPF-F
+  name:
+    en: GPF final payment
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+- id: CGEGIS
+  family: INSURANCE
+  formNumber: RPR-CGEGIS
+  name:
+    en: CGEGIS / GIS claim
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+- id: RETIREMENT_BENEFITS
+  family: RETIREMENT
+  formNumber: RPR-RB
+  name:
+    en: Retirement benefits (commutation, gratuity, leave encashment)
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 r.32
+  formNumberStatus: U
+- id: CF_WITHDRAWAL
+  family: CONTINGENCY_FUND
+  formNumber: RPR-CFI
+  name:
+    en: Bill for withdrawal from Contingency Fund of India
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: Art. 267(1); GFR 2017 (advance from Contingency Fund)
+  formNumberStatus: U
+- id: WORK_CHARGED_WAGES
+  family: ESTABLISHMENT_PAY
+  formNumber: RPR-13
+  name:
+    en: Work-charged establishment wages
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR SI 2.30
+- id: DEATH_ARREARS
+  family: PERSONAL_CLAIM
+  formNumber: RPR-26
+  name:
+    en: Arrears to heirs of a deceased employee (with indemnity)
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 r.14(7)
+  attachments:
+  - id: INDEMNITY_BOND
+    required: true
+- id: SECRET_SERVICE
+  family: CLASSIFIED
+  formNumber: RPR-SS
+  name:
+    en: Secret-service / classified payment (certificate in lieu of receipt)
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR SI 2.16(6); DFPR 10(10)(v)
+  certificates:
+  - DISBURSING_OFFICER_CERTIFICATE
+  formNumberStatus: U
+  payeeConfidential: true
+- id: ENTERTAINMENT
+  family: CONTINGENT
+  formNumber: RPR-29
+  name:
+    en: Entertainment and certificate-backed claims
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR SI 2.16
+  certificates:
+  - ENTERTAINMENT_CERT
+- id: LPC_FIRST_PAY
+  family: ESTABLISHMENT_PAY
+  formNumber: RPR-2
+  name:
+    en: First pay claim after transfer (Last Pay Certificate)
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR SI 2.1(6)
+  attachments:
+  - id: LPC
+    required: true
+- id: CDDO_ASSIGNMENT
+  family: ASSIGNMENT
+  formNumber: RPR-CDDO
+  name:
+    en: Cheque-drawing DDO payment against assignment
+  approvalChain: CDDO
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 r.13(2)-(3), 19
+  formNumberStatus: U
+- id: SNA_SPARSH_RELEASE
+  family: TRANSFER
+  formNumber: PFMS-SS
+  name:
+    en: SNA-SPARSH daily sanction / release
+  approvalChain: SNA_SPARSH_3
+  sanction: REFERENCE
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: CGA SOP SNA-SPARSH 11-08-2025
+- id: RBI_TRANSFER_STATE
+  family: TRANSFER
+  formNumber: RPR-RBI
+  name:
+    en: Loans / grants to States through RBI
+  approvalChain: PR_AO
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  formNumberStatus: U
+approvalChains:
+- id: PAO_3
+  steps:
+  - role: BILL_DISTRIBUTOR
+  - role: DEALING_HAND
+  - role: AAO
+  - role: PAO
+    sign: true
+  returnBy:
+  - PAO
+  mayEdit: false
+  queue:
+    token: true
+    tokenSeries: TOKEN
+    fifo: true
+    distributorRole: BILL_DISTRIBUTOR
+  signatures:
+  - atOrAbove: 1000000
+    count: 2
+    secondSignatoryRole: SECOND_SIGNATORY
+    ruleRef: CAM 2024 2.2.9 note (two DSCs at Rs 10 lakh and above)
+  sequence:
+  - DDO
+  - PAO
+  ruleRef: CAM 2024 2.2.8 (only the PAO returns a bill)
+- id: CDDO
+  steps:
+  - role: CDDO
+    sign: true
+  returnBy:
+  - CDDO
+  mayEdit: false
+- id: SNA_SPARSH_3
+  steps:
+  - role: PD_CHECKER
+    sign: true
+  - role: PR_AO
+    sign: true
+  - role: PAO
+    sign: true
+  returnBy:
+  - PD_CHECKER
+  mayEdit: false
+- id: SNA_SPARSH_7
+  steps:
+  - role: PD_MAKER
+  - role: PD_CHECKER
+  - role: PR_AO
+  - role: BILL_DISTRIBUTOR
+  - role: PAO_DH
+  - role: PAO_AAO
+  - role: PAO
+  returnBy:
+  - PAO
+  mayEdit: false
+- id: PR_AO
+  steps:
+  - role: PR_AO
+    sign: true
+  returnBy:
+  - PR_AO
+  mayEdit: false
+- id: SANCTION
+  steps:
+  - role: SANCTION_MAKER
+  - role: SANCTION_CHECKER
+    sign: true
+  returnBy:
+  - SANCTION_CHECKER
+  mayEdit: true
+  ruleRef: CAM 2024 2.3.3; RPR-100 uniform sanction
+numberSeries:
+- id: TOKEN
+  reset: DAILY
+  format: '{unit}/{yyyyMMdd}/{n:5}'
+- id: VOUCHER
+  reset: MONTHLY
+  format: '{unit}/{period}/{n:6}'
+chargedBodies:
+  list: Art. 112(3)(a)-(g)
+  status: V
+budgetFormulation:
+  calendar:
+    appendicesDue: '2025-10-03'
+    circular: '2025-08-28'
+    for: BE 2026-27
+  financeCommission:
+    id: 16FC
+    from: 2026-27
+    to: 2030-31
+    carryOver15thFc: false
+deductions:
+  gstTdsHead: 8658-00-139
+  rates: null
+retention:
+  ruleRef: GFR 320 + App. 9
+  classes:
+    SANCTION: P2Y_OR_1Y_AFTER_AUDIT
+    DDO_CASH_BOOK: P10Y
+    CONTINGENT: P3Y_OR_1Y_AFTER_AUDIT
+  holdIfAuditObjection: true
+worksManual:
+  doeManualWorks2025:
+    listed: '2026-01-05'
+    amended: '2026-06-18'
+  cpwdAfter2022: null
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/GOI/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: GOI
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: V
+  - key: ifms-procurement-mode
+    file: in/dmn/GOI/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: GOI
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: P
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: 0
+      ruleRef: 'RPR 2022: DDO draws within a sanction; no sanction power of its own'
+    - role: HOO
+      maxAmount: 500000
+      ruleRef: DFPR 2024 r.12(4) and department re-delegation order [U value]
+    - role: HOD
+      maxAmount: 5000000
+      ruleRef: DFPR 2024 r.12(2) re-delegation to HoD [U value]
+    - role: SECRETARY
+      maxAmount: 1000000000
+      ruleRef: DFPR 2024 r.11 (open / limited tender up to 100 cr)
+    - role: MINISTER
+      maxAmount: 0
+      ruleRef: 'DFPR 2024 r.11: above the Secretary; no upper limit in this table'
+    - role: FA
+      maxAmount: 0
+      ruleRef: advice / concurrence only
+    procurementThresholds:
+      direct: '50000'
+      gemL1: 10L
+      limitedTender: 50L
+      limitedTenderScientific: 1CR

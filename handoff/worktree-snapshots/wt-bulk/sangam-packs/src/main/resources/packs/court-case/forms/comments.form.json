@@ -1,0 +1,36 @@
+{
+  "key": "court-case/comments",
+  "version": "1.0.0",
+  "pack": "gov.court-case",
+  "title": {
+    "en": "Para-wise comments",
+    "hi": "पैरावार टिप्पणियाँ"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "paraWiseComments",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Para-wise comments",
+        "hi": "पैरावार टिप्पणियाँ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

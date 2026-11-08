@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_scm_powers" name="Delegated powers by role" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- K6 / IX.5 rule 3. SYNTHETIC limits: replace with the board-approved delegation of financial powers of the regulated entity. -->
+  <decision id="sec-scm-powers" name="Delegated powers by role" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-scm-powers_t" hitPolicy="FIRST">
+      <input id="sec-scm-powers_i0" label="Seat role"><inputExpression id="sec-scm-powers_ie0" typeRef="string"><text>seatRole</text></inputExpression></input>
+      <input id="sec-scm-powers_i1" label="Case type"><inputExpression id="sec-scm-powers_ie1" typeRef="string"><text>caseType</text></inputExpression></input>
+      <output id="sec-scm-powers_o0" label="Power limit (INR)" name="powerLimit" typeRef="number"/>
+      <output id="sec-scm-powers_o1" label="Allowed" name="allowed" typeRef="boolean"/>
+      <rule id="sec-scm-powers_r0">
+        <inputEntry id="sec-scm-powers_r0_i0"><text>"DEPTHEAD"</text></inputEntry>
+        <inputEntry id="sec-scm-powers_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-scm-powers_r0_o0"><text>500000</text></outputEntry>
+        <outputEntry id="sec-scm-powers_r0_o1"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-powers_r1">
+        <inputEntry id="sec-scm-powers_r1_i0"><text>"PROCHEAD"</text></inputEntry>
+        <inputEntry id="sec-scm-powers_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-scm-powers_r1_o0"><text>5000000</text></outputEntry>
+        <outputEntry id="sec-scm-powers_r1_o1"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-powers_r2">
+        <inputEntry id="sec-scm-powers_r2_i0"><text>"CFO"</text></inputEntry>
+        <inputEntry id="sec-scm-powers_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-scm-powers_r2_o0"><text>1000000000</text></outputEntry>
+        <outputEntry id="sec-scm-powers_r2_o1"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-powers_r3"><description>no delegated power</description>
+        <inputEntry id="sec-scm-powers_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-scm-powers_r3_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-scm-powers_r3_o0"><text>0</text></outputEntry>
+        <outputEntry id="sec-scm-powers_r3_o1"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

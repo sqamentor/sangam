@@ -1,0 +1,36 @@
+{
+  "key": "sec-hr-appraisal/manager",
+  "version": "1.0.0",
+  "pack": "sec.hr.appraisal",
+  "title": {
+    "en": "Manager rating",
+    "hi": "प्रबंधक रेटिंग"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "rating",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Citizen rating",
+        "hi": "नागरिक मूल्यांकन"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

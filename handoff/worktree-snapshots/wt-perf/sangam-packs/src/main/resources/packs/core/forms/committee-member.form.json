@@ -1,0 +1,63 @@
+{
+  "key": "core/committee-member",
+  "version": "1.0.0",
+  "pack": "sangam.core",
+  "title": {
+    "en": "Committee member decision",
+    "hi": "समिति सदस्य का निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "voteRemarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Member remarks",
+        "hi": "सदस्य की टिप्पणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "vote",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      },
+      {
+        "value": "abstain",
+        "label": {
+          "en": "Abstain",
+          "hi": "तटस्थ"
+        }
+      }
+    ]
+  }
+}

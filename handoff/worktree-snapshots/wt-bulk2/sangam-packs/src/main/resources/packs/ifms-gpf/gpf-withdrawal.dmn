@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_gpf_withdrawal" name="GPF advance / withdrawal eligibility" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="gpf-withdrawal" name="GPF advance / withdrawal eligibility" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="gpf-withdrawal_t" hitPolicy="FIRST">
+      <input id="gpf-withdrawal_i0" label="Purpose"><inputExpression id="gpf-withdrawal_ie0" typeRef="string"><text>gpfPurpose</text></inputExpression></input>
+      <input id="gpf-withdrawal_i1" label="Amount"><inputExpression id="gpf-withdrawal_ie1" typeRef="number"><text>amount</text></inputExpression></input>
+      <input id="gpf-withdrawal_i2" label="Balance"><inputExpression id="gpf-withdrawal_ie2" typeRef="number"><text>gpfBalance</text></inputExpression></input>
+      <input id="gpf-withdrawal_i3" label="Qualifying service"><inputExpression id="gpf-withdrawal_ie3" typeRef="number"><text>qualifyingService</text></inputExpression></input>
+      <output id="gpf-withdrawal_o0" label="Eligible" name="gpfEligible" typeRef="boolean"/>
+      <output id="gpf-withdrawal_o1" label="Rule" name="ruleRef" typeRef="string"/>
+      <rule id="gpf-withdrawal_r0">
+        <inputEntry id="gpf-withdrawal_r0_i0"><text>-</text></inputEntry>
+        <inputEntry id="gpf-withdrawal_r0_i1"><text>-</text></inputEntry>
+        <inputEntry id="gpf-withdrawal_r0_i2"><text>&lt;= 0</text></inputEntry>
+        <inputEntry id="gpf-withdrawal_r0_i3"><text>-</text></inputEntry>
+        <outputEntry id="gpf-withdrawal_r0_o0"><text>false</text></outputEntry>
+        <outputEntry id="gpf-withdrawal_r0_o1"><text>"no balance"</text></outputEntry>
+      </rule>
+      <rule id="gpf-withdrawal_r1">
+        <inputEntry id="gpf-withdrawal_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="gpf-withdrawal_r1_i1"><text>&gt; gpfBalance</text></inputEntry>
+        <inputEntry id="gpf-withdrawal_r1_i2"><text>-</text></inputEntry>
+        <inputEntry id="gpf-withdrawal_r1_i3"><text>-</text></inputEntry>
+        <outputEntry id="gpf-withdrawal_r1_o0"><text>false</text></outputEntry>
+        <outputEntry id="gpf-withdrawal_r1_o1"><text>"GPF (CS) Rules 1960: not above the balance"</text></outputEntry>
+      </rule>
+      <rule id="gpf-withdrawal_r2"><description>placeholder limits</description>
+        <inputEntry id="gpf-withdrawal_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="gpf-withdrawal_r2_i1"><text>-</text></inputEntry>
+        <inputEntry id="gpf-withdrawal_r2_i2"><text>-</text></inputEntry>
+        <inputEntry id="gpf-withdrawal_r2_i3"><text>-</text></inputEntry>
+        <outputEntry id="gpf-withdrawal_r2_o0"><text>true</text></outputEntry>
+        <outputEntry id="gpf-withdrawal_r2_o1"><text>"GPF (CS) Rules 1960 [U: purpose-wise limits to load]"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

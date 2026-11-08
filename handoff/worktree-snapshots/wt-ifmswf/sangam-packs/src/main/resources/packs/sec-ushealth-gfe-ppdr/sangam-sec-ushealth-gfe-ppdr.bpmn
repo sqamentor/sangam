@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Good-faith estimate and dispute. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_gfe_ppdr" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_ushealth_billIssued" name="sangam.ushealth.billIssued"/>
+  <message id="msg_sangam_ushealth_ppdrDetermination" name="sangam.ushealth.ppdrDetermination"/>
+  <message id="msg_sangam_ushealth_ppdrInitiated" name="sangam.ushealth.ppdrInitiated"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-gfe-ppdr" name="Good-faith estimate and dispute" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.gfe-ppdr</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>patientName,scheduledDate,expectedCharges</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="gf_start" name="Service scheduled or estimate requested" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-gfe-ppdr/schedule"></startEvent>
+    <serviceTask id="gf_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;daysUntilService=10;expectedCharges=0;billedAmount=0;gfeSeat=FINANCIAL-COUNSELOR;billingSeat=PATIENT-BILLING;complianceSeat=COMPLIANCE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="gf_cfg" name="GFE timeframe and dispute threshold (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-gfe-config</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="gf_estimate_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gf_estimate</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${gfeSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="gf_estimate" name="Prepare and deliver the good-faith estimate (with co-providers)" operaton:candidateGroups="${gfeSeat}" operaton:formKey="sangam:sec-ushealth-gfe-ppdr/estimate" operaton:dueDate="${gf_estimateDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="gf_estimate_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gf_estimate</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>gfeSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="gf_estimate_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="gf_estimate_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gf_estimate</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>gfeSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="gf_estimate_breachGw" name="Deemed?" default="sec_ushealth_gfe_ppdr_f8"></exclusiveGateway>
+    <exclusiveGateway id="gf_estimate_done" name=""></exclusiveGateway>
+    <intermediateCatchEvent id="gf_bill" name="Bill issued"><messageEventDefinition messageRef="msg_sangam_ushealth_billIssued"/></intermediateCatchEvent>
+    <userTask id="gf_compare" name="Compare the bill with the estimate" operaton:candidateGroups="${billingSeat}" operaton:formKey="sangam:sec-ushealth-gfe-ppdr/compare"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="gf_variance" name="Bill minus estimate" operaton:expression="${execution.setVariable('billVariance', billedAmount - expectedCharges)}"></serviceTask>
+    <exclusiveGateway id="gf_eligGw" name="Dispute eligible?" default="sec_ushealth_gfe_ppdr_f17"></exclusiveGateway>
+    <endEvent id="gf_endOk" name="Bill within the estimate"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="gf_notice" name="Tell the patient about the dispute process" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>ushealth-ppdr-rights</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>patientName</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gf_window" name="Due date: ppdrInitiation" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ppdrInitiation</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>billDate</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${ppdrWindowLead}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="gf_initWait" name="Dispute initiated or window closed"></eventBasedGateway>
+    <intermediateCatchEvent id="gf_initiated" name="Patient initiated the dispute"><messageEventDefinition messageRef="msg_sangam_ushealth_ppdrInitiated"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="gf_lapsed" name="Initiation window closed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ppdrInitiationDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="gf_endLapsed" name="No dispute initiated"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CLOSED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="gf_hold" name="Collections hold while the dispute is open" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>collectionsHold=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="gf_sdr" name="Provide the estimate and bill to the SDR entity" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ppdr.sdr</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>respond</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName,expectedCharges,billedAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>sdr</operaton:string></operaton:field><operaton:field name="step"><operaton:string>sdr</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="gf_determination" name="SDR determination received"><messageEventDefinition messageRef="msg_sangam_ushealth_ppdrDetermination"/></intermediateCatchEvent>
+    <userTask id="gf_apply" name="Apply the determination, adjust the bill, release the hold" operaton:candidateGroups="${billingSeat}" operaton:formKey="sangam:sec-ushealth-gfe-ppdr/apply"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="gf_release" name="Release the collections hold" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>collectionsHold=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="gf_end" name="Dispute resolved"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>RESOLVED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="gf_estimate_warn" name="SLA warning (75%)" attachedToRef="gf_estimate" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gf_estimateWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="gf_estimate_breach" name="SLA breached" attachedToRef="gf_estimate" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gf_estimateDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f1" sourceRef="gf_start" targetRef="gf_defaults"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f2" sourceRef="gf_defaults" targetRef="gf_cfg"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f3" sourceRef="gf_estimate_warn" targetRef="gf_estimate_warnNotify"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f4" sourceRef="gf_estimate_warnNotify" targetRef="gf_estimate_warnEnd"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f5" sourceRef="gf_estimate_breach" targetRef="gf_estimate_breachAct"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f6" sourceRef="gf_estimate_breachAct" targetRef="gf_estimate_breachGw"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f7" name="deemed" sourceRef="gf_estimate_breachGw" targetRef="gf_estimate_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f8" name="escalated" sourceRef="gf_estimate_breachGw" targetRef="gf_estimate_slaPlan"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f9" sourceRef="gf_estimate_slaPlan" targetRef="gf_estimate"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f10" sourceRef="gf_estimate" targetRef="gf_estimate_done"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f11" sourceRef="gf_cfg" targetRef="gf_estimate_slaPlan"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f12" sourceRef="gf_estimate_done" targetRef="gf_bill"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f13" sourceRef="gf_bill" targetRef="gf_compare"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f14" sourceRef="gf_compare" targetRef="gf_variance"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f15" sourceRef="gf_variance" targetRef="gf_eligGw"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f16" name="within threshold" sourceRef="gf_eligGw" targetRef="gf_endOk"><conditionExpression xsi:type="tFormalExpression">${billVariance &lt; ppdrThreshold}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f17" name="eligible" sourceRef="gf_eligGw" targetRef="gf_notice"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f18" sourceRef="gf_notice" targetRef="gf_window"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f19" sourceRef="gf_window" targetRef="gf_initWait"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f20" sourceRef="gf_initWait" targetRef="gf_initiated"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f21" sourceRef="gf_initWait" targetRef="gf_lapsed"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f22" sourceRef="gf_lapsed" targetRef="gf_endLapsed"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f23" sourceRef="gf_initiated" targetRef="gf_hold"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f24" sourceRef="gf_hold" targetRef="gf_sdr"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f25" sourceRef="gf_sdr" targetRef="gf_determination"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f26" sourceRef="gf_determination" targetRef="gf_apply"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f27" sourceRef="gf_apply" targetRef="gf_release"/>
+    <sequenceFlow id="sec_ushealth_gfe_ppdr_f28" sourceRef="gf_release" targetRef="gf_end"/>
+    <subProcess id="gf_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="gf_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="gf_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gf_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gf_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_gfe_ppdr_f29" sourceRef="gf_withdrawStart" targetRef="gf_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_gfe_ppdr_f30" sourceRef="gf_withdrawKind" targetRef="gf_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_gfe_ppdr_f31" sourceRef="gf_withdrawCall" targetRef="gf_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="gf_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="gf_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="gf_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gf_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gf_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_gfe_ppdr_f32" sourceRef="gf_cancelStart" targetRef="gf_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_gfe_ppdr_f33" sourceRef="gf_cancelKind" targetRef="gf_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_gfe_ppdr_f34" sourceRef="gf_cancelCall" targetRef="gf_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_gfe_ppdr_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_gfe_ppdr_plane" bpmnElement="sangam-sec-ushealth-gfe-ppdr">
+      <bpmndi:BPMNShape id="gf_start_di" bpmnElement="gf_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_defaults_di" bpmnElement="gf_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_cfg_di" bpmnElement="gf_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_estimate_slaPlan_di" bpmnElement="gf_estimate_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_estimate_di" bpmnElement="gf_estimate"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_estimate_warnNotify_di" bpmnElement="gf_estimate_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_estimate_warnEnd_di" bpmnElement="gf_estimate_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_estimate_breachAct_di" bpmnElement="gf_estimate_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_estimate_breachGw_di" bpmnElement="gf_estimate_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_estimate_done_di" bpmnElement="gf_estimate_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_bill_di" bpmnElement="gf_bill"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_compare_di" bpmnElement="gf_compare"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_variance_di" bpmnElement="gf_variance"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_eligGw_di" bpmnElement="gf_eligGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_endOk_di" bpmnElement="gf_endOk"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_notice_di" bpmnElement="gf_notice"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_window_di" bpmnElement="gf_window"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_initWait_di" bpmnElement="gf_initWait"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_initiated_di" bpmnElement="gf_initiated"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_lapsed_di" bpmnElement="gf_lapsed"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_endLapsed_di" bpmnElement="gf_endLapsed"><dc:Bounds x="2692" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_hold_di" bpmnElement="gf_hold"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_sdr_di" bpmnElement="gf_sdr"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_determination_di" bpmnElement="gf_determination"><dc:Bounds x="3022" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_apply_di" bpmnElement="gf_apply"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_release_di" bpmnElement="gf_release"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_end_di" bpmnElement="gf_end"><dc:Bounds x="3517" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_estimate_warn_di" bpmnElement="gf_estimate_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_estimate_breach_di" bpmnElement="gf_estimate_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_withdraw_di" bpmnElement="gf_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_withdrawStart_di" bpmnElement="gf_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_withdrawKind_di" bpmnElement="gf_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_withdrawCall_di" bpmnElement="gf_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_withdrawEnd_di" bpmnElement="gf_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_cancel_di" bpmnElement="gf_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_cancelStart_di" bpmnElement="gf_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_cancelKind_di" bpmnElement="gf_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_cancelCall_di" bpmnElement="gf_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gf_cancelEnd_di" bpmnElement="gf_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f1_di" bpmnElement="sec_ushealth_gfe_ppdr_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f2_di" bpmnElement="sec_ushealth_gfe_ppdr_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f3_di" bpmnElement="sec_ushealth_gfe_ppdr_f3"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f4_di" bpmnElement="sec_ushealth_gfe_ppdr_f4"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f5_di" bpmnElement="sec_ushealth_gfe_ppdr_f5"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f6_di" bpmnElement="sec_ushealth_gfe_ppdr_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f7_di" bpmnElement="sec_ushealth_gfe_ppdr_f7"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f8_di" bpmnElement="sec_ushealth_gfe_ppdr_f8"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f9_di" bpmnElement="sec_ushealth_gfe_ppdr_f9"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f10_di" bpmnElement="sec_ushealth_gfe_ppdr_f10"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f11_di" bpmnElement="sec_ushealth_gfe_ppdr_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f12_di" bpmnElement="sec_ushealth_gfe_ppdr_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f13_di" bpmnElement="sec_ushealth_gfe_ppdr_f13"><di:waypoint x="1408" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f14_di" bpmnElement="sec_ushealth_gfe_ppdr_f14"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f15_di" bpmnElement="sec_ushealth_gfe_ppdr_f15"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f16_di" bpmnElement="sec_ushealth_gfe_ppdr_f16"><di:waypoint x="1910" y="70"/><di:waypoint x="1971" y="70"/><di:waypoint x="1971" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f17_di" bpmnElement="sec_ushealth_gfe_ppdr_f17"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f18_di" bpmnElement="sec_ushealth_gfe_ppdr_f18"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f19_di" bpmnElement="sec_ushealth_gfe_ppdr_f19"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f20_di" bpmnElement="sec_ushealth_gfe_ppdr_f20"><di:waypoint x="2405" y="70"/><di:waypoint x="2466" y="70"/><di:waypoint x="2466" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f21_di" bpmnElement="sec_ushealth_gfe_ppdr_f21"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f22_di" bpmnElement="sec_ushealth_gfe_ppdr_f22"><di:waypoint x="2563" y="70"/><di:waypoint x="2692" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f23_di" bpmnElement="sec_ushealth_gfe_ppdr_f23"><di:waypoint x="2563" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f24_di" bpmnElement="sec_ushealth_gfe_ppdr_f24"><di:waypoint x="2760" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f25_di" bpmnElement="sec_ushealth_gfe_ppdr_f25"><di:waypoint x="2925" y="195"/><di:waypoint x="3022" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f26_di" bpmnElement="sec_ushealth_gfe_ppdr_f26"><di:waypoint x="3058" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f27_di" bpmnElement="sec_ushealth_gfe_ppdr_f27"><di:waypoint x="3255" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f28_di" bpmnElement="sec_ushealth_gfe_ppdr_f28"><di:waypoint x="3420" y="195"/><di:waypoint x="3517" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f29_di" bpmnElement="sec_ushealth_gfe_ppdr_f29"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f30_di" bpmnElement="sec_ushealth_gfe_ppdr_f30"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f31_di" bpmnElement="sec_ushealth_gfe_ppdr_f31"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f32_di" bpmnElement="sec_ushealth_gfe_ppdr_f32"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f33_di" bpmnElement="sec_ushealth_gfe_ppdr_f33"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_gfe_ppdr_f34_di" bpmnElement="sec_ushealth_gfe_ppdr_f34"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

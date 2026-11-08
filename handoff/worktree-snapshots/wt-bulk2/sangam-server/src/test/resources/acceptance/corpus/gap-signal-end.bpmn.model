@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GAP set (SANGAM.md XI.3, CF-13 / R34): signal end event. SHARED, standard BPMN 2.0.2.
+  Two processes in one file: "gap-signal-end" throws signal "gapSignal" from its end event;
+  "gap-signal-end-catcher" has a signal start event, so a broadcast creates a catcher instance.
+  Pass: starting gap-signal-end ends that instance AND creates one gap-signal-end-catcher instance
+  waiting in gap_sigEnd_probe.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="gap-signal-end-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <signal id="gap_sigEnd_signal" name="gapSignal"/>
+
+  <process id="gap-signal-end" name="GAP signal end event" isExecutable="true">
+    <startEvent id="gap_sigEnd_start"/>
+    <sequenceFlow id="gap_sigEnd_f1" sourceRef="gap_sigEnd_start" targetRef="gap_sigEnd_end"/>
+    <endEvent id="gap_sigEnd_end" name="Throw gapSignal">
+      <signalEventDefinition id="gap_sigEnd_endDef" signalRef="gap_sigEnd_signal"/>
+    </endEvent>
+  </process>
+
+  <process id="gap-signal-end-catcher" name="GAP signal end event (catcher)" isExecutable="true">
+    <startEvent id="gap_sigEnd_catchStart" name="On gapSignal">
+      <signalEventDefinition id="gap_sigEnd_catchStartDef" signalRef="gap_sigEnd_signal"/>
+    </startEvent>
+    <sequenceFlow id="gap_sigEnd_f2" sourceRef="gap_sigEnd_catchStart" targetRef="gap_sigEnd_probe"/>
+    <userTask id="gap_sigEnd_probe" name="Signal received"/>
+    <sequenceFlow id="gap_sigEnd_f3" sourceRef="gap_sigEnd_probe" targetRef="gap_sigEnd_catcherEnd"/>
+    <endEvent id="gap_sigEnd_catcherEnd"/>
+  </process>
+</definitions>

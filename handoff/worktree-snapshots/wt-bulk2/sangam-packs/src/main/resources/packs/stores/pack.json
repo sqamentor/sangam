@@ -1,0 +1,75 @@
+{
+  "id": "gov.stores",
+  "version": "1.0.0",
+  "name": {
+    "en": "Stores: physical verification and discrepancies",
+    "hi": "भंडार: भौतिक सत्यापन एवं विसंगतियाँ"
+  },
+  "domain": "Stores / inventory",
+  "description": "Annual physical verification by a board (timer start, GFR 213/217), book against physical comparison, one discrepancy case per item (GP-55, GP-09) investigated and resolved by recovery, adjustment or write-off sanctioned under the write-off powers.",
+  "mainProcesses": [
+    "sangam-stock-verification"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/stores/sangam-stock-verification.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/stores/sangam-stock-discrepancy.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/stores/stores-writeoff-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/stores/forms/count.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/stores/forms/investigate.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/stores/seed.json"
+    }
+  ],
+  "seed": "packs/stores/seed.json",
+  "connectors": [
+    {
+      "id": "stores.ledger",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Book balances"
+    },
+    {
+      "id": "stores.adjust",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Stock adjustment"
+    },
+    {
+      "id": "hr.recovery",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Recovery from the responsible person"
+    }
+  ],
+  "covers": [
+    "GP-55",
+    "GP-30",
+    "GP-09",
+    "GP-01"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

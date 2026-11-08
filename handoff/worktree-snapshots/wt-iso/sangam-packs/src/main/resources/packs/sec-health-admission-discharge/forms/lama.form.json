@@ -1,0 +1,36 @@
+{
+  "key": "sec-health-admission-discharge/lama",
+  "version": "1.0.0",
+  "pack": "sec.health.admission-discharge",
+  "title": {
+    "en": "Record LAMA / DAMA with risks explained",
+    "hi": "लामा दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "clinicalNotes",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Clinical notes",
+        "hi": "नैदानिक टिप्पणियाँ"
+      }
+    }
+  ]
+}

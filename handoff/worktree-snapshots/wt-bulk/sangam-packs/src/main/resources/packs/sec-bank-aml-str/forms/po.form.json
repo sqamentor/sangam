@@ -1,0 +1,47 @@
+{
+  "key": "sec-bank-aml-str/po",
+  "version": "1.0.0",
+  "pack": "sec.bank.aml-str",
+  "title": {
+    "en": "Principal Officer: suspicious? (record reasons)",
+    "hi": "प्रधान अधिकारी: संदिग्ध? (कारण दर्ज करें)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "strGrounds",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Grounds of suspicion",
+        "hi": "संदेह के आधार"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "poDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "fileStr",
+        "label": {
+          "en": "File STR",
+          "hi": "एसटीआर दाखिल करें"
+        }
+      },
+      {
+        "value": "noStr",
+        "label": {
+          "en": "No STR",
+          "hi": "एसटीआर नहीं"
+        }
+      }
+    ]
+  }
+}

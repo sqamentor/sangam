@@ -1,0 +1,47 @@
+{
+  "key": "p3-grant-sanction/account-verify",
+  "version": "1.0.0",
+  "pack": "gov.p3.grant-sanction",
+  "title": {
+    "en": "Verify new bank account",
+    "hi": "नए बैंक खाते का सत्यापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "accountVerdict",
+    "required": true,
+    "options": [
+      {
+        "value": "verified",
+        "label": {
+          "en": "Verified",
+          "hi": "सत्यापित"
+        }
+      },
+      {
+        "value": "failed",
+        "label": {
+          "en": "Not verified",
+          "hi": "असत्यापित"
+        }
+      }
+    ]
+  }
+}

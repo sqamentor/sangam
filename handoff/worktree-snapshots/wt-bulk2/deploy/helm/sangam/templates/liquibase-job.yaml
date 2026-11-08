@@ -1,0 +1,78 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if eq .Values.liquibase.mode "job" }}
+{{- $fullname := include "sangam.fullname" . -}}
+# R12: Liquibase runs as ONE Kubernetes Job with the Liquibase session lock (DATABASECHANGELOGLOCK), before any new
+# server pod starts (pre-install / pre-upgrade hook). The server image runs in migrate-only mode: Sangam product
+# changelogs (sangam-persistence, Liquibase 4.33.0) + Operaton schema create/upgrade, then exits.
+# backoffLimit 0: a failed migration is not retried blindly; the job is kept for its logs (deploy/README.md).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $fullname }}-migrate-{{ .Release.Revision }}
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: {{ .Values.liquibase.job.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.liquibase.job.activeDeadlineSeconds }}
+  ttlSecondsAfterFinished: {{ .Values.liquibase.job.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "sangam.selectorLabels" (dict "ctx" . "component" "migration") | nindent 8 }}
+        sangam.io/db-client: "true"
+    spec:
+      restartPolicy: Never
+      {{- include "sangam.imagePullSecrets" . | nindent 6 }}
+      # Hook runs before the chart's ServiceAccount exists on first install: no token, default account.
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.server.podSecurityContext | nindent 8 }}
+      {{- $init := include "sangam.drivers.initContainer" . }}
+      {{- if $init }}
+      initContainers:
+        {{- $init | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: migrate
+          image: {{ include "sangam.image" (dict "ctx" . "image" .Values.server.image) | quote }}
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.server.securityContext | nindent 12 }}
+          env:
+            {{- include "sangam.server.env" . | nindent 12 }}
+            - name: SANGAM_LIQUIBASE_MODE
+              value: migrate-only
+            - name: SANGAM_JOB_EXECUTOR_ENABLED
+              value: "false"
+            - name: SANGAM_COMPLIANCE_SCHEDULE
+              value: "false"
+            - name: TZ
+              value: UTC
+            {{- with .Values.liquibase.job.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.liquibase.job.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: state
+              mountPath: /var/lib/sangam
+            - name: drivers
+              mountPath: /opt/sangam/drivers
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        # one-shot run: no compliance scheduler, so a scratch directory is enough here
+        - name: state
+          emptyDir:
+            sizeLimit: 64Mi
+        {{- include "sangam.drivers.volume" . | nindent 8 }}
+{{- end }}

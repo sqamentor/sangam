@@ -1,0 +1,22 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if and .Values.server.state.create (not .Values.server.state.existingClaim) }}
+# /var/lib/sangam of the server pods: compliance log archive (R51, >= 180 days, India-resident) and cell exports.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "sangam.server.stateClaim" . }}
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    {{- toYaml .Values.server.state.accessModes | nindent 4 }}
+  {{- with .Values.server.state.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.server.state.size }}
+{{- end }}

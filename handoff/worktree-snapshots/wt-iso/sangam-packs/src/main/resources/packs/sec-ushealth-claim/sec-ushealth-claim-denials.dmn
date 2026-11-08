@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_claim_denials" name="Denial routing by CARC (SYNTHETIC)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-ushealth-claim-denials" name="Denial routing by CARC (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ushealth-claim-denials_t" hitPolicy="FIRST">
+      <input id="sec-ushealth-claim-denials_i0" label="First adjustment reason code"><inputExpression id="sec-ushealth-claim-denials_ie0" typeRef="string"><text>eraFirstReasonCode</text></inputExpression></input>
+      <output id="sec-ushealth-claim-denials_o0" label="Suggested route" name="denialRoute" typeRef="string"/>
+      <rule id="sec-ushealth-claim-denials_r0"><description>missing information</description>
+        <inputEntry id="sec-ushealth-claim-denials_r0_i0"><text>"16"</text></inputEntry>
+        <outputEntry id="sec-ushealth-claim-denials_r0_o0"><text>"CORRECT_RESUBMIT"</text></outputEntry>
+      </rule>
+      <rule id="sec-ushealth-claim-denials_r1"><description>not medically necessary</description>
+        <inputEntry id="sec-ushealth-claim-denials_r1_i0"><text>"50"</text></inputEntry>
+        <outputEntry id="sec-ushealth-claim-denials_r1_o0"><text>"APPEAL"</text></outputEntry>
+      </rule>
+      <rule id="sec-ushealth-claim-denials_r2"><description>precertification absent</description>
+        <inputEntry id="sec-ushealth-claim-denials_r2_i0"><text>"197"</text></inputEntry>
+        <outputEntry id="sec-ushealth-claim-denials_r2_o0"><text>"APPEAL"</text></outputEntry>
+      </rule>
+      <rule id="sec-ushealth-claim-denials_r3"><description>timely filing expired</description>
+        <inputEntry id="sec-ushealth-claim-denials_r3_i0"><text>"29"</text></inputEntry>
+        <outputEntry id="sec-ushealth-claim-denials_r3_o0"><text>"WRITE_OFF"</text></outputEntry>
+      </rule>
+      <rule id="sec-ushealth-claim-denials_r4">
+        <inputEntry id="sec-ushealth-claim-denials_r4_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-ushealth-claim-denials_r4_o0"><text>"REVIEW"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

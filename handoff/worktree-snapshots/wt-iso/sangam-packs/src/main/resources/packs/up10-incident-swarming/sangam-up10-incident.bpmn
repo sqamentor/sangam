@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-10 Incident. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up10_incident" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_incident_reprioritise" name="sangam.incident.reprioritise"/>
+  <process id="sangam-up10-incident" name="UP-10 Incident" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up10-incident-swarming</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>incidentSummary,priority</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u10_start" name="Incident raised" operaton:initiator="initiator" operaton:formKey="sangam:up10-incident-swarming/raise"></startEvent>
+    <businessRuleTask id="u10_prio" name="Resolver group and SLA by priority (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>up10-priority</operaton:string></operaton:field><operaton:field name="binding"><operaton:string>latest</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="u10_majorGw" name="Major incident?" default="up10_incident_f11"></exclusiveGateway>
+    <serviceTask id="u10_resolve_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u10_resolve</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${slaSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u10_resolve" name="Resolve incident" operaton:candidateGroups="${resolverGroup}" operaton:formKey="sangam:up10-incident-swarming/resolve" operaton:dueDate="${u10_resolveDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>incidentDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="u10_resolve_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u10_resolve</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>resolverGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u10_resolve_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="u10_resolve_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u10_resolve</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>resolverGroup</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>incidentDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u10_resolve_breachGw" name="Deemed?" default="up10_incident_f8"></exclusiveGateway>
+    <exclusiveGateway id="u10_resolve_done" name=""></exclusiveGateway>
+    <parallelGateway id="u10_swarm" name="Swarm"></parallelGateway>
+    <exclusiveGateway id="u10_decGw" name="" default="up10_incident_f24"></exclusiveGateway>
+    <parallelGateway id="u10_join" name="All groups done"></parallelGateway>
+    <userTask id="u10_netops" name="Network investigation" operaton:candidateGroups="NET-OPS" operaton:formKey="sangam:up10-incident-swarming/swarm-net-ops"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="u10_appops" name="Application investigation" operaton:candidateGroups="APP-OPS" operaton:formKey="sangam:up10-incident-swarming/swarm-app-ops"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="u10_dbops" name="Database investigation" operaton:candidateGroups="DB-OPS" operaton:formKey="sangam:up10-incident-swarming/swarm-db-ops"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="u10_incidentmgr" name="Major incident bridge" operaton:candidateGroups="INCIDENT-MGR" operaton:formKey="sangam:up10-incident-swarming/swarm-incident-mgr"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="u10_confirm" name="Confirm resolution" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:up10-incident-swarming/confirm"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>confirmDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u10_confGw" name="" default="up10_incident_f27"></exclusiveGateway>
+    <endEvent id="u10_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="u10_resolve_warn" name="SLA warning (75%)" attachedToRef="u10_resolve" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${u10_resolveWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="u10_resolve_breach" name="SLA breached" attachedToRef="u10_resolve" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${u10_resolveDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="up10_incident_f1" sourceRef="u10_start" targetRef="u10_prio"/>
+    <sequenceFlow id="up10_incident_f2" sourceRef="u10_prio" targetRef="u10_majorGw"/>
+    <sequenceFlow id="up10_incident_f3" sourceRef="u10_resolve_warn" targetRef="u10_resolve_warnNotify"/>
+    <sequenceFlow id="up10_incident_f4" sourceRef="u10_resolve_warnNotify" targetRef="u10_resolve_warnEnd"/>
+    <sequenceFlow id="up10_incident_f5" sourceRef="u10_resolve_breach" targetRef="u10_resolve_breachAct"/>
+    <sequenceFlow id="up10_incident_f6" sourceRef="u10_resolve_breachAct" targetRef="u10_resolve_breachGw"/>
+    <sequenceFlow id="up10_incident_f7" name="deemed" sourceRef="u10_resolve_breachGw" targetRef="u10_resolve_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up10_incident_f8" name="escalated" sourceRef="u10_resolve_breachGw" targetRef="u10_resolve_slaPlan"/>
+    <sequenceFlow id="up10_incident_f9" sourceRef="u10_resolve_slaPlan" targetRef="u10_resolve"/>
+    <sequenceFlow id="up10_incident_f10" sourceRef="u10_resolve" targetRef="u10_resolve_done"/>
+    <sequenceFlow id="up10_incident_f11" name="no" sourceRef="u10_majorGw" targetRef="u10_resolve_slaPlan"/>
+    <sequenceFlow id="up10_incident_f12" name="major" sourceRef="u10_majorGw" targetRef="u10_swarm"><conditionExpression xsi:type="tFormalExpression">${majorIncident}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up10_incident_f13" sourceRef="u10_resolve_done" targetRef="u10_decGw"/>
+    <sequenceFlow id="up10_incident_f14" name="swarm" sourceRef="u10_decGw" targetRef="u10_swarm"><conditionExpression xsi:type="tFormalExpression">${incidentDecision == 'swarm'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up10_incident_f15" sourceRef="u10_swarm" targetRef="u10_netops"/>
+    <sequenceFlow id="up10_incident_f16" sourceRef="u10_netops" targetRef="u10_join"/>
+    <sequenceFlow id="up10_incident_f17" sourceRef="u10_swarm" targetRef="u10_appops"/>
+    <sequenceFlow id="up10_incident_f18" sourceRef="u10_appops" targetRef="u10_join"/>
+    <sequenceFlow id="up10_incident_f19" sourceRef="u10_swarm" targetRef="u10_dbops"/>
+    <sequenceFlow id="up10_incident_f20" sourceRef="u10_dbops" targetRef="u10_join"/>
+    <sequenceFlow id="up10_incident_f21" sourceRef="u10_swarm" targetRef="u10_incidentmgr"/>
+    <sequenceFlow id="up10_incident_f22" sourceRef="u10_incidentmgr" targetRef="u10_join"/>
+    <sequenceFlow id="up10_incident_f23" sourceRef="u10_join" targetRef="u10_confirm"/>
+    <sequenceFlow id="up10_incident_f24" name="fixed" sourceRef="u10_decGw" targetRef="u10_confirm"/>
+    <sequenceFlow id="up10_incident_f25" sourceRef="u10_confirm" targetRef="u10_confGw"/>
+    <sequenceFlow id="up10_incident_f26" name="reopen" sourceRef="u10_confGw" targetRef="u10_resolve_slaPlan"><conditionExpression xsi:type="tFormalExpression">${confirmDecision == 'reopen'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up10_incident_f27" name="close" sourceRef="u10_confGw" targetRef="u10_end"/>
+    <subProcess id="u10_reprioritise" name="Re-prioritise in flight" triggeredByEvent="true">
+      <startEvent id="u10_rpStart" name="Priority changed" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_incident_reprioritise"/></startEvent>
+      <businessRuleTask id="u10_rpRule" name="Re-evaluate" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>up10-priority</operaton:string></operaton:field><operaton:field name="binding"><operaton:string>latest</operaton:string></operaton:field></extensionElements></businessRuleTask>
+      <endEvent id="u10_rpEnd" name="Updated"></endEvent>
+      <sequenceFlow id="up10_incident_f28" sourceRef="u10_rpStart" targetRef="u10_rpRule"/>
+      <sequenceFlow id="up10_incident_f29" sourceRef="u10_rpRule" targetRef="u10_rpEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="up10_incident_diagram">
+    <bpmndi:BPMNPlane id="up10_incident_plane" bpmnElement="sangam-up10-incident">
+      <bpmndi:BPMNShape id="u10_start_di" bpmnElement="u10_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_prio_di" bpmnElement="u10_prio"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_majorGw_di" bpmnElement="u10_majorGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_resolve_slaPlan_di" bpmnElement="u10_resolve_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_resolve_di" bpmnElement="u10_resolve"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_resolve_warnNotify_di" bpmnElement="u10_resolve_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_resolve_warnEnd_di" bpmnElement="u10_resolve_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_resolve_breachAct_di" bpmnElement="u10_resolve_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_resolve_breachGw_di" bpmnElement="u10_resolve_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_resolve_done_di" bpmnElement="u10_resolve_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_swarm_di" bpmnElement="u10_swarm"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_decGw_di" bpmnElement="u10_decGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_join_di" bpmnElement="u10_join"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_netops_di" bpmnElement="u10_netops"><dc:Bounds x="1670" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_appops_di" bpmnElement="u10_appops"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_dbops_di" bpmnElement="u10_dbops"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_incidentmgr_di" bpmnElement="u10_incidentmgr"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_confirm_di" bpmnElement="u10_confirm"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_confGw_di" bpmnElement="u10_confGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_end_di" bpmnElement="u10_end"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_resolve_warn_di" bpmnElement="u10_resolve_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_resolve_breach_di" bpmnElement="u10_resolve_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_reprioritise_di" bpmnElement="u10_reprioritise" isExpanded="true"><dc:Bounds x="30" y="535" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_rpStart_di" bpmnElement="u10_rpStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_rpRule_di" bpmnElement="u10_rpRule"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u10_rpEnd_di" bpmnElement="u10_rpEnd"><dc:Bounds x="422" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up10_incident_f1_di" bpmnElement="up10_incident_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f2_di" bpmnElement="up10_incident_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f3_di" bpmnElement="up10_incident_f3"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f4_di" bpmnElement="up10_incident_f4"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f5_di" bpmnElement="up10_incident_f5"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f6_di" bpmnElement="up10_incident_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f7_di" bpmnElement="up10_incident_f7"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f8_di" bpmnElement="up10_incident_f8"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f9_di" bpmnElement="up10_incident_f9"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f10_di" bpmnElement="up10_incident_f10"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f11_di" bpmnElement="up10_incident_f11"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f12_di" bpmnElement="up10_incident_f12"><di:waypoint x="425" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f13_di" bpmnElement="up10_incident_f13"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f14_di" bpmnElement="up10_incident_f14"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f15_di" bpmnElement="up10_incident_f15"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f16_di" bpmnElement="up10_incident_f16"><di:waypoint x="1770" y="445"/><di:waypoint x="1815" y="445"/><di:waypoint x="1815" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f17_di" bpmnElement="up10_incident_f17"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f18_di" bpmnElement="up10_incident_f18"><di:waypoint x="1770" y="320"/><di:waypoint x="1815" y="320"/><di:waypoint x="1815" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f19_di" bpmnElement="up10_incident_f19"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f20_di" bpmnElement="up10_incident_f20"><di:waypoint x="1770" y="195"/><di:waypoint x="1815" y="195"/><di:waypoint x="1815" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f21_di" bpmnElement="up10_incident_f21"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f22_di" bpmnElement="up10_incident_f22"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f23_di" bpmnElement="up10_incident_f23"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f24_di" bpmnElement="up10_incident_f24"><di:waypoint x="1415" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f25_di" bpmnElement="up10_incident_f25"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f26_di" bpmnElement="up10_incident_f26"><di:waypoint x="2215" y="95"/><di:waypoint x="2215" y="135"/><di:waypoint x="565" y="135"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f27_di" bpmnElement="up10_incident_f27"><di:waypoint x="2240" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f28_di" bpmnElement="up10_incident_f28"><di:waypoint x="128" y="615"/><di:waypoint x="225" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up10_incident_f29_di" bpmnElement="up10_incident_f29"><di:waypoint x="325" y="615"/><di:waypoint x="422" y="615"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

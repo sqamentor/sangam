@@ -1,0 +1,143 @@
+{
+  "id": "sec.eu.gdpr-dsr",
+  "version": "1.0.0",
+  "name": {
+    "en": "GDPR data subject rights request (Art. 12, 15-22)",
+    "hi": "जीडीपीआर डेटा विषय अधिकार अनुरोध (अनु. 12, 15-22)"
+  },
+  "domain": "Legal / privacy (EU)",
+  "description": "Request received and logged; identity confirmed (Art. 12(6)); one-month clock from receipt (Art. 12(3)), one extension of two further months with the reasons told inside the first month; the right is routed (access copy, rectification, erasure with the Art. 17(3) check, restriction, portability, objection); recipients notified (Art. 19); no action only with reasons and the complaint and judicial remedy route (Art. 12(4)).",
+  "mainProcesses": [
+    "sangam-sec-eu-gdpr-dsr"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-eu-gdpr-dsr/sangam-sec-eu-gdpr-dsr.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-eu-gdpr-dsr/sec-eu-gdpr-periods.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-eu-gdpr-dsr/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-eu-gdpr-dsr/forms/verify.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-eu-gdpr-dsr/forms/decide.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-eu-gdpr-dsr/forms/no-action.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-eu-gdpr-dsr/forms/extend.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-eu-gdpr-dsr/forms/erasure.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-eu-gdpr-dsr/forms/respond.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-eu-gdpr-dsr/seed.json"
+    }
+  ],
+  "seed": "packs/sec-eu-gdpr-dsr/seed.json",
+  "connectors": [
+    {
+      "id": "records.summary",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Copy of the personal data (Art. 15(3))"
+    },
+    {
+      "id": "records.rectify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Rectification"
+    },
+    {
+      "id": "records.erase",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Erasure"
+    },
+    {
+      "id": "records.restrict",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Restriction of processing"
+    },
+    {
+      "id": "records.export",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Portable export (Art. 20)"
+    },
+    {
+      "id": "recipients.notify",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Notice to recipients (Art. 19)"
+    }
+  ],
+  "covers": [
+    "SL-33",
+    "GDPR-12-3",
+    "GDPR-12-4",
+    "GDPR-12-6",
+    "GDPR-15",
+    "GDPR-16",
+    "GDPR-17",
+    "GDPR-18",
+    "GDPR-19",
+    "GDPR-20",
+    "GDPR-21",
+    "GP-35"
+  ],
+  "acceptance": [
+    {
+      "id": "SEC-EU-GDPR-1",
+      "title": "Erasure request answered with recipients notified",
+      "refs": [
+        "GDPR-17",
+        "GDPR-19"
+      ],
+      "given": "an erasure request from a verified data subject",
+      "when": "the DPO erases (no Art. 17(3) exception)",
+      "then": "the data is erased, recipients are notified and the request is answered",
+      "startVariables": {
+        "dsrRight": "ERASURE"
+      },
+      "expectState": null,
+      "run": {
+        "expect": {
+          "tasks": [
+            "gd_verify",
+            "gd_decide",
+            "gd_erasure",
+            "gd_respond"
+          ],
+          "ended": true
+        }
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

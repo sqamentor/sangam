@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: committee decision (all / quorum). Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_committee" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-core-committee" name="Core: committee decision (all / quorum)" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>GP-03 (all members must sign) and GP-04 (quorum n of m) for purchase, tender opening and evaluation, survey / condemnation and selection boards: members are seats in committeeSeats, at most 50 (GP-09 limit, enforced at deploy); quorumRule ALL / MAJORITY / n. Output: committeeApproved.</documentation>
+    <startEvent id="cm_start" name="Committee convened"></startEvent>
+    <serviceTask id="cm_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>quorumRule=ALL;committeeWindow=P7D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cm_prepare" name="Constitute committee" operaton:class="org.sangam.packs.core.CommitteeDelegate"><extensionElements><operaton:field name="op"><operaton:string>PREPARE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="cm_member" name="Committee member decision" operaton:candidateGroups="${committeeSeats.split(',')[loopCounter]}" operaton:formKey="sangam:core/committee-member"><extensionElements><operaton:properties><operaton:property name="sangam.maxCardinality" value="50"/></operaton:properties><operaton:taskListener event="complete" class="org.sangam.packs.core.CommitteeDelegate"/><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>vote</operaton:string></operaton:field></operaton:taskListener></extensionElements><multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">${committeeSize}</loopCardinality><completionCondition xsi:type="tFormalExpression">${quorumRule != 'ALL' &amp;&amp; committeeApprovals &gt;= quorum}</completionCondition></multiInstanceLoopCharacteristics></userTask>
+    <serviceTask id="cm_tally" name="Tally" operaton:class="org.sangam.packs.core.CommitteeDelegate"><extensionElements><operaton:field name="op"><operaton:string>TALLY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cm_end" name="Decided"></endEvent>
+    <boundaryEvent id="cm_deadline" name="Committee deadline" attachedToRef="cm_member" cancelActivity="true"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${committeeWindow}</timeDuration></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="core_committee_f1" sourceRef="cm_start" targetRef="cm_defaults"/>
+    <sequenceFlow id="core_committee_f2" sourceRef="cm_defaults" targetRef="cm_prepare"/>
+    <sequenceFlow id="core_committee_f3" sourceRef="cm_prepare" targetRef="cm_member"/>
+    <sequenceFlow id="core_committee_f4" sourceRef="cm_member" targetRef="cm_tally"/>
+    <sequenceFlow id="core_committee_f5" sourceRef="cm_tally" targetRef="cm_end"/>
+    <sequenceFlow id="core_committee_f6" sourceRef="cm_deadline" targetRef="cm_tally"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_committee_diagram">
+    <bpmndi:BPMNPlane id="core_committee_plane" bpmnElement="sangam-core-committee">
+      <bpmndi:BPMNShape id="cm_start_di" bpmnElement="cm_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cm_defaults_di" bpmnElement="cm_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cm_prepare_di" bpmnElement="cm_prepare"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cm_member_di" bpmnElement="cm_member"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cm_tally_di" bpmnElement="cm_tally"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cm_end_di" bpmnElement="cm_end"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cm_deadline_di" bpmnElement="cm_deadline"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_committee_f1_di" bpmnElement="core_committee_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_committee_f2_di" bpmnElement="core_committee_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_committee_f3_di" bpmnElement="core_committee_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_committee_f4_di" bpmnElement="core_committee_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_committee_f5_di" bpmnElement="core_committee_f5"><di:waypoint x="780" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_committee_f6_di" bpmnElement="core_committee_f6"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

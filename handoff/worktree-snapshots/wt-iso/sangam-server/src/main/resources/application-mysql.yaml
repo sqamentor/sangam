@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+# MySQL 8.4 LTS (Tier 1 under the R84 conditions) through the shipped MariaDB driver (LGPL-2.1, LIC-4; Connector/J is
+# never bundled). READ COMMITTED per session and utf8mb4 are enforced and checked by IsolationGuard.
+# Millisecond datetime precision for engine tables: P-1 patch from sangam-engine (MysqlDatetimePrecisionPatch).
+spring:
+  datasource:
+    url: ${SANGAM_DB_URL:jdbc:mariadb://localhost:3306/sangam?useServerPrepStmts=true&sessionVariables=transaction_isolation='READ-COMMITTED'&connectionCollation=utf8mb4_bin&permitMysqlScheme}
+    username: ${SANGAM_DB_USER:sangam}
+    password: ${SANGAM_DB_PASSWORD:sangam}
+    driver-class-name: org.mariadb.jdbc.Driver
+    hikari:
+      connection-init-sql: SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED
+
+operaton:
+  bpm:
+    database:
+      type: mysql
+      schema-update: ${SANGAM_ENGINE_SCHEMA_UPDATE:false}
+      jdbc-batch-processing: false
+
+logging:
+  structured:
+    format:
+      console: ecs

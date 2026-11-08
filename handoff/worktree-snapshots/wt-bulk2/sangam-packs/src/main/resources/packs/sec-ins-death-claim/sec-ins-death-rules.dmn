@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ins_death_rules" name="Death claim rules (verify timelines against the 2024 master circular)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-ins-death-rules" name="Death claim rules (verify timelines against the 2024 master circular)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ins-death-rules_t" hitPolicy="FIRST">
+      <input id="sec-ins-death-rules_i0" label="Policy age (years)"><inputExpression id="sec-ins-death-rules_ie0" typeRef="integer"><text>policyAgeYears</text></inputExpression></input>
+      <output id="sec-ins-death-rules_o0" label="Investigation" name="investigationAllowed" typeRef="boolean"/>
+      <output id="sec-ins-death-rules_o1" label="Investigate within" name="investigationSpec" typeRef="string"/>
+      <output id="sec-ins-death-rules_o2" label="Settle within" name="settlementSpec" typeRef="string"/>
+      <rule id="sec-ins-death-rules_r0"><description>early claim: investigation (verify 45 days)</description>
+        <inputEntry id="sec-ins-death-rules_r0_i0"><text>&lt; 3</text></inputEntry>
+        <outputEntry id="sec-ins-death-rules_r0_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-ins-death-rules_r0_o1"><text>"45D"</text></outputEntry>
+        <outputEntry id="sec-ins-death-rules_r0_o2"><text>"15D"</text></outputEntry>
+      </rule>
+      <rule id="sec-ins-death-rules_r1"><description>s.45: no repudiation after 3 years; settle in 15 days (verify)</description>
+        <inputEntry id="sec-ins-death-rules_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-ins-death-rules_r1_o0"><text>false</text></outputEntry>
+        <outputEntry id="sec-ins-death-rules_r1_o1"><text>"45D"</text></outputEntry>
+        <outputEntry id="sec-ins-death-rules_r1_o2"><text>"15D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

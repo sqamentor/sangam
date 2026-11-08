@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL"
+             xmlns:operaton="http://operaton.org/schema/1.0/cmmn"
+             id="defs_p4_licence_case" targetNamespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- P4 licence, case variant (hardened from spike WF-3 case, GP-21): scrutiny runs at once; clarification is a
+       repeatable discretionary task; inspection becomes available after scrutiny and is manually activated (not
+       every licence needs it); approval needs scrutiny; the milestone Approved completes the case. Candidate groups
+       are seats. The SLA runs in the BPMN process task (CMMN timer listeners are not supported, spike E16-b). -->
+  <case id="sangam-p4-licence-case" name="P4 Licence case" operaton:historyTimeToLive="3650">
+    <casePlanModel id="p4c_plan" name="Licence case" autoComplete="true">
+      <planItem id="p4c_pi_scrutiny" definitionRef="p4c_scrutiny"/>
+      <planItem id="p4c_pi_clarify" definitionRef="p4c_clarify">
+        <itemControl id="p4c_ic_clarify">
+          <repetitionRule id="p4c_rep"><condition id="p4c_c1">${true}</condition></repetitionRule>
+          <manualActivationRule id="p4c_mar1"><condition id="p4c_c2">${true}</condition></manualActivationRule>
+        </itemControl>
+      </planItem>
+      <planItem id="p4c_pi_inspection" definitionRef="p4c_inspection">
+        <itemControl id="p4c_ic_insp">
+          <manualActivationRule id="p4c_mar2"><condition id="p4c_c3">${true}</condition></manualActivationRule>
+        </itemControl>
+        <entryCriterion id="p4c_ec_insp" sentryRef="p4c_s_scrutinised"/>
+      </planItem>
+      <planItem id="p4c_pi_approval" definitionRef="p4c_approval">
+        <itemControl id="p4c_ic_appr">
+          <requiredRule id="p4c_req"><condition id="p4c_c4">${true}</condition></requiredRule>
+        </itemControl>
+        <entryCriterion id="p4c_ec_appr" sentryRef="p4c_s_scrutinised"/>
+      </planItem>
+      <planItem id="p4c_pi_sla" definitionRef="p4c_sla">
+        <exitCriterion id="p4c_xc_sla" sentryRef="p4c_s_approved"/>
+      </planItem>
+      <planItem id="p4c_pi_approved" definitionRef="p4c_approvedMs">
+        <entryCriterion id="p4c_ec_ms" sentryRef="p4c_s_approved"/>
+      </planItem>
+      <sentry id="p4c_s_scrutinised" name="Scrutinised">
+        <planItemOnPart id="p4c_op1" sourceRef="p4c_pi_scrutiny"><standardEvent>complete</standardEvent></planItemOnPart>
+      </sentry>
+      <sentry id="p4c_s_approved" name="Approved">
+        <planItemOnPart id="p4c_op2" sourceRef="p4c_pi_approval"><standardEvent>complete</standardEvent></planItemOnPart>
+      </sentry>
+      <humanTask id="p4c_scrutiny" name="Scrutiny" operaton:candidateGroups="CLERK-W7"/>
+      <humanTask id="p4c_clarify" name="Seek clarification from applicant" operaton:candidateGroups="CLERK-W7"/>
+      <humanTask id="p4c_inspection" name="Inspection" operaton:candidateGroups="INSP-W7"/>
+      <humanTask id="p4c_approval" name="Approval" operaton:candidateGroups="LO-MC"/>
+      <processTask id="p4c_sla" name="Statutory clock" processRef="sangam-p4-case-sla" isBlocking="true"/>
+      <milestone id="p4c_approvedMs" name="Approved"/>
+    </casePlanModel>
+  </case>
+</definitions>

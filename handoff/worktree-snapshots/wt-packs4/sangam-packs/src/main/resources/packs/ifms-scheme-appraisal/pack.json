@@ -1,0 +1,113 @@
+{
+  "id": "gov.ifms.scheme-appraisal",
+  "version": "1.0.0",
+  "name": {
+    "en": "Scheme / project appraisal and approval",
+    "hi": "योजना / परियोजना मूल्यांकन और अनुमोदन"
+  },
+  "domain": "IFMS",
+  "description": "Appraisal forum and approval authority by total outlay (ladder DMN; thresholds are profile data: FA up to 100 cr, SFC to 500 cr, EFC above; Secretary / Minister / Minister + FM / Cabinet), appraisal timeline with comments and final memo, committee meeting, approvals, Cabinet note above the top band; sunset with the Finance Commission cycle; outcome framework link.",
+  "mainProcesses": [
+    "sangam-ifms-scheme-appraisal"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-scheme-appraisal/sangam-ifms-scheme-appraisal.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-scheme-appraisal/ifms-scheme-appraisal.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-scheme-appraisal/ifms-scheme-approval.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-scheme-appraisal/ifms-scheme-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-scheme-appraisal/forms/proposal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-scheme-appraisal/forms/comments.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-scheme-appraisal/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-scheme-appraisal/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    }
+  ],
+  "covers": [
+    "IFC-080",
+    "IFC-081",
+    "IFC-082",
+    "IFC-083",
+    "IFC-053",
+    "IFC-054",
+    "IFC-076",
+    "IFC-084",
+    "GP-03",
+    "GP-06",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-committee",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-scheme-powers",
+      "rule": "CAA SCHEME up to 1000000000",
+      "reason": "the corpus verifies the appraisal forum by outlay (IFC-080) but not the approval thresholds (Secretary / Minister / FM / Cabinet are not modelled, IFMS-CENTRAL gap 7); confirm from DFPR App. III and deploy it as a tenant DMN override"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit",
+      "totalOutlay"
+    ]
+  }
+}

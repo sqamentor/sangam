@@ -1,0 +1,63 @@
+{
+  "key": "up11-change-window/request",
+  "version": "1.0.0",
+  "pack": "universal.up11-change-window",
+  "title": {
+    "en": "Change request",
+    "hi": "परिवर्तन अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "subject",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Subject",
+        "hi": "विषय"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    },
+    {
+      "id": "changeWindowStart",
+      "type": "datetime",
+      "required": true,
+      "label": {
+        "en": "Change window start",
+        "hi": "परिवर्तन अवधि आरंभ"
+      }
+    },
+    {
+      "id": "rollbackPlan",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Rollback plan",
+        "hi": "वापसी योजना"
+      }
+    },
+    {
+      "id": "priority",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Priority",
+        "hi": "प्राथमिकता"
+      }
+    }
+  ]
+}

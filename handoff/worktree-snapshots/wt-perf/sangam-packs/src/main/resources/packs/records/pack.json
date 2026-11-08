@@ -1,0 +1,66 @@
+{
+  "id": "gov.records",
+  "version": "1.0.0",
+  "name": {
+    "en": "Records retention, review and transfer",
+    "hi": "अभिलेख प्रतिधारण, समीक्षा एवं अंतरण"
+  },
+  "domain": "Records",
+  "description": "Closed records are reviewed on the retention schedule (Public Records Rules 1997 r.9, CSMOP 2022 A / C): retain, transfer to the National Archives (PDF/A) or destroy with a permanent Form 6 list after appraisal; a legal hold blocks destruction (GP-52, R61).",
+  "mainProcesses": [
+    "sangam-record-retention"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/records/sangam-record-retention.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/records/records-destruction-check.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/records/forms/register.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/records/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/records/forms/appraisal.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/records/seed.json"
+    }
+  ],
+  "seed": "packs/records/seed.json",
+  "connectors": [
+    {
+      "id": "archive.nai",
+      "capabilityClass": "a",
+      "govTag": "G-REC",
+      "purpose": "Transfer to the National Archives"
+    },
+    {
+      "id": "archive.destroyCopies",
+      "capabilityClass": "a",
+      "govTag": "G-REC",
+      "purpose": "Destruction of digital copies"
+    }
+  ],
+  "covers": [
+    "GP-52",
+    "GP-53",
+    "R61",
+    "GOV-11"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

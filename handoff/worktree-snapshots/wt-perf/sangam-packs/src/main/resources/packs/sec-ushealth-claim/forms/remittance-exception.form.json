@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-claim/remittance-exception",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "Resolve the remittance exception",
+    "es": "Resolver la excepción de la remesa"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "remitSummary",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Remittance (835)",
+        "es": "Remesa (835)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

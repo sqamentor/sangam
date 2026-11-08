@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-discharge/moon",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.discharge",
+  "title": {
+    "en": "Deliver the MOON notice (observation)",
+    "es": "Entregar el aviso MOON (observación)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "noticeSigned",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Notice signed or refusal documented",
+        "es": "Aviso firmado o negativa documentada"
+      }
+    }
+  ]
+}

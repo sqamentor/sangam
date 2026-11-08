@@ -1,0 +1,122 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- include "sangam.drivers.check" . -}}
+{{- $c := .Values.compliance -}}
+{{- $cell := .Values.scale.cell -}}
+# Environment of the server pods. Names follow sangam-server/src/main/resources/application*.yaml (SANGAM_*).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sangam.fullname" . }}-server-env
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+data:
+  TZ: UTC
+  # SL-18: production posture (no dev tokens/bootstrap, no loopback URL defaults, keys required)
+  SANGAM_SECURITY_PRODUCTION: {{ .Values.server.production | quote }}
+  SANGAM_TRUSTED_PROXIES: {{ join "," .Values.server.trustedProxies | quote }}
+  SANGAM_CLIENT_IP_HEADERS: {{ join "," .Values.server.clientIpHeaders | quote }}
+  SANGAM_PORT: {{ .Values.server.service.port | quote }}
+  SANGAM_MANAGEMENT_PORT: {{ .Values.server.service.managementPort | quote }}
+  SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: {{ printf "%ds" (int (sub .Values.server.terminationGracePeriodSeconds 20)) | quote }}
+  SANGAM_LIQUIBASE_MODE: {{ include "sangam.liquibase.serverMode" . | quote }}
+  {{- with .Values.server.defaultTenant }}
+  SANGAM_TENANT_DEFAULT: {{ . | quote }}
+  {{- end }}
+  SANGAM_DB_POOL_SIZE: {{ .Values.database.pool.maximumPoolSize | quote }}
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: {{ .Values.database.pool.minimumIdle | quote }}
+  SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: {{ .Values.database.pool.connectionTimeoutMs | quote }}
+  SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: {{ .Values.database.pool.maxLifetimeMs | quote }}
+  {{- with .Values.database.replica.jdbcUrl }}
+  # IR-6 read replica for analytics, audit and history reads
+  SANGAM_DB_REPLICA_URL: {{ . | quote }}
+  SANGAM_DB_REPLICA_POOL: {{ $.Values.database.replica.poolSize | quote }}
+  {{- end }}
+  # Job executor (SANGAM_JOB_*, sangam-engine SangamEngineSettings)
+  SANGAM_JOB_EXECUTOR_ENABLED: {{ .Values.server.jobExecutor.enabled | quote }}
+  SANGAM_JOB_CORE_POOL_SIZE: {{ .Values.server.jobExecutor.corePoolSize | quote }}
+  SANGAM_JOB_MAX_POOL_SIZE: {{ .Values.server.jobExecutor.maxPoolSize | quote }}
+  SANGAM_JOB_MAX_JOBS_PER_ACQUISITION: {{ .Values.server.jobExecutor.maxJobsPerAcquisition | quote }}
+  # OIDC (profile "oidc"): SANGAM_OIDC_ISSUER is the iss the tokens carry; jwk-set-uri optional (internal JWKS URL)
+  SANGAM_OIDC_ISSUER: {{ required "oidc.issuerUri is required" .Values.oidc.issuerUri | quote }}
+  {{- with .Values.oidc.jwkSetUri }}
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: {{ . | quote }}
+  {{- end }}
+  SANGAM_SECURITY_OIDC_AUDIENCE: {{ .Values.oidc.audience | quote }}
+  SANGAM_SECURITY_OIDC_TENANT_CLAIM: {{ .Values.oidc.tenantClaim | quote }}
+  SANGAM_SECURITY_OIDC_ROLES_CLAIM: {{ .Values.oidc.rolesClaim | quote }}
+  SANGAM_SECURITY_OIDC_SEATS_CLAIM: {{ .Values.oidc.seatsClaim | quote }}
+  {{- with .Values.server.corsOrigins }}
+  SANGAM_CORS_ORIGINS: {{ . | quote }}
+  {{- end }}
+  # Upload limits (sangam.content.max-bytes and the servlet multipart limits move together)
+  SANGAM_CONTENT_MAX_BYTES: {{ .Values.server.content.maxBytes | quote }}
+  SANGAM_CONTENT_MAX_FILE: {{ .Values.server.content.maxFile | quote }}
+  SANGAM_CONTENT_MAX_REQUEST: {{ .Values.server.content.maxRequest | quote }}
+  # Telemetry: off by default (R56); OTLP via the Spring Boot OpenTelemetry starter
+  SANGAM_OTLP_ENABLED: {{ .Values.otel.enabled | quote }}
+  {{- if .Values.otel.enabled }}
+  SANGAM_OTLP_TRACES_ENDPOINT: {{ printf "%s/v1/traces" (trimSuffix "/" .Values.otel.endpoint) | quote }}
+  MANAGEMENT_OTLP_METRICS_EXPORT_URL: {{ printf "%s/v1/metrics" (trimSuffix "/" .Values.otel.endpoint) | quote }}
+  MANAGEMENT_TRACING_SAMPLING_PROBABILITY: {{ .Values.otel.samplerRatio | quote }}
+  {{- end }}
+  {{- with .Values.server.keys.existingSecret }}
+  SANGAM_KEYS_DIRECTORY: /opt/sangam/secrets
+  {{- end }}
+  # sangam-integration
+  SANGAM_INTEGRATION_SIMULATORS_ENABLED: {{ .Values.server.simulators | quote }}
+  {{- with .Values.server.integrationTopics }}
+  SANGAM_INTEGRATION_TOPICS: {{ . | quote }}
+  {{- end }}
+  {{- $dest := .Values.server.outboxDestinations -}}
+  {{- if and $cell.id (not (contains "rollup:national" $dest)) -}}
+  {{- $dest = trimPrefix "," (printf "%s,rollup:national" $dest) -}}
+  {{- end }}
+  {{- with $dest }}
+  SANGAM_OUTBOX_DESTINATIONS: {{ . | quote }}
+  {{- end }}
+  # sangam-compliance (DPDP Act 2023 / Rules 2025, CERT-In 2022). Log archive: R51, >= 180 days, India-resident.
+  SANGAM_MODULE_COMPLIANCE: {{ $c.enabled | quote }}
+  SANGAM_COMPLIANCE_JURISDICTIONS: {{ $c.jurisdictions | quote }}
+  SANGAM_COMPLIANCE_ORGANISATION: {{ $c.organisation | quote }}
+  {{- with $c.tenants }}
+  SANGAM_COMPLIANCE_TENANTS: {{ . | quote }}
+  {{- end }}
+  SANGAM_COMPLIANCE_LOG_ARCHIVE: /var/lib/sangam/compliance-logs
+  SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY: {{ $c.logArchive.country | quote }}
+  SANGAM_COMPLIANCE_SCHEDULE: {{ $c.schedule | quote }}
+  SANGAM_COMPLIANCE_SMS_CONNECTOR: {{ $c.connectors.sms | quote }}
+  SANGAM_COMPLIANCE_EMAIL_CONNECTOR: {{ $c.connectors.email | quote }}
+  SANGAM_COMPLIANCE_AUTHORITY_EMAIL_CONNECTOR: {{ $c.connectors.authorityEmail | quote }}
+  SANGAM_COMPLIANCE_AUTHORITY_HTTP_CONNECTOR: {{ $c.connectors.authorityHttp | quote }}
+  SANGAM_CELL_EXPORT_DIR: /var/lib/sangam/cell-exports
+  {{- if $cell.id }}
+  # SCALE cell (sangam-cell IR-1..IR-4). SANGAM_CELL_ID switches the cell on, so it is only rendered when set.
+  SANGAM_CELL_ID: {{ $cell.id | quote }}
+  SANGAM_CELL_REGION: {{ $cell.region | quote }}
+  SANGAM_CELL_JURISDICTION: {{ $cell.jurisdiction | quote }}
+  SANGAM_CELL_RESIDENCY: {{ default $cell.jurisdiction $cell.residency | quote }}
+  SANGAM_CELL_PUBLIC_URL: {{ required "scale.cell.publicUrl is required with scale.cell.id" $cell.publicUrl | quote }}
+  SANGAM_CELL_ADMIN_URL: {{ default $cell.publicUrl $cell.adminUrl | quote }}
+  SANGAM_CELL_CAPACITY_STARTS: {{ $cell.capacity.startsPerSec | quote }}
+  SANGAM_CELL_CAPACITY_TENANTS: {{ $cell.capacity.tenants | quote }}
+  SANGAM_CONTROL_PLANE_URL: {{ default (printf "http://%s-control-plane:8090" (include "sangam.fullname" .)) $cell.controlPlaneUrl | quote }}
+  SANGAM_ROLLUP_INGEST_URL: {{ default (printf "http://%s-rollup:8095/api/v1/ingest" (include "sangam.fullname" .)) $cell.rollupIngestUrl | quote }}
+  SANGAM_GATEWAY_URL: {{ default (printf "http://%s-gateway:8000" (include "sangam.fullname" .)) $cell.gatewayUrl | quote }}
+  {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sangam.fullname" . }}-server-config
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+data:
+  application-helm.yaml: |
+    # Rendered from .Values.server.config (no secrets).
+    {{- if .Values.server.config }}
+    {{- toYaml .Values.server.config | nindent 4 }}
+    {{- else }}
+    {}
+    {{- end }}

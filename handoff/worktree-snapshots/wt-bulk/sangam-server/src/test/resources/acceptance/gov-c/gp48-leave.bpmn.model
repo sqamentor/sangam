@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp48">
+  <!-- GP-48 cross-instance ledger: the leave account lives outside every instance (product table); the debit is
+       external work that updates the ledger in the engine's own transaction and raises a BPMN error when the balance
+       is short. -->
+  <error id="err_insufficient" errorCode="INSUFFICIENT_BALANCE"/>
+  <process id="gp48-leave" name="GP-48 Leave against a shared ledger" isExecutable="true">
+    <startEvent id="gp48_start"/>
+    <sequenceFlow id="f1" sourceRef="gp48_start" targetRef="gp48_approve"/>
+    <userTask id="gp48_approve" name="Sanction leave"><potentialOwner><resourceAssignmentExpression><formalExpression>group(controlling-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp48_approve" targetRef="gp48_debit"/>
+    <serviceTask id="gp48_debit" name="Debit leave account" @@ext|leave-debit@@/>
+    <boundaryEvent id="gp48_insufficient" attachedToRef="gp48_debit"><errorEventDefinition errorRef="err_insufficient"/></boundaryEvent>
+    <sequenceFlow id="f3" sourceRef="gp48_debit" targetRef="gp48_end_granted"/>
+    <endEvent id="gp48_end_granted"/>
+    <sequenceFlow id="f4" sourceRef="gp48_insufficient" targetRef="gp48_inform"/>
+    <userTask id="gp48_inform" name="Inform: leave not due"><potentialOwner><resourceAssignmentExpression><formalExpression>group(establishment)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f5" sourceRef="gp48_inform" targetRef="gp48_end_rejected"/>
+    <endEvent id="gp48_end_rejected"/>
+  </process>
+</definitions>

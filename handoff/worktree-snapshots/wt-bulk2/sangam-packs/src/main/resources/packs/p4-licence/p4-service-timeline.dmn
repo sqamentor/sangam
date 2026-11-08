@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_p4_service_timeline" name="P4 notified timeline and breach rule (time-bound service law)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Deemed approval only where the state law provides it (to confirm with the G1 buyer). -->
+  <decision id="p4-service-timeline" name="P4 notified timeline and breach rule (time-bound service law)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="p4-service-timeline_t" hitPolicy="FIRST">
+      <input id="p4-service-timeline_i0" label="Licence type"><inputExpression id="p4-service-timeline_ie0" typeRef="string"><text>licenceType</text></inputExpression></input>
+      <output id="p4-service-timeline_o0" label="Statutory timeline" name="caseSla" typeRef="string"/>
+      <output id="p4-service-timeline_o1" label="Approval stage SLA" name="approvalSla" typeRef="string"/>
+      <output id="p4-service-timeline_o2" label="Inspection SLA" name="inspectionSla" typeRef="string"/>
+      <output id="p4-service-timeline_o3" label="On breach" name="deemedAction" typeRef="string"/>
+      <output id="p4-service-timeline_o4" label="Rule cited" name="deemedRule" typeRef="string"/>
+      <rule id="p4-service-timeline_r0">
+        <inputEntry id="p4-service-timeline_r0_i0"><text>"TRADE"</text></inputEntry>
+        <outputEntry id="p4-service-timeline_r0_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r0_o1"><text>"5WD"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r0_o2"><text>"7WD"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r0_o3"><text>"DEEMED_APPROVAL"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r0_o4"><text>"Time-bound Services Act s.5 (synthetic)"</text></outputEntry>
+      </rule>
+      <rule id="p4-service-timeline_r1">
+        <inputEntry id="p4-service-timeline_r1_i0"><text>"FOOD"</text></inputEntry>
+        <outputEntry id="p4-service-timeline_r1_o0"><text>"60D"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r1_o1"><text>"7WD"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r1_o2"><text>"10WD"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r1_o3"><text>"ESCALATE"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r1_o4"><text>""</text></outputEntry>
+      </rule>
+      <rule id="p4-service-timeline_r2">
+        <inputEntry id="p4-service-timeline_r2_i0"><text>"FACTORY"</text></inputEntry>
+        <outputEntry id="p4-service-timeline_r2_o0"><text>"90D"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r2_o1"><text>"10WD"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r2_o2"><text>"15WD"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r2_o3"><text>"ESCALATE"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r2_o4"><text>""</text></outputEntry>
+      </rule>
+      <rule id="p4-service-timeline_r3">
+        <inputEntry id="p4-service-timeline_r3_i0"><text>-</text></inputEntry>
+        <outputEntry id="p4-service-timeline_r3_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r3_o1"><text>"5WD"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r3_o2"><text>"7WD"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r3_o3"><text>"ESCALATE"</text></outputEntry>
+        <outputEntry id="p4-service-timeline_r3_o4"><text>""</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

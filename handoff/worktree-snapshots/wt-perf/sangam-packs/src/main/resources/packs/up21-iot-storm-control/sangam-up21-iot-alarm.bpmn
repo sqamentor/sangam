@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-21 Device alarm. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up21_iot_alarm" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_iot_alarm" name="sangam.iot.alarm"/>
+  <message id="msg_sangam_iot_clear" name="sangam.iot.clear"/>
+  <process id="sangam-up21-iot-alarm" name="UP-21 Device alarm" isExecutable="true" operaton:historyTimeToLive="30" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up21-iot-storm-control</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>deviceId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u21_start" name="Alarm (per device business key)"><messageEventDefinition messageRef="msg_sangam_iot_alarm"/></startEvent>
+    <serviceTask id="u21_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>debounce=PT2M;threshold=3;fieldSeat=FIELD-CREW</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u21_add" name="Record alarm" operaton:class="org.sangam.packs.universal.EventWindowDelegate"><extensionElements><operaton:field name="op"><operaton:string>ADD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="u21_wait" name="Repeat, clear or debounce end"></eventBasedGateway>
+    <intermediateCatchEvent id="u21_repeat" name="Repeat alarm"><messageEventDefinition messageRef="msg_sangam_iot_alarm"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="u21_clear" name="Clear"><messageEventDefinition messageRef="msg_sangam_iot_clear"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="u21_debounce" name="Debounce window"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${debounce}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="u21_add2" name="Record repeat" operaton:class="org.sangam.packs.universal.EventWindowDelegate"><extensionElements><operaton:field name="op"><operaton:string>ADD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u21_endCleared" name="Auto-closed on clear"></endEvent>
+    <serviceTask id="u21_eval" name="Threshold" operaton:class="org.sangam.packs.universal.EventWindowDelegate"><extensionElements><operaton:field name="op"><operaton:string>EVALUATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u21_gw" name="Dispatch?" default="up21_iot_alarm_f13"></exclusiveGateway>
+    <endEvent id="u21_endNoise" name="Below threshold"></endEvent>
+    <userTask id="u21_dispatch" name="Field maintenance" operaton:candidateGroups="${fieldSeat}" operaton:formKey="sangam:up21-iot-storm-control/dispatch"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="u21_endClearedWork" name="Cleared"></endEvent>
+    <endEvent id="u21_end" name="Repaired"></endEvent>
+    <boundaryEvent id="u21_clearedDuring" name="Cleared during work" attachedToRef="u21_dispatch" cancelActivity="true"><messageEventDefinition messageRef="msg_sangam_iot_clear"/></boundaryEvent>
+    <sequenceFlow id="up21_iot_alarm_f1" sourceRef="u21_start" targetRef="u21_defaults"/>
+    <sequenceFlow id="up21_iot_alarm_f2" sourceRef="u21_defaults" targetRef="u21_add"/>
+    <sequenceFlow id="up21_iot_alarm_f3" sourceRef="u21_add" targetRef="u21_wait"/>
+    <sequenceFlow id="up21_iot_alarm_f4" sourceRef="u21_wait" targetRef="u21_repeat"/>
+    <sequenceFlow id="up21_iot_alarm_f5" sourceRef="u21_wait" targetRef="u21_clear"/>
+    <sequenceFlow id="up21_iot_alarm_f6" sourceRef="u21_wait" targetRef="u21_debounce"/>
+    <sequenceFlow id="up21_iot_alarm_f7" sourceRef="u21_repeat" targetRef="u21_add2"/>
+    <sequenceFlow id="up21_iot_alarm_f8" sourceRef="u21_add2" targetRef="u21_wait"/>
+    <sequenceFlow id="up21_iot_alarm_f9" sourceRef="u21_clear" targetRef="u21_endCleared"/>
+    <sequenceFlow id="up21_iot_alarm_f10" sourceRef="u21_debounce" targetRef="u21_eval"/>
+    <sequenceFlow id="up21_iot_alarm_f11" sourceRef="u21_eval" targetRef="u21_gw"/>
+    <sequenceFlow id="up21_iot_alarm_f12" name="noise" sourceRef="u21_gw" targetRef="u21_endNoise"><conditionExpression xsi:type="tFormalExpression">${!thresholdReached}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up21_iot_alarm_f13" name="dispatch" sourceRef="u21_gw" targetRef="u21_dispatch"/>
+    <sequenceFlow id="up21_iot_alarm_f14" sourceRef="u21_clearedDuring" targetRef="u21_endClearedWork"/>
+    <sequenceFlow id="up21_iot_alarm_f15" sourceRef="u21_dispatch" targetRef="u21_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up21_iot_alarm_diagram">
+    <bpmndi:BPMNPlane id="up21_iot_alarm_plane" bpmnElement="sangam-up21-iot-alarm">
+      <bpmndi:BPMNShape id="u21_start_di" bpmnElement="u21_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_defaults_di" bpmnElement="u21_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_add_di" bpmnElement="u21_add"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_wait_di" bpmnElement="u21_wait"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_repeat_di" bpmnElement="u21_repeat"><dc:Bounds x="712" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_clear_di" bpmnElement="u21_clear"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_debounce_di" bpmnElement="u21_debounce"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_add2_di" bpmnElement="u21_add2"><dc:Bounds x="845" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_endCleared_di" bpmnElement="u21_endCleared"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_eval_di" bpmnElement="u21_eval"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_gw_di" bpmnElement="u21_gw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_endNoise_di" bpmnElement="u21_endNoise"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_dispatch_di" bpmnElement="u21_dispatch"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_endClearedWork_di" bpmnElement="u21_endClearedWork"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_end_di" bpmnElement="u21_end"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u21_clearedDuring_di" bpmnElement="u21_clearedDuring"><dc:Bounds x="1183" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f1_di" bpmnElement="up21_iot_alarm_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f2_di" bpmnElement="up21_iot_alarm_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f3_di" bpmnElement="up21_iot_alarm_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f4_di" bpmnElement="up21_iot_alarm_f4"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="320"/><di:waypoint x="712" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f5_di" bpmnElement="up21_iot_alarm_f5"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f6_di" bpmnElement="up21_iot_alarm_f6"><di:waypoint x="590" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f7_di" bpmnElement="up21_iot_alarm_f7"><di:waypoint x="748" y="320"/><di:waypoint x="845" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f8_di" bpmnElement="up21_iot_alarm_f8"><di:waypoint x="895" y="360"/><di:waypoint x="895" y="399"/><di:waypoint x="565" y="399"/><di:waypoint x="565" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f9_di" bpmnElement="up21_iot_alarm_f9"><di:waypoint x="748" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f10_di" bpmnElement="up21_iot_alarm_f10"><di:waypoint x="748" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f11_di" bpmnElement="up21_iot_alarm_f11"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f12_di" bpmnElement="up21_iot_alarm_f12"><di:waypoint x="1085" y="70"/><di:waypoint x="1146" y="70"/><di:waypoint x="1146" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f13_di" bpmnElement="up21_iot_alarm_f13"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f14_di" bpmnElement="up21_iot_alarm_f14"><di:waypoint x="1201" y="128"/><di:waypoint x="1201" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up21_iot_alarm_f15_di" bpmnElement="up21_iot_alarm_f15"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

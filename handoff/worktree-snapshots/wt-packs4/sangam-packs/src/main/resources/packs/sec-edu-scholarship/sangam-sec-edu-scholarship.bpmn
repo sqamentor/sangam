@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Scholarship. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_edu_scholarship" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-edu-scholarship" name="Scholarship" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.edu.scholarship</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>applicantName,schemeId,income</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="sc_start" name="Application on NSP" operaton:initiator="initiator" operaton:formKey="sangam:sec-edu-scholarship/apply"></startEvent>
+    <serviceTask id="sc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>income=10000000;amount=1200000;caseType=SCHOLARSHIP;routingDecisionKey=sec-edu-sch-authority;powersDecisionKey=sec-edu-sch-powers;executionConnector=pfms.dbt;executionStep=dbt;reconcileRequired=true;executionPayloadFields=applicantName,amount;appealAllowed=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="sc_rule" name="Income ceiling (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-edu-sch-eligibility</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="sc_gw" name="Eligible?" default="sec_edu_scholarship_f7"></exclusiveGateway>
+    <serviceTask id="sc_rjInc_code" name="Reason: INCOME_ABOVE_CEILING" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=INCOME_ABOVE_CEILING</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="sc_rjInc_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="sc_rjInc_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="sc_l1" name="Institute verification (L1)" operaton:candidateGroups="INSTITUTE-NODAL" operaton:formKey="sangam:sec-edu-scholarship/l1"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>l1Decision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="sc_l1Gw" name="" default="sec_edu_scholarship_f11"></exclusiveGateway>
+    <callActivity id="sc_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="sc_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="sc_l2" name="District / state verification and sanction (L2, core sanction)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="sc_pay" name="Pay by DBT (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="sc_sanGw" name="sanctionOutcome?" default="sec_edu_scholarship_f14"></exclusiveGateway>
+    <userTask id="sc_fix" name="Correct bank / Aadhaar seeding after failure" operaton:candidateGroups="INSTITUTE-NODAL" operaton:formKey="sangam:sec-edu-scholarship/fix"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="sc_end" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="sc_payGw" name="executionOutcome?" default="sec_edu_scholarship_f17"></exclusiveGateway>
+    <sequenceFlow id="sec_edu_scholarship_f1" sourceRef="sc_start" targetRef="sc_defaults"/>
+    <sequenceFlow id="sec_edu_scholarship_f2" sourceRef="sc_defaults" targetRef="sc_rule"/>
+    <sequenceFlow id="sec_edu_scholarship_f3" sourceRef="sc_rule" targetRef="sc_gw"/>
+    <sequenceFlow id="sec_edu_scholarship_f4" sourceRef="sc_rjInc_reject" targetRef="sc_rjInc_endRejected"/>
+    <sequenceFlow id="sec_edu_scholarship_f5" sourceRef="sc_rjInc_code" targetRef="sc_rjInc_reject"/>
+    <sequenceFlow id="sec_edu_scholarship_f6" name="no" sourceRef="sc_gw" targetRef="sc_rjInc_code"><conditionExpression xsi:type="tFormalExpression">${!eligible}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_scholarship_f7" name="yes" sourceRef="sc_gw" targetRef="sc_l1"/>
+    <sequenceFlow id="sec_edu_scholarship_f8" sourceRef="sc_l1" targetRef="sc_l1Gw"/>
+    <sequenceFlow id="sec_edu_scholarship_f9" sourceRef="sc_rj_reject" targetRef="sc_rj_endRejected"/>
+    <sequenceFlow id="sec_edu_scholarship_f10" name="not verified" sourceRef="sc_l1Gw" targetRef="sc_rj_reject"><conditionExpression xsi:type="tFormalExpression">${l1Decision == 'failed'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_scholarship_f11" name="verified" sourceRef="sc_l1Gw" targetRef="sc_l2"/>
+    <sequenceFlow id="sec_edu_scholarship_f12" name="SANCTIONED" sourceRef="sc_sanGw" targetRef="sc_pay"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_scholarship_f13" name="RETURNED" sourceRef="sc_sanGw" targetRef="sc_l1"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_scholarship_f14" name="otherwise" sourceRef="sc_sanGw" targetRef="sc_rj_reject"/>
+    <sequenceFlow id="sec_edu_scholarship_f15" sourceRef="sc_l2" targetRef="sc_sanGw"/>
+    <sequenceFlow id="sec_edu_scholarship_f16" name="DONE" sourceRef="sc_payGw" targetRef="sc_end"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_edu_scholarship_f17" name="otherwise" sourceRef="sc_payGw" targetRef="sc_fix"/>
+    <sequenceFlow id="sec_edu_scholarship_f18" sourceRef="sc_pay" targetRef="sc_payGw"/>
+    <sequenceFlow id="sec_edu_scholarship_f19" sourceRef="sc_fix" targetRef="sc_l2"/>
+    <subProcess id="sc_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="sc_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="sc_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="sc_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="sc_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_edu_scholarship_f20" sourceRef="sc_withdrawStart" targetRef="sc_withdrawKind"/>
+      <sequenceFlow id="sec_edu_scholarship_f21" sourceRef="sc_withdrawKind" targetRef="sc_withdrawCall"/>
+      <sequenceFlow id="sec_edu_scholarship_f22" sourceRef="sc_withdrawCall" targetRef="sc_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="sc_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="sc_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="sc_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="sc_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="sc_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_edu_scholarship_f23" sourceRef="sc_cancelStart" targetRef="sc_cancelKind"/>
+      <sequenceFlow id="sec_edu_scholarship_f24" sourceRef="sc_cancelKind" targetRef="sc_cancelCall"/>
+      <sequenceFlow id="sec_edu_scholarship_f25" sourceRef="sc_cancelCall" targetRef="sc_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_edu_scholarship_diagram">
+    <bpmndi:BPMNPlane id="sec_edu_scholarship_plane" bpmnElement="sangam-sec-edu-scholarship">
+      <bpmndi:BPMNShape id="sc_start_di" bpmnElement="sc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_defaults_di" bpmnElement="sc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_rule_di" bpmnElement="sc_rule"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_gw_di" bpmnElement="sc_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_rjInc_code_di" bpmnElement="sc_rjInc_code"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_rjInc_reject_di" bpmnElement="sc_rjInc_reject"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_rjInc_endRejected_di" bpmnElement="sc_rjInc_endRejected"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_l1_di" bpmnElement="sc_l1"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_l1Gw_di" bpmnElement="sc_l1Gw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_rj_reject_di" bpmnElement="sc_rj_reject"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_rj_endRejected_di" bpmnElement="sc_rj_endRejected"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_l2_di" bpmnElement="sc_l2"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_pay_di" bpmnElement="sc_pay"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_sanGw_di" bpmnElement="sc_sanGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_fix_di" bpmnElement="sc_fix"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_end_di" bpmnElement="sc_end"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_payGw_di" bpmnElement="sc_payGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_withdraw_di" bpmnElement="sc_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_withdrawStart_di" bpmnElement="sc_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_withdrawKind_di" bpmnElement="sc_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_withdrawCall_di" bpmnElement="sc_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_withdrawEnd_di" bpmnElement="sc_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_cancel_di" bpmnElement="sc_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_cancelStart_di" bpmnElement="sc_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_cancelKind_di" bpmnElement="sc_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_cancelCall_di" bpmnElement="sc_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sc_cancelEnd_di" bpmnElement="sc_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f1_di" bpmnElement="sec_edu_scholarship_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f2_di" bpmnElement="sec_edu_scholarship_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f3_di" bpmnElement="sec_edu_scholarship_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f4_di" bpmnElement="sec_edu_scholarship_f4"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f5_di" bpmnElement="sec_edu_scholarship_f5"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f6_di" bpmnElement="sec_edu_scholarship_f6"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f7_di" bpmnElement="sec_edu_scholarship_f7"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f8_di" bpmnElement="sec_edu_scholarship_f8"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f9_di" bpmnElement="sec_edu_scholarship_f9"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f10_di" bpmnElement="sec_edu_scholarship_f10"><di:waypoint x="920" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f11_di" bpmnElement="sec_edu_scholarship_f11"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f12_di" bpmnElement="sec_edu_scholarship_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f13_di" bpmnElement="sec_edu_scholarship_f13"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="128"/><di:waypoint x="730" y="128"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f14_di" bpmnElement="sec_edu_scholarship_f14"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f15_di" bpmnElement="sec_edu_scholarship_f15"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f16_di" bpmnElement="sec_edu_scholarship_f16"><di:waypoint x="1580" y="70"/><di:waypoint x="1641" y="70"/><di:waypoint x="1641" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f17_di" bpmnElement="sec_edu_scholarship_f17"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f18_di" bpmnElement="sec_edu_scholarship_f18"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f19_di" bpmnElement="sec_edu_scholarship_f19"><di:waypoint x="1720" y="110"/><di:waypoint x="1720" y="142"/><di:waypoint x="1060" y="142"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f20_di" bpmnElement="sec_edu_scholarship_f20"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f21_di" bpmnElement="sec_edu_scholarship_f21"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f22_di" bpmnElement="sec_edu_scholarship_f22"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f23_di" bpmnElement="sec_edu_scholarship_f23"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f24_di" bpmnElement="sec_edu_scholarship_f24"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_edu_scholarship_f25_di" bpmnElement="sec_edu_scholarship_f25"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

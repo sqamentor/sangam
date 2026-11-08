@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_dvar">
+  <!-- Variation approval chain: above 5 % of the contract value or above 90 days it goes up to the CE. -->
+  <process id="d-variation" name="D-CONTRACT-VARIATION Variation approval" isExecutable="true">
+    <startEvent id="dvar_start"/>
+    <sequenceFlow id="f1" sourceRef="dvar_start" targetRef="dvar_examine"/>
+    <userTask id="dvar_examine" name="Examine variation / hindrance"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="dvar_examine" targetRef="dvar_gw"/>
+    <exclusiveGateway id="dvar_gw" default="f4"/>
+    <sequenceFlow id="f3" sourceRef="dvar_gw" targetRef="dvar_seRecommend"><conditionExpression xsi:type="tFormalExpression">${amount gt contractValue * 0.05 or days gt 90}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f4" sourceRef="dvar_gw" targetRef="dvar_seApprove"/>
+    <userTask id="dvar_seApprove" name="SE approves"><potentialOwner><resourceAssignmentExpression><formalExpression>group(se)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f5" sourceRef="dvar_seApprove" targetRef="dvar_end"/>
+    <userTask id="dvar_seRecommend" name="SE recommends"><potentialOwner><resourceAssignmentExpression><formalExpression>group(se)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f6" sourceRef="dvar_seRecommend" targetRef="dvar_ceApprove"/>
+    <userTask id="dvar_ceApprove" name="CE approves"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ce)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f7" sourceRef="dvar_ceApprove" targetRef="dvar_end"/>
+    <endEvent id="dvar_end"/>
+  </process>
+</definitions>

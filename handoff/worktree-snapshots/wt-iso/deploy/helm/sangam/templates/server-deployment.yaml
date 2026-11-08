@@ -1,0 +1,168 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- $fullname := include "sangam.fullname" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-server
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+spec:
+  {{- if not .Values.server.autoscaling.enabled }}
+  replicas: {{ .Values.server.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: 5
+  # N/N-1 rolling upgrade (R32): never fewer ready pods than desired during a rollout.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 8 }}
+        sangam.io/db-client: "true"
+        {{- with .Values.server.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/server-configmap.yaml") . | sha256sum }}
+        {{- with .Values.server.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "sangam.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "sangam.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      terminationGracePeriodSeconds: {{ .Values.server.terminationGracePeriodSeconds }}
+      securityContext:
+        {{- toYaml .Values.server.podSecurityContext | nindent 8 }}
+      {{- $init := include "sangam.drivers.initContainer" . }}
+      {{- if $init }}
+      initContainers:
+        {{- $init | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: server
+          image: {{ include "sangam.image" (dict "ctx" . "image" .Values.server.image) | quote }}
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.server.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.server.service.port }}
+              protocol: TCP
+            - name: management
+              containerPort: {{ .Values.server.service.managementPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ $fullname }}-server-env
+            {{- with .Values.server.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            {{- include "sangam.server.env" . | nindent 12 }}
+            - name: SANGAM_INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+              value: optional:file:/opt/sangam/config/
+            {{- with .Values.server.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.server.probes.startup.path }}
+              port: management
+            periodSeconds: {{ .Values.server.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.server.probes.startup.failureThreshold }}
+            timeoutSeconds: {{ .Values.server.probes.startup.timeoutSeconds }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.server.probes.liveness.path }}
+              port: management
+            periodSeconds: {{ .Values.server.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.server.probes.liveness.failureThreshold }}
+            timeoutSeconds: {{ .Values.server.probes.liveness.timeoutSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.server.probes.readiness.path }}
+              port: management
+            periodSeconds: {{ .Values.server.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.server.probes.readiness.failureThreshold }}
+            timeoutSeconds: {{ .Values.server.probes.readiness.timeoutSeconds }}
+          {{- if gt (int .Values.server.preStopSleepSeconds) 0 }}
+          lifecycle:
+            preStop:
+              # Native sleep action (Kubernetes >= 1.30): works on the distroless image (no shell).
+              sleep:
+                seconds: {{ .Values.server.preStopSleepSeconds }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: state
+              mountPath: /var/lib/sangam
+            - name: config
+              mountPath: /opt/sangam/config
+              readOnly: true
+            - name: drivers
+              mountPath: /opt/sangam/drivers
+              readOnly: true
+            {{- if .Values.server.keys.existingSecret }}
+            - name: keys
+              mountPath: /opt/sangam/secrets
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: state
+          persistentVolumeClaim:
+            claimName: {{ include "sangam.server.stateClaim" . }}
+        - name: config
+          configMap:
+            name: {{ $fullname }}-server-config
+        {{- include "sangam.drivers.volume" . | nindent 8 }}
+        {{- if .Values.server.keys.existingSecret }}
+        - name: keys
+          secret:
+            secretName: {{ .Values.server.keys.existingSecret }}
+            defaultMode: 0440
+        {{- end }}
+      {{- if .Values.server.topologySpread }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 14 }}
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 14 }}
+      {{- end }}
+      {{- with .Values.server.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

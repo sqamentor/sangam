@@ -1,0 +1,116 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if .Values.backup.enabled }}
+{{- $type := include "sangam.db.type" . -}}
+# Backup scripts (EXAMPLES, ADR-D-12: RPO <= 5 min, RTO <= 1 h). Env: DB_HOST, DB_PORT, DB_NAME, DB_USER,
+# DB_PASSWORD, BACKUP_DIR, RETENTION_DAYS. Every run writes a manifest with sha256 sums next to the backup.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sangam.fullname" . }}-backup-scripts
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backup
+data:
+  common.sh: |
+    set -eu
+    ts() { date -u +%Y%m%dT%H%M%SZ; }
+    log() { echo "$(date -u +%FT%TZ) $*"; }
+    checksum_dir() { (cd "$1" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS); }
+    prune() { find "$1" -mindepth 1 -maxdepth 1 -type d -mtime +"${RETENTION_DAYS}" -print -exec rm -rf {} + || true; }
+{{- if eq $type "postgres" }}
+  pg-full.sh: |
+    . /scripts/common.sh
+    export PGPASSWORD="$DB_PASSWORD"
+    dest="$BACKUP_DIR/base/$(ts)"; mkdir -p "$dest"
+    log "pg_basebackup -> $dest"
+    pg_basebackup -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -D "$dest" -Ft -z -X stream \
+      --checkpoint=fast --label="sangam-$(ts)" --manifest-checksums=SHA256 --progress --verbose
+    checksum_dir "$dest"
+    prune "$BACKUP_DIR/base"
+    # WAL files older than the oldest kept base backup are no longer needed.
+    oldest=$(ls -1 "$BACKUP_DIR/base" | head -n 1 || true)
+    [ -n "$oldest" ] && find "$BACKUP_DIR/wal" -type f ! -newer "$BACKUP_DIR/base/$oldest" -name '0000*' -delete || true
+    log "done"
+  pg-logical.sh: |
+    . /scripts/common.sh
+    export PGPASSWORD="$DB_PASSWORD"
+    dest="$BACKUP_DIR/logical/$(ts)"; mkdir -p "$dest"
+    pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -Fc -Z 6 -f "$dest/sangam.dump"
+    pg_restore --list "$dest/sangam.dump" > "$dest/sangam.toc"
+    checksum_dir "$dest"; prune "$BACKUP_DIR/logical"; log "done"
+  pg-receivewal.sh: |
+    . /scripts/common.sh
+    export PGPASSWORD="$DB_PASSWORD"
+    mkdir -p "$BACKUP_DIR/wal"
+    pg_receivewal -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -D "$BACKUP_DIR/wal" \
+      --slot="$WAL_SLOT" --create-slot --if-not-exists || true
+    exec pg_receivewal -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -D "$BACKUP_DIR/wal" \
+      --slot="$WAL_SLOT" --synchronous --compress=gzip --verbose
+{{- else if eq $type "oracle" }}
+  oracle-rman.sh: |
+    . /scripts/common.sh
+    # $1 = full | incremental | archivelog. RMAN writes through the database server's channels: the backup
+    # destination (FRA / DISK path / media manager) is configured in the database (CONFIGURE CHANNEL ...).
+    case "$1" in
+      full)        cmd="BACKUP INCREMENTAL LEVEL 0 DATABASE PLUS ARCHIVELOG NOT BACKED UP 1 TIMES TAG 'SANGAM_L0';" ;;
+      incremental) cmd="BACKUP INCREMENTAL LEVEL 1 CUMULATIVE DATABASE PLUS ARCHIVELOG NOT BACKED UP 1 TIMES TAG 'SANGAM_L1';" ;;
+      archivelog)  cmd="SQL 'ALTER SYSTEM ARCHIVE LOG CURRENT'; BACKUP ARCHIVELOG ALL NOT BACKED UP 1 TIMES TAG 'SANGAM_ARCH';" ;;
+      *) echo "usage: oracle-rman.sh full|incremental|archivelog"; exit 2 ;;
+    esac
+    printf '%s\nDELETE NOPROMPT OBSOLETE RECOVERY WINDOW OF %s DAYS;\nCROSSCHECK BACKUP;\n' "$cmd" "$RETENTION_DAYS" > /tmp/job.rman
+    log "rman $1"
+    set +e
+    rman target "\"${DB_USER}/${DB_PASSWORD}@//${DB_HOST}:${DB_PORT}/${DB_NAME} ${ORACLE_CONNECT_AS}\"" cmdfile=/tmp/job.rman log=/tmp/rman.log
+    rc=$?; cat /tmp/rman.log; [ "$rc" -eq 0 ] || { log "rman failed ($rc)"; exit "$rc"; }; log "done"
+{{- else if eq $type "sqlserver" }}
+  mssql-backup.sh: |
+    . /scripts/common.sh
+    # $1 = full | diff | log. BACKUP runs ON THE SQL SERVER; DEST is a path/URL as seen by the server.
+    kind="$1"; stamp=$(ts)
+    case "$DEST_TYPE" in
+      DISK) target="DISK = N'${DEST}/sangam_${kind}_${stamp}.$( [ "$kind" = log ] && echo trn || echo bak )'" ;;
+      URL)  target="URL = N'${DEST}/sangam_${kind}_${stamp}.$( [ "$kind" = log ] && echo trn || echo bak )'" ;;
+      *) echo "DEST_TYPE must be DISK or URL"; exit 2 ;;
+    esac
+    case "$kind" in
+      full) sql="BACKUP DATABASE [${DB_NAME}] TO ${target} WITH COMPRESSION, CHECKSUM, STATS = 10${URL_CRED};" ;;
+      diff) sql="BACKUP DATABASE [${DB_NAME}] TO ${target} WITH DIFFERENTIAL, COMPRESSION, CHECKSUM${URL_CRED};" ;;
+      log)  sql="BACKUP LOG [${DB_NAME}] TO ${target} WITH COMPRESSION, CHECKSUM${URL_CRED};" ;;
+      *) echo "usage: mssql-backup.sh full|diff|log"; exit 2 ;;
+    esac
+    log "$sql"
+    /opt/mssql-tools18/bin/sqlcmd -C -S "${DB_HOST},${DB_PORT}" -U "$DB_USER" -P "$DB_PASSWORD" -b -Q "$sql"
+    # verify the backup that was just written
+    /opt/mssql-tools18/bin/sqlcmd -C -S "${DB_HOST},${DB_PORT}" -U "$DB_USER" -P "$DB_PASSWORD" -b \
+      -Q "RESTORE VERIFYONLY FROM ${target} WITH CHECKSUM${URL_CRED};"
+    log "done"
+{{- else if eq $type "mysql" }}
+  mysql-full.sh: |
+    . /scripts/common.sh
+    dest="$BACKUP_DIR/full/$(ts)"; mkdir -p "$dest"
+    export MYSQL_PWD="$DB_PASSWORD"
+    log "mysqldump -> $dest"
+    mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" --single-transaction --quick --routines --triggers \
+      --events --hex-blob --set-gtid-purged=ON --source-data=2 --default-character-set=utf8mb4 \
+      --databases "$DB_NAME" | gzip -6 > "$dest/sangam.sql.gz"
+    gzip -t "$dest/sangam.sql.gz"
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -N -e "SELECT @@GLOBAL.gtid_executed" > "$dest/gtid_executed.txt"
+    checksum_dir "$dest"; prune "$BACKUP_DIR/full"; log "done"
+  mysql-binlog.sh: |
+    . /scripts/common.sh
+    export MYSQL_PWD="$DB_PASSWORD"
+    dir="$BACKUP_DIR/binlog"; mkdir -p "$dir"
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -e "FLUSH BINARY LOGS"
+    # every binlog except the newest (still open) one
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -N -e "SHOW BINARY LOGS" | awk '{print $1}' | sed '$d' > /tmp/closed
+    while read -r f; do
+      [ -s "$dir/$f" ] && continue
+      log "copy $f"
+      mysqlbinlog --read-from-remote-server --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" \
+        --raw --result-file="$dir/" "$f"
+      sha256sum "$dir/$f" >> "$dir/SHA256SUMS"
+    done < /tmp/closed
+    find "$dir" -type f -name '*-bin.*' -mtime +"${RETENTION_DAYS}" -delete || true
+    log "done"
+{{- end }}
+{{- end }}

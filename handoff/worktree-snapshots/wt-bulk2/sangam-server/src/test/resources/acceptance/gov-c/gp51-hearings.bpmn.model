@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp51">
+  <!-- GP-51 hearing series with dates set by an outside forum. Branch B waits for the hearing date and re-arms itself
+       when the court reschedules (event-based gateway loop). Branch A's brief deadline is a boundary timer that the
+       model cannot re-arm: a reschedule needs the engine to move that timer. -->
+  <message id="m_listed" name="hearingListed"/>
+  <message id="m_resched" name="hearingRescheduled"/>
+  <process id="gp51-hearings" name="GP-51 Hearing series" isExecutable="true">
+    <startEvent id="gp51_start"/>
+    <sequenceFlow id="f1" sourceRef="gp51_start" targetRef="gp51_listed"/>
+    <intermediateCatchEvent id="gp51_listed" name="First hearing listed"><messageEventDefinition messageRef="m_listed"/></intermediateCatchEvent>
+    <sequenceFlow id="f2" sourceRef="gp51_listed" targetRef="gp51_merge"/>
+    <exclusiveGateway id="gp51_merge"/>
+    <sequenceFlow id="f3" sourceRef="gp51_merge" targetRef="gp51_fork"/>
+    <parallelGateway id="gp51_fork"/>
+    <sequenceFlow id="f4" sourceRef="gp51_fork" targetRef="gp51_brief"/>
+    <sequenceFlow id="f5" sourceRef="gp51_fork" targetRef="gp51_waitHearing"/>
+    <userTask id="gp51_brief" name="File counter-affidavit / brief"><potentialOwner><resourceAssignmentExpression><formalExpression>group(law-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="gp51_briefDue" attachedToRef="gp51_brief" cancelActivity="false">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${briefDue}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f6" sourceRef="gp51_briefDue" targetRef="gp51_escalateBrief"/>
+    <userTask id="gp51_escalateBrief" name="Brief overdue: escalate to JS (Legal)"><potentialOwner><resourceAssignmentExpression><formalExpression>group(js-legal)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f7" sourceRef="gp51_escalateBrief" targetRef="gp51_escEnd"/>
+    <endEvent id="gp51_escEnd"/>
+    <sequenceFlow id="f8" sourceRef="gp51_brief" targetRef="gp51_join"/>
+    <eventBasedGateway id="gp51_waitHearing"/>
+    <sequenceFlow id="f9" sourceRef="gp51_waitHearing" targetRef="gp51_hearingDay"/>
+    <sequenceFlow id="f10" sourceRef="gp51_waitHearing" targetRef="gp51_rescheduled"/>
+    <intermediateCatchEvent id="gp51_hearingDay"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${nextHearing}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="gp51_rescheduled"><messageEventDefinition messageRef="m_resched"/></intermediateCatchEvent>
+    <sequenceFlow id="f11" sourceRef="gp51_rescheduled" targetRef="gp51_waitHearing"/>
+    <sequenceFlow id="f12" sourceRef="gp51_hearingDay" targetRef="gp51_attend"/>
+    <userTask id="gp51_attend" name="Attend hearing, record outcome"><potentialOwner><resourceAssignmentExpression><formalExpression>group(law-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f13" sourceRef="gp51_attend" targetRef="gp51_join"/>
+    <parallelGateway id="gp51_join"/>
+    <sequenceFlow id="f14" sourceRef="gp51_join" targetRef="gp51_outcome"/>
+    <exclusiveGateway id="gp51_outcome" default="f16"/>
+    <sequenceFlow id="f15" sourceRef="gp51_outcome" targetRef="gp51_merge"><conditionExpression xsi:type="tFormalExpression">${outcome == 'ADJOURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f16" sourceRef="gp51_outcome" targetRef="gp51_comply"/>
+    <userTask id="gp51_comply" name="Comply with final order"><potentialOwner><resourceAssignmentExpression><formalExpression>group(department)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f17" sourceRef="gp51_comply" targetRef="gp51_end"/>
+    <endEvent id="gp51_end"/>
+  </process>
+</definitions>

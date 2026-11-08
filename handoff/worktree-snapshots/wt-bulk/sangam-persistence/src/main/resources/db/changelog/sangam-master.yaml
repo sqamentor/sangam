@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# YAML entry point for Spring Boot's Liquibase integration (spring.liquibase.change-log default
+# classpath:db/changelog/db.changelog-master.yaml; sangam-server points at this file). It only includes the XML master,
+# so changeset identities (file path of each formatted-SQL changelog) are the same whichever entry point runs.
+databaseChangeLog:
+  - include:
+      file: sangam-master.xml
+      relativeToChangelogFile: true

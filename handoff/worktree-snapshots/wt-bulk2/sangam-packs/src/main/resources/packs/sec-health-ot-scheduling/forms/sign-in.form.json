@@ -1,0 +1,27 @@
+{
+  "key": "sec-health-ot-scheduling/sign-in",
+  "version": "1.0.0",
+  "pack": "sec.health.ot-scheduling",
+  "title": {
+    "en": "Sign in (before induction)",
+    "hi": "साइन इन (निश्चेतना से पहले)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "checklistDone",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Checklist completed",
+        "hi": "जाँच-सूची पूर्ण"
+      }
+    }
+  ]
+}

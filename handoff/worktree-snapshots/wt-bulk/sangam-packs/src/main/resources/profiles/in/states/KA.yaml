@@ -1,0 +1,258 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: KA
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Karnataka
+    hi: कर्नाटक
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources KA1-KA3, accessed 2026-11-04)
+placeholders:
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 7
+  sources: KA1-KA3
+locale:
+  languages:
+  - tag: kn
+    script: Knda
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - accounts
+    - audit
+    note: accounts and audit outputs are usually English (IFMS-STATES 9.1)
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - Khajane-II
+  - e-Sanction
+  - e-Budget (AIE)
+  - EPS
+  - e-Voucher
+  - HRMS
+  snaSparsh:
+    onboarded: '2022-04-28'
+    hosting: CAU
+  ekuber: true
+orgTopology:
+  directorate: Commissioner of Treasuries
+  unitTypes:
+    DISTRICT_TREASURY: 31
+    SUB_TREASURY: 207
+    CYBER_TREASURY_RECEIPTS: 1
+    HQ_TREASURY: 1
+    PENSION_TREASURY: 1
+    CAU_SNA: 1
+  ddoCount: 31556
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: KTC
+    title: Karnataka Treasury Code
+  - id: KFC
+    title: Karnataka Financial Code
+  - id: KTPP
+    title: KTPP Act 1999 (to 2023) / Rules 2000
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+  failure:
+    suspense: true
+    alterationMemoAfter: P1Y
+sanctionBeforeBill:
+  object: E_SANCTION
+  delegations:
+  - GDFP
+  - SDFP
+budgetControl:
+  stages:
+  - BUDGET_RELEASE
+  - AIE
+  - GDFP_RELEASE
+billSources:
+- HRMS
+payee:
+  lockAfterValidation: true
+procurement:
+  vmsBelow: 5L
+  gemAbove: 5L
+  family: ACT
+  rule: KTPP Act 1999 / Rules 2000 (2024 amendments)
+  worksCode: Karnataka PWD Code 2014
+works:
+  eMbAttachments: true
+classification:
+  schemes:
+  - id: HOA_KA
+    separator: '-'
+    segments:
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: subHead
+      width: 1
+    - id: detailed
+      width: 2
+    - id: object
+      width: 3
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: 2055-00-113-0-03-240
+    evidence: V
+    source: CAG KA Appropriation Accounts 2013-14 (IFS-KA-003 corrected)
+  defaultScheme: HOA_KA
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/KA/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: KA
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/KA/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: KA
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from KTPP Act 1999 / Rules 2000 (2024 amendments) (was: RPR 2022: DDO draws within
+        a sanction; no sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from KTPP Act 1999 / Rules 2000 (2024 amendments) (was: DFPR 2024 r.12(4) and
+        department re-delegation order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from KTPP Act 1999 / Rules 2000 (2024 amendments) (was: DFPR 2024 r.12(2) re-delegation
+        to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from KTPP Act 1999 / Rules 2000 (2024 amendments) (was: DFPR 2024 r.11 (open
+        / limited tender up to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from KTPP Act 1999 / Rules 2000 (2024 amendments) (was: DFPR 2024 r.11: above
+        the Secretary; no upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from KTPP Act 1999 / Rules 2000 (2024 amendments) (was: advice / concurrence
+        only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

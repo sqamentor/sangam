@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- E-way bill. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_scm_eway_bill" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_ewb_delivered" name="sangam.ewb.delivered"/>
+  <message id="msg_sangam_ewb_notMoved" name="sangam.ewb.notMoved"/>
+  <message id="msg_sangam_ewb_rejected" name="sangam.ewb.rejected"/>
+  <message id="msg_sangam_ewb_vehicleChange" name="sangam.ewb.vehicleChange"/>
+  <process id="sangam-sec-scm-eway-bill" name="E-way bill" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.scm.eway-bill</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>invoiceNo,consignmentValue,distanceKm</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ew_start" name="Dispatch planned" operaton:initiator="initiator" operaton:formKey="sangam:sec-scm-eway-bill/dispatch"></startEvent>
+    <serviceTask id="ew_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>invoiceNo=@customerId;consignmentValue=100000;distanceKm=400;vehicleNo=X</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ew_rule" name="E-way bill needed and validity (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-scm-ewb</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="ew_gw" name="Required?" default="sec_scm_eway_bill_f5"></exclusiveGateway>
+    <endEvent id="ew_endNotReq" name="Not required (below threshold)"></endEvent>
+    <serviceTask id="ew_generate" name="Generate e-way bill" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ewb.generate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>generate</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>invoiceNo,consignmentValue,vehicleNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ewb</operaton:string></operaton:field><operaton:field name="step"><operaton:string>generate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ew_valid" name="Regulatory clock: validity" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>validity</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${validitySpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="ew_wait" name="Delivered, moved, rejected or expiring"></eventBasedGateway>
+    <intermediateCatchEvent id="ew_delivered" name="Delivered"><messageEventDefinition messageRef="msg_sangam_ewb_delivered"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ew_notMoved" name="Goods not moved"><messageEventDefinition messageRef="msg_sangam_ewb_notMoved"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ew_tranship" name="Transhipment / vehicle change"><messageEventDefinition messageRef="msg_sangam_ewb_vehicleChange"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ew_rejected" name="Recipient rejects (72 hours)"><messageEventDefinition messageRef="msg_sangam_ewb_rejected"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ew_expiring" name="Validity ending"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${validityDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="ew_end" name="Delivered"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ew_cancel" name="Cancel within 24 hours" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ewb.cancel</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>cancel</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>invoiceNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cancel</operaton:string></operaton:field><operaton:field name="step"><operaton:string>cancel</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ew_endCancelled" name="Cancelled"></endEvent>
+    <serviceTask id="ew_update" name="Update Part B" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ewb.updateVehicle</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>update</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>invoiceNo,vehicleNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>upd</operaton:string></operaton:field><operaton:field name="step"><operaton:string>part-b</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ew_endRejected" name="Rejected by the recipient"></endEvent>
+    <serviceTask id="ew_extend" name="Extend validity (within 8 hours of expiry)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ewb.extend</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>extend</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>invoiceNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ext</operaton:string></operaton:field><operaton:field name="step"><operaton:string>extend</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ew_valid2" name="Regulatory clock: validity" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>validity</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>1D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <sequenceFlow id="sec_scm_eway_bill_f1" sourceRef="ew_start" targetRef="ew_defaults"/>
+    <sequenceFlow id="sec_scm_eway_bill_f2" sourceRef="ew_defaults" targetRef="ew_rule"/>
+    <sequenceFlow id="sec_scm_eway_bill_f3" sourceRef="ew_rule" targetRef="ew_gw"/>
+    <sequenceFlow id="sec_scm_eway_bill_f4" name="no" sourceRef="ew_gw" targetRef="ew_endNotReq"><conditionExpression xsi:type="tFormalExpression">${!ewbRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_scm_eway_bill_f5" name="yes" sourceRef="ew_gw" targetRef="ew_generate"/>
+    <sequenceFlow id="sec_scm_eway_bill_f6" sourceRef="ew_generate" targetRef="ew_valid"/>
+    <sequenceFlow id="sec_scm_eway_bill_f7" sourceRef="ew_valid" targetRef="ew_wait"/>
+    <sequenceFlow id="sec_scm_eway_bill_f8" sourceRef="ew_wait" targetRef="ew_delivered"/>
+    <sequenceFlow id="sec_scm_eway_bill_f9" sourceRef="ew_wait" targetRef="ew_notMoved"/>
+    <sequenceFlow id="sec_scm_eway_bill_f10" sourceRef="ew_wait" targetRef="ew_tranship"/>
+    <sequenceFlow id="sec_scm_eway_bill_f11" sourceRef="ew_wait" targetRef="ew_rejected"/>
+    <sequenceFlow id="sec_scm_eway_bill_f12" sourceRef="ew_wait" targetRef="ew_expiring"/>
+    <sequenceFlow id="sec_scm_eway_bill_f13" sourceRef="ew_delivered" targetRef="ew_end"/>
+    <sequenceFlow id="sec_scm_eway_bill_f14" sourceRef="ew_notMoved" targetRef="ew_cancel"/>
+    <sequenceFlow id="sec_scm_eway_bill_f15" sourceRef="ew_cancel" targetRef="ew_endCancelled"/>
+    <sequenceFlow id="sec_scm_eway_bill_f16" sourceRef="ew_tranship" targetRef="ew_update"/>
+    <sequenceFlow id="sec_scm_eway_bill_f17" sourceRef="ew_update" targetRef="ew_wait"/>
+    <sequenceFlow id="sec_scm_eway_bill_f18" sourceRef="ew_rejected" targetRef="ew_endRejected"/>
+    <sequenceFlow id="sec_scm_eway_bill_f19" sourceRef="ew_expiring" targetRef="ew_extend"/>
+    <sequenceFlow id="sec_scm_eway_bill_f20" sourceRef="ew_extend" targetRef="ew_valid2"/>
+    <sequenceFlow id="sec_scm_eway_bill_f21" sourceRef="ew_valid2" targetRef="ew_wait"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_scm_eway_bill_diagram">
+    <bpmndi:BPMNPlane id="sec_scm_eway_bill_plane" bpmnElement="sangam-sec-scm-eway-bill">
+      <bpmndi:BPMNShape id="ew_start_di" bpmnElement="ew_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_defaults_di" bpmnElement="ew_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_rule_di" bpmnElement="ew_rule"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_gw_di" bpmnElement="ew_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_endNotReq_di" bpmnElement="ew_endNotReq"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_generate_di" bpmnElement="ew_generate"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_valid_di" bpmnElement="ew_valid"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_wait_di" bpmnElement="ew_wait"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_delivered_di" bpmnElement="ew_delivered"><dc:Bounds x="1207" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_notMoved_di" bpmnElement="ew_notMoved"><dc:Bounds x="1207" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_tranship_di" bpmnElement="ew_tranship"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_rejected_di" bpmnElement="ew_rejected"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_expiring_di" bpmnElement="ew_expiring"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_end_di" bpmnElement="ew_end"><dc:Bounds x="1372" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_cancel_di" bpmnElement="ew_cancel"><dc:Bounds x="1340" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_endCancelled_di" bpmnElement="ew_endCancelled"><dc:Bounds x="1537" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_update_di" bpmnElement="ew_update"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_endRejected_di" bpmnElement="ew_endRejected"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_extend_di" bpmnElement="ew_extend"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ew_valid2_di" bpmnElement="ew_valid2"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f1_di" bpmnElement="sec_scm_eway_bill_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f2_di" bpmnElement="sec_scm_eway_bill_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f3_di" bpmnElement="sec_scm_eway_bill_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f4_di" bpmnElement="sec_scm_eway_bill_f4"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f5_di" bpmnElement="sec_scm_eway_bill_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f6_di" bpmnElement="sec_scm_eway_bill_f6"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f7_di" bpmnElement="sec_scm_eway_bill_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f8_di" bpmnElement="sec_scm_eway_bill_f8"><di:waypoint x="1085" y="70"/><di:waypoint x="1146" y="70"/><di:waypoint x="1146" y="570"/><di:waypoint x="1207" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f9_di" bpmnElement="sec_scm_eway_bill_f9"><di:waypoint x="1085" y="70"/><di:waypoint x="1146" y="70"/><di:waypoint x="1146" y="445"/><di:waypoint x="1207" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f10_di" bpmnElement="sec_scm_eway_bill_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1146" y="70"/><di:waypoint x="1146" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f11_di" bpmnElement="sec_scm_eway_bill_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1146" y="70"/><di:waypoint x="1146" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f12_di" bpmnElement="sec_scm_eway_bill_f12"><di:waypoint x="1085" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f13_di" bpmnElement="sec_scm_eway_bill_f13"><di:waypoint x="1243" y="570"/><di:waypoint x="1372" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f14_di" bpmnElement="sec_scm_eway_bill_f14"><di:waypoint x="1243" y="445"/><di:waypoint x="1340" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f15_di" bpmnElement="sec_scm_eway_bill_f15"><di:waypoint x="1440" y="445"/><di:waypoint x="1537" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f16_di" bpmnElement="sec_scm_eway_bill_f16"><di:waypoint x="1243" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f17_di" bpmnElement="sec_scm_eway_bill_f17"><di:waypoint x="1390" y="360"/><di:waypoint x="1390" y="378"/><di:waypoint x="1060" y="378"/><di:waypoint x="1060" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f18_di" bpmnElement="sec_scm_eway_bill_f18"><di:waypoint x="1243" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f19_di" bpmnElement="sec_scm_eway_bill_f19"><di:waypoint x="1243" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f20_di" bpmnElement="sec_scm_eway_bill_f20"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_eway_bill_f21_di" bpmnElement="sec_scm_eway_bill_f21"><di:waypoint x="1555" y="110"/><di:waypoint x="1555" y="128"/><di:waypoint x="1060" y="128"/><di:waypoint x="1060" y="95"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

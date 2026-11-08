@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-claim/receivable-exception",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "Receivable not posted: resolve",
+    "es": "Cuenta por cobrar no registrada: resolver"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "id": "gov.security-instrument",
+  "version": "1.0.0",
+  "name": {
+    "en": "Bank guarantee / EMD / performance security",
+    "hi": "बैंक गारंटी / बयाना / कार्य निष्पादन प्रतिभूति"
+  },
+  "domain": "Contracts",
+  "description": "Verify the guarantee with the issuing bank, review it a lead time before expiry and extend, encash or release; contract completion releases it and a contract default encashes it (GP-41).",
+  "mainProcesses": [
+    "sangam-security-instrument"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/security-instrument/sangam-security-instrument.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/security-instrument/forms/register.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/security-instrument/forms/not-confirmed.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/security-instrument/forms/expiry.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/security-instrument/forms/return-original.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/security-instrument/seed.json"
+    }
+  ],
+  "seed": "packs/security-instrument/seed.json",
+  "connectors": [
+    {
+      "id": "bank.bgVerify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "SFMS confirmation from the issuing bank"
+    },
+    {
+      "id": "bank.bgExtend",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Extension request"
+    },
+    {
+      "id": "bank.bgInvoke",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Invocation (encashment)"
+    },
+    {
+      "id": "bank.bgRelease",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Release / return of the original"
+    }
+  ],
+  "covers": [
+    "GP-41",
+    "GP-13",
+    "GP-12",
+    "GP-53"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ]
+}

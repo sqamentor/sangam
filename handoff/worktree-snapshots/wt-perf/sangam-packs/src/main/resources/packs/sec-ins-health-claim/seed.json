@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "TPA",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "TPA-DOCTOR",
+      "role": "TPADOCTOR",
+      "office": "TPA",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "TPA-HEAD",
+      "name": {
+        "en": "TPA medical officer",
+        "hi": "टीपीए चिकित्सा अधिकारी"
+      }
+    },
+    {
+      "id": "TPA-HEAD",
+      "role": "TPAHEAD",
+      "office": "TPA",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of health claims",
+        "hi": "स्वास्थ्य दावा प्रमुख"
+      }
+    },
+    {
+      "id": "CLAIMS-REVIEW-COMMITTEE",
+      "role": "CRC",
+      "office": "TPA",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Claims review committee",
+        "hi": "दावा समीक्षा समिति"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "TPA-DOCTOR",
+      "person": "ihc.tpa-doctor",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TPA-HEAD",
+      "person": "ihc.tpa-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CLAIMS-REVIEW-COMMITTEE",
+      "person": "ihc.claims-review-committee",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "TPADOCTOR",
+      "name": {
+        "en": "TPA medical officer",
+        "hi": "टीपीए चिकित्सा अधिकारी"
+      }
+    },
+    {
+      "code": "TPAHEAD",
+      "name": {
+        "en": "Head of health claims",
+        "hi": "स्वास्थ्य दावा प्रमुख"
+      }
+    },
+    {
+      "code": "CRC",
+      "name": {
+        "en": "Claims review committee",
+        "hi": "दावा समीक्षा समिति"
+      }
+    }
+  ]
+}

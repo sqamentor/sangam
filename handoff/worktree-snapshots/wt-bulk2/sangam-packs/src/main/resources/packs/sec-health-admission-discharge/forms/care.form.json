@@ -1,0 +1,70 @@
+{
+  "key": "sec-health-admission-discharge/care",
+  "version": "1.0.0",
+  "pack": "sec.health.admission-discharge",
+  "title": {
+    "en": "Inpatient care: orders and notes",
+    "hi": "अंतःरोगी देखभाल: आदेश एवं टिप्पणियाँ"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "clinicalNotes",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Clinical notes",
+        "hi": "नैदानिक टिप्पणियाँ"
+      }
+    },
+    {
+      "id": "diagnosis",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Diagnosis (ICD-10)",
+        "hi": "निदान (आईसीडी-10)"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "careOutcome",
+    "required": true,
+    "options": [
+      {
+        "value": "discharge",
+        "label": {
+          "en": "Discharge",
+          "hi": "डिस्चार्ज"
+        }
+      },
+      {
+        "value": "transfer",
+        "label": {
+          "en": "Transfer (s.6(3))",
+          "hi": "अंतरित करें (धारा 6(3))"
+        }
+      },
+      {
+        "value": "lama",
+        "label": {
+          "en": "Left against medical advice",
+          "hi": "चिकित्सा सलाह के विरुद्ध गया"
+        }
+      },
+      {
+        "value": "death",
+        "label": {
+          "en": "Death",
+          "hi": "मृत्यु"
+        }
+      }
+    ]
+  }
+}

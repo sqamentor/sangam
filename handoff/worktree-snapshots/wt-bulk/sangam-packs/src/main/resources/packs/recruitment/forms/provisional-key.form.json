@@ -1,0 +1,27 @@
+{
+  "key": "recruitment/provisional-key",
+  "version": "1.0.0",
+  "pack": "gov.recruitment",
+  "title": {
+    "en": "Publish provisional answer key and results",
+    "hi": "अनंतिम उत्तर कुंजी एवं परिणाम प्रकाशित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

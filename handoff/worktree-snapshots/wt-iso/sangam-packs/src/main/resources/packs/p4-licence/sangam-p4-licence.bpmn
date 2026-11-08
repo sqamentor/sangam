@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- P4 Licence / permit. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_p4_licence" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-p4-licence" name="P4 Licence / permit" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Pack P4. Material fields: applicantName, licenceType, tradeName, premisesAddress, durationYears, fee.</documentation>
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.p4.licence</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>applicantName,licenceType,tradeName,premisesAddress,durationYears,fee</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="p4_start" name="Application received" operaton:initiator="initiator" operaton:formKey="sangam:p4-licence/application"></startEvent>
+    <serviceTask id="p4_defaults" name="Pack configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=LICENCE;routingDecisionKey=p4-approving-authority;powersDecisionKey=sangam-core-powers;signatureRequired=true;outputTemplate=licence-certificate;requireApprovalForOutput=true;appealAllowed=true;appealWindow=P30D;appellateSeat=APPELLATE-LIC;pauseOnClarification=true;retentionCategory=C;retentionYears=10;releaseConnector=paygov.refund;issueOutput=false;amount=0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="p4_fee" name="Fee (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>p4-fee</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <businessRuleTask id="p4_timeline" name="Service timeline and deemed approval (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>p4-service-timeline</operaton:string></operaton:field><operaton:field name="binding"><operaton:string>deployment</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="p4_payConfig" name="Fee payment step" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionConnector=paygov.fee;executionOperation=collectFee;executionStep=fee;verifyApproval=false;reconcileRequired=false;ackWindow=PT30M;executionPayloadFields=fee,applicantRef,licenceType</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p4_payFee" name="Fee payment (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="p4_clock" name="Statutory clock starts on fee confirmation" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>case</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${caseSla}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <userTask id="p4_payAgain" name="Payment failed: pay again" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:p4-licence/pay-again"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>payDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="p4_feeGw" name="executionOutcome?" default="p4_licence_f7"></exclusiveGateway>
+    <exclusiveGateway id="p4_payAgainGw" name="" default="p4_licence_f13"></exclusiveGateway>
+    <serviceTask id="p4_wdFee_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p4_wdFee_call" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p4_wdFee_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="p4_scrutinySeat" name="Scrutiny clerk for the ward" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLE</operaton:string></operaton:field><operaton:field name="role"><operaton:string>SCRUTINY-CLERK</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>scrutinySeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p4_scrutiny" name="Scrutiny with clarification (core)" calledElement="sangam-core-scrutiny"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="p4_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p4_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="p4_rj_appealGw" name="Appeal allowed?" default="p4_licence_f18"></exclusiveGateway>
+    <businessRuleTask id="p4_inspRule" name="Inspection required? (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>p4-inspection-required</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="p4_rjLapsed_code" name="Reason: CLARIFICATION_LAPSED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=CLARIFICATION_LAPSED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p4_rjLapsed_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p4_rjLapsed_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="p4_scrGw" name="scrutinyOutcome?" default="p4_licence_f23"></exclusiveGateway>
+    <exclusiveGateway id="p4_inspGw" name="Inspection?" default="p4_licence_f46"></exclusiveGateway>
+    <serviceTask id="p4_inspSeat" name="Inspector for the ward" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLE</operaton:string></operaton:field><operaton:field name="role"><operaton:string>INSPECTOR</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>inspectorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p4_inspect_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p4_inspect</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${inspectionSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="p4_inspect" name="Schedule and conduct inspection" operaton:candidateGroups="${inspectorSeat}" operaton:formKey="sangam:p4-licence/inspection" operaton:dueDate="${p4_inspectDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>inspectionDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="p4_inspect_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p4_inspect</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>inspectorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="p4_inspect_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="p4_inspect_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p4_inspect</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>inspectorSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>inspectionDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p4_inspect_breachGw" name="Deemed?" default="p4_licence_f32"></exclusiveGateway>
+    <exclusiveGateway id="p4_inspect_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="p4_inspRes" name="Inspection result?" default="p4_licence_f45"></exclusiveGateway>
+    <exclusiveGateway id="p4_whoGw" name="Requested by applicant?" default="p4_licence_f39"></exclusiveGateway>
+    <serviceTask id="p4_pause" name="Pause clock (applicant asked)" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PAUSE</operaton:string></operaton:field><operaton:field name="reason"><operaton:string>applicant reschedule</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p4_newSlot" name="Tell applicant the new slot" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>inspection-rescheduled</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p4_resume" name="Resume clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUME</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p4_rjInsp_code" name="Reason: INSPECTION_UNSATISFACTORY" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=INSPECTION_UNSATISFACTORY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p4_rjInsp_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p4_rjInsp_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="p4_breachRule" name="Approval breach rule from the timeline" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>sanctionOnBreach=@deemedAction;sanctionSla=@approvalSla</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p4_approve" name="Approval (core sanction, deemed approval if the law provides)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="p4_certificate" name="Signed certificate from the approved data" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>licence-certificate</operaton:string></operaton:field><operaton:field name="requireApproval"><operaton:string>true</operaton:string></operaton:field><operaton:field name="resultVar"><operaton:string>licenceNo</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p4_sanGw" name="sanctionOutcome?" default="p4_licence_f51"></exclusiveGateway>
+    <serviceTask id="p4_pushConfig" name="DigiLocker push step" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionConnector=digilocker.push;executionOperation=pushCertificate;executionStep=digilocker;verifyApproval=true;reconcileRequired=false;ackWindow=PT1H;executionPayloadFields=licenceNo,applicantName,licenceType,approvedPayloadHash</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p4_push" name="Push to DigiLocker (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="p4_close" name="Notify and close (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="p4_pushPending" name="Partial success: DigiLocker copy pending" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>digilocker-pending</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p4_pushGw" name="executionOutcome?" default="p4_licence_f56"></exclusiveGateway>
+    <endEvent id="p4_end" name="Licence issued"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="p4_inspect_warn" name="SLA warning (75%)" attachedToRef="p4_inspect" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p4_inspectWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="p4_inspect_breach" name="SLA breached" attachedToRef="p4_inspect" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p4_inspectDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="p4_licence_f1" sourceRef="p4_start" targetRef="p4_defaults"/>
+    <sequenceFlow id="p4_licence_f2" sourceRef="p4_defaults" targetRef="p4_fee"/>
+    <sequenceFlow id="p4_licence_f3" sourceRef="p4_fee" targetRef="p4_timeline"/>
+    <sequenceFlow id="p4_licence_f4" sourceRef="p4_timeline" targetRef="p4_payConfig"/>
+    <sequenceFlow id="p4_licence_f5" sourceRef="p4_payConfig" targetRef="p4_payFee"/>
+    <sequenceFlow id="p4_licence_f6" name="DONE" sourceRef="p4_feeGw" targetRef="p4_clock"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f7" name="otherwise" sourceRef="p4_feeGw" targetRef="p4_payAgain"/>
+    <sequenceFlow id="p4_licence_f8" sourceRef="p4_payFee" targetRef="p4_feeGw"/>
+    <sequenceFlow id="p4_licence_f9" sourceRef="p4_payAgain" targetRef="p4_payAgainGw"/>
+    <sequenceFlow id="p4_licence_f10" name="pay again" sourceRef="p4_payAgainGw" targetRef="p4_payFee"><conditionExpression xsi:type="tFormalExpression">${payDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f11" sourceRef="p4_wdFee_kind" targetRef="p4_wdFee_call"/>
+    <sequenceFlow id="p4_licence_f12" sourceRef="p4_wdFee_call" targetRef="p4_wdFee_end"/>
+    <sequenceFlow id="p4_licence_f13" name="withdraw" sourceRef="p4_payAgainGw" targetRef="p4_wdFee_kind"/>
+    <sequenceFlow id="p4_licence_f14" sourceRef="p4_clock" targetRef="p4_scrutinySeat"/>
+    <sequenceFlow id="p4_licence_f15" sourceRef="p4_scrutinySeat" targetRef="p4_scrutiny"/>
+    <sequenceFlow id="p4_licence_f16" sourceRef="p4_rj_reject" targetRef="p4_rj_appealGw"/>
+    <sequenceFlow id="p4_licence_f17" name="appeal allowed: re-verify" sourceRef="p4_rj_appealGw" targetRef="p4_breachRule"><conditionExpression xsi:type="tFormalExpression">${rejectionOutcome == 'APPEAL_ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f18" name="final" sourceRef="p4_rj_appealGw" targetRef="p4_rj_endRejected"/>
+    <sequenceFlow id="p4_licence_f19" sourceRef="p4_rjLapsed_reject" targetRef="p4_rjLapsed_endRejected"/>
+    <sequenceFlow id="p4_licence_f20" sourceRef="p4_rjLapsed_code" targetRef="p4_rjLapsed_reject"/>
+    <sequenceFlow id="p4_licence_f21" name="ACCEPTED" sourceRef="p4_scrGw" targetRef="p4_inspRule"><conditionExpression xsi:type="tFormalExpression">${scrutinyOutcome == 'ACCEPTED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f22" name="LAPSED" sourceRef="p4_scrGw" targetRef="p4_rjLapsed_code"><conditionExpression xsi:type="tFormalExpression">${scrutinyOutcome == 'LAPSED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f23" name="otherwise" sourceRef="p4_scrGw" targetRef="p4_rj_reject"/>
+    <sequenceFlow id="p4_licence_f24" sourceRef="p4_scrutiny" targetRef="p4_scrGw"/>
+    <sequenceFlow id="p4_licence_f25" sourceRef="p4_inspRule" targetRef="p4_inspGw"/>
+    <sequenceFlow id="p4_licence_f26" name="yes" sourceRef="p4_inspGw" targetRef="p4_inspSeat"><conditionExpression xsi:type="tFormalExpression">${inspectionRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f27" sourceRef="p4_inspect_warn" targetRef="p4_inspect_warnNotify"/>
+    <sequenceFlow id="p4_licence_f28" sourceRef="p4_inspect_warnNotify" targetRef="p4_inspect_warnEnd"/>
+    <sequenceFlow id="p4_licence_f29" sourceRef="p4_inspect_breach" targetRef="p4_inspect_breachAct"/>
+    <sequenceFlow id="p4_licence_f30" sourceRef="p4_inspect_breachAct" targetRef="p4_inspect_breachGw"/>
+    <sequenceFlow id="p4_licence_f31" name="deemed" sourceRef="p4_inspect_breachGw" targetRef="p4_inspect_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f32" name="escalated" sourceRef="p4_inspect_breachGw" targetRef="p4_inspect_slaPlan"/>
+    <sequenceFlow id="p4_licence_f33" sourceRef="p4_inspect_slaPlan" targetRef="p4_inspect"/>
+    <sequenceFlow id="p4_licence_f34" sourceRef="p4_inspect" targetRef="p4_inspect_done"/>
+    <sequenceFlow id="p4_licence_f35" sourceRef="p4_inspSeat" targetRef="p4_inspect_slaPlan"/>
+    <sequenceFlow id="p4_licence_f36" sourceRef="p4_inspect_done" targetRef="p4_inspRes"/>
+    <sequenceFlow id="p4_licence_f37" name="J-P4-E05" sourceRef="p4_inspRes" targetRef="p4_whoGw"><conditionExpression xsi:type="tFormalExpression">${inspectionDecision == 'reschedule'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f38" name="applicant" sourceRef="p4_whoGw" targetRef="p4_pause"><conditionExpression xsi:type="tFormalExpression">${rescheduleRequestedBy == 'applicant'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f39" name="department" sourceRef="p4_whoGw" targetRef="p4_newSlot"/>
+    <sequenceFlow id="p4_licence_f40" sourceRef="p4_pause" targetRef="p4_newSlot"/>
+    <sequenceFlow id="p4_licence_f41" sourceRef="p4_newSlot" targetRef="p4_inspect_slaPlan"/>
+    <sequenceFlow id="p4_licence_f42" name="satisfactory" sourceRef="p4_inspRes" targetRef="p4_resume"><conditionExpression xsi:type="tFormalExpression">${inspectionDecision == 'satisfactory'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f43" sourceRef="p4_rjInsp_reject" targetRef="p4_rjInsp_endRejected"/>
+    <sequenceFlow id="p4_licence_f44" sourceRef="p4_rjInsp_code" targetRef="p4_rjInsp_reject"/>
+    <sequenceFlow id="p4_licence_f45" name="unsatisfactory" sourceRef="p4_inspRes" targetRef="p4_rjInsp_code"/>
+    <sequenceFlow id="p4_licence_f46" name="no inspection" sourceRef="p4_inspGw" targetRef="p4_breachRule"/>
+    <sequenceFlow id="p4_licence_f47" sourceRef="p4_resume" targetRef="p4_breachRule"/>
+    <sequenceFlow id="p4_licence_f48" sourceRef="p4_breachRule" targetRef="p4_approve"/>
+    <sequenceFlow id="p4_licence_f49" name="SANCTIONED" sourceRef="p4_sanGw" targetRef="p4_certificate"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f50" name="RETURNED" sourceRef="p4_sanGw" targetRef="p4_scrutinySeat"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f51" name="otherwise" sourceRef="p4_sanGw" targetRef="p4_rj_reject"/>
+    <sequenceFlow id="p4_licence_f52" sourceRef="p4_approve" targetRef="p4_sanGw"/>
+    <sequenceFlow id="p4_licence_f53" sourceRef="p4_certificate" targetRef="p4_pushConfig"/>
+    <sequenceFlow id="p4_licence_f54" sourceRef="p4_pushConfig" targetRef="p4_push"/>
+    <sequenceFlow id="p4_licence_f55" name="DONE" sourceRef="p4_pushGw" targetRef="p4_close"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p4_licence_f56" name="otherwise" sourceRef="p4_pushGw" targetRef="p4_pushPending"/>
+    <sequenceFlow id="p4_licence_f57" sourceRef="p4_push" targetRef="p4_pushGw"/>
+    <sequenceFlow id="p4_licence_f58" sourceRef="p4_pushPending" targetRef="p4_close"/>
+    <sequenceFlow id="p4_licence_f59" sourceRef="p4_close" targetRef="p4_end"/>
+    <subProcess id="p4_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="p4_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="p4_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="p4_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="p4_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="p4_licence_f60" sourceRef="p4_withdrawStart" targetRef="p4_withdrawKind"/>
+      <sequenceFlow id="p4_licence_f61" sourceRef="p4_withdrawKind" targetRef="p4_withdrawCall"/>
+      <sequenceFlow id="p4_licence_f62" sourceRef="p4_withdrawCall" targetRef="p4_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="p4_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="p4_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="p4_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="p4_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="p4_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="p4_licence_f63" sourceRef="p4_cancelStart" targetRef="p4_cancelKind"/>
+      <sequenceFlow id="p4_licence_f64" sourceRef="p4_cancelKind" targetRef="p4_cancelCall"/>
+      <sequenceFlow id="p4_licence_f65" sourceRef="p4_cancelCall" targetRef="p4_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="p4_licence_diagram">
+    <bpmndi:BPMNPlane id="p4_licence_plane" bpmnElement="sangam-p4-licence">
+      <bpmndi:BPMNShape id="p4_start_di" bpmnElement="p4_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_defaults_di" bpmnElement="p4_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_fee_di" bpmnElement="p4_fee"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_timeline_di" bpmnElement="p4_timeline"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_payConfig_di" bpmnElement="p4_payConfig"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_payFee_di" bpmnElement="p4_payFee"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_clock_di" bpmnElement="p4_clock"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_payAgain_di" bpmnElement="p4_payAgain"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_feeGw_di" bpmnElement="p4_feeGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_payAgainGw_di" bpmnElement="p4_payAgainGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_wdFee_kind_di" bpmnElement="p4_wdFee_kind"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_wdFee_call_di" bpmnElement="p4_wdFee_call"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_wdFee_end_di" bpmnElement="p4_wdFee_end"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_scrutinySeat_di" bpmnElement="p4_scrutinySeat"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_scrutiny_di" bpmnElement="p4_scrutiny"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rj_reject_di" bpmnElement="p4_rj_reject"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rj_endRejected_di" bpmnElement="p4_rj_endRejected"><dc:Bounds x="4342" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rj_appealGw_di" bpmnElement="p4_rj_appealGw"><dc:Bounds x="4170" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspRule_di" bpmnElement="p4_inspRule"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rjLapsed_code_di" bpmnElement="p4_rjLapsed_code"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rjLapsed_reject_di" bpmnElement="p4_rjLapsed_reject"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rjLapsed_endRejected_di" bpmnElement="p4_rjLapsed_endRejected"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_scrGw_di" bpmnElement="p4_scrGw"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspGw_di" bpmnElement="p4_inspGw"><dc:Bounds x="2025" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspSeat_di" bpmnElement="p4_inspSeat"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspect_slaPlan_di" bpmnElement="p4_inspect_slaPlan"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspect_di" bpmnElement="p4_inspect"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspect_warnNotify_di" bpmnElement="p4_inspect_warnNotify"><dc:Bounds x="2660" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspect_warnEnd_di" bpmnElement="p4_inspect_warnEnd"><dc:Bounds x="2857" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspect_breachAct_di" bpmnElement="p4_inspect_breachAct"><dc:Bounds x="2660" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspect_breachGw_di" bpmnElement="p4_inspect_breachGw"><dc:Bounds x="2850" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspect_done_di" bpmnElement="p4_inspect_done"><dc:Bounds x="3015" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspRes_di" bpmnElement="p4_inspRes"><dc:Bounds x="3180" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_whoGw_di" bpmnElement="p4_whoGw"><dc:Bounds x="3345" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_pause_di" bpmnElement="p4_pause"><dc:Bounds x="3485" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_newSlot_di" bpmnElement="p4_newSlot"><dc:Bounds x="3650" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_resume_di" bpmnElement="p4_resume"><dc:Bounds x="3320" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rjInsp_code_di" bpmnElement="p4_rjInsp_code"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rjInsp_reject_di" bpmnElement="p4_rjInsp_reject"><dc:Bounds x="3485" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_rjInsp_endRejected_di" bpmnElement="p4_rjInsp_endRejected"><dc:Bounds x="3682" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_breachRule_di" bpmnElement="p4_breachRule"><dc:Bounds x="3485" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_approve_di" bpmnElement="p4_approve"><dc:Bounds x="3650" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_certificate_di" bpmnElement="p4_certificate"><dc:Bounds x="3980" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_sanGw_di" bpmnElement="p4_sanGw"><dc:Bounds x="3840" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_pushConfig_di" bpmnElement="p4_pushConfig"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_push_di" bpmnElement="p4_push"><dc:Bounds x="4310" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_close_di" bpmnElement="p4_close"><dc:Bounds x="4805" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_pushPending_di" bpmnElement="p4_pushPending"><dc:Bounds x="4640" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_pushGw_di" bpmnElement="p4_pushGw"><dc:Bounds x="4500" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_end_di" bpmnElement="p4_end"><dc:Bounds x="5002" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspect_warn_di" bpmnElement="p4_inspect_warn"><dc:Bounds x="2503" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_inspect_breach_di" bpmnElement="p4_inspect_breach"><dc:Bounds x="2533" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_withdraw_di" bpmnElement="p4_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_withdrawStart_di" bpmnElement="p4_withdrawStart"><dc:Bounds x="92" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_withdrawKind_di" bpmnElement="p4_withdrawKind"><dc:Bounds x="225" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_withdrawCall_di" bpmnElement="p4_withdrawCall"><dc:Bounds x="390" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_withdrawEnd_di" bpmnElement="p4_withdrawEnd"><dc:Bounds x="587" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_cancel_di" bpmnElement="p4_cancel" isExpanded="true"><dc:Bounds x="30" y="850" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_cancelStart_di" bpmnElement="p4_cancelStart"><dc:Bounds x="92" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_cancelKind_di" bpmnElement="p4_cancelKind"><dc:Bounds x="225" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_cancelCall_di" bpmnElement="p4_cancelCall"><dc:Bounds x="390" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p4_cancelEnd_di" bpmnElement="p4_cancelEnd"><dc:Bounds x="587" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="p4_licence_f1_di" bpmnElement="p4_licence_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f2_di" bpmnElement="p4_licence_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f3_di" bpmnElement="p4_licence_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f4_di" bpmnElement="p4_licence_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f5_di" bpmnElement="p4_licence_f5"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f6_di" bpmnElement="p4_licence_f6"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f7_di" bpmnElement="p4_licence_f7"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f8_di" bpmnElement="p4_licence_f8"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f9_di" bpmnElement="p4_licence_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f10_di" bpmnElement="p4_licence_f10"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="135"/><di:waypoint x="895" y="135"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f11_di" bpmnElement="p4_licence_f11"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f12_di" bpmnElement="p4_licence_f12"><di:waypoint x="1770" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f13_di" bpmnElement="p4_licence_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f14_di" bpmnElement="p4_licence_f14"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f15_di" bpmnElement="p4_licence_f15"><di:waypoint x="1440" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f16_di" bpmnElement="p4_licence_f16"><di:waypoint x="4080" y="195"/><di:waypoint x="4170" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f17_di" bpmnElement="p4_licence_f17"><di:waypoint x="4195" y="220"/><di:waypoint x="4195" y="503"/><di:waypoint x="3535" y="503"/><di:waypoint x="3535" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f18_di" bpmnElement="p4_licence_f18"><di:waypoint x="4220" y="195"/><di:waypoint x="4342" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f19_di" bpmnElement="p4_licence_f19"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f20_di" bpmnElement="p4_licence_f20"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f21_di" bpmnElement="p4_licence_f21"><di:waypoint x="1745" y="195"/><di:waypoint x="1790" y="195"/><di:waypoint x="1790" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f22_di" bpmnElement="p4_licence_f22"><di:waypoint x="1745" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f23_di" bpmnElement="p4_licence_f23"><di:waypoint x="1745" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f24_di" bpmnElement="p4_licence_f24"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f25_di" bpmnElement="p4_licence_f25"><di:waypoint x="1935" y="320"/><di:waypoint x="2025" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f26_di" bpmnElement="p4_licence_f26"><di:waypoint x="2075" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f27_di" bpmnElement="p4_licence_f27"><di:waypoint x="2521" y="378"/><di:waypoint x="2521" y="445"/><di:waypoint x="2660" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f28_di" bpmnElement="p4_licence_f28"><di:waypoint x="2760" y="445"/><di:waypoint x="2857" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f29_di" bpmnElement="p4_licence_f29"><di:waypoint x="2551" y="378"/><di:waypoint x="2551" y="320"/><di:waypoint x="2660" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f30_di" bpmnElement="p4_licence_f30"><di:waypoint x="2760" y="320"/><di:waypoint x="2850" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f31_di" bpmnElement="p4_licence_f31"><di:waypoint x="2900" y="320"/><di:waypoint x="3015" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f32_di" bpmnElement="p4_licence_f32"><di:waypoint x="2875" y="345"/><di:waypoint x="2875" y="399"/><di:waypoint x="2380" y="399"/><di:waypoint x="2380" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f33_di" bpmnElement="p4_licence_f33"><di:waypoint x="2430" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f34_di" bpmnElement="p4_licence_f34"><di:waypoint x="2595" y="320"/><di:waypoint x="3015" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f35_di" bpmnElement="p4_licence_f35"><di:waypoint x="2265" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f36_di" bpmnElement="p4_licence_f36"><di:waypoint x="3065" y="320"/><di:waypoint x="3180" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f37_di" bpmnElement="p4_licence_f37"><di:waypoint x="3230" y="320"/><di:waypoint x="3287" y="320"/><di:waypoint x="3287" y="570"/><di:waypoint x="3345" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f38_di" bpmnElement="p4_licence_f38"><di:waypoint x="3395" y="570"/><di:waypoint x="3485" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f39_di" bpmnElement="p4_licence_f39"><di:waypoint x="3395" y="570"/><di:waypoint x="3650" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f40_di" bpmnElement="p4_licence_f40"><di:waypoint x="3585" y="570"/><di:waypoint x="3650" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f41_di" bpmnElement="p4_licence_f41"><di:waypoint x="3700" y="610"/><di:waypoint x="3700" y="628"/><di:waypoint x="2380" y="628"/><di:waypoint x="2380" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f42_di" bpmnElement="p4_licence_f42"><di:waypoint x="3230" y="320"/><di:waypoint x="3275" y="320"/><di:waypoint x="3275" y="445"/><di:waypoint x="3320" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f43_di" bpmnElement="p4_licence_f43"><di:waypoint x="3585" y="320"/><di:waypoint x="3682" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f44_di" bpmnElement="p4_licence_f44"><di:waypoint x="3420" y="320"/><di:waypoint x="3485" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f45_di" bpmnElement="p4_licence_f45"><di:waypoint x="3230" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f46_di" bpmnElement="p4_licence_f46"><di:waypoint x="2075" y="320"/><di:waypoint x="2780" y="320"/><di:waypoint x="2780" y="445"/><di:waypoint x="3485" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f47_di" bpmnElement="p4_licence_f47"><di:waypoint x="3420" y="445"/><di:waypoint x="3485" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f48_di" bpmnElement="p4_licence_f48"><di:waypoint x="3585" y="445"/><di:waypoint x="3650" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f49_di" bpmnElement="p4_licence_f49"><di:waypoint x="3890" y="445"/><di:waypoint x="3980" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f50_di" bpmnElement="p4_licence_f50"><di:waypoint x="3865" y="470"/><di:waypoint x="3865" y="495"/><di:waypoint x="1390" y="495"/><di:waypoint x="1390" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f51_di" bpmnElement="p4_licence_f51"><di:waypoint x="3890" y="445"/><di:waypoint x="3935" y="445"/><di:waypoint x="3935" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f52_di" bpmnElement="p4_licence_f52"><di:waypoint x="3750" y="445"/><di:waypoint x="3840" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f53_di" bpmnElement="p4_licence_f53"><di:waypoint x="4080" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f54_di" bpmnElement="p4_licence_f54"><di:waypoint x="4245" y="445"/><di:waypoint x="4310" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f55_di" bpmnElement="p4_licence_f55"><di:waypoint x="4550" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f56_di" bpmnElement="p4_licence_f56"><di:waypoint x="4550" y="445"/><di:waypoint x="4640" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f57_di" bpmnElement="p4_licence_f57"><di:waypoint x="4410" y="445"/><di:waypoint x="4500" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f58_di" bpmnElement="p4_licence_f58"><di:waypoint x="4740" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f59_di" bpmnElement="p4_licence_f59"><di:waypoint x="4905" y="445"/><di:waypoint x="5002" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f60_di" bpmnElement="p4_licence_f60"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f61_di" bpmnElement="p4_licence_f61"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f62_di" bpmnElement="p4_licence_f62"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f63_di" bpmnElement="p4_licence_f63"><di:waypoint x="128" y="930"/><di:waypoint x="225" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f64_di" bpmnElement="p4_licence_f64"><di:waypoint x="325" y="930"/><di:waypoint x="390" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p4_licence_f65_di" bpmnElement="p4_licence_f65"><di:waypoint x="490" y="930"/><di:waypoint x="587" y="930"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,36 @@
+{
+  "key": "up20-rpa/item",
+  "version": "1.0.0",
+  "pack": "universal.up20-rpa",
+  "title": {
+    "en": "Legacy data entry item",
+    "hi": "पुराने तंत्र में डेटा प्रविष्टि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "description",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

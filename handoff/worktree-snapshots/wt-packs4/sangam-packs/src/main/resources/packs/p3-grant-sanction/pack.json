@@ -1,0 +1,222 @@
+{
+  "id": "gov.p3.grant-sanction",
+  "version": "1.0.0",
+  "name": {
+    "en": "P3 Grant / scheme sanction (DBT)",
+    "hi": "पी3 अनुदान / योजना स्वीकृति (डीबीटी)"
+  },
+  "domain": "Scheme / DBT",
+  "description": "Application with DPDP notice and DigiLocker pull, eligibility and duplicate-beneficiary checks, document verification with clarification, optional field verification, entitlement by rule, sanction by limit, DBT disbursement in instalments with per-record operationId, account-failure correction with re-verification and re-sanction, rejection with reasons and appeal with a different verifier (IX.4 P3, X.4.5).",
+  "mainProcesses": [
+    "sangam-p3-grant-application"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/p3-grant-sanction/sangam-p3-grant-application.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p3-grant-sanction/p3-eligibility.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p3-grant-sanction/p3-field-verification-required.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p3-grant-sanction/p3-entitlement.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p3-grant-sanction/p3-sanction-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p3-grant-sanction/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p3-grant-sanction/forms/duplicate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p3-grant-sanction/forms/field-verification.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p3-grant-sanction/forms/recommend.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p3-grant-sanction/forms/bank-update.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p3-grant-sanction/forms/account-verify.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/p3-grant-sanction/seed.json"
+    }
+  ],
+  "seed": "packs/p3-grant-sanction/seed.json",
+  "connectors": [
+    {
+      "id": "digilocker.pull",
+      "capabilityClass": "a",
+      "govTag": "G-DL",
+      "purpose": "Requester: applicant certificates"
+    },
+    {
+      "id": "registry.beneficiary",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Beneficiary registry / duplicate check"
+    },
+    {
+      "id": "pfms.dbt",
+      "capabilityClass": "c",
+      "govTag": "G-PFMS",
+      "purpose": "DBT record per instalment"
+    },
+    {
+      "id": "bank.statement",
+      "capabilityClass": "b",
+      "govTag": "G-PFMS",
+      "purpose": "Credit confirmation"
+    },
+    {
+      "id": "esign.sign",
+      "capabilityClass": "b",
+      "govTag": "G-SIGN",
+      "purpose": "Sanction order signature"
+    }
+  ],
+  "covers": [
+    "AC-05",
+    "GP-16",
+    "GP-17",
+    "GP-19",
+    "GP-22",
+    "GP-37",
+    "J-P3-H",
+    "J-P3-E01",
+    "J-P3-E02",
+    "J-P3-E03",
+    "J-P3-E04",
+    "J-P3-E05",
+    "J-P3-E06",
+    "J-P3-E07",
+    "J-P3-E08",
+    "J-P3-E09",
+    "R53",
+    "R59",
+    "D-DBT-SCHEME",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [
+    {
+      "id": "AC-05",
+      "title": "Ineligible after verification; partial disbursement; account failure",
+      "refs": [
+        "T11",
+        "T27"
+      ],
+      "given": "housing grant of 1,50,000 in three instalments",
+      "when": "income above limit (variant); instalment 2 fails with ACCOUNT_CLOSED (variant)",
+      "then": "rejection with coded reasons and appeal route; 2 of 3 credited; new account re-verified, re-sanctioned, new operationId",
+      "startVariables": {
+        "applicantName": "Sita Devi",
+        "applicantRef": "mobile:98XXXXXX10",
+        "schemeId": "HOUSING-GRANT",
+        "beneficiaryId": "VAULT-7f3a",
+        "bankAccount": "3210987654",
+        "ifsc": "PUNB0123400",
+        "income": 12000000,
+        "age": 41,
+        "socialCategory": "SC",
+        "landHolding": 0.5,
+        "district": "A",
+        "officeId": "BLOCK-A1",
+        "actingSeat": "DEO-A1",
+        "initiator": "p3.deo-a1",
+        "instalmentInterval": "PT1S"
+      },
+      "expectState": "CLOSED",
+      "run": {
+        "expect": {
+          "tasks": [
+            "sc_scrutiny",
+            "sn_sanction"
+          ],
+          "audit": [
+            "CASE_CLOSED"
+          ]
+        }
+      }
+    },
+    {
+      "id": "J-P3-E01",
+      "title": "Ineligible after verification",
+      "refs": [
+        "T11"
+      ],
+      "given": "income 3,00,000",
+      "when": "verifier accepts documents",
+      "then": "REJECTED with INCOME_ABOVE_LIMIT; rejection order; appeal window",
+      "startVariables": {
+        "applicantName": "Sita Devi",
+        "applicantRef": "mobile:98XXXXXX10",
+        "schemeId": "HOUSING-GRANT",
+        "beneficiaryId": "VAULT-7f3a",
+        "bankAccount": "3210987654",
+        "ifsc": "PUNB0123400",
+        "income": 30000000,
+        "age": 41,
+        "socialCategory": "SC",
+        "landHolding": 0.5,
+        "district": "A",
+        "officeId": "BLOCK-A1",
+        "actingSeat": "DEO-A1",
+        "initiator": "p3.deo-a1",
+        "instalmentInterval": "PT1S"
+      },
+      "expectState": "REJECTED",
+      "run": {
+        "expect": {
+          "audit": [
+            "CASE_REJECTED"
+          ],
+          "notAudit": [
+            "CASE_IN_SANCTION"
+          ]
+        }
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-core-scrutiny"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "entitlement",
+      "entitlementOverride",
+      "income"
+    ]
+  }
+}

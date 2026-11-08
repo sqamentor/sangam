@@ -1,0 +1,80 @@
+{
+  "id": "gov.assets",
+  "version": "1.0.0",
+  "name": {
+    "en": "Assets and vehicles: register to disposal",
+    "hi": "परिसंपत्ति एवं वाहन: पंजीकरण से निपटान"
+  },
+  "domain": "Assets / vehicles",
+  "description": "Registration, periodic maintenance / fitness cycle, condemnation proposal, survey / condemnation board (committee), condemnation sanction by book value, disposal by e-auction with relisting, deposit of proceeds and removal from the register; loss reports.",
+  "mainProcesses": [
+    "sangam-asset-lifecycle"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/assets/sangam-asset-lifecycle.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/assets/assets-condemnation-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/assets/forms/register.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/assets/forms/maintenance.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/assets/forms/relist.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/assets/forms/loss.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/assets/seed.json"
+    }
+  ],
+  "seed": "packs/assets/seed.json",
+  "connectors": [
+    {
+      "id": "assets.register",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Asset register"
+    },
+    {
+      "id": "eauction.list",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "e-Auction listing"
+    },
+    {
+      "id": "assets.remove",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Removal from register"
+    }
+  ],
+  "covers": [
+    "GP-03",
+    "GP-10",
+    "GP-01",
+    "GP-53"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-committee",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

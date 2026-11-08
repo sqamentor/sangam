@@ -1,0 +1,47 @@
+{
+  "key": "ifms-gia-uc/uc-default",
+  "version": "1.0.0",
+  "pack": "gov.ifms.gia-uc",
+  "title": {
+    "en": "UC not received: remind or blacklist",
+    "hi": "उपयोगिता प्रमाण पत्र अप्राप्त"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "defaultDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "remind",
+        "label": {
+          "en": "Remind",
+          "hi": "स्मरण कराएँ"
+        }
+      },
+      {
+        "value": "blacklist",
+        "label": {
+          "en": "Blacklist grantee",
+          "hi": "प्राप्तकर्ता को काली सूची में डालें"
+        }
+      }
+    ]
+  }
+}

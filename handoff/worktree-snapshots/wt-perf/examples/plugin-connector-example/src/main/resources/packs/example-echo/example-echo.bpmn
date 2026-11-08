@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+             id="defs_example_echo" targetNamespace="http://example.com/sangam">
+  <process id="example-echo" name="Example echo posting" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <startEvent id="start"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="post"/>
+    <serviceTask id="post" name="Post through the plugin connector" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true">
+      <extensionElements>
+        <operaton:field name="connector"><operaton:string>example.post</operaton:string></operaton:field>
+        <operaton:field name="operation"><operaton:string>post</operaton:string></operaton:field>
+        <operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field>
+        <operaton:field name="inputs"><operaton:string>amount</operaton:string></operaton:field>
+        <operaton:field name="resultPrefix"><operaton:string>post</operaton:string></operaton:field>
+        <operaton:field name="step"><operaton:string>post</operaton:string></operaton:field>
+      </extensionElements>
+    </serviceTask>
+    <sequenceFlow id="f2" sourceRef="post" targetRef="done"/>
+    <receiveTask id="done" name="Posted" messageRef="m_end"/>
+    <sequenceFlow id="f3" sourceRef="done" targetRef="end"/>
+    <endEvent id="end"/>
+  </process>
+  <message id="m_end" name="example-echo-end"/>
+</definitions>

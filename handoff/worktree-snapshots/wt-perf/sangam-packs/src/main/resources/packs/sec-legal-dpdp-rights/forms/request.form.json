@@ -1,0 +1,54 @@
+{
+  "key": "sec-legal-dpdp-rights/request",
+  "version": "1.0.0",
+  "pack": "sec.legal.dpdp-rights",
+  "title": {
+    "en": "Data principal request",
+    "hi": "डेटा प्रधान अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "requestType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Request type",
+        "hi": "अनुरोध का प्रकार"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    }
+  ]
+}

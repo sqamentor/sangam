@@ -1,0 +1,45 @@
+{{/* SPDX-License-Identifier: Apache-2.0 */}}
+{{- if .Values.rollup.enabled }}
+{{- $r := .Values.rollup }}
+{{- $name := printf "%s-rollup" .Release.Name }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels: {{ include "national.labels" (dict "root" . "name" "rollup") | nindent 4 }}
+spec:
+  replicas: {{ $r.replicaCount }}
+  selector:
+    matchLabels: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/name: rollup }
+  template:
+    metadata:
+      labels: {{ include "national.labels" (dict "root" . "name" "rollup") | nindent 8 }}
+    spec:
+      {{- include "national.pod" (dict "root" .) | nindent 6 }}
+      containers:
+        - name: rollup
+          {{- include "national.container" (dict "root" . "cfg" $r) | nindent 10 }}
+          env:
+            - { name: SANGAM_RU_PORT, value: {{ $r.port | quote }} }
+            - { name: SANGAM_RU_MANAGEMENT_PORT, value: {{ $r.managementPort | quote }} }
+            - { name: SANGAM_ROLLUP_SHARDS, value: {{ $r.shards | quote }} }
+            - { name: SANGAM_RU_DB_URL, value: {{ required "rollup.database.jdbcUrl is required" $r.database.jdbcUrl | quote }} }
+            - name: SANGAM_RU_DB_USER
+              valueFrom: { secretKeyRef: { name: {{ required "rollup.database.existingSecret" $r.database.existingSecret }}, key: username } }
+            - name: SANGAM_RU_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $r.database.existingSecret }}, key: password } }
+            - name: SANGAM_RU_TOKENS
+              valueFrom: { secretKeyRef: { name: {{ required "rollup.tokensSecret" $r.tokensSecret }}, key: tokens } }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels: {{ include "national.labels" (dict "root" . "name" "rollup") | nindent 4 }}
+spec:
+  selector: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/name: rollup }
+  ports:
+    - { name: http, port: {{ $r.port }}, targetPort: http }
+{{- end }}

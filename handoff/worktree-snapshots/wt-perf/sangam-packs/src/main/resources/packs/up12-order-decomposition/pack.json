@@ -1,0 +1,63 @@
+{
+  "id": "universal.up12-order-decomposition",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-12 Order decomposition and amendment in flight",
+    "hi": "यूपी-12 आदेश विभाजन एवं प्रगति में संशोधन"
+  },
+  "domain": "Universal",
+  "description": "One order becomes one sub-order instance per line (GP-09 pattern instead of a dynamic multi-instance), aggregated by the parent; amendments are broadcast to the running sub-orders; partial fulfilment is reported (R36, R49).",
+  "mainProcesses": [
+    "sangam-up12-order"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up12-order-decomposition/sangam-up12-order.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/up12-order-decomposition/sangam-up12-suborder.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up12-order-decomposition/forms/order.form.json"
+    }
+  ],
+  "seed": null,
+  "connectors": [
+    {
+      "id": "order.lines",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Lines of the order"
+    },
+    {
+      "id": "telecom.activate",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Activation"
+    },
+    {
+      "id": "telecom.modify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Modification"
+    }
+  ],
+  "covers": [
+    "UP-12",
+    "R36",
+    "R49",
+    "GP-09",
+    "GP-14"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ]
+}

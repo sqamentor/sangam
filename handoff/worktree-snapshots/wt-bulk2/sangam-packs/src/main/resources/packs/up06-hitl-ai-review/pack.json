@@ -1,0 +1,65 @@
+{
+  "id": "universal.up06-hitl-ai-review",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-06 Human-in-the-loop AI review",
+    "hi": "यूपी-06 मानव-समीक्षित एआई"
+  },
+  "domain": "Universal",
+  "description": "An IDP / agent worker proposes extracted fields with confidence; below the threshold, or for any write action, a human approves, edits or rejects; the reviewed result is fed back as evaluation data; the applied payload is bound to the reviewed version (R72, R75).",
+  "mainProcesses": [
+    "sangam-up06-hitl-ai"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up06-hitl-ai-review/sangam-up06-hitl-ai.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up06-hitl-ai-review/forms/intake.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up06-hitl-ai-review/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up06-hitl-ai-review/seed.json"
+    }
+  ],
+  "seed": "packs/up06-hitl-ai-review/seed.json",
+  "connectors": [
+    {
+      "id": "ai.extract",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Extraction (external task sangam.ai.extract)"
+    },
+    {
+      "id": "ai.feedback",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Evaluation feedback"
+    },
+    {
+      "id": "records.apply",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Apply reviewed data"
+    }
+  ],
+  "covers": [
+    "UP-06",
+    "R14",
+    "R72",
+    "R75",
+    "GP-34"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

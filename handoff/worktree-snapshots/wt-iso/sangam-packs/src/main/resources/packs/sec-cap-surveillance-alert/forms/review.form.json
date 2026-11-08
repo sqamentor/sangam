@@ -1,0 +1,54 @@
+{
+  "key": "sec-cap-surveillance-alert/review",
+  "version": "1.0.0",
+  "pack": "sec.cap.surveillance-alert",
+  "title": {
+    "en": "Review alert and client trading",
+    "hi": "चेतावनी एवं ग्राहक व्यापार की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "findings",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "svDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "close",
+        "label": {
+          "en": "Close",
+          "hi": "बंद करें"
+        }
+      },
+      {
+        "value": "clarify",
+        "label": {
+          "en": "Seek clarification",
+          "hi": "स्पष्टीकरण मांगें"
+        }
+      },
+      {
+        "value": "escalate",
+        "label": {
+          "en": "Escalate",
+          "hi": "आगे बढ़ाएँ"
+        }
+      }
+    ]
+  }
+}

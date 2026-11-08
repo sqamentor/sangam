@@ -1,0 +1,47 @@
+{
+  "key": "up20-rpa/handle",
+  "version": "1.0.0",
+  "pack": "universal.up20-rpa",
+  "title": {
+    "en": "Bot failed: retry or do manually",
+    "hi": "बॉट विफल: पुनः प्रयास या मैन्युअल"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "botDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "retry",
+        "label": {
+          "en": "Retry",
+          "hi": "पुनः प्रयास करें"
+        }
+      },
+      {
+        "value": "manual",
+        "label": {
+          "en": "Do it manually",
+          "hi": "मैन्युअल रूप से करें"
+        }
+      }
+    ]
+  }
+}

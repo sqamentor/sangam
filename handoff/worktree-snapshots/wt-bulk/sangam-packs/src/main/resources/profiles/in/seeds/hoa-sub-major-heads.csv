@@ -1,0 +1,719 @@
+# SPDX-License-Identifier: Apache-2.0
+scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
+HOA,subMajor,0007,01,Chandigarh,,,,LMMH CS1127 p.33,V
+HOA,subMajor,0007,02,Daman and Diu,,,,LMMH CS1127 p.33,V
+HOA,subMajor,0007,03,Dadra and Nagar Haveli,,,,LMMH CS1127 p.33,V
+HOA,subMajor,0007,04,Lakshadweep,,,,LMMH CS1127 p.34,V
+HOA,subMajor,0007,05,Andaman and Nicobar Islands,,,,LMMH CS1127 p.34,V
+HOA,subMajor,0007,06,Other Territory,,,,LMMH CS1127 p.35,V
+HOA,subMajor,0007,07,Ladakh,,,,LMMH CS1127 p.35,V
+HOA,subMajor,0008,01,IGST on Import/Export of Goods and Services,,,,LMMH CS1127 p.37,V
+HOA,subMajor,0008,02,IGST on Domestic Supply of Goods and Services,,,,LMMH CS1127 p.37,V
+HOA,subMajor,0009,01,GST Compensation cess on Import/Export of Goods and Services,,,,LMMH CS1127 p.41,V
+HOA,subMajor,0009,02,GST Compensation cess on Domestic Supply of Goods and Services,,,,LMMH CS1127 p.41,V
+HOA,subMajor,0030,01,Stamps-Judicial,,,,LMMH CS1127 p.53,V
+HOA,subMajor,0030,02,Stamps-Non-Judicial,,,,LMMH CS1127 p.53,V
+HOA,subMajor,0030,03,Registration Fees,,,,LMMH CS1127 p.53,V
+HOA,subMajor,0031,01,Estate Duty,,,,LMMH CS1127 p.54,V
+HOA,subMajor,0031,02,Gift Tax,,,,LMMH CS1127 p.54,V
+HOA,subMajor,0031,03,Banking Cash Transaction Tax,,,,LMMH CS1127 p.54,V
+HOA,subMajor,0038,01,Shareable Duties,,,,LMMH CS1127 p.59,V
+HOA,subMajor,0038,02,Duties assigned to States,,,,LMMH CS1127 p.59,V
+HOA,subMajor,0038,03,Non-Sharable Duties,,,,LMMH CS1127 p.59,V
+HOA,subMajor,0038,04,Cesses on Commodities,minorRule=A Minor head for each Commodity (4),,,LMMH CS1127 p.59,V
+HOA,subMajor,0038,60,Other Receipts,,,,LMMH CS1127 p.59,V
+HOA,subMajor,0049,01,Interest from State Governments,,,,LMMH CS1127 p.69,V
+HOA,subMajor,0049,02,Interest from Union Territory Governments with Legislature,,,,LMMH CS1127 p.69,V
+HOA,subMajor,0049,03,Other Interest receipts of Central Government,,,,LMMH CS1127 p.69,V
+HOA,subMajor,0049,04,Interest Receipts of State/ Union Territory Governments with Legislature,,,,LMMH CS1127 p.70,V
+HOA,subMajor,0059,01,Office Buildings,,,,LMMH CS1127 p.75,V
+HOA,subMajor,0059,60,Other Buildings,,,,LMMH CS1127 p.75,V
+HOA,subMajor,0059,80,General,,,,LMMH CS1127 p.75,V
+HOA,subMajor,0070,01,Administration of Justice,,,,LMMH CS1127 p.76,V
+HOA,subMajor,0070,02,Elections,,,,LMMH CS1127 p.76,V
+HOA,subMajor,0070,60,Other Services,,,,LMMH CS1127 p.76,V
+HOA,subMajor,0071,01,Civil,,,,LMMH CS1127 p.78,V
+HOA,subMajor,0071,02,Defence,,,,LMMH CS1127 p.78,V
+HOA,subMajor,0081,01,HQ IDS and Joint Staff,,,,LMMH CS1127 p.84,V
+HOA,subMajor,0202,01,General Education,,,,LMMH CS1127 p.85,V
+HOA,subMajor,0202,02,Technical Education,,,,LMMH CS1127 p.85,V
+HOA,subMajor,0202,03,Sports and Youth Services,,,,LMMH CS1127 p.85,V
+HOA,subMajor,0202,04,Art and Culture,,,,LMMH CS1127 p.85,V
+HOA,subMajor,0210,01,Urban Health Services,,,,LMMH CS1127 p.86,V
+HOA,subMajor,0210,02,Rural Health Services,,,,LMMH CS1127 p.86,V
+HOA,subMajor,0210,03,"Medical Education, Training and Research",,,,LMMH CS1127 p.86,V
+HOA,subMajor,0210,04,Public Health,,,,LMMH CS1127 p.86,V
+HOA,subMajor,0210,80,General,,,,LMMH CS1127 p.86,V
+HOA,subMajor,0215,01,Water Supply,,,,LMMH CS1127 p.87,V
+HOA,subMajor,0215,02,Sewerage and Sanitation,,,,LMMH CS1127 p.87,V
+HOA,subMajor,0216,01,Government Residential Buildings,,,,LMMH CS1127 p.88,V
+HOA,subMajor,0216,02,Urban Housing,,,,LMMH CS1127 p.88,V
+HOA,subMajor,0216,03,Rural Housing,,,,LMMH CS1127 p.88,V
+HOA,subMajor,0216,80,General,,,,LMMH CS1127 p.88,V
+HOA,subMajor,0217,01,State Capital Development,minorRule=(Name of each State capital will be a minor head),,,LMMH CS1127 p.89,V
+HOA,subMajor,0217,02,National Capital Region,,,,LMMH CS1127 p.89,V
+HOA,subMajor,0217,03,Integrated Development of Small and Medium Towns,,,,LMMH CS1127 p.89,V
+HOA,subMajor,0217,04,Slum Area Improvement,,,,LMMH CS1127 p.89,V
+HOA,subMajor,0217,60,Other Urban Development Schemes,,,,LMMH CS1127 p.89,V
+HOA,subMajor,0220,01,Films,,,,LMMH CS1127 p.90,V
+HOA,subMajor,0220,60,Others,,,,LMMH CS1127 p.90,V
+HOA,subMajor,0221,01,Sound Broadcasting,,,,LMMH CS1127 p.90,V
+HOA,subMajor,0221,02,Television,,,,LMMH CS1127 p.90,V
+HOA,subMajor,0235,01,Rehabilitation,,,,LMMH CS1127 p.91,V
+HOA,subMajor,0235,60,Other Social Security and Welfare Programmes,,,,LMMH CS1127 p.91,V
+HOA,subMajor,0406,01,Forestry,,,,LMMH CS1127 p.95,V
+HOA,subMajor,0406,02,Environmental Forestry and Wild Life,,,,LMMH CS1127 p.95,V
+HOA,subMajor,0407,01,Tea,,,,LMMH CS1127 p.97,V
+HOA,subMajor,0407,02,Coffee,,,,LMMH CS1127 p.97,V
+HOA,subMajor,0407,03,Rubber,,,,LMMH CS1127 p.97,V
+HOA,subMajor,0407,04,Spices,,,,LMMH CS1127 p.97,V
+HOA,subMajor,0407,60,Others,,,,LMMH CS1127 p.97,V
+HOA,subMajor,0551,01,Western Ghats,,,,LMMH CS1127 p.100,V
+HOA,subMajor,0551,60,Other Hill Areas,minorRule=Minor heads corresponding to functional major heads/sub-major heads may be opened as necessary.,,,LMMH CS1127 p.100,V
+HOA,subMajor,0575,01,Dangs District,,,,LMMH CS1127 p.101,V
+HOA,subMajor,0575,02,Backward Areas,,,,LMMH CS1127 p.101,V
+HOA,subMajor,0575,03,Tribal Areas,,,,LMMH CS1127 p.101,V
+HOA,subMajor,0575,04,Ladakh Autonomous Hill Development Council,,,,LMMH CS1127 p.101,V
+HOA,subMajor,0575,05,Jharkhand Area Autonomous Council,,,,LMMH CS1127 p.101,V
+HOA,subMajor,0575,06,Border Area Development,,,,LMMH CS1127 p.101,V
+HOA,subMajor,0575,60,Others,minorRule=Minor heads corresponding to functional major heads/sub-major heads may be opened under the sub-major heads as necessary.,,,LMMH CS1127 p.101,V
+HOA,subMajor,0700,80,General,,,,LMMH CS1127 p.102,V
+HOA,subMajor,0701,80,General,,,,LMMH CS1127 p.103,V
+HOA,subMajor,0702,01,Surface Water,,,,LMMH CS1127 p.104,V
+HOA,subMajor,0702,02,Groundwater,,,,LMMH CS1127 p.104,V
+HOA,subMajor,0702,03,Command Area Development,,,,LMMH CS1127 p.104,V
+HOA,subMajor,0702,04,Flood Control,,,,LMMH CS1127 p.104,V
+HOA,subMajor,0702,80,General,,,,LMMH CS1127 p.104,V
+HOA,subMajor,0801,01,Hydel Generation,minorRule=Each Scheme will be a minor head (1),,,LMMH CS1127 p.105,V
+HOA,subMajor,0801,02,Thermal power Generation,minorRule=Each Scheme will be a minor head (1),,,LMMH CS1127 p.105,V
+HOA,subMajor,0801,03,Nuclear Power Generation,minorRule=Each Scheme will be a minor head (1),,,LMMH CS1127 p.105,V
+HOA,subMajor,0801,04,Diesel/Gas Power Generation,minorRule=Each Scheme will be a minor head (1),,,LMMH CS1127 p.105,V
+HOA,subMajor,0801,05,Transmission & Distribution,minorRule=Each Scheme will be a minor head (1)(2),,,LMMH CS1127 p.105,V
+HOA,subMajor,0801,06,Rural Electrification,,,,LMMH CS1127 p.105,V
+HOA,subMajor,0801,80,General,,,,LMMH CS1127 p.105,V
+HOA,subMajor,0852,01,Iron and Steel Industries,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0852,02,Cement and Non-Metallic Mineral Industries,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0852,03,Fertilizer Industries,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0852,04,Petrochemical Industries,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0852,05,Chemical and Pharmaceutical Industries,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0852,06,Engineering Industries,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0852,07,Telecommunication and Electronic Industries,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0852,08,Consumer Industries,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0852,09,Atomic Energy Industries,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0852,80,General,,,,LMMH CS1127 p.108,V
+HOA,subMajor,0875,01,Opium and Alkaloid Industries,,,,LMMH CS1127 p.110,V
+HOA,subMajor,0875,02,Other Industries,,,,LMMH CS1127 p.110,V
+HOA,subMajor,0875,03,Development of Backward Areas,,,,LMMH CS1127 p.110,V
+HOA,subMajor,0875,60,Others,,,,LMMH CS1127 p.110,V
+HOA,subMajor,1001,01,Commercial Lines,,,,LMMH CS1127 p.112,V
+HOA,subMajor,1001,02,Strategic Lines,,,,LMMH CS1127 p.112,V
+HOA,subMajor,1001,80,General,,,,LMMH CS1127 p.112,V
+HOA,subMajor,1002,01,Coaching Earnings,,,,LMMH CS1127 p.114,V
+HOA,subMajor,1002,02,Goods Earnings,,,,LMMH CS1127 p.114,V
+HOA,subMajor,1002,03,Sundry Other Earnings,,,,LMMH CS1127 p.114,V
+HOA,subMajor,1002,04,Suspense,,,,LMMH CS1127 p.114,V
+HOA,subMajor,1003,01,Coaching Earnings,,,,LMMH CS1127 p.115,V
+HOA,subMajor,1003,02,Goods Earnings,,,,LMMH CS1127 p.115,V
+HOA,subMajor,1003,03,Sundry other Earnings,,,,LMMH CS1127 p.115,V
+HOA,subMajor,1003,04,Suspense,,,,LMMH CS1127 p.115,V
+HOA,subMajor,1003,60,Other Railways,,,,LMMH CS1127 p.115,V
+HOA,subMajor,1051,01,Major Ports,,,,LMMH CS1127 p.116,V
+HOA,subMajor,1051,02,Minor Ports,,,,LMMH CS1127 p.116,V
+HOA,subMajor,1051,03,Light Houses and Lightships,,,,LMMH CS1127 p.116,V
+HOA,subMajor,1051,80,General,,,,LMMH CS1127 p.116,V
+HOA,subMajor,1052,01,Overseas Shipping,,,,LMMH CS1127 p.117,V
+HOA,subMajor,1052,02,Coastal Shipping,,,,LMMH CS1127 p.117,V
+HOA,subMajor,1052,80,General,,,,LMMH CS1127 p.117,V
+HOA,subMajor,1225,01,Telephones (Urban),,,,LMMH CS1127 p.122,V
+HOA,subMajor,1225,02,Telephones (Rural),,,,LMMH CS1127 p.122,V
+HOA,subMajor,1225,03,Telegraphs,,,,LMMH CS1127 p.122,V
+HOA,subMajor,1225,04,Registration Fees from Prospective Subscribers.,,,,LMMH CS1127 p.123,V
+HOA,subMajor,1225,05,Telecommunication Services,,,,LMMH CS1127 p.123,V
+HOA,subMajor,1601,01,Non-Plan Grants,,,,LMMH CS1127 p.130,V
+HOA,subMajor,1601,02,Grants for State/Union Territory Plan Schemes,,,,LMMH CS1127 p.130,V
+HOA,subMajor,1601,03,Grants for Central Plan Schemes,,,,LMMH CS1127 p.130,V
+HOA,subMajor,1601,04,Grants for Centrally Sponsored Plan Schemes,,,,LMMH CS1127 p.130,V
+HOA,subMajor,1601,05,Grants for Special Plan Schemes,,,,LMMH CS1127 p.130,V
+HOA,subMajor,1601,06,Centrally Sponsored Schemes,,,,LMMH CS1127 p.130,V
+HOA,subMajor,1601,07,Finance Commission Grants,,,,LMMH CS1127 p.131,V
+HOA,subMajor,1601,08,Other Transfer/Grants to States/Union Territories with Legislatures,,,,LMMH CS1127 p.131,V
+HOA,subMajor,2011,01,Parliament,,,,LMMH CS1127 p.137,V
+HOA,subMajor,2011,02,State/Union Territory Legislatures,,,,LMMH CS1127 p.137,V
+HOA,subMajor,2012,01,President,,,,LMMH CS1127 p.138,V
+HOA,subMajor,2012,02,Vice President,,,,LMMH CS1127 p.138,V
+HOA,subMajor,2012,03,Governor/Administrator of Union Territories,,,,LMMH CS1127 p.138,V
+HOA,subMajor,2030,01,Stamps-Judicial,,,,LMMH CS1127 p.145,V
+HOA,subMajor,2030,02,Stamps-Non-judicial,,,,LMMH CS1127 p.145,V
+HOA,subMajor,2030,03,Registration,,,,LMMH CS1127 p.145,V
+HOA,subMajor,2049,01,Interest on Internal Debt.,,,,LMMH CS1127 p.154,V
+HOA,subMajor,2049,02,Interest on External Debt,,,,LMMH CS1127 p.155,V
+HOA,subMajor,2049,03,Interest on Small Savings Provident Funds etc.,,,,LMMH CS1127 p.157,V
+HOA,subMajor,2049,04,Interest on Loans and Advances from Central Government.,,,,LMMH CS1127 p.157,V
+HOA,subMajor,2049,05,Interest on Reserve Funds,,,,LMMH CS1127 p.158,V
+HOA,subMajor,2049,60,Interest on Other Obligations,,,,LMMH CS1127 p.158,V
+HOA,subMajor,2059,01,Office Buildings,,,,LMMH CS1127 p.165,V
+HOA,subMajor,2059,60,Other Buildings,,,,LMMH CS1127 p.165,V
+HOA,subMajor,2059,80,General,,,,LMMH CS1127 p.165,V
+HOA,subMajor,2071,01,Civil,,,,LMMH CS1127 p.172,V
+HOA,subMajor,2071,02,Defence,,,,LMMH CS1127 p.173,V
+HOA,subMajor,2081,01,HQ IDS and Joint Staff,,,,LMMH CS1127 p.179,V
+HOA,subMajor,2202,01,Elementary Education,,,,LMMH CS1127 p.180,V
+HOA,subMajor,2202,02,Secondary Education,,,,LMMH CS1127 p.180,V
+HOA,subMajor,2202,03,University and Higher Education,,,,LMMH CS1127 p.181,V
+HOA,subMajor,2202,04,Adult Education,,,,LMMH CS1127 p.181,V
+HOA,subMajor,2202,05,Language Development,,,,LMMH CS1127 p.181,V
+HOA,subMajor,2202,80,General,,,,LMMH CS1127 p.181,V
+HOA,subMajor,2210,01,Urban Health Services- Allopathy,,,,LMMH CS1127 p.186,V
+HOA,subMajor,2210,02,Urban Health Services- Other systems of medicine,,,,LMMH CS1127 p.186,V
+HOA,subMajor,2210,03,Rural Health Services- Allopathy,,,,LMMH CS1127 p.186,V
+HOA,subMajor,2210,04,Rural Health Services- Other Systems of medicine,,,,LMMH CS1127 p.186,V
+HOA,subMajor,2210,05,"Medical Education, Training and Research",,,,LMMH CS1127 p.186,V
+HOA,subMajor,2210,06,Public Health,,,,LMMH CS1127 p.187,V
+HOA,subMajor,2210,80,General,,,,LMMH CS1127 p.187,V
+HOA,subMajor,2215,01,Water Supply,,,,LMMH CS1127 p.191,V
+HOA,subMajor,2215,02,Sewerage and Sanitation,,,,LMMH CS1127 p.191,V
+HOA,subMajor,2215,80,General,,,,LMMH CS1127 p.191,V
+HOA,subMajor,2216,02,Urban Housing,minorRule=(Each class of scheme will be a minor head),,,LMMH CS1127 p.192,V
+HOA,subMajor,2216,03,Rural Housing,minorRule=(Each class of scheme will be a minor head),,,LMMH CS1127 p.192,V
+HOA,subMajor,2216,04,Bombay Building Repairs and Reconstructions Scheme,,,,LMMH CS1127 p.192,V
+HOA,subMajor,2216,05,General Pool Accommodation,,,,LMMH CS1127 p.192,V
+HOA,subMajor,2216,06,Police Housing,,,,LMMH CS1127 p.192,V
+HOA,subMajor,2216,07,Other Housing,,,,LMMH CS1127 p.192,V
+HOA,subMajor,2216,80,General,,,,LMMH CS1127 p.193,V
+HOA,subMajor,2217,01,State Capital Development,,,,LMMH CS1127 p.194,V
+HOA,subMajor,2217,02,National Capital Region,,,,LMMH CS1127 p.194,V
+HOA,subMajor,2217,03,Integrated Development of Small and Medium Towns,,,,LMMH CS1127 p.194,V
+HOA,subMajor,2217,04,Slum Area Improvement,,,,LMMH CS1127 p.194,V
+HOA,subMajor,2217,05,Other Urban Development Schemes,,,,LMMH CS1127 p.194,V
+HOA,subMajor,2217,80,General,,,,LMMH CS1127 p.195,V
+HOA,subMajor,2220,01,Films,,,,LMMH CS1127 p.196,V
+HOA,subMajor,2220,60,Others,,,,LMMH CS1127 p.196,V
+HOA,subMajor,2221,01,Sound Broadcasting,,,,LMMH CS1127 p.197,V
+HOA,subMajor,2221,02,Television,,,,LMMH CS1127 p.197,V
+HOA,subMajor,2221,80,General,,,,LMMH CS1127 p.197,V
+HOA,subMajor,2225,01,Welfare of Scheduled Castes,,,,LMMH CS1127 p.199,V
+HOA,subMajor,2225,02,Welfare of Scheduled Tribes,,,,LMMH CS1127 p.199,V
+HOA,subMajor,2225,03,Welfare of Backward Classes,,,,LMMH CS1127 p.199,V
+HOA,subMajor,2225,04,Welfare of Minorities,,,,LMMH CS1127 p.199,V
+HOA,subMajor,2225,80,General,,,,LMMH CS1127 p.200,V
+HOA,subMajor,2230,01,Labour,,,,LMMH CS1127 p.201,V
+HOA,subMajor,2230,02,Employment Service,,,,LMMH CS1127 p.201,V
+HOA,subMajor,2230,03,Training,,,,LMMH CS1127 p.201,V
+HOA,subMajor,2235,01,Rehabilitation,,,,LMMH CS1127 p.203,V
+HOA,subMajor,2235,02,Social Welfare,,,,LMMH CS1127 p.203,V
+HOA,subMajor,2235,03,National Social Assistance Programme.,,,,LMMH CS1127 p.203,V
+HOA,subMajor,2235,04,Debt Relief for Farmers,,,,LMMH CS1127 p.204,V
+HOA,subMajor,2235,60,Other Social Security and Welfare Programmes,,,,LMMH CS1127 p.204,V
+HOA,subMajor,2236,01,Production of Nutritious Foods and Beverages,,,,LMMH CS1127 p.206,V
+HOA,subMajor,2236,02,Distribution of nutritious food and beverages,,,,LMMH CS1127 p.206,V
+HOA,subMajor,2236,80,General,,,,LMMH CS1127 p.206,V
+HOA,subMajor,2245,01,Drought,,,,LMMH CS1127 p.207,V
+HOA,subMajor,2245,02,"Floods, Cyclones etc.",,,,LMMH CS1127 p.207,V
+HOA,subMajor,2245,03,Unspent Margin Money Fund,,,,LMMH CS1127 p.208,V
+HOA,subMajor,2245,04,Famine Relief Fund,,,,LMMH CS1127 p.208,V
+HOA,subMajor,2245,05,State Disaster Response Fund,,,,LMMH CS1127 p.208,V
+HOA,subMajor,2245,06,Earthquake,,,,LMMH CS1127 p.208,V
+HOA,subMajor,2245,07,Disaster Management,,,,LMMH CS1127 p.209,V
+HOA,subMajor,2245,08,State Disaster Mitigation Fund,,,,LMMH CS1127 p.209,V
+HOA,subMajor,2245,80,General,,,,LMMH CS1127 p.209,V
+HOA,subMajor,2406,01,Forestry,,,,LMMH CS1127 p.216,V
+HOA,subMajor,2406,02,Environmental Forestry and Wild Life,,,,LMMH CS1127 p.216,V
+HOA,subMajor,2406,04,Afforestation and Ecology Development,,,,LMMH CS1127 p.216,V
+HOA,subMajor,2407,01,Tea,,,,LMMH CS1127 p.217,V
+HOA,subMajor,2407,02,Coffee,,,,LMMH CS1127 p.217,V
+HOA,subMajor,2407,03,Rubber,,,,LMMH CS1127 p.217,V
+HOA,subMajor,2407,04,Spices,,,,LMMH CS1127 p.217,V
+HOA,subMajor,2407,60,Others,,,,LMMH CS1127 p.217,V
+HOA,subMajor,2408,01,Food,,,,LMMH CS1127 p.218,V
+HOA,subMajor,2408,02,Storage and Warehousing,,,,LMMH CS1127 p.218,V
+HOA,subMajor,2415,01,Crop Husbandry,,,,LMMH CS1127 p.219,V
+HOA,subMajor,2415,02,Soil and Water Conservation,,,,LMMH CS1127 p.219,V
+HOA,subMajor,2415,03,Animal Husbandry,,,,LMMH CS1127 p.219,V
+HOA,subMajor,2415,04,Dairy Development,,,,LMMH CS1127 p.219,V
+HOA,subMajor,2415,05,Fisheries,,,,LMMH CS1127 p.219,V
+HOA,subMajor,2415,06,Forestry,,,,LMMH CS1127 p.219,V
+HOA,subMajor,2415,07,Plantations,,,,LMMH CS1127 p.220,V
+HOA,subMajor,2415,80,General,,,,LMMH CS1127 p.220,V
+HOA,subMajor,2435,01,Marketing and quality control (I),,,,LMMH CS1127 p.222,V
+HOA,subMajor,2435,60,Others,minorRule=Each Programme not covered elsewhere in this sub-sector will be a minor head,,,LMMH CS1127 p.222,V
+HOA,subMajor,2501,02,Draught Prone Areas Development Programme,,,,LMMH CS1127 p.223,V
+HOA,subMajor,2501,03,Desert Development Programme,,,,LMMH CS1127 p.223,V
+HOA,subMajor,2501,04,Integrated Rural Energy Planning Programme,,,,LMMH CS1127 p.223,V
+HOA,subMajor,2501,05,Waste Land Development,,,,LMMH CS1127 p.223,V
+HOA,subMajor,2501,06,Self Employment Programmes,,,,LMMH CS1127 p.223,V
+HOA,subMajor,2505,01,National Programmes,,,,LMMH CS1127 p.224,V
+HOA,subMajor,2505,02,Rural Employment Guarantee Schemes,,,,LMMH CS1127 p.224,V
+HOA,subMajor,2505,60,Other programmes,minorRule=Each Programme like employment guarantee scheme will be a minor head,,,LMMH CS1127 p.224,V
+HOA,subMajor,2551,01,Western Chats,,,,LMMH CS1127 p.226,V
+HOA,subMajor,2551,60,Other Hill Areas,minorRule=(Minor heads corresponding to functional major heads/sub-major heads may be opened as necessary),,,LMMH CS1127 p.226,V
+HOA,subMajor,2575,01,Dangs District,,,,LMMH CS1127 p.227,V
+HOA,subMajor,2575,02,Backward Areas,,,,LMMH CS1127 p.227,V
+HOA,subMajor,2575,03,Tribal Areas,,,,LMMH CS1127 p.227,V
+HOA,subMajor,2575,04,Ladakh Autonomous Hill Development Council,,,,LMMH CS1127 p.227,V
+HOA,subMajor,2575,05,Jharkhand Area Autonomous Council,,,,LMMH CS1127 p.227,V
+HOA,subMajor,2575,06,Border Area Development,,,,LMMH CS1127 p.227,V
+HOA,subMajor,2575,60,Others,minorRule=Minor heads corresponding to functional major heads sub-major heads may be opened under the sub-major heads as necessary,,,LMMH CS1127 p.227,V
+HOA,subMajor,2700,80,General,,,,LMMH CS1127 p.228,V
+HOA,subMajor,2701,80,General,,,,LMMH CS1127 p.230,V
+HOA,subMajor,2702,01,Surface Water,,,,LMMH CS1127 p.232,V
+HOA,subMajor,2702,02,Ground water,,,,LMMH CS1127 p.232,V
+HOA,subMajor,2702,03,Maintenance,,,,LMMH CS1127 p.232,V
+HOA,subMajor,2702,80,General,,,,LMMH CS1127 p.232,V
+HOA,subMajor,2711,01,Flood Control,,,,LMMH CS1127 p.234,V
+HOA,subMajor,2711,02,Anti-sea Erosion Projects,,,,LMMH CS1127 p.234,V
+HOA,subMajor,2711,03,Drainage,,,,LMMH CS1127 p.234,V
+HOA,subMajor,2801,01,Hydel Generation,minorRule=Each Hydroelectric Scheme will be a minor head (1).,,,LMMH CS1127 p.235,V
+HOA,subMajor,2801,02,Thermal Power Generation,minorRule=Each Thermal Power Scheme will be a minor head (2),,,LMMH CS1127 p.235,V
+HOA,subMajor,2801,03,Nuclear Power Generation,minorRule=Each Nuclear Power Scheme will be a minor head,,,LMMH CS1127 p.235,V
+HOA,subMajor,2801,04,Diesel/Gas Power Generation,minorRule=Each Diesel/Gas Power Scheme will be a minor head (3),,,LMMH CS1127 p.235,V
+HOA,subMajor,2801,05,Transmission and Distribution,minorRule=Each Transmission/ Distribution Scheme will be a minor head,,,LMMH CS1127 p.236,V
+HOA,subMajor,2801,06,Rural Electrification,,,,LMMH CS1127 p.236,V
+HOA,subMajor,2801,80,General,,,,LMMH CS1127 p.236,V
+HOA,subMajor,2802,01,Exploration and Production of Crude Oil and Gas,,,,LMMH CS1127 p.237,V
+HOA,subMajor,2802,02,Refining and Marketing of Oil and Gas,,,,LMMH CS1127 p.237,V
+HOA,subMajor,2802,80,General,,,,LMMH CS1127 p.237,V
+HOA,subMajor,2852,01,Iron and Steel Industries,,,,LMMH CS1127 p.240,V
+HOA,subMajor,2852,02,Cement and Non-metallic Mineral Industries,,,,LMMH CS1127 p.240,V
+HOA,subMajor,2852,03,Fertilizer Industries,,,,LMMH CS1127 p.240,V
+HOA,subMajor,2852,04,Petrochemical industries,,,,LMMH CS1127 p.240,V
+HOA,subMajor,2852,05,Chemical and Pharmaceutical Industries,,,,LMMH CS1127 p.240,V
+HOA,subMajor,2852,06,Engineering Industries,,,,LMMH CS1127 p.240,V
+HOA,subMajor,2852,07,Telecommunication and Electronic Industries,,,,LMMH CS1127 p.240,V
+HOA,subMajor,2852,08,Consumer Industries,,,,LMMH CS1127 p.240,V
+HOA,subMajor,2852,09,Atomic Energy Industries,,,,LMMH CS1127 p.241,V
+HOA,subMajor,2852,80,General,,,,LMMH CS1127 p.241,V
+HOA,subMajor,2853,01,Geological Survey of India,,,,LMMH CS1127 p.243,V
+HOA,subMajor,2853,02,Regulation and Development of Mines,,,,LMMH CS1127 p.243,V
+HOA,subMajor,2875,01,Opium and Alkaloid Industries,,,,LMMH CS1127 p.244,V
+HOA,subMajor,2875,60,Other Industries,,,,LMMH CS1127 p.244,V
+HOA,subMajor,2885,01,Industrial Financial Institutions,,,,LMMH CS1127 p.246,V
+HOA,subMajor,2885,02,Development of Backward Areas,,,,LMMH CS1127 p.246,V
+HOA,subMajor,2885,03,Industrial Corridors,minorRule=Each Industdrial Corridor project will be a Minor Head.,,,LMMH CS1127 p.246,V
+HOA,subMajor,2885,60,Others,,,,LMMH CS1127 p.246,V
+HOA,subMajor,3002,01,General Superintendence and Services,,,,LMMH CS1127 p.249,V
+HOA,subMajor,3002,02,Repairs and Maintenance of Permanent Way and Works,,,,LMMH CS1127 p.249,V
+HOA,subMajor,3002,03,Repairs and Maintenance of Motive power,,,,LMMH CS1127 p.249,V
+HOA,subMajor,3002,04,Repairs and Maintenance of Carriage and Wagons,,,,LMMH CS1127 p.250,V
+HOA,subMajor,3002,05,Repairs & Maintenance of Plant and Equipment,,,,LMMH CS1127 p.250,V
+HOA,subMajor,3002,06,Operating Expenses Rolling Stock and Equipment,,,,LMMH CS1127 p.250,V
+HOA,subMajor,3002,07,Operating Expenses- Traffic,,,,LMMH CS1127 p.251,V
+HOA,subMajor,3002,08,Operating expenses-Fuel,,,,LMMH CS1127 p.251,V
+HOA,subMajor,3002,09,Staff Welfare and Amenities,,,,LMMH CS1127 p.251,V
+HOA,subMajor,3002,10,Miscellaneous-Working expenses,,,,LMMH CS1127 p.251,V
+HOA,subMajor,3002,11,"Provident Fund, Pension and Other Retirement Benefits",,,,LMMH CS1127 p.251,V
+HOA,subMajor,3002,12,Appropriation to Funds,,,,LMMH CS1127 p.252,V
+HOA,subMajor,3002,13,Suspense,,,,LMMH CS1127 p.252,V
+HOA,subMajor,3002,14,Government Contribution for Defined Contribution Pension Scheme,,,,LMMH CS1127 p.252,V
+HOA,subMajor,3003,01,General Superintendence and Services,,,,LMMH CS1127 p.253,V
+HOA,subMajor,3003,02,Repairs and Maintenance of permanent Way and Works,,,,LMMH CS1127 p.253,V
+HOA,subMajor,3003,03,Repairs and Maintenance of Motive Power,,,,LMMH CS1127 p.253,V
+HOA,subMajor,3003,04,Repairs and Maintenance of Carriages and Wagons,,,,LMMH CS1127 p.253,V
+HOA,subMajor,3003,05,Repairs and Maintenance of Plant and Equipment,,,,LMMH CS1127 p.254,V
+HOA,subMajor,3003,06,Operation Expenses Rolling stock and Equipment,,,,LMMH CS1127 p.254,V
+HOA,subMajor,3003,07,Operating Expenses- Traffic,,,,LMMH CS1127 p.254,V
+HOA,subMajor,3003,08,Operating Expenses- Fuel,,,,LMMH CS1127 p.255,V
+HOA,subMajor,3003,09,Staff Welfare and Amenities,,,,LMMH CS1127 p.255,V
+HOA,subMajor,3003,10,Miscellaneous Working Expenses,,,,LMMH CS1127 p.255,V
+HOA,subMajor,3003,11,"Provident Fund, Pension and Other Retirement benefits",,,,LMMH CS1127 p.255,V
+HOA,subMajor,3003,12,Appropriation to Funds,,,,LMMH CS1127 p.255,V
+HOA,subMajor,3003,13,Suspense,,,,LMMH CS1127 p.256,V
+HOA,subMajor,3003,14,Government Contribution for Defined Contribution Pension Scheme,,,,LMMH CS1127 p.256,V
+HOA,subMajor,3004,01,Commercial Lines- Revenue Works,,,,LMMH CS1127 p.257,V
+HOA,subMajor,3004,02,Strategic Lines-Revenue works,,,,LMMH CS1127 p.257,V
+HOA,subMajor,3051,01,Major Ports,,,,LMMH CS1127 p.259,V
+HOA,subMajor,3051,02,Minor Ports,,,,LMMH CS1127 p.259,V
+HOA,subMajor,3051,03,Light Houses and Light Ships,,,,LMMH CS1127 p.259,V
+HOA,subMajor,3051,80,General,,,,LMMH CS1127 p.259,V
+HOA,subMajor,3052,01,Overseas Shipping,,,,LMMH CS1127 p.260,V
+HOA,subMajor,3052,02,Coastal Shipping,,,,LMMH CS1127 p.260,V
+HOA,subMajor,3052,80,General,,,,LMMH CS1127 p.260,V
+HOA,subMajor,3053,01,Air Services,,,,LMMH CS1127 p.262,V
+HOA,subMajor,3053,02,Airports,,,,LMMH CS1127 p.262,V
+HOA,subMajor,3053,60,Other Aeronautical Services,,,,LMMH CS1127 p.262,V
+HOA,subMajor,3053,80,General,,,,LMMH CS1127 p.262,V
+HOA,subMajor,3054,01,National Highways,,,,LMMH CS1127 p.264,V
+HOA,subMajor,3054,02,Strategic and Border Roads,,,,LMMH CS1127 p.264,V
+HOA,subMajor,3054,03,State Highways,,,,LMMH CS1127 p.264,V
+HOA,subMajor,3054,04,District and Other Roads,,,,LMMH CS1127 p.264,V
+HOA,subMajor,3054,05,Roads of Inter State or Economic Importance,,,,LMMH CS1127 p.264,V
+HOA,subMajor,3054,80,General,,,,LMMH CS1127 p.264,V
+HOA,subMajor,3075,01,River Training Works,,,,LMMH CS1127 p.268,V
+HOA,subMajor,3075,60,Others,,,,LMMH CS1127 p.268,V
+HOA,subMajor,3201,01,General Administration,,,,LMMH CS1127 p.269,V
+HOA,subMajor,3201,02,Operation,,,,LMMH CS1127 p.269,V
+HOA,subMajor,3201,03,Agency Services,,,,LMMH CS1127 p.269,V
+HOA,subMajor,3201,04,Accounts and Audit,,,,LMMH CS1127 p.269,V
+HOA,subMajor,3201,05,Engineering,,,,LMMH CS1127 p.269,V
+HOA,subMajor,3201,06,Amenities to Staff,,,,LMMH CS1127 p.269,V
+HOA,subMajor,3201,07,Pension,,,,LMMH CS1127 p.269,V
+HOA,subMajor,3201,08,Stationery and Printing,,,,LMMH CS1127 p.270,V
+HOA,subMajor,3201,60,Other Expenses,,,,LMMH CS1127 p.270,V
+HOA,subMajor,3225,01,General Administration,,,,LMMH CS1127 p.271,V
+HOA,subMajor,3225,02,Operation,,,,LMMH CS1127 p.271,V
+HOA,subMajor,3225,03,Stores and Factories,,,,LMMH CS1127 p.271,V
+HOA,subMajor,3225,04,Research and Development,,,,LMMH CS1127 p.271,V
+HOA,subMajor,3225,05,Engineering,,,,LMMH CS1127 p.271,V
+HOA,subMajor,3225,06,Accounts and Audit,,,,LMMH CS1127 p.271,V
+HOA,subMajor,3225,07,Amenities to Staff,,,,LMMH CS1127 p.271,V
+HOA,subMajor,3225,08,Pension,,,,LMMH CS1127 p.271,V
+HOA,subMajor,3225,09,Stationery and Printing,,,,LMMH CS1127 p.272,V
+HOA,subMajor,3225,10,Telecommunication Systems,,,,LMMH CS1127 p.272,V
+HOA,subMajor,3225,60,Other Expenses,,,,LMMH CS1127 p.272,V
+HOA,subMajor,3425,01,Survey of India,,,,LMMH CS1127 p.278,V
+HOA,subMajor,3425,02,Pharmaceutical Research,,,,LMMH CS1127 p.278,V
+HOA,subMajor,3425,60,Others,,,,LMMH CS1127 p.278,V
+HOA,subMajor,3435,01,Survey (Botanical),,,,LMMH CS1127 p.279,V
+HOA,subMajor,3435,02,Survey (Zoological),,,,LMMH CS1127 p.279,V
+HOA,subMajor,3435,03,Environmental Research and Ecological Regeneration,,,,LMMH CS1127 p.279,V
+HOA,subMajor,3435,04,Prevention and Control of Pollution,,,,LMMH CS1127 p.279,V
+HOA,subMajor,3435,60,Others,,,,LMMH CS1127 p.279,V
+HOA,subMajor,3452,01,Tourist Infrastructure,,,,LMMH CS1127 p.281,V
+HOA,subMajor,3452,80,General,,,,LMMH CS1127 p.281,V
+HOA,subMajor,3454,01,Census,,,,LMMH CS1127 p.283,V
+HOA,subMajor,3454,02,Surveys and Statistics,,,,LMMH CS1127 p.283,V
+HOA,subMajor,3465,01,General Financial Institutions,,,,LMMH CS1127 p.286,V
+HOA,subMajor,3465,02,Trading Institutions,,,,LMMH CS1127 p.286,V
+HOA,subMajor,3601,01,Non-Plan Grants,,,,LMMH CS1127 p.289,V
+HOA,subMajor,3601,02,Grants for State Plan Schemes,,,,LMMH CS1127 p.289,V
+HOA,subMajor,3601,03,Grants for Central Plan Schemes,,,,LMMH CS1127 p.289,V
+HOA,subMajor,3601,04,Grants for Centrally Sponsored Plan Schemes,,,,LMMH CS1127 p.289,V
+HOA,subMajor,3601,05,Grants for Special Plan Schemes,,,,LMMH CS1127 p.290,V
+HOA,subMajor,3601,06,Centrally Sponsored Schemes,,,,LMMH CS1127 p.290,V
+HOA,subMajor,3601,07,Finance Commission Grants,,,,LMMH CS1127 p.290,V
+HOA,subMajor,3601,08,Other Transfer/Grants to States,,,,LMMH CS1127 p.290,V
+HOA,subMajor,3602,01,Non-Plan Grants,,,,LMMH CS1127 p.292,V
+HOA,subMajor,3602,02,Grants for Union Territory Plan Schemes,,,,LMMH CS1127 p.292,V
+HOA,subMajor,3602,03,Grants for Central Plan Schemes,,,,LMMH CS1127 p.292,V
+HOA,subMajor,3602,04,Grants for Centrally Sponsored Plan Schemes,,,,LMMH CS1127 p.292,V
+HOA,subMajor,3602,05,Grants for Special Plan Schemes,,,,LMMH CS1127 p.292,V
+HOA,subMajor,3602,06,Centrally Sponsored Schemes,,,,LMMH CS1127 p.292,V
+HOA,subMajor,3602,07,Finance Commission Grants,,,,LMMH CS1127 p.292,V
+HOA,subMajor,3602,08,Other Transfer/Grants to Union Territory Governments with Legislatures,,,,LMMH CS1127 p.292,V
+HOA,subMajor,4000,01,Civil,,,,LMMH CS1127 p.298,V
+HOA,subMajor,4000,02,Telecommunications,,,,LMMH CS1127 p.298,V
+HOA,subMajor,4000,03,Disinvestment of Government's Equity Holdings,,,,LMMH CS1127 p.298,V
+HOA,subMajor,4000,04,Premium received on Disinvestment of Government's Equity Holdings,,,,LMMH CS1127 p.298,V
+HOA,subMajor,4000,05,Enemy Properties,,,,LMMH CS1127 p.298,V
+HOA,subMajor,4000,06,Defence,,,,LMMH CS1127 p.299,V
+HOA,subMajor,4059,01,Office Buildings,,,,LMMH CS1127 p.306,V
+HOA,subMajor,4059,60,Other Buildings,,,,LMMH CS1127 p.306,V
+HOA,subMajor,4059,80,General,,,,LMMH CS1127 p.306,V
+HOA,subMajor,4076,01,Army,,,,LMMH CS1127 p.310,V
+HOA,subMajor,4076,02,Navy,,,,LMMH CS1127 p.310,V
+HOA,subMajor,4076,03,Air Force,,,,LMMH CS1127 p.310,V
+HOA,subMajor,4076,04,Coordination & Services (Directorate of Ordnance),,,,LMMH CS1127 p.310,V
+HOA,subMajor,4076,05,Research & Development Organisation,,,,LMMH CS1127 p.310,V
+HOA,subMajor,4076,06,Inspection Organisation,,,,LMMH CS1127 p.310,V
+HOA,subMajor,4076,07,Special metals and Super Alloys Project,,,,LMMH CS1127 p.310,V
+HOA,subMajor,4076,08,Technology Development,,,,LMMH CS1127 p.310,V
+HOA,subMajor,4076,09,Defence Services,,,,LMMH CS1127 p.311,V
+HOA,subMajor,4202,01,General Education,,,,LMMH CS1127 p.312,V
+HOA,subMajor,4202,02,Technical Education,,,,LMMH CS1127 p.312,V
+HOA,subMajor,4202,03,Sports and Youth Services,,,,LMMH CS1127 p.312,V
+HOA,subMajor,4202,04,Art and Culture,,,,LMMH CS1127 p.312,V
+HOA,subMajor,4210,01,Urban Health Services,,,,LMMH CS1127 p.313,V
+HOA,subMajor,4210,02,Rural Health Services,,,,LMMH CS1127 p.313,V
+HOA,subMajor,4210,03,Medical Education Training and Research,,,,LMMH CS1127 p.313,V
+HOA,subMajor,4210,04,Public Health,,,,LMMH CS1127 p.313,V
+HOA,subMajor,4210,80,General,,,,LMMH CS1127 p.313,V
+HOA,subMajor,4215,01,Water Supply,,,,LMMH CS1127 p.315,V
+HOA,subMajor,4215,02,Sewerage and Sanitation,,,,LMMH CS1127 p.315,V
+HOA,subMajor,4216,01,Government Residential Buildings,minorRule=Each class of Scheme will be a minor head,,,LMMH CS1127 p.316,V
+HOA,subMajor,4216,02,Urban Housing,minorRule=Each class of Scheme will be a minor head,,,LMMH CS1127 p.316,V
+HOA,subMajor,4216,03,Rural Housing,minorRule=Each class of Scheme will be a minor head,,,LMMH CS1127 p.316,V
+HOA,subMajor,4216,80,General,,,,LMMH CS1127 p.316,V
+HOA,subMajor,4217,01,State Capital Development,,,,LMMH CS1127 p.317,V
+HOA,subMajor,4217,02,National Capital Region,,,,LMMH CS1127 p.317,V
+HOA,subMajor,4217,03,Integrated Development of Small and Medium Towns,,,,LMMH CS1127 p.317,V
+HOA,subMajor,4217,04,Slum Area Improvement,,,,LMMH CS1127 p.317,V
+HOA,subMajor,4217,60,Other Urban Development Schemes,,,,LMMH CS1127 p.318,V
+HOA,subMajor,4220,01,Films,,,,LMMH CS1127 p.319,V
+HOA,subMajor,4220,60,Others,,,,LMMH CS1127 p.319,V
+HOA,subMajor,4221,01,Sound Broadcasting,,,,LMMH CS1127 p.320,V
+HOA,subMajor,4221,02,Television,,,,LMMH CS1127 p.320,V
+HOA,subMajor,4221,80,General,,,,LMMH CS1127 p.320,V
+HOA,subMajor,4225,01,Welfare of Scheduled Castes,,,,LMMH CS1127 p.321,V
+HOA,subMajor,4225,02,Welfare of Scheduled Tribes,,,,LMMH CS1127 p.321,V
+HOA,subMajor,4225,03,Welfare of Backward Classes,,,,LMMH CS1127 p.321,V
+HOA,subMajor,4225,04,Welfare of Minorities,,,,LMMH CS1127 p.321,V
+HOA,subMajor,4225,80,General,,,,LMMH CS1127 p.322,V
+HOA,subMajor,4235,01,Rehabilitation,minorRule=Each major scheme will be a minor head,,,LMMH CS1127 p.323,V
+HOA,subMajor,4235,02,Social Welfare,minorRule=Each Scheme will be a minor head,,,LMMH CS1127 p.323,V
+HOA,subMajor,4235,60,Other Social Security and Welfare Programmes,,,,LMMH CS1127 p.323,V
+HOA,subMajor,4236,01,Production of Nutritious Foods and Beverages,,,,LMMH CS1127 p.324,V
+HOA,subMajor,4236,02,Distribution of Nutritious Foods and Beverages,,,,LMMH CS1127 p.324,V
+HOA,subMajor,4236,80,General,,,,LMMH CS1127 p.324,V
+HOA,subMajor,4406,01,Forestry,,,,LMMH CS1127 p.329,V
+HOA,subMajor,4406,02,Environmental Forestry and Wild Life,,,,LMMH CS1127 p.329,V
+HOA,subMajor,4407,01,Tea,,,,LMMH CS1127 p.330,V
+HOA,subMajor,4407,02,Coffee,,,,LMMH CS1127 p.330,V
+HOA,subMajor,4407,03,Rubber,,,,LMMH CS1127 p.330,V
+HOA,subMajor,4407,04,Spices,,,,LMMH CS1127 p.330,V
+HOA,subMajor,4407,60,Others,,,,LMMH CS1127 p.330,V
+HOA,subMajor,4408,01,Food,,,,LMMH CS1127 p.331,V
+HOA,subMajor,4408,02,Storage and Warehousing,,,,LMMH CS1127 p.331,V
+HOA,subMajor,4415,01,Crop Husbandry,,,,LMMH CS1127 p.332,V
+HOA,subMajor,4415,02,Soil and Water Conservation,,,,LMMH CS1127 p.332,V
+HOA,subMajor,4415,03,Animal Husbandry,,,,LMMH CS1127 p.332,V
+HOA,subMajor,4415,04,Dairy Development,,,,LMMH CS1127 p.332,V
+HOA,subMajor,4415,05,Fisheries,,,,LMMH CS1127 p.332,V
+HOA,subMajor,4415,06,Forestry,,,,LMMH CS1127 p.332,V
+HOA,subMajor,4415,07,Plantations,,,,LMMH CS1127 p.332,V
+HOA,subMajor,4415,80,General,,,,LMMH CS1127 p.332,V
+HOA,subMajor,4435,01,Marketing and Quality Control,,,,LMMH CS1127 p.334,V
+HOA,subMajor,4435,60,Others,minorRule=Each programme not covered elsewhere will be a minor head,,,LMMH CS1127 p.334,V
+HOA,subMajor,4551,01,Western Ghats,,,,LMMH CS1127 p.336,V
+HOA,subMajor,4551,60,Other Hill Areas,minorRule=Minor heads corresponding to functional major heads/sub major heads may be opened as necessary,,,LMMH CS1127 p.336,V
+HOA,subMajor,4575,01,Dangs District,,,,LMMH CS1127 p.337,V
+HOA,subMajor,4575,02,Backward Areas,,,,LMMH CS1127 p.337,V
+HOA,subMajor,4575,03,Tribal Areas,,,,LMMH CS1127 p.337,V
+HOA,subMajor,4575,04,Ladakh Autonomous Hill Development Council,,,,LMMH CS1127 p.337,V
+HOA,subMajor,4575,05,Jharkhand Area Autonomous Council,,,,LMMH CS1127 p.337,V
+HOA,subMajor,4575,06,Border Area Development,,,,LMMH CS1127 p.337,V
+HOA,subMajor,4575,60,Others,minorRule=Minor heads corresponding to functional major heads/sub major heads may be opened under the sub major heads as necessary,,,LMMH CS1127 p.337,V
+HOA,subMajor,4700,80,General,,,,LMMH CS1127 p.338,V
+HOA,subMajor,4701,80,General,,,,LMMH CS1127 p.339,V
+HOA,subMajor,4711,01,Flood Control,minorRule=Each Flood Control Project will be a Minor Head (1),,,LMMH CS1127 p.341,V
+HOA,subMajor,4711,02,Anti-sea Erosion Projects,,,,LMMH CS1127 p.341,V
+HOA,subMajor,4711,03,Drainage,,,,LMMH CS1127 p.341,V
+HOA,subMajor,4801,01,Hydel Generation,minorRule=Each Hydel-Electric Scheme (1),,,LMMH CS1127 p.342,V
+HOA,subMajor,4801,02,Thermal Power Generation,minorRule=Each Thermal Power Scheme (2),,,LMMH CS1127 p.342,V
+HOA,subMajor,4801,03,Nuclear Power Generation,minorRule=Each Nuclear Power Scheme,,,LMMH CS1127 p.342,V
+HOA,subMajor,4801,04,Diesel/Gas Power Generation,minorRule=Each Diesel/Gas Power Scheme (3),,,LMMH CS1127 p.342,V
+HOA,subMajor,4801,05,Transmission and Distribution,minorRule=Each Transmission and Distribution Scheme (5),,,LMMH CS1127 p.343,V
+HOA,subMajor,4801,06,Rural Electrification,,,,LMMH CS1127 p.343,V
+HOA,subMajor,4801,80,General,,,,LMMH CS1127 p.343,V
+HOA,subMajor,4802,01,Exploration and Production of Crude Oil and Gas,,,,LMMH CS1127 p.345,V
+HOA,subMajor,4802,02,Refining and Marketing of Oil and Gas,,,,LMMH CS1127 p.345,V
+HOA,subMajor,4802,03,Sovereign Strategic Storage of Crude Oil,,,,LMMH CS1127 p.345,V
+HOA,subMajor,4852,01,Mining,,,,LMMH CS1127 p.346,V
+HOA,subMajor,4852,02,Manufacture,,,,LMMH CS1127 p.346,V
+HOA,subMajor,4853,01,Mineral Exploration and Development,,,,LMMH CS1127 p.347,V
+HOA,subMajor,4853,02,Non-Ferrous Metals,,,,LMMH CS1127 p.347,V
+HOA,subMajor,4853,60,Other Mining and Metallurgical Industries,,,,LMMH CS1127 p.347,V
+HOA,subMajor,4854,01,Cement,,,,LMMH CS1127 p.348,V
+HOA,subMajor,4854,60,Others,,,,LMMH CS1127 p.348,V
+HOA,subMajor,4857,01,Chemical and Pesticides Industries,,,,LMMH CS1127 p.349,V
+HOA,subMajor,4857,02,Drugs and Pharmaceutical Industries,,,,LMMH CS1127 p.349,V
+HOA,subMajor,4858,01,Electrical Engineering Industries,,,,LMMH CS1127 p.350,V
+HOA,subMajor,4858,02,Other Industrial Machinery Industries,,,,LMMH CS1127 p.350,V
+HOA,subMajor,4858,03,Transport Equipment Industries,,,,LMMH CS1127 p.350,V
+HOA,subMajor,4858,04,Ship-Building Industries,,,,LMMH CS1127 p.350,V
+HOA,subMajor,4858,05,Air Craft Industries,,,,LMMH CS1127 p.350,V
+HOA,subMajor,4858,60,Other Engineering Industries,,,,LMMH CS1127 p.350,V
+HOA,subMajor,4859,01,Telecommunications,,,,LMMH CS1127 p.351,V
+HOA,subMajor,4859,02,Electronics,,,,LMMH CS1127 p.351,V
+HOA,subMajor,4860,01,Textiles,,,,LMMH CS1127 p.352,V
+HOA,subMajor,4860,03,Leather,,,,LMMH CS1127 p.352,V
+HOA,subMajor,4860,04,Sugar,,,,LMMH CS1127 p.352,V
+HOA,subMajor,4860,05,Paper and Newsprint,,,,LMMH CS1127 p.352,V
+HOA,subMajor,4860,60,Others,,,,LMMH CS1127 p.352,V
+HOA,subMajor,4861,01,Heavy Water,minorRule=Each Heavy Water Plant will be a Minor Head (1),,,LMMH CS1127 p.353,V
+HOA,subMajor,4861,02,Atomic Minerals,,,,LMMH CS1127 p.353,V
+HOA,subMajor,4861,03,Atomic Energy Industries,,,,LMMH CS1127 p.353,V
+HOA,subMajor,4861,60,Others,,,,LMMH CS1127 p.353,V
+HOA,subMajor,4875,01,Opium and Alkaloid Industries,,,,LMMH CS1127 p.354,V
+HOA,subMajor,4875,60,Other Industries,,,,LMMH CS1127 p.354,V
+HOA,subMajor,4885,01,Investments in Industrial Financial Institutions,,,,LMMH CS1127 p.354,V
+HOA,subMajor,4885,02,Development of Backward Areas,,,,LMMH CS1127 p.354,V
+HOA,subMajor,4885,60,Others,,,,LMMH CS1127 p.354,V
+HOA,subMajor,5002,01,Capital bearing dividend Liability,,,,LMMH CS1127 p.355,V
+HOA,subMajor,5002,02,Capital Free of Dividend Liability,,,,LMMH CS1127 p.356,V
+HOA,subMajor,5002,03,Capital Outlay,,,,LMMH CS1127 p.356,V
+HOA,subMajor,5002,80,General,,,,LMMH CS1127 p.357,V
+HOA,subMajor,5003,01,Capital bearing Dividend Liability,,,,LMMH CS1127 p.358,V
+HOA,subMajor,5003,03,Capital Outlay,,,,LMMH CS1127 p.359,V
+HOA,subMajor,5003,80,General,,,,LMMH CS1127 p.360,V
+HOA,subMajor,5051,01,Major Ports,minorRule=A minor head for each Major Port (1),,,LMMH CS1127 p.361,V
+HOA,subMajor,5051,02,Minor Ports,minorRule=A minor head for each Minor Port,,,LMMH CS1127 p.361,V
+HOA,subMajor,5051,03,Light Houses and light ships,,,,LMMH CS1127 p.361,V
+HOA,subMajor,5051,80,General,,,,LMMH CS1127 p.361,V
+HOA,subMajor,5052,01,Overseas Shipping,,,,LMMH CS1127 p.362,V
+HOA,subMajor,5052,02,Coastal Shipping,,,,LMMH CS1127 p.362,V
+HOA,subMajor,5052,80,General,,,,LMMH CS1127 p.362,V
+HOA,subMajor,5053,01,Air Services,,,,LMMH CS1127 p.363,V
+HOA,subMajor,5053,02,Air Ports,,,,LMMH CS1127 p.363,V
+HOA,subMajor,5053,60,Other Aeronautical Services,,,,LMMH CS1127 p.363,V
+HOA,subMajor,5053,80,General,,,,LMMH CS1127 p.363,V
+HOA,subMajor,5054,01,National Highways,,,,LMMH CS1127 p.364,V
+HOA,subMajor,5054,02,Strategic and Border Roads,,,,LMMH CS1127 p.364,V
+HOA,subMajor,5054,03,State Highways,,,,LMMH CS1127 p.364,V
+HOA,subMajor,5054,04,District & Other Roads,,,,LMMH CS1127 p.364,V
+HOA,subMajor,5054,05,Roads,,,,LMMH CS1127 p.364,V
+HOA,subMajor,5054,80,General,,,,LMMH CS1127 p.364,V
+HOA,subMajor,5075,01,River Training Works,,,,LMMH CS1127 p.366,V
+HOA,subMajor,5075,60,Others,,,,LMMH CS1127 p.366,V
+HOA,subMajor,5225,01,Telegraph and Telex Systems,,,,LMMH CS1127 p.369,V
+HOA,subMajor,5225,02,Local Telephone systems,,,,LMMH CS1127 p.369,V
+HOA,subMajor,5225,03,Long distance switching systems,,,,LMMH CS1127 p.369,V
+HOA,subMajor,5225,04,Long distance Transmission systems,,,,LMMH CS1127 p.369,V
+HOA,subMajor,5225,05,Ancillary Systems,,,,LMMH CS1127 p.369,V
+HOA,subMajor,5225,06,Telecommunication Systems,,,,LMMH CS1127 p.370,V
+HOA,subMajor,5225,60,Other Lands and Buildings,,,,LMMH CS1127 p.370,V
+HOA,subMajor,5225,80,General,,,,LMMH CS1127 p.370,V
+HOA,subMajor,5452,01,Tourist Infrastructure,,,,LMMH CS1127 p.375,V
+HOA,subMajor,5452,80,General,,,,LMMH CS1127 p.375,V
+HOA,subMajor,5453,01,Kandla Special Economic Zone,,,,LMMH CS1127 p.376,V
+HOA,subMajor,5453,02,Santacruz Special Economic Zone,,,,LMMH CS1127 p.376,V
+HOA,subMajor,5453,03,EPZ (Salt Lake),,,,LMMH CS1127 p.376,V
+HOA,subMajor,5453,04,FALTA (EPZ),,,,LMMH CS1127 p.376,V
+HOA,subMajor,5453,05,Madras EPZ,,,,LMMH CS1127 p.376,V
+HOA,subMajor,5453,06,Cochin Special Economic Zone,,,,LMMH CS1127 p.376,V
+HOA,subMajor,5453,07,NOIDAEPZ,,,,LMMH CS1127 p.376,V
+HOA,subMajor,5453,08,New (EPZ),,,,LMMH CS1127 p.376,V
+HOA,subMajor,5453,80,General,,,,LMMH CS1127 p.376,V
+HOA,subMajor,5465,01,Investments in General Financial Institutions,,,,LMMH CS1127 p.377,V
+HOA,subMajor,5465,02,Investment in Trading Institutions,,,,LMMH CS1127 p.377,V
+HOA,subMajor,6004,01,Non-Plan Loans,,,,LMMH CS1127 p.387,V
+HOA,subMajor,6004,02,Loans for State/Union Territory Plan Schemes,,,,LMMH CS1127 p.387,V
+HOA,subMajor,6004,03,Loans for Central Plan Schemes,,,,LMMH CS1127 p.387,V
+HOA,subMajor,6004,04,Loans for Centrally Sponsored Plan Schemes,,,,LMMH CS1127 p.387,V
+HOA,subMajor,6004,05,Loans for Special Schemes,,,,LMMH CS1127 p.387,V
+HOA,subMajor,6004,06,Ways and Means Advances,,,,LMMH CS1127 p.387,V
+HOA,subMajor,6004,07,Pre-1984-85 Loans,,,,LMMH CS1127 p.387,V
+HOA,subMajor,6004,08,Centrally Sponsored Schemes,,,,LMMH CS1127 p.388,V
+HOA,subMajor,6004,09,Other Loans for States/Union Territory with Legislature Schemes,,,,LMMH CS1127 p.388,V
+HOA,subMajor,6202,01,General Education,,,,LMMH CS1127 p.391,V
+HOA,subMajor,6202,02,Technical Education,,,,LMMH CS1127 p.391,V
+HOA,subMajor,6202,03,Sports and Youth Services,,,,LMMH CS1127 p.391,V
+HOA,subMajor,6202,04,Art and Culture,,,,LMMH CS1127 p.391,V
+HOA,subMajor,6202,80,General,,,,LMMH CS1127 p.391,V
+HOA,subMajor,6210,01,Urban Health Services,,,,LMMH CS1127 p.392,V
+HOA,subMajor,6210,02,Rural Health Services,,,,LMMH CS1127 p.392,V
+HOA,subMajor,6210,03,"Medical Education, Training and Research",,,,LMMH CS1127 p.392,V
+HOA,subMajor,6210,04,Public Health,,,,LMMH CS1127 p.392,V
+HOA,subMajor,6210,80,General,,,,LMMH CS1127 p.392,V
+HOA,subMajor,6215,01,Water Supply,,,,LMMH CS1127 p.393,V
+HOA,subMajor,6215,02,Sewerage and Sanitation,,,,LMMH CS1127 p.393,V
+HOA,subMajor,6216,02,Urban Housing,,,,LMMH CS1127 p.394,V
+HOA,subMajor,6216,03,Rural Housing,,,,LMMH CS1127 p.394,V
+HOA,subMajor,6216,80,General,,,,LMMH CS1127 p.394,V
+HOA,subMajor,6217,01,State Capital Development,,,,LMMH CS1127 p.394,V
+HOA,subMajor,6217,02,National Capital Region,,,,LMMH CS1127 p.394,V
+HOA,subMajor,6217,03,Integrated Development of Small and Medium Towns,,,,LMMH CS1127 p.394,V
+HOA,subMajor,6217,04,Slum Area Development,,,,LMMH CS1127 p.394,V
+HOA,subMajor,6217,60,Other Urban Development Schemes,,,,LMMH CS1127 p.394,V
+HOA,subMajor,6220,01,Films,,,,LMMH CS1127 p.395,V
+HOA,subMajor,6220,60,Others,,,,LMMH CS1127 p.395,V
+HOA,subMajor,6225,01,Welfare of Scheduled Castes,,,,LMMH CS1127 p.396,V
+HOA,subMajor,6225,02,Welfare of Scheduled Tribes,,,,LMMH CS1127 p.396,V
+HOA,subMajor,6225,03,Welfare of Backward Classes,,,,LMMH CS1127 p.396,V
+HOA,subMajor,6225,04,Welfare of Minorities,,,,LMMH CS1127 p.396,V
+HOA,subMajor,6225,80,General,,,,LMMH CS1127 p.396,V
+HOA,subMajor,6235,01,Rehabilitation,,,,LMMH CS1127 p.397,V
+HOA,subMajor,6235,02,Social Welfare,,,,LMMH CS1127 p.397,V
+HOA,subMajor,6235,60,Other Social Security and Welfare programmes,,,,LMMH CS1127 p.397,V
+HOA,subMajor,6245,01,Drought,,,,LMMH CS1127 p.398,V
+HOA,subMajor,6245,02,Floods Cyclones,,,,LMMH CS1127 p.398,V
+HOA,subMajor,6250,01,Nutrition,,,,LMMH CS1127 p.400,V
+HOA,subMajor,6250,60,Others,,,,LMMH CS1127 p.400,V
+HOA,subMajor,6407,01,Tea,,,,LMMH CS1127 p.403,V
+HOA,subMajor,6407,02,Coffee,,,,LMMH CS1127 p.403,V
+HOA,subMajor,6407,03,Rubber,,,,LMMH CS1127 p.403,V
+HOA,subMajor,6407,04,Spices,,,,LMMH CS1127 p.403,V
+HOA,subMajor,6407,60,Others,,,,LMMH CS1127 p.403,V
+HOA,subMajor,6408,01,Food,,,,LMMH CS1127 p.404,V
+HOA,subMajor,6408,02,Storage and Warehousing,,,,LMMH CS1127 p.404,V
+HOA,subMajor,6435,01,Marketing and quality control,,,,LMMH CS1127 p.405,V
+HOA,subMajor,6435,60,Others,minorRule=(Each programme not covered elsewhere will be a minor head),,,LMMH CS1127 p.405,V
+HOA,subMajor,6551,01,Western Ghats,,,,LMMH CS1127 p.408,V
+HOA,subMajor,6551,60,Other Hill Areas,minorRule=Minor Heads Corresponding to functional Major Heads/ Sub Major heads may be opened as necessary,,,LMMH CS1127 p.408,V
+HOA,subMajor,6575,01,Dangs District,,,,LMMH CS1127 p.409,V
+HOA,subMajor,6575,02,Backward Areas,,,,LMMH CS1127 p.409,V
+HOA,subMajor,6575,03,Tribal Areas,,,,LMMH CS1127 p.409,V
+HOA,subMajor,6575,04,Ladakh Autonomous Hill Development Council,,,,LMMH CS1127 p.409,V
+HOA,subMajor,6575,05,Jharkand Area Autonomous Council,,,,LMMH CS1127 p.409,V
+HOA,subMajor,6575,06,Border Area Development,,,,LMMH CS1127 p.409,V
+HOA,subMajor,6575,60,Others,minorRule=Minor Heads Corresponding to functional Major Heads/Sub-Major heads may be opened as necessary,,,LMMH CS1127 p.409,V
+HOA,subMajor,6700,60,Others,,,,LMMH CS1127 p.410,V
+HOA,subMajor,6701,60,Others,,,,LMMH CS1127 p.410,V
+HOA,subMajor,6802,01,Exploration and Production of Crude oil and Gas,,,,LMMH CS1127 p.413,V
+HOA,subMajor,6802,02,Refining and Marketing of Oil and Gas,,,,LMMH CS1127 p.413,V
+HOA,subMajor,6852,01,Mining,,,,LMMH CS1127 p.415,V
+HOA,subMajor,6852,02,Manufacture,,,,LMMH CS1127 p.415,V
+HOA,subMajor,6853,01,Mineral Exploration and Development,,,,LMMH CS1127 p.415,V
+HOA,subMajor,6853,02,Non-Ferrous Metals,,,,LMMH CS1127 p.415,V
+HOA,subMajor,6853,60,Other mining and Metallurgical Industries,,,,LMMH CS1127 p.415,V
+HOA,subMajor,6854,01,Cement,,,,LMMH CS1127 p.416,V
+HOA,subMajor,6854,60,Others,,,,LMMH CS1127 p.416,V
+HOA,subMajor,6857,01,Chemicals and Pesticides Industries,,,,LMMH CS1127 p.417,V
+HOA,subMajor,6857,02,Drugs and Pharmaceutical Industries,,,,LMMH CS1127 p.417,V
+HOA,subMajor,6858,01,Electrical Engineering Industries,,,,LMMH CS1127 p.418,V
+HOA,subMajor,6858,02,Other Industrial Machinery Industries,,,,LMMH CS1127 p.418,V
+HOA,subMajor,6858,03,Transport Equipment Industries,,,,LMMH CS1127 p.418,V
+HOA,subMajor,6858,60,Other Engineering Industries,,,,LMMH CS1127 p.418,V
+HOA,subMajor,6859,01,Telecommunications,,,,LMMH CS1127 p.418,V
+HOA,subMajor,6859,02,Electronics,,,,LMMH CS1127 p.418,V
+HOA,subMajor,6860,01,Textiles,,,,LMMH CS1127 p.419,V
+HOA,subMajor,6860,03,Leather,,,,LMMH CS1127 p.419,V
+HOA,subMajor,6860,04,Sugar,,,,LMMH CS1127 p.419,V
+HOA,subMajor,6860,05,Paper and Newsprint,,,,LMMH CS1127 p.419,V
+HOA,subMajor,6860,60,Others,,,,LMMH CS1127 p.419,V
+HOA,subMajor,6875,01,Opium and Alkaloid Industries,,,,LMMH CS1127 p.420,V
+HOA,subMajor,6875,60,Other Industries,,,,LMMH CS1127 p.420,V
+HOA,subMajor,6885,01,Loans to Industrial Financial Institutions,,,,LMMH CS1127 p.421,V
+HOA,subMajor,6885,02,Development of Backward Areas,,,,LMMH CS1127 p.421,V
+HOA,subMajor,6885,60,Others,,,,LMMH CS1127 p.421,V
+HOA,subMajor,7051,01,Major Ports,minorRule=A Minor Head for each Major Port,,,LMMH CS1127 p.422,V
+HOA,subMajor,7051,02,Minor Ports,minorRule=A Minor Head for each Minor Port,,,LMMH CS1127 p.422,V
+HOA,subMajor,7051,03,Light Houses and Lightships,,,,LMMH CS1127 p.422,V
+HOA,subMajor,7051,60,Others,,,,LMMH CS1127 p.422,V
+HOA,subMajor,7052,01,Overseas Shipping,,,,LMMH CS1127 p.423,V
+HOA,subMajor,7052,02,Coastal Shipping,,,,LMMH CS1127 p.423,V
+HOA,subMajor,7052,60,Others,,,,LMMH CS1127 p.423,V
+HOA,subMajor,7075,01,Roads and Bridges,,,,LMMH CS1127 p.425,V
+HOA,subMajor,7075,60,Other Transport Services,,,,LMMH CS1127 p.425,V
+HOA,subMajor,7452,01,Tourist Infrastructure,,,,LMMH CS1127 p.427,V
+HOA,subMajor,7452,60,Others,,,,LMMH CS1127 p.427,V
+HOA,subMajor,7601,01,Loans for Non-Plan Schemes,,,,LMMH CS1127 p.429,V
+HOA,subMajor,7601,02,Loans for State Plan Schemes,,,,LMMH CS1127 p.429,V
+HOA,subMajor,7601,03,Loans for Central Plan Schemes,,,,LMMH CS1127 p.429,V
+HOA,subMajor,7601,04,Loans for Centrally Sponsored Plan Schemes,,,,LMMH CS1127 p.429,V
+HOA,subMajor,7601,05,Loans for Special Plan Schemes,,,,LMMH CS1127 p.429,V
+HOA,subMajor,7601,06,Ways and Means Advances,,,,LMMH CS1127 p.429,V
+HOA,subMajor,7601,07,Pre-1984-85 Loans,,,,LMMH CS1127 p.430,V
+HOA,subMajor,7601,08,Centrally Sponsored Schemes,,,,LMMH CS1127 p.430,V
+HOA,subMajor,7601,09,Other Loans to States,,,,LMMH CS1127 p.430,V
+HOA,subMajor,7602,01,Loans for Non-Plan Schemes,,,,LMMH CS1127 p.432,V
+HOA,subMajor,7602,02,Loans for Union Territory plan schemes,,,,LMMH CS1127 p.432,V
+HOA,subMajor,7602,03,Loans for Central Plan Schemes,,,,LMMH CS1127 p.432,V
+HOA,subMajor,7602,04,Loans for Centrally Sponsored Plan Schemes,,,,LMMH CS1127 p.432,V
+HOA,subMajor,7602,05,Loans for Special Plan Schemes,,,,LMMH CS1127 p.432,V
+HOA,subMajor,7602,06,Centrally Sponsored Schemes,,,,LMMH CS1127 p.432,V
+HOA,subMajor,7602,07,Other Loans to Union Territory (with Legislature) Schemes,,,,LMMH CS1127 p.432,V
+HOA,subMajor,8008,01,Income from Investments of Small Savings Collections,,,,LMMH CS1127 p.440,V
+HOA,subMajor,8008,02,Interest Payments to Subscribers,,,,LMMH CS1127 p.440,V
+HOA,subMajor,8008,03,Management Cost,,,,LMMH CS1127 p.440,V
+HOA,subMajor,8008,04,Other Income of NSSF,,,,LMMH CS1127 p.440,V
+HOA,subMajor,8009,01,Civil,,,,LMMH CS1127 p.441,V
+HOA,subMajor,8009,02,Defence,,,,LMMH CS1127 p.441,V
+HOA,subMajor,8009,03,Railways,,,,LMMH CS1127 p.441,V
+HOA,subMajor,8009,04,Interest Suspense,,,,LMMH CS1127 p.441,V
+HOA,subMajor,8009,60,Other Provident Funds,,,,LMMH CS1127 p.441,V
+HOA,subMajor,8013,01,Deposit Schemes for Retiring Employees.,,,,LMMH CS1127 p.446,V
+HOA,subMajor,8013,60,Other Deposits Schemes,,,,LMMH CS1127 p.446,V
+HOA,subMajor,8014,01,Postal Life Insurance Schemes,,,,LMMH CS1127 p.447,V
+HOA,subMajor,8014,02,Rural Postal Life Insurance Schemes,,,,LMMH CS1127 p.447,V
+HOA,subMajor,8015,01,"Investments of net corpus as on 31st October, 2009 in dated securities",,,,LMMH CS1127 p.448,V
+HOA,subMajor,8015,02,"Investments of net Postal Life Insurance Fund (PLIF) accretions from 1st day of November, 2009 onwards",,,,LMMH CS1127 p.448,V
+HOA,subMajor,8015,03,"Investments of net Rural Postal Life Insurance Fund (RPLIF) accretions from 1st day of November, 2009 onwards",,,,LMMH CS1127 p.448,V
+HOA,subMajor,8016,01,Incomes on Investments of PLI Funds,,,,LMMH CS1127 p.449,V
+HOA,subMajor,8016,02,Incomes on Investments of Rural PLI Funds,,,,LMMH CS1127 p.449,V
+HOA,subMajor,8016,03,Other Incomes of Post Office Insurance Fund,,,,LMMH CS1127 p.450,V
+HOA,subMajor,8016,04,Establishment related Expenditure,,,,LMMH CS1127 p.450,V
+HOA,subMajor,8016,05,Bonus Payments to the Policy Holders,,,,LMMH CS1127 p.450,V
+HOA,subMajor,8016,06,Management Costs,,,,LMMH CS1127 p.450,V
+HOA,subMajor,8016,07,Evaluation of Post Office Insurance Fund,,,,LMMH CS1127 p.450,V
+HOA,subMajor,8222,01,Appropriation for reduction or avoidance of Debt,,,,LMMH CS1127 p.457,V
+HOA,subMajor,8222,02,Sinking Fund Investment Account,,,,LMMH CS1127 p.457,V
+HOA,subMajor,8225,01,National Highways Permanent Bridges Fees Fund,,,,LMMH CS1127 p.462,V
+HOA,subMajor,8225,02,State Roads and Bridges Fund,,,,LMMH CS1127 p.462,V
+HOA,subMajor,8225,03,Monetization of National Highways Fund,,,,LMMH CS1127 p.462,V
+HOA,subMajor,8452,01,Civil,,,,LMMH CS1127 p.481,V
+HOA,subMajor,8553,01,Postal Advances,,,,LMMH CS1127 p.486,V
+HOA,subMajor,8553,02,Special Post Office Insurance Fund Advance,,,,LMMH CS1127 p.486,V
+HOA,subMajor,8797,01,Accounts between Civil & Civil,"minorRule=Exchange Accounts between---- (1) Exchange Accounts advised by---- (2) Exchange Accounts between P.W. Division and P.W. Division (3) Exchange Accounts between PAO and PAO (3) Minor Head Exchange Accounts advised by Pr. A. O. (4), may be opened for Exchange Accounts transaction between various Principal Accounts Officer of Civil Ministries/Departments.",,,LMMH CS1127 p.519,V
+HOA,subMajor,8797,02,Accounts between Defence Accounts Officers,minorRule=A Separate Minor Head for accounts between any two accounting units,,,LMMH CS1127 p.519,V
+HOA,subMajor,8797,03,Accounts between Railways,minorRule=A separate minor Head for accounts between each district 'Accounting unit headed by a F.A &C.A.O or an independent additional Dy. F A and C.A.O may be opened.',,,LMMH CS1127 p.519,V
+HOA,subMajor,8797,04,Accounts between Postal Accounts Officers.,minorRule=A separate minor head for accounts between any two Accounting Units should be opened.,,,LMMH CS1127 p.519,V
+HOA,subMajor,8797,05,Accounts between Telecommunications Accounts Officers.,,,,LMMH CS1127 p.519,V

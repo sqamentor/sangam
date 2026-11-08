@@ -1,0 +1,83 @@
+{
+  "key": "sec-bank-payment-dual-auth/initiate",
+  "version": "1.0.0",
+  "pack": "sec.bank.payment-dual-auth",
+  "title": {
+    "en": "Payment initiation",
+    "hi": "भुगतान प्रारंभ"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "payee",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "account",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Bank account number",
+        "hi": "बैंक खाता संख्या"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "paymentRail",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Payment rail",
+        "hi": "भुगतान माध्यम"
+      }
+    },
+    {
+      "id": "purposeCode",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Purpose code",
+        "hi": "प्रयोजन कोड"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

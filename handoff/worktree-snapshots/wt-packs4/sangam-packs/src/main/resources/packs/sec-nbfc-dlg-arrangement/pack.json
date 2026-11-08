@@ -1,0 +1,88 @@
+{
+  "id": "sec.nbfc.dlg-arrangement",
+  "version": "1.0.0",
+  "name": {
+    "en": "Default loss guarantee arrangement with the 5% cap",
+    "hi": "पाँच प्रतिशत सीमा सहित डिफ़ॉल्ट हानि गारंटी व्यवस्था"
+  },
+  "domain": "NBFC / fintech",
+  "description": "DLG arrangement with an LSP or another RE: cover computed against the portfolio and refused above 5 %, DLG only as cash, fixed deposit or bank guarantee, board-approved policy and sanction with SoD, disclosure; invocation for a defaulted loan only within 120 days of overdue; DLG never used to set off below the portfolio NPA recognition.",
+  "mainProcesses": [
+    "sangam-sec-nbfc-dlg"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-nbfc-dlg-arrangement/sangam-sec-nbfc-dlg.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-nbfc-dlg-arrangement/sec-nbfc-dlg-cap.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-nbfc-dlg-arrangement/sec-nbfc-dlg-invocation.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-nbfc-dlg-arrangement/sec-nbfc-dlg-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-nbfc-dlg-arrangement/sec-nbfc-dlg-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-nbfc-dlg-arrangement/forms/proposal.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-nbfc-dlg-arrangement/seed.json"
+    }
+  ],
+  "seed": "packs/sec-nbfc-dlg-arrangement/seed.json",
+  "connectors": [
+    {
+      "id": "dlg.register",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "DLG register"
+    },
+    {
+      "id": "dlg.invoke",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Invoke guarantee"
+    }
+  ],
+  "covers": [
+    "SEC-NBFC-006",
+    "SEC-NBFC-007",
+    "GP-41",
+    "GP-42",
+    "UP-05",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "dlgAmount",
+      "portfolioAmount",
+      "powerLimit"
+    ]
+  }
+}

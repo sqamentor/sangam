@@ -1,0 +1,81 @@
+{
+  "key": "p3-grant-sanction/field-verification",
+  "version": "1.0.0",
+  "pack": "gov.p3.grant-sanction",
+  "title": {
+    "en": "Field verification",
+    "hi": "क्षेत्र सत्यापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "visitDate",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Visit date",
+        "hi": "निरीक्षण तिथि"
+      }
+    },
+    {
+      "id": "geoTag",
+      "type": "geo",
+      "required": true,
+      "label": {
+        "en": "Geo-tag",
+        "hi": "जियो-टैग"
+      }
+    },
+    {
+      "id": "photos",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Photographs (geo-tagged)",
+        "hi": "फ़ोटो (जियो-टैग)"
+      }
+    },
+    {
+      "id": "findings",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "fieldVerdict",
+    "required": true,
+    "options": [
+      {
+        "value": "verified",
+        "label": {
+          "en": "Verified",
+          "hi": "सत्यापित"
+        }
+      },
+      {
+        "value": "doubtful",
+        "label": {
+          "en": "Doubtful",
+          "hi": "संदिग्ध"
+        }
+      },
+      {
+        "value": "failed",
+        "label": {
+          "en": "Not verified",
+          "hi": "असत्यापित"
+        }
+      }
+    ]
+  }
+}

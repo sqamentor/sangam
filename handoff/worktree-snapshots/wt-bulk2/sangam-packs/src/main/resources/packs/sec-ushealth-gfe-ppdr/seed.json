@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "PROVIDER",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "FINANCIAL-COUNSELOR",
+      "role": "FINCOUNSEL",
+      "office": "PROVIDER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "COMPLIANCE",
+      "name": {
+        "en": "Financial counselor",
+        "es": "Asesor financiero"
+      }
+    },
+    {
+      "id": "PATIENT-BILLING",
+      "role": "PATBILL",
+      "office": "PROVIDER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "COMPLIANCE",
+      "name": {
+        "en": "Patient billing",
+        "es": "Facturación al paciente"
+      }
+    },
+    {
+      "id": "COMPLIANCE",
+      "role": "COMPLIANCE",
+      "office": "PROVIDER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Compliance officer",
+        "es": "Oficial de cumplimiento"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "FINANCIAL-COUNSELOR",
+      "person": "ugf.financial-counselor",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PATIENT-BILLING",
+      "person": "ugf.patient-billing",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "COMPLIANCE",
+      "person": "ugf.compliance",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "FINCOUNSEL",
+      "name": {
+        "en": "Financial counselor",
+        "es": "Asesor financiero"
+      }
+    },
+    {
+      "code": "PATBILL",
+      "name": {
+        "en": "Patient billing",
+        "es": "Facturación al paciente"
+      }
+    },
+    {
+      "code": "COMPLIANCE",
+      "name": {
+        "en": "Compliance officer",
+        "es": "Oficial de cumplimiento"
+      }
+    }
+  ]
+}

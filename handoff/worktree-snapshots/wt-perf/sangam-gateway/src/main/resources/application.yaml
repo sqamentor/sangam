@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+server:
+  port: ${SANGAM_GW_PORT:8000}
+  shutdown: graceful
+
+spring:
+  application:
+    name: sangam-gateway
+  main:
+    web-application-type: reactive
+
+sangam:
+  gateway:
+    control-plane-url: ${SANGAM_GW_CONTROL_PLANE_URL:http://localhost:8090}
+    control-plane-token: ${SANGAM_GW_CONTROL_PLANE_TOKEN:}
+    refresh-interval: 5s
+    max-stale: 24h
+    tenant-header: X-Sangam-Tenant
+    tenant-claim: ${SANGAM_GW_TENANT_CLAIM:tenant}
+    host-suffix: ${SANGAM_GW_HOST_SUFFIX:}
+    retry-after-seconds: 30
+    connect-timeout: 2s
+    response-timeout: 60s
+    max-in-flight-per-tenant: 400
+
+management:
+  server:
+    port: ${SANGAM_GW_MANAGEMENT_PORT:8001}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true

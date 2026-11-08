@@ -1,0 +1,4 @@
+# files that differ from the main tree (changed) or exist only here (added)
+A sangam-engine/src/main/java/org/sangam/engine/deploy/SangamBpmnParseListener.java.mine
+A sangam-engine/src/main/java/org/sangam/engine/deploy/SequentialCompensation.java.mine
+A sangam-engine/src/test/java/org/sangam/engine/InheritedWeaknessH2Test.java.mine

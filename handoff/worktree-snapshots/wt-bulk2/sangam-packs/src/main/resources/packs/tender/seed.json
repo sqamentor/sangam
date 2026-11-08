@@ -1,0 +1,230 @@
+{
+  "offices": [
+    {
+      "id": "DIV-T",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "BOC-1",
+      "role": "BOC",
+      "office": "DIV-T",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "EE-T",
+      "name": {
+        "en": "Bid opening member 1",
+        "hi": "बोली खोलने वाले सदस्य 1"
+      }
+    },
+    {
+      "id": "BOC-2",
+      "role": "BOC",
+      "office": "DIV-T",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "EE-T",
+      "name": {
+        "en": "Bid opening member 2",
+        "hi": "बोली खोलने वाले सदस्य 2"
+      }
+    },
+    {
+      "id": "TEC-1",
+      "role": "TEC",
+      "office": "DIV-T",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "EE-T",
+      "name": {
+        "en": "Technical committee chair",
+        "hi": "तकनीकी समिति अध्यक्ष"
+      }
+    },
+    {
+      "id": "TEC-2",
+      "role": "TEC",
+      "office": "DIV-T",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "EE-T",
+      "name": {
+        "en": "Technical committee member",
+        "hi": "तकनीकी समिति सदस्य"
+      }
+    },
+    {
+      "id": "TEC-3",
+      "role": "TEC",
+      "office": "DIV-T",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "EE-T",
+      "name": {
+        "en": "Technical committee member (finance)",
+        "hi": "तकनीकी समिति सदस्य (वित्त)"
+      }
+    },
+    {
+      "id": "TPC-CHAIR",
+      "role": "TPC",
+      "office": "DIV-T",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SE-T",
+      "name": {
+        "en": "Tender purchase committee chair",
+        "hi": "निविदा क्रय समिति अध्यक्ष"
+      }
+    },
+    {
+      "id": "EE-T",
+      "role": "EE",
+      "office": "DIV-T",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SE-T",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "id": "SE-T",
+      "role": "SE",
+      "office": "DIV-T",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CE-T",
+      "name": {
+        "en": "Superintending Engineer",
+        "hi": "अधीक्षण अभियंता"
+      }
+    },
+    {
+      "id": "CE-T",
+      "role": "CE",
+      "office": "DIV-T",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Chief Engineer",
+        "hi": "मुख्य अभियंता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "BOC-1",
+      "person": "td.boc-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BOC-2",
+      "person": "td.boc-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TEC-1",
+      "person": "td.tec-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TEC-2",
+      "person": "td.tec-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TEC-3",
+      "person": "td.tec-3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TPC-CHAIR",
+      "person": "td.tpc-chair",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EE-T",
+      "person": "td.ee-t",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SE-T",
+      "person": "td.se-t",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CE-T",
+      "person": "td.ce-t",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "BOC",
+      "name": {
+        "en": "Bid opening member 1",
+        "hi": "बोली खोलने वाले सदस्य 1"
+      }
+    },
+    {
+      "code": "BOC",
+      "name": {
+        "en": "Bid opening member 2",
+        "hi": "बोली खोलने वाले सदस्य 2"
+      }
+    },
+    {
+      "code": "TEC",
+      "name": {
+        "en": "Technical committee chair",
+        "hi": "तकनीकी समिति अध्यक्ष"
+      }
+    },
+    {
+      "code": "TEC",
+      "name": {
+        "en": "Technical committee member",
+        "hi": "तकनीकी समिति सदस्य"
+      }
+    },
+    {
+      "code": "TEC",
+      "name": {
+        "en": "Technical committee member (finance)",
+        "hi": "तकनीकी समिति सदस्य (वित्त)"
+      }
+    },
+    {
+      "code": "TPC",
+      "name": {
+        "en": "Tender purchase committee chair",
+        "hi": "निविदा क्रय समिति अध्यक्ष"
+      }
+    },
+    {
+      "code": "EE",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "code": "SE",
+      "name": {
+        "en": "Superintending Engineer",
+        "hi": "अधीक्षण अभियंता"
+      }
+    },
+    {
+      "code": "CE",
+      "name": {
+        "en": "Chief Engineer",
+        "hi": "मुख्य अभियंता"
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "key": "sec-bank-loan-closure/compensation",
+  "version": "1.0.0",
+  "pack": "sec.bank.loan-closure",
+  "title": {
+    "en": "Compute compensation (Rs 5,000 / day, delay attributable)",
+    "hi": "क्षतिपूर्ति की गणना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "delayDays",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Delay attributable to contractor (days)",
+        "hi": "ठेकेदार के कारण विलंब (दिन)"
+      }
+    },
+    {
+      "id": "compensationAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Compensation (INR)",
+        "hi": "क्षतिपूर्ति (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

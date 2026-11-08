@@ -1,0 +1,56 @@
+{
+  "key": "sec-hr-appraisal/appeal",
+  "version": "1.0.0",
+  "pack": "sec.hr.appraisal",
+  "title": {
+    "en": "HR decides the appeal",
+    "hi": "मानव संसाधन द्वारा अपील निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "rating",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Citizen rating",
+        "hi": "नागरिक मूल्यांकन"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "appealDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "allow",
+        "label": {
+          "en": "Allow appeal",
+          "hi": "अपील स्वीकार करें"
+        }
+      },
+      {
+        "value": "dismiss",
+        "label": {
+          "en": "Dismiss appeal",
+          "hi": "अपील खारिज करें"
+        }
+      }
+    ]
+  }
+}

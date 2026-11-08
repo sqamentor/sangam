@@ -1,0 +1,60 @@
+{
+  "id": "universal.up14-three-way-match",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-14 Three-way match with tolerance exceptions",
+    "hi": "यूपी-14 सहनशीलता अपवादों सहित त्रि-पक्षीय मिलान"
+  },
+  "domain": "Universal",
+  "description": "PO, goods receipt and invoice are compared by rule with quantity and price tolerances; within tolerance posts automatically, exceptions go to an AP clerk who may seek supplier clarification (R8, R71).",
+  "mainProcesses": [
+    "sangam-up14-three-way-match"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up14-three-way-match/sangam-up14-three-way-match.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up14-three-way-match/up14-tolerance.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up14-three-way-match/forms/invoice.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up14-three-way-match/forms/exception.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up14-three-way-match/seed.json"
+    }
+  ],
+  "seed": "packs/up14-three-way-match/seed.json",
+  "connectors": [
+    {
+      "id": "ap.post",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Post invoice for payment"
+    }
+  ],
+  "covers": [
+    "UP-14",
+    "R8",
+    "R71",
+    "GP-29",
+    "GP-31",
+    "GP-16"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "offices": [
+    {
+      "id": "DEPT-C",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CEC-1",
+      "role": "CEC",
+      "office": "DEPT-C",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "JS-C",
+      "name": {
+        "en": "Consultancy committee chair",
+        "hi": "परामर्श समिति अध्यक्ष"
+      }
+    },
+    {
+      "id": "CEC-2",
+      "role": "CEC",
+      "office": "DEPT-C",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "JS-C",
+      "name": {
+        "en": "Consultancy committee member",
+        "hi": "परामर्श समिति सदस्य"
+      }
+    },
+    {
+      "id": "CEC-3",
+      "role": "CEC",
+      "office": "DEPT-C",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "JS-C",
+      "name": {
+        "en": "Consultancy committee member (finance)",
+        "hi": "परामर्श समिति सदस्य (वित्त)"
+      }
+    },
+    {
+      "id": "JS-C",
+      "role": "JS",
+      "office": "DEPT-C",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Joint Secretary",
+        "hi": "संयुक्त सचिव"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CEC-1",
+      "person": "cs.cec-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CEC-2",
+      "person": "cs.cec-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CEC-3",
+      "person": "cs.cec-3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "JS-C",
+      "person": "cs.js-c",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CEC",
+      "name": {
+        "en": "Consultancy committee chair",
+        "hi": "परामर्श समिति अध्यक्ष"
+      }
+    },
+    {
+      "code": "CEC",
+      "name": {
+        "en": "Consultancy committee member",
+        "hi": "परामर्श समिति सदस्य"
+      }
+    },
+    {
+      "code": "CEC",
+      "name": {
+        "en": "Consultancy committee member (finance)",
+        "hi": "परामर्श समिति सदस्य (वित्त)"
+      }
+    },
+    {
+      "code": "JS",
+      "name": {
+        "en": "Joint Secretary",
+        "hi": "संयुक्त सचिव"
+      }
+    }
+  ]
+}

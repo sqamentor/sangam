@@ -1,0 +1,83 @@
+{
+  "key": "sec-ecom-seller-onboarding/correct",
+  "version": "1.0.0",
+  "pack": "sec.ecom.seller-onboarding",
+  "title": {
+    "en": "Correct registration details",
+    "hi": "पंजीकरण विवरण सुधारें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "gstin",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "GSTIN",
+        "hi": "जीएसटीआईएन"
+      }
+    },
+    {
+      "id": "pan",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "PAN",
+        "hi": "पैन"
+      }
+    },
+    {
+      "id": "bankAccount",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Beneficiary bank account",
+        "hi": "लाभार्थी बैंक खाता"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "es_correctDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

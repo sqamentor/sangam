@@ -1,0 +1,54 @@
+{
+  "key": "sec-health-ot-scheduling/request",
+  "version": "1.0.0",
+  "pack": "sec.health.ot-scheduling",
+  "title": {
+    "en": "Surgery request",
+    "hi": "शल्य अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "hi": "रोगी का नाम"
+      }
+    },
+    {
+      "id": "procedureName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Procedure",
+        "hi": "प्रक्रिया"
+      }
+    },
+    {
+      "id": "urgency",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Urgency",
+        "hi": "तात्कालिकता"
+      }
+    },
+    {
+      "id": "clinicalNotes",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Clinical notes",
+        "hi": "नैदानिक टिप्पणियाँ"
+      }
+    }
+  ]
+}

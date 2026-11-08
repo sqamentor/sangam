@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_rail_connector" name="Payment rail to connector" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- IFS-053 rail per state / unit / bill type. State defaults are tenant overrides of this table. -->
+  <decision id="ifms-rail-connector" name="Payment rail to connector" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-rail-connector_t" hitPolicy="FIRST">
+      <input id="ifms-rail-connector_i0" label="Payment rail (catalogue / profile)"><inputExpression id="ifms-rail-connector_ie0" typeRef="string"><text>docPaymentRail</text></inputExpression></input>
+      <output id="ifms-rail-connector_o0" label="Execution connector" name="executionConnector" typeRef="string"/>
+      <rule id="ifms-rail-connector_r0"><description>RBI e-Kuber</description>
+        <inputEntry id="ifms-rail-connector_r0_i0"><text>"CENTRAL_BANK_SETTLEMENT"</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r0_o0"><text>"rail.ekuber"</text></outputEntry>
+      </rule>
+      <rule id="ifms-rail-connector_r1"><description>agency bank CMP</description>
+        <inputEntry id="ifms-rail-connector_r1_i0"><text>"AGENCY_BANK"</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r1_o0"><text>"rail.agencyBank"</text></outputEntry>
+      </rule>
+      <rule id="ifms-rail-connector_r2"><description>state-owned bank (Sikkim)</description>
+        <inputEntry id="ifms-rail-connector_r2_i0"><text>"STATE_OWNED_BANK"</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r2_o0"><text>"rail.stateBank"</text></outputEntry>
+      </rule>
+      <rule id="ifms-rail-connector_r3"><description>treasury cheque</description>
+        <inputEntry id="ifms-rail-connector_r3_i0"><text>"TREASURY_CHEQUE"</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r3_o0"><text>"rail.cheque"</text></outputEntry>
+      </rule>
+      <rule id="ifms-rail-connector_r4"><description>LoC / CCL-DCL</description>
+        <inputEntry id="ifms-rail-connector_r4_i0"><text>"LETTER_OF_CREDIT"</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r4_o0"><text>"rail.loc"</text></outputEntry>
+      </rule>
+      <rule id="ifms-rail-connector_r5"><description>missions</description>
+        <inputEntry id="ifms-rail-connector_r5_i0"><text>"FOREIGN_CURRENCY_ADVICE"</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r5_o0"><text>"rail.fcy"</text></outputEntry>
+      </rule>
+      <rule id="ifms-rail-connector_r6"><description>DEFAULT: PFMS (Union); States override this table per tenant</description>
+        <inputEntry id="ifms-rail-connector_r6_i0"><text>-</text></inputEntry>
+        <outputEntry id="ifms-rail-connector_r6_o0"><text>"pfms.payment"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

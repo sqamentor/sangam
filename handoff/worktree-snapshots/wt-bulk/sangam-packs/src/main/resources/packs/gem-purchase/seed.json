@@ -1,0 +1,110 @@
+{
+  "offices": [
+    {
+      "id": "DEPT-GM",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "STORE-GM",
+      "role": "STORE",
+      "office": "DEPT-GM",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SO-GM",
+      "name": {
+        "en": "Consignee / store keeper",
+        "hi": "परेषिती / भंडारपाल"
+      }
+    },
+    {
+      "id": "SO-GM",
+      "role": "SO",
+      "office": "DEPT-GM",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "DS-GM",
+      "name": {
+        "en": "Section officer (purchase)",
+        "hi": "अनुभाग अधिकारी (क्रय)"
+      }
+    },
+    {
+      "id": "DS-GM",
+      "role": "DS",
+      "office": "DEPT-GM",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "JS-GM",
+      "name": {
+        "en": "Deputy Secretary",
+        "hi": "उप सचिव"
+      }
+    },
+    {
+      "id": "JS-GM",
+      "role": "JS",
+      "office": "DEPT-GM",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Joint Secretary",
+        "hi": "संयुक्त सचिव"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "STORE-GM",
+      "person": "gm.store-gm",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SO-GM",
+      "person": "gm.so-gm",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DS-GM",
+      "person": "gm.ds-gm",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "JS-GM",
+      "person": "gm.js-gm",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "STORE",
+      "name": {
+        "en": "Consignee / store keeper",
+        "hi": "परेषिती / भंडारपाल"
+      }
+    },
+    {
+      "code": "SO",
+      "name": {
+        "en": "Section officer (purchase)",
+        "hi": "अनुभाग अधिकारी (क्रय)"
+      }
+    },
+    {
+      "code": "DS",
+      "name": {
+        "en": "Deputy Secretary",
+        "hi": "उप सचिव"
+      }
+    },
+    {
+      "code": "JS",
+      "name": {
+        "en": "Joint Secretary",
+        "hi": "संयुक्त सचिव"
+      }
+    }
+  ]
+}

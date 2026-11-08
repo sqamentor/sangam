@@ -1,0 +1,49 @@
+{
+  "key": "works/delay",
+  "version": "1.0.0",
+  "pack": "gov.works",
+  "title": {
+    "en": "Completion overdue: assess delay (monthly)",
+    "hi": "पूर्णता विलंबित: विलंब का आकलन (मासिक)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "delayDays",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Delay attributable to contractor (days)",
+        "hi": "ठेकेदार के कारण विलंब (दिन)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "delayDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "proceed",
+        "label": {
+          "en": "Proceed",
+          "hi": "आगे बढ़ें"
+        }
+      }
+    ]
+  }
+}

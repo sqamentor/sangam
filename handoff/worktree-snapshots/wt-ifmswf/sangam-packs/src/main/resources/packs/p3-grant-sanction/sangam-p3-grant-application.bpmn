@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- P3 Grant / scheme application. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_p3_grant_application" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <error id="err_APPROVAL_INVALIDATED" name="APPROVAL_INVALIDATED" errorCode="APPROVAL_INVALIDATED"/>
+  <process id="sangam-p3-grant-application" name="P3 Grant / scheme application" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Pack P3. Material fields: beneficiaryId, bankAccount, ifsc, amount (entitlement), schemeId.</documentation>
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.p3.grant-sanction</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>beneficiaryId,bankAccount,ifsc,amount,schemeId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="p3_start" name="Application submitted" operaton:initiator="initiator" operaton:formKey="sangam:p3-grant-sanction/application"></startEvent>
+    <serviceTask id="p3_defaults" name="Pack configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=GRANT;routingDecisionKey=p3-sanction-authority;powersDecisionKey=sangam-core-powers;signatureRequired=true;executionConnector=pfms.dbt;executionOperation=submitDbtRecord;executionStep=dbt;reconcileRequired=true;reconcileConnector=bank.statement;outputTemplate=disbursement-record;issueOutput=true;appealAllowed=true;appealWindow=P30D;appellateSeat=APPELLATE-DIR;instalmentNo=0;instalmentInterval=P90D;retentionCategory=C;retentionYears=10;amount=0;executionPayloadFields=beneficiaryId,bankAccount,ifsc,instalmentAmount,instalmentNo,schemeId;entitlementOverride=null;childApplicant=false;regDuplicate=false;scrutinySla=7WD;sanctionSla=5WD;correctedAccount=null;correctedIfsc=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p3_childGw" name="Child applicant?" default="p3_grant_application_f4"></exclusiveGateway>
+    <serviceTask id="p3_child" name="Child record: guardian, analytics blocked (GOV-4)" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>childApplicant=true;analyticsBlocked=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p3_digilocker" name="Pull certificates from DigiLocker" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>digilocker.pull</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>pull</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>beneficiaryId,schemeId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>dl</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p3_dlGw" name="Fetched?" default="p3_grant_application_f8"></exclusiveGateway>
+    <serviceTask id="p3_selfUploaded" name="Self-uploaded documents, to verify" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>documentsSelfUploaded=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="p3_eligibility" name="Eligibility pre-check (DMN, bound version)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>p3-eligibility</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="p3_registry" name="Duplicate-beneficiary check" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>registry.beneficiary</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>beneficiaryId,schemeId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>reg</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p3_dupGw" name="Possible duplicate?" default="p3_grant_application_f13"></exclusiveGateway>
+    <serviceTask id="p3_verifierSeat" name="Verifier seat for the block" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLE</operaton:string></operaton:field><operaton:field name="role"><operaton:string>DOCVERIFIER</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>scrutinySeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="p3_duplicate" name="Possible duplicate beneficiary" operaton:candidateGroups="DOCVERIFIER" operaton:formKey="sangam:p3-grant-sanction/duplicate"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>dupDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="p3_dupDecGw" name="" default="p3_grant_application_f18"></exclusiveGateway>
+    <serviceTask id="p3_rjDup_code" name="Reason: DUPLICATE_BENEFICIARY" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=DUPLICATE_BENEFICIARY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p3_rjDup_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p3_rjDup_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="p3_docVerify" name="Document verification (core scrutiny)" calledElement="sangam-core-scrutiny" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="p3_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p3_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="p3_rj_appealGw" name="Appeal allowed?" default="p3_grant_application_f22"></exclusiveGateway>
+    <businessRuleTask id="p3_fieldRule" name="Field verification required? (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>p3-field-verification-required</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="p3_scrGw" name="scrutinyOutcome?" default="p3_grant_application_f24"></exclusiveGateway>
+    <exclusiveGateway id="p3_fieldGw" name="Field visit?" default="p3_grant_application_f37"></exclusiveGateway>
+    <serviceTask id="p3_fieldSeat" name="Field verifier for the block" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLE</operaton:string></operaton:field><operaton:field name="role"><operaton:string>FIELDVERIFIER</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>fieldVerifierSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p3_field_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p3_field</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="p3_field" name="Field verification" operaton:candidateGroups="${fieldVerifierSeat}" operaton:formKey="sangam:p3-grant-sanction/field-verification" operaton:dueDate="${p3_fieldDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>fieldVerdict</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="p3_field_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p3_field</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>fieldVerifierSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="p3_field_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="p3_field_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p3_field</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>fieldVerifierSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>fieldVerdict</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p3_field_breachGw" name="Deemed?" default="p3_grant_application_f33"></exclusiveGateway>
+    <exclusiveGateway id="p3_field_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="p3_eligibleGw" name="Eligible after verification?" default="p3_grant_application_f46"></exclusiveGateway>
+    <exclusiveGateway id="p3_fieldRes" name="Verified?" default="p3_grant_application_f44"></exclusiveGateway>
+    <serviceTask id="p3_rjField_code" name="Reason: FIELD_VERIFICATION_FAILED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=FIELD_VERIFICATION_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p3_rjField_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p3_rjField_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="p3_rjField_appealGw" name="Appeal allowed?" default="p3_grant_application_f41"></exclusiveGateway>
+    <businessRuleTask id="p3_entitlement" name="Entitlement (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>p3-entitlement</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="p3_ineligible" name="Ineligible: reasons from the rule" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=@eligibilityReasonCode</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p3_amount" name="Entitlement is the sanction amount" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>amount=@entitlement</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p3_recommend_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p3_recommend</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>3WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="p3_recommend" name="Recommend with entitlement" operaton:candidateGroups="${scrutinySeat}" operaton:formKey="sangam:p3-grant-sanction/recommend" operaton:dueDate="${p3_recommendDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>p3RecDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="p3_recommend_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p3_recommend</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>scrutinySeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="p3_recommend_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="p3_recommend_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p3_recommend</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>scrutinySeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>p3RecDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p3_recommend_breachGw" name="Deemed?" default="p3_grant_application_f53"></exclusiveGateway>
+    <exclusiveGateway id="p3_recommend_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="p3_overrideGw" name="Override?" default="p3_grant_application_f62"></exclusiveGateway>
+    <exclusiveGateway id="p3_recGw" name="Recommended?" default="p3_grant_application_f60"></exclusiveGateway>
+    <serviceTask id="p3_override" name="Apply override (reason recorded)" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>amount=@entitlementOverride</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p3_sanction" name="Sanction by limit (core)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="p3_nextInstalment" name="Next instalment" operaton:expression="${execution.setVariable('instalmentNo', instalmentNo + 1)}"></serviceTask>
+    <serviceTask id="p3_instalmentAmount" name="Instalment amount" operaton:expression="${execution.setVariable('instalmentAmount', amount / instalments)}"></serviceTask>
+    <serviceTask id="p3_stepSuffix" name="One operation per instalment" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionStepSuffix=@instalmentNo</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p3_disburse" name="DBT disbursement (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="p3_sanGw" name="sanctionOutcome?" default="p3_grant_application_f66"></exclusiveGateway>
+    <userTask id="p3_bankUpdate" name="Payment returned: update bank details" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:p3-grant-sanction/bank-update"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>bankDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="p3_bankNotify" name="Tell applicant: account failure" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>dbt-account-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p3_moreGw" name="More instalments?" default="p3_grant_application_f97"></exclusiveGateway>
+    <exclusiveGateway id="p3_exGw" name="executionOutcome?" default="p3_grant_application_f73"></exclusiveGateway>
+    <exclusiveGateway id="p3_bankGw" name="" default="p3_grant_application_f90"></exclusiveGateway>
+    <serviceTask id="p3_applyBank" name="Apply new account" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>bankAccount=@correctedAccount;ifsc=@correctedIfsc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p3_bankVersion" name="New case version (approval invalidated)" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUBMIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p3_accountVerify_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p3_accountVerify</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>3WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="p3_accountVerify" name="Verify new bank account" operaton:candidateGroups="${scrutinySeat}" operaton:formKey="sangam:p3-grant-sanction/account-verify" operaton:dueDate="${p3_accountVerifyDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>accountVerdict</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="p3_accountVerify_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p3_accountVerify</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>scrutinySeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="p3_accountVerify_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="p3_accountVerify_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p3_accountVerify</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>scrutinySeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>accountVerdict</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p3_accountVerify_breachGw" name="Deemed?" default="p3_grant_application_f82"></exclusiveGateway>
+    <exclusiveGateway id="p3_accountVerify_done" name=""></exclusiveGateway>
+    <serviceTask id="p3_wdBank_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p3_wdBank_call" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p3_wdBank_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="p3_avGw" name="" default="p3_grant_application_f94"></exclusiveGateway>
+    <serviceTask id="p3_reSanction" name="Same instalment again" operaton:expression="${execution.setVariable('instalmentNo', instalmentNo - 1)}"></serviceTask>
+    <intermediateCatchEvent id="p3_instalmentWait" name="Next instalment date"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${instalmentInterval}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <callActivity id="p3_close" name="Disbursement record and closure (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p3_end" name="Disbursed and closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="p3_field_warn" name="SLA warning (75%)" attachedToRef="p3_field" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p3_fieldWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="p3_field_breach" name="SLA breached" attachedToRef="p3_field" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p3_fieldDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="p3_recommend_warn" name="SLA warning (75%)" attachedToRef="p3_recommend" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p3_recommendWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="p3_recommend_breach" name="SLA breached" attachedToRef="p3_recommend" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p3_recommendDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="p3_invalidated" name="Approval invalidated" attachedToRef="p3_disburse" cancelActivity="true"><errorEventDefinition errorRef="err_APPROVAL_INVALIDATED"/></boundaryEvent>
+    <boundaryEvent id="p3_accountVerify_warn" name="SLA warning (75%)" attachedToRef="p3_accountVerify" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p3_accountVerifyWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="p3_accountVerify_breach" name="SLA breached" attachedToRef="p3_accountVerify" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${p3_accountVerifyDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="p3_grant_application_f1" sourceRef="p3_start" targetRef="p3_defaults"/>
+    <sequenceFlow id="p3_grant_application_f2" sourceRef="p3_defaults" targetRef="p3_childGw"/>
+    <sequenceFlow id="p3_grant_application_f3" name="J-P3-E09" sourceRef="p3_childGw" targetRef="p3_child"><conditionExpression xsi:type="tFormalExpression">${age &lt; 18}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f4" name="adult" sourceRef="p3_childGw" targetRef="p3_digilocker"/>
+    <sequenceFlow id="p3_grant_application_f5" sourceRef="p3_child" targetRef="p3_digilocker"/>
+    <sequenceFlow id="p3_grant_application_f6" sourceRef="p3_digilocker" targetRef="p3_dlGw"/>
+    <sequenceFlow id="p3_grant_application_f7" name="J-P3-E07" sourceRef="p3_dlGw" targetRef="p3_selfUploaded"><conditionExpression xsi:type="tFormalExpression">${dlStatus != 'COMPLETED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f8" name="fetched" sourceRef="p3_dlGw" targetRef="p3_eligibility"/>
+    <sequenceFlow id="p3_grant_application_f9" sourceRef="p3_selfUploaded" targetRef="p3_eligibility"/>
+    <sequenceFlow id="p3_grant_application_f10" sourceRef="p3_eligibility" targetRef="p3_registry"/>
+    <sequenceFlow id="p3_grant_application_f11" sourceRef="p3_registry" targetRef="p3_dupGw"/>
+    <sequenceFlow id="p3_grant_application_f12" name="J-P3-E06" sourceRef="p3_dupGw" targetRef="p3_duplicate"><conditionExpression xsi:type="tFormalExpression">${regDuplicate}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f13" name="unique" sourceRef="p3_dupGw" targetRef="p3_verifierSeat"/>
+    <sequenceFlow id="p3_grant_application_f14" sourceRef="p3_duplicate" targetRef="p3_dupDecGw"/>
+    <sequenceFlow id="p3_grant_application_f15" name="proceed" sourceRef="p3_dupDecGw" targetRef="p3_verifierSeat"><conditionExpression xsi:type="tFormalExpression">${dupDecision == 'proceed'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f16" sourceRef="p3_rjDup_reject" targetRef="p3_rjDup_endRejected"/>
+    <sequenceFlow id="p3_grant_application_f17" sourceRef="p3_rjDup_code" targetRef="p3_rjDup_reject"/>
+    <sequenceFlow id="p3_grant_application_f18" name="reject" sourceRef="p3_dupDecGw" targetRef="p3_rjDup_code"/>
+    <sequenceFlow id="p3_grant_application_f19" sourceRef="p3_verifierSeat" targetRef="p3_docVerify"/>
+    <sequenceFlow id="p3_grant_application_f20" sourceRef="p3_rj_reject" targetRef="p3_rj_appealGw"/>
+    <sequenceFlow id="p3_grant_application_f21" name="appeal allowed: re-verify" sourceRef="p3_rj_appealGw" targetRef="p3_verifierSeat"><conditionExpression xsi:type="tFormalExpression">${rejectionOutcome == 'APPEAL_ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f22" name="final" sourceRef="p3_rj_appealGw" targetRef="p3_rj_endRejected"/>
+    <sequenceFlow id="p3_grant_application_f23" name="ACCEPTED" sourceRef="p3_scrGw" targetRef="p3_fieldRule"><conditionExpression xsi:type="tFormalExpression">${scrutinyOutcome == 'ACCEPTED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f24" name="otherwise" sourceRef="p3_scrGw" targetRef="p3_rj_reject"/>
+    <sequenceFlow id="p3_grant_application_f25" sourceRef="p3_docVerify" targetRef="p3_scrGw"/>
+    <sequenceFlow id="p3_grant_application_f26" sourceRef="p3_fieldRule" targetRef="p3_fieldGw"/>
+    <sequenceFlow id="p3_grant_application_f27" name="yes" sourceRef="p3_fieldGw" targetRef="p3_fieldSeat"><conditionExpression xsi:type="tFormalExpression">${fieldVerification}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f28" sourceRef="p3_field_warn" targetRef="p3_field_warnNotify"/>
+    <sequenceFlow id="p3_grant_application_f29" sourceRef="p3_field_warnNotify" targetRef="p3_field_warnEnd"/>
+    <sequenceFlow id="p3_grant_application_f30" sourceRef="p3_field_breach" targetRef="p3_field_breachAct"/>
+    <sequenceFlow id="p3_grant_application_f31" sourceRef="p3_field_breachAct" targetRef="p3_field_breachGw"/>
+    <sequenceFlow id="p3_grant_application_f32" name="deemed" sourceRef="p3_field_breachGw" targetRef="p3_field_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f33" name="escalated" sourceRef="p3_field_breachGw" targetRef="p3_field_slaPlan"/>
+    <sequenceFlow id="p3_grant_application_f34" sourceRef="p3_field_slaPlan" targetRef="p3_field"/>
+    <sequenceFlow id="p3_grant_application_f35" sourceRef="p3_field" targetRef="p3_field_done"/>
+    <sequenceFlow id="p3_grant_application_f36" sourceRef="p3_fieldSeat" targetRef="p3_field_slaPlan"/>
+    <sequenceFlow id="p3_grant_application_f37" name="no visit" sourceRef="p3_fieldGw" targetRef="p3_eligibleGw"/>
+    <sequenceFlow id="p3_grant_application_f38" sourceRef="p3_field_done" targetRef="p3_fieldRes"/>
+    <sequenceFlow id="p3_grant_application_f39" sourceRef="p3_rjField_reject" targetRef="p3_rjField_appealGw"/>
+    <sequenceFlow id="p3_grant_application_f40" name="appeal allowed: re-verify" sourceRef="p3_rjField_appealGw" targetRef="p3_verifierSeat"><conditionExpression xsi:type="tFormalExpression">${rejectionOutcome == 'APPEAL_ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f41" name="final" sourceRef="p3_rjField_appealGw" targetRef="p3_rjField_endRejected"/>
+    <sequenceFlow id="p3_grant_application_f42" sourceRef="p3_rjField_code" targetRef="p3_rjField_reject"/>
+    <sequenceFlow id="p3_grant_application_f43" name="failed" sourceRef="p3_fieldRes" targetRef="p3_rjField_code"><conditionExpression xsi:type="tFormalExpression">${fieldVerdict == 'failed'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f44" name="verified / doubtful" sourceRef="p3_fieldRes" targetRef="p3_eligibleGw"/>
+    <sequenceFlow id="p3_grant_application_f45" name="eligible" sourceRef="p3_eligibleGw" targetRef="p3_entitlement"><conditionExpression xsi:type="tFormalExpression">${eligible}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f46" name="AC-05 ineligible" sourceRef="p3_eligibleGw" targetRef="p3_ineligible"/>
+    <sequenceFlow id="p3_grant_application_f47" sourceRef="p3_ineligible" targetRef="p3_rj_reject"/>
+    <sequenceFlow id="p3_grant_application_f48" sourceRef="p3_recommend_warn" targetRef="p3_recommend_warnNotify"/>
+    <sequenceFlow id="p3_grant_application_f49" sourceRef="p3_recommend_warnNotify" targetRef="p3_recommend_warnEnd"/>
+    <sequenceFlow id="p3_grant_application_f50" sourceRef="p3_recommend_breach" targetRef="p3_recommend_breachAct"/>
+    <sequenceFlow id="p3_grant_application_f51" sourceRef="p3_recommend_breachAct" targetRef="p3_recommend_breachGw"/>
+    <sequenceFlow id="p3_grant_application_f52" name="deemed" sourceRef="p3_recommend_breachGw" targetRef="p3_recommend_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f53" name="escalated" sourceRef="p3_recommend_breachGw" targetRef="p3_recommend_slaPlan"/>
+    <sequenceFlow id="p3_grant_application_f54" sourceRef="p3_recommend_slaPlan" targetRef="p3_recommend"/>
+    <sequenceFlow id="p3_grant_application_f55" sourceRef="p3_recommend" targetRef="p3_recommend_done"/>
+    <sequenceFlow id="p3_grant_application_f56" sourceRef="p3_entitlement" targetRef="p3_amount"/>
+    <sequenceFlow id="p3_grant_application_f57" sourceRef="p3_amount" targetRef="p3_recommend_slaPlan"/>
+    <sequenceFlow id="p3_grant_application_f58" sourceRef="p3_recommend_done" targetRef="p3_recGw"/>
+    <sequenceFlow id="p3_grant_application_f59" name="recommend" sourceRef="p3_recGw" targetRef="p3_overrideGw"><conditionExpression xsi:type="tFormalExpression">${p3RecDecision == 'recommend'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f60" name="reject" sourceRef="p3_recGw" targetRef="p3_rj_reject"/>
+    <sequenceFlow id="p3_grant_application_f61" name="override" sourceRef="p3_overrideGw" targetRef="p3_override"><conditionExpression xsi:type="tFormalExpression">${entitlementOverride != null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f62" name="as computed" sourceRef="p3_overrideGw" targetRef="p3_sanction"/>
+    <sequenceFlow id="p3_grant_application_f63" sourceRef="p3_override" targetRef="p3_sanction"/>
+    <sequenceFlow id="p3_grant_application_f64" name="SANCTIONED" sourceRef="p3_sanGw" targetRef="p3_nextInstalment"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f65" name="RETURNED" sourceRef="p3_sanGw" targetRef="p3_verifierSeat"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f66" name="otherwise" sourceRef="p3_sanGw" targetRef="p3_rj_reject"/>
+    <sequenceFlow id="p3_grant_application_f67" sourceRef="p3_sanction" targetRef="p3_sanGw"/>
+    <sequenceFlow id="p3_grant_application_f68" sourceRef="p3_nextInstalment" targetRef="p3_instalmentAmount"/>
+    <sequenceFlow id="p3_grant_application_f69" sourceRef="p3_instalmentAmount" targetRef="p3_stepSuffix"/>
+    <sequenceFlow id="p3_grant_application_f70" sourceRef="p3_stepSuffix" targetRef="p3_disburse"/>
+    <sequenceFlow id="p3_grant_application_f71" sourceRef="p3_invalidated" targetRef="p3_sanction"/>
+    <sequenceFlow id="p3_grant_application_f72" name="DONE" sourceRef="p3_exGw" targetRef="p3_moreGw"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f73" name="otherwise" sourceRef="p3_exGw" targetRef="p3_bankNotify"/>
+    <sequenceFlow id="p3_grant_application_f74" sourceRef="p3_disburse" targetRef="p3_exGw"/>
+    <sequenceFlow id="p3_grant_application_f75" sourceRef="p3_bankNotify" targetRef="p3_bankUpdate"/>
+    <sequenceFlow id="p3_grant_application_f76" sourceRef="p3_bankUpdate" targetRef="p3_bankGw"/>
+    <sequenceFlow id="p3_grant_application_f77" sourceRef="p3_accountVerify_warn" targetRef="p3_accountVerify_warnNotify"/>
+    <sequenceFlow id="p3_grant_application_f78" sourceRef="p3_accountVerify_warnNotify" targetRef="p3_accountVerify_warnEnd"/>
+    <sequenceFlow id="p3_grant_application_f79" sourceRef="p3_accountVerify_breach" targetRef="p3_accountVerify_breachAct"/>
+    <sequenceFlow id="p3_grant_application_f80" sourceRef="p3_accountVerify_breachAct" targetRef="p3_accountVerify_breachGw"/>
+    <sequenceFlow id="p3_grant_application_f81" name="deemed" sourceRef="p3_accountVerify_breachGw" targetRef="p3_accountVerify_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f82" name="escalated" sourceRef="p3_accountVerify_breachGw" targetRef="p3_accountVerify_slaPlan"/>
+    <sequenceFlow id="p3_grant_application_f83" sourceRef="p3_accountVerify_slaPlan" targetRef="p3_accountVerify"/>
+    <sequenceFlow id="p3_grant_application_f84" sourceRef="p3_accountVerify" targetRef="p3_accountVerify_done"/>
+    <sequenceFlow id="p3_grant_application_f85" name="J-P3-E03" sourceRef="p3_bankGw" targetRef="p3_applyBank"><conditionExpression xsi:type="tFormalExpression">${bankDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f86" sourceRef="p3_applyBank" targetRef="p3_bankVersion"/>
+    <sequenceFlow id="p3_grant_application_f87" sourceRef="p3_bankVersion" targetRef="p3_accountVerify_slaPlan"/>
+    <sequenceFlow id="p3_grant_application_f88" sourceRef="p3_wdBank_kind" targetRef="p3_wdBank_call"/>
+    <sequenceFlow id="p3_grant_application_f89" sourceRef="p3_wdBank_call" targetRef="p3_wdBank_end"/>
+    <sequenceFlow id="p3_grant_application_f90" name="withdraw" sourceRef="p3_bankGw" targetRef="p3_wdBank_kind"/>
+    <sequenceFlow id="p3_grant_application_f91" sourceRef="p3_accountVerify_done" targetRef="p3_avGw"/>
+    <sequenceFlow id="p3_grant_application_f92" name="re-sanction" sourceRef="p3_avGw" targetRef="p3_reSanction"><conditionExpression xsi:type="tFormalExpression">${accountVerdict == 'verified'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f93" sourceRef="p3_reSanction" targetRef="p3_sanction"/>
+    <sequenceFlow id="p3_grant_application_f94" name="not verified" sourceRef="p3_avGw" targetRef="p3_bankUpdate"/>
+    <sequenceFlow id="p3_grant_application_f95" name="J-P3-E02 partial disbursement" sourceRef="p3_moreGw" targetRef="p3_instalmentWait"><conditionExpression xsi:type="tFormalExpression">${instalmentNo &lt; instalments}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p3_grant_application_f96" sourceRef="p3_instalmentWait" targetRef="p3_nextInstalment"/>
+    <sequenceFlow id="p3_grant_application_f97" name="all paid" sourceRef="p3_moreGw" targetRef="p3_close"/>
+    <sequenceFlow id="p3_grant_application_f98" sourceRef="p3_close" targetRef="p3_end"/>
+    <subProcess id="p3_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="p3_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="p3_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="p3_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="p3_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="p3_grant_application_f99" sourceRef="p3_withdrawStart" targetRef="p3_withdrawKind"/>
+      <sequenceFlow id="p3_grant_application_f100" sourceRef="p3_withdrawKind" targetRef="p3_withdrawCall"/>
+      <sequenceFlow id="p3_grant_application_f101" sourceRef="p3_withdrawCall" targetRef="p3_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="p3_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="p3_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="p3_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="p3_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="p3_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="p3_grant_application_f102" sourceRef="p3_cancelStart" targetRef="p3_cancelKind"/>
+      <sequenceFlow id="p3_grant_application_f103" sourceRef="p3_cancelKind" targetRef="p3_cancelCall"/>
+      <sequenceFlow id="p3_grant_application_f104" sourceRef="p3_cancelCall" targetRef="p3_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="p3_grant_application_diagram">
+    <bpmndi:BPMNPlane id="p3_grant_application_plane" bpmnElement="sangam-p3-grant-application">
+      <bpmndi:BPMNShape id="p3_start_di" bpmnElement="p3_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_defaults_di" bpmnElement="p3_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_childGw_di" bpmnElement="p3_childGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_child_di" bpmnElement="p3_child"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_digilocker_di" bpmnElement="p3_digilocker"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_dlGw_di" bpmnElement="p3_dlGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_selfUploaded_di" bpmnElement="p3_selfUploaded"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_eligibility_di" bpmnElement="p3_eligibility"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_registry_di" bpmnElement="p3_registry"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_dupGw_di" bpmnElement="p3_dupGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_verifierSeat_di" bpmnElement="p3_verifierSeat"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_duplicate_di" bpmnElement="p3_duplicate"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_dupDecGw_di" bpmnElement="p3_dupDecGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rjDup_code_di" bpmnElement="p3_rjDup_code"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rjDup_reject_di" bpmnElement="p3_rjDup_reject"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rjDup_endRejected_di" bpmnElement="p3_rjDup_endRejected"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_docVerify_di" bpmnElement="p3_docVerify"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rj_reject_di" bpmnElement="p3_rj_reject"><dc:Bounds x="6125" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rj_endRejected_di" bpmnElement="p3_rj_endRejected"><dc:Bounds x="6487" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rj_appealGw_di" bpmnElement="p3_rj_appealGw"><dc:Bounds x="6315" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_fieldRule_di" bpmnElement="p3_fieldRule"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_scrGw_di" bpmnElement="p3_scrGw"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_fieldGw_di" bpmnElement="p3_fieldGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_fieldSeat_di" bpmnElement="p3_fieldSeat"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_field_slaPlan_di" bpmnElement="p3_field_slaPlan"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_field_di" bpmnElement="p3_field"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_field_warnNotify_di" bpmnElement="p3_field_warnNotify"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_field_warnEnd_di" bpmnElement="p3_field_warnEnd"><dc:Bounds x="3517" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_field_breachAct_di" bpmnElement="p3_field_breachAct"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_field_breachGw_di" bpmnElement="p3_field_breachGw"><dc:Bounds x="3510" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_field_done_di" bpmnElement="p3_field_done"><dc:Bounds x="3675" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_eligibleGw_di" bpmnElement="p3_eligibleGw"><dc:Bounds x="4005" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_fieldRes_di" bpmnElement="p3_fieldRes"><dc:Bounds x="3840" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rjField_code_di" bpmnElement="p3_rjField_code"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rjField_reject_di" bpmnElement="p3_rjField_reject"><dc:Bounds x="4145" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rjField_endRejected_di" bpmnElement="p3_rjField_endRejected"><dc:Bounds x="4507" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_rjField_appealGw_di" bpmnElement="p3_rjField_appealGw"><dc:Bounds x="4335" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_entitlement_di" bpmnElement="p3_entitlement"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_ineligible_di" bpmnElement="p3_ineligible"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_amount_di" bpmnElement="p3_amount"><dc:Bounds x="4310" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recommend_slaPlan_di" bpmnElement="p3_recommend_slaPlan"><dc:Bounds x="4475" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recommend_di" bpmnElement="p3_recommend"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recommend_warnNotify_di" bpmnElement="p3_recommend_warnNotify"><dc:Bounds x="4805" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recommend_warnEnd_di" bpmnElement="p3_recommend_warnEnd"><dc:Bounds x="5002" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recommend_breachAct_di" bpmnElement="p3_recommend_breachAct"><dc:Bounds x="4805" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recommend_breachGw_di" bpmnElement="p3_recommend_breachGw"><dc:Bounds x="4995" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recommend_done_di" bpmnElement="p3_recommend_done"><dc:Bounds x="5160" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_overrideGw_di" bpmnElement="p3_overrideGw"><dc:Bounds x="5490" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recGw_di" bpmnElement="p3_recGw"><dc:Bounds x="5325" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_override_di" bpmnElement="p3_override"><dc:Bounds x="5630" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_sanction_di" bpmnElement="p3_sanction"><dc:Bounds x="5795" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_nextInstalment_di" bpmnElement="p3_nextInstalment"><dc:Bounds x="6125" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_instalmentAmount_di" bpmnElement="p3_instalmentAmount"><dc:Bounds x="6290" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_stepSuffix_di" bpmnElement="p3_stepSuffix"><dc:Bounds x="6455" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_disburse_di" bpmnElement="p3_disburse"><dc:Bounds x="6620" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_sanGw_di" bpmnElement="p3_sanGw"><dc:Bounds x="5985" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_bankUpdate_di" bpmnElement="p3_bankUpdate"><dc:Bounds x="7115" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_bankNotify_di" bpmnElement="p3_bankNotify"><dc:Bounds x="6950" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_moreGw_di" bpmnElement="p3_moreGw"><dc:Bounds x="6975" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_exGw_di" bpmnElement="p3_exGw"><dc:Bounds x="6810" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_bankGw_di" bpmnElement="p3_bankGw"><dc:Bounds x="7305" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_applyBank_di" bpmnElement="p3_applyBank"><dc:Bounds x="7445" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_bankVersion_di" bpmnElement="p3_bankVersion"><dc:Bounds x="7610" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_accountVerify_slaPlan_di" bpmnElement="p3_accountVerify_slaPlan"><dc:Bounds x="7775" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_accountVerify_di" bpmnElement="p3_accountVerify"><dc:Bounds x="7940" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_accountVerify_warnNotify_di" bpmnElement="p3_accountVerify_warnNotify"><dc:Bounds x="8105" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_accountVerify_warnEnd_di" bpmnElement="p3_accountVerify_warnEnd"><dc:Bounds x="8302" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_accountVerify_breachAct_di" bpmnElement="p3_accountVerify_breachAct"><dc:Bounds x="8105" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_accountVerify_breachGw_di" bpmnElement="p3_accountVerify_breachGw"><dc:Bounds x="8295" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_accountVerify_done_di" bpmnElement="p3_accountVerify_done"><dc:Bounds x="8460" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_wdBank_kind_di" bpmnElement="p3_wdBank_kind"><dc:Bounds x="7445" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_wdBank_call_di" bpmnElement="p3_wdBank_call"><dc:Bounds x="7610" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_wdBank_end_di" bpmnElement="p3_wdBank_end"><dc:Bounds x="7807" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_avGw_di" bpmnElement="p3_avGw"><dc:Bounds x="8625" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_reSanction_di" bpmnElement="p3_reSanction"><dc:Bounds x="8765" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_instalmentWait_di" bpmnElement="p3_instalmentWait"><dc:Bounds x="7147" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_close_di" bpmnElement="p3_close"><dc:Bounds x="7115" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_end_di" bpmnElement="p3_end"><dc:Bounds x="7312" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_field_warn_di" bpmnElement="p3_field_warn"><dc:Bounds x="3163" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_field_breach_di" bpmnElement="p3_field_breach"><dc:Bounds x="3193" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recommend_warn_di" bpmnElement="p3_recommend_warn"><dc:Bounds x="4648" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_recommend_breach_di" bpmnElement="p3_recommend_breach"><dc:Bounds x="4678" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_invalidated_di" bpmnElement="p3_invalidated"><dc:Bounds x="6628" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_accountVerify_warn_di" bpmnElement="p3_accountVerify_warn"><dc:Bounds x="7948" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_accountVerify_breach_di" bpmnElement="p3_accountVerify_breach"><dc:Bounds x="7978" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_withdraw_di" bpmnElement="p3_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_withdrawStart_di" bpmnElement="p3_withdrawStart"><dc:Bounds x="92" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_withdrawKind_di" bpmnElement="p3_withdrawKind"><dc:Bounds x="225" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_withdrawCall_di" bpmnElement="p3_withdrawCall"><dc:Bounds x="390" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_withdrawEnd_di" bpmnElement="p3_withdrawEnd"><dc:Bounds x="587" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_cancel_di" bpmnElement="p3_cancel" isExpanded="true"><dc:Bounds x="30" y="850" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_cancelStart_di" bpmnElement="p3_cancelStart"><dc:Bounds x="92" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_cancelKind_di" bpmnElement="p3_cancelKind"><dc:Bounds x="225" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_cancelCall_di" bpmnElement="p3_cancelCall"><dc:Bounds x="390" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p3_cancelEnd_di" bpmnElement="p3_cancelEnd"><dc:Bounds x="587" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="p3_grant_application_f1_di" bpmnElement="p3_grant_application_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f2_di" bpmnElement="p3_grant_application_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f3_di" bpmnElement="p3_grant_application_f3"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f4_di" bpmnElement="p3_grant_application_f4"><di:waypoint x="425" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f5_di" bpmnElement="p3_grant_application_f5"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f6_di" bpmnElement="p3_grant_application_f6"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f7_di" bpmnElement="p3_grant_application_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f8_di" bpmnElement="p3_grant_application_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f9_di" bpmnElement="p3_grant_application_f9"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f10_di" bpmnElement="p3_grant_application_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f11_di" bpmnElement="p3_grant_application_f11"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f12_di" bpmnElement="p3_grant_application_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f13_di" bpmnElement="p3_grant_application_f13"><di:waypoint x="1580" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f14_di" bpmnElement="p3_grant_application_f14"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f15_di" bpmnElement="p3_grant_application_f15"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f16_di" bpmnElement="p3_grant_application_f16"><di:waypoint x="2265" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f17_di" bpmnElement="p3_grant_application_f17"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f18_di" bpmnElement="p3_grant_application_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f19_di" bpmnElement="p3_grant_application_f19"><di:waypoint x="2100" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f20_di" bpmnElement="p3_grant_application_f20"><di:waypoint x="6225" y="195"/><di:waypoint x="6315" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f21_di" bpmnElement="p3_grant_application_f21"><di:waypoint x="6340" y="220"/><di:waypoint x="6340" y="253"/><di:waypoint x="2050" y="253"/><di:waypoint x="2050" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f22_di" bpmnElement="p3_grant_application_f22"><di:waypoint x="6365" y="195"/><di:waypoint x="6487" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f23_di" bpmnElement="p3_grant_application_f23"><di:waypoint x="2405" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f24_di" bpmnElement="p3_grant_application_f24"><di:waypoint x="2405" y="195"/><di:waypoint x="6125" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f25_di" bpmnElement="p3_grant_application_f25"><di:waypoint x="2265" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f26_di" bpmnElement="p3_grant_application_f26"><di:waypoint x="2595" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f27_di" bpmnElement="p3_grant_application_f27"><di:waypoint x="2735" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f28_di" bpmnElement="p3_grant_application_f28"><di:waypoint x="3181" y="253"/><di:waypoint x="3181" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f29_di" bpmnElement="p3_grant_application_f29"><di:waypoint x="3420" y="320"/><di:waypoint x="3517" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f30_di" bpmnElement="p3_grant_application_f30"><di:waypoint x="3211" y="253"/><di:waypoint x="3211" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f31_di" bpmnElement="p3_grant_application_f31"><di:waypoint x="3420" y="195"/><di:waypoint x="3510" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f32_di" bpmnElement="p3_grant_application_f32"><di:waypoint x="3560" y="195"/><di:waypoint x="3675" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f33_di" bpmnElement="p3_grant_application_f33"><di:waypoint x="3535" y="220"/><di:waypoint x="3535" y="253"/><di:waypoint x="3040" y="253"/><di:waypoint x="3040" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f34_di" bpmnElement="p3_grant_application_f34"><di:waypoint x="3090" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f35_di" bpmnElement="p3_grant_application_f35"><di:waypoint x="3255" y="195"/><di:waypoint x="3675" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f36_di" bpmnElement="p3_grant_application_f36"><di:waypoint x="2925" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f37_di" bpmnElement="p3_grant_application_f37"><di:waypoint x="2735" y="195"/><di:waypoint x="4005" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f38_di" bpmnElement="p3_grant_application_f38"><di:waypoint x="3725" y="195"/><di:waypoint x="3840" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f39_di" bpmnElement="p3_grant_application_f39"><di:waypoint x="4245" y="445"/><di:waypoint x="4335" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f40_di" bpmnElement="p3_grant_application_f40"><di:waypoint x="4360" y="470"/><di:waypoint x="4360" y="509"/><di:waypoint x="2050" y="509"/><di:waypoint x="2050" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f41_di" bpmnElement="p3_grant_application_f41"><di:waypoint x="4385" y="445"/><di:waypoint x="4507" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f42_di" bpmnElement="p3_grant_application_f42"><di:waypoint x="4080" y="320"/><di:waypoint x="4112" y="320"/><di:waypoint x="4112" y="445"/><di:waypoint x="4145" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f43_di" bpmnElement="p3_grant_application_f43"><di:waypoint x="3890" y="195"/><di:waypoint x="3935" y="195"/><di:waypoint x="3935" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f44_di" bpmnElement="p3_grant_application_f44"><di:waypoint x="3890" y="195"/><di:waypoint x="4005" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f45_di" bpmnElement="p3_grant_application_f45"><di:waypoint x="4055" y="195"/><di:waypoint x="4100" y="195"/><di:waypoint x="4100" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f46_di" bpmnElement="p3_grant_application_f46"><di:waypoint x="4055" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f47_di" bpmnElement="p3_grant_application_f47"><di:waypoint x="4245" y="195"/><di:waypoint x="6125" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f48_di" bpmnElement="p3_grant_application_f48"><di:waypoint x="4666" y="378"/><di:waypoint x="4666" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f49_di" bpmnElement="p3_grant_application_f49"><di:waypoint x="4905" y="445"/><di:waypoint x="5002" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f50_di" bpmnElement="p3_grant_application_f50"><di:waypoint x="4696" y="378"/><di:waypoint x="4696" y="320"/><di:waypoint x="4805" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f51_di" bpmnElement="p3_grant_application_f51"><di:waypoint x="4905" y="320"/><di:waypoint x="4995" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f52_di" bpmnElement="p3_grant_application_f52"><di:waypoint x="5045" y="320"/><di:waypoint x="5160" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f53_di" bpmnElement="p3_grant_application_f53"><di:waypoint x="5020" y="345"/><di:waypoint x="5020" y="378"/><di:waypoint x="4525" y="378"/><di:waypoint x="4525" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f54_di" bpmnElement="p3_grant_application_f54"><di:waypoint x="4575" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f55_di" bpmnElement="p3_grant_application_f55"><di:waypoint x="4740" y="320"/><di:waypoint x="5160" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f56_di" bpmnElement="p3_grant_application_f56"><di:waypoint x="4245" y="320"/><di:waypoint x="4310" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f57_di" bpmnElement="p3_grant_application_f57"><di:waypoint x="4410" y="320"/><di:waypoint x="4475" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f58_di" bpmnElement="p3_grant_application_f58"><di:waypoint x="5210" y="320"/><di:waypoint x="5325" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f59_di" bpmnElement="p3_grant_application_f59"><di:waypoint x="5375" y="320"/><di:waypoint x="5490" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f60_di" bpmnElement="p3_grant_application_f60"><di:waypoint x="5375" y="320"/><di:waypoint x="5750" y="320"/><di:waypoint x="5750" y="195"/><di:waypoint x="6125" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f61_di" bpmnElement="p3_grant_application_f61"><di:waypoint x="5540" y="320"/><di:waypoint x="5630" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f62_di" bpmnElement="p3_grant_application_f62"><di:waypoint x="5540" y="320"/><di:waypoint x="5795" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f63_di" bpmnElement="p3_grant_application_f63"><di:waypoint x="5730" y="320"/><di:waypoint x="5795" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f64_di" bpmnElement="p3_grant_application_f64"><di:waypoint x="6035" y="320"/><di:waypoint x="6125" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f65_di" bpmnElement="p3_grant_application_f65"><di:waypoint x="6010" y="345"/><di:waypoint x="6010" y="363"/><di:waypoint x="2050" y="363"/><di:waypoint x="2050" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f66_di" bpmnElement="p3_grant_application_f66"><di:waypoint x="6035" y="320"/><di:waypoint x="6080" y="320"/><di:waypoint x="6080" y="195"/><di:waypoint x="6125" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f67_di" bpmnElement="p3_grant_application_f67"><di:waypoint x="5895" y="320"/><di:waypoint x="5985" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f68_di" bpmnElement="p3_grant_application_f68"><di:waypoint x="6225" y="320"/><di:waypoint x="6290" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f69_di" bpmnElement="p3_grant_application_f69"><di:waypoint x="6390" y="320"/><di:waypoint x="6455" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f70_di" bpmnElement="p3_grant_application_f70"><di:waypoint x="6555" y="320"/><di:waypoint x="6620" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f71_di" bpmnElement="p3_grant_application_f71"><di:waypoint x="6646" y="378"/><di:waypoint x="6646" y="410"/><di:waypoint x="5845" y="410"/><di:waypoint x="5845" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f72_di" bpmnElement="p3_grant_application_f72"><di:waypoint x="6860" y="320"/><di:waypoint x="6917" y="320"/><di:waypoint x="6917" y="445"/><di:waypoint x="6975" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f73_di" bpmnElement="p3_grant_application_f73"><di:waypoint x="6860" y="320"/><di:waypoint x="6950" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f74_di" bpmnElement="p3_grant_application_f74"><di:waypoint x="6720" y="320"/><di:waypoint x="6810" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f75_di" bpmnElement="p3_grant_application_f75"><di:waypoint x="7050" y="320"/><di:waypoint x="7115" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f76_di" bpmnElement="p3_grant_application_f76"><di:waypoint x="7215" y="320"/><di:waypoint x="7305" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f77_di" bpmnElement="p3_grant_application_f77"><di:waypoint x="7966" y="503"/><di:waypoint x="7966" y="570"/><di:waypoint x="8105" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f78_di" bpmnElement="p3_grant_application_f78"><di:waypoint x="8205" y="570"/><di:waypoint x="8302" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f79_di" bpmnElement="p3_grant_application_f79"><di:waypoint x="7996" y="503"/><di:waypoint x="7996" y="445"/><di:waypoint x="8105" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f80_di" bpmnElement="p3_grant_application_f80"><di:waypoint x="8205" y="445"/><di:waypoint x="8295" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f81_di" bpmnElement="p3_grant_application_f81"><di:waypoint x="8345" y="445"/><di:waypoint x="8460" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f82_di" bpmnElement="p3_grant_application_f82"><di:waypoint x="8320" y="470"/><di:waypoint x="8320" y="510"/><di:waypoint x="7825" y="510"/><di:waypoint x="7825" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f83_di" bpmnElement="p3_grant_application_f83"><di:waypoint x="7875" y="445"/><di:waypoint x="7940" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f84_di" bpmnElement="p3_grant_application_f84"><di:waypoint x="8040" y="445"/><di:waypoint x="8460" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f85_di" bpmnElement="p3_grant_application_f85"><di:waypoint x="7355" y="320"/><di:waypoint x="7400" y="320"/><di:waypoint x="7400" y="445"/><di:waypoint x="7445" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f86_di" bpmnElement="p3_grant_application_f86"><di:waypoint x="7545" y="445"/><di:waypoint x="7610" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f87_di" bpmnElement="p3_grant_application_f87"><di:waypoint x="7710" y="445"/><di:waypoint x="7775" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f88_di" bpmnElement="p3_grant_application_f88"><di:waypoint x="7545" y="320"/><di:waypoint x="7610" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f89_di" bpmnElement="p3_grant_application_f89"><di:waypoint x="7710" y="320"/><di:waypoint x="7807" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f90_di" bpmnElement="p3_grant_application_f90"><di:waypoint x="7355" y="320"/><di:waypoint x="7445" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f91_di" bpmnElement="p3_grant_application_f91"><di:waypoint x="8510" y="445"/><di:waypoint x="8625" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f92_di" bpmnElement="p3_grant_application_f92"><di:waypoint x="8675" y="445"/><di:waypoint x="8765" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f93_di" bpmnElement="p3_grant_application_f93"><di:waypoint x="8815" y="485"/><di:waypoint x="8815" y="503"/><di:waypoint x="5845" y="503"/><di:waypoint x="5845" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f94_di" bpmnElement="p3_grant_application_f94"><di:waypoint x="8650" y="470"/><di:waypoint x="8650" y="495"/><di:waypoint x="7165" y="495"/><di:waypoint x="7165" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f95_di" bpmnElement="p3_grant_application_f95"><di:waypoint x="7025" y="445"/><di:waypoint x="7086" y="445"/><di:waypoint x="7086" y="570"/><di:waypoint x="7147" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f96_di" bpmnElement="p3_grant_application_f96"><di:waypoint x="7165" y="588"/><di:waypoint x="7165" y="627"/><di:waypoint x="6175" y="627"/><di:waypoint x="6175" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f97_di" bpmnElement="p3_grant_application_f97"><di:waypoint x="7025" y="445"/><di:waypoint x="7115" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f98_di" bpmnElement="p3_grant_application_f98"><di:waypoint x="7215" y="445"/><di:waypoint x="7312" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f99_di" bpmnElement="p3_grant_application_f99"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f100_di" bpmnElement="p3_grant_application_f100"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f101_di" bpmnElement="p3_grant_application_f101"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f102_di" bpmnElement="p3_grant_application_f102"><di:waypoint x="128" y="930"/><di:waypoint x="225" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f103_di" bpmnElement="p3_grant_application_f103"><di:waypoint x="325" y="930"/><di:waypoint x="390" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p3_grant_application_f104_di" bpmnElement="p3_grant_application_f104"><di:waypoint x="490" y="930"/><di:waypoint x="587" y="930"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

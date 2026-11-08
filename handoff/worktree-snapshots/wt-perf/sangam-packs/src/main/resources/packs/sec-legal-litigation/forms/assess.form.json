@@ -1,0 +1,63 @@
+{
+  "key": "sec-legal-litigation/assess",
+  "version": "1.0.0",
+  "pack": "sec.legal.litigation",
+  "title": {
+    "en": "Assess, engage counsel and approve fee",
+    "hi": "आकलन, अधिवक्ता नियुक्ति एवं शुल्क अनुमोदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "counselName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Counsel engaged",
+        "hi": "नियुक्त अधिवक्ता"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "legalDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "contest",
+        "label": {
+          "en": "Contest",
+          "hi": "प्रतिवाद करें"
+        }
+      },
+      {
+        "value": "settle",
+        "label": {
+          "en": "One-time settlement",
+          "hi": "एकमुश्त निपटान"
+        }
+      },
+      {
+        "value": "file",
+        "label": {
+          "en": "File",
+          "hi": "दायर करें"
+        }
+      }
+    ]
+  }
+}

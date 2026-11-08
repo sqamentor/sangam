@@ -1,0 +1,99 @@
+{
+  "key": "p4-licence/application",
+  "version": "1.0.0",
+  "pack": "gov.p4.licence",
+  "title": {
+    "en": "Licence application",
+    "hi": "अनुज्ञप्ति आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "licenceType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Licence type",
+        "hi": "अनुज्ञप्ति का प्रकार"
+      }
+    },
+    {
+      "id": "tradeName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Trade name",
+        "hi": "व्यापार का नाम"
+      }
+    },
+    {
+      "id": "premisesAddress",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Premises address",
+        "hi": "परिसर का पता"
+      }
+    },
+    {
+      "id": "premisesArea",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Premises area (sq m)",
+        "hi": "परिसर का क्षेत्रफल (वर्ग मी)"
+      }
+    },
+    {
+      "id": "durationYears",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Licence period (years)",
+        "hi": "अनुज्ञप्ति अवधि (वर्ष)"
+      }
+    },
+    {
+      "id": "consentNoticeVersion",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Privacy notice version accepted",
+        "hi": "स्वीकृत गोपनीयता सूचना संस्करण"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

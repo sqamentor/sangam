@@ -1,0 +1,42 @@
+{
+  "id": "gov.ifms.salary-monthly",
+  "version": "1.0.0",
+  "name": {
+    "en": "Monthly salary bills",
+    "hi": "मासिक वेतन बिल"
+  },
+  "domain": "IFMS",
+  "description": "On the 20th of each month (timer start cycle) one salary bill per DDO is generated from HRMS and each runs as a P1 bill with caseType SALARY (one instance per DDO, GP-09); the run closes when every bill is paid or rejected.",
+  "mainProcesses": [
+    "sangam-salary-monthly"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/salary-monthly/sangam-salary-monthly.bpmn"
+    }
+  ],
+  "seed": null,
+  "connectors": [
+    {
+      "id": "hrms.salaryBills",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Salary bill per DDO for the period"
+    }
+  ],
+  "covers": [
+    "GP-30",
+    "GP-10",
+    "GP-09",
+    "GP-08",
+    "D-IFMS-BILL"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "gov.p1.bill-payment"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_works_config" name="Works pack configuration: order of sanctions" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Per department: add a row for its office. Per tenant: deploy overrides/&lt;tenant&gt;/works-config.dmn (PackDeployer with that tenant id); the tenant table wins (GP-37). -->
+  <decision id="works-config" name="Works pack configuration: order of sanctions" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="works-config_t" hitPolicy="FIRST">
+      <input id="works-config_i0" label="Office / department"><inputExpression id="works-config_ie0" typeRef="string"><text>officeId</text></inputExpression></input>
+      <output id="works-config_o0" label="Order of sanctions" name="worksSanctionOrder" typeRef="string"/>
+      <rule id="works-config_r0"><description>example: one department / division that grants AA before TS</description>
+        <inputEntry id="works-config_r0_i0"><text>"DIV-WK-AAFIRST"</text></inputEntry>
+        <outputEntry id="works-config_r0_o0"><text>"AA_FIRST"</text></outputEntry>
+      </rule>
+      <rule id="works-config_r1"><description>default: estimate &gt; technical sanction &gt; administrative approval</description>
+        <inputEntry id="works-config_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="works-config_r1_o0"><text>"TS_FIRST"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

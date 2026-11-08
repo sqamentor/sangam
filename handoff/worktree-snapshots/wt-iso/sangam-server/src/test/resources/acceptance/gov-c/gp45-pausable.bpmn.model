@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp45">
+  <!-- GP-45 pausable statutory clock: the SLA boundary timer must STOP while the fee is awaited (RTI s7(3)) and resume
+       with the remaining time. The model is a plain SLA; pausing is done on the running instance through the engine. -->
+  <process id="gp45-pausable" name="GP-45 Pausable clock" isExecutable="true">
+    <startEvent id="gp45_start"/>
+    <sequenceFlow id="f1" sourceRef="gp45_start" targetRef="gp45_process"/>
+    <userTask id="gp45_process" name="Process RTI request"><potentialOwner><resourceAssignmentExpression><formalExpression>group(cpio)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="gp45_sla" attachedToRef="gp45_process" cancelActivity="true">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${slaDue}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f2" sourceRef="gp45_process" targetRef="gp45_end_ok"/>
+    <endEvent id="gp45_end_ok"/>
+    <sequenceFlow id="f3" sourceRef="gp45_sla" targetRef="gp45_escalate"/>
+    <userTask id="gp45_escalate" name="SLA breached"><potentialOwner><resourceAssignmentExpression><formalExpression>group(faa)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f4" sourceRef="gp45_escalate" targetRef="gp45_end_breach"/>
+    <endEvent id="gp45_end_breach"/>
+  </process>
+</definitions>

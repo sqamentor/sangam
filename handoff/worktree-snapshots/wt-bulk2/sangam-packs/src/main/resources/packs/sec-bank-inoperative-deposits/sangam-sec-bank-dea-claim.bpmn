@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Reactivation / claim. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_dea_claim" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-bank-dea-claim" name="Reactivation / claim" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.inoperative-deposits</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,accountNo</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="dc_start" name="Claim or reactivation request" operaton:initiator="initiator" operaton:formKey="sangam:sec-bank-inoperative-deposits/claim"></startEvent>
+    <serviceTask id="dc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>accountNo=@customerId;claimantType=HOLDER;transferredToDea=false;opsSeat=OPS-CHECKER;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dc_kyc" name="Verify KYC and entitlement (holder, nominee, legal heir)" operaton:candidateGroups="${opsSeat}" operaton:formKey="sangam:sec-bank-inoperative-deposits/verify"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>claimDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="dc_gw" name="" default="sec_bank_dea_claim_f7"></exclusiveGateway>
+    <serviceTask id="dc_rj_code" name="Reason: ENTITLEMENT_NOT_ESTABLISHED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=ENTITLEMENT_NOT_ESTABLISHED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="dc_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="dc_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="dc_deaGw" name="Already with DEA Fund?" default="sec_bank_dea_claim_f9"></exclusiveGateway>
+    <serviceTask id="dc_claim" name="Claim refund from the DEA Fund" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>rbi.deaClaim</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>claim</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>accountNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>deaClaim</operaton:string></operaton:field><operaton:field name="step"><operaton:string>dea-claim</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dc_credit" name="Reactivate / pay with interest, no fee" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>accountNo,customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>credit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dc_end" name="Paid / reactivated"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_bank_dea_claim_f1" sourceRef="dc_start" targetRef="dc_defaults"/>
+    <sequenceFlow id="sec_bank_dea_claim_f2" sourceRef="dc_defaults" targetRef="dc_kyc"/>
+    <sequenceFlow id="sec_bank_dea_claim_f3" sourceRef="dc_kyc" targetRef="dc_gw"/>
+    <sequenceFlow id="sec_bank_dea_claim_f4" sourceRef="dc_rj_reject" targetRef="dc_rj_endRejected"/>
+    <sequenceFlow id="sec_bank_dea_claim_f5" sourceRef="dc_rj_code" targetRef="dc_rj_reject"/>
+    <sequenceFlow id="sec_bank_dea_claim_f6" name="reject" sourceRef="dc_gw" targetRef="dc_rj_code"><conditionExpression xsi:type="tFormalExpression">${claimDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_dea_claim_f7" name="approve" sourceRef="dc_gw" targetRef="dc_deaGw"/>
+    <sequenceFlow id="sec_bank_dea_claim_f8" name="yes" sourceRef="dc_deaGw" targetRef="dc_claim"><conditionExpression xsi:type="tFormalExpression">${transferredToDea}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_dea_claim_f9" name="no" sourceRef="dc_deaGw" targetRef="dc_credit"/>
+    <sequenceFlow id="sec_bank_dea_claim_f10" sourceRef="dc_claim" targetRef="dc_credit"/>
+    <sequenceFlow id="sec_bank_dea_claim_f11" sourceRef="dc_credit" targetRef="dc_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_dea_claim_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_dea_claim_plane" bpmnElement="sangam-sec-bank-dea-claim">
+      <bpmndi:BPMNShape id="dc_start_di" bpmnElement="dc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_defaults_di" bpmnElement="dc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_kyc_di" bpmnElement="dc_kyc"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_gw_di" bpmnElement="dc_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_rj_code_di" bpmnElement="dc_rj_code"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_rj_reject_di" bpmnElement="dc_rj_reject"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_rj_endRejected_di" bpmnElement="dc_rj_endRejected"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_deaGw_di" bpmnElement="dc_deaGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_claim_di" bpmnElement="dc_claim"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_credit_di" bpmnElement="dc_credit"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dc_end_di" bpmnElement="dc_end"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f1_di" bpmnElement="sec_bank_dea_claim_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f2_di" bpmnElement="sec_bank_dea_claim_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f3_di" bpmnElement="sec_bank_dea_claim_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f4_di" bpmnElement="sec_bank_dea_claim_f4"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f5_di" bpmnElement="sec_bank_dea_claim_f5"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f6_di" bpmnElement="sec_bank_dea_claim_f6"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f7_di" bpmnElement="sec_bank_dea_claim_f7"><di:waypoint x="590" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f8_di" bpmnElement="sec_bank_dea_claim_f8"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f9_di" bpmnElement="sec_bank_dea_claim_f9"><di:waypoint x="755" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f10_di" bpmnElement="sec_bank_dea_claim_f10"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_dea_claim_f11_di" bpmnElement="sec_bank_dea_claim_f11"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,54 @@
+{
+  "key": "audit-para/reply",
+  "version": "1.0.0",
+  "pack": "gov.audit-para",
+  "title": {
+    "en": "Reply to audit para",
+    "hi": "लेखापरीक्षा पैरा का उत्तर"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "paraNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Audit para number",
+        "hi": "लेखापरीक्षा पैरा संख्या"
+      }
+    },
+    {
+      "id": "paraText",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Audit observation",
+        "hi": "लेखापरीक्षा आपत्ति"
+      }
+    },
+    {
+      "id": "replyToAudit",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Reply to audit",
+        "hi": "लेखापरीक्षा को उत्तर"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

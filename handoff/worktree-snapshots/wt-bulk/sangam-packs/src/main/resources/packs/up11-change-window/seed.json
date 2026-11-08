@@ -1,0 +1,110 @@
+{
+  "offices": [
+    {
+      "id": "CAB",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CAB-1",
+      "role": "CAB",
+      "office": "CAB",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "CAB member 1",
+        "hi": "सीएबी सदस्य 1"
+      }
+    },
+    {
+      "id": "CAB-2",
+      "role": "CAB",
+      "office": "CAB",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "CAB member 2",
+        "hi": "सीएबी सदस्य 2"
+      }
+    },
+    {
+      "id": "CAB-3",
+      "role": "CAB",
+      "office": "CAB",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "CAB member 3",
+        "hi": "सीएबी सदस्य 3"
+      }
+    },
+    {
+      "id": "IMPLEMENTER",
+      "role": "IMPL",
+      "office": "CAB",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Implementer",
+        "hi": "कार्यान्वयनकर्ता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CAB-1",
+      "person": "u11.cab-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CAB-2",
+      "person": "u11.cab-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CAB-3",
+      "person": "u11.cab-3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "IMPLEMENTER",
+      "person": "u11.implementer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CAB",
+      "name": {
+        "en": "CAB member 1",
+        "hi": "सीएबी सदस्य 1"
+      }
+    },
+    {
+      "code": "CAB",
+      "name": {
+        "en": "CAB member 2",
+        "hi": "सीएबी सदस्य 2"
+      }
+    },
+    {
+      "code": "CAB",
+      "name": {
+        "en": "CAB member 3",
+        "hi": "सीएबी सदस्य 3"
+      }
+    },
+    {
+      "code": "IMPL",
+      "name": {
+        "en": "Implementer",
+        "hi": "कार्यान्वयनकर्ता"
+      }
+    }
+  ]
+}

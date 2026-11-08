@@ -1,0 +1,158 @@
+{
+  "offices": [
+    {
+      "id": "OFFICE-A",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "ASSET-OFFICER",
+      "role": "ASSETOFFICER",
+      "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HOO-A",
+      "name": {
+        "en": "Asset / transport officer",
+        "hi": "परिसंपत्ति / परिवहन अधिकारी"
+      }
+    },
+    {
+      "id": "BOARD-1",
+      "role": "BOARD",
+      "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HOO-A",
+      "name": {
+        "en": "Survey board member 1",
+        "hi": "सर्वेक्षण बोर्ड सदस्य 1"
+      }
+    },
+    {
+      "id": "BOARD-2",
+      "role": "BOARD",
+      "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HOO-A",
+      "name": {
+        "en": "Survey board member 2",
+        "hi": "सर्वेक्षण बोर्ड सदस्य 2"
+      }
+    },
+    {
+      "id": "BOARD-3",
+      "role": "BOARD",
+      "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HOO-A",
+      "name": {
+        "en": "Survey board member 3",
+        "hi": "सर्वेक्षण बोर्ड सदस्य 3"
+      }
+    },
+    {
+      "id": "HOO-A",
+      "role": "HOO",
+      "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "HOD-A",
+      "name": {
+        "en": "Head of office",
+        "hi": "कार्यालय प्रमुख"
+      }
+    },
+    {
+      "id": "HOD-A",
+      "role": "HOD",
+      "office": "OFFICE-A",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of department",
+        "hi": "विभागाध्यक्ष"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "ASSET-OFFICER",
+      "person": "as.asset-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BOARD-1",
+      "person": "as.board-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BOARD-2",
+      "person": "as.board-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BOARD-3",
+      "person": "as.board-3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HOO-A",
+      "person": "as.hoo-a",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "HOD-A",
+      "person": "as.hod-a",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "ASSETOFFICER",
+      "name": {
+        "en": "Asset / transport officer",
+        "hi": "परिसंपत्ति / परिवहन अधिकारी"
+      }
+    },
+    {
+      "code": "BOARD",
+      "name": {
+        "en": "Survey board member 1",
+        "hi": "सर्वेक्षण बोर्ड सदस्य 1"
+      }
+    },
+    {
+      "code": "BOARD",
+      "name": {
+        "en": "Survey board member 2",
+        "hi": "सर्वेक्षण बोर्ड सदस्य 2"
+      }
+    },
+    {
+      "code": "BOARD",
+      "name": {
+        "en": "Survey board member 3",
+        "hi": "सर्वेक्षण बोर्ड सदस्य 3"
+      }
+    },
+    {
+      "code": "HOO",
+      "name": {
+        "en": "Head of office",
+        "hi": "कार्यालय प्रमुख"
+      }
+    },
+    {
+      "code": "HOD",
+      "name": {
+        "en": "Head of department",
+        "hi": "विभागाध्यक्ष"
+      }
+    }
+  ]
+}

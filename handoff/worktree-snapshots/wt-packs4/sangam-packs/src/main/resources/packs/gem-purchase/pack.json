@@ -1,0 +1,116 @@
+{
+  "id": "gov.gem-purchase",
+  "version": "1.0.0",
+  "name": {
+    "en": "Procurement of goods (GeM-style)",
+    "hi": "वस्तुओं का प्रापण (जेम-शैली)"
+  },
+  "domain": "Procurement",
+  "description": "Indent, mode of procurement by rule (direct purchase / L1 / bid / outside GeM), budget encumbrance, auto-approval below threshold or sanction by band, GeM order with operationId, delivery window, inspection and CRAC, rejection and return of goods, bill through P1 within the payment SLA.",
+  "mainProcesses": [
+    "sangam-gem-purchase"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gem-purchase/sangam-gem-purchase.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gem-purchase/gem-procurement-mode.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gem-purchase/gem-purchase-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gem-purchase/forms/indent.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gem-purchase/forms/bid-document.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gem-purchase/forms/overdue.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gem-purchase/forms/crac.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gem-purchase/seed.json"
+    }
+  ],
+  "seed": "packs/gem-purchase/seed.json",
+  "connectors": [
+    {
+      "id": "gem.order",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "GeM order / contract"
+    },
+    {
+      "id": "gem.rejectGoods",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Rejection of goods on GeM"
+    },
+    {
+      "id": "ifms.budget",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Budget"
+    },
+    {
+      "id": "ifms.encumber",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Encumbrance"
+    },
+    {
+      "id": "ifms.release",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Release"
+    }
+  ],
+  "covers": [
+    "GP-29",
+    "GP-01",
+    "GP-11",
+    "GP-12",
+    "GP-06",
+    "UP-14",
+    "R62",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "gov.tender",
+    "gov.p1.bill-payment"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-p1-bill-payment",
+    "sangam-tender"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "unitPrice"
+    ]
+  }
+}

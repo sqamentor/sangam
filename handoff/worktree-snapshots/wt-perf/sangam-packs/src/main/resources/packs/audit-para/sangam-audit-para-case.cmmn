@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL"
+             xmlns:operaton="http://operaton.org/schema/1.0/cmmn"
+             id="defs_audit_para_case" targetNamespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Audit para, case variant (GP-21, hardened from spike gp21-audit-case): draft reply at once; collect records
+       and seek comments of another section are discretionary and repeatable; approval needs the draft; milestone
+       Sent to AG. -->
+  <case id="sangam-audit-para-case" name="Audit para (case)" operaton:historyTimeToLive="3650">
+    <casePlanModel id="apc_plan" name="Audit para" autoComplete="true">
+      <planItem id="apc_pi_draft" definitionRef="apc_draft"/>
+      <planItem id="apc_pi_records" definitionRef="apc_records">
+        <itemControl id="apc_ic1">
+          <repetitionRule id="apc_rep1"><condition id="apc_c1">${true}</condition></repetitionRule>
+          <manualActivationRule id="apc_mar1"><condition id="apc_c2">${true}</condition></manualActivationRule>
+        </itemControl>
+      </planItem>
+      <planItem id="apc_pi_comments" definitionRef="apc_comments">
+        <itemControl id="apc_ic2">
+          <repetitionRule id="apc_rep2"><condition id="apc_c3">${true}</condition></repetitionRule>
+          <manualActivationRule id="apc_mar2"><condition id="apc_c4">${true}</condition></manualActivationRule>
+        </itemControl>
+      </planItem>
+      <planItem id="apc_pi_approve" definitionRef="apc_approve">
+        <entryCriterion id="apc_ec1" sentryRef="apc_s_drafted"/>
+      </planItem>
+      <planItem id="apc_pi_sent" definitionRef="apc_sentMs">
+        <entryCriterion id="apc_ec2" sentryRef="apc_s_approved"/>
+      </planItem>
+      <sentry id="apc_s_drafted" name="Drafted">
+        <planItemOnPart id="apc_op1" sourceRef="apc_pi_draft"><standardEvent>complete</standardEvent></planItemOnPart>
+      </sentry>
+      <sentry id="apc_s_approved" name="Approved">
+        <planItemOnPart id="apc_op2" sourceRef="apc_pi_approve"><standardEvent>complete</standardEvent></planItemOnPart>
+      </sentry>
+      <humanTask id="apc_draft" name="Draft reply to the para" operaton:candidateGroups="DDO-AUDIT"/>
+      <humanTask id="apc_records" name="Collect records" operaton:candidateGroups="DDO-AUDIT"/>
+      <humanTask id="apc_comments" name="Seek comments of another section" operaton:candidateGroups="AUDIT-CELL"/>
+      <humanTask id="apc_approve" name="Approve reply" operaton:candidateGroups="HOD-AU"/>
+      <milestone id="apc_sentMs" name="Sent to AG"/>
+    </casePlanModel>
+  </case>
+</definitions>

@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: REGIME-WESTMINSTER-SUPPLY
+  layer: regime
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL
+  name:
+    en: 'Regime preset: Westminster supply (vote, appropriation, lapse at year end)'
+  source: INTERNATIONAL-PFM-REQUIREMENTS 4.1 (L1 regime preset)
+ledgers:
+- id: BUDGET
+  kind: LIMIT
+  mode: AUTHORITATIVE
+  stages:
+  - APPROPRIATION
+  - ALLOCATION
+  - RELEASE
+  - AUTHORISATION
+  - SUB_ALLOTMENT
+  checks:
+    APPROPRIATION: HARD
+    ALLOCATION: HARD
+    RELEASE: HARD
+    AUTHORISATION: HARD
+    SUB_ALLOTMENT: HARD
+  availability:
+    type: ANNUAL
+    carryForwardCommitments: false
+    cancelAfterYears: 0
+  holdQueue: true
+  stripes: 1
+  accounting:
+  - event: CONSUME
+    basis: CASH
+    debit: '{line}'
+    credit: BANK:{holder}
+  - event: ENCUMBER
+    basis: ACCRUAL
+    debit: '{line}'
+    credit: PAYABLE:{holder}
+yearEnd:
+  policy: LAPSE
+  surrenderBeforeClose: true

@@ -161,6 +161,19 @@ The selftest `node tools/governance/selftest-push-approval.mjs` passes 31/31 und
 | **UI parity, round 2** | `wt-uip2` | The UI is green 3 times. The `taskForm` flake is fixed at the root (1.9 s down to under 0.3 s). Additive APIs are approved: task-list variables, `activityInstanceId` filters, an activity-state filter. Server tests were rerunning. | Finish the server tests and `OpenApiCompatibilityTest`, then apply. Items: P13, P14, P35, P45, P49, the duplicate label, P02 and P59 tests. |
 | **Matrix runner** | (repo scripts, `AcceptanceDatabase`) | `sqlserver2025` lane added (`2025-CU10-ubuntu-24.04`, RCSI); 5-minute container start timeout. PostgreSQL: E1 17/17, E11 8/8, E16c 15/15, E17b 6/6, E17c 6/6, E16a 19/20 (GP-13), E16b 19/20 (GP-21), E17a 4/5 (D-TENDER). E10 now passes. The Europe/Berlin E8 run was in progress. | Run E8 Berlin, then the full suite on SQL Server 2022, Oracle 23, MySQL 8.4 and SQL Server 2025 (gated, owner `customwf-matrix`). Update SG-04/05. |
 
+### 6b-URGENT. SL-43 REOPENED: quota connection-pool deadlock (HIGH, found 2026-11-08 ~22:40 IST)
+- **Defect:** `JdbcTenantQuotas.overrides` takes a second pool connection through `QuotaWiring`'s `Transactions.of(ds)` while the caller already holds one. This happens in `TenantQuotaEnginePlugin.checkVariables` and in `TenantQuotaFilter`.
+- **Effect:** under concurrency the pool starves (20/20 active, 49 waiting). The T-SCALE baseline got **0 starts/s**: 209 attempts, all failed, with 60 s timeouts, 403 via `/error` and 500s.
+- **Where it is:** in the main tree and in commit `2aaf44f`. **Do not merge the handoff branch until this is fixed.**
+- **Fix:** a fix agent was dispatched (worktree `scratchpad\wt-qdl`, lock owner `customwf-qdl`). If that session died, redo it: read on the caller's transaction, or use a cache refreshed outside any held connection. Add a regression test with 3×pool concurrent starts that deadlocks without the fix. Also audit the other new code for the same nested-connection pattern.
+- **T-SCALE:** throughput cannot be measured until this is fixed. Baseline round trips per full lifecycle: **484.7**, plus 63.3 in the background. Report: `scratchpad\tscale-base\report.txt`.
+
+### 6b-URGENT-2. SG-35 (HIGH, money path, from IFMS Trial 2, single-verified)
+- **Defect:** on 15e4135, a bill whose amount matches no band at the `gwBand` exclusive gateway is silently parked. The case keeps running with no task, and no NO_MATCHING_ROUTE incident is raised.
+- **Regression:** 0196b57 raised ENGINE-02004 correctly. Seen on Oracle 23 with JDK 25 (kit X-13). Evidence: oneifms-sangam 7c34baa, E-54 (IFMS b2e03be).
+- **Cause:** suspected to be the ADR-D-25 strict-XOR change.
+- **Fix:** a fix agent was dispatched (worktree `scratchpad\wt-sg35`, lock owner `customwf-sg35`). If it died, redo it: no match must fail closed with an audited `NO_MATCHING_ROUTE` incident, for every exclusive gateway. Add a regression test on H2, on the IFMS bill pack and on PostgreSQL. WorkFlow needs the fix commit id.
+
 ### 6c. Not started / open
 - **SL-35:** a new document type, end to end. It depends on packs4.
 - **IX.8 follow-ups:**

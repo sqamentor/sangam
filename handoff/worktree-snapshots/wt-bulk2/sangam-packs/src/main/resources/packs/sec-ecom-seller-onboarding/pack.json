@@ -1,0 +1,95 @@
+{
+  "id": "sec.ecom.seller-onboarding",
+  "version": "1.0.0",
+  "name": {
+    "en": "Marketplace seller onboarding",
+    "hi": "मार्केटप्लेस विक्रेता पंजीकरण"
+  },
+  "domain": "E-commerce",
+  "description": "Seller KYC (GSTIN, PAN, bank account by penny drop), category licences (FSSAI, drug licence, BIS) by rule, review with clarification rounds through the seller portal, maker-checker approval, seller agreement, publication of the seller's name, address, grievance officer and ratings on the platform (E-Commerce Rules r.5 and r.6), country of origin captured per listing.",
+  "mainProcesses": [
+    "sangam-sec-ecom-seller-onboarding"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ecom-seller-onboarding/sangam-sec-ecom-seller-onboarding.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ecom-seller-onboarding/sec-ecom-seller-docs.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-seller-onboarding/forms/apply.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-seller-onboarding/forms/correct.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-seller-onboarding/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-seller-onboarding/forms/portal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-seller-onboarding/forms/approve.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ecom-seller-onboarding/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ecom-seller-onboarding/seed.json",
+  "connectors": [
+    {
+      "id": "gst.verify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "GSTIN status"
+    },
+    {
+      "id": "pan.verify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "PAN"
+    },
+    {
+      "id": "bene.validate",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Penny drop"
+    },
+    {
+      "id": "marketplace.createSeller",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Seller account"
+    },
+    {
+      "id": "catalogue.publishSeller",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Seller profile"
+    }
+  ],
+  "covers": [
+    "SEC-ECOM-006",
+    "SEC-ECOM-008",
+    "UP-22",
+    "UP-05",
+    "GP-16"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

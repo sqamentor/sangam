@@ -1,0 +1,72 @@
+{
+  "key": "sec-ins-health-claim/preauth",
+  "version": "1.0.0",
+  "pack": "sec.ins.health-claim",
+  "title": {
+    "en": "Cashless pre-authorisation (1 hour)",
+    "hi": "कैशलेस पूर्व-प्राधिकरण (1 घंटा)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "approvedAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Approved amount (INR)",
+        "hi": "स्वीकृत राशि (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "preauthDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "clarify",
+        "label": {
+          "en": "Seek clarification",
+          "hi": "स्पष्टीकरण मांगें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

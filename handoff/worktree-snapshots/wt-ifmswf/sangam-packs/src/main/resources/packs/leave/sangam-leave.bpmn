@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Leave application. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_leave" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <error id="err_INSUFFICIENT_BALANCE" name="INSUFFICIENT_BALANCE" errorCode="INSUFFICIENT_BALANCE"/>
+  <process id="sangam-leave" name="Leave application" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.leave</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>employeeId,leaveType,leaveFrom,leaveTo,leaveDays</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="lv_start" name="Leave applied" operaton:initiator="initiator" operaton:formKey="sangam:leave/application"></startEvent>
+    <serviceTask id="lv_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=LEAVE;amount=0;routingDecisionKey=leave-authority;chargeSeat=null;encumbranceLedger=leave;appealAllowed=false;issueOutput=true;outputTemplate=leave-order</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="lv_account" name="Ledger account" operaton:expression="${execution.setVariable('encumbranceAccount', employeeId.concat(':').concat(leaveType))}"></serviceTask>
+    <serviceTask id="lv_balance" name="Leave balance (GP-48)" operaton:class="org.sangam.packs.core.LedgerDelegate"><extensionElements><operaton:field name="op"><operaton:string>BALANCE</operaton:string></operaton:field><operaton:field name="ledger"><operaton:string>leave</operaton:string></operaton:field><operaton:field name="account"><operaton:expression>${encumbranceAccount}</operaton:expression></operaton:field><operaton:field name="resultVar"><operaton:string>leaveBalance</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="lv_route" name="Routing (DMN, tenant override GP-37)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>leave-routing</operaton:string></operaton:field><operaton:field name="binding"><operaton:string>latest</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <callActivity id="lv_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="lv_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="lv_auto" name="Auto-approved below threshold (GP-29)" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>BIND_DEEMED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="lv_sanction" name="Leave sanction (core)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="lv_debit" name="Debit balance" operaton:class="org.sangam.packs.core.LedgerDelegate"><extensionElements><operaton:field name="op"><operaton:string>ENCUMBER</operaton:string></operaton:field><operaton:field name="unit"><operaton:string>DAYS</operaton:string></operaton:field><operaton:field name="ledger"><operaton:string>leave</operaton:string></operaton:field><operaton:field name="account"><operaton:expression>${encumbranceAccount}</operaton:expression></operaton:field><operaton:field name="amount"><operaton:expression>${leaveDays}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="lv_rjShort_code" name="Reason: INSUFFICIENT_LEAVE_BALANCE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=INSUFFICIENT_LEAVE_BALANCE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="lv_rjShort_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="lv_rjShort_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="lv_routeGw" name="leaveRoute?" default="leave_f10"></exclusiveGateway>
+    <exclusiveGateway id="lv_sanGw" name="sanctionOutcome?" default="leave_f14"></exclusiveGateway>
+    <serviceTask id="lv_order" name="Leave order" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>leave-order</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lv_chargeGw" name="Charge arrangement?" default="leave_f20"></exclusiveGateway>
+    <serviceTask id="lv_charge" name="Create additional charge for the period (GP-18)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hr.chargeArrangement</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>grant</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId,chargeSeat,leaveFrom,leaveTo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>charge</operaton:string></operaton:field><operaton:field name="step"><operaton:string>charge</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lv_chargeJoin" name=""></exclusiveGateway>
+    <intermediateCatchEvent id="lv_leaveEnds" name="Leave ends"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${leaveTo}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="lv_joining" name="Submit joining report" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:leave/joining"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lv_revert" name="End the additional charge" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hr.chargeRevert</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revert</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId,chargeSeat</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>chargeRevert</operaton:string></operaton:field><operaton:field name="step"><operaton:string>charge-revert</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="lv_close" name="Close (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="lv_noOutput" name="No second order" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>issueOutput=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lv_end" name="Rejoined"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="lv_noBalance" name="Insufficient balance" attachedToRef="lv_debit" cancelActivity="true"><errorEventDefinition errorRef="err_INSUFFICIENT_BALANCE"/></boundaryEvent>
+    <sequenceFlow id="leave_f1" sourceRef="lv_start" targetRef="lv_defaults"/>
+    <sequenceFlow id="leave_f2" sourceRef="lv_defaults" targetRef="lv_account"/>
+    <sequenceFlow id="leave_f3" sourceRef="lv_account" targetRef="lv_balance"/>
+    <sequenceFlow id="leave_f4" sourceRef="lv_balance" targetRef="lv_route"/>
+    <sequenceFlow id="leave_f5" sourceRef="lv_rj_reject" targetRef="lv_rj_endRejected"/>
+    <sequenceFlow id="leave_f6" sourceRef="lv_rjShort_reject" targetRef="lv_rjShort_endRejected"/>
+    <sequenceFlow id="leave_f7" sourceRef="lv_rjShort_code" targetRef="lv_rjShort_reject"/>
+    <sequenceFlow id="leave_f8" name="AUTO" sourceRef="lv_routeGw" targetRef="lv_auto"><conditionExpression xsi:type="tFormalExpression">${leaveRoute == 'AUTO'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="leave_f9" name="INSUFFICIENT" sourceRef="lv_routeGw" targetRef="lv_rjShort_code"><conditionExpression xsi:type="tFormalExpression">${leaveRoute == 'INSUFFICIENT'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="leave_f10" name="otherwise" sourceRef="lv_routeGw" targetRef="lv_sanction"/>
+    <sequenceFlow id="leave_f11" sourceRef="lv_route" targetRef="lv_routeGw"/>
+    <sequenceFlow id="leave_f12" sourceRef="lv_auto" targetRef="lv_debit"/>
+    <sequenceFlow id="leave_f13" name="SANCTIONED" sourceRef="lv_sanGw" targetRef="lv_debit"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="leave_f14" name="otherwise" sourceRef="lv_sanGw" targetRef="lv_rj_reject"/>
+    <sequenceFlow id="leave_f15" sourceRef="lv_sanction" targetRef="lv_sanGw"/>
+    <sequenceFlow id="leave_f16" sourceRef="lv_noBalance" targetRef="lv_rjShort_code"/>
+    <sequenceFlow id="leave_f17" sourceRef="lv_debit" targetRef="lv_order"/>
+    <sequenceFlow id="leave_f18" sourceRef="lv_order" targetRef="lv_chargeGw"/>
+    <sequenceFlow id="leave_f19" name="yes" sourceRef="lv_chargeGw" targetRef="lv_charge"><conditionExpression xsi:type="tFormalExpression">${chargeSeat != null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="leave_f20" name="no" sourceRef="lv_chargeGw" targetRef="lv_chargeJoin"/>
+    <sequenceFlow id="leave_f21" sourceRef="lv_charge" targetRef="lv_chargeJoin"/>
+    <sequenceFlow id="leave_f22" sourceRef="lv_chargeJoin" targetRef="lv_leaveEnds"/>
+    <sequenceFlow id="leave_f23" sourceRef="lv_leaveEnds" targetRef="lv_joining"/>
+    <sequenceFlow id="leave_f24" sourceRef="lv_joining" targetRef="lv_revert"/>
+    <sequenceFlow id="leave_f25" sourceRef="lv_revert" targetRef="lv_noOutput"/>
+    <sequenceFlow id="leave_f26" sourceRef="lv_noOutput" targetRef="lv_close"/>
+    <sequenceFlow id="leave_f27" sourceRef="lv_close" targetRef="lv_end"/>
+    <subProcess id="lv_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="lv_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="lv_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="lv_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="lv_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="leave_f28" sourceRef="lv_withdrawStart" targetRef="lv_withdrawKind"/>
+      <sequenceFlow id="leave_f29" sourceRef="lv_withdrawKind" targetRef="lv_withdrawCall"/>
+      <sequenceFlow id="leave_f30" sourceRef="lv_withdrawCall" targetRef="lv_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="lv_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="lv_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="lv_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="lv_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="lv_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="leave_f31" sourceRef="lv_cancelStart" targetRef="lv_cancelKind"/>
+      <sequenceFlow id="leave_f32" sourceRef="lv_cancelKind" targetRef="lv_cancelCall"/>
+      <sequenceFlow id="leave_f33" sourceRef="lv_cancelCall" targetRef="lv_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="leave_diagram">
+    <bpmndi:BPMNPlane id="leave_plane" bpmnElement="sangam-leave">
+      <bpmndi:BPMNShape id="lv_start_di" bpmnElement="lv_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_defaults_di" bpmnElement="lv_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_account_di" bpmnElement="lv_account"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_balance_di" bpmnElement="lv_balance"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_route_di" bpmnElement="lv_route"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_rj_reject_di" bpmnElement="lv_rj_reject"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_rj_endRejected_di" bpmnElement="lv_rj_endRejected"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_auto_di" bpmnElement="lv_auto"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_sanction_di" bpmnElement="lv_sanction"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_debit_di" bpmnElement="lv_debit"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_rjShort_code_di" bpmnElement="lv_rjShort_code"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_rjShort_reject_di" bpmnElement="lv_rjShort_reject"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_rjShort_endRejected_di" bpmnElement="lv_rjShort_endRejected"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_routeGw_di" bpmnElement="lv_routeGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_sanGw_di" bpmnElement="lv_sanGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_order_di" bpmnElement="lv_order"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_chargeGw_di" bpmnElement="lv_chargeGw"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_charge_di" bpmnElement="lv_charge"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_chargeJoin_di" bpmnElement="lv_chargeJoin"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_leaveEnds_di" bpmnElement="lv_leaveEnds"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_joining_di" bpmnElement="lv_joining"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_revert_di" bpmnElement="lv_revert"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_close_di" bpmnElement="lv_close"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_noOutput_di" bpmnElement="lv_noOutput"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_end_di" bpmnElement="lv_end"><dc:Bounds x="3022" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_noBalance_di" bpmnElement="lv_noBalance"><dc:Bounds x="1348" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_withdraw_di" bpmnElement="lv_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_withdrawStart_di" bpmnElement="lv_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_withdrawKind_di" bpmnElement="lv_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_withdrawCall_di" bpmnElement="lv_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_withdrawEnd_di" bpmnElement="lv_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_cancel_di" bpmnElement="lv_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_cancelStart_di" bpmnElement="lv_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_cancelKind_di" bpmnElement="lv_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_cancelCall_di" bpmnElement="lv_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lv_cancelEnd_di" bpmnElement="lv_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="leave_f1_di" bpmnElement="leave_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f2_di" bpmnElement="leave_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f3_di" bpmnElement="leave_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f4_di" bpmnElement="leave_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f5_di" bpmnElement="leave_f5"><di:waypoint x="1440" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f6_di" bpmnElement="leave_f6"><di:waypoint x="1770" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f7_di" bpmnElement="leave_f7"><di:waypoint x="1605" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f8_di" bpmnElement="leave_f8"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f9_di" bpmnElement="leave_f9"><di:waypoint x="920" y="70"/><di:waypoint x="1212" y="70"/><di:waypoint x="1212" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f10_di" bpmnElement="leave_f10"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f11_di" bpmnElement="leave_f11"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f12_di" bpmnElement="leave_f12"><di:waypoint x="1110" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f13_di" bpmnElement="leave_f13"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f14_di" bpmnElement="leave_f14"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f15_di" bpmnElement="leave_f15"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f16_di" bpmnElement="leave_f16"><di:waypoint x="1366" y="253"/><di:waypoint x="1366" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f17_di" bpmnElement="leave_f17"><di:waypoint x="1440" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f18_di" bpmnElement="leave_f18"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f19_di" bpmnElement="leave_f19"><di:waypoint x="1745" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f20_di" bpmnElement="leave_f20"><di:waypoint x="1745" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f21_di" bpmnElement="leave_f21"><di:waypoint x="1935" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f22_di" bpmnElement="leave_f22"><di:waypoint x="2075" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f23_di" bpmnElement="leave_f23"><di:waypoint x="2233" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f24_di" bpmnElement="leave_f24"><di:waypoint x="2430" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f25_di" bpmnElement="leave_f25"><di:waypoint x="2595" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f26_di" bpmnElement="leave_f26"><di:waypoint x="2760" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f27_di" bpmnElement="leave_f27"><di:waypoint x="2925" y="195"/><di:waypoint x="3022" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f28_di" bpmnElement="leave_f28"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f29_di" bpmnElement="leave_f29"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f30_di" bpmnElement="leave_f30"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f31_di" bpmnElement="leave_f31"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f32_di" bpmnElement="leave_f32"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="leave_f33_di" bpmnElement="leave_f33"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

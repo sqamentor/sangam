@@ -1,0 +1,54 @@
+{
+  "key": "land-acquisition/requisition",
+  "version": "1.0.0",
+  "pack": "gov.land-acquisition",
+  "title": {
+    "en": "Land acquisition requisition",
+    "hi": "भूमि अर्जन मांग"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "projectName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Project",
+        "hi": "परियोजना"
+      }
+    },
+    {
+      "id": "areaHectares",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Area (hectares)",
+        "hi": "क्षेत्रफल (हेक्टेयर)"
+      }
+    },
+    {
+      "id": "district",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "District",
+        "hi": "ज़िला"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

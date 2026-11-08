@@ -1,0 +1,54 @@
+{
+  "key": "sec-ushealth-gfe-ppdr/schedule",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.gfe-ppdr",
+  "title": {
+    "en": "Scheduling",
+    "es": "Programación"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "es": "Nombre del paciente"
+      }
+    },
+    {
+      "id": "serviceDescription",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Items and services expected",
+        "es": "Artículos y servicios previstos"
+      }
+    },
+    {
+      "id": "scheduledDate",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Scheduled date of service",
+        "es": "Fecha programada del servicio"
+      }
+    },
+    {
+      "id": "daysUntilService",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Business days between scheduling and service (0 = on request)",
+        "es": "Días hábiles entre la programación y el servicio (0 = a solicitud)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "id": "gov.ifms.supplementary",
+  "version": "1.0.0",
+  "name": {
+    "en": "Supplementary demands, new service, Contingency Fund",
+    "hi": "अनुपूरक माँगें, नई सेवा, आकस्मिकता निधि"
+  },
+  "domain": "IFMS",
+  "description": "Supplementary proposal in the batch the budget division calls (cash / technical / token), new-service determination by DMN (prior Parliament approval or report with the next batch), Contingency Fund advance with recoupment by supplementary, ledger ADJUST on approval.",
+  "mainProcesses": [
+    "sangam-ifms-supplementary"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-supplementary/sangam-ifms-supplementary.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-supplementary/ifms-new-service.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-supplementary/ifms-supplementary-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-supplementary/ifms-supplementary-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-supplementary/forms/proposal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-supplementary/forms/fa.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-supplementary/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-supplementary/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "ledger.adjust",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Add the supplementary to the line (sangam-ledger, idempotent by operationId)"
+    }
+  ],
+  "covers": [
+    "IFC-048",
+    "IFC-049",
+    "IFC-050",
+    "IFC-051",
+    "IFC-073",
+    "GA-03",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-referral",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-supplementary-powers",
+      "rule": "CAA SUPPLEMENTARY no monetary limit",
+      "reason": "the approving authority of a supplementary proposal is not read from the rule text; confirm from the delegation order and deploy it as a tenant DMN override"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
+}

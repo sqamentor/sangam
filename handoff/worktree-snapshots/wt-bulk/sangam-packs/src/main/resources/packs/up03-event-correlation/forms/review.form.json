@@ -1,0 +1,47 @@
+{
+  "key": "up03-event-correlation/review",
+  "version": "1.0.0",
+  "pack": "universal.up03-event-correlation",
+  "title": {
+    "en": "Review correlated signal",
+    "hi": "सहसंबद्ध संकेत की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "signalDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "proceed",
+        "label": {
+          "en": "Proceed",
+          "hi": "आगे बढ़ें"
+        }
+      },
+      {
+        "value": "drop",
+        "label": {
+          "en": "Drop the proposal",
+          "hi": "प्रस्ताव छोड़ें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "key": "sec-bank-cheque-return/return",
+  "version": "1.0.0",
+  "pack": "sec.bank.cheque-return",
+  "title": {
+    "en": "Cheque return",
+    "hi": "चेक वापसी"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "chequeNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Cheque number",
+        "hi": "चेक संख्या"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "drawerName",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Drawer",
+        "hi": "आहर्ता"
+      }
+    },
+    {
+      "id": "returnReason",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Reason for return",
+        "hi": "वापसी का कारण"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    }
+  ]
+}

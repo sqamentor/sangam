@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_recruit_authority" name="Recruitment notification approval" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="recruit-authority" name="Recruitment notification approval" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="recruit-authority_t" hitPolicy="FIRST">
+      <input id="recruit-authority_i0" label="Amount"><inputExpression id="recruit-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="recruit-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="recruit-authority_r0">
+        <inputEntry id="recruit-authority_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="recruit-authority_r0_o0"><text>"JS"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,184 @@
+{
+  "id": "gov.p2.file-movement",
+  "version": "1.0.0",
+  "name": {
+    "en": "P2 File movement (e-Office)",
+    "hi": "पी2 फ़ाइल संचलन (ई-ऑफ़िस)"
+  },
+  "domain": "e-Office",
+  "description": "Note / draft for approval moves up the \"put up to\" chain by seat, with return to any level, parallel comments, out-of-hierarchy marking with reason, signed noting at every level (CSMOP), disposal by the competent authority, dispatch, closure with retention category, part files, physical-file custody, inter-department referral and RTI linkage (IX.4 P2, X.4.4).",
+  "mainProcesses": [
+    "sangam-p2-file-movement"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/p2-file-movement/sangam-p2-file-movement.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p2-file-movement/p2-put-up-to.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p2-file-movement/p2-disposal-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p2-file-movement/p2-disposal-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p2-file-movement/forms/file-open.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p2-file-movement/forms/resign.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p2-file-movement/forms/revise.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p2-file-movement/forms/dispatch.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p2-file-movement/forms/close.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p2-file-movement/forms/physical-receipt.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/p2-file-movement/seed.json"
+    }
+  ],
+  "seed": "packs/p2-file-movement/seed.json",
+  "connectors": [
+    {
+      "id": "dsc.sign",
+      "capabilityClass": "a",
+      "govTag": "G-SIGN",
+      "purpose": "DSC signer agent for noting"
+    },
+    {
+      "id": "esign.sign",
+      "capabilityClass": "b",
+      "govTag": "G-SIGN",
+      "purpose": "eSign fallback"
+    },
+    {
+      "id": "dak.dispatch",
+      "capabilityClass": "c",
+      "govTag": "G-MAIL",
+      "purpose": "Dispatch: gov.in e-mail, dak register"
+    },
+    {
+      "id": "referral.send",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Referral to another department"
+    }
+  ],
+  "covers": [
+    "AC-04",
+    "GP-02",
+    "GP-18",
+    "GP-32",
+    "GP-34",
+    "GP-52",
+    "GP-53",
+    "GP-54",
+    "J-P2-H",
+    "J-P2-E01",
+    "J-P2-E02",
+    "J-P2-E03",
+    "J-P2-E04",
+    "J-P2-E05",
+    "J-P2-E06",
+    "J-P2-E07",
+    "J-P2-E08",
+    "J-P2-E09",
+    "J-P2-E10",
+    "R57",
+    "R61",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [
+    {
+      "id": "AC-04",
+      "title": "Up three levels, back two, resubmitted, approved; acted-for shown",
+      "refs": [
+        "T15",
+        "T17"
+      ],
+      "given": "chain SO-B2 > US-B > DS-B, DS on leave with JS-1 on additional charge",
+      "when": "DS-B returns to level 1; file goes up again; JS-1 approves as DS-B",
+      "then": "CASE_RETURNED, CASE_RESUBMITTED, ACTED_FOR with the additional-charge order; dispatch; closed",
+      "startVariables": {
+        "fileNo": "B-2/14/2026-Estt",
+        "subject": "Sanction of honorarium",
+        "subjectHead": "ESTABLISHMENT",
+        "noting": "Proposal for approval.",
+        "draftLetter": "Draft order.",
+        "actingSeat": "DA-B2",
+        "initiator": "p2.da",
+        "officeId": "SEC-B2"
+      },
+      "expectState": "CLOSED",
+      "run": {
+        "expect": {
+          "tasks": [
+            "sn_sanction",
+            "p2_dispatch"
+          ],
+          "audit": [
+            "APPROVAL_RECORDED",
+            "CASE_CLOSED"
+          ]
+        }
+      }
+    },
+    {
+      "id": "J-P2-E04",
+      "title": "Additional-charge holder who noted lower down cannot decide",
+      "refs": [
+        "T17"
+      ],
+      "given": "p2.us noted as US-B and holds DS-B on additional charge",
+      "when": "p2.us tries to approve as DS-B",
+      "then": "422 SOD_VIOLATION; SOD_VIOLATION_BLOCKED",
+      "startVariables": {
+        "fileNo": "B-2/14/2026-Estt",
+        "subject": "Sanction of honorarium",
+        "subjectHead": "ESTABLISHMENT",
+        "noting": "Proposal for approval.",
+        "draftLetter": "Draft order.",
+        "actingSeat": "DA-B2",
+        "initiator": "p2.da",
+        "officeId": "SEC-B2"
+      },
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: one person acts on two levels of the same file"
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-recommendation",
+    "sangam-core-referral",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

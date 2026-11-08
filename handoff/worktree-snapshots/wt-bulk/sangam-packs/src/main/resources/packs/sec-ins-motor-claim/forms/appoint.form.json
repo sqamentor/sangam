@@ -1,0 +1,27 @@
+{
+  "key": "sec-ins-motor-claim/appoint",
+  "version": "1.0.0",
+  "pack": "sec.ins.motor-claim",
+  "title": {
+    "en": "Appoint surveyor (24 hours)",
+    "hi": "सर्वेक्षक नियुक्त करें (24 घंटे)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "surveyorId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Licensed surveyor",
+        "hi": "अनुज्ञप्त सर्वेक्षक"
+      }
+    }
+  ]
+}

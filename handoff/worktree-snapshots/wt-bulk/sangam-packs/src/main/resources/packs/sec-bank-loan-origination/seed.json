@@ -1,0 +1,230 @@
+{
+  "offices": [
+    {
+      "id": "BRANCH-LO",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CREDIT-ANALYST",
+      "role": "ANALYST",
+      "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "BRANCH-MGR",
+      "name": {
+        "en": "Credit analyst",
+        "hi": "ऋण विश्लेषक"
+      }
+    },
+    {
+      "id": "LEGAL-OFFICER",
+      "role": "LEGAL",
+      "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "BRANCH-MGR",
+      "name": {
+        "en": "Legal officer",
+        "hi": "विधि अधिकारी"
+      }
+    },
+    {
+      "id": "VALUER",
+      "role": "VALUER",
+      "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "BRANCH-MGR",
+      "name": {
+        "en": "Empanelled valuer",
+        "hi": "पैनलबद्ध मूल्यांकक"
+      }
+    },
+    {
+      "id": "BRANCH-MGR",
+      "role": "BRANCHMGR",
+      "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "ZONAL-CREDIT",
+      "name": {
+        "en": "Branch manager",
+        "hi": "शाखा प्रबंधक"
+      }
+    },
+    {
+      "id": "ZONAL-CREDIT",
+      "role": "ZONALCREDIT",
+      "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CREDIT-HEAD",
+      "name": {
+        "en": "Zonal credit head",
+        "hi": "क्षेत्रीय ऋण प्रमुख"
+      }
+    },
+    {
+      "id": "CREDIT-HEAD",
+      "role": "CREDITHEAD",
+      "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Chief credit officer",
+        "hi": "मुख्य ऋण अधिकारी"
+      }
+    },
+    {
+      "id": "CREDIT-COMM-1",
+      "role": "COMMITTEE",
+      "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Credit committee member 1",
+        "hi": "ऋण समिति सदस्य 1"
+      }
+    },
+    {
+      "id": "CREDIT-COMM-2",
+      "role": "COMMITTEE",
+      "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Credit committee member 2",
+        "hi": "ऋण समिति सदस्य 2"
+      }
+    },
+    {
+      "id": "CREDIT-COMM-3",
+      "role": "COMMITTEE",
+      "office": "BRANCH-LO",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Credit committee member 3",
+        "hi": "ऋण समिति सदस्य 3"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CREDIT-ANALYST",
+      "person": "blo.credit-analyst",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "LEGAL-OFFICER",
+      "person": "blo.legal-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "VALUER",
+      "person": "blo.valuer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BRANCH-MGR",
+      "person": "blo.branch-mgr",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "ZONAL-CREDIT",
+      "person": "blo.zonal-credit",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CREDIT-HEAD",
+      "person": "blo.credit-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CREDIT-COMM-1",
+      "person": "blo.credit-comm-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CREDIT-COMM-2",
+      "person": "blo.credit-comm-2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CREDIT-COMM-3",
+      "person": "blo.credit-comm-3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "ANALYST",
+      "name": {
+        "en": "Credit analyst",
+        "hi": "ऋण विश्लेषक"
+      }
+    },
+    {
+      "code": "LEGAL",
+      "name": {
+        "en": "Legal officer",
+        "hi": "विधि अधिकारी"
+      }
+    },
+    {
+      "code": "VALUER",
+      "name": {
+        "en": "Empanelled valuer",
+        "hi": "पैनलबद्ध मूल्यांकक"
+      }
+    },
+    {
+      "code": "BRANCHMGR",
+      "name": {
+        "en": "Branch manager",
+        "hi": "शाखा प्रबंधक"
+      }
+    },
+    {
+      "code": "ZONALCREDIT",
+      "name": {
+        "en": "Zonal credit head",
+        "hi": "क्षेत्रीय ऋण प्रमुख"
+      }
+    },
+    {
+      "code": "CREDITHEAD",
+      "name": {
+        "en": "Chief credit officer",
+        "hi": "मुख्य ऋण अधिकारी"
+      }
+    },
+    {
+      "code": "COMMITTEE",
+      "name": {
+        "en": "Credit committee member 1",
+        "hi": "ऋण समिति सदस्य 1"
+      }
+    },
+    {
+      "code": "COMMITTEE",
+      "name": {
+        "en": "Credit committee member 2",
+        "hi": "ऋण समिति सदस्य 2"
+      }
+    },
+    {
+      "code": "COMMITTEE",
+      "name": {
+        "en": "Credit committee member 3",
+        "hi": "ऋण समिति सदस्य 3"
+      }
+    }
+  ]
+}

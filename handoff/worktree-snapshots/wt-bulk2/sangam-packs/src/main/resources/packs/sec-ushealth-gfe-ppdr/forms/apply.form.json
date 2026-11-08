@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-gfe-ppdr/apply",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.gfe-ppdr",
+  "title": {
+    "en": "Apply the determination, adjust the bill, release the hold",
+    "es": "Aplicar la determinación, ajustar la factura y liberar la retención"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "determinationAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount determined by the SDR entity (USD)",
+        "es": "Importe determinado por la entidad SDR (USD)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

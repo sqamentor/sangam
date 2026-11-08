@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Account opening with KYC. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_account_opening" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-bank-account-opening" name="Account opening with KYC" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.account-opening</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerName,pan,accountType,kycMode</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ao_start" name="Application received" operaton:initiator="initiator" operaton:formKey="sangam:sec-bank-account-opening/application"></startEvent>
+    <serviceTask id="ao_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>customerName=@customerId;accountType=SAVINGS;kycMode=AADHAAR_OTP;occupation=SALARIED;consentGiven=true;ckycFound=false;panValid=true;screenHit=false;pepFlag=false;amount=0;caseType=ACCOUNT_OPENING;routingDecisionKey=sec-bank-ao-checker;powersDecisionKey=sec-bank-ao-powers;executionConnector=cbs.accountOpen;executionStep=open-account;reconcileRequired=false;outputTemplate=welcome-kit;appealAllowed=false;vcipSeat=VCIP-OFFICIAL;complianceSeat=AML-COMPLIANCE;eddSeat=BRANCH-HEAD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ao_consentGw" name="Consent for KYC?" default="sec_bank_account_opening_f4"></exclusiveGateway>
+    <endEvent id="ao_endNoConsent" name="Stopped: no consent"></endEvent>
+    <serviceTask id="ao_ckycSearch" name="Search CKYCR" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ckycr.search</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>search</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>pan,customerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ckyc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ao_ckycDownload" name="Download CKYC record" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ckycr.download</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>download</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>pan</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ckycRec</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ao_ckycGw" name="Found in CKYCR?" default="sec_bank_account_opening_f6"></exclusiveGateway>
+    <exclusiveGateway id="ao_ckycMerge" name=""></exclusiveGateway>
+    <serviceTask id="ao_pan" name="Verify PAN" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>pan.verify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>verify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>pan,customerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>pan</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ao_panGw" name="PAN valid?" default="sec_bank_account_opening_f18"></exclusiveGateway>
+    <userTask id="ao_correct" name="Correct application details" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:sec-bank-account-opening/correct"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>ao_correctDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ao_correct_gw" name="Resubmit?" default="sec_bank_account_opening_f16"></exclusiveGateway>
+    <serviceTask id="ao_correct_version" name="New case version" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUBMIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ao_correct_wd_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ao_correct_wd_call" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ao_correct_wd_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="ao_modeGw" name="KYC mode?" default="sec_bank_account_opening_f28"></exclusiveGateway>
+    <serviceTask id="ao_vcip_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ao_vcip</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>2WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ao_vcip" name="V-CIP: live video identification" operaton:candidateGroups="${vcipSeat}" operaton:formKey="sangam:sec-bank-account-opening/vcip" operaton:dueDate="${ao_vcipDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>vcipDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ao_vcip_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ao_vcip</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>vcipSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ao_vcip_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ao_vcip_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ao_vcip</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>vcipSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>vcipDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ao_vcip_breachGw" name="Deemed?" default="sec_bank_account_opening_f24"></exclusiveGateway>
+    <exclusiveGateway id="ao_vcip_done" name=""></exclusiveGateway>
+    <serviceTask id="ao_ekyc" name="Aadhaar OTP e-KYC" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>uidai.ekyc</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>otp-ekyc</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerName,mobile</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ekyc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ao_vcipGw" name="V-CIP result?" default="sec_bank_account_opening_f35"></exclusiveGateway>
+    <exclusiveGateway id="ao_kycJoin" name=""></exclusiveGateway>
+    <serviceTask id="ao_rjVcip_code" name="Reason: VCIP_FAILED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=VCIP_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ao_rjVcip_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ao_rjVcip_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ao_screen" name="Screen UNSC / UAPA / PEP lists" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>sanctions.screen</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>screen</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerName,pan</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>screen</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ao_screenGw" name="Screening hit?" default="sec_bank_account_opening_f39"></exclusiveGateway>
+    <userTask id="ao_compliance" name="Review screening hit" operaton:candidateGroups="${complianceSeat}" operaton:formKey="sangam:sec-bank-account-opening/screening"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>screenDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <businessRuleTask id="ao_risk" name="Customer risk category (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-kyc-risk</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="ao_compGw" name="" default="sec_bank_account_opening_f44"></exclusiveGateway>
+    <serviceTask id="ao_rjScreen_code" name="Reason: SANCTIONS_MATCH" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=SANCTIONS_MATCH</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ao_rjScreen_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ao_rjScreen_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="ao_edd" name="Enhanced due diligence" operaton:candidateGroups="${eddSeat}" operaton:formKey="sangam:sec-bank-account-opening/edd"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>eddDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <callActivity id="ao_check" name="Checker approves account opening (core sanction, SoD)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ao_eddOptGw" name="High risk: EDD?" default="sec_bank_account_opening_f46"></exclusiveGateway>
+    <exclusiveGateway id="ao_eddOptMerge" name=""></exclusiveGateway>
+    <callActivity id="ao_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ao_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="ao_open" name="Open account in CBS (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="ao_sanGw" name="sanctionOutcome?" default="sec_bank_account_opening_f53"></exclusiveGateway>
+    <serviceTask id="ao_ckycUpload" name="Upload KYC record to CKYCR" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ckycr.upload</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>upload</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerName,pan,riskCategory</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ckycUp</operaton:string></operaton:field><operaton:field name="step"><operaton:string>ckyc-upload</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ao_close" name="Welcome kit and closure (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="ao_openFailed" name="CBS refused the account" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>cbs-open-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ao_exGw" name="executionOutcome?" default="sec_bank_account_opening_f56"></exclusiveGateway>
+    <endEvent id="ao_end" name="Account opened"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ao_vcip_warn" name="SLA warning (75%)" attachedToRef="ao_vcip" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ao_vcipWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ao_vcip_breach" name="SLA breached" attachedToRef="ao_vcip" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ao_vcipDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_bank_account_opening_f1" sourceRef="ao_start" targetRef="ao_defaults"/>
+    <sequenceFlow id="sec_bank_account_opening_f2" sourceRef="ao_defaults" targetRef="ao_consentGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f3" name="no" sourceRef="ao_consentGw" targetRef="ao_endNoConsent"><conditionExpression xsi:type="tFormalExpression">${!consentGiven}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f4" name="yes" sourceRef="ao_consentGw" targetRef="ao_ckycSearch"/>
+    <sequenceFlow id="sec_bank_account_opening_f5" name="yes" sourceRef="ao_ckycGw" targetRef="ao_ckycDownload"><conditionExpression xsi:type="tFormalExpression">${ckycFound}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f6" name="no" sourceRef="ao_ckycGw" targetRef="ao_ckycMerge"/>
+    <sequenceFlow id="sec_bank_account_opening_f7" sourceRef="ao_ckycDownload" targetRef="ao_ckycMerge"/>
+    <sequenceFlow id="sec_bank_account_opening_f8" sourceRef="ao_ckycSearch" targetRef="ao_ckycGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f9" sourceRef="ao_ckycMerge" targetRef="ao_pan"/>
+    <sequenceFlow id="sec_bank_account_opening_f10" sourceRef="ao_pan" targetRef="ao_panGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f11" sourceRef="ao_correct" targetRef="ao_correct_gw"/>
+    <sequenceFlow id="sec_bank_account_opening_f12" name="resubmit" sourceRef="ao_correct_gw" targetRef="ao_correct_version"><conditionExpression xsi:type="tFormalExpression">${ao_correctDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f13" sourceRef="ao_correct_version" targetRef="ao_pan"/>
+    <sequenceFlow id="sec_bank_account_opening_f14" sourceRef="ao_correct_wd_kind" targetRef="ao_correct_wd_call"/>
+    <sequenceFlow id="sec_bank_account_opening_f15" sourceRef="ao_correct_wd_call" targetRef="ao_correct_wd_end"/>
+    <sequenceFlow id="sec_bank_account_opening_f16" name="withdraw" sourceRef="ao_correct_gw" targetRef="ao_correct_wd_kind"/>
+    <sequenceFlow id="sec_bank_account_opening_f17" name="mismatch: correct" sourceRef="ao_panGw" targetRef="ao_correct"><conditionExpression xsi:type="tFormalExpression">${!panValid}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f18" name="valid" sourceRef="ao_panGw" targetRef="ao_modeGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f19" sourceRef="ao_vcip_warn" targetRef="ao_vcip_warnNotify"/>
+    <sequenceFlow id="sec_bank_account_opening_f20" sourceRef="ao_vcip_warnNotify" targetRef="ao_vcip_warnEnd"/>
+    <sequenceFlow id="sec_bank_account_opening_f21" sourceRef="ao_vcip_breach" targetRef="ao_vcip_breachAct"/>
+    <sequenceFlow id="sec_bank_account_opening_f22" sourceRef="ao_vcip_breachAct" targetRef="ao_vcip_breachGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f23" name="deemed" sourceRef="ao_vcip_breachGw" targetRef="ao_vcip_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f24" name="escalated" sourceRef="ao_vcip_breachGw" targetRef="ao_vcip_slaPlan"/>
+    <sequenceFlow id="sec_bank_account_opening_f25" sourceRef="ao_vcip_slaPlan" targetRef="ao_vcip"/>
+    <sequenceFlow id="sec_bank_account_opening_f26" sourceRef="ao_vcip" targetRef="ao_vcip_done"/>
+    <sequenceFlow id="sec_bank_account_opening_f27" name="V-CIP" sourceRef="ao_modeGw" targetRef="ao_vcip_slaPlan"><conditionExpression xsi:type="tFormalExpression">${kycMode == 'VCIP'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f28" name="e-KYC / digital" sourceRef="ao_modeGw" targetRef="ao_ekyc"/>
+    <sequenceFlow id="sec_bank_account_opening_f29" sourceRef="ao_vcip_done" targetRef="ao_vcipGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f30" name="dropped / poor video: reschedule" sourceRef="ao_vcipGw" targetRef="ao_vcip_slaPlan"><conditionExpression xsi:type="tFormalExpression">${vcipDecision == 'reschedule'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f31" name="pass" sourceRef="ao_vcipGw" targetRef="ao_kycJoin"><conditionExpression xsi:type="tFormalExpression">${vcipDecision == 'pass'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f32" sourceRef="ao_ekyc" targetRef="ao_kycJoin"/>
+    <sequenceFlow id="sec_bank_account_opening_f33" sourceRef="ao_rjVcip_reject" targetRef="ao_rjVcip_endRejected"/>
+    <sequenceFlow id="sec_bank_account_opening_f34" sourceRef="ao_rjVcip_code" targetRef="ao_rjVcip_reject"/>
+    <sequenceFlow id="sec_bank_account_opening_f35" name="fail" sourceRef="ao_vcipGw" targetRef="ao_rjVcip_code"/>
+    <sequenceFlow id="sec_bank_account_opening_f36" sourceRef="ao_kycJoin" targetRef="ao_screen"/>
+    <sequenceFlow id="sec_bank_account_opening_f37" sourceRef="ao_screen" targetRef="ao_screenGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f38" name="possible match" sourceRef="ao_screenGw" targetRef="ao_compliance"><conditionExpression xsi:type="tFormalExpression">${screenHit}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f39" name="clear" sourceRef="ao_screenGw" targetRef="ao_risk"/>
+    <sequenceFlow id="sec_bank_account_opening_f40" sourceRef="ao_compliance" targetRef="ao_compGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f41" name="false positive" sourceRef="ao_compGw" targetRef="ao_risk"><conditionExpression xsi:type="tFormalExpression">${screenDecision == 'falsePositive'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f42" sourceRef="ao_rjScreen_reject" targetRef="ao_rjScreen_endRejected"/>
+    <sequenceFlow id="sec_bank_account_opening_f43" sourceRef="ao_rjScreen_code" targetRef="ao_rjScreen_reject"/>
+    <sequenceFlow id="sec_bank_account_opening_f44" name="true match" sourceRef="ao_compGw" targetRef="ao_rjScreen_code"/>
+    <sequenceFlow id="sec_bank_account_opening_f45" name="yes" sourceRef="ao_eddOptGw" targetRef="ao_edd"><conditionExpression xsi:type="tFormalExpression">${eddRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f46" name="no" sourceRef="ao_eddOptGw" targetRef="ao_eddOptMerge"/>
+    <sequenceFlow id="sec_bank_account_opening_f47" sourceRef="ao_edd" targetRef="ao_eddOptMerge"/>
+    <sequenceFlow id="sec_bank_account_opening_f48" sourceRef="ao_risk" targetRef="ao_eddOptGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f49" sourceRef="ao_eddOptMerge" targetRef="ao_check"/>
+    <sequenceFlow id="sec_bank_account_opening_f50" sourceRef="ao_rj_reject" targetRef="ao_rj_endRejected"/>
+    <sequenceFlow id="sec_bank_account_opening_f51" name="SANCTIONED" sourceRef="ao_sanGw" targetRef="ao_open"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f52" name="RETURNED" sourceRef="ao_sanGw" targetRef="ao_correct"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f53" name="otherwise" sourceRef="ao_sanGw" targetRef="ao_rj_reject"/>
+    <sequenceFlow id="sec_bank_account_opening_f54" sourceRef="ao_check" targetRef="ao_sanGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f55" name="DONE" sourceRef="ao_exGw" targetRef="ao_ckycUpload"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_account_opening_f56" name="otherwise" sourceRef="ao_exGw" targetRef="ao_openFailed"/>
+    <sequenceFlow id="sec_bank_account_opening_f57" sourceRef="ao_open" targetRef="ao_exGw"/>
+    <sequenceFlow id="sec_bank_account_opening_f58" sourceRef="ao_openFailed" targetRef="ao_check"/>
+    <sequenceFlow id="sec_bank_account_opening_f59" sourceRef="ao_ckycUpload" targetRef="ao_close"/>
+    <sequenceFlow id="sec_bank_account_opening_f60" sourceRef="ao_close" targetRef="ao_end"/>
+    <subProcess id="ao_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ao_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ao_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ao_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ao_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_bank_account_opening_f61" sourceRef="ao_withdrawStart" targetRef="ao_withdrawKind"/>
+      <sequenceFlow id="sec_bank_account_opening_f62" sourceRef="ao_withdrawKind" targetRef="ao_withdrawCall"/>
+      <sequenceFlow id="sec_bank_account_opening_f63" sourceRef="ao_withdrawCall" targetRef="ao_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ao_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ao_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ao_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ao_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ao_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_bank_account_opening_f64" sourceRef="ao_cancelStart" targetRef="ao_cancelKind"/>
+      <sequenceFlow id="sec_bank_account_opening_f65" sourceRef="ao_cancelKind" targetRef="ao_cancelCall"/>
+      <sequenceFlow id="sec_bank_account_opening_f66" sourceRef="ao_cancelCall" targetRef="ao_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_account_opening_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_account_opening_plane" bpmnElement="sangam-sec-bank-account-opening">
+      <bpmndi:BPMNShape id="ao_start_di" bpmnElement="ao_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_defaults_di" bpmnElement="ao_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_consentGw_di" bpmnElement="ao_consentGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_endNoConsent_di" bpmnElement="ao_endNoConsent"><dc:Bounds x="547" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_ckycSearch_di" bpmnElement="ao_ckycSearch"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_ckycDownload_di" bpmnElement="ao_ckycDownload"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_ckycGw_di" bpmnElement="ao_ckycGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_ckycMerge_di" bpmnElement="ao_ckycMerge"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_pan_di" bpmnElement="ao_pan"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_panGw_di" bpmnElement="ao_panGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_correct_di" bpmnElement="ao_correct"><dc:Bounds x="4475" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_correct_gw_di" bpmnElement="ao_correct_gw"><dc:Bounds x="4665" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_correct_version_di" bpmnElement="ao_correct_version"><dc:Bounds x="4805" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_correct_wd_kind_di" bpmnElement="ao_correct_wd_kind"><dc:Bounds x="4805" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_correct_wd_call_di" bpmnElement="ao_correct_wd_call"><dc:Bounds x="4970" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_correct_wd_end_di" bpmnElement="ao_correct_wd_end"><dc:Bounds x="5167" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_modeGw_di" bpmnElement="ao_modeGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcip_slaPlan_di" bpmnElement="ao_vcip_slaPlan"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcip_di" bpmnElement="ao_vcip"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcip_warnNotify_di" bpmnElement="ao_vcip_warnNotify"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcip_warnEnd_di" bpmnElement="ao_vcip_warnEnd"><dc:Bounds x="2197" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcip_breachAct_di" bpmnElement="ao_vcip_breachAct"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcip_breachGw_di" bpmnElement="ao_vcip_breachGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcip_done_di" bpmnElement="ao_vcip_done"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_ekyc_di" bpmnElement="ao_ekyc"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcipGw_di" bpmnElement="ao_vcipGw"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_kycJoin_di" bpmnElement="ao_kycJoin"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_rjVcip_code_di" bpmnElement="ao_rjVcip_code"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_rjVcip_reject_di" bpmnElement="ao_rjVcip_reject"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_rjVcip_endRejected_di" bpmnElement="ao_rjVcip_endRejected"><dc:Bounds x="3022" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_screen_di" bpmnElement="ao_screen"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_screenGw_di" bpmnElement="ao_screenGw"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_compliance_di" bpmnElement="ao_compliance"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_risk_di" bpmnElement="ao_risk"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_compGw_di" bpmnElement="ao_compGw"><dc:Bounds x="3345" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_rjScreen_code_di" bpmnElement="ao_rjScreen_code"><dc:Bounds x="3485" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_rjScreen_reject_di" bpmnElement="ao_rjScreen_reject"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_rjScreen_endRejected_di" bpmnElement="ao_rjScreen_endRejected"><dc:Bounds x="3847" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_edd_di" bpmnElement="ao_edd"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_check_di" bpmnElement="ao_check"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_eddOptGw_di" bpmnElement="ao_eddOptGw"><dc:Bounds x="3675" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_eddOptMerge_di" bpmnElement="ao_eddOptMerge"><dc:Bounds x="4005" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_rj_reject_di" bpmnElement="ao_rj_reject"><dc:Bounds x="4475" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_rj_endRejected_di" bpmnElement="ao_rj_endRejected"><dc:Bounds x="4672" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_open_di" bpmnElement="ao_open"><dc:Bounds x="4475" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_sanGw_di" bpmnElement="ao_sanGw"><dc:Bounds x="4335" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_ckycUpload_di" bpmnElement="ao_ckycUpload"><dc:Bounds x="4805" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_close_di" bpmnElement="ao_close"><dc:Bounds x="4970" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_openFailed_di" bpmnElement="ao_openFailed"><dc:Bounds x="4805" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_exGw_di" bpmnElement="ao_exGw"><dc:Bounds x="4665" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_end_di" bpmnElement="ao_end"><dc:Bounds x="5167" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcip_warn_di" bpmnElement="ao_vcip_warn"><dc:Bounds x="1843" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_vcip_breach_di" bpmnElement="ao_vcip_breach"><dc:Bounds x="1873" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_withdraw_di" bpmnElement="ao_withdraw" isExpanded="true"><dc:Bounds x="30" y="535" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_withdrawStart_di" bpmnElement="ao_withdrawStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_withdrawKind_di" bpmnElement="ao_withdrawKind"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_withdrawCall_di" bpmnElement="ao_withdrawCall"><dc:Bounds x="390" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_withdrawEnd_di" bpmnElement="ao_withdrawEnd"><dc:Bounds x="587" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_cancel_di" bpmnElement="ao_cancel" isExpanded="true"><dc:Bounds x="30" y="725" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_cancelStart_di" bpmnElement="ao_cancelStart"><dc:Bounds x="92" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_cancelKind_di" bpmnElement="ao_cancelKind"><dc:Bounds x="225" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_cancelCall_di" bpmnElement="ao_cancelCall"><dc:Bounds x="390" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ao_cancelEnd_di" bpmnElement="ao_cancelEnd"><dc:Bounds x="587" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f1_di" bpmnElement="sec_bank_account_opening_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f2_di" bpmnElement="sec_bank_account_opening_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f3_di" bpmnElement="sec_bank_account_opening_f3"><di:waypoint x="425" y="70"/><di:waypoint x="486" y="70"/><di:waypoint x="486" y="195"/><di:waypoint x="547" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f4_di" bpmnElement="sec_bank_account_opening_f4"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f5_di" bpmnElement="sec_bank_account_opening_f5"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f6_di" bpmnElement="sec_bank_account_opening_f6"><di:waypoint x="755" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f7_di" bpmnElement="sec_bank_account_opening_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f8_di" bpmnElement="sec_bank_account_opening_f8"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f9_di" bpmnElement="sec_bank_account_opening_f9"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f10_di" bpmnElement="sec_bank_account_opening_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f11_di" bpmnElement="sec_bank_account_opening_f11"><di:waypoint x="4575" y="70"/><di:waypoint x="4665" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f12_di" bpmnElement="sec_bank_account_opening_f12"><di:waypoint x="4715" y="70"/><di:waypoint x="4760" y="70"/><di:waypoint x="4760" y="195"/><di:waypoint x="4805" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f13_di" bpmnElement="sec_bank_account_opening_f13"><di:waypoint x="4855" y="235"/><di:waypoint x="4855" y="253"/><di:waypoint x="1225" y="253"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f14_di" bpmnElement="sec_bank_account_opening_f14"><di:waypoint x="4905" y="70"/><di:waypoint x="4970" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f15_di" bpmnElement="sec_bank_account_opening_f15"><di:waypoint x="5070" y="70"/><di:waypoint x="5167" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f16_di" bpmnElement="sec_bank_account_opening_f16"><di:waypoint x="4715" y="70"/><di:waypoint x="4805" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f17_di" bpmnElement="sec_bank_account_opening_f17"><di:waypoint x="1415" y="70"/><di:waypoint x="4475" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f18_di" bpmnElement="sec_bank_account_opening_f18"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f19_di" bpmnElement="sec_bank_account_opening_f19"><di:waypoint x="1861" y="253"/><di:waypoint x="1861" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f20_di" bpmnElement="sec_bank_account_opening_f20"><di:waypoint x="2100" y="320"/><di:waypoint x="2197" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f21_di" bpmnElement="sec_bank_account_opening_f21"><di:waypoint x="1891" y="253"/><di:waypoint x="1891" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f22_di" bpmnElement="sec_bank_account_opening_f22"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f23_di" bpmnElement="sec_bank_account_opening_f23"><di:waypoint x="2240" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f24_di" bpmnElement="sec_bank_account_opening_f24"><di:waypoint x="2215" y="220"/><di:waypoint x="2215" y="274"/><di:waypoint x="1720" y="274"/><di:waypoint x="1720" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f25_di" bpmnElement="sec_bank_account_opening_f25"><di:waypoint x="1770" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f26_di" bpmnElement="sec_bank_account_opening_f26"><di:waypoint x="1935" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f27_di" bpmnElement="sec_bank_account_opening_f27"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f28_di" bpmnElement="sec_bank_account_opening_f28"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f29_di" bpmnElement="sec_bank_account_opening_f29"><di:waypoint x="2405" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f30_di" bpmnElement="sec_bank_account_opening_f30"><di:waypoint x="2545" y="220"/><di:waypoint x="2545" y="260"/><di:waypoint x="1720" y="260"/><di:waypoint x="1720" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f31_di" bpmnElement="sec_bank_account_opening_f31"><di:waypoint x="2570" y="195"/><di:waypoint x="2627" y="195"/><di:waypoint x="2627" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f32_di" bpmnElement="sec_bank_account_opening_f32"><di:waypoint x="1770" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f33_di" bpmnElement="sec_bank_account_opening_f33"><di:waypoint x="2925" y="195"/><di:waypoint x="3022" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f34_di" bpmnElement="sec_bank_account_opening_f34"><di:waypoint x="2760" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f35_di" bpmnElement="sec_bank_account_opening_f35"><di:waypoint x="2570" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f36_di" bpmnElement="sec_bank_account_opening_f36"><di:waypoint x="2735" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f37_di" bpmnElement="sec_bank_account_opening_f37"><di:waypoint x="2925" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f38_di" bpmnElement="sec_bank_account_opening_f38"><di:waypoint x="3065" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f39_di" bpmnElement="sec_bank_account_opening_f39"><di:waypoint x="3065" y="70"/><di:waypoint x="3275" y="70"/><di:waypoint x="3275" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f40_di" bpmnElement="sec_bank_account_opening_f40"><di:waypoint x="3255" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f41_di" bpmnElement="sec_bank_account_opening_f41"><di:waypoint x="3395" y="70"/><di:waypoint x="3440" y="70"/><di:waypoint x="3440" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f42_di" bpmnElement="sec_bank_account_opening_f42"><di:waypoint x="3750" y="70"/><di:waypoint x="3847" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f43_di" bpmnElement="sec_bank_account_opening_f43"><di:waypoint x="3585" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f44_di" bpmnElement="sec_bank_account_opening_f44"><di:waypoint x="3395" y="70"/><di:waypoint x="3485" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f45_di" bpmnElement="sec_bank_account_opening_f45"><di:waypoint x="3725" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f46_di" bpmnElement="sec_bank_account_opening_f46"><di:waypoint x="3725" y="195"/><di:waypoint x="4005" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f47_di" bpmnElement="sec_bank_account_opening_f47"><di:waypoint x="3915" y="195"/><di:waypoint x="4005" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f48_di" bpmnElement="sec_bank_account_opening_f48"><di:waypoint x="3585" y="195"/><di:waypoint x="3675" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f49_di" bpmnElement="sec_bank_account_opening_f49"><di:waypoint x="4055" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f50_di" bpmnElement="sec_bank_account_opening_f50"><di:waypoint x="4575" y="195"/><di:waypoint x="4672" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f51_di" bpmnElement="sec_bank_account_opening_f51"><di:waypoint x="4385" y="195"/><di:waypoint x="4430" y="195"/><di:waypoint x="4430" y="320"/><di:waypoint x="4475" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f52_di" bpmnElement="sec_bank_account_opening_f52"><di:waypoint x="4385" y="195"/><di:waypoint x="4430" y="195"/><di:waypoint x="4430" y="70"/><di:waypoint x="4475" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f53_di" bpmnElement="sec_bank_account_opening_f53"><di:waypoint x="4385" y="195"/><di:waypoint x="4475" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f54_di" bpmnElement="sec_bank_account_opening_f54"><di:waypoint x="4245" y="195"/><di:waypoint x="4335" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f55_di" bpmnElement="sec_bank_account_opening_f55"><di:waypoint x="4715" y="320"/><di:waypoint x="4760" y="320"/><di:waypoint x="4760" y="445"/><di:waypoint x="4805" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f56_di" bpmnElement="sec_bank_account_opening_f56"><di:waypoint x="4715" y="320"/><di:waypoint x="4805" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f57_di" bpmnElement="sec_bank_account_opening_f57"><di:waypoint x="4575" y="320"/><di:waypoint x="4665" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f58_di" bpmnElement="sec_bank_account_opening_f58"><di:waypoint x="4855" y="360"/><di:waypoint x="4855" y="385"/><di:waypoint x="4195" y="385"/><di:waypoint x="4195" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f59_di" bpmnElement="sec_bank_account_opening_f59"><di:waypoint x="4905" y="445"/><di:waypoint x="4970" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f60_di" bpmnElement="sec_bank_account_opening_f60"><di:waypoint x="5070" y="445"/><di:waypoint x="5167" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f61_di" bpmnElement="sec_bank_account_opening_f61"><di:waypoint x="128" y="615"/><di:waypoint x="225" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f62_di" bpmnElement="sec_bank_account_opening_f62"><di:waypoint x="325" y="615"/><di:waypoint x="390" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f63_di" bpmnElement="sec_bank_account_opening_f63"><di:waypoint x="490" y="615"/><di:waypoint x="587" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f64_di" bpmnElement="sec_bank_account_opening_f64"><di:waypoint x="128" y="805"/><di:waypoint x="225" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f65_di" bpmnElement="sec_bank_account_opening_f65"><di:waypoint x="325" y="805"/><di:waypoint x="390" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_account_opening_f66_di" bpmnElement="sec_bank_account_opening_f66"><di:waypoint x="490" y="805"/><di:waypoint x="587" y="805"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

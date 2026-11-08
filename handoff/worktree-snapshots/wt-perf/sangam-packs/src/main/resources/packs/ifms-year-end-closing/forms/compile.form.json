@@ -1,0 +1,49 @@
+{
+  "key": "ifms-year-end-closing/compile",
+  "version": "1.0.0",
+  "pack": "gov.ifms.year-end-closing",
+  "title": {
+    "en": "Compile the cut",
+    "hi": "चरण का संकलन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "closingCut",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Closing cut",
+        "hi": "समापन चरण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "compileDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "compiled",
+        "label": {
+          "en": "Compiled",
+          "hi": "संकलित"
+        }
+      }
+    ]
+  }
+}

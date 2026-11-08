@@ -1,0 +1,36 @@
+{
+  "key": "sec-legal-litigation/hearing",
+  "version": "1.0.0",
+  "pack": "sec.legal.litigation",
+  "title": {
+    "en": "Attend hearing and record the order",
+    "hi": "सुनवाई में उपस्थिति एवं आदेश दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "nextHearingDate",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Next date of hearing",
+        "hi": "सुनवाई की अगली तिथि"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

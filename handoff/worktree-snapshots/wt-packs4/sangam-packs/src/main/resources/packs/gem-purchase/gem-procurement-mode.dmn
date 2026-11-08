@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_gem_procurement_mode" name="Mode of procurement (synthetic thresholds)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="gem-procurement-mode" name="Mode of procurement (synthetic thresholds)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="gem-procurement-mode_t" hitPolicy="FIRST">
+      <input id="gem-procurement-mode_i0" label="Value"><inputExpression id="gem-procurement-mode_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <input id="gem-procurement-mode_i1" label="Available on GeM"><inputExpression id="gem-procurement-mode_ie1" typeRef="boolean"><text>gemAvailable</text></inputExpression></input>
+      <output id="gem-procurement-mode_o0" label="Mode" name="procurementMode" typeRef="string"/>
+      <output id="gem-procurement-mode_o1" label="Auto-approve" name="autoApprove" typeRef="boolean"/>
+      <rule id="gem-procurement-mode_r0"><description>not on GeM: tender with justification</description>
+        <inputEntry id="gem-procurement-mode_r0_i0"><text>-</text></inputEntry>
+        <inputEntry id="gem-procurement-mode_r0_i1"><text>false</text></inputEntry>
+        <outputEntry id="gem-procurement-mode_r0_o0"><text>"OUTSIDE_GEM"</text></outputEntry>
+        <outputEntry id="gem-procurement-mode_r0_o1"><text>false</text></outputEntry>
+      </rule>
+      <rule id="gem-procurement-mode_r1"><description>direct purchase, auto-approved (GP-29)</description>
+        <inputEntry id="gem-procurement-mode_r1_i0"><text>&lt;= 2500000</text></inputEntry>
+        <inputEntry id="gem-procurement-mode_r1_i1"><text>true</text></inputEntry>
+        <outputEntry id="gem-procurement-mode_r1_o0"><text>"DIRECT"</text></outputEntry>
+        <outputEntry id="gem-procurement-mode_r1_o1"><text>true</text></outputEntry>
+      </rule>
+      <rule id="gem-procurement-mode_r2"><description>direct purchase</description>
+        <inputEntry id="gem-procurement-mode_r2_i0"><text>&lt;= 5000000</text></inputEntry>
+        <inputEntry id="gem-procurement-mode_r2_i1"><text>true</text></inputEntry>
+        <outputEntry id="gem-procurement-mode_r2_o0"><text>"DIRECT"</text></outputEntry>
+        <outputEntry id="gem-procurement-mode_r2_o1"><text>false</text></outputEntry>
+      </rule>
+      <rule id="gem-procurement-mode_r3"><description>L1 among three sellers</description>
+        <inputEntry id="gem-procurement-mode_r3_i0"><text>&lt;= 100000000</text></inputEntry>
+        <inputEntry id="gem-procurement-mode_r3_i1"><text>true</text></inputEntry>
+        <outputEntry id="gem-procurement-mode_r3_o0"><text>"L1"</text></outputEntry>
+        <outputEntry id="gem-procurement-mode_r3_o1"><text>false</text></outputEntry>
+      </rule>
+      <rule id="gem-procurement-mode_r4"><description>bid / reverse auction</description>
+        <inputEntry id="gem-procurement-mode_r4_i0"><text>-</text></inputEntry>
+        <inputEntry id="gem-procurement-mode_r4_i1"><text>true</text></inputEntry>
+        <outputEntry id="gem-procurement-mode_r4_o0"><text>"BID"</text></outputEntry>
+        <outputEntry id="gem-procurement-mode_r4_o1"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

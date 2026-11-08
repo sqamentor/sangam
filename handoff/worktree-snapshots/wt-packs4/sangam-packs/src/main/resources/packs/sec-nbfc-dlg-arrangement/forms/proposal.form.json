@@ -1,0 +1,67 @@
+{
+  "key": "sec-nbfc-dlg-arrangement/proposal",
+  "version": "1.0.0",
+  "pack": "sec.nbfc.dlg-arrangement",
+  "title": {
+    "en": "DLG proposal",
+    "hi": "डीएलजी प्रस्ताव"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "dlgProvider",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "DLG provider",
+        "hi": "डीएलजी प्रदाता"
+      }
+    },
+    {
+      "id": "portfolioAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Portfolio covered (INR)",
+        "hi": "आवृत पोर्टफोलियो (रुपये)"
+      }
+    },
+    {
+      "id": "dlgAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "DLG amount (INR)",
+        "hi": "डीएलजी राशि (रुपये)"
+      }
+    },
+    {
+      "id": "dlgForm",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "DLG form (cash, FD lien, bank guarantee)",
+        "hi": "डीएलजी का रूप (नकद, सावधि जमा, बैंक गारंटी)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

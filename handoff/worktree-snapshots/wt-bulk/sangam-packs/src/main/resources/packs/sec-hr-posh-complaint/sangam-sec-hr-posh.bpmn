@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- POSH complaint. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_hr_posh" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_appealFiled" name="sangam.appealFiled"/>
+  <message id="msg_sangam_posh_reply" name="sangam.posh.reply"/>
+  <process id="sangam-sec-hr-posh" name="POSH complaint" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.hr.posh-complaint</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>complainantRef,respondentId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="po_start" name="Complaint to the Internal Committee" operaton:initiator="initiator" operaton:formKey="sangam:sec-hr-posh-complaint/complaint"></startEvent>
+    <serviceTask id="po_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>complainantRef=@customerId;respondentId=@employeeId;conciliationRequested=false;icSeat=IC-PRESIDING;committeeSeats=IC-PRESIDING,IC-MEMBER,IC-EXTERNAL;quorumRule=ALL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="po_admit" name="Admit complaint (limitation three months)" operaton:candidateGroups="${icSeat}" operaton:formKey="sangam:sec-hr-posh-complaint/admit"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>admitDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="po_admGw" name="" default="sec_hr_posh_f13"></exclusiveGateway>
+    <endEvent id="po_endNotAdmitted" name="Not admitted (reasons recorded)"></endEvent>
+    <serviceTask id="po_copy_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>po_copy</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>7WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="po_copy" name="Send copy to the respondent (7 working days)" operaton:candidateGroups="${icSeat}" operaton:formKey="sangam:sec-hr-posh-complaint/copy" operaton:dueDate="${po_copyDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="po_copy_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>po_copy</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>icSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="po_copy_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="po_copy_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>po_copy</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>icSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="po_copy_breachGw" name="Deemed?" default="sec_hr_posh_f10"></exclusiveGateway>
+    <exclusiveGateway id="po_copy_done" name=""></exclusiveGateway>
+    <eventBasedGateway id="po_replyWait" name="Reply or 10 working days"></eventBasedGateway>
+    <intermediateCatchEvent id="po_reply" name="Respondent replies"><messageEventDefinition messageRef="msg_sangam_posh_reply"/></intermediateCatchEvent>
+    <serviceTask id="po_replyClock" name="Regulatory clock: reply" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>reply</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="po_replyLapse" name="No reply in time"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${replyDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <exclusiveGateway id="po_concGw" name="Conciliation requested?" default="sec_hr_posh_f23"></exclusiveGateway>
+    <userTask id="po_conciliate" name="Conciliation (no monetary settlement)" operaton:candidateGroups="${icSeat}" operaton:formKey="sangam:sec-hr-posh-complaint/conciliation"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>concDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="po_concRes" name="" default="sec_hr_posh_f24"></exclusiveGateway>
+    <endEvent id="po_endSettled" name="Settled by conciliation"></endEvent>
+    <serviceTask id="po_inqClock" name="Regulatory clock: inquiry" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>inquiry</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>90D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="po_inquiry" name="Inquiry by the Internal Committee (core committee)" calledElement="sangam-core-committee"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="po_report_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>po_report</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>10D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="po_report" name="Inquiry report to the employer (10 days)" operaton:candidateGroups="${icSeat}" operaton:formKey="sangam:sec-hr-posh-complaint/report" operaton:dueDate="${po_reportDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="po_report_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>po_report</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>icSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="po_report_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="po_report_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>po_report</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>icSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="po_report_breachGw" name="Deemed?" default="sec_hr_posh_f31"></exclusiveGateway>
+    <exclusiveGateway id="po_report_done" name=""></exclusiveGateway>
+    <serviceTask id="po_action_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>po_action</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>60D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="po_action" name="Employer acts on the report (60 days)" operaton:candidateGroups="${employerSeat}" operaton:formKey="sangam:sec-hr-posh-complaint/action" operaton:dueDate="${po_actionDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="po_action_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>po_action</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>employerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="po_action_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="po_action_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>po_action</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>employerSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="po_action_breachGw" name="Deemed?" default="sec_hr_posh_f40"></exclusiveGateway>
+    <exclusiveGateway id="po_action_done" name=""></exclusiveGateway>
+    <serviceTask id="po_employer" name="Employer" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>employerSeat=EMPLOYER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="po_appealWait" name="Appeal window"></eventBasedGateway>
+    <intermediateCatchEvent id="po_appeal" name="Appeal filed"><messageEventDefinition messageRef="msg_sangam_appealFiled"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="po_appealLapse" name="90 days over"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P90D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="po_endAppealed" name="Appeal before the appellate authority"></endEvent>
+    <endEvent id="po_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="po_copy_warn" name="SLA warning (75%)" attachedToRef="po_copy" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${po_copyWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="po_copy_breach" name="SLA breached" attachedToRef="po_copy" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${po_copyDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="po_report_warn" name="SLA warning (75%)" attachedToRef="po_report" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${po_reportWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="po_report_breach" name="SLA breached" attachedToRef="po_report" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${po_reportDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="po_action_warn" name="SLA warning (75%)" attachedToRef="po_action" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${po_actionWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="po_action_breach" name="SLA breached" attachedToRef="po_action" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${po_actionDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_hr_posh_f1" sourceRef="po_start" targetRef="po_defaults"/>
+    <sequenceFlow id="sec_hr_posh_f2" sourceRef="po_defaults" targetRef="po_admit"/>
+    <sequenceFlow id="sec_hr_posh_f3" sourceRef="po_admit" targetRef="po_admGw"/>
+    <sequenceFlow id="sec_hr_posh_f4" name="reject" sourceRef="po_admGw" targetRef="po_endNotAdmitted"><conditionExpression xsi:type="tFormalExpression">${admitDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_posh_f5" sourceRef="po_copy_warn" targetRef="po_copy_warnNotify"/>
+    <sequenceFlow id="sec_hr_posh_f6" sourceRef="po_copy_warnNotify" targetRef="po_copy_warnEnd"/>
+    <sequenceFlow id="sec_hr_posh_f7" sourceRef="po_copy_breach" targetRef="po_copy_breachAct"/>
+    <sequenceFlow id="sec_hr_posh_f8" sourceRef="po_copy_breachAct" targetRef="po_copy_breachGw"/>
+    <sequenceFlow id="sec_hr_posh_f9" name="deemed" sourceRef="po_copy_breachGw" targetRef="po_copy_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_posh_f10" name="escalated" sourceRef="po_copy_breachGw" targetRef="po_copy_slaPlan"/>
+    <sequenceFlow id="sec_hr_posh_f11" sourceRef="po_copy_slaPlan" targetRef="po_copy"/>
+    <sequenceFlow id="sec_hr_posh_f12" sourceRef="po_copy" targetRef="po_copy_done"/>
+    <sequenceFlow id="sec_hr_posh_f13" name="admit" sourceRef="po_admGw" targetRef="po_copy_slaPlan"/>
+    <sequenceFlow id="sec_hr_posh_f14" sourceRef="po_copy_done" targetRef="po_replyClock"/>
+    <sequenceFlow id="sec_hr_posh_f15" sourceRef="po_replyClock" targetRef="po_replyWait"/>
+    <sequenceFlow id="sec_hr_posh_f16" sourceRef="po_replyWait" targetRef="po_reply"/>
+    <sequenceFlow id="sec_hr_posh_f17" sourceRef="po_replyWait" targetRef="po_replyLapse"/>
+    <sequenceFlow id="sec_hr_posh_f18" sourceRef="po_reply" targetRef="po_concGw"/>
+    <sequenceFlow id="sec_hr_posh_f19" sourceRef="po_replyLapse" targetRef="po_concGw"/>
+    <sequenceFlow id="sec_hr_posh_f20" name="yes" sourceRef="po_concGw" targetRef="po_conciliate"><conditionExpression xsi:type="tFormalExpression">${conciliationRequested}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_posh_f21" sourceRef="po_conciliate" targetRef="po_concRes"/>
+    <sequenceFlow id="sec_hr_posh_f22" name="settled" sourceRef="po_concRes" targetRef="po_endSettled"><conditionExpression xsi:type="tFormalExpression">${concDecision == 'settled'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_posh_f23" name="no" sourceRef="po_concGw" targetRef="po_inqClock"/>
+    <sequenceFlow id="sec_hr_posh_f24" name="failed" sourceRef="po_concRes" targetRef="po_inqClock"/>
+    <sequenceFlow id="sec_hr_posh_f25" sourceRef="po_inqClock" targetRef="po_inquiry"/>
+    <sequenceFlow id="sec_hr_posh_f26" sourceRef="po_report_warn" targetRef="po_report_warnNotify"/>
+    <sequenceFlow id="sec_hr_posh_f27" sourceRef="po_report_warnNotify" targetRef="po_report_warnEnd"/>
+    <sequenceFlow id="sec_hr_posh_f28" sourceRef="po_report_breach" targetRef="po_report_breachAct"/>
+    <sequenceFlow id="sec_hr_posh_f29" sourceRef="po_report_breachAct" targetRef="po_report_breachGw"/>
+    <sequenceFlow id="sec_hr_posh_f30" name="deemed" sourceRef="po_report_breachGw" targetRef="po_report_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_posh_f31" name="escalated" sourceRef="po_report_breachGw" targetRef="po_report_slaPlan"/>
+    <sequenceFlow id="sec_hr_posh_f32" sourceRef="po_report_slaPlan" targetRef="po_report"/>
+    <sequenceFlow id="sec_hr_posh_f33" sourceRef="po_report" targetRef="po_report_done"/>
+    <sequenceFlow id="sec_hr_posh_f34" sourceRef="po_inquiry" targetRef="po_report_slaPlan"/>
+    <sequenceFlow id="sec_hr_posh_f35" sourceRef="po_action_warn" targetRef="po_action_warnNotify"/>
+    <sequenceFlow id="sec_hr_posh_f36" sourceRef="po_action_warnNotify" targetRef="po_action_warnEnd"/>
+    <sequenceFlow id="sec_hr_posh_f37" sourceRef="po_action_breach" targetRef="po_action_breachAct"/>
+    <sequenceFlow id="sec_hr_posh_f38" sourceRef="po_action_breachAct" targetRef="po_action_breachGw"/>
+    <sequenceFlow id="sec_hr_posh_f39" name="deemed" sourceRef="po_action_breachGw" targetRef="po_action_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_hr_posh_f40" name="escalated" sourceRef="po_action_breachGw" targetRef="po_action_slaPlan"/>
+    <sequenceFlow id="sec_hr_posh_f41" sourceRef="po_action_slaPlan" targetRef="po_action"/>
+    <sequenceFlow id="sec_hr_posh_f42" sourceRef="po_action" targetRef="po_action_done"/>
+    <sequenceFlow id="sec_hr_posh_f43" sourceRef="po_report_done" targetRef="po_employer"/>
+    <sequenceFlow id="sec_hr_posh_f44" sourceRef="po_employer" targetRef="po_action_slaPlan"/>
+    <sequenceFlow id="sec_hr_posh_f45" sourceRef="po_action_done" targetRef="po_appealWait"/>
+    <sequenceFlow id="sec_hr_posh_f46" sourceRef="po_appealWait" targetRef="po_appeal"/>
+    <sequenceFlow id="sec_hr_posh_f47" sourceRef="po_appealWait" targetRef="po_appealLapse"/>
+    <sequenceFlow id="sec_hr_posh_f48" sourceRef="po_appeal" targetRef="po_endAppealed"/>
+    <sequenceFlow id="sec_hr_posh_f49" sourceRef="po_appealLapse" targetRef="po_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_hr_posh_diagram">
+    <bpmndi:BPMNPlane id="sec_hr_posh_plane" bpmnElement="sangam-sec-hr-posh">
+      <bpmndi:BPMNShape id="po_start_di" bpmnElement="po_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_defaults_di" bpmnElement="po_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_admit_di" bpmnElement="po_admit"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_admGw_di" bpmnElement="po_admGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_endNotAdmitted_di" bpmnElement="po_endNotAdmitted"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_copy_slaPlan_di" bpmnElement="po_copy_slaPlan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_copy_di" bpmnElement="po_copy"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_copy_warnNotify_di" bpmnElement="po_copy_warnNotify"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_copy_warnEnd_di" bpmnElement="po_copy_warnEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_copy_breachAct_di" bpmnElement="po_copy_breachAct"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_copy_breachGw_di" bpmnElement="po_copy_breachGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_copy_done_di" bpmnElement="po_copy_done"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_replyWait_di" bpmnElement="po_replyWait"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_reply_di" bpmnElement="po_reply"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_replyClock_di" bpmnElement="po_replyClock"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_replyLapse_di" bpmnElement="po_replyLapse"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_concGw_di" bpmnElement="po_concGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_conciliate_di" bpmnElement="po_conciliate"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_concRes_di" bpmnElement="po_concRes"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_endSettled_di" bpmnElement="po_endSettled"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_inqClock_di" bpmnElement="po_inqClock"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_inquiry_di" bpmnElement="po_inquiry"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_report_slaPlan_di" bpmnElement="po_report_slaPlan"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_report_di" bpmnElement="po_report"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_report_warnNotify_di" bpmnElement="po_report_warnNotify"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_report_warnEnd_di" bpmnElement="po_report_warnEnd"><dc:Bounds x="3352" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_report_breachAct_di" bpmnElement="po_report_breachAct"><dc:Bounds x="3155" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_report_breachGw_di" bpmnElement="po_report_breachGw"><dc:Bounds x="3345" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_report_done_di" bpmnElement="po_report_done"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_action_slaPlan_di" bpmnElement="po_action_slaPlan"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_action_di" bpmnElement="po_action"><dc:Bounds x="3980" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_action_warnNotify_di" bpmnElement="po_action_warnNotify"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_action_warnEnd_di" bpmnElement="po_action_warnEnd"><dc:Bounds x="4342" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_action_breachAct_di" bpmnElement="po_action_breachAct"><dc:Bounds x="4145" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_action_breachGw_di" bpmnElement="po_action_breachGw"><dc:Bounds x="4335" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_action_done_di" bpmnElement="po_action_done"><dc:Bounds x="4500" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_employer_di" bpmnElement="po_employer"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_appealWait_di" bpmnElement="po_appealWait"><dc:Bounds x="4665" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_appeal_di" bpmnElement="po_appeal"><dc:Bounds x="4837" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_appealLapse_di" bpmnElement="po_appealLapse"><dc:Bounds x="4837" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_endAppealed_di" bpmnElement="po_endAppealed"><dc:Bounds x="5002" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_end_di" bpmnElement="po_end"><dc:Bounds x="5002" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_copy_warn_di" bpmnElement="po_copy_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_copy_breach_di" bpmnElement="po_copy_breach"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_report_warn_di" bpmnElement="po_report_warn"><dc:Bounds x="2998" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_report_breach_di" bpmnElement="po_report_breach"><dc:Bounds x="3028" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_action_warn_di" bpmnElement="po_action_warn"><dc:Bounds x="3988" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="po_action_breach_di" bpmnElement="po_action_breach"><dc:Bounds x="4018" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f1_di" bpmnElement="sec_hr_posh_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f2_di" bpmnElement="sec_hr_posh_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f3_di" bpmnElement="sec_hr_posh_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f4_di" bpmnElement="sec_hr_posh_f4"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f5_di" bpmnElement="sec_hr_posh_f5"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f6_di" bpmnElement="sec_hr_posh_f6"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f7_di" bpmnElement="sec_hr_posh_f7"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f8_di" bpmnElement="sec_hr_posh_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f9_di" bpmnElement="sec_hr_posh_f9"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f10_di" bpmnElement="sec_hr_posh_f10"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="135"/><di:waypoint x="730" y="135"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f11_di" bpmnElement="sec_hr_posh_f11"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f12_di" bpmnElement="sec_hr_posh_f12"><di:waypoint x="945" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f13_di" bpmnElement="sec_hr_posh_f13"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f14_di" bpmnElement="sec_hr_posh_f14"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f15_di" bpmnElement="sec_hr_posh_f15"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f16_di" bpmnElement="sec_hr_posh_f16"><di:waypoint x="1745" y="70"/><di:waypoint x="1806" y="70"/><di:waypoint x="1806" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f17_di" bpmnElement="sec_hr_posh_f17"><di:waypoint x="1745" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f18_di" bpmnElement="sec_hr_posh_f18"><di:waypoint x="1903" y="195"/><di:waypoint x="1964" y="195"/><di:waypoint x="1964" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f19_di" bpmnElement="sec_hr_posh_f19"><di:waypoint x="1903" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f20_di" bpmnElement="sec_hr_posh_f20"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f21_di" bpmnElement="sec_hr_posh_f21"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f22_di" bpmnElement="sec_hr_posh_f22"><di:waypoint x="2405" y="70"/><di:waypoint x="2466" y="70"/><di:waypoint x="2466" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f23_di" bpmnElement="sec_hr_posh_f23"><di:waypoint x="2075" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f24_di" bpmnElement="sec_hr_posh_f24"><di:waypoint x="2405" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f25_di" bpmnElement="sec_hr_posh_f25"><di:waypoint x="2595" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f26_di" bpmnElement="sec_hr_posh_f26"><di:waypoint x="3016" y="128"/><di:waypoint x="3016" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f27_di" bpmnElement="sec_hr_posh_f27"><di:waypoint x="3255" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f28_di" bpmnElement="sec_hr_posh_f28"><di:waypoint x="3046" y="128"/><di:waypoint x="3046" y="70"/><di:waypoint x="3155" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f29_di" bpmnElement="sec_hr_posh_f29"><di:waypoint x="3255" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f30_di" bpmnElement="sec_hr_posh_f30"><di:waypoint x="3395" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f31_di" bpmnElement="sec_hr_posh_f31"><di:waypoint x="3370" y="95"/><di:waypoint x="3370" y="142"/><di:waypoint x="2875" y="142"/><di:waypoint x="2875" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f32_di" bpmnElement="sec_hr_posh_f32"><di:waypoint x="2925" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f33_di" bpmnElement="sec_hr_posh_f33"><di:waypoint x="3090" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f34_di" bpmnElement="sec_hr_posh_f34"><di:waypoint x="2760" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f35_di" bpmnElement="sec_hr_posh_f35"><di:waypoint x="4006" y="128"/><di:waypoint x="4006" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f36_di" bpmnElement="sec_hr_posh_f36"><di:waypoint x="4245" y="195"/><di:waypoint x="4342" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f37_di" bpmnElement="sec_hr_posh_f37"><di:waypoint x="4036" y="128"/><di:waypoint x="4036" y="70"/><di:waypoint x="4145" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f38_di" bpmnElement="sec_hr_posh_f38"><di:waypoint x="4245" y="70"/><di:waypoint x="4335" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f39_di" bpmnElement="sec_hr_posh_f39"><di:waypoint x="4385" y="70"/><di:waypoint x="4500" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f40_di" bpmnElement="sec_hr_posh_f40"><di:waypoint x="4360" y="95"/><di:waypoint x="4360" y="149"/><di:waypoint x="3865" y="149"/><di:waypoint x="3865" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f41_di" bpmnElement="sec_hr_posh_f41"><di:waypoint x="3915" y="70"/><di:waypoint x="3980" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f42_di" bpmnElement="sec_hr_posh_f42"><di:waypoint x="4080" y="70"/><di:waypoint x="4500" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f43_di" bpmnElement="sec_hr_posh_f43"><di:waypoint x="3560" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f44_di" bpmnElement="sec_hr_posh_f44"><di:waypoint x="3750" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f45_di" bpmnElement="sec_hr_posh_f45"><di:waypoint x="4550" y="70"/><di:waypoint x="4665" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f46_di" bpmnElement="sec_hr_posh_f46"><di:waypoint x="4715" y="70"/><di:waypoint x="4776" y="70"/><di:waypoint x="4776" y="195"/><di:waypoint x="4837" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f47_di" bpmnElement="sec_hr_posh_f47"><di:waypoint x="4715" y="70"/><di:waypoint x="4837" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f48_di" bpmnElement="sec_hr_posh_f48"><di:waypoint x="4873" y="195"/><di:waypoint x="5002" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_hr_posh_f49_di" bpmnElement="sec_hr_posh_f49"><di:waypoint x="4873" y="70"/><di:waypoint x="5002" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

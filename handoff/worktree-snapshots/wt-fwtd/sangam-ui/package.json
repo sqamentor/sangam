@@ -1,0 +1,44 @@
+{
+  "name": "@sangam/ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sangam web UI: tasklist, operations console, admin, modeller, analytics, audit and citizen portal (React 18 + TypeScript + Vite).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "lint": "tsc -p tsconfig.json --noEmit && node scripts/check-i18n.mjs && node scripts/check-no-cdn.mjs",
+    "test": "vitest --run",
+    "preview": "vite preview",
+    "i18n:check": "node scripts/check-i18n.mjs",
+    "licences": "node scripts/list-licences.mjs",
+    "compat": "node scripts/gen-compat.mjs"
+  },
+  "dependencies": {
+    "@bpmn-io/form-js-editor": "1.12.0",
+    "@bpmn-io/form-js-viewer": "1.12.0",
+    "@fontsource/noto-sans": "5.1.0",
+    "@fontsource/noto-sans-devanagari": "5.1.0",
+    "bpmn-js": "17.11.1",
+    "dmn-js": "16.8.2",
+    "i18next": "23.16.8",
+    "oidc-client-ts": "3.1.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-i18next": "15.1.4",
+    "react-router-dom": "7.18.5"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.7.0",
+    "typescript": "5.6.3",
+    "vitest": "4.1.12",
+    "vite": "6.4.5"
+  }
+}

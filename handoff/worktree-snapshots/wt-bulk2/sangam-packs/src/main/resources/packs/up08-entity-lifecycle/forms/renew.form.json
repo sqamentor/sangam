@@ -1,0 +1,47 @@
+{
+  "key": "up08-entity-lifecycle/renew",
+  "version": "1.0.0",
+  "pack": "universal.up08-entity-lifecycle",
+  "title": {
+    "en": "Renew or terminate",
+    "hi": "नवीनीकरण या समाप्ति"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "renewalDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "renew",
+        "label": {
+          "en": "Renew",
+          "hi": "नवीनीकरण करें"
+        }
+      },
+      {
+        "value": "terminate",
+        "label": {
+          "en": "Terminate",
+          "hi": "समाप्त करें"
+        }
+      }
+    ]
+  }
+}

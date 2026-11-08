@@ -1,0 +1,36 @@
+{
+  "key": "sec-util-disconnection/disconnect",
+  "version": "1.0.0",
+  "pack": "sec.util.disconnection",
+  "title": {
+    "en": "Disconnect supply",
+    "hi": "आपूर्ति विच्छेद"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "photos",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Photographs (geo-tagged)",
+        "hi": "फ़ोटो (जियो-टैग)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Security instrument lifecycle. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_security_instrument" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_contractCompleted" name="sangam.contractCompleted"/>
+  <message id="msg_sangam_contractDefault" name="sangam.contractDefault"/>
+  <process id="sangam-security-instrument" name="Security instrument lifecycle" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.security-instrument</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>bgNo,bgBank,bgAmount,bgExpiryAt</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="si_start" name="Instrument received" operaton:initiator="initiator" operaton:formKey="sangam:security-instrument/register"></startEvent>
+    <serviceTask id="si_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>custodianSeat=EE-SI;reviewLead=P30D;executionConnector=bank.bgInvoke;executionStep=invoke;verifyApproval=false;reconcileRequired=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="si_verify" name="Confirm with issuing bank (SFMS)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>bank.bgVerify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>confirm</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>bgNo,bgBank,bgAmount,bgExpiryAt</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bgv</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="si_vGw" name="Confirmed?" default="security_instrument_f8"></exclusiveGateway>
+    <userTask id="si_notConfirmed" name="Guarantee not confirmed by the bank" operaton:candidateGroups="${custodianSeat}" operaton:formKey="sangam:security-instrument/not-confirmed"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>bgDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="si_endRejected" name="Instrument rejected"></endEvent>
+    <exclusiveGateway id="si_badGw" name="" default="security_instrument_f7"></exclusiveGateway>
+    <serviceTask id="si_tellParent" name="Tell the contract" operaton:class="org.sangam.packs.core.CorrelationDelegate"><extensionElements><operaton:field name="messageName"><operaton:string>sangam.securityVerified</operaton:string></operaton:field><operaton:field name="optional"><operaton:string>true</operaton:string></operaton:field><operaton:field name="variables"><operaton:string>bgNo,bgAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="si_review" name="Review date before expiry" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>bgReview</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>bgExpiryAt</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${reviewLead}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="si_wait" name="Expiry review, completion or default"></eventBasedGateway>
+    <intermediateCatchEvent id="si_due" name="Review date"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${bgReviewDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="si_completed" name="Contract completed"><messageEventDefinition messageRef="msg_sangam_contractCompleted"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="si_default" name="Contract default"><messageEventDefinition messageRef="msg_sangam_contractDefault"/></intermediateCatchEvent>
+    <userTask id="si_decide" name="Guarantee expiring: extend, encash or release" operaton:candidateGroups="${custodianSeat}" operaton:formKey="sangam:security-instrument/expiry"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>expiryDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="si_extend" name="Request extension" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>bank.bgExtend</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>extend</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>bgNo,bgExpiryAt</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bgx</operaton:string></operaton:field><operaton:field name="step"><operaton:string>extend</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="si_release" name="Release instrument" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>bank.bgRelease</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>release</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>bgNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bgr</operaton:string></operaton:field><operaton:field name="step"><operaton:string>release</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="si_invoke" name="Invoke guarantee (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="si_decGw" name="expiryDecision?" default="security_instrument_f17"></exclusiveGateway>
+    <userTask id="si_returnOriginal" name="Return the original instrument" operaton:candidateGroups="${custodianSeat}" operaton:formKey="sangam:security-instrument/return-original"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="si_endReleased" name="Released"></endEvent>
+    <endEvent id="si_endEncashed" name="Encashed"></endEvent>
+    <sequenceFlow id="security_instrument_f1" sourceRef="si_start" targetRef="si_defaults"/>
+    <sequenceFlow id="security_instrument_f2" sourceRef="si_defaults" targetRef="si_verify"/>
+    <sequenceFlow id="security_instrument_f3" sourceRef="si_verify" targetRef="si_vGw"/>
+    <sequenceFlow id="security_instrument_f4" name="no" sourceRef="si_vGw" targetRef="si_notConfirmed"><conditionExpression xsi:type="tFormalExpression">${bgvStatus != 'COMPLETED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="security_instrument_f5" sourceRef="si_notConfirmed" targetRef="si_badGw"/>
+    <sequenceFlow id="security_instrument_f6" name="corrected" sourceRef="si_badGw" targetRef="si_verify"><conditionExpression xsi:type="tFormalExpression">${bgDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="security_instrument_f7" name="reject" sourceRef="si_badGw" targetRef="si_endRejected"/>
+    <sequenceFlow id="security_instrument_f8" name="confirmed" sourceRef="si_vGw" targetRef="si_tellParent"/>
+    <sequenceFlow id="security_instrument_f9" sourceRef="si_tellParent" targetRef="si_review"/>
+    <sequenceFlow id="security_instrument_f10" sourceRef="si_review" targetRef="si_wait"/>
+    <sequenceFlow id="security_instrument_f11" sourceRef="si_wait" targetRef="si_due"/>
+    <sequenceFlow id="security_instrument_f12" sourceRef="si_wait" targetRef="si_completed"/>
+    <sequenceFlow id="security_instrument_f13" sourceRef="si_wait" targetRef="si_default"/>
+    <sequenceFlow id="security_instrument_f14" sourceRef="si_due" targetRef="si_decide"/>
+    <sequenceFlow id="security_instrument_f15" name="extend" sourceRef="si_decGw" targetRef="si_extend"><conditionExpression xsi:type="tFormalExpression">${expiryDecision == 'extend'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="security_instrument_f16" name="encash" sourceRef="si_decGw" targetRef="si_invoke"><conditionExpression xsi:type="tFormalExpression">${expiryDecision == 'encash'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="security_instrument_f17" name="otherwise" sourceRef="si_decGw" targetRef="si_release"/>
+    <sequenceFlow id="security_instrument_f18" sourceRef="si_decide" targetRef="si_decGw"/>
+    <sequenceFlow id="security_instrument_f19" sourceRef="si_extend" targetRef="si_review"/>
+    <sequenceFlow id="security_instrument_f20" sourceRef="si_completed" targetRef="si_release"/>
+    <sequenceFlow id="security_instrument_f21" sourceRef="si_default" targetRef="si_invoke"/>
+    <sequenceFlow id="security_instrument_f22" sourceRef="si_release" targetRef="si_returnOriginal"/>
+    <sequenceFlow id="security_instrument_f23" sourceRef="si_returnOriginal" targetRef="si_endReleased"/>
+    <sequenceFlow id="security_instrument_f24" sourceRef="si_invoke" targetRef="si_endEncashed"/>
+  </process>
+  <bpmndi:BPMNDiagram id="security_instrument_diagram">
+    <bpmndi:BPMNPlane id="security_instrument_plane" bpmnElement="sangam-security-instrument">
+      <bpmndi:BPMNShape id="si_start_di" bpmnElement="si_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_defaults_di" bpmnElement="si_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_verify_di" bpmnElement="si_verify"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_vGw_di" bpmnElement="si_vGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_notConfirmed_di" bpmnElement="si_notConfirmed"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_endRejected_di" bpmnElement="si_endRejected"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_badGw_di" bpmnElement="si_badGw"><dc:Bounds x="870" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_tellParent_di" bpmnElement="si_tellParent"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_review_di" bpmnElement="si_review"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_wait_di" bpmnElement="si_wait"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_due_di" bpmnElement="si_due"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_completed_di" bpmnElement="si_completed"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_default_di" bpmnElement="si_default"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_decide_di" bpmnElement="si_decide"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_extend_di" bpmnElement="si_extend"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_release_di" bpmnElement="si_release"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_invoke_di" bpmnElement="si_invoke"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_decGw_di" bpmnElement="si_decGw"><dc:Bounds x="1530" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_returnOriginal_di" bpmnElement="si_returnOriginal"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_endReleased_di" bpmnElement="si_endReleased"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="si_endEncashed_di" bpmnElement="si_endEncashed"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="security_instrument_f1_di" bpmnElement="security_instrument_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f2_di" bpmnElement="security_instrument_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f3_di" bpmnElement="security_instrument_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f4_di" bpmnElement="security_instrument_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f5_di" bpmnElement="security_instrument_f5"><di:waypoint x="780" y="195"/><di:waypoint x="870" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f6_di" bpmnElement="security_instrument_f6"><di:waypoint x="895" y="220"/><di:waypoint x="895" y="245"/><di:waypoint x="400" y="245"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f7_di" bpmnElement="security_instrument_f7"><di:waypoint x="920" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f8_di" bpmnElement="security_instrument_f8"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f9_di" bpmnElement="security_instrument_f9"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f10_di" bpmnElement="security_instrument_f10"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f11_di" bpmnElement="security_instrument_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1146" y="70"/><di:waypoint x="1146" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f12_di" bpmnElement="security_instrument_f12"><di:waypoint x="1085" y="70"/><di:waypoint x="1146" y="70"/><di:waypoint x="1146" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f13_di" bpmnElement="security_instrument_f13"><di:waypoint x="1085" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f14_di" bpmnElement="security_instrument_f14"><di:waypoint x="1243" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f15_di" bpmnElement="security_instrument_f15"><di:waypoint x="1580" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f16_di" bpmnElement="security_instrument_f16"><di:waypoint x="1580" y="320"/><di:waypoint x="1625" y="320"/><di:waypoint x="1625" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f17_di" bpmnElement="security_instrument_f17"><di:waypoint x="1580" y="320"/><di:waypoint x="1625" y="320"/><di:waypoint x="1625" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f18_di" bpmnElement="security_instrument_f18"><di:waypoint x="1440" y="320"/><di:waypoint x="1530" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f19_di" bpmnElement="security_instrument_f19"><di:waypoint x="1720" y="360"/><di:waypoint x="1720" y="392"/><di:waypoint x="895" y="392"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f20_di" bpmnElement="security_instrument_f20"><di:waypoint x="1243" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f21_di" bpmnElement="security_instrument_f21"><di:waypoint x="1243" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f22_di" bpmnElement="security_instrument_f22"><di:waypoint x="1770" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f23_di" bpmnElement="security_instrument_f23"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="security_instrument_f24_di" bpmnElement="security_instrument_f24"><di:waypoint x="1770" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

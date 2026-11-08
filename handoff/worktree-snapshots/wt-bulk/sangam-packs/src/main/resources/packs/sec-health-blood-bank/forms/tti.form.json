@@ -1,0 +1,36 @@
+{
+  "key": "sec-health-blood-bank/tti",
+  "version": "1.0.0",
+  "pack": "sec.health.blood-bank",
+  "title": {
+    "en": "TTI testing",
+    "hi": "टीटीआई परीक्षण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "ttiReactive",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "TTI reactive",
+        "hi": "टीटीआई प्रतिक्रियाशील"
+      }
+    },
+    {
+      "id": "results",
+      "type": "json",
+      "required": false,
+      "label": {
+        "en": "Results",
+        "hi": "परिणाम"
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_stores_writeoff_authority" name="Write-off of losses (synthetic GFR-style powers)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="stores-writeoff-authority" name="Write-off of losses (synthetic GFR-style powers)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="stores-writeoff-authority_t" hitPolicy="FIRST">
+      <input id="stores-writeoff-authority_i0" label="Amount"><inputExpression id="stores-writeoff-authority_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="stores-writeoff-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="stores-writeoff-authority_r0">
+        <inputEntry id="stores-writeoff-authority_r0_i0"><text>&lt;= 5000000</text></inputEntry>
+        <outputEntry id="stores-writeoff-authority_r0_o0"><text>"HOO"</text></outputEntry>
+      </rule>
+      <rule id="stores-writeoff-authority_r1">
+        <inputEntry id="stores-writeoff-authority_r1_i0"><text>&lt;= 100000000</text></inputEntry>
+        <outputEntry id="stores-writeoff-authority_r1_o0"><text>"HOD"</text></outputEntry>
+      </rule>
+      <rule id="stores-writeoff-authority_r2">
+        <inputEntry id="stores-writeoff-authority_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="stores-writeoff-authority_r2_o0"><text>"SECRETARY"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

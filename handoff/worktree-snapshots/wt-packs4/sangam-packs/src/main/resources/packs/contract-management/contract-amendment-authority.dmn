@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_contract_amendment_authority" name="Amendment authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="contract-amendment-authority" name="Amendment authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="contract-amendment-authority_t" hitPolicy="FIRST">
+      <input id="contract-amendment-authority_i0" label="Type"><inputExpression id="contract-amendment-authority_ie0" typeRef="string"><text>amendmentType</text></inputExpression></input>
+      <input id="contract-amendment-authority_i1" label="Amount"><inputExpression id="contract-amendment-authority_ie1" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="contract-amendment-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="contract-amendment-authority_r0"><description>extension of time</description>
+        <inputEntry id="contract-amendment-authority_r0_i0"><text>"EOT"</text></inputEntry>
+        <inputEntry id="contract-amendment-authority_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="contract-amendment-authority_r0_o0"><text>"SE"</text></outputEntry>
+      </rule>
+      <rule id="contract-amendment-authority_r1"><description>LD levy</description>
+        <inputEntry id="contract-amendment-authority_r1_i0"><text>"LD"</text></inputEntry>
+        <inputEntry id="contract-amendment-authority_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="contract-amendment-authority_r1_o0"><text>"EE"</text></outputEntry>
+      </rule>
+      <rule id="contract-amendment-authority_r2">
+        <inputEntry id="contract-amendment-authority_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="contract-amendment-authority_r2_i1"><text>&lt;= 50000000</text></inputEntry>
+        <outputEntry id="contract-amendment-authority_r2_o0"><text>"EE"</text></outputEntry>
+      </rule>
+      <rule id="contract-amendment-authority_r3">
+        <inputEntry id="contract-amendment-authority_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="contract-amendment-authority_r3_i1"><text>&lt;= 250000000</text></inputEntry>
+        <outputEntry id="contract-amendment-authority_r3_o0"><text>"SE"</text></outputEntry>
+      </rule>
+      <rule id="contract-amendment-authority_r4">
+        <inputEntry id="contract-amendment-authority_r4_i0"><text>-</text></inputEntry>
+        <inputEntry id="contract-amendment-authority_r4_i1"><text>-</text></inputEntry>
+        <outputEntry id="contract-amendment-authority_r4_o0"><text>"CE"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

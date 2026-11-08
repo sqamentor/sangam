@@ -1,0 +1,88 @@
+{
+  "key": "sec-ins-proposal-underwriting/decide",
+  "version": "1.0.0",
+  "pack": "sec.ins.proposal-underwriting",
+  "title": {
+    "en": "Underwriting decision",
+    "hi": "हामीदारी निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "loadingPct",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Extra premium loading (%)",
+        "hi": "अतिरिक्त प्रीमियम भार (%)"
+      }
+    },
+    {
+      "id": "premiumAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Premium (INR)",
+        "hi": "प्रीमियम (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "uwDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "acceptLoaded",
+        "label": {
+          "en": "Accept with extra premium",
+          "hi": "अतिरिक्त प्रीमियम सहित स्वीकार"
+        }
+      },
+      {
+        "value": "postpone",
+        "label": {
+          "en": "Postpone",
+          "hi": "स्थगित करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "key": "sec-scm-eway-bill/dispatch",
+  "version": "1.0.0",
+  "pack": "sec.scm.eway-bill",
+  "title": {
+    "en": "Dispatch",
+    "hi": "प्रेषण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "invoiceNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Invoice number",
+        "hi": "बीजक संख्या"
+      }
+    },
+    {
+      "id": "consignmentValue",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Consignment value (INR)",
+        "hi": "प्रेषित माल का मूल्य (रुपये)"
+      }
+    },
+    {
+      "id": "distanceKm",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Distance (km)",
+        "hi": "दूरी (किमी)"
+      }
+    },
+    {
+      "id": "vehicleNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Vehicle number",
+        "hi": "वाहन संख्या"
+      }
+    },
+    {
+      "id": "recipientGstin",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Recipient GSTIN",
+        "hi": "प्राप्तकर्ता जीएसटीआईएन"
+      }
+    }
+  ]
+}

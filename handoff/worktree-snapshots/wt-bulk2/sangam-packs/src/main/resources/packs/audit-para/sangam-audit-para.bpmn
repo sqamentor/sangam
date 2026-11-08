@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Audit para. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_audit_para" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_auditVerdict" name="sangam.auditVerdict"/>
+  <process id="sangam-audit-para" name="Audit para" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.audit-para</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>paraNo,paraText,replyToAudit</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ap2_start" name="Para"></startEvent>
+    <serviceTask id="ap2_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>paraOwnerSeat=DDO-AUDIT;caseType=AUDIT_REPLY;amount=0;routingDecisionKey=audit-reply-authority;appealAllowed=false;verdictWait=P90D;paraNo=@key</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ap2_reply_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap2_reply</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>20WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ap2_reply" name="Reply to audit para" operaton:candidateGroups="${paraOwnerSeat}" operaton:formKey="sangam:audit-para/reply" operaton:dueDate="${ap2_replyDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ap2_reply_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap2_reply</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paraOwnerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ap2_reply_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ap2_reply_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ap2_reply</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paraOwnerSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ap2_reply_breachGw" name="Deemed?" default="audit_para_f6"></exclusiveGateway>
+    <exclusiveGateway id="ap2_reply_done" name=""></exclusiveGateway>
+    <callActivity id="ap2_approve" name="Reply approved by HoD (core sanction)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="ap2_send" name="Send reply to AG" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ag.paraReply</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>reply</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>paraNo,replyToAudit</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>agReply</operaton:string></operaton:field><operaton:field name="step"><operaton:string>ag-reply</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ap2_sanGw" name="sanctionOutcome?" default="audit_para_f13"></exclusiveGateway>
+    <eventBasedGateway id="ap2_wait" name="AG verdict"></eventBasedGateway>
+    <intermediateCatchEvent id="ap2_verdict" name="AG verdict"><messageEventDefinition messageRef="msg_sangam_auditVerdict"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ap2_remind" name="No verdict yet"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${verdictWait}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="ap2_reminder" name="Follow up with AG" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>audit-followup</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>paraOwnerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ap2_vGw" name="Verdict?" default="audit_para_f22"></exclusiveGateway>
+    <endEvent id="ap2_end" name="Settled / dropped"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ap2_reply_warn" name="SLA warning (75%)" attachedToRef="ap2_reply" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap2_replyWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ap2_reply_breach" name="SLA breached" attachedToRef="ap2_reply" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ap2_replyDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="audit_para_f1" sourceRef="ap2_reply_warn" targetRef="ap2_reply_warnNotify"/>
+    <sequenceFlow id="audit_para_f2" sourceRef="ap2_reply_warnNotify" targetRef="ap2_reply_warnEnd"/>
+    <sequenceFlow id="audit_para_f3" sourceRef="ap2_reply_breach" targetRef="ap2_reply_breachAct"/>
+    <sequenceFlow id="audit_para_f4" sourceRef="ap2_reply_breachAct" targetRef="ap2_reply_breachGw"/>
+    <sequenceFlow id="audit_para_f5" name="deemed" sourceRef="ap2_reply_breachGw" targetRef="ap2_reply_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="audit_para_f6" name="escalated" sourceRef="ap2_reply_breachGw" targetRef="ap2_reply_slaPlan"/>
+    <sequenceFlow id="audit_para_f7" sourceRef="ap2_reply_slaPlan" targetRef="ap2_reply"/>
+    <sequenceFlow id="audit_para_f8" sourceRef="ap2_reply" targetRef="ap2_reply_done"/>
+    <sequenceFlow id="audit_para_f9" sourceRef="ap2_start" targetRef="ap2_defaults"/>
+    <sequenceFlow id="audit_para_f10" sourceRef="ap2_defaults" targetRef="ap2_reply_slaPlan"/>
+    <sequenceFlow id="audit_para_f11" sourceRef="ap2_reply_done" targetRef="ap2_approve"/>
+    <sequenceFlow id="audit_para_f12" name="SANCTIONED" sourceRef="ap2_sanGw" targetRef="ap2_send"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="audit_para_f13" name="otherwise" sourceRef="ap2_sanGw" targetRef="ap2_reply_slaPlan"/>
+    <sequenceFlow id="audit_para_f14" sourceRef="ap2_approve" targetRef="ap2_sanGw"/>
+    <sequenceFlow id="audit_para_f15" sourceRef="ap2_send" targetRef="ap2_wait"/>
+    <sequenceFlow id="audit_para_f16" sourceRef="ap2_wait" targetRef="ap2_verdict"/>
+    <sequenceFlow id="audit_para_f17" sourceRef="ap2_wait" targetRef="ap2_remind"/>
+    <sequenceFlow id="audit_para_f18" sourceRef="ap2_remind" targetRef="ap2_reminder"/>
+    <sequenceFlow id="audit_para_f19" sourceRef="ap2_reminder" targetRef="ap2_wait"/>
+    <sequenceFlow id="audit_para_f20" sourceRef="ap2_verdict" targetRef="ap2_vGw"/>
+    <sequenceFlow id="audit_para_f21" name="further reply (GP-50)" sourceRef="ap2_vGw" targetRef="ap2_reply_slaPlan"><conditionExpression xsi:type="tFormalExpression">${agVerdict == 'furtherReply'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="audit_para_f22" name="settled / dropped" sourceRef="ap2_vGw" targetRef="ap2_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="audit_para_diagram">
+    <bpmndi:BPMNPlane id="audit_para_plane" bpmnElement="sangam-audit-para">
+      <bpmndi:BPMNShape id="ap2_start_di" bpmnElement="ap2_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_defaults_di" bpmnElement="ap2_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reply_slaPlan_di" bpmnElement="ap2_reply_slaPlan"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reply_di" bpmnElement="ap2_reply"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reply_warnNotify_di" bpmnElement="ap2_reply_warnNotify"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reply_warnEnd_di" bpmnElement="ap2_reply_warnEnd"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reply_breachAct_di" bpmnElement="ap2_reply_breachAct"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reply_breachGw_di" bpmnElement="ap2_reply_breachGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reply_done_di" bpmnElement="ap2_reply_done"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_approve_di" bpmnElement="ap2_approve"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_send_di" bpmnElement="ap2_send"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_sanGw_di" bpmnElement="ap2_sanGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_wait_di" bpmnElement="ap2_wait"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_verdict_di" bpmnElement="ap2_verdict"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_remind_di" bpmnElement="ap2_remind"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reminder_di" bpmnElement="ap2_reminder"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_vGw_di" bpmnElement="ap2_vGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_end_di" bpmnElement="ap2_end"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reply_warn_di" bpmnElement="ap2_reply_warn"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ap2_reply_breach_di" bpmnElement="ap2_reply_breach"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="audit_para_f1_di" bpmnElement="audit_para_f1"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f2_di" bpmnElement="audit_para_f2"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f3_di" bpmnElement="audit_para_f3"><di:waypoint x="571" y="128"/><di:waypoint x="571" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f4_di" bpmnElement="audit_para_f4"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f5_di" bpmnElement="audit_para_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f6_di" bpmnElement="audit_para_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f7_di" bpmnElement="audit_para_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f8_di" bpmnElement="audit_para_f8"><di:waypoint x="615" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f9_di" bpmnElement="audit_para_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f10_di" bpmnElement="audit_para_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f11_di" bpmnElement="audit_para_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f12_di" bpmnElement="audit_para_f12"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f13_di" bpmnElement="audit_para_f13"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="128"/><di:waypoint x="400" y="128"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f14_di" bpmnElement="audit_para_f14"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f15_di" bpmnElement="audit_para_f15"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f16_di" bpmnElement="audit_para_f16"><di:waypoint x="1745" y="70"/><di:waypoint x="1806" y="70"/><di:waypoint x="1806" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f17_di" bpmnElement="audit_para_f17"><di:waypoint x="1745" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f18_di" bpmnElement="audit_para_f18"><di:waypoint x="1903" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f19_di" bpmnElement="audit_para_f19"><di:waypoint x="2050" y="110"/><di:waypoint x="2050" y="142"/><di:waypoint x="1720" y="142"/><di:waypoint x="1720" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f20_di" bpmnElement="audit_para_f20"><di:waypoint x="1903" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f21_di" bpmnElement="audit_para_f21"><di:waypoint x="2050" y="220"/><di:waypoint x="2050" y="238"/><di:waypoint x="400" y="238"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_para_f22_di" bpmnElement="audit_para_f22"><di:waypoint x="2075" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

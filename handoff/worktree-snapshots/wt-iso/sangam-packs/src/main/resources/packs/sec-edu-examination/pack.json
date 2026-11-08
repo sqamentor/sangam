@@ -1,0 +1,90 @@
+{
+  "id": "sec.edu.examination",
+  "version": "1.0.0",
+  "name": {
+    "en": "Examination, results and revaluation",
+    "hi": "परीक्षा, परिणाम एवं पुनर्मूल्यांकन"
+  },
+  "domain": "Education",
+  "description": "Examination cycle: registration window, hall tickets, conduct, evaluation, moderation by the result committee, publication and upload to DigiLocker / NAD (ABC credits); revaluation requests within the window, each its own case with a different evaluator and the revised result.",
+  "mainProcesses": [
+    "sangam-sec-edu-exam-cycle"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-edu-examination/sangam-sec-edu-exam-cycle.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-edu-examination/sangam-sec-edu-revaluation.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-examination/forms/notify.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-examination/forms/conduct.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-examination/forms/evaluate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-examination/forms/revaluation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-examination/forms/re-evaluate.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-edu-examination/seed.json"
+    }
+  ],
+  "seed": "packs/sec-edu-examination/seed.json",
+  "connectors": [
+    {
+      "id": "exam.hallTickets",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Hall tickets"
+    },
+    {
+      "id": "exam.publish",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Publish results"
+    },
+    {
+      "id": "nad.upload",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "DigiLocker / NAD upload"
+    },
+    {
+      "id": "pg.collect",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Revaluation fee"
+    }
+  ],
+  "covers": [
+    "SEC-EDU-004",
+    "GP-03",
+    "GP-22",
+    "GP-24",
+    "GP-47"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-committee",
+    "sangam-core-execution"
+  ]
+}

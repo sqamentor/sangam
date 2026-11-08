@@ -1,0 +1,76 @@
+{
+  "key": "ifms-budget-formulation/estimates",
+  "version": "1.0.0",
+  "pack": "gov.ifms.budget-formulation",
+  "title": {
+    "en": "Budget estimates",
+    "hi": "बजट अनुमान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fiscalYear",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Financial year",
+        "hi": "वित्तीय वर्ष"
+      }
+    },
+    {
+      "id": "headOfAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Head of account",
+        "hi": "लेखा शीर्ष"
+      }
+    },
+    {
+      "id": "beAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Budget estimate (BE)",
+        "hi": "बजट अनुमान"
+      }
+    },
+    {
+      "id": "reAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Revised estimate (RE)",
+        "hi": "संशोधित अनुमान"
+      }
+    },
+    {
+      "id": "actuals",
+      "type": "money",
+      "required": false,
+      "label": {
+        "en": "Actuals to date",
+        "hi": "अब तक का वास्तविक व्यय"
+      }
+    },
+    {
+      "id": "justification",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Justification",
+        "hi": "औचित्य"
+      }
+    }
+  ]
+}

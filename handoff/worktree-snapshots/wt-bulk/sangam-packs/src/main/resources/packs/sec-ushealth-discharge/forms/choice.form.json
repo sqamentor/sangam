@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-discharge/choice",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.discharge",
+  "title": {
+    "en": "Patient choice of post-acute provider (list with quality data)",
+    "es": "Elección del proveedor de atención posaguda (lista con datos de calidad)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "choiceListGiven",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "List of available HHA / SNF / IRF / LTCH with quality data given",
+        "es": "Lista de HHA / SNF / IRF / LTCH disponibles con datos de calidad entregada"
+      }
+    },
+    {
+      "id": "postAcuteProvider",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Post-acute provider chosen by the patient",
+        "es": "Proveedor de atención posaguda elegido por el paciente"
+      }
+    }
+  ]
+}

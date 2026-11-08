@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_ifms_scheme_approval" name="Competent authority" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="ifms-scheme-approval" name="Competent authority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="ifms-scheme-approval_t" hitPolicy="FIRST">
+      <input id="ifms-scheme-approval_i0" label="Amount (INR)"><inputExpression id="ifms-scheme-approval_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="ifms-scheme-approval_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="ifms-scheme-approval_r0"><description>Secretary</description>
+        <inputEntry id="ifms-scheme-approval_r0_i0"><text>&lt;= 1000000000</text></inputEntry>
+        <outputEntry id="ifms-scheme-approval_r0_o0"><text>"CAA"</text></outputEntry>
+      </rule>
+      <rule id="ifms-scheme-approval_r1"><description>routed to the authority of the ladder</description>
+        <inputEntry id="ifms-scheme-approval_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="ifms-scheme-approval_r1_o0"><text>"FA"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

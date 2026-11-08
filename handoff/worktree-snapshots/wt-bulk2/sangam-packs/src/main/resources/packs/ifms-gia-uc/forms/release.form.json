@@ -1,0 +1,99 @@
+{
+  "key": "ifms-gia-uc/release",
+  "version": "1.0.0",
+  "pack": "gov.ifms.gia-uc",
+  "title": {
+    "en": "Grant release",
+    "hi": "अनुदान विमुक्ति"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "grantee",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Grantee",
+        "hi": "अनुदान प्राप्तकर्ता"
+      }
+    },
+    {
+      "id": "granteeType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Grantee type",
+        "hi": "अनुदान प्राप्तकर्ता का प्रकार"
+      }
+    },
+    {
+      "id": "recurringGrant",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Recurring grant",
+        "hi": "आवर्ती अनुदान"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "releasePercent",
+      "type": "number",
+      "required": false,
+      "label": {
+        "en": "Release as % of sanction",
+        "hi": "स्वीकृति का % विमुक्ति"
+      }
+    },
+    {
+      "id": "ucStatus",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Utilisation certificate status",
+        "hi": "उपयोगिता प्रमाण पत्र की स्थिति"
+      }
+    },
+    {
+      "id": "unspentBalance",
+      "type": "money",
+      "required": false,
+      "label": {
+        "en": "Unspent balance with the grantee",
+        "hi": "प्राप्तकर्ता के पास अव्ययित शेष"
+      }
+    },
+    {
+      "id": "headOfAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Head of account",
+        "hi": "लेखा शीर्ष"
+      }
+    },
+    {
+      "id": "sanctionRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Sanction reference",
+        "hi": "स्वीकृति संदर्भ"
+      }
+    }
+  ]
+}

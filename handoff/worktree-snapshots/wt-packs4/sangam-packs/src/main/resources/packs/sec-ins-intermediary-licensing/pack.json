@@ -1,0 +1,85 @@
+{
+  "id": "sec.ins.intermediary-licensing",
+  "version": "1.0.0",
+  "name": {
+    "en": "Agent and broker registration",
+    "hi": "अभिकर्ता एवं ब्रोकर पंजीकरण"
+  },
+  "domain": "Insurance",
+  "description": "Insurance agent: eligibility, pre-licensing training, examination, KYC and background check, appointment uploaded to the IRDAI agency portal, code issued; renewal and termination with portfolio reassignment. Broker: application to IRDAI with net worth and principal officer checks by rule.",
+  "mainProcesses": [
+    "sangam-sec-ins-intermediary"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ins-intermediary-licensing/sangam-sec-ins-intermediary.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ins-intermediary-licensing/sec-ins-intermediary.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-intermediary-licensing/forms/apply.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-intermediary-licensing/forms/training.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-intermediary-licensing/forms/appoint.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ins-intermediary-licensing/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ins-intermediary-licensing/seed.json",
+  "connectors": [
+    {
+      "id": "irdai.agencyPortal",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "IRDAI agency portal"
+    },
+    {
+      "id": "exam.book",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Examination booking"
+    },
+    {
+      "id": "irdai.brokerApply",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Broker application"
+    }
+  ],
+  "covers": [
+    "SEC-INS-013",
+    "GP-16",
+    "GP-30",
+    "UP-22",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-rejection"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "netWorth"
+    ]
+  }
+}

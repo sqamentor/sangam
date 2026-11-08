@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Intermediary registration. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ins_intermediary" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_exam_result" name="sangam.exam.result"/>
+  <message id="msg_sangam_irdai_brokerDecision" name="sangam.irdai.brokerDecision"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ins-intermediary" name="Intermediary registration" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ins.intermediary-licensing</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>applicantName,intermediaryType</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ag_start" name="Application" operaton:initiator="initiator" operaton:formKey="sangam:sec-ins-intermediary-licensing/apply"></startEvent>
+    <serviceTask id="ag_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>intermediaryType=AGENT;qualification=12TH;netWorth=0;examPassed=false;agencySeat=AGENCY-ADMIN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ag_rule" name="Eligibility (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ins-intermediary</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="ag_gw" name="Eligible?" default="sec_ins_intermediary_f7"></exclusiveGateway>
+    <serviceTask id="ag_rj_code" name="Reason: NOT_ELIGIBLE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=NOT_ELIGIBLE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ag_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ag_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="ag_typeGw" name="Agent or broker?" default="sec_ins_intermediary_f18"></exclusiveGateway>
+    <userTask id="ag_training" name="Pre-licensing training completed" operaton:candidateGroups="${agencySeat}" operaton:formKey="sangam:sec-ins-intermediary-licensing/training"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ag_exam" name="Book examination" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>exam.book</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>book</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>applicantName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>exam</operaton:string></operaton:field><operaton:field name="step"><operaton:string>exam</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="ag_result" name="Examination result"><messageEventDefinition messageRef="msg_sangam_exam_result"/></intermediateCatchEvent>
+    <exclusiveGateway id="ag_examGw" name="Passed?" default="sec_ins_intermediary_f13"></exclusiveGateway>
+    <userTask id="ag_appoint" name="Background check and appointment" operaton:candidateGroups="PRINCIPAL-OFFICER" operaton:formKey="sangam:sec-ins-intermediary-licensing/appoint"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>appointDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ag_apGw" name="" default="sec_ins_intermediary_f16"></exclusiveGateway>
+    <serviceTask id="ag_upload" name="Upload appointment to the IRDAI agency portal" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>irdai.agencyPortal</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>appoint</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>applicantName,pan</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>portal</operaton:string></operaton:field><operaton:field name="step"><operaton:string>appoint</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ag_endRejected" name="Not appointed"></endEvent>
+    <endEvent id="ag_end" name="Code issued"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ag_broker" name="Apply to IRDAI for a broker licence" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>irdai.brokerApply</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>apply</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>applicantName,netWorth</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>broker</operaton:string></operaton:field><operaton:field name="step"><operaton:string>broker</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="ag_brokerResult" name="IRDAI decision"><messageEventDefinition messageRef="msg_sangam_irdai_brokerDecision"/></intermediateCatchEvent>
+    <endEvent id="ag_endBroker" name="Broker decision recorded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ins_intermediary_f1" sourceRef="ag_start" targetRef="ag_defaults"/>
+    <sequenceFlow id="sec_ins_intermediary_f2" sourceRef="ag_defaults" targetRef="ag_rule"/>
+    <sequenceFlow id="sec_ins_intermediary_f3" sourceRef="ag_rule" targetRef="ag_gw"/>
+    <sequenceFlow id="sec_ins_intermediary_f4" sourceRef="ag_rj_reject" targetRef="ag_rj_endRejected"/>
+    <sequenceFlow id="sec_ins_intermediary_f5" sourceRef="ag_rj_code" targetRef="ag_rj_reject"/>
+    <sequenceFlow id="sec_ins_intermediary_f6" name="no" sourceRef="ag_gw" targetRef="ag_rj_code"><conditionExpression xsi:type="tFormalExpression">${!eligible}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_intermediary_f7" name="yes" sourceRef="ag_gw" targetRef="ag_typeGw"/>
+    <sequenceFlow id="sec_ins_intermediary_f8" name="agent" sourceRef="ag_typeGw" targetRef="ag_training"><conditionExpression xsi:type="tFormalExpression">${intermediaryType == 'AGENT'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_intermediary_f9" sourceRef="ag_training" targetRef="ag_exam"/>
+    <sequenceFlow id="sec_ins_intermediary_f10" sourceRef="ag_exam" targetRef="ag_result"/>
+    <sequenceFlow id="sec_ins_intermediary_f11" sourceRef="ag_result" targetRef="ag_examGw"/>
+    <sequenceFlow id="sec_ins_intermediary_f12" name="retake" sourceRef="ag_examGw" targetRef="ag_exam"><conditionExpression xsi:type="tFormalExpression">${!examPassed}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_intermediary_f13" name="passed" sourceRef="ag_examGw" targetRef="ag_appoint"/>
+    <sequenceFlow id="sec_ins_intermediary_f14" sourceRef="ag_appoint" targetRef="ag_apGw"/>
+    <sequenceFlow id="sec_ins_intermediary_f15" name="approve" sourceRef="ag_apGw" targetRef="ag_upload"><conditionExpression xsi:type="tFormalExpression">${appointDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_intermediary_f16" name="reject" sourceRef="ag_apGw" targetRef="ag_endRejected"/>
+    <sequenceFlow id="sec_ins_intermediary_f17" sourceRef="ag_upload" targetRef="ag_end"/>
+    <sequenceFlow id="sec_ins_intermediary_f18" name="broker" sourceRef="ag_typeGw" targetRef="ag_broker"/>
+    <sequenceFlow id="sec_ins_intermediary_f19" sourceRef="ag_broker" targetRef="ag_brokerResult"/>
+    <sequenceFlow id="sec_ins_intermediary_f20" sourceRef="ag_brokerResult" targetRef="ag_endBroker"/>
+    <subProcess id="ag_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ag_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ag_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ag_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ag_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_intermediary_f21" sourceRef="ag_withdrawStart" targetRef="ag_withdrawKind"/>
+      <sequenceFlow id="sec_ins_intermediary_f22" sourceRef="ag_withdrawKind" targetRef="ag_withdrawCall"/>
+      <sequenceFlow id="sec_ins_intermediary_f23" sourceRef="ag_withdrawCall" targetRef="ag_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ag_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ag_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ag_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ag_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ag_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_intermediary_f24" sourceRef="ag_cancelStart" targetRef="ag_cancelKind"/>
+      <sequenceFlow id="sec_ins_intermediary_f25" sourceRef="ag_cancelKind" targetRef="ag_cancelCall"/>
+      <sequenceFlow id="sec_ins_intermediary_f26" sourceRef="ag_cancelCall" targetRef="ag_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ins_intermediary_diagram">
+    <bpmndi:BPMNPlane id="sec_ins_intermediary_plane" bpmnElement="sangam-sec-ins-intermediary">
+      <bpmndi:BPMNShape id="ag_start_di" bpmnElement="ag_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_defaults_di" bpmnElement="ag_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_rule_di" bpmnElement="ag_rule"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_gw_di" bpmnElement="ag_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_rj_code_di" bpmnElement="ag_rj_code"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_rj_reject_di" bpmnElement="ag_rj_reject"><dc:Bounds x="845" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_rj_endRejected_di" bpmnElement="ag_rj_endRejected"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_typeGw_di" bpmnElement="ag_typeGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_training_di" bpmnElement="ag_training"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_exam_di" bpmnElement="ag_exam"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_result_di" bpmnElement="ag_result"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_examGw_di" bpmnElement="ag_examGw"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_appoint_di" bpmnElement="ag_appoint"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_apGw_di" bpmnElement="ag_apGw"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_upload_di" bpmnElement="ag_upload"><dc:Bounds x="1835" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_endRejected_di" bpmnElement="ag_endRejected"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_end_di" bpmnElement="ag_end"><dc:Bounds x="2032" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_broker_di" bpmnElement="ag_broker"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_brokerResult_di" bpmnElement="ag_brokerResult"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_endBroker_di" bpmnElement="ag_endBroker"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_withdraw_di" bpmnElement="ag_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_withdrawStart_di" bpmnElement="ag_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_withdrawKind_di" bpmnElement="ag_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_withdrawCall_di" bpmnElement="ag_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_withdrawEnd_di" bpmnElement="ag_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_cancel_di" bpmnElement="ag_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_cancelStart_di" bpmnElement="ag_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_cancelKind_di" bpmnElement="ag_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_cancelCall_di" bpmnElement="ag_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ag_cancelEnd_di" bpmnElement="ag_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f1_di" bpmnElement="sec_ins_intermediary_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f2_di" bpmnElement="sec_ins_intermediary_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f3_di" bpmnElement="sec_ins_intermediary_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f4_di" bpmnElement="sec_ins_intermediary_f4"><di:waypoint x="945" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f5_di" bpmnElement="sec_ins_intermediary_f5"><di:waypoint x="780" y="195"/><di:waypoint x="812" y="195"/><di:waypoint x="812" y="320"/><di:waypoint x="845" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f6_di" bpmnElement="sec_ins_intermediary_f6"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f7_di" bpmnElement="sec_ins_intermediary_f7"><di:waypoint x="590" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f8_di" bpmnElement="sec_ins_intermediary_f8"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f9_di" bpmnElement="sec_ins_intermediary_f9"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f10_di" bpmnElement="sec_ins_intermediary_f10"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f11_di" bpmnElement="sec_ins_intermediary_f11"><di:waypoint x="1243" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f12_di" bpmnElement="sec_ins_intermediary_f12"><di:waypoint x="1390" y="220"/><di:waypoint x="1390" y="274"/><di:waypoint x="1060" y="274"/><di:waypoint x="1060" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f13_di" bpmnElement="sec_ins_intermediary_f13"><di:waypoint x="1415" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f14_di" bpmnElement="sec_ins_intermediary_f14"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f15_di" bpmnElement="sec_ins_intermediary_f15"><di:waypoint x="1745" y="195"/><di:waypoint x="1790" y="195"/><di:waypoint x="1790" y="320"/><di:waypoint x="1835" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f16_di" bpmnElement="sec_ins_intermediary_f16"><di:waypoint x="1745" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f17_di" bpmnElement="sec_ins_intermediary_f17"><di:waypoint x="1935" y="320"/><di:waypoint x="2032" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f18_di" bpmnElement="sec_ins_intermediary_f18"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f19_di" bpmnElement="sec_ins_intermediary_f19"><di:waypoint x="945" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f20_di" bpmnElement="sec_ins_intermediary_f20"><di:waypoint x="1078" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f21_di" bpmnElement="sec_ins_intermediary_f21"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f22_di" bpmnElement="sec_ins_intermediary_f22"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f23_di" bpmnElement="sec_ins_intermediary_f23"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f24_di" bpmnElement="sec_ins_intermediary_f24"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f25_di" bpmnElement="sec_ins_intermediary_f25"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_intermediary_f26_di" bpmnElement="sec_ins_intermediary_f26"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

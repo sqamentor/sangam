@@ -1,0 +1,72 @@
+{
+  "key": "sec-ushealth-eligibility/register",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.eligibility",
+  "title": {
+    "en": "Patient registration",
+    "es": "Registro del paciente"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "es": "Nombre del paciente"
+      }
+    },
+    {
+      "id": "memberId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Member ID",
+        "es": "Número de afiliado"
+      }
+    },
+    {
+      "id": "payerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payer ID",
+        "es": "Identificador del pagador"
+      }
+    },
+    {
+      "id": "providerNpi",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Provider NPI",
+        "es": "NPI del proveedor"
+      }
+    },
+    {
+      "id": "serviceTypes",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Service type codes (X12 EQ01)",
+        "es": "Códigos de tipo de servicio (X12 EQ01)"
+      }
+    },
+    {
+      "id": "visitType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Visit type",
+        "es": "Tipo de visita"
+      }
+    }
+  ]
+}

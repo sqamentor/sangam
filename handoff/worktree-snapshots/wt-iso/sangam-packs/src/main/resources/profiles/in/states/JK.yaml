@@ -1,0 +1,173 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: JK
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-UT-LEG
+  name:
+    en: Jammu & Kashmir
+    hi: जम्मू और कश्मीर
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources JK1-JK3, accessed 2026-11-04)
+placeholders:
+- path: documentTypes
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (37 JKPaySys
+    bill types: names to load)'
+- path: rulebooks.own.JK_BUDGET_MANUAL
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live'
+- path: classification.defaultScheme
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (no official
+    code structure found; Union layout used)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 7
+  sources: JK1-JK3
+locale:
+  languages:
+  - tag: ks
+    script: Arab
+    scope: statewide
+    docClass:
+    - statutory
+    direction: rtl
+    default: true
+  - tag: doi
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+  - tag: ur
+    script: Arab
+    scope: statewide
+    docClass:
+    - statutory
+    direction: rtl
+  - tag: hi
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: V
+integrations:
+  systems:
+  - BEAMS
+  - TreasuryNet
+  - JKPaySys
+  - JKGRAS
+  - Cyber Treasury
+  - GenProfit
+  snaSparsh: {}
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Accounts & Treasuries
+  unitTypes:
+    DISTRICT_TREASURY: 132
+  ddoCount: 5915
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: JK_FC
+    title: J&K Financial Code I/II
+  - id: JK_TC
+    title: Treasury Code (SRO-68/2017)
+  - id: JK_BFP
+    title: Book of Financial Powers (3rd edn 2002)
+  - id: JK_BUDGET_MANUAL
+    title: Budget Manual SO-334/2020
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+budgetControl:
+  stages:
+  - RELEASE
+  - BEAMS_ALLOCATION
+billTypes: 37
+procurementRules: GFR2017
+banks:
+- JK_BANK
+geoTaggedEvidence: true
+unionDemand: 58
+regimeHistory:
+- from: '2019-10-31'
+  to: '2025-03-31'
+  approvals: PARLIAMENT
+- from: '2025-04-01'
+  approvals: ASSEMBLY
+classification:
+  defaultScheme: HOA
+procurement:
+  family: CENTRAL
+  rule: GFR 2017 (LG order 2020)
+  worksCode: J&K PWD + Works Manual 2019
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/JK/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: JK
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/JK/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: JK
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (LG order 2020) (was: RPR 2022: DDO draws within a sanction; no
+        sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (LG order 2020) (was: DFPR 2024 r.12(4) and department re-delegation
+        order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (LG order 2020) (was: DFPR 2024 r.12(2) re-delegation to HoD [U
+        value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (LG order 2020) (was: DFPR 2024 r.11 (open / limited tender up
+        to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (LG order 2020) (was: DFPR 2024 r.11: above the Secretary; no upper
+        limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (LG order 2020) (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

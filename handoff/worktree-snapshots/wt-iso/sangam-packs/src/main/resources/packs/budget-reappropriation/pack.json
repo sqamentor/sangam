@@ -1,0 +1,75 @@
+{
+  "id": "gov.ifms.budget-reappropriation",
+  "version": "1.0.0",
+  "name": {
+    "en": "Budget re-appropriation",
+    "hi": "बजट पुनर्विनियोजन"
+  },
+  "domain": "IFMS",
+  "description": "Savings in one head are re-appropriated to another: savings checked in IFMS, budget-section scrutiny, Finance concurrence through the referral inbox, sanction by the re-appropriation power, IFMS update with operationId and the re-appropriation order.",
+  "mainProcesses": [
+    "sangam-budget-reappropriation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/budget-reappropriation/sangam-budget-reappropriation.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/budget-reappropriation/reapp-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/budget-reappropriation/forms/proposal.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/budget-reappropriation/seed.json"
+    }
+  ],
+  "seed": "packs/budget-reappropriation/seed.json",
+  "connectors": [
+    {
+      "id": "ledger.available",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Savings available in the source line (sangam-ledger)"
+    },
+    {
+      "id": "ledger.transfer",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Post the re-appropriation as a ledger TRANSFER"
+    },
+    {
+      "id": "referral.send",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Finance concurrence"
+    }
+  ],
+  "covers": [
+    "D-BUDGET-REAPPROPRIATION",
+    "GP-01",
+    "GP-11",
+    "GP-32",
+    "GP-37",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-referral",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-core-scrutiny"
+  ]
+}

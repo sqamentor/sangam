@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_pension_computation" name="Pension computation (CCS (Pension) Rules 2021)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Replaces the earlier 50 % placeholder. Values from the CCS (Pension) Rules 2021 as summarised in IFMS-CENTRAL IFC-179; ceilings marked [U] are configuration placeholders. Commutation uses ccs-commutation-factor. -->
+  <decision id="pension-computation" name="Pension computation (CCS (Pension) Rules 2021)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="pension-computation_t" hitPolicy="FIRST">
+      <input id="pension-computation_i0" label="Qualifying service (years)"><inputExpression id="pension-computation_ie0" typeRef="number"><text>qualifyingService</text></inputExpression></input>
+      <input id="pension-computation_i1" label="Last emoluments"><inputExpression id="pension-computation_ie1" typeRef="number"><text>lastPay</text></inputExpression></input>
+      <input id="pension-computation_i2" label="Average emoluments (10 months)"><inputExpression id="pension-computation_ie2" typeRef="number"><text>averageEmoluments</text></inputExpression></input>
+      <output id="pension-computation_o0" label="Monthly pension" name="pensionAmount" typeRef="number"/>
+      <output id="pension-computation_o1" label="Eligible" name="eligibleForPension" typeRef="boolean"/>
+      <output id="pension-computation_o2" label="Retirement gratuity" name="retirementGratuity" typeRef="number"/>
+      <output id="pension-computation_o3" label="Family pension (ordinary rate)" name="familyPension" typeRef="number"/>
+      <output id="pension-computation_o4" label="Rule" name="ruleRef" typeRef="string"/>
+      <rule id="pension-computation_r0"><description>pension after 10 years of qualifying service</description>
+        <inputEntry id="pension-computation_r0_i0"><text>&gt;= 10</text></inputEntry>
+        <inputEntry id="pension-computation_r0_i1"><text>-</text></inputEntry>
+        <inputEntry id="pension-computation_r0_i2"><text>-</text></inputEntry>
+        <outputEntry id="pension-computation_r0_o0"><text>min([max([max([lastPay, averageEmoluments]) * 0.5, 9000]), 125000])</text></outputEntry>
+        <outputEntry id="pension-computation_r0_o1"><text>true</text></outputEntry>
+        <outputEntry id="pension-computation_r0_o2"><text>min([lastPay * 0.25 * min([floor(qualifyingService * 2), 66]), 2500000])</text></outputEntry>
+        <outputEntry id="pension-computation_r0_o3"><text>max([lastPay * 0.3, 9000])</text></outputEntry>
+        <outputEntry id="pension-computation_r0_o4"><text>"CCS (Pension) Rules 2021: 50% of last emoluments or average emoluments, whichever is more beneficial; minimum 9,000, maximum 50% of the highest pay (1,25,000); gratuity 1/4 per six-monthly period, max 16.5 x emoluments, ceiling 25 lakh [U ceiling date]"</text></outputEntry>
+      </rule>
+      <rule id="pension-computation_r1"><description>service gratuity only</description>
+        <inputEntry id="pension-computation_r1_i0"><text>&lt; 10</text></inputEntry>
+        <inputEntry id="pension-computation_r1_i1"><text>-</text></inputEntry>
+        <inputEntry id="pension-computation_r1_i2"><text>-</text></inputEntry>
+        <outputEntry id="pension-computation_r1_o0"><text>0</text></outputEntry>
+        <outputEntry id="pension-computation_r1_o1"><text>false</text></outputEntry>
+        <outputEntry id="pension-computation_r1_o2"><text>lastPay * 0.5 * floor(qualifyingService * 2)</text></outputEntry>
+        <outputEntry id="pension-computation_r1_o3"><text>max([lastPay * 0.3, 9000])</text></outputEntry>
+        <outputEntry id="pension-computation_r1_o4"><text>"CCS (Pension) Rules 2021: service gratuity below 10 years (half a month per six-monthly period) [U]"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

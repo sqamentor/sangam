@@ -1,0 +1,97 @@
+{
+  "id": "sec.util.new-connection",
+  "version": "1.0.0",
+  "name": {
+    "en": "New electricity connection with standards of performance",
+    "hi": "प्रदर्शन मानकों सहित नया विद्युत कनेक्शन"
+  },
+  "domain": "Utilities",
+  "description": "Electricity (Rights of Consumers) Rules 2020: application with two documents, connection within 7 days (metro), 15 days (other municipal) or 30 days (rural) where no new works are needed; site inspection, estimate and demand note when works are needed, fee paid once, meter installed and energised; delay beyond the standard credits the compensation notified by the SERC.",
+  "mainProcesses": [
+    "sangam-sec-util-connection"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-util-new-connection/sangam-sec-util-connection.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-util-new-connection/sec-util-sop.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-new-connection/forms/apply.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-new-connection/forms/inspect.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-new-connection/forms/estimate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-new-connection/forms/install.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-util-new-connection/forms/compensation-manual.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-util-new-connection/seed.json"
+    }
+  ],
+  "seed": "packs/sec-util-new-connection/seed.json",
+  "connectors": [
+    {
+      "id": "pg.collect",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Connection charges"
+    },
+    {
+      "id": "billing.credit",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Compensation credit"
+    },
+    {
+      "id": "mdm.install",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Meter data management; keeps the business key as the connection case of the consumer"
+    }
+  ],
+  "covers": [
+    "SEC-UTIL-001",
+    "SEC-UTIL-002",
+    "GP-06",
+    "GP-12",
+    "GP-17",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-scrutiny"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "compensationAmount",
+      "estimateAmount"
+    ]
+  }
+}

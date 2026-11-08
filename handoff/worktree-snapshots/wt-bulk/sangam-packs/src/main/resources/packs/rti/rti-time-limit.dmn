@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_rti_time_limit" name="RTI time limit (RTI Act 2005 s.7)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="rti-time-limit" name="RTI time limit (RTI Act 2005 s.7)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="rti-time-limit_t" hitPolicy="FIRST">
+      <input id="rti-time-limit_i0" label="Life or liberty"><inputExpression id="rti-time-limit_ie0" typeRef="boolean"><text>lifeLiberty</text></inputExpression></input>
+      <input id="rti-time-limit_i1" label="Received via APIO"><inputExpression id="rti-time-limit_ie1" typeRef="boolean"><text>viaApio</text></inputExpression></input>
+      <output id="rti-time-limit_o0" label="Time limit" name="caseSla" typeRef="string"/>
+      <rule id="rti-time-limit_r0"><description>s.7(1) proviso</description>
+        <inputEntry id="rti-time-limit_r0_i0"><text>true</text></inputEntry>
+        <inputEntry id="rti-time-limit_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="rti-time-limit_r0_o0"><text>"48H"</text></outputEntry>
+      </rule>
+      <rule id="rti-time-limit_r1"><description>s.5(2): +5 days via APIO</description>
+        <inputEntry id="rti-time-limit_r1_i0"><text>false</text></inputEntry>
+        <inputEntry id="rti-time-limit_r1_i1"><text>true</text></inputEntry>
+        <outputEntry id="rti-time-limit_r1_o0"><text>"35D"</text></outputEntry>
+      </rule>
+      <rule id="rti-time-limit_r2"><description>s.7(1)</description>
+        <inputEntry id="rti-time-limit_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="rti-time-limit_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="rti-time-limit_r2_o0"><text>"30D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: sanction by the competent authority. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_sanction" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_signatureResult" name="sangam.signatureResult"/>
+  <process id="sangam-core-sanction" name="Core: sanction by the competent authority" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>SANCTION / APPROVAL (IX.3): the competent role comes from the routing DMN (routingDecisionKey, the rule in force today), the seat from the hierarchy (IX.5 rule 2); at completion the seat's delegated power is checked against the powers DMN (K6), SoD by person and seat (K5), and the approval is bound to the payload hash (K4). Deemed approval by the system principal on behalf of the seat where the law provides it (J-P4-E07). Optional signature over the approved hash (GP-34, J-P2-E06/E07). Output: sanctionOutcome SANCTIONED / REJECTED / RETURNED.</documentation>
+    <startEvent id="sn_start" name="Sanction requested"></startEvent>
+    <serviceTask id="sn_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>deemedDecision=false</operaton:string></operaton:field><operaton:field name="defaults"><operaton:string>sanctionSla=5WD;sanctionOnBreach=ESCALATE;signatureRequired=false;powersDecisionKey=sangam-core-powers;routingDecisionKey=sangam-core-competent-authority;caseType=GENERAL;signMethod=esign;espId=ESP-1</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sn_state" name="State: SANCTION" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>SANCTION</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="sn_route" name="Competent authority (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:expression>${routingDecisionKey}</operaton:expression></operaton:field><operaton:field name="binding"><operaton:string>latest</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="sn_seat" name="Resolve competent seat" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLE</operaton:string></operaton:field><operaton:field name="roleVar"><operaton:string>competentRole</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>sanctionSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sn_sanction_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sn_sanction</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${sanctionSla}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="sn_sanction" name="Sanction / approval" operaton:candidateGroups="${sanctionSeat}" operaton:formKey="sangam:core/sanction" operaton:dueDate="${sn_sanctionDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="stepSuffixVar"><operaton:string>routingDecisionKey</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.PowerLimitGuardListener"><operaton:field name="decisionKey"><operaton:expression>${powersDecisionKey}</operaton:expression></operaton:field><operaton:field name="approveValues"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>sanctionDecision</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ApprovalBindingListener"><operaton:field name="decisionVar"><operaton:string>sanctionDecision</operaton:string></operaton:field><operaton:field name="approveValues"><operaton:string>approve</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>sanctionDecision</operaton:string></operaton:field><operaton:field name="stepSuffixVar"><operaton:string>routingDecisionKey</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="sn_sanction_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sn_sanction</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>sanctionSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sn_sanction_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="sn_sanction_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>sn_sanction</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:expression>${sanctionOnBreach}</operaton:expression></operaton:field><operaton:field name="seatVar"><operaton:string>sanctionSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>sanctionDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sn_sanction_breachGw" name="Deemed?" default="core_sanction_f6"></exclusiveGateway>
+    <exclusiveGateway id="sn_sanction_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="sn_deemedGw" name="Deemed?" default="core_sanction_f16"></exclusiveGateway>
+    <serviceTask id="sn_bindDeemed" name="Bind deemed approval" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>BIND_DEEMED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sn_decGw" name="Decision?" default="core_sanction_f38"></exclusiveGateway>
+    <exclusiveGateway id="sn_signGw" name="Signature required?" default="core_sanction_f20"></exclusiveGateway>
+    <serviceTask id="sn_sign" name="Sign approved payload" operaton:class="org.sangam.packs.core.SignatureDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>REQUEST</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>sanction</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sn_approved" name="State: APPROVED" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>APPROVED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sn_signRes" name="Signed?" default="core_sanction_f29"></exclusiveGateway>
+    <eventBasedGateway id="sn_signWait" name="Awaiting ESP"></eventBasedGateway>
+    <intermediateCatchEvent id="sn_signMsg" name="Signature result"><messageEventDefinition messageRef="msg_sangam_signatureResult"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="sn_signTimeout" name="ESP timeout"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT15M</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="sn_signApply" name="Apply signature result" operaton:class="org.sangam.packs.core.SignatureDelegate"><extensionElements><operaton:field name="op"><operaton:string>APPLY_RESULT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sn_signUnknown" name="Signature status unknown" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>signatureStatus=UNKNOWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sn_signFailed" name="Signature not applied: the case has not moved" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>signature-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>sanctionSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sn_sanctioned" name="Sanctioned" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>sanctionOutcome=SANCTIONED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sn_endSanctioned" name="Sanctioned"></endEvent>
+    <serviceTask id="sn_rejected" name="Rejected" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>sanctionOutcome=REJECTED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sn_endRejected" name="Rejected"></endEvent>
+    <serviceTask id="sn_returned" name="Returned" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>sanctionOutcome=RETURNED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sn_endReturned" name="Returned"></endEvent>
+    <serviceTask id="sn_forward" name="Forward to higher seat" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>sanctionSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <boundaryEvent id="sn_sanction_warn" name="SLA warning (75%)" attachedToRef="sn_sanction" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sn_sanctionWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="sn_sanction_breach" name="SLA breached" attachedToRef="sn_sanction" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${sn_sanctionDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="core_sanction_f1" sourceRef="sn_sanction_warn" targetRef="sn_sanction_warnNotify"/>
+    <sequenceFlow id="core_sanction_f2" sourceRef="sn_sanction_warnNotify" targetRef="sn_sanction_warnEnd"/>
+    <sequenceFlow id="core_sanction_f3" sourceRef="sn_sanction_breach" targetRef="sn_sanction_breachAct"/>
+    <sequenceFlow id="core_sanction_f4" sourceRef="sn_sanction_breachAct" targetRef="sn_sanction_breachGw"/>
+    <sequenceFlow id="core_sanction_f5" name="deemed" sourceRef="sn_sanction_breachGw" targetRef="sn_sanction_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_sanction_f6" name="escalated" sourceRef="sn_sanction_breachGw" targetRef="sn_sanction_slaPlan"/>
+    <sequenceFlow id="core_sanction_f7" sourceRef="sn_sanction_slaPlan" targetRef="sn_sanction"/>
+    <sequenceFlow id="core_sanction_f8" sourceRef="sn_sanction" targetRef="sn_sanction_done"/>
+    <sequenceFlow id="core_sanction_f9" sourceRef="sn_start" targetRef="sn_defaults"/>
+    <sequenceFlow id="core_sanction_f10" sourceRef="sn_defaults" targetRef="sn_state"/>
+    <sequenceFlow id="core_sanction_f11" sourceRef="sn_state" targetRef="sn_route"/>
+    <sequenceFlow id="core_sanction_f12" sourceRef="sn_route" targetRef="sn_seat"/>
+    <sequenceFlow id="core_sanction_f13" sourceRef="sn_seat" targetRef="sn_sanction_slaPlan"/>
+    <sequenceFlow id="core_sanction_f14" sourceRef="sn_sanction_done" targetRef="sn_deemedGw"/>
+    <sequenceFlow id="core_sanction_f15" name="deemed approval" sourceRef="sn_deemedGw" targetRef="sn_bindDeemed"><conditionExpression xsi:type="tFormalExpression">${deemedDecision &amp;&amp; sanctionDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_sanction_f16" sourceRef="sn_deemedGw" targetRef="sn_decGw"/>
+    <sequenceFlow id="core_sanction_f17" sourceRef="sn_bindDeemed" targetRef="sn_decGw"/>
+    <sequenceFlow id="core_sanction_f18" name="approve" sourceRef="sn_decGw" targetRef="sn_signGw"><conditionExpression xsi:type="tFormalExpression">${sanctionDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_sanction_f19" name="sign" sourceRef="sn_signGw" targetRef="sn_sign"><conditionExpression xsi:type="tFormalExpression">${signatureRequired &amp;&amp; !deemedDecision}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_sanction_f20" name="no signature" sourceRef="sn_signGw" targetRef="sn_approved"/>
+    <sequenceFlow id="core_sanction_f21" sourceRef="sn_sign" targetRef="sn_signRes"/>
+    <sequenceFlow id="core_sanction_f22" name="signed" sourceRef="sn_signRes" targetRef="sn_approved"><conditionExpression xsi:type="tFormalExpression">${signatureStatus == 'COMPLETED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_sanction_f23" name="pending" sourceRef="sn_signRes" targetRef="sn_signWait"><conditionExpression xsi:type="tFormalExpression">${signatureStatus == 'PENDING'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_sanction_f24" sourceRef="sn_signWait" targetRef="sn_signMsg"/>
+    <sequenceFlow id="core_sanction_f25" sourceRef="sn_signWait" targetRef="sn_signTimeout"/>
+    <sequenceFlow id="core_sanction_f26" sourceRef="sn_signMsg" targetRef="sn_signApply"/>
+    <sequenceFlow id="core_sanction_f27" sourceRef="sn_signApply" targetRef="sn_signRes"/>
+    <sequenceFlow id="core_sanction_f28" sourceRef="sn_signTimeout" targetRef="sn_signUnknown"/>
+    <sequenceFlow id="core_sanction_f29" name="failed" sourceRef="sn_signRes" targetRef="sn_signFailed"/>
+    <sequenceFlow id="core_sanction_f30" sourceRef="sn_signUnknown" targetRef="sn_signFailed"/>
+    <sequenceFlow id="core_sanction_f31" sourceRef="sn_signFailed" targetRef="sn_sanction_slaPlan"/>
+    <sequenceFlow id="core_sanction_f32" sourceRef="sn_approved" targetRef="sn_sanctioned"/>
+    <sequenceFlow id="core_sanction_f33" sourceRef="sn_sanctioned" targetRef="sn_endSanctioned"/>
+    <sequenceFlow id="core_sanction_f34" name="reject" sourceRef="sn_decGw" targetRef="sn_rejected"><conditionExpression xsi:type="tFormalExpression">${sanctionDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_sanction_f35" sourceRef="sn_rejected" targetRef="sn_endRejected"/>
+    <sequenceFlow id="core_sanction_f36" name="return" sourceRef="sn_decGw" targetRef="sn_returned"><conditionExpression xsi:type="tFormalExpression">${sanctionDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_sanction_f37" sourceRef="sn_returned" targetRef="sn_endReturned"/>
+    <sequenceFlow id="core_sanction_f38" name="forward" sourceRef="sn_decGw" targetRef="sn_forward"/>
+    <sequenceFlow id="core_sanction_f39" sourceRef="sn_forward" targetRef="sn_sanction_slaPlan"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_sanction_diagram">
+    <bpmndi:BPMNPlane id="core_sanction_plane" bpmnElement="sangam-core-sanction">
+      <bpmndi:BPMNShape id="sn_start_di" bpmnElement="sn_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_defaults_di" bpmnElement="sn_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_state_di" bpmnElement="sn_state"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_route_di" bpmnElement="sn_route"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_seat_di" bpmnElement="sn_seat"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanction_slaPlan_di" bpmnElement="sn_sanction_slaPlan"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanction_di" bpmnElement="sn_sanction"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanction_warnNotify_di" bpmnElement="sn_sanction_warnNotify"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanction_warnEnd_di" bpmnElement="sn_sanction_warnEnd"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanction_breachAct_di" bpmnElement="sn_sanction_breachAct"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanction_breachGw_di" bpmnElement="sn_sanction_breachGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanction_done_di" bpmnElement="sn_sanction_done"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_deemedGw_di" bpmnElement="sn_deemedGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_bindDeemed_di" bpmnElement="sn_bindDeemed"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_decGw_di" bpmnElement="sn_decGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_signGw_di" bpmnElement="sn_signGw"><dc:Bounds x="2190" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sign_di" bpmnElement="sn_sign"><dc:Bounds x="2330" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_approved_di" bpmnElement="sn_approved"><dc:Bounds x="2660" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_signRes_di" bpmnElement="sn_signRes"><dc:Bounds x="2520" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_signWait_di" bpmnElement="sn_signWait"><dc:Bounds x="2685" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_signMsg_di" bpmnElement="sn_signMsg"><dc:Bounds x="2857" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_signTimeout_di" bpmnElement="sn_signTimeout"><dc:Bounds x="2857" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_signApply_di" bpmnElement="sn_signApply"><dc:Bounds x="2990" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_signUnknown_di" bpmnElement="sn_signUnknown"><dc:Bounds x="2990" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_signFailed_di" bpmnElement="sn_signFailed"><dc:Bounds x="3155" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanctioned_di" bpmnElement="sn_sanctioned"><dc:Bounds x="2825" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_endSanctioned_di" bpmnElement="sn_endSanctioned"><dc:Bounds x="3022" y="677" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_rejected_di" bpmnElement="sn_rejected"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_endRejected_di" bpmnElement="sn_endRejected"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_returned_di" bpmnElement="sn_returned"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_endReturned_di" bpmnElement="sn_endReturned"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_forward_di" bpmnElement="sn_forward"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanction_warn_di" bpmnElement="sn_sanction_warn"><dc:Bounds x="1018" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sn_sanction_breach_di" bpmnElement="sn_sanction_breach"><dc:Bounds x="1048" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_sanction_f1_di" bpmnElement="core_sanction_f1"><di:waypoint x="1036" y="128"/><di:waypoint x="1036" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f2_di" bpmnElement="core_sanction_f2"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f3_di" bpmnElement="core_sanction_f3"><di:waypoint x="1066" y="128"/><di:waypoint x="1066" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f4_di" bpmnElement="core_sanction_f4"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f5_di" bpmnElement="core_sanction_f5"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f6_di" bpmnElement="core_sanction_f6"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="135"/><di:waypoint x="895" y="135"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f7_di" bpmnElement="core_sanction_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f8_di" bpmnElement="core_sanction_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f9_di" bpmnElement="core_sanction_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f10_di" bpmnElement="core_sanction_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f11_di" bpmnElement="core_sanction_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f12_di" bpmnElement="core_sanction_f12"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f13_di" bpmnElement="core_sanction_f13"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f14_di" bpmnElement="core_sanction_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f15_di" bpmnElement="core_sanction_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f16_di" bpmnElement="core_sanction_f16"><di:waypoint x="1745" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f17_di" bpmnElement="core_sanction_f17"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f18_di" bpmnElement="core_sanction_f18"><di:waypoint x="2075" y="70"/><di:waypoint x="2132" y="70"/><di:waypoint x="2132" y="445"/><di:waypoint x="2190" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f19_di" bpmnElement="core_sanction_f19"><di:waypoint x="2240" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f20_di" bpmnElement="core_sanction_f20"><di:waypoint x="2240" y="445"/><di:waypoint x="2450" y="445"/><di:waypoint x="2450" y="570"/><di:waypoint x="2660" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f21_di" bpmnElement="core_sanction_f21"><di:waypoint x="2430" y="445"/><di:waypoint x="2520" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f22_di" bpmnElement="core_sanction_f22"><di:waypoint x="2570" y="445"/><di:waypoint x="2615" y="445"/><di:waypoint x="2615" y="570"/><di:waypoint x="2660" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f23_di" bpmnElement="core_sanction_f23"><di:waypoint x="2570" y="445"/><di:waypoint x="2685" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f24_di" bpmnElement="core_sanction_f24"><di:waypoint x="2735" y="445"/><di:waypoint x="2796" y="445"/><di:waypoint x="2796" y="570"/><di:waypoint x="2857" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f25_di" bpmnElement="core_sanction_f25"><di:waypoint x="2735" y="445"/><di:waypoint x="2857" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f26_di" bpmnElement="core_sanction_f26"><di:waypoint x="2893" y="570"/><di:waypoint x="2990" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f27_di" bpmnElement="core_sanction_f27"><di:waypoint x="3040" y="610"/><di:waypoint x="3040" y="642"/><di:waypoint x="2545" y="642"/><di:waypoint x="2545" y="470"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f28_di" bpmnElement="core_sanction_f28"><di:waypoint x="2893" y="445"/><di:waypoint x="2990" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f29_di" bpmnElement="core_sanction_f29"><di:waypoint x="2570" y="445"/><di:waypoint x="3155" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f30_di" bpmnElement="core_sanction_f30"><di:waypoint x="3090" y="445"/><di:waypoint x="3155" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f31_di" bpmnElement="core_sanction_f31"><di:waypoint x="3205" y="485"/><di:waypoint x="3205" y="517"/><di:waypoint x="895" y="517"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f32_di" bpmnElement="core_sanction_f32"><di:waypoint x="2760" y="570"/><di:waypoint x="2792" y="570"/><di:waypoint x="2792" y="695"/><di:waypoint x="2825" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f33_di" bpmnElement="core_sanction_f33"><di:waypoint x="2925" y="695"/><di:waypoint x="3022" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f34_di" bpmnElement="core_sanction_f34"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f35_di" bpmnElement="core_sanction_f35"><di:waypoint x="2265" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f36_di" bpmnElement="core_sanction_f36"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f37_di" bpmnElement="core_sanction_f37"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f38_di" bpmnElement="core_sanction_f38"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_sanction_f39_di" bpmnElement="core_sanction_f39"><di:waypoint x="2215" y="110"/><di:waypoint x="2215" y="142"/><di:waypoint x="895" y="142"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

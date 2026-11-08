@@ -1,0 +1,36 @@
+{
+  "key": "works/completion",
+  "version": "1.0.0",
+  "pack": "gov.works",
+  "title": {
+    "en": "Completion certificate",
+    "hi": "पूर्णता प्रमाण पत्र"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "completionDate",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Date of completion",
+        "hi": "पूर्णता तिथि"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

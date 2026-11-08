@@ -1,0 +1,101 @@
+{
+  "id": "sec.bank.collections",
+  "version": "1.0.0",
+  "name": {
+    "en": "Collections, SMA / NPA, restructuring, OTS and SARFAESI",
+    "hi": "वसूली, एसएमए / एनपीए, पुनर्संरचना, एकमुश्त निपटान एवं सरफेसी"
+  },
+  "domain": "Banking",
+  "description": "One case per overdue loan (from the LMS end-of-day): SMA-0/1/2 and NPA classification by days past due, CRILC reporting for large exposures, reminders on registered templates, contact by a recovery agent within permitted hours, promise to pay, restructuring or one-time settlement sanctioned with maker-checker, SARFAESI s.13(2) demand notice with the 60-day window and the reply to a representation within 15 days, s.13(4) measures.",
+  "mainProcesses": [
+    "sangam-sec-bank-collections"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-collections/sangam-sec-bank-collections.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-collections/sec-bank-sma.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-collections/sec-bank-ots-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-collections/sec-bank-ots-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-collections/forms/contact.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-collections/forms/reply.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-collections/forms/measures.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-collections/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-collections/seed.json",
+  "connectors": [
+    {
+      "id": "crilc.report",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "CRILC / CIC reporting"
+    },
+    {
+      "id": "lms.status",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Loan status"
+    },
+    {
+      "id": "lms.settle",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Post settlement / restructuring"
+    },
+    {
+      "id": "docs.notice",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Demand / possession notice"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-015",
+    "SEC-BANK-016",
+    "SEC-BANK-017",
+    "SEC-BANK-018",
+    "GP-01",
+    "GP-06",
+    "GP-46",
+    "UP-04"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
+}

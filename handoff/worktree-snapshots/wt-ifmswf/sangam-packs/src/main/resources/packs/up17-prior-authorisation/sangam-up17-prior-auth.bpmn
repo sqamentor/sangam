@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-17 Prior authorisation. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up17_prior_auth" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-up17-prior-auth" name="UP-17 Prior authorisation" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up17-prior-authorisation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,description,urgency</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u17_start" name="Request from provider" operaton:initiator="initiator" operaton:formKey="sangam:up17-prior-authorisation/request"></startEvent>
+    <serviceTask id="u17_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>urgency=@priority;consentGiven=false;appealAllowed=true;appellateSeat=MEDICAL-DIRECTOR;reviewerSeat=CLINICAL-REVIEWER;caseType=PRIOR_AUTH</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u17_consent" name="Consent recorded?" default="up17_prior_auth_f4"></exclusiveGateway>
+    <endEvent id="u17_endNoConsent" name="Stopped: no consent"></endEvent>
+    <serviceTask id="u17_eligibility" name="Eligibility with payer" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.eligibility</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>payer</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="u17_criteria" name="Clinical criteria and decision clock (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>up17-criteria</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="u17_clock" name="Statutory decision clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>case</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${decisionClock}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u17_autoGw" name="Criteria met automatically?" default="up17_prior_auth_f17"></exclusiveGateway>
+    <serviceTask id="u17_auto" name="Auto-approval bound to the request" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>BIND_DEEMED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u17_review_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u17_review</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${decisionClock}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u17_review" name="Clinical review" operaton:candidateGroups="${reviewerSeat}" operaton:formKey="sangam:up17-prior-authorisation/review" operaton:dueDate="${u17_reviewDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ApprovalBindingListener"><operaton:field name="decisionVar"><operaton:string>clinicalDecision</operaton:string></operaton:field><operaton:field name="approveValues"><operaton:string>approve</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>clinicalDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="u17_review_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u17_review</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reviewerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u17_review_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="u17_review_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>u17_review</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reviewerSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>clinicalDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u17_review_breachGw" name="Deemed?" default="up17_prior_auth_f14"></exclusiveGateway>
+    <exclusiveGateway id="u17_review_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="u17_gw" name="" default="up17_prior_auth_f27"></exclusiveGateway>
+    <userTask id="u17_peer" name="Peer review" operaton:candidateGroups="PEER-REVIEWER" operaton:formKey="sangam:up17-prior-authorisation/peer"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="u17_callback" name="Decision to the provider" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>provider.callback</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>decision</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,clinicalDecision</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>callback</operaton:string></operaton:field><operaton:field name="step"><operaton:string>callback</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u17_end" name="Decided"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="u17_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="u17_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="u17_rj_appealGw" name="Appeal allowed?" default="up17_prior_auth_f26"></exclusiveGateway>
+    <boundaryEvent id="u17_review_warn" name="SLA warning (75%)" attachedToRef="u17_review" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${u17_reviewWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="u17_review_breach" name="SLA breached" attachedToRef="u17_review" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${u17_reviewDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="up17_prior_auth_f1" sourceRef="u17_start" targetRef="u17_defaults"/>
+    <sequenceFlow id="up17_prior_auth_f2" sourceRef="u17_defaults" targetRef="u17_consent"/>
+    <sequenceFlow id="up17_prior_auth_f3" name="no" sourceRef="u17_consent" targetRef="u17_endNoConsent"><conditionExpression xsi:type="tFormalExpression">${!consentGiven}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up17_prior_auth_f4" name="yes" sourceRef="u17_consent" targetRef="u17_eligibility"/>
+    <sequenceFlow id="up17_prior_auth_f5" sourceRef="u17_eligibility" targetRef="u17_criteria"/>
+    <sequenceFlow id="up17_prior_auth_f6" sourceRef="u17_criteria" targetRef="u17_clock"/>
+    <sequenceFlow id="up17_prior_auth_f7" sourceRef="u17_clock" targetRef="u17_autoGw"/>
+    <sequenceFlow id="up17_prior_auth_f8" name="yes" sourceRef="u17_autoGw" targetRef="u17_auto"><conditionExpression xsi:type="tFormalExpression">${autoApprove}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up17_prior_auth_f9" sourceRef="u17_review_warn" targetRef="u17_review_warnNotify"/>
+    <sequenceFlow id="up17_prior_auth_f10" sourceRef="u17_review_warnNotify" targetRef="u17_review_warnEnd"/>
+    <sequenceFlow id="up17_prior_auth_f11" sourceRef="u17_review_breach" targetRef="u17_review_breachAct"/>
+    <sequenceFlow id="up17_prior_auth_f12" sourceRef="u17_review_breachAct" targetRef="u17_review_breachGw"/>
+    <sequenceFlow id="up17_prior_auth_f13" name="deemed" sourceRef="u17_review_breachGw" targetRef="u17_review_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up17_prior_auth_f14" name="escalated" sourceRef="u17_review_breachGw" targetRef="u17_review_slaPlan"/>
+    <sequenceFlow id="up17_prior_auth_f15" sourceRef="u17_review_slaPlan" targetRef="u17_review"/>
+    <sequenceFlow id="up17_prior_auth_f16" sourceRef="u17_review" targetRef="u17_review_done"/>
+    <sequenceFlow id="up17_prior_auth_f17" name="no" sourceRef="u17_autoGw" targetRef="u17_review_slaPlan"/>
+    <sequenceFlow id="up17_prior_auth_f18" sourceRef="u17_review_done" targetRef="u17_gw"/>
+    <sequenceFlow id="up17_prior_auth_f19" name="peer review" sourceRef="u17_gw" targetRef="u17_peer"><conditionExpression xsi:type="tFormalExpression">${clinicalDecision == 'peer'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up17_prior_auth_f20" sourceRef="u17_peer" targetRef="u17_review_slaPlan"/>
+    <sequenceFlow id="up17_prior_auth_f21" name="approve" sourceRef="u17_gw" targetRef="u17_callback"><conditionExpression xsi:type="tFormalExpression">${clinicalDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up17_prior_auth_f22" sourceRef="u17_auto" targetRef="u17_callback"/>
+    <sequenceFlow id="up17_prior_auth_f23" sourceRef="u17_callback" targetRef="u17_end"/>
+    <sequenceFlow id="up17_prior_auth_f24" sourceRef="u17_rj_reject" targetRef="u17_rj_appealGw"/>
+    <sequenceFlow id="up17_prior_auth_f25" name="appeal allowed: re-verify" sourceRef="u17_rj_appealGw" targetRef="u17_review_slaPlan"><conditionExpression xsi:type="tFormalExpression">${rejectionOutcome == 'APPEAL_ALLOWED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up17_prior_auth_f26" name="final" sourceRef="u17_rj_appealGw" targetRef="u17_rj_endRejected"/>
+    <sequenceFlow id="up17_prior_auth_f27" name="reject" sourceRef="u17_gw" targetRef="u17_rj_reject"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up17_prior_auth_diagram">
+    <bpmndi:BPMNPlane id="up17_prior_auth_plane" bpmnElement="sangam-up17-prior-auth">
+      <bpmndi:BPMNShape id="u17_start_di" bpmnElement="u17_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_defaults_di" bpmnElement="u17_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_consent_di" bpmnElement="u17_consent"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_endNoConsent_di" bpmnElement="u17_endNoConsent"><dc:Bounds x="547" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_eligibility_di" bpmnElement="u17_eligibility"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_criteria_di" bpmnElement="u17_criteria"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_clock_di" bpmnElement="u17_clock"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_autoGw_di" bpmnElement="u17_autoGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_auto_di" bpmnElement="u17_auto"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_review_slaPlan_di" bpmnElement="u17_review_slaPlan"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_review_di" bpmnElement="u17_review"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_review_warnNotify_di" bpmnElement="u17_review_warnNotify"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_review_warnEnd_di" bpmnElement="u17_review_warnEnd"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_review_breachAct_di" bpmnElement="u17_review_breachAct"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_review_breachGw_di" bpmnElement="u17_review_breachGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_review_done_di" bpmnElement="u17_review_done"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_gw_di" bpmnElement="u17_gw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_peer_di" bpmnElement="u17_peer"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_callback_di" bpmnElement="u17_callback"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_end_di" bpmnElement="u17_end"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_rj_reject_di" bpmnElement="u17_rj_reject"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_rj_endRejected_di" bpmnElement="u17_rj_endRejected"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_rj_appealGw_di" bpmnElement="u17_rj_appealGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_review_warn_di" bpmnElement="u17_review_warn"><dc:Bounds x="1348" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u17_review_breach_di" bpmnElement="u17_review_breach"><dc:Bounds x="1378" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f1_di" bpmnElement="up17_prior_auth_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f2_di" bpmnElement="up17_prior_auth_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f3_di" bpmnElement="up17_prior_auth_f3"><di:waypoint x="425" y="70"/><di:waypoint x="486" y="70"/><di:waypoint x="486" y="195"/><di:waypoint x="547" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f4_di" bpmnElement="up17_prior_auth_f4"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f5_di" bpmnElement="up17_prior_auth_f5"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f6_di" bpmnElement="up17_prior_auth_f6"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f7_di" bpmnElement="up17_prior_auth_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f8_di" bpmnElement="up17_prior_auth_f8"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f9_di" bpmnElement="up17_prior_auth_f9"><di:waypoint x="1366" y="128"/><di:waypoint x="1366" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f10_di" bpmnElement="up17_prior_auth_f10"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f11_di" bpmnElement="up17_prior_auth_f11"><di:waypoint x="1396" y="128"/><di:waypoint x="1396" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f12_di" bpmnElement="up17_prior_auth_f12"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f13_di" bpmnElement="up17_prior_auth_f13"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f14_di" bpmnElement="up17_prior_auth_f14"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="135"/><di:waypoint x="1225" y="135"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f15_di" bpmnElement="up17_prior_auth_f15"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f16_di" bpmnElement="up17_prior_auth_f16"><di:waypoint x="1440" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f17_di" bpmnElement="up17_prior_auth_f17"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f18_di" bpmnElement="up17_prior_auth_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f19_di" bpmnElement="up17_prior_auth_f19"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f20_di" bpmnElement="up17_prior_auth_f20"><di:waypoint x="2215" y="235"/><di:waypoint x="2215" y="274"/><di:waypoint x="1225" y="274"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f21_di" bpmnElement="up17_prior_auth_f21"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f22_di" bpmnElement="up17_prior_auth_f22"><di:waypoint x="1275" y="195"/><di:waypoint x="1720" y="195"/><di:waypoint x="1720" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f23_di" bpmnElement="up17_prior_auth_f23"><di:waypoint x="2265" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f24_di" bpmnElement="up17_prior_auth_f24"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f25_di" bpmnElement="up17_prior_auth_f25"><di:waypoint x="2380" y="95"/><di:waypoint x="2380" y="128"/><di:waypoint x="1225" y="128"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f26_di" bpmnElement="up17_prior_auth_f26"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up17_prior_auth_f27_di" bpmnElement="up17_prior_auth_f27"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

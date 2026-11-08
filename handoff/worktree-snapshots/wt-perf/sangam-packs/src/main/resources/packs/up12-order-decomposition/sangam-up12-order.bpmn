@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-12 Decomposed order. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up12_order" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_order_amend" name="sangam.order.amend"/>
+  <process id="sangam-up12-order" name="UP-12 Decomposed order" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up12-order-decomposition</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>orderId,customerId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u12_start" name="Order captured" operaton:initiator="initiator" operaton:formKey="sangam:up12-order-decomposition/order"></startEvent>
+    <serviceTask id="u12_lines" name="Decompose into lines" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>order.lines</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u12_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u12_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-up12-suborder</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>orderId,customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u12_fanGw" name="All started?" default="up12_order_f5"></exclusiveGateway>
+    <intermediateCatchEvent id="u12_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT1M</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="u12_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u12_doneGw" name="Round complete?" default="up12_order_f10"></exclusiveGateway>
+    <exclusiveGateway id="u12_partialGw" name="Partial?" default="up12_order_f12"></exclusiveGateway>
+    <serviceTask id="u12_partial" name="Partial fulfilment notice" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>order-partial</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u12_end" name="Fulfilled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="up12_order_f1" sourceRef="u12_start" targetRef="u12_lines"/>
+    <sequenceFlow id="up12_order_f2" sourceRef="u12_open" targetRef="u12_fanOut"/>
+    <sequenceFlow id="up12_order_f3" sourceRef="u12_fanOut" targetRef="u12_fanGw"/>
+    <sequenceFlow id="up12_order_f4" name="next chunk" sourceRef="u12_fanGw" targetRef="u12_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up12_order_f5" name="all started" sourceRef="u12_fanGw" targetRef="u12_poll"/>
+    <sequenceFlow id="up12_order_f6" sourceRef="u12_poll" targetRef="u12_aggregate"/>
+    <sequenceFlow id="up12_order_f7" sourceRef="u12_aggregate" targetRef="u12_doneGw"/>
+    <sequenceFlow id="up12_order_f8" name="not yet" sourceRef="u12_doneGw" targetRef="u12_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up12_order_f9" sourceRef="u12_lines" targetRef="u12_open"/>
+    <sequenceFlow id="up12_order_f10" name="complete" sourceRef="u12_doneGw" targetRef="u12_partialGw"/>
+    <sequenceFlow id="up12_order_f11" name="some lines failed" sourceRef="u12_partialGw" targetRef="u12_partial"><conditionExpression xsi:type="tFormalExpression">${batchFailed &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up12_order_f12" name="all lines" sourceRef="u12_partialGw" targetRef="u12_end"/>
+    <sequenceFlow id="up12_order_f13" sourceRef="u12_partial" targetRef="u12_end"/>
+    <subProcess id="u12_amend" name="Amend in flight" triggeredByEvent="true">
+      <startEvent id="u12_amStart" name="Amendment" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_order_amend"/></startEvent>
+      <serviceTask id="u12_am_notify" name="Notify items: sangam.suborder.amend" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>NOTIFY_ITEMS</operaton:string></operaton:field><operaton:field name="messageName"><operaton:string>sangam.suborder.amend</operaton:string></operaton:field><operaton:field name="itemsAreBusinessKeys"><operaton:string>false</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="round"><operaton:string>1</operaton:string></operaton:field></extensionElements></serviceTask>
+      <exclusiveGateway id="u12_am_notifyGw" name="All notified?" default="up12_order_f17"></exclusiveGateway>
+      <endEvent id="u12_amEnd" name="Amendment sent"></endEvent>
+      <sequenceFlow id="up12_order_f14" sourceRef="u12_am_notify" targetRef="u12_am_notifyGw"/>
+      <sequenceFlow id="up12_order_f15" name="next chunk" sourceRef="u12_am_notifyGw" targetRef="u12_am_notify"><conditionExpression xsi:type="tFormalExpression">${!notifyDone}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="up12_order_f16" sourceRef="u12_amStart" targetRef="u12_am_notify"/>
+      <sequenceFlow id="up12_order_f17" name="all told" sourceRef="u12_am_notifyGw" targetRef="u12_amEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="up12_order_diagram">
+    <bpmndi:BPMNPlane id="up12_order_plane" bpmnElement="sangam-up12-order">
+      <bpmndi:BPMNShape id="u12_start_di" bpmnElement="u12_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_lines_di" bpmnElement="u12_lines"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_open_di" bpmnElement="u12_open"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_fanOut_di" bpmnElement="u12_fanOut"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_fanGw_di" bpmnElement="u12_fanGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_poll_di" bpmnElement="u12_poll"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_aggregate_di" bpmnElement="u12_aggregate"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_doneGw_di" bpmnElement="u12_doneGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_partialGw_di" bpmnElement="u12_partialGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_partial_di" bpmnElement="u12_partial"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_end_di" bpmnElement="u12_end"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_amend_di" bpmnElement="u12_amend" isExpanded="true"><dc:Bounds x="30" y="160" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_amStart_di" bpmnElement="u12_amStart"><dc:Bounds x="92" y="222" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_am_notify_di" bpmnElement="u12_am_notify"><dc:Bounds x="225" y="200" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_am_notifyGw_di" bpmnElement="u12_am_notifyGw"><dc:Bounds x="415" y="215" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12_amEnd_di" bpmnElement="u12_amEnd"><dc:Bounds x="587" y="222" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up12_order_f1_di" bpmnElement="up12_order_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f2_di" bpmnElement="up12_order_f2"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f3_di" bpmnElement="up12_order_f3"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f4_di" bpmnElement="up12_order_f4"><di:waypoint x="730" y="95"/><di:waypoint x="730" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f5_di" bpmnElement="up12_order_f5"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f6_di" bpmnElement="up12_order_f6"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f7_di" bpmnElement="up12_order_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f8_di" bpmnElement="up12_order_f8"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="134"/><di:waypoint x="895" y="134"/><di:waypoint x="895" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f9_di" bpmnElement="up12_order_f9"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f10_di" bpmnElement="up12_order_f10"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f11_di" bpmnElement="up12_order_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f12_di" bpmnElement="up12_order_f12"><di:waypoint x="1415" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f13_di" bpmnElement="up12_order_f13"><di:waypoint x="1605" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f14_di" bpmnElement="up12_order_f14"><di:waypoint x="325" y="240"/><di:waypoint x="415" y="240"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f15_di" bpmnElement="up12_order_f15"><di:waypoint x="440" y="265"/><di:waypoint x="440" y="312"/><di:waypoint x="275" y="312"/><di:waypoint x="275" y="280"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f16_di" bpmnElement="up12_order_f16"><di:waypoint x="128" y="240"/><di:waypoint x="225" y="240"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_order_f17_di" bpmnElement="up12_order_f17"><di:waypoint x="465" y="240"/><di:waypoint x="587" y="240"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

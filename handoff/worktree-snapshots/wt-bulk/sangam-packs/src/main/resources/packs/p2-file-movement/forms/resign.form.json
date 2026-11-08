@@ -1,0 +1,56 @@
+{
+  "key": "p2-file-movement/resign",
+  "version": "1.0.0",
+  "pack": "gov.p2.file-movement",
+  "title": {
+    "en": "Signature not applied: sign again",
+    "hi": "हस्ताक्षर नहीं हुआ: पुनः हस्ताक्षर करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "signMethod",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Signature method (eSign / DSC)",
+        "hi": "हस्ताक्षर विधि (ई-साइन / डीएससी)"
+      }
+    },
+    {
+      "id": "espId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "eSign service provider",
+        "hi": "ई-साइन सेवा प्रदाता"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "resignDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

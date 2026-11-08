@@ -1,0 +1,72 @@
+{
+  "id": "sec.cap.surveillance-alert",
+  "version": "1.0.0",
+  "name": {
+    "en": "Trade surveillance alert",
+    "hi": "व्यापार निगरानी चेतावनी"
+  },
+  "domain": "Capital markets",
+  "description": "Exchange or internal surveillance alert (unusual volume, pump and dump, synchronised trades): analyst review with client clarification and due diligence, compliance officer decision, adverse observations reported to the exchange, STR where suspicious, closed within the processing timeline with reasons.",
+  "mainProcesses": [
+    "sangam-sec-cap-surveillance"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-cap-surveillance-alert/sangam-sec-cap-surveillance.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-cap-surveillance-alert/sec-cap-surveillance-tl.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-surveillance-alert/forms/alert.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-surveillance-alert/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-surveillance-alert/forms/decide.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-cap-surveillance-alert/seed.json"
+    }
+  ],
+  "seed": "packs/sec-cap-surveillance-alert/seed.json",
+  "connectors": [
+    {
+      "id": "exchange.alerts",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Exchange alert feed"
+    },
+    {
+      "id": "exchange.report",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Report to the exchange"
+    },
+    {
+      "id": "fiu.finnet",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "STR"
+    }
+  ],
+  "covers": [
+    "SEC-CAP-006",
+    "UP-03",
+    "UP-06",
+    "GP-06"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

@@ -1,0 +1,96 @@
+{
+  "id": "gov.land-acquisition",
+  "version": "1.0.0",
+  "name": {
+    "en": "Land acquisition (RFCTLARR Act 2013)",
+    "hi": "भूमि अर्जन (आरएफसीटीएलएआरआर अधिनियम 2013)"
+  },
+  "domain": "Land acquisition",
+  "description": "Social impact assessment (s.4), expert group appraisal, preliminary notification (s.11), objections window and hearing (s.15, GP-46), declaration (s.19), award within twelve months or the proceedings lapse (s.25, a deemed outcome, GP-44), R&R, compensation one payment per awardee (GP-09), possession.",
+  "mainProcesses": [
+    "sangam-land-acquisition"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/land-acquisition/sangam-land-acquisition.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/land-acquisition/sangam-land-compensation-payment.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/land-acquisition/land-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/land-acquisition/forms/requisition.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/land-acquisition/forms/sia.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/land-acquisition/forms/hearing.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/land-acquisition/forms/award.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/land-acquisition/forms/rr.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/land-acquisition/forms/possession.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/land-acquisition/seed.json"
+    }
+  ],
+  "seed": "packs/land-acquisition/seed.json",
+  "connectors": [
+    {
+      "id": "gazette.publish",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Gazette / newspaper notification"
+    },
+    {
+      "id": "land.awardees",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Awardees and amounts"
+    },
+    {
+      "id": "pfms.payment",
+      "capabilityClass": "c",
+      "govTag": "G-PFMS",
+      "purpose": "Compensation"
+    }
+  ],
+  "covers": [
+    "GP-46",
+    "GP-44",
+    "GP-03",
+    "GP-09",
+    "GP-12",
+    "GP-05"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-closure",
+    "sangam-core-committee",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

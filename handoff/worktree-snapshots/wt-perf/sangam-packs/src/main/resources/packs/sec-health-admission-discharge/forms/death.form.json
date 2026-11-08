@@ -1,0 +1,36 @@
+{
+  "key": "sec-health-admission-discharge/death",
+  "version": "1.0.0",
+  "pack": "sec.health.admission-discharge",
+  "title": {
+    "en": "Death summary and MCCD",
+    "hi": "मृत्यु सारांश एवं एमसीसीडी"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "dischargeSummary",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Discharge summary",
+        "hi": "डिस्चार्ज सारांश"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

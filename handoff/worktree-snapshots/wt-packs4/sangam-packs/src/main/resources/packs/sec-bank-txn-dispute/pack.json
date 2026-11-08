@@ -1,0 +1,107 @@
+{
+  "id": "sec.bank.txn-dispute",
+  "version": "1.0.0",
+  "name": {
+    "en": "Failed transactions, unauthorised transactions and card chargebacks",
+    "hi": "विफल लेनदेन, अनधिकृत लेनदेन एवं कार्ड चार्जबैक"
+  },
+  "domain": "Banking",
+  "description": "Failed transactions reversed within the RBI TAT (ATM T+5, IMPS / UPI T+1) with suo moto compensation of Rs 100 per day beyond it; unauthorised electronic transactions: instrument blocked, shadow credit within 10 working days, customer liability by reporting delay, resolution within 90 days; card chargeback with merchant representment and pre-arbitration; the RB-IOS route after 30 days.",
+  "mainProcesses": [
+    "sangam-sec-bank-txn-dispute"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-txn-dispute/sangam-sec-bank-txn-dispute.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-txn-dispute/sec-bank-dispute-tat.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-txn-dispute/forms/report.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-txn-dispute/forms/reverse.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-txn-dispute/forms/shadow.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-txn-dispute/forms/investigate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-txn-dispute/forms/representment.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-txn-dispute/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-txn-dispute/seed.json",
+  "connectors": [
+    {
+      "id": "switch.status",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Switch / NPCI transaction status"
+    },
+    {
+      "id": "cbs.reversal",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Reversal"
+    },
+    {
+      "id": "cbs.compensation",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Compensation credit"
+    },
+    {
+      "id": "cards.block",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Block the instrument"
+    },
+    {
+      "id": "card.chargeback",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Chargeback to the network"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-032",
+    "SEC-BANK-033",
+    "SEC-BANK-034",
+    "SEC-BANK-035",
+    "GP-06",
+    "GP-12",
+    "GP-15",
+    "GP-35",
+    "UP-09"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "key": "p4-licence/case-overdue",
+  "version": "1.0.0",
+  "pack": "gov.p4.licence",
+  "title": {
+    "en": "Licence overdue: direct action",
+    "hi": "अनुज्ञप्ति विलंबित: कार्रवाई निर्देशित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

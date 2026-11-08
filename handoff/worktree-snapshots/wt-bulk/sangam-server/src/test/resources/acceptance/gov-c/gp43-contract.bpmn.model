@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp43">
+  <!-- GP-43 live contract amendment: a non-interrupting message event sub-process runs the amendment chain as a child
+       process; on approval the parent's completion date / value change and the LD timer must follow. gp43_extraItem has
+       no incoming flow: it is reached only by instance modification (extra item on a running contract). -->
+  <message id="m_amend" name="amendmentRequested"/>
+  <process id="gp43-contract" name="GP-43 Works contract" isExecutable="true">
+    <startEvent id="gp43_start"/>
+    <sequenceFlow id="f1" sourceRef="gp43_start" targetRef="gp43_execution"/>
+    <userTask id="gp43_execution" name="Execute work"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="gp43_ldStart" attachedToRef="gp43_execution" cancelActivity="false">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${completionDate}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f2" sourceRef="gp43_ldStart" targetRef="gp43_ldNotice"/>
+    <userTask id="gp43_ldNotice" name="LD notice: stipulated date passed"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="gp43_ldNotice" targetRef="gp43_end_ld"/>
+    <endEvent id="gp43_end_ld"/>
+    <sequenceFlow id="f4" sourceRef="gp43_execution" targetRef="gp43_finalBill"/>
+    <userTask id="gp43_finalBill" name="Final bill"><potentialOwner><resourceAssignmentExpression><formalExpression>group(accounts)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f5" sourceRef="gp43_finalBill" targetRef="gp43_end"/>
+    <endEvent id="gp43_end"/>
+    <userTask id="gp43_extraItem" name="Execute extra item"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f6" sourceRef="gp43_extraItem" targetRef="gp43_extraEnd"/>
+    <endEvent id="gp43_extraEnd"/>
+    <subProcess id="gp43_amendSub" triggeredByEvent="true">
+      <startEvent id="gp43_amendStart" isInterrupting="false"><messageEventDefinition messageRef="m_amend"/></startEvent>
+      <sequenceFlow id="a1" sourceRef="gp43_amendStart" targetRef="gp43_amend"/>
+      <callActivity id="gp43_amend" name="Amendment approval" calledElement="gp43-amendment">@@callio|in=amendType,proposedCompletion,extraAmount,completionDate;out=approved,approvedCompletion,approvedExtra@@</callActivity>
+      <sequenceFlow id="a2" sourceRef="gp43_amend" targetRef="gp43_gwApproved"/>
+      <exclusiveGateway id="gp43_gwApproved" default="a4"/>
+      <sequenceFlow id="a3" sourceRef="gp43_gwApproved" targetRef="gp43_applyDate"><conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="a4" sourceRef="gp43_gwApproved" targetRef="gp43_amendRejected"/>
+      <endEvent id="gp43_amendRejected"/>
+      <serviceTask id="gp43_applyDate" @@expr|${execution.setVariable('completionDate', approvedCompletion)}@@/>
+      <sequenceFlow id="a5" sourceRef="gp43_applyDate" targetRef="gp43_applyValue"/>
+      <serviceTask id="gp43_applyValue" @@expr|${execution.setVariable('contractValue', contractValue + approvedExtra)}@@/>
+      <sequenceFlow id="a6" sourceRef="gp43_applyValue" targetRef="gp43_amendEnd"/>
+      <endEvent id="gp43_amendEnd"/>
+    </subProcess>
+  </process>
+</definitions>

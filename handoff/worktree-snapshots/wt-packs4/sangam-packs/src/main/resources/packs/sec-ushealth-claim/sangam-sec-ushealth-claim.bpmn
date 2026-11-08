@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Claim to cash. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_claim" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_ushealth_appealDecision" name="sangam.ushealth.appealDecision"/>
+  <message id="msg_sangam_ushealth_remit" name="sangam.ushealth.remit"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-claim" name="Claim to cash" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.claim</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>patientName,patientControlNumber,totalCharge</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="cl_start" name="Encounter ready to bill" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-claim/encounter"></startEvent>
+    <serviceTask id="cl_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;memberId=@customerId;payerId=SIMPAYER;payerProgram=COMMERCIAL;providerNpi=1234567893;patientControlNumber=@customerId;totalCharge=10000;claimType=837P;clmAccepted=true;csStatus=PENDING;eraClaimStatus=PAID_PRIMARY;eraPatientResponsibility=0;frequency=1;coderSeat=CODER;billerSeat=BILLER;denialSeat=DENIAL-ANALYST;rcmSeat=REV-CYCLE-MGR;ledgerId=RECEIVABLES;line=CLAIM;period=OPEN;eraBalanced=true;postExceptionCount=0;receivableRaised=null;correctionNo=0;eraTraceNumber=no-trace</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="cl_cfg" name="Timely filing, follow-up and appeal windows (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-claim-clocks</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="cl_filing" name="Regulatory clock: filing" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>filing</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${filingSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <userTask id="cl_scrub" name="Code and scrub the claim" operaton:candidateGroups="${coderSeat}" operaton:formKey="sangam:sec-ushealth-claim/scrub"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cl_submit" name="Submit claim 837P / 837I (999 acknowledgment)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>x12.claim</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>submitClaim</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,payerId,providerNpi,patientControlNumber,totalCharge,serviceDate,claimType,priorAuthNumber,frequency</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>clm</operaton:string></operaton:field><operaton:field name="step"><operaton:string>claim-submit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cl_ackGw" name="Accepted at the front end?" default="sec_ushealth_claim_f9"></exclusiveGateway>
+    <userTask id="cl_fix" name="Fix the front-end rejection (999 / 277CA)" operaton:candidateGroups="${billerSeat}" operaton:formKey="sangam:sec-ushealth-claim/fix"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <eventBasedGateway id="cl_wait" name="Remittance or follow-up"></eventBasedGateway>
+    <serviceTask id="cl_receivableCfg" name="Receivable for the claim" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>holder=@patientControlNumber;amount=@totalCharge</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cl_receivable" name="Raise the claim receivable" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.allocate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>allocate</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,line,period,holder,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>recv</operaton:string></operaton:field><operaton:field name="step"><operaton:string>receivable</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cl_firstGw" name="Receivable raised already?" default="sec_ushealth_claim_f12"></exclusiveGateway>
+    <serviceTask id="cl_delta" name="Change in the charge (corrected claim)" operaton:expression="${execution.setVariable('receivableDelta', totalCharge - receivableRaised)}"></serviceTask>
+    <exclusiveGateway id="cl_deltaGw" name="Charge changed?" default="sec_ushealth_claim_f15"></exclusiveGateway>
+    <serviceTask id="cl_adjustCfg" name="Adjustment leg" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>holder=@patientControlNumber;amount=@receivableDelta</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cl_adjust" name="Adjust the claim receivable" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.adjust</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>adjust</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,line,period,holder,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>recv</operaton:string></operaton:field><operaton:field name="step"><operaton:expression>receivable-adjust:${correctionNo}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cl_recvGw" name="Receivable posted?" default="sec_ushealth_claim_f21"></exclusiveGateway>
+    <userTask id="cl_recvException" name="Receivable not posted: resolve" operaton:candidateGroups="${billerSeat}" operaton:formKey="sangam:sec-ushealth-claim/receivable-exception"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cl_recvOk" name="Receivable now stands at the charge" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>receivableRaised=@totalCharge</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="cl_remit" name="Remittance received (835)"><messageEventDefinition messageRef="msg_sangam_ushealth_remit"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="cl_followUp" name="No remittance yet"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${statusFollowUp}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="cl_status" name="Claim status 276 / 277" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>x12.claimStatus</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>claimStatus</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,payerId,providerNpi,patientControlNumber,totalCharge,serviceDate</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cs</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cl_parse" name="Decode this claim of the 835" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>x12.remit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>parse</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>x12,eraTraceNumber,patientControlNumber</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>era</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cl_post" name="Post payment and adjustments" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.post</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>post</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientControlNumber,eraClaims,eraClaimStatus,eraPaidAmount,eraPatientResponsibility,eraTraceNumber,ledgerId,line,period</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>post</operaton:string></operaton:field><operaton:field name="step"><operaton:expression>posting:${eraTraceNumber}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cl_paidGw" name="Paid or denied?" default="sec_ushealth_claim_f38"></exclusiveGateway>
+    <exclusiveGateway id="cl_postGw" name="Posted cleanly?" default="sec_ushealth_claim_f31"></exclusiveGateway>
+    <userTask id="cl_postException" name="Resolve the posting exception" operaton:candidateGroups="${billerSeat}" operaton:formKey="sangam:sec-ushealth-claim/post-exception"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="cl_patientBill" name="Bill the patient balance" operaton:candidateGroups="${billerSeat}" operaton:formKey="sangam:sec-ushealth-claim/patient-bill"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="cl_balOptGw" name="Patient balance?" default="sec_ushealth_claim_f34"></exclusiveGateway>
+    <exclusiveGateway id="cl_balOptMerge" name=""></exclusiveGateway>
+    <endEvent id="cl_end" name="Paid and posted"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>PAID</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <businessRuleTask id="cl_denialRoute" name="Denial routing by adjustment group and CARC (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-claim-denials</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <userTask id="cl_denial" name="Work the denial: correct, appeal or write off" operaton:candidateGroups="${denialSeat}" operaton:formKey="sangam:sec-ushealth-claim/denial"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>denialAction</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="cl_denialGw" name="" default="sec_ushealth_claim_f56"></exclusiveGateway>
+    <serviceTask id="cl_corrected" name="Corrected claim (frequency 7)" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>frequency=7</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cl_correctionNo" name="Count the correction" operaton:expression="${execution.setVariable('correctionNo', correctionNo + 1)}"></serviceTask>
+    <serviceTask id="cl_appealWindow" name="Regulatory clock: appealFiling" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>appealFiling</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${appealFilingSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <userTask id="cl_appeal" name="File the appeal / redetermination" operaton:candidateGroups="${denialSeat}" operaton:formKey="sangam:sec-ushealth-claim/appeal" operaton:dueDate="${appealFilingDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cl_appealFile" name="Send the appeal to the payer" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.appeal</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>file</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientControlNumber,appealGrounds</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>appeal</operaton:string></operaton:field><operaton:field name="step"><operaton:string>claim-appeal</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cl_appealDecisionClock" name="Regulatory clock: appealDecision" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>appealDecision</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${appealDecisionSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="cl_appealWait" name="Appeal decision"></eventBasedGateway>
+    <intermediateCatchEvent id="cl_appealDecided" name="Appeal decided"><messageEventDefinition messageRef="msg_sangam_ushealth_appealDecision"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="cl_appealLate" name="Appeal decision overdue"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${appealDecisionDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="cl_appealOutcome" name="Record the appeal outcome" operaton:candidateGroups="${denialSeat}" operaton:formKey="sangam:sec-ushealth-claim/appeal-outcome"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="cl_appealOutGw" name="Overturned?" default="sec_ushealth_claim_f55"></exclusiveGateway>
+    <userTask id="cl_writeOff" name="Approve the write-off (segregation of duties)" operaton:candidateGroups="${rcmSeat}" operaton:formKey="sangam:sec-ushealth-claim/write-off"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>writeOffDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="cl_woGw" name="" default="sec_ushealth_claim_f59"></exclusiveGateway>
+    <endEvent id="cl_endWo" name="Written off"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WRITTEN_OFF</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ushealth_claim_f1" sourceRef="cl_start" targetRef="cl_defaults"/>
+    <sequenceFlow id="sec_ushealth_claim_f2" sourceRef="cl_defaults" targetRef="cl_cfg"/>
+    <sequenceFlow id="sec_ushealth_claim_f3" sourceRef="cl_cfg" targetRef="cl_filing"/>
+    <sequenceFlow id="sec_ushealth_claim_f4" sourceRef="cl_filing" targetRef="cl_scrub"/>
+    <sequenceFlow id="sec_ushealth_claim_f5" sourceRef="cl_scrub" targetRef="cl_submit"/>
+    <sequenceFlow id="sec_ushealth_claim_f6" sourceRef="cl_submit" targetRef="cl_ackGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f7" name="rejected" sourceRef="cl_ackGw" targetRef="cl_fix"><conditionExpression xsi:type="tFormalExpression">${!clmAccepted}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f8" sourceRef="cl_fix" targetRef="cl_scrub"/>
+    <sequenceFlow id="sec_ushealth_claim_f9" name="accepted" sourceRef="cl_ackGw" targetRef="cl_firstGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f10" name="first submission" sourceRef="cl_firstGw" targetRef="cl_receivableCfg"><conditionExpression xsi:type="tFormalExpression">${receivableRaised == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f11" sourceRef="cl_receivableCfg" targetRef="cl_receivable"/>
+    <sequenceFlow id="sec_ushealth_claim_f12" name="corrected claim" sourceRef="cl_firstGw" targetRef="cl_delta"/>
+    <sequenceFlow id="sec_ushealth_claim_f13" sourceRef="cl_delta" targetRef="cl_deltaGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f14" name="no" sourceRef="cl_deltaGw" targetRef="cl_wait"><conditionExpression xsi:type="tFormalExpression">${receivableDelta == 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f15" name="yes" sourceRef="cl_deltaGw" targetRef="cl_adjustCfg"/>
+    <sequenceFlow id="sec_ushealth_claim_f16" sourceRef="cl_adjustCfg" targetRef="cl_adjust"/>
+    <sequenceFlow id="sec_ushealth_claim_f17" sourceRef="cl_receivable" targetRef="cl_recvGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f18" sourceRef="cl_adjust" targetRef="cl_recvGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f19" name="refused" sourceRef="cl_recvGw" targetRef="cl_recvException"><conditionExpression xsi:type="tFormalExpression">${recvStatus == 'FAILED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f20" sourceRef="cl_recvException" targetRef="cl_wait"/>
+    <sequenceFlow id="sec_ushealth_claim_f21" name="posted" sourceRef="cl_recvGw" targetRef="cl_recvOk"/>
+    <sequenceFlow id="sec_ushealth_claim_f22" sourceRef="cl_recvOk" targetRef="cl_wait"/>
+    <sequenceFlow id="sec_ushealth_claim_f23" sourceRef="cl_wait" targetRef="cl_remit"/>
+    <sequenceFlow id="sec_ushealth_claim_f24" sourceRef="cl_wait" targetRef="cl_followUp"/>
+    <sequenceFlow id="sec_ushealth_claim_f25" sourceRef="cl_followUp" targetRef="cl_status"/>
+    <sequenceFlow id="sec_ushealth_claim_f26" sourceRef="cl_status" targetRef="cl_wait"/>
+    <sequenceFlow id="sec_ushealth_claim_f27" sourceRef="cl_remit" targetRef="cl_parse"/>
+    <sequenceFlow id="sec_ushealth_claim_f28" sourceRef="cl_parse" targetRef="cl_post"/>
+    <sequenceFlow id="sec_ushealth_claim_f29" sourceRef="cl_post" targetRef="cl_postGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f30" name="US-HLT-106 work queue" sourceRef="cl_postGw" targetRef="cl_postException"><conditionExpression xsi:type="tFormalExpression">${postStatus == 'FAILED' || postExceptionCount &gt; 0 || !eraBalanced || eraClaimStatus == 'NOT_IN_FILE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f31" name="clean" sourceRef="cl_postGw" targetRef="cl_paidGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f32" sourceRef="cl_postException" targetRef="cl_paidGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f33" name="yes" sourceRef="cl_balOptGw" targetRef="cl_patientBill"><conditionExpression xsi:type="tFormalExpression">${eraPatientResponsibility &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f34" name="no" sourceRef="cl_balOptGw" targetRef="cl_balOptMerge"/>
+    <sequenceFlow id="sec_ushealth_claim_f35" sourceRef="cl_patientBill" targetRef="cl_balOptMerge"/>
+    <sequenceFlow id="sec_ushealth_claim_f36" name="paid" sourceRef="cl_paidGw" targetRef="cl_balOptGw"><conditionExpression xsi:type="tFormalExpression">${eraClaimStatus != 'DENIED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f37" sourceRef="cl_balOptMerge" targetRef="cl_end"/>
+    <sequenceFlow id="sec_ushealth_claim_f38" name="denied" sourceRef="cl_paidGw" targetRef="cl_denialRoute"/>
+    <sequenceFlow id="sec_ushealth_claim_f39" sourceRef="cl_denialRoute" targetRef="cl_denial"/>
+    <sequenceFlow id="sec_ushealth_claim_f40" sourceRef="cl_denial" targetRef="cl_denialGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f41" name="correct" sourceRef="cl_denialGw" targetRef="cl_corrected"><conditionExpression xsi:type="tFormalExpression">${denialAction == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f42" sourceRef="cl_corrected" targetRef="cl_correctionNo"/>
+    <sequenceFlow id="sec_ushealth_claim_f43" sourceRef="cl_correctionNo" targetRef="cl_scrub"/>
+    <sequenceFlow id="sec_ushealth_claim_f44" name="appeal" sourceRef="cl_denialGw" targetRef="cl_appealWindow"><conditionExpression xsi:type="tFormalExpression">${denialAction == 'appeal'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f45" sourceRef="cl_appealWindow" targetRef="cl_appeal"/>
+    <sequenceFlow id="sec_ushealth_claim_f46" sourceRef="cl_appeal" targetRef="cl_appealFile"/>
+    <sequenceFlow id="sec_ushealth_claim_f47" sourceRef="cl_appealFile" targetRef="cl_appealDecisionClock"/>
+    <sequenceFlow id="sec_ushealth_claim_f48" sourceRef="cl_appealDecisionClock" targetRef="cl_appealWait"/>
+    <sequenceFlow id="sec_ushealth_claim_f49" sourceRef="cl_appealWait" targetRef="cl_appealDecided"/>
+    <sequenceFlow id="sec_ushealth_claim_f50" sourceRef="cl_appealWait" targetRef="cl_appealLate"/>
+    <sequenceFlow id="sec_ushealth_claim_f51" sourceRef="cl_appealDecided" targetRef="cl_appealOutcome"/>
+    <sequenceFlow id="sec_ushealth_claim_f52" sourceRef="cl_appealLate" targetRef="cl_appealOutcome"/>
+    <sequenceFlow id="sec_ushealth_claim_f53" sourceRef="cl_appealOutcome" targetRef="cl_appealOutGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f54" name="overturned: await payment" sourceRef="cl_appealOutGw" targetRef="cl_wait"><conditionExpression xsi:type="tFormalExpression">${appealOutcome == 'overturned'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f55" name="upheld" sourceRef="cl_appealOutGw" targetRef="cl_writeOff"/>
+    <sequenceFlow id="sec_ushealth_claim_f56" name="write off" sourceRef="cl_denialGw" targetRef="cl_writeOff"/>
+    <sequenceFlow id="sec_ushealth_claim_f57" sourceRef="cl_writeOff" targetRef="cl_woGw"/>
+    <sequenceFlow id="sec_ushealth_claim_f58" name="rework" sourceRef="cl_woGw" targetRef="cl_denial"><conditionExpression xsi:type="tFormalExpression">${writeOffDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_claim_f59" name="approved" sourceRef="cl_woGw" targetRef="cl_endWo"/>
+    <subProcess id="cl_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="cl_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="cl_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="cl_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="cl_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_claim_f60" sourceRef="cl_withdrawStart" targetRef="cl_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_claim_f61" sourceRef="cl_withdrawKind" targetRef="cl_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_claim_f62" sourceRef="cl_withdrawCall" targetRef="cl_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="cl_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="cl_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="cl_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="cl_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="cl_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_claim_f63" sourceRef="cl_cancelStart" targetRef="cl_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_claim_f64" sourceRef="cl_cancelKind" targetRef="cl_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_claim_f65" sourceRef="cl_cancelCall" targetRef="cl_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_claim_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_claim_plane" bpmnElement="sangam-sec-ushealth-claim">
+      <bpmndi:BPMNShape id="cl_start_di" bpmnElement="cl_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_defaults_di" bpmnElement="cl_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_cfg_di" bpmnElement="cl_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_filing_di" bpmnElement="cl_filing"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_scrub_di" bpmnElement="cl_scrub"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_submit_di" bpmnElement="cl_submit"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_ackGw_di" bpmnElement="cl_ackGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_fix_di" bpmnElement="cl_fix"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_wait_di" bpmnElement="cl_wait"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_receivableCfg_di" bpmnElement="cl_receivableCfg"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_receivable_di" bpmnElement="cl_receivable"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_firstGw_di" bpmnElement="cl_firstGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_delta_di" bpmnElement="cl_delta"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_deltaGw_di" bpmnElement="cl_deltaGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_adjustCfg_di" bpmnElement="cl_adjustCfg"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_adjust_di" bpmnElement="cl_adjust"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_recvGw_di" bpmnElement="cl_recvGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_recvException_di" bpmnElement="cl_recvException"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_recvOk_di" bpmnElement="cl_recvOk"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_remit_di" bpmnElement="cl_remit"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_followUp_di" bpmnElement="cl_followUp"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_status_di" bpmnElement="cl_status"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_parse_di" bpmnElement="cl_parse"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_post_di" bpmnElement="cl_post"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_paidGw_di" bpmnElement="cl_paidGw"><dc:Bounds x="3345" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_postGw_di" bpmnElement="cl_postGw"><dc:Bounds x="3015" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_postException_di" bpmnElement="cl_postException"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_patientBill_di" bpmnElement="cl_patientBill"><dc:Bounds x="3650" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_balOptGw_di" bpmnElement="cl_balOptGw"><dc:Bounds x="3510" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_balOptMerge_di" bpmnElement="cl_balOptMerge"><dc:Bounds x="3840" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_end_di" bpmnElement="cl_end"><dc:Bounds x="4012" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_denialRoute_di" bpmnElement="cl_denialRoute"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_denial_di" bpmnElement="cl_denial"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_denialGw_di" bpmnElement="cl_denialGw"><dc:Bounds x="3840" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_corrected_di" bpmnElement="cl_corrected"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_correctionNo_di" bpmnElement="cl_correctionNo"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_appealWindow_di" bpmnElement="cl_appealWindow"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_appeal_di" bpmnElement="cl_appeal"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_appealFile_di" bpmnElement="cl_appealFile"><dc:Bounds x="4310" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_appealDecisionClock_di" bpmnElement="cl_appealDecisionClock"><dc:Bounds x="4475" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_appealWait_di" bpmnElement="cl_appealWait"><dc:Bounds x="4665" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_appealDecided_di" bpmnElement="cl_appealDecided"><dc:Bounds x="4837" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_appealLate_di" bpmnElement="cl_appealLate"><dc:Bounds x="4837" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_appealOutcome_di" bpmnElement="cl_appealOutcome"><dc:Bounds x="4970" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_appealOutGw_di" bpmnElement="cl_appealOutGw"><dc:Bounds x="5160" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_writeOff_di" bpmnElement="cl_writeOff"><dc:Bounds x="5300" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_woGw_di" bpmnElement="cl_woGw"><dc:Bounds x="5490" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_endWo_di" bpmnElement="cl_endWo"><dc:Bounds x="5662" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_withdraw_di" bpmnElement="cl_withdraw" isExpanded="true"><dc:Bounds x="30" y="513" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_withdrawStart_di" bpmnElement="cl_withdrawStart"><dc:Bounds x="92" y="575" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_withdrawKind_di" bpmnElement="cl_withdrawKind"><dc:Bounds x="225" y="553" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_withdrawCall_di" bpmnElement="cl_withdrawCall"><dc:Bounds x="390" y="553" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_withdrawEnd_di" bpmnElement="cl_withdrawEnd"><dc:Bounds x="587" y="575" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_cancel_di" bpmnElement="cl_cancel" isExpanded="true"><dc:Bounds x="30" y="703" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_cancelStart_di" bpmnElement="cl_cancelStart"><dc:Bounds x="92" y="765" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_cancelKind_di" bpmnElement="cl_cancelKind"><dc:Bounds x="225" y="743" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_cancelCall_di" bpmnElement="cl_cancelCall"><dc:Bounds x="390" y="743" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cl_cancelEnd_di" bpmnElement="cl_cancelEnd"><dc:Bounds x="587" y="765" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f1_di" bpmnElement="sec_ushealth_claim_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f2_di" bpmnElement="sec_ushealth_claim_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f3_di" bpmnElement="sec_ushealth_claim_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f4_di" bpmnElement="sec_ushealth_claim_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f5_di" bpmnElement="sec_ushealth_claim_f5"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f6_di" bpmnElement="sec_ushealth_claim_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f7_di" bpmnElement="sec_ushealth_claim_f7"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f8_di" bpmnElement="sec_ushealth_claim_f8"><di:waypoint x="1225" y="235"/><di:waypoint x="1225" y="274"/><di:waypoint x="730" y="274"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f9_di" bpmnElement="sec_ushealth_claim_f9"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f10_di" bpmnElement="sec_ushealth_claim_f10"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f11_di" bpmnElement="sec_ushealth_claim_f11"><di:waypoint x="1440" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f12_di" bpmnElement="sec_ushealth_claim_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f13_di" bpmnElement="sec_ushealth_claim_f13"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f14_di" bpmnElement="sec_ushealth_claim_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f15_di" bpmnElement="sec_ushealth_claim_f15"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f16_di" bpmnElement="sec_ushealth_claim_f16"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f17_di" bpmnElement="sec_ushealth_claim_f17"><di:waypoint x="1605" y="195"/><di:waypoint x="1815" y="195"/><di:waypoint x="1815" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f18_di" bpmnElement="sec_ushealth_claim_f18"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f19_di" bpmnElement="sec_ushealth_claim_f19"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f20_di" bpmnElement="sec_ushealth_claim_f20"><di:waypoint x="2265" y="195"/><di:waypoint x="2310" y="195"/><di:waypoint x="2310" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f21_di" bpmnElement="sec_ushealth_claim_f21"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f22_di" bpmnElement="sec_ushealth_claim_f22"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f23_di" bpmnElement="sec_ushealth_claim_f23"><di:waypoint x="2405" y="70"/><di:waypoint x="2466" y="70"/><di:waypoint x="2466" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f24_di" bpmnElement="sec_ushealth_claim_f24"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f25_di" bpmnElement="sec_ushealth_claim_f25"><di:waypoint x="2563" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f26_di" bpmnElement="sec_ushealth_claim_f26"><di:waypoint x="2710" y="110"/><di:waypoint x="2710" y="135"/><di:waypoint x="2380" y="135"/><di:waypoint x="2380" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f27_di" bpmnElement="sec_ushealth_claim_f27"><di:waypoint x="2563" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f28_di" bpmnElement="sec_ushealth_claim_f28"><di:waypoint x="2760" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f29_di" bpmnElement="sec_ushealth_claim_f29"><di:waypoint x="2925" y="195"/><di:waypoint x="3015" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f30_di" bpmnElement="sec_ushealth_claim_f30"><di:waypoint x="3065" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f31_di" bpmnElement="sec_ushealth_claim_f31"><di:waypoint x="3065" y="195"/><di:waypoint x="3345" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f32_di" bpmnElement="sec_ushealth_claim_f32"><di:waypoint x="3255" y="195"/><di:waypoint x="3345" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f33_di" bpmnElement="sec_ushealth_claim_f33"><di:waypoint x="3560" y="320"/><di:waypoint x="3650" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f34_di" bpmnElement="sec_ushealth_claim_f34"><di:waypoint x="3560" y="320"/><di:waypoint x="3840" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f35_di" bpmnElement="sec_ushealth_claim_f35"><di:waypoint x="3750" y="320"/><di:waypoint x="3840" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f36_di" bpmnElement="sec_ushealth_claim_f36"><di:waypoint x="3395" y="195"/><di:waypoint x="3452" y="195"/><di:waypoint x="3452" y="320"/><di:waypoint x="3510" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f37_di" bpmnElement="sec_ushealth_claim_f37"><di:waypoint x="3890" y="320"/><di:waypoint x="3951" y="320"/><di:waypoint x="3951" y="445"/><di:waypoint x="4012" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f38_di" bpmnElement="sec_ushealth_claim_f38"><di:waypoint x="3395" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f39_di" bpmnElement="sec_ushealth_claim_f39"><di:waypoint x="3585" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f40_di" bpmnElement="sec_ushealth_claim_f40"><di:waypoint x="3750" y="195"/><di:waypoint x="3840" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f41_di" bpmnElement="sec_ushealth_claim_f41"><di:waypoint x="3890" y="195"/><di:waypoint x="3935" y="195"/><di:waypoint x="3935" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f42_di" bpmnElement="sec_ushealth_claim_f42"><di:waypoint x="4080" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f43_di" bpmnElement="sec_ushealth_claim_f43"><di:waypoint x="4195" y="360"/><di:waypoint x="4195" y="392"/><di:waypoint x="730" y="392"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f44_di" bpmnElement="sec_ushealth_claim_f44"><di:waypoint x="3890" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f45_di" bpmnElement="sec_ushealth_claim_f45"><di:waypoint x="4080" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f46_di" bpmnElement="sec_ushealth_claim_f46"><di:waypoint x="4245" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f47_di" bpmnElement="sec_ushealth_claim_f47"><di:waypoint x="4410" y="195"/><di:waypoint x="4475" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f48_di" bpmnElement="sec_ushealth_claim_f48"><di:waypoint x="4575" y="195"/><di:waypoint x="4665" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f49_di" bpmnElement="sec_ushealth_claim_f49"><di:waypoint x="4715" y="195"/><di:waypoint x="4776" y="195"/><di:waypoint x="4776" y="320"/><di:waypoint x="4837" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f50_di" bpmnElement="sec_ushealth_claim_f50"><di:waypoint x="4715" y="195"/><di:waypoint x="4837" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f51_di" bpmnElement="sec_ushealth_claim_f51"><di:waypoint x="4873" y="320"/><di:waypoint x="4921" y="320"/><di:waypoint x="4921" y="195"/><di:waypoint x="4970" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f52_di" bpmnElement="sec_ushealth_claim_f52"><di:waypoint x="4873" y="195"/><di:waypoint x="4970" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f53_di" bpmnElement="sec_ushealth_claim_f53"><di:waypoint x="5070" y="195"/><di:waypoint x="5160" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f54_di" bpmnElement="sec_ushealth_claim_f54"><di:waypoint x="5185" y="220"/><di:waypoint x="5185" y="245"/><di:waypoint x="2380" y="245"/><di:waypoint x="2380" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f55_di" bpmnElement="sec_ushealth_claim_f55"><di:waypoint x="5210" y="195"/><di:waypoint x="5300" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f56_di" bpmnElement="sec_ushealth_claim_f56"><di:waypoint x="3890" y="195"/><di:waypoint x="5300" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f57_di" bpmnElement="sec_ushealth_claim_f57"><di:waypoint x="5400" y="195"/><di:waypoint x="5490" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f58_di" bpmnElement="sec_ushealth_claim_f58"><di:waypoint x="5515" y="220"/><di:waypoint x="5515" y="260"/><di:waypoint x="3700" y="260"/><di:waypoint x="3700" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f59_di" bpmnElement="sec_ushealth_claim_f59"><di:waypoint x="5540" y="195"/><di:waypoint x="5662" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f60_di" bpmnElement="sec_ushealth_claim_f60"><di:waypoint x="128" y="593"/><di:waypoint x="225" y="593"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f61_di" bpmnElement="sec_ushealth_claim_f61"><di:waypoint x="325" y="593"/><di:waypoint x="390" y="593"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f62_di" bpmnElement="sec_ushealth_claim_f62"><di:waypoint x="490" y="593"/><di:waypoint x="587" y="593"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f63_di" bpmnElement="sec_ushealth_claim_f63"><di:waypoint x="128" y="783"/><di:waypoint x="225" y="783"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f64_di" bpmnElement="sec_ushealth_claim_f64"><di:waypoint x="325" y="783"/><di:waypoint x="390" y="783"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_claim_f65_di" bpmnElement="sec_ushealth_claim_f65"><di:waypoint x="490" y="783"/><di:waypoint x="587" y="783"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,61 @@
+{
+  "id": "gov.contract-management",
+  "version": "1.0.0",
+  "name": {
+    "en": "Contract amendment: variation, extra item, EoT, LD, price escalation",
+    "hi": "अनुबंध संशोधन: परिवर्तन, अतिरिक्त मद, समय विस्तार, परिनिर्धारित नुकसानी, मूल्य वृद्धि"
+  },
+  "domain": "Contracts",
+  "description": "A running contract is amended: variation and extra items, extension of time, liquidated damages and price escalation are computed by rule, sanctioned by the competent authority and applied to the running works or supply case by message (GP-43, GP-42).",
+  "mainProcesses": [
+    "sangam-contract-amendment"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/contract-management/sangam-contract-amendment.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/contract-management/contract-ld.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/contract-management/contract-price-escalation.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/contract-management/contract-amendment-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/contract-management/forms/proposal.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/contract-management/seed.json"
+    }
+  ],
+  "seed": "packs/contract-management/seed.json",
+  "connectors": [],
+  "covers": [
+    "GP-43",
+    "GP-42",
+    "GP-05",
+    "GP-19",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-core-scrutiny"
+  ]
+}

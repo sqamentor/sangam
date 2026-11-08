@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-16 Joiner / leaver provisioning. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up16_provisioning" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <error id="err_PROVISION_FAILED" name="PROVISION_FAILED" errorCode="PROVISION_FAILED"/>
+  <process id="sangam-up16-provisioning" name="UP-16 Joiner / leaver provisioning" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up16-provisioning</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>employeeId,employeeName,mode</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u16_start" name="Joiner or leaver" operaton:initiator="initiator" operaton:formKey="sangam:up16-provisioning/request"></startEvent>
+    <serviceTask id="u16_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>mode=JOINER;securitySeat=SECURITY-OFFICER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u16_mode" name="Joiner or leaver?" default="up16_provisioning_f17"></exclusiveGateway>
+    <parallelGateway id="u16_jfork" name="Provision in parallel"></parallelGateway>
+    <parallelGateway id="u16_jjoin" name="All provisioned"></parallelGateway>
+    <serviceTask id="u16_account" name="Provision: Accounts" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>provision.account</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>provision</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId,employeeName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u16_account</operaton:string></operaton:field><operaton:field name="step"><operaton:string>u16_account</operaton:string></operaton:field><operaton:field name="errorOnFailure"><operaton:string>PROVISION_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u16_account_undo" name="Undo: Accounts" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true" isForCompensation="true"><extensionElements><operaton:field name="connector"><operaton:string>provision.undo</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>undo</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u16_accountUndo</operaton:string></operaton:field><operaton:field name="step"><operaton:string>u16_account-undo</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u16_badge" name="Provision: Badge" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>provision.badge</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>provision</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId,employeeName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u16_badge</operaton:string></operaton:field><operaton:field name="step"><operaton:string>u16_badge</operaton:string></operaton:field><operaton:field name="errorOnFailure"><operaton:string>PROVISION_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u16_badge_undo" name="Undo: Badge" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true" isForCompensation="true"><extensionElements><operaton:field name="connector"><operaton:string>provision.undo</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>undo</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u16_badgeUndo</operaton:string></operaton:field><operaton:field name="step"><operaton:string>u16_badge-undo</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u16_laptop" name="Provision: Laptop" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>provision.laptop</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>provision</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId,employeeName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u16_laptop</operaton:string></operaton:field><operaton:field name="step"><operaton:string>u16_laptop</operaton:string></operaton:field><operaton:field name="errorOnFailure"><operaton:string>PROVISION_FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u16_laptop_undo" name="Undo: Laptop" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true" isForCompensation="true"><extensionElements><operaton:field name="connector"><operaton:string>provision.undo</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>undo</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u16_laptopUndo</operaton:string></operaton:field><operaton:field name="step"><operaton:string>u16_laptop-undo</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateThrowEvent id="u16_compensate" name="Undo what was provisioned"><compensateEventDefinition/></intermediateThrowEvent>
+    <endEvent id="u16_endFailed" name="Provisioning failed (undone)"></endEvent>
+    <parallelGateway id="u16_lfork" name="Revoke in parallel"></parallelGateway>
+    <parallelGateway id="u16_ljoin" name="All revoked"></parallelGateway>
+    <serviceTask id="u16_revokeAll" name="Revoke all access" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>iam.revokeAll</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revoke</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u16_revokeAll</operaton:string></operaton:field><operaton:field name="step"><operaton:string>u16_revokeAll</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u16_recoverAssets" name="Recover assets" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>provision.recoverAssets</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revoke</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>employeeId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>u16_recoverAssets</operaton:string></operaton:field><operaton:field name="step"><operaton:string>u16_recoverAssets</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u16_evidence" name="Evidence of completion" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>provisioning-evidence</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u16_end" name="Done"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="u16_account_comp" name="Undo" attachedToRef="u16_account" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
+    <boundaryEvent id="u16_account_fail" name="Failed" attachedToRef="u16_account" cancelActivity="true"><errorEventDefinition errorRef="err_PROVISION_FAILED"/></boundaryEvent>
+    <boundaryEvent id="u16_badge_comp" name="Undo" attachedToRef="u16_badge" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
+    <boundaryEvent id="u16_badge_fail" name="Failed" attachedToRef="u16_badge" cancelActivity="true"><errorEventDefinition errorRef="err_PROVISION_FAILED"/></boundaryEvent>
+    <boundaryEvent id="u16_laptop_comp" name="Undo" attachedToRef="u16_laptop" cancelActivity="true"><compensateEventDefinition/></boundaryEvent>
+    <boundaryEvent id="u16_laptop_fail" name="Failed" attachedToRef="u16_laptop" cancelActivity="true"><errorEventDefinition errorRef="err_PROVISION_FAILED"/></boundaryEvent>
+    <sequenceFlow id="up16_provisioning_f1" sourceRef="u16_start" targetRef="u16_defaults"/>
+    <sequenceFlow id="up16_provisioning_f2" sourceRef="u16_defaults" targetRef="u16_mode"/>
+    <sequenceFlow id="up16_provisioning_f3" name="joiner" sourceRef="u16_mode" targetRef="u16_jfork"><conditionExpression xsi:type="tFormalExpression">${mode == 'JOINER'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up16_provisioning_f4" sourceRef="u16_jfork" targetRef="u16_account"/>
+    <sequenceFlow id="up16_provisioning_f5" sourceRef="u16_account" targetRef="u16_jjoin"/>
+    <sequenceFlow id="up16_provisioning_f7" sourceRef="u16_account_fail" targetRef="u16_compensate"/>
+    <sequenceFlow id="up16_provisioning_f8" sourceRef="u16_jfork" targetRef="u16_badge"/>
+    <sequenceFlow id="up16_provisioning_f9" sourceRef="u16_badge" targetRef="u16_jjoin"/>
+    <sequenceFlow id="up16_provisioning_f11" sourceRef="u16_badge_fail" targetRef="u16_compensate"/>
+    <sequenceFlow id="up16_provisioning_f12" sourceRef="u16_jfork" targetRef="u16_laptop"/>
+    <sequenceFlow id="up16_provisioning_f13" sourceRef="u16_laptop" targetRef="u16_jjoin"/>
+    <sequenceFlow id="up16_provisioning_f15" sourceRef="u16_laptop_fail" targetRef="u16_compensate"/>
+    <sequenceFlow id="up16_provisioning_f16" sourceRef="u16_compensate" targetRef="u16_endFailed"/>
+    <sequenceFlow id="up16_provisioning_f17" name="leaver" sourceRef="u16_mode" targetRef="u16_lfork"/>
+    <sequenceFlow id="up16_provisioning_f18" sourceRef="u16_lfork" targetRef="u16_revokeAll"/>
+    <sequenceFlow id="up16_provisioning_f19" sourceRef="u16_revokeAll" targetRef="u16_ljoin"/>
+    <sequenceFlow id="up16_provisioning_f20" sourceRef="u16_lfork" targetRef="u16_recoverAssets"/>
+    <sequenceFlow id="up16_provisioning_f21" sourceRef="u16_recoverAssets" targetRef="u16_ljoin"/>
+    <sequenceFlow id="up16_provisioning_f22" sourceRef="u16_jjoin" targetRef="u16_evidence"/>
+    <sequenceFlow id="up16_provisioning_f23" sourceRef="u16_ljoin" targetRef="u16_evidence"/>
+    <sequenceFlow id="up16_provisioning_f24" sourceRef="u16_evidence" targetRef="u16_end"/>
+    <subProcess id="u16_late" name="Leaver deadline" triggeredByEvent="true">
+      <startEvent id="u16_lateStart" name="Deadline passed" isInterrupting="false"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT4H</timeDuration></timerEventDefinition></startEvent>
+      <serviceTask id="u16_lateNotify" name="Escalate to security" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>revocation-late</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>securitySeat</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="u16_lateEnd" name="Escalated"></endEvent>
+      <sequenceFlow id="up16_provisioning_f25" sourceRef="u16_lateStart" targetRef="u16_lateNotify"/>
+      <sequenceFlow id="up16_provisioning_f26" sourceRef="u16_lateNotify" targetRef="u16_lateEnd"/>
+    </subProcess>
+    <association id="up16_provisioning_a6" associationDirection="One" sourceRef="u16_account_comp" targetRef="u16_account_undo"/>
+    <association id="up16_provisioning_a10" associationDirection="One" sourceRef="u16_badge_comp" targetRef="u16_badge_undo"/>
+    <association id="up16_provisioning_a14" associationDirection="One" sourceRef="u16_laptop_comp" targetRef="u16_laptop_undo"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up16_provisioning_diagram">
+    <bpmndi:BPMNPlane id="up16_provisioning_plane" bpmnElement="sangam-up16-provisioning">
+      <bpmndi:BPMNShape id="u16_start_di" bpmnElement="u16_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_defaults_di" bpmnElement="u16_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_mode_di" bpmnElement="u16_mode"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_jfork_di" bpmnElement="u16_jfork"><dc:Bounds x="540" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_jjoin_di" bpmnElement="u16_jjoin"><dc:Bounds x="870" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_account_di" bpmnElement="u16_account"><dc:Bounds x="680" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_account_undo_di" bpmnElement="u16_account_undo"><dc:Bounds x="720" y="650" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_badge_di" bpmnElement="u16_badge"><dc:Bounds x="680" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_badge_undo_di" bpmnElement="u16_badge_undo"><dc:Bounds x="720" y="525" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_laptop_di" bpmnElement="u16_laptop"><dc:Bounds x="680" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_laptop_undo_di" bpmnElement="u16_laptop_undo"><dc:Bounds x="720" y="400" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_compensate_di" bpmnElement="u16_compensate"><dc:Bounds x="877" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_endFailed_di" bpmnElement="u16_endFailed"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_lfork_di" bpmnElement="u16_lfork"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_ljoin_di" bpmnElement="u16_ljoin"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_revokeAll_di" bpmnElement="u16_revokeAll"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_recoverAssets_di" bpmnElement="u16_recoverAssets"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_evidence_di" bpmnElement="u16_evidence"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_end_di" bpmnElement="u16_end"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_account_comp_di" bpmnElement="u16_account_comp"><dc:Bounds x="688" y="592" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_account_fail_di" bpmnElement="u16_account_fail"><dc:Bounds x="718" y="592" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_badge_comp_di" bpmnElement="u16_badge_comp"><dc:Bounds x="688" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_badge_fail_di" bpmnElement="u16_badge_fail"><dc:Bounds x="718" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_laptop_comp_di" bpmnElement="u16_laptop_comp"><dc:Bounds x="688" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_laptop_fail_di" bpmnElement="u16_laptop_fail"><dc:Bounds x="718" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_late_di" bpmnElement="u16_late" isExpanded="true"><dc:Bounds x="30" y="780" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_lateStart_di" bpmnElement="u16_lateStart"><dc:Bounds x="92" y="842" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_lateNotify_di" bpmnElement="u16_lateNotify"><dc:Bounds x="225" y="820" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u16_lateEnd_di" bpmnElement="u16_lateEnd"><dc:Bounds x="422" y="842" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up16_provisioning_f1_di" bpmnElement="up16_provisioning_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f2_di" bpmnElement="up16_provisioning_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f3_di" bpmnElement="up16_provisioning_f3"><di:waypoint x="425" y="70"/><di:waypoint x="482" y="70"/><di:waypoint x="482" y="195"/><di:waypoint x="540" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f4_di" bpmnElement="up16_provisioning_f4"><di:waypoint x="590" y="195"/><di:waypoint x="635" y="195"/><di:waypoint x="635" y="570"/><di:waypoint x="680" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f5_di" bpmnElement="up16_provisioning_f5"><di:waypoint x="780" y="570"/><di:waypoint x="825" y="570"/><di:waypoint x="825" y="445"/><di:waypoint x="870" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f7_di" bpmnElement="up16_provisioning_f7"><di:waypoint x="736" y="628"/><di:waypoint x="736" y="320"/><di:waypoint x="877" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f8_di" bpmnElement="up16_provisioning_f8"><di:waypoint x="590" y="195"/><di:waypoint x="635" y="195"/><di:waypoint x="635" y="445"/><di:waypoint x="680" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f9_di" bpmnElement="up16_provisioning_f9"><di:waypoint x="780" y="445"/><di:waypoint x="870" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f11_di" bpmnElement="up16_provisioning_f11"><di:waypoint x="736" y="503"/><di:waypoint x="736" y="320"/><di:waypoint x="877" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f12_di" bpmnElement="up16_provisioning_f12"><di:waypoint x="590" y="195"/><di:waypoint x="635" y="195"/><di:waypoint x="635" y="320"/><di:waypoint x="680" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f13_di" bpmnElement="up16_provisioning_f13"><di:waypoint x="780" y="320"/><di:waypoint x="825" y="320"/><di:waypoint x="825" y="445"/><di:waypoint x="870" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f15_di" bpmnElement="up16_provisioning_f15"><di:waypoint x="736" y="378"/><di:waypoint x="736" y="320"/><di:waypoint x="877" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f16_di" bpmnElement="up16_provisioning_f16"><di:waypoint x="913" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f17_di" bpmnElement="up16_provisioning_f17"><di:waypoint x="425" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f18_di" bpmnElement="up16_provisioning_f18"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f19_di" bpmnElement="up16_provisioning_f19"><di:waypoint x="780" y="195"/><di:waypoint x="825" y="195"/><di:waypoint x="825" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f20_di" bpmnElement="up16_provisioning_f20"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f21_di" bpmnElement="up16_provisioning_f21"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f22_di" bpmnElement="up16_provisioning_f22"><di:waypoint x="920" y="445"/><di:waypoint x="965" y="445"/><di:waypoint x="965" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f23_di" bpmnElement="up16_provisioning_f23"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f24_di" bpmnElement="up16_provisioning_f24"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f25_di" bpmnElement="up16_provisioning_f25"><di:waypoint x="128" y="860"/><di:waypoint x="225" y="860"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_f26_di" bpmnElement="up16_provisioning_f26"><di:waypoint x="325" y="860"/><di:waypoint x="422" y="860"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_a6_di" bpmnElement="up16_provisioning_a6"><di:waypoint x="706" y="628"/><di:waypoint x="770" y="650"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_a10_di" bpmnElement="up16_provisioning_a10"><di:waypoint x="706" y="503"/><di:waypoint x="770" y="525"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up16_provisioning_a14_di" bpmnElement="up16_provisioning_a14"><di:waypoint x="706" y="378"/><di:waypoint x="770" y="400"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

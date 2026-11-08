@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Self-contained schema of this module (Liquibase 4.33.0, D-7). Each changeset carries dbms:<name>, so exactly one
+     dialect applies: postgresql, oracle, mssql, mysql (8.4, utf8mb4) and h2 (development only). -->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.33.xsd">
+
+  <include file="postgresql/cp-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="oracle/cp-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="mssql/cp-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="mysql/cp-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="h2/cp-0001-baseline.sql" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>

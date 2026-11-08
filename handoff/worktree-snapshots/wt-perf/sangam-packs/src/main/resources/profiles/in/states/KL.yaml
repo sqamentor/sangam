@@ -1,0 +1,270 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: KL
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Kerala
+    hi: केरल
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources KL1-KL4, accessed 2026-11-04)
+placeholders:
+- path: integrations.snaSparsh.onboarded
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live'
+- path: chartOfAccounts
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (state digit
+    structure not found)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 7
+  sources: KL1-KL4
+locale:
+  languages:
+  - tag: ml
+    script: Mlym
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: V
+integrations:
+  systems:
+  - IFMS Kerala
+  - BiMS 2.0
+  - SPARK
+  - BAMS
+  - Core TSB
+  - ViMS
+  - iAMS
+  - e-TR5
+  snaSparsh:
+    hosting: MODULE
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Treasuries
+  unitTypes:
+    DISTRICT_TREASURY: 23
+    SUB_TREASURY: 201
+  ddoCount: 47500
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: KTC_2016
+    title: Kerala Treasury Code 2016
+  - id: KFC
+    title: Kerala Financial Code
+  - id: KL_SPM_2013
+    title: Stores Purchase Manual 2013 (to 2023)
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+treasury:
+  tokenless: true
+publicAccounts:
+  types:
+  - id: PLAN_TSB
+    head: 8031-102-99
+  - id: TREASURY_SB
+    interest: true
+    tds: true
+    ekyc: true
+ddoClasses:
+- REGULAR
+- VIRTUAL_DDO
+virtualDdos: 16550
+billSources:
+- BIMS
+- SPARK
+- SANKHYA
+- EMLI
+preRegistrationBeforeBill:
+- PROJECT
+- WORK
+- PROCUREMENT
+- SCHEME
+salaryDestinations:
+- TSB
+- BANK
+classification:
+  schemes:
+  - id: HOA_KL
+    separator: '-'
+    segments:
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: subHead
+      width: 2
+    - id: subSubHead
+      width: 2
+    - id: detailed
+      width: 2
+    - id: object
+      width: 2
+    - id: planFlag
+      width: 1
+      pattern: '[A-Z]'
+      optional: true
+    - id: votedCharged
+      width: 1
+      pattern: '[A-Z]'
+      optional: true
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: 2056-00-001-99-00-02-05
+    evidence: V
+    source: KL Appropriation Accounts 2020-21
+  defaultScheme: HOA_KL
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+procurement:
+  family: RULES
+  rule: Stores Purchase Manual 2013 (to 2021)
+  worksCode: Kerala PWD Manual 2012
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/KL/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: KL
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/KL/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: KL
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Stores Purchase Manual 2013 (to 2021) (was: RPR 2022: DDO draws within a
+        sanction; no sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Stores Purchase Manual 2013 (to 2021) (was: DFPR 2024 r.12(4) and department
+        re-delegation order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Stores Purchase Manual 2013 (to 2021) (was: DFPR 2024 r.12(2) re-delegation
+        to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Stores Purchase Manual 2013 (to 2021) (was: DFPR 2024 r.11 (open / limited
+        tender up to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Stores Purchase Manual 2013 (to 2021) (was: DFPR 2024 r.11: above the Secretary;
+        no upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Stores Purchase Manual 2013 (to 2021) (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

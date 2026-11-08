@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "COVERED-ENTITY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PRIVACY-OFFICE",
+      "role": "PRIVACY",
+      "office": "COVERED-ENTITY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Privacy officer",
+        "es": "Oficial de privacidad"
+      }
+    },
+    {
+      "id": "SECURITY-OFFICE",
+      "role": "SECURITY",
+      "office": "COVERED-ENTITY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "PRIVACY-OFFICE",
+      "name": {
+        "en": "Security officer",
+        "es": "Oficial de seguridad"
+      }
+    },
+    {
+      "id": "COUNSEL",
+      "role": "COUNSEL",
+      "office": "COVERED-ENTITY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "PRIVACY-OFFICE",
+      "name": {
+        "en": "Legal counsel",
+        "es": "Asesor jurídico"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PRIVACY-OFFICE",
+      "person": "uba.privacy-office",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SECURITY-OFFICE",
+      "person": "uba.security-office",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "COUNSEL",
+      "person": "uba.counsel",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PRIVACY",
+      "name": {
+        "en": "Privacy officer",
+        "es": "Oficial de privacidad"
+      }
+    },
+    {
+      "code": "SECURITY",
+      "name": {
+        "en": "Security officer",
+        "es": "Oficial de seguridad"
+      }
+    },
+    {
+      "code": "COUNSEL",
+      "name": {
+        "en": "Legal counsel",
+        "es": "Asesor jurídico"
+      }
+    }
+  ]
+}

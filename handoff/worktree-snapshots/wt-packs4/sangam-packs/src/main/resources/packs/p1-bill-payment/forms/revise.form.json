@@ -1,0 +1,121 @@
+{
+  "key": "p1-bill-payment/revise",
+  "version": "1.0.0",
+  "pack": "gov.p1.bill-payment",
+  "title": {
+    "en": "Revise bill",
+    "hi": "बिल संशोधित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "payee",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "account",
+      "type": "masked",
+      "required": false,
+      "label": {
+        "en": "Bank account number",
+        "hi": "बैंक खाता संख्या"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "invoiceNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Invoice number",
+        "hi": "बीजक संख्या"
+      }
+    },
+    {
+      "id": "budgetHead",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Budget head",
+        "hi": "बजट शीर्ष"
+      }
+    },
+    {
+      "id": "sanctionRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Sanction reference",
+        "hi": "स्वीकृति संदर्भ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "p1_reviseDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

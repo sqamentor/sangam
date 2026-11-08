@@ -1,0 +1,56 @@
+{
+  "key": "sec-ushealth-access-request/verify",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.access-request",
+  "title": {
+    "en": "Verify identity and authority",
+    "es": "Verificar identidad y autoridad"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "identityEvidence",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Identity and authority evidence",
+        "es": "Prueba de identidad y autoridad"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "verifyDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "verified",
+        "label": {
+          "en": "Verified",
+          "es": "Identidad y autoridad verificadas"
+        }
+      },
+      {
+        "value": "notVerified",
+        "label": {
+          "en": "Ask for proof",
+          "es": "Solicitar prueba"
+        }
+      }
+    ]
+  }
+}

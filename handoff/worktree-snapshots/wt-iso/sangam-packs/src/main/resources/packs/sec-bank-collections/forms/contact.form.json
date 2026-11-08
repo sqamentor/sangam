@@ -1,0 +1,86 @@
+{
+  "key": "sec-bank-collections/contact",
+  "version": "1.0.0",
+  "pack": "sec.bank.collections",
+  "title": {
+    "en": "Contact borrower (08:00-19:00, agent identity disclosed)",
+    "hi": "उधारकर्ता से संपर्क (08:00-19:00)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "contactOutcome",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Contact outcome",
+        "hi": "संपर्क का परिणाम"
+      }
+    },
+    {
+      "id": "promiseDate",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Promised payment date",
+        "hi": "भुगतान का वचनबद्ध दिनांक"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "collectDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "promise",
+        "label": {
+          "en": "Promise to pay",
+          "hi": "भुगतान का वचन"
+        }
+      },
+      {
+        "value": "restructure",
+        "label": {
+          "en": "Restructure",
+          "hi": "पुनर्संरचना"
+        }
+      },
+      {
+        "value": "settle",
+        "label": {
+          "en": "One-time settlement",
+          "hi": "एकमुश्त निपटान"
+        }
+      },
+      {
+        "value": "legal",
+        "label": {
+          "en": "Legal action",
+          "hi": "विधिक कार्रवाई"
+        }
+      },
+      {
+        "value": "paid",
+        "label": {
+          "en": "Paid",
+          "hi": "भुगतान हो गया"
+        }
+      }
+    ]
+  }
+}

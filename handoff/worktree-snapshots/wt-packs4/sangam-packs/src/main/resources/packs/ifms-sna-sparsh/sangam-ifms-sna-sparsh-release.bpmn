@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SNA-SPARSH daily release. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_sna_sparsh_release" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-ifms-sna-sparsh-release" name="SNA-SPARSH daily release" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.sna-sparsh</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>slsCode,amount,centreShare,stateShare</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ss_start" name="IA payment file from the state treasury" operaton:initiator="initiator" operaton:formKey="sangam:ifms-sna-sparsh/claim"></startEvent>
+    <serviceTask id="ss_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>amount=0;centreShare=0;stateShare=0;ledgerId=SNA;fundsAvailable=99999999999900;pdCheckerSeat=FA-1;prAoSeat=PRAO-1;paoSeat=PAO-1;reissueTag=false;executionConnector=rail.ekuber;executionStep=rbiBatch;reconcileRequired=true;caseType=SNA_SPARSH;routingDecisionKey=ifms-sna-authority;outputTemplate=sna-release-advice;appealAllowed=false;chainId=SNA_SPARSH_3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ss_mother" name="Mother sanction balance (one active per SLS)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.available</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>available</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,slsCode,motherSanctionNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>funds</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ss_msGw" name="Within mother sanction?" default="ifms_sna_sparsh_release_f15"></exclusiveGateway>
+    <serviceTask id="ss_rjMs_code" name="Reason: NO_ACTIVE_MOTHER_SANCTION" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=NO_ACTIVE_MOTHER_SANCTION</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ss_rjMs_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ss_rjMs_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="ss_pd_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ss_pd</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>1WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ss_pd" name="Daily sanction (DSC)" operaton:candidateGroups="${pdCheckerSeat}" operaton:formKey="sangam:ifms-sna-sparsh/daily" operaton:dueDate="${ss_pdDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>pdDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ss_pd_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ss_pd</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>pdCheckerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ss_pd_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ss_pd_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ss_pd</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>pdCheckerSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>pdDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ss_pd_breachGw" name="Deemed?" default="ifms_sna_sparsh_release_f12"></exclusiveGateway>
+    <exclusiveGateway id="ss_pd_done" name=""></exclusiveGateway>
+    <serviceTask id="ss_prao_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ss_prao</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>1WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ss_prao" name="Payment authorisation (DSC)" operaton:candidateGroups="${prAoSeat}" operaton:formKey="sangam:ifms-sna-sparsh/authorise" operaton:dueDate="${ss_praoDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>praoDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ss_prao_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ss_prao</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>prAoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ss_prao_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ss_prao_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ss_prao</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>prAoSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>praoDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ss_prao_breachGw" name="Deemed?" default="ifms_sna_sparsh_release_f21"></exclusiveGateway>
+    <exclusiveGateway id="ss_prao_done" name=""></exclusiveGateway>
+    <serviceTask id="ss_pao_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ss_pao</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>1WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ss_pao" name="PAO pre-check and pass" operaton:candidateGroups="${paoSeat}" operaton:formKey="sangam:ifms-sna-sparsh/pao" operaton:dueDate="${ss_paoDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>paoDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ss_pao_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ss_pao</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ss_pao_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ss_pao_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ss_pao</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paoSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>paoDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ss_pao_breachGw" name="Deemed?" default="ifms_sna_sparsh_release_f29"></exclusiveGateway>
+    <exclusiveGateway id="ss_pao_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="ss_pdGw" name="" default="ifms_sna_sparsh_release_f34"></exclusiveGateway>
+    <serviceTask id="ss_returned" name="Returned to the state (PD returns the file)" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>sna-returned</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>pdCheckerSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ss_praoGw" name="" default="ifms_sna_sparsh_release_f37"></exclusiveGateway>
+    <serviceTask id="ss_cutoff" name="Processing day under the 15:00 cut-off" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>snaCutoff</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>1WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ss_paoGw" name="" default="ifms_sna_sparsh_release_f40"></exclusiveGateway>
+    <callActivity id="ss_batch" name="Batch to RBI (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="ss_consume" name="Consume mother sanction" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.consume</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>consume</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,slsCode,amount,operationId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>con</operaton:string></operaton:field><operaton:field name="step"><operaton:string>consume</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ss_reissue" name="Re-push with reissue tag" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>reissueTag=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ss_exGw" name="executionOutcome?" default="ifms_sna_sparsh_release_f43"></exclusiveGateway>
+    <callActivity id="ss_close" name="Reconciliation per SLS and closure (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ss_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="ss_endRet" name="Returned"></endEvent>
+    <boundaryEvent id="ss_pd_warn" name="SLA warning (75%)" attachedToRef="ss_pd" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ss_pdWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ss_pd_breach" name="SLA breached" attachedToRef="ss_pd" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ss_pdDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ss_prao_warn" name="SLA warning (75%)" attachedToRef="ss_prao" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ss_praoWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ss_prao_breach" name="SLA breached" attachedToRef="ss_prao" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ss_praoDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ss_pao_warn" name="SLA warning (75%)" attachedToRef="ss_pao" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ss_paoWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ss_pao_breach" name="SLA breached" attachedToRef="ss_pao" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ss_paoDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_sna_sparsh_release_f1" sourceRef="ss_start" targetRef="ss_defaults"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f2" sourceRef="ss_defaults" targetRef="ss_mother"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f3" sourceRef="ss_mother" targetRef="ss_msGw"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f4" sourceRef="ss_rjMs_reject" targetRef="ss_rjMs_endRejected"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f5" sourceRef="ss_rjMs_code" targetRef="ss_rjMs_reject"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f6" name="no / exhausted mother sanction" sourceRef="ss_msGw" targetRef="ss_rjMs_code"><conditionExpression xsi:type="tFormalExpression">${fundsAvailable &lt; amount}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_sna_sparsh_release_f7" sourceRef="ss_pd_warn" targetRef="ss_pd_warnNotify"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f8" sourceRef="ss_pd_warnNotify" targetRef="ss_pd_warnEnd"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f9" sourceRef="ss_pd_breach" targetRef="ss_pd_breachAct"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f10" sourceRef="ss_pd_breachAct" targetRef="ss_pd_breachGw"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f11" name="deemed" sourceRef="ss_pd_breachGw" targetRef="ss_pd_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_sna_sparsh_release_f12" name="escalated" sourceRef="ss_pd_breachGw" targetRef="ss_pd_slaPlan"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f13" sourceRef="ss_pd_slaPlan" targetRef="ss_pd"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f14" sourceRef="ss_pd" targetRef="ss_pd_done"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f15" name="within" sourceRef="ss_msGw" targetRef="ss_pd_slaPlan"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f16" sourceRef="ss_prao_warn" targetRef="ss_prao_warnNotify"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f17" sourceRef="ss_prao_warnNotify" targetRef="ss_prao_warnEnd"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f18" sourceRef="ss_prao_breach" targetRef="ss_prao_breachAct"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f19" sourceRef="ss_prao_breachAct" targetRef="ss_prao_breachGw"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f20" name="deemed" sourceRef="ss_prao_breachGw" targetRef="ss_prao_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_sna_sparsh_release_f21" name="escalated" sourceRef="ss_prao_breachGw" targetRef="ss_prao_slaPlan"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f22" sourceRef="ss_prao_slaPlan" targetRef="ss_prao"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f23" sourceRef="ss_prao" targetRef="ss_prao_done"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f24" sourceRef="ss_pao_warn" targetRef="ss_pao_warnNotify"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f25" sourceRef="ss_pao_warnNotify" targetRef="ss_pao_warnEnd"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f26" sourceRef="ss_pao_breach" targetRef="ss_pao_breachAct"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f27" sourceRef="ss_pao_breachAct" targetRef="ss_pao_breachGw"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f28" name="deemed" sourceRef="ss_pao_breachGw" targetRef="ss_pao_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_sna_sparsh_release_f29" name="escalated" sourceRef="ss_pao_breachGw" targetRef="ss_pao_slaPlan"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f30" sourceRef="ss_pao_slaPlan" targetRef="ss_pao"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f31" sourceRef="ss_pao" targetRef="ss_pao_done"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f32" sourceRef="ss_pd_done" targetRef="ss_pdGw"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f33" name="signed" sourceRef="ss_pdGw" targetRef="ss_prao_slaPlan"><conditionExpression xsi:type="tFormalExpression">${pdDecision == 'signed'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_sna_sparsh_release_f34" name="returned" sourceRef="ss_pdGw" targetRef="ss_returned"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f35" sourceRef="ss_prao_done" targetRef="ss_praoGw"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f36" name="authorised" sourceRef="ss_praoGw" targetRef="ss_pao_slaPlan"><conditionExpression xsi:type="tFormalExpression">${praoDecision == 'signed'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_sna_sparsh_release_f37" name="returned" sourceRef="ss_praoGw" targetRef="ss_returned"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f38" sourceRef="ss_pao_done" targetRef="ss_paoGw"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f39" name="passed" sourceRef="ss_paoGw" targetRef="ss_cutoff"><conditionExpression xsi:type="tFormalExpression">${paoDecision == 'passBill'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_sna_sparsh_release_f40" name="returned" sourceRef="ss_paoGw" targetRef="ss_returned"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f41" sourceRef="ss_cutoff" targetRef="ss_batch"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f42" name="DONE" sourceRef="ss_exGw" targetRef="ss_consume"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_sna_sparsh_release_f43" name="otherwise" sourceRef="ss_exGw" targetRef="ss_reissue"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f44" sourceRef="ss_batch" targetRef="ss_exGw"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f45" sourceRef="ss_reissue" targetRef="ss_batch"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f46" sourceRef="ss_consume" targetRef="ss_close"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f47" sourceRef="ss_close" targetRef="ss_end"/>
+    <sequenceFlow id="ifms_sna_sparsh_release_f48" sourceRef="ss_returned" targetRef="ss_endRet"/>
+    <subProcess id="ss_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ss_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ss_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ss_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ss_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_sna_sparsh_release_f49" sourceRef="ss_withdrawStart" targetRef="ss_withdrawKind"/>
+      <sequenceFlow id="ifms_sna_sparsh_release_f50" sourceRef="ss_withdrawKind" targetRef="ss_withdrawCall"/>
+      <sequenceFlow id="ifms_sna_sparsh_release_f51" sourceRef="ss_withdrawCall" targetRef="ss_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ss_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ss_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ss_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ss_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ss_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_sna_sparsh_release_f52" sourceRef="ss_cancelStart" targetRef="ss_cancelKind"/>
+      <sequenceFlow id="ifms_sna_sparsh_release_f53" sourceRef="ss_cancelKind" targetRef="ss_cancelCall"/>
+      <sequenceFlow id="ifms_sna_sparsh_release_f54" sourceRef="ss_cancelCall" targetRef="ss_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_sna_sparsh_release_diagram">
+    <bpmndi:BPMNPlane id="ifms_sna_sparsh_release_plane" bpmnElement="sangam-ifms-sna-sparsh-release">
+      <bpmndi:BPMNShape id="ss_start_di" bpmnElement="ss_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_defaults_di" bpmnElement="ss_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_mother_di" bpmnElement="ss_mother"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_msGw_di" bpmnElement="ss_msGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_rjMs_code_di" bpmnElement="ss_rjMs_code"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_rjMs_reject_di" bpmnElement="ss_rjMs_reject"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_rjMs_endRejected_di" bpmnElement="ss_rjMs_endRejected"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pd_slaPlan_di" bpmnElement="ss_pd_slaPlan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pd_di" bpmnElement="ss_pd"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pd_warnNotify_di" bpmnElement="ss_pd_warnNotify"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pd_warnEnd_di" bpmnElement="ss_pd_warnEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pd_breachAct_di" bpmnElement="ss_pd_breachAct"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pd_breachGw_di" bpmnElement="ss_pd_breachGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pd_done_di" bpmnElement="ss_pd_done"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_prao_slaPlan_di" bpmnElement="ss_prao_slaPlan"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_prao_di" bpmnElement="ss_prao"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_prao_warnNotify_di" bpmnElement="ss_prao_warnNotify"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_prao_warnEnd_di" bpmnElement="ss_prao_warnEnd"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_prao_breachAct_di" bpmnElement="ss_prao_breachAct"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_prao_breachGw_di" bpmnElement="ss_prao_breachGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_prao_done_di" bpmnElement="ss_prao_done"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pao_slaPlan_di" bpmnElement="ss_pao_slaPlan"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pao_di" bpmnElement="ss_pao"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pao_warnNotify_di" bpmnElement="ss_pao_warnNotify"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pao_warnEnd_di" bpmnElement="ss_pao_warnEnd"><dc:Bounds x="3187" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pao_breachAct_di" bpmnElement="ss_pao_breachAct"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pao_breachGw_di" bpmnElement="ss_pao_breachGw"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pao_done_di" bpmnElement="ss_pao_done"><dc:Bounds x="3345" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pdGw_di" bpmnElement="ss_pdGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_returned_di" bpmnElement="ss_returned"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_praoGw_di" bpmnElement="ss_praoGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_cutoff_di" bpmnElement="ss_cutoff"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_paoGw_di" bpmnElement="ss_paoGw"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_batch_di" bpmnElement="ss_batch"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_consume_di" bpmnElement="ss_consume"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_reissue_di" bpmnElement="ss_reissue"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_exGw_di" bpmnElement="ss_exGw"><dc:Bounds x="4005" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_close_di" bpmnElement="ss_close"><dc:Bounds x="4310" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_end_di" bpmnElement="ss_end"><dc:Bounds x="4507" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_endRet_di" bpmnElement="ss_endRet"><dc:Bounds x="3847" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pd_warn_di" bpmnElement="ss_pd_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pd_breach_di" bpmnElement="ss_pd_breach"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_prao_warn_di" bpmnElement="ss_prao_warn"><dc:Bounds x="1843" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_prao_breach_di" bpmnElement="ss_prao_breach"><dc:Bounds x="1873" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pao_warn_di" bpmnElement="ss_pao_warn"><dc:Bounds x="2833" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_pao_breach_di" bpmnElement="ss_pao_breach"><dc:Bounds x="2863" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_withdraw_di" bpmnElement="ss_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_withdrawStart_di" bpmnElement="ss_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_withdrawKind_di" bpmnElement="ss_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_withdrawCall_di" bpmnElement="ss_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_withdrawEnd_di" bpmnElement="ss_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_cancel_di" bpmnElement="ss_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_cancelStart_di" bpmnElement="ss_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_cancelKind_di" bpmnElement="ss_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_cancelCall_di" bpmnElement="ss_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ss_cancelEnd_di" bpmnElement="ss_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f1_di" bpmnElement="ifms_sna_sparsh_release_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f2_di" bpmnElement="ifms_sna_sparsh_release_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f3_di" bpmnElement="ifms_sna_sparsh_release_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f4_di" bpmnElement="ifms_sna_sparsh_release_f4"><di:waypoint x="945" y="195"/><di:waypoint x="993" y="195"/><di:waypoint x="993" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f5_di" bpmnElement="ifms_sna_sparsh_release_f5"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f6_di" bpmnElement="ifms_sna_sparsh_release_f6"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f7_di" bpmnElement="ifms_sna_sparsh_release_f7"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f8_di" bpmnElement="ifms_sna_sparsh_release_f8"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f9_di" bpmnElement="ifms_sna_sparsh_release_f9"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f10_di" bpmnElement="ifms_sna_sparsh_release_f10"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f11_di" bpmnElement="ifms_sna_sparsh_release_f11"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f12_di" bpmnElement="ifms_sna_sparsh_release_f12"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="149"/><di:waypoint x="730" y="149"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f13_di" bpmnElement="ifms_sna_sparsh_release_f13"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f14_di" bpmnElement="ifms_sna_sparsh_release_f14"><di:waypoint x="945" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f15_di" bpmnElement="ifms_sna_sparsh_release_f15"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f16_di" bpmnElement="ifms_sna_sparsh_release_f16"><di:waypoint x="1861" y="128"/><di:waypoint x="1861" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f17_di" bpmnElement="ifms_sna_sparsh_release_f17"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f18_di" bpmnElement="ifms_sna_sparsh_release_f18"><di:waypoint x="1891" y="128"/><di:waypoint x="1891" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f19_di" bpmnElement="ifms_sna_sparsh_release_f19"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f20_di" bpmnElement="ifms_sna_sparsh_release_f20"><di:waypoint x="2240" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f21_di" bpmnElement="ifms_sna_sparsh_release_f21"><di:waypoint x="2215" y="95"/><di:waypoint x="2215" y="128"/><di:waypoint x="1720" y="128"/><di:waypoint x="1720" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f22_di" bpmnElement="ifms_sna_sparsh_release_f22"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f23_di" bpmnElement="ifms_sna_sparsh_release_f23"><di:waypoint x="1935" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f24_di" bpmnElement="ifms_sna_sparsh_release_f24"><di:waypoint x="2851" y="128"/><di:waypoint x="2851" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f25_di" bpmnElement="ifms_sna_sparsh_release_f25"><di:waypoint x="3090" y="195"/><di:waypoint x="3187" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f26_di" bpmnElement="ifms_sna_sparsh_release_f26"><di:waypoint x="2881" y="128"/><di:waypoint x="2881" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f27_di" bpmnElement="ifms_sna_sparsh_release_f27"><di:waypoint x="3090" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f28_di" bpmnElement="ifms_sna_sparsh_release_f28"><di:waypoint x="3230" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f29_di" bpmnElement="ifms_sna_sparsh_release_f29"><di:waypoint x="3205" y="95"/><di:waypoint x="3205" y="128"/><di:waypoint x="2710" y="128"/><di:waypoint x="2710" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f30_di" bpmnElement="ifms_sna_sparsh_release_f30"><di:waypoint x="2760" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f31_di" bpmnElement="ifms_sna_sparsh_release_f31"><di:waypoint x="2925" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f32_di" bpmnElement="ifms_sna_sparsh_release_f32"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f33_di" bpmnElement="ifms_sna_sparsh_release_f33"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f34_di" bpmnElement="ifms_sna_sparsh_release_f34"><di:waypoint x="1580" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f35_di" bpmnElement="ifms_sna_sparsh_release_f35"><di:waypoint x="2405" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f36_di" bpmnElement="ifms_sna_sparsh_release_f36"><di:waypoint x="2570" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f37_di" bpmnElement="ifms_sna_sparsh_release_f37"><di:waypoint x="2570" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f38_di" bpmnElement="ifms_sna_sparsh_release_f38"><di:waypoint x="3395" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f39_di" bpmnElement="ifms_sna_sparsh_release_f39"><di:waypoint x="3560" y="70"/><di:waypoint x="3605" y="70"/><di:waypoint x="3605" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f40_di" bpmnElement="ifms_sna_sparsh_release_f40"><di:waypoint x="3560" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f41_di" bpmnElement="ifms_sna_sparsh_release_f41"><di:waypoint x="3750" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f42_di" bpmnElement="ifms_sna_sparsh_release_f42"><di:waypoint x="4055" y="195"/><di:waypoint x="4100" y="195"/><di:waypoint x="4100" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f43_di" bpmnElement="ifms_sna_sparsh_release_f43"><di:waypoint x="4055" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f44_di" bpmnElement="ifms_sna_sparsh_release_f44"><di:waypoint x="3915" y="195"/><di:waypoint x="4005" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f45_di" bpmnElement="ifms_sna_sparsh_release_f45"><di:waypoint x="4195" y="235"/><di:waypoint x="4195" y="253"/><di:waypoint x="3865" y="253"/><di:waypoint x="3865" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f46_di" bpmnElement="ifms_sna_sparsh_release_f46"><di:waypoint x="4245" y="320"/><di:waypoint x="4310" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f47_di" bpmnElement="ifms_sna_sparsh_release_f47"><di:waypoint x="4410" y="320"/><di:waypoint x="4507" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f48_di" bpmnElement="ifms_sna_sparsh_release_f48"><di:waypoint x="3750" y="70"/><di:waypoint x="3847" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f49_di" bpmnElement="ifms_sna_sparsh_release_f49"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f50_di" bpmnElement="ifms_sna_sparsh_release_f50"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f51_di" bpmnElement="ifms_sna_sparsh_release_f51"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f52_di" bpmnElement="ifms_sna_sparsh_release_f52"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f53_di" bpmnElement="ifms_sna_sparsh_release_f53"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_sna_sparsh_release_f54_di" bpmnElement="ifms_sna_sparsh_release_f54"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

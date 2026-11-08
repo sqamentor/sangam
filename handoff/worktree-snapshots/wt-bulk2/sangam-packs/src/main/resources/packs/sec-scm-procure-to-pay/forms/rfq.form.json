@@ -1,0 +1,65 @@
+{
+  "key": "sec-scm-procure-to-pay/rfq",
+  "version": "1.0.0",
+  "pack": "sec.scm.procure-to-pay",
+  "title": {
+    "en": "Collect quotations and comparative statement",
+    "hi": "कोटेशन एवं तुलनात्मक विवरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "supplierName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Supplier",
+        "hi": "आपूर्तिकर्ता"
+      }
+    },
+    {
+      "id": "unitPrice",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Unit price (INR)",
+        "hi": "इकाई मूल्य (रुपये)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "rfqDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "award",
+        "label": {
+          "en": "Award",
+          "hi": "अधिनिर्णय / आबंटन"
+        }
+      },
+      {
+        "value": "retender",
+        "label": {
+          "en": "Retender",
+          "hi": "पुनः निविदा"
+        }
+      }
+    ]
+  }
+}

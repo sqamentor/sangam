@@ -1,0 +1,81 @@
+{
+  "key": "ifms-pao-chain/pao",
+  "version": "1.0.0",
+  "pack": "gov.ifms.pao-chain",
+  "title": {
+    "en": "PAO pass, object or return",
+    "hi": "पीएओ: पारित, आपत्ति या वापसी"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "tokenNo",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Token number",
+        "hi": "टोकन संख्या"
+      }
+    },
+    {
+      "id": "objectionCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Objection codes (with rule)",
+        "hi": "आपत्ति कोड (नियम सहित)"
+      }
+    },
+    {
+      "id": "objectionMemo",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Objection memo",
+        "hi": "आपत्ति ज्ञापन"
+      }
+    },
+    {
+      "id": "dscSerial",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "DSC serial",
+        "hi": "डीएससी क्रमांक"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "paoDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "passBill",
+        "label": {
+          "en": "Pass",
+          "hi": "पारित करें"
+        }
+      },
+      {
+        "value": "object",
+        "label": {
+          "en": "Raise objection",
+          "hi": "आपत्ति उठाएँ"
+        }
+      },
+      {
+        "value": "returnBill",
+        "label": {
+          "en": "Return to DDO",
+          "hi": "डीडीओ को वापस करें"
+        }
+      }
+    ]
+  }
+}

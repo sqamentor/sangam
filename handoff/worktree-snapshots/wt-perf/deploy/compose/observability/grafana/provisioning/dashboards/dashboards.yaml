@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: 1
+providers:
+  - name: sangam
+    folder: Sangam
+    type: file
+    disableDeletion: true
+    options:
+      path: /var/lib/grafana/dashboards

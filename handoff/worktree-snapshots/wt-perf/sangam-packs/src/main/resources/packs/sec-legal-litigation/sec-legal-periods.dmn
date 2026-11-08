@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_legal_periods" name="Response and appeal periods (CPC, Limitation Act; verify per forum)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-legal-periods" name="Response and appeal periods (CPC, Limitation Act; verify per forum)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-legal-periods_t" hitPolicy="FIRST">
+      <input id="sec-legal-periods_i0" label="Matter"><inputExpression id="sec-legal-periods_ie0" typeRef="string"><text>matterType</text></inputExpression></input>
+      <output id="sec-legal-periods_o0" label="Respond within" name="responseSpec" typeRef="string"/>
+      <output id="sec-legal-periods_o1" label="Appeal within" name="appealSpec" typeRef="string"/>
+      <rule id="sec-legal-periods_r0"><description>notice period as stated (SYNTHETIC 15 days)</description>
+        <inputEntry id="sec-legal-periods_r0_i0"><text>"LEGAL_NOTICE"</text></inputEntry>
+        <outputEntry id="sec-legal-periods_r0_o0"><text>"15D"</text></outputEntry>
+        <outputEntry id="sec-legal-periods_r0_o1"><text>"90D"</text></outputEntry>
+      </rule>
+      <rule id="sec-legal-periods_r1"><description>written statement 30 days (CPC O.VIII r.1); first appeal 90 days to the HC</description>
+        <inputEntry id="sec-legal-periods_r1_i0"><text>"SUMMONS"</text></inputEntry>
+        <outputEntry id="sec-legal-periods_r1_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-legal-periods_r1_o1"><text>"90D"</text></outputEntry>
+      </rule>
+      <rule id="sec-legal-periods_r2"><description>Commercial Courts Act s.13: 60 days</description>
+        <inputEntry id="sec-legal-periods_r2_i0"><text>"COMMERCIAL"</text></inputEntry>
+        <outputEntry id="sec-legal-periods_r2_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-legal-periods_r2_o1"><text>"60D"</text></outputEntry>
+      </rule>
+      <rule id="sec-legal-periods_r3"><description>CPA 2019: version 30 (+15) days; appeal 45 days</description>
+        <inputEntry id="sec-legal-periods_r3_i0"><text>"CONSUMER"</text></inputEntry>
+        <outputEntry id="sec-legal-periods_r3_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-legal-periods_r3_o1"><text>"45D"</text></outputEntry>
+      </rule>
+      <rule id="sec-legal-periods_r4"><description>outward suit: file before limitation (3 years for contracts)</description>
+        <inputEntry id="sec-legal-periods_r4_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-legal-periods_r4_o0"><text>"30D"</text></outputEntry>
+        <outputEntry id="sec-legal-periods_r4_o1"><text>"90D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

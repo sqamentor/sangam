@@ -1,0 +1,88 @@
+{
+  "id": "gov.ifms.year-end-closing",
+  "version": "1.0.0",
+  "name": {
+    "en": "Year-end closing and annual accounts",
+    "hi": "वर्षांत समापन और वार्षिक लेखे"
+  },
+  "domain": "IFMS",
+  "description": "March cuts from the profile (preliminary, supplementary I / II) as extra fiscal periods, statement of central transactions, Appropriation Accounts per grant from the ledger (original, supplementary, re-appropriation, actuals, savings / excess) with explanatory notes, CAA signature, audit; Finance Accounts data; excess-grant regularisation input.",
+  "mainProcesses": [
+    "sangam-ifms-year-end-closing"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-year-end-closing/sangam-ifms-year-end-closing.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-year-end-closing/forms/cut.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-year-end-closing/forms/compile.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-year-end-closing/forms/sign.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-year-end-closing/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-year-end-closing/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "accounts.render",
+      "capabilityClass": "a",
+      "govTag": "G-AG",
+      "purpose": "Render annual accounts"
+    }
+  ],
+  "covers": [
+    "IFC-202",
+    "IFC-203",
+    "IFC-204",
+    "IFC-205",
+    "IFC-051",
+    "IFC-213",
+    "IFC-250",
+    "IFS-043",
+    "IFS-SK-004",
+    "GA-25"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ]
+}

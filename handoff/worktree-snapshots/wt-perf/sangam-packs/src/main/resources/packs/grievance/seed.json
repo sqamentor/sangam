@@ -1,0 +1,135 @@
+{
+  "offices": [
+    {
+      "id": "MIN-G",
+      "parent": ""
+    },
+    {
+      "id": "FIELD-G",
+      "parent": "MIN-G"
+    }
+  ],
+  "seats": [
+    {
+      "id": "GRO-1",
+      "role": "GRO",
+      "office": "MIN-G",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "NODAL-GRV",
+      "name": {
+        "en": "Grievance officer",
+        "hi": "शिकायत अधिकारी"
+      }
+    },
+    {
+      "id": "GRO-F",
+      "role": "GRO",
+      "office": "FIELD-G",
+      "level": "REGIONAL_OFFICE",
+      "reportsTo": "GRO-1",
+      "name": {
+        "en": "Grievance officer (field)",
+        "hi": "शिकायत अधिकारी (क्षेत्रीय)"
+      }
+    },
+    {
+      "id": "GRO-PEN",
+      "role": "GRO-PENSION",
+      "office": "MIN-G",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "NODAL-GRV",
+      "name": {
+        "en": "Pension grievance officer",
+        "hi": "पेंशन शिकायत अधिकारी"
+      }
+    },
+    {
+      "id": "CVO-1",
+      "role": "CVO",
+      "office": "MIN-G",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SECY-G",
+      "name": {
+        "en": "Chief vigilance officer",
+        "hi": "मुख्य सतर्कता अधिकारी"
+      }
+    },
+    {
+      "id": "NODAL-GRV",
+      "role": "NODAL",
+      "office": "MIN-G",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SECY-G",
+      "name": {
+        "en": "Nodal grievance officer",
+        "hi": "नोडल शिकायत अधिकारी"
+      }
+    },
+    {
+      "id": "APPELLATE-GRO",
+      "role": "APPELLATE",
+      "office": "MIN-G",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "SECY-G",
+      "name": {
+        "en": "Appellate authority (grievances)",
+        "hi": "अपीलीय प्राधिकारी (शिकायत)"
+      }
+    },
+    {
+      "id": "SECY-G",
+      "role": "SECRETARY",
+      "office": "MIN-G",
+      "level": "HEAD_OFFICE",
+      "name": {
+        "en": "Secretary",
+        "hi": "सचिव"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "GRO-1",
+      "person": "gv.gro-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "GRO-F",
+      "person": "gv.gro-f",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "GRO-PEN",
+      "person": "gv.gro-pen",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CVO-1",
+      "person": "gv.cvo-1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "NODAL-GRV",
+      "person": "gv.nodal-grv",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "APPELLATE-GRO",
+      "person": "gv.appellate-gro",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "SECY-G",
+      "person": "gv.secy-g",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": []
+}

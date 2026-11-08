@@ -1,0 +1,104 @@
+{
+  "id": "gov.rti",
+  "version": "1.0.0",
+  "name": {
+    "en": "Right to Information request",
+    "hi": "सूचना का अधिकार अनुरोध"
+  },
+  "domain": "RTI",
+  "description": "RTI Act 2005: s.7(1) 30 days or 48 hours for life or liberty, +5 days via APIO, fee exemption for BPL, s.7(3) additional fee pauses the clock (GP-45), s.6(3) transfer, s.11 third-party notice and objection window (GP-46), deemed refusal on lapse (s.7(2), GP-44), first appeal to the FAA (s.19, GP-22) with the PIO excluded, closure with retention.",
+  "mainProcesses": [
+    "sangam-rti-request"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/rti/sangam-rti-request.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/rti/rti-time-limit.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/rti/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/rti/forms/pio-decision.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/rti/seed.json"
+    }
+  ],
+  "seed": "packs/rti/seed.json",
+  "connectors": [
+    {
+      "id": "paygov.fee",
+      "capabilityClass": "b",
+      "govTag": "G-PG",
+      "purpose": "RTI fee"
+    },
+    {
+      "id": "referral.send",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "s.6(3) transfer"
+    },
+    {
+      "id": "notify.sms",
+      "capabilityClass": "b",
+      "govTag": "G-DLT",
+      "purpose": "Applicant and third-party notices"
+    }
+  ],
+  "covers": [
+    "D-RTI",
+    "GP-06",
+    "GP-22",
+    "GP-35",
+    "GP-44",
+    "GP-45",
+    "GP-46",
+    "R61",
+    "GOV-11",
+    "J-P2-E10",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [
+    {
+      "id": "GP-44",
+      "title": "Deemed refusal on lapse opens the first appeal",
+      "refs": [
+        "GP-44",
+        "GP-35",
+        "T22"
+      ],
+      "given": "a request with the 30-day clock",
+      "when": "the PIO does not decide in time",
+      "then": "DEEMED_DECISION (refusal), rejection order, appeal window; FAA hears without the PIO",
+      "startVariables": {
+        "applicantName": "A. Kumar",
+        "applicantRef": "mobile:9XXXXXXX01",
+        "information": "copy of file notings"
+      },
+      "expectState": null,
+      "run": {
+        "manual": "needs a clock driver: the PIO decision deadline lapses (deemed refusal)"
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-appeal",
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection"
+  ]
+}

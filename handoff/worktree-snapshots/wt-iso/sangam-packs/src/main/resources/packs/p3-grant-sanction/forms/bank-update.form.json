@@ -1,0 +1,56 @@
+{
+  "key": "p3-grant-sanction/bank-update",
+  "version": "1.0.0",
+  "pack": "gov.p3.grant-sanction",
+  "title": {
+    "en": "Payment returned: update bank details",
+    "hi": "भुगतान वापस: बैंक विवरण अद्यतन करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "correctedAccount",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Corrected bank account",
+        "hi": "संशोधित बैंक खाता"
+      }
+    },
+    {
+      "id": "correctedIfsc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Corrected IFSC",
+        "hi": "संशोधित आईएफएससी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "bankDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "hi": "पुनः प्रस्तुत करें"
+        }
+      },
+      {
+        "value": "withdraw",
+        "label": {
+          "en": "Withdraw",
+          "hi": "वापस लें"
+        }
+      }
+    ]
+  }
+}

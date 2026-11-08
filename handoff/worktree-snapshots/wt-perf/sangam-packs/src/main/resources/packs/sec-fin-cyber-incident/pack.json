@@ -1,0 +1,98 @@
+{
+  "id": "sec.fin.cyber-incident",
+  "version": "1.0.0",
+  "name": {
+    "en": "Cyber incident response and regulatory reporting",
+    "hi": "साइबर घटना प्रतिक्रिया एवं नियामक रिपोर्टिंग"
+  },
+  "domain": "Financial services (cross-sector)",
+  "description": "Containment and, in parallel, the reports each law requires: CERT-In within 6 hours (2022 directions), the sector regulator within 6 hours (RBI IT Governance Directions 2023, SEBI CSCRF, IRDAI), the Data Protection Board and the affected data principals (DPDP Rules r.7, detailed report within 72 hours); root cause analysis by the deadline, CISO approval with SoD, RCA submitted.",
+  "mainProcesses": [
+    "sangam-sec-fin-cyber-incident"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-fin-cyber-incident/sangam-sec-fin-cyber-incident.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-fin-cyber-incident/sec-fin-incident-reporting.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-cyber-incident/forms/raise.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-cyber-incident/forms/contain.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-cyber-incident/forms/certin.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-cyber-incident/forms/regulator.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-cyber-incident/forms/dpb.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-cyber-incident/forms/rca.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-cyber-incident/forms/approve.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-fin-cyber-incident/seed.json"
+    }
+  ],
+  "seed": "packs/sec-fin-cyber-incident/seed.json",
+  "connectors": [
+    {
+      "id": "certin.report",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "CERT-In incident report"
+    },
+    {
+      "id": "regulator.report",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Regulator portal"
+    },
+    {
+      "id": "dpb.report",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Data Protection Board intimation"
+    },
+    {
+      "id": "notify.email",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Data principals"
+    }
+  ],
+  "covers": [
+    "SEC-FIN-004",
+    "SEC-FIN-005",
+    "SEC-FIN-006",
+    "SEC-BANK-036",
+    "SEC-CAP-003",
+    "SEC-LEGAL-003",
+    "UP-10",
+    "GP-06"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

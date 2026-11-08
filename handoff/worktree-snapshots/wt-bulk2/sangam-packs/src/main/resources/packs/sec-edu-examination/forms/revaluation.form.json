@@ -1,0 +1,45 @@
+{
+  "key": "sec-edu-examination/revaluation",
+  "version": "1.0.0",
+  "pack": "sec.edu.examination",
+  "title": {
+    "en": "Revaluation request",
+    "hi": "पुनर्मूल्यांकन अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "examName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Examination",
+        "hi": "परीक्षा"
+      }
+    },
+    {
+      "id": "subject",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Subject",
+        "hi": "विषय"
+      }
+    }
+  ]
+}

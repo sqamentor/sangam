@@ -1,0 +1,12 @@
+{
+  "id": "example.echo",
+  "version": "1.0.0",
+  "name": {"en": "Example echo posting"},
+  "domain": "example",
+  "description": "Calls the plugin's connector through the pack connector id example.post.",
+  "mainProcesses": ["example-echo"],
+  "resources": [{"kind": "BPMN", "path": "packs/example-echo/example-echo.bpmn"}],
+  "connectors": [{"id": "example.post", "capabilityClass": "a", "purpose": "post to the example ledger"}],
+  "dependsOn": ["sangam.core"],
+  "requires": {"packs": {"sangam.core": "^1.0.0"}}
+}

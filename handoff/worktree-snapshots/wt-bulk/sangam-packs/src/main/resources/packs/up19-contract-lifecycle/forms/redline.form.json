@@ -1,0 +1,56 @@
+{
+  "key": "up19-contract-lifecycle/redline",
+  "version": "1.0.0",
+  "pack": "universal.up19-contract-lifecycle",
+  "title": {
+    "en": "Counterparty redline",
+    "hi": "प्रतिपक्ष संशोधन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "redline",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Redlined draft",
+        "hi": "संशोधित प्रारूप"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "redlineDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

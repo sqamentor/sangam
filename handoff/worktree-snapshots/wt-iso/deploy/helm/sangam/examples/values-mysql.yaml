@@ -1,0 +1,15 @@
+# MySQL 8.4 through the shipped MariaDB Connector/J (LIC-4/LIC-5): no driver to supply.
+database:
+  type: mysql
+  host: mysql-primary.dc.example.gov.in
+  name: sangam
+  existingSecret: sangam-db
+  params: "sslMode=verify-full"
+oidc:
+  issuerUri: https://sso.example.gov.in/realms/sangam
+networkPolicy:
+  database:
+    cidrs: [10.30.3.0/28]
+backup:
+  enabled: true
+  existingSecret: sangam-db-backup   # RELOAD, REPLICATION CLIENT, REPLICATION SLAVE, SELECT, SHOW VIEW, EVENT, TRIGGER

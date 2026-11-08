@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp55d">
+  <process id="gp55-discrepancy" name="GP-55 Discrepancy case" isExecutable="true">
+    <startEvent id="gp55d_start"/>
+    <sequenceFlow id="f1" sourceRef="gp55d_start" targetRef="gp55d_investigate"/>
+    <userTask id="gp55d_investigate" name="Investigate discrepancy"><potentialOwner><resourceAssignmentExpression><formalExpression>group(stores-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp55d_investigate" targetRef="gp55d_responsibility"/>
+    <userTask id="gp55d_responsibility" name="Fix responsibility (GFR 217(iv))"><potentialOwner><resourceAssignmentExpression><formalExpression>group(hod)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="gp55d_responsibility" targetRef="gp55d_end"/>
+    <endEvent id="gp55d_end"/>
+  </process>
+</definitions>

@@ -1,0 +1,113 @@
+{
+  "key": "rti/pio-decision",
+  "version": "1.0.0",
+  "pack": "gov.rti",
+  "title": {
+    "en": "PIO: decide request",
+    "hi": "लोक सूचना अधिकारी: अनुरोध पर निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "replyText",
+      "type": "richtext",
+      "required": false,
+      "label": {
+        "en": "Reply",
+        "hi": "उत्तर"
+      }
+    },
+    {
+      "id": "exemptionSection",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Exemption section (s.8 / s.9)",
+        "hi": "छूट की धारा (धारा 8 / 9)"
+      }
+    },
+    {
+      "id": "additionalFee",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Additional fee (INR)",
+        "hi": "अतिरिक्त शुल्क (रुपये)"
+      }
+    },
+    {
+      "id": "transferToAuthority",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Transfer to public authority (s.6(3))",
+        "hi": "लोक प्राधिकरण को अंतरण (धारा 6(3))"
+      }
+    },
+    {
+      "id": "thirdPartyName",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Third party (s.11)",
+        "hi": "तृतीय पक्ष (धारा 11)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "pioDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "supply",
+        "label": {
+          "en": "Supply information",
+          "hi": "सूचना प्रदान करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      },
+      {
+        "value": "transfer",
+        "label": {
+          "en": "Transfer (s.6(3))",
+          "hi": "अंतरित करें (धारा 6(3))"
+        }
+      },
+      {
+        "value": "additionalFee",
+        "label": {
+          "en": "Seek additional fee (s.7(3))",
+          "hi": "अतिरिक्त शुल्क मांगें (धारा 7(3))"
+        }
+      },
+      {
+        "value": "thirdParty",
+        "label": {
+          "en": "Third-party notice (s.11)",
+          "hi": "तृतीय पक्ष सूचना (धारा 11)"
+        }
+      }
+    ]
+  }
+}

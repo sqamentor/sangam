@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: US
+  layer: jurisdiction
+  version: 2026.11.0
+  effectiveFrom: '2026-01-01'
+  extends:
+  - INTL
+  name:
+    en: 'United States: health revenue-cycle reference'
+  source: spike/results/US-HEALTH-WORKFLOWS.md US-HLT-089, US-HLT-106
+placeholders:
+- path: ledgers
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (the claim balance
+    rule used in posting was not read from a public source)'
+jurisdiction: US
+ledgers:
+- id: RECEIVABLES
+  kind: RECEIVABLE
+  mode: AUTHORITATIVE
+  currency: USD
+  stages:
+  - DEMAND
+  availability:
+    type: NO_YEAR

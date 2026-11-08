@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GAP set (SANGAM.md XI.3, CF-13 / R34): message intermediate throw event. SHARED, standard BPMN 2.0.2.
+  No implementation is attached on purpose (same reasoning as gap-message-end.bpmn).
+  Pass criterion for E11: the instance passes the throw event and waits in gap_msgThrow_probe;
+  the experiment records whether a message was actually sent or the event was a no-op.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="gap-message-throw-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <message id="gap_msgThrow_message" name="gapMessageThrow"/>
+
+  <process id="gap-message-throw" name="GAP message intermediate throw" isExecutable="true">
+    <startEvent id="gap_msgThrow_start"/>
+    <sequenceFlow id="gap_msgThrow_f1" sourceRef="gap_msgThrow_start" targetRef="gap_msgThrow_throw"/>
+    <intermediateThrowEvent id="gap_msgThrow_throw" name="Send gapMessageThrow">
+      <messageEventDefinition id="gap_msgThrow_throwDef" messageRef="gap_msgThrow_message"/>
+    </intermediateThrowEvent>
+    <sequenceFlow id="gap_msgThrow_f2" sourceRef="gap_msgThrow_throw" targetRef="gap_msgThrow_probe"/>
+    <userTask id="gap_msgThrow_probe" name="Reached after message throw"/>
+    <sequenceFlow id="gap_msgThrow_f3" sourceRef="gap_msgThrow_probe" targetRef="gap_msgThrow_end"/>
+    <endEvent id="gap_msgThrow_end"/>
+  </process>
+</definitions>

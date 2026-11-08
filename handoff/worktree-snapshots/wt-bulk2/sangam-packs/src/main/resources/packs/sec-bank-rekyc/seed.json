@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "BRANCH-RK",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "OPS-CHECKER",
+      "role": "OPSCHECKER",
+      "office": "BRANCH-RK",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Operations checker",
+        "hi": "संचालन जाँचकर्ता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "OPS-CHECKER",
+      "person": "brk.ops-checker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "OPSCHECKER",
+      "name": {
+        "en": "Operations checker",
+        "hi": "संचालन जाँचकर्ता"
+      }
+    }
+  ]
+}

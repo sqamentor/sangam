@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: v2
+name: sangam
+description: >-
+  Sangam universal workflow platform (based on Operaton 2.2.0): server, UI, Liquibase migration job, autoscaling,
+  disruption budgets, network policies and per-database backup CronJob examples (RPO <= 5 min / RTO <= 1 h).
+type: application
+version: 0.1.0
+appVersion: "0.1.0-SNAPSHOT"
+kubeVersion: ">=1.30.0-0"
+home: https://github.com/sqamentor/sangam
+sources:
+  - https://github.com/sqamentor/sangam
+keywords: [workflow, bpmn, dmn, cmmn, government, operaton]
+annotations:
+  sangam.io/license: Apache-2.0
+  sangam.io/databases: "postgres,oracle,sqlserver,mysql"
+  sangam.io/airgap: "supported (see deploy/README.md)"

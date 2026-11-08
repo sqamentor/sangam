@@ -1,0 +1,27 @@
+{
+  "key": "up18-capa/implement",
+  "version": "1.0.0",
+  "pack": "universal.up18-capa",
+  "title": {
+    "en": "Implement actions",
+    "hi": "कार्रवाई लागू करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

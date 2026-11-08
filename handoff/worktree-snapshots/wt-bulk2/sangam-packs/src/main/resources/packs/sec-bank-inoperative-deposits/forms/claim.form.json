@@ -1,0 +1,54 @@
+{
+  "key": "sec-bank-inoperative-deposits/claim",
+  "version": "1.0.0",
+  "pack": "sec.bank.inoperative-deposits",
+  "title": {
+    "en": "Reactivation / claim",
+    "hi": "पुनः सक्रियण / दावा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "accountNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Account number",
+        "hi": "खाता संख्या"
+      }
+    },
+    {
+      "id": "claimantType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Claimant (holder, nominee, legal heir)",
+        "hi": "दावेदार (धारक, नामिती, विधिक उत्तराधिकारी)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

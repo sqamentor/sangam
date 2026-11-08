@@ -1,0 +1,237 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: NL
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-NE-HIMALAYAN
+  name:
+    en: Nagaland
+    hi: नागालैंड
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources NL1-NL2, accessed 2026-11-04)
+placeholders:
+- path: orgTopology.units
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (sources inconsistent)'
+- path: payees.villageCouncil
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live'
+- path: chartOfAccounts
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (state digit
+    structure not found)'
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 6
+  sources: NL1-NL2
+locale:
+  languages:
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - NIFiMS
+  - e-Pay Bill (Dec 2025)
+  - PIMS v2
+  snaSparsh:
+    onboarded: '2025-04-01'
+  ekuber: true
+orgTopology:
+  directorate: Principal Directorate of Treasuries & Accounts
+  unitTypes:
+    DISTRICT_TREASURY: 14
+    SUB_TREASURY: 22
+  ddoCount: 960
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: CTR_VOL1
+    title: CTR
+  - id: GFR2017
+    title: GFR (as adopted)
+  - id: CPWD_ACCOUNT_CODE
+    title: CPWD Account Code
+paymentRails:
+  default: AGENCY_BANK
+  migration:
+    from: AGENCY_BANK
+    to: CENTRAL_BANK_SETTLEMENT
+    parallelRun: true
+budgetControl:
+  treasuryHeldSubAllotment: true
+ddoClasses:
+- REGULAR
+- TREASURY_AS_DDO
+classification:
+  schemes:
+  - id: HOA_NL
+    separator: '-'
+    segments:
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: subHead
+      width: 2
+    - id: subSubHead
+      width: 2
+    - id: detailed
+      width: 2
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: 2011 02 101 01 / 01 (last tier = object)
+    evidence: V
+    source: NL finance
+  defaultScheme: HOA_NL
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+procurement:
+  family: CENTRAL
+  rule: e-Procurement Policy; GFR
+  worksCode: CPWD Account Code
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/NL/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: NL
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/NL/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: NL
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from e-Procurement Policy; GFR (was: RPR 2022: DDO draws within a sanction; no
+        sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from e-Procurement Policy; GFR (was: DFPR 2024 r.12(4) and department re-delegation
+        order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from e-Procurement Policy; GFR (was: DFPR 2024 r.12(2) re-delegation to HoD [U
+        value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from e-Procurement Policy; GFR (was: DFPR 2024 r.11 (open / limited tender up
+        to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from e-Procurement Policy; GFR (was: DFPR 2024 r.11: above the Secretary; no
+        upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from e-Procurement Policy; GFR (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

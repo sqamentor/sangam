@@ -1,0 +1,85 @@
+{
+  "id": "sec.health.ot-scheduling",
+  "version": "1.0.0",
+  "name": {
+    "en": "Operation theatre scheduling and surgical safety",
+    "hi": "शल्य कक्ष समय-निर्धारण एवं शल्य सुरक्षा"
+  },
+  "domain": "Healthcare",
+  "description": "Surgery request, pre-anaesthetic check (fit / unfit / defer), informed consent for surgery and anaesthesia, OT slot by rule, WHO surgical safety checklist (sign in, time out, sign out) with the count and specimen, post-operative recovery; cancellation with reasons.",
+  "mainProcesses": [
+    "sangam-sec-health-ot"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-health-ot-scheduling/sangam-sec-health-ot.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-health-ot-scheduling/sec-health-ot-urgency.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-ot-scheduling/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-ot-scheduling/forms/pac.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-ot-scheduling/forms/consent.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-ot-scheduling/forms/sign-in.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-ot-scheduling/forms/time-out.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-ot-scheduling/forms/sign-out.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-ot-scheduling/forms/recovery.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-health-ot-scheduling/seed.json"
+    }
+  ],
+  "seed": "packs/sec-health-ot-scheduling/seed.json",
+  "connectors": [
+    {
+      "id": "ot.book",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "OT slot booking"
+    },
+    {
+      "id": "lis.specimen",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Specimen to the laboratory"
+    }
+  ],
+  "covers": [
+    "SEC-HEALTH-013",
+    "GP-06",
+    "UP-04",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

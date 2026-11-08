@@ -1,0 +1,54 @@
+{
+  "key": "sec-ushealth-gfe-ppdr/estimate",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.gfe-ppdr",
+  "title": {
+    "en": "Prepare and deliver the good-faith estimate (with co-providers)",
+    "es": "Preparar y entregar el presupuesto de buena fe (con coproveedores)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "serviceDescription",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Items and services expected",
+        "es": "Artículos y servicios previstos"
+      }
+    },
+    {
+      "id": "coProviders",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Co-providers and co-facilities",
+        "es": "Coproveedores y coinstalaciones"
+      }
+    },
+    {
+      "id": "expectedCharges",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Expected charges in the good-faith estimate (USD)",
+        "es": "Cargos previstos en el presupuesto de buena fe (USD)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "es": "Documentos"
+      }
+    }
+  ]
+}

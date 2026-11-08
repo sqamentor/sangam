@@ -1,0 +1,124 @@
+{
+  "id": "gov.ifms.receipts",
+  "version": "1.0.0",
+  "name": {
+    "en": "Receipts: challan / e-receipt lifecycle and scroll reconciliation",
+    "hi": "प्राप्तियाँ: चालान जीवनचक्र और स्क्रॉल मिलान"
+  },
+  "domain": "IFMS",
+  "description": "Challan (GRN / CPIN) generated with the receipt heads and apportionment rules of the profile, paid through the portal / bank (CIN / UTR), matched with the e-scroll or RBI credit notification, booked to the heads; unaccounted credits follow the SOP (trace, book or refund); short deposits rejected; card settlement within T+n; refund and defacement.",
+  "mainProcesses": [
+    "sangam-ifms-receipt"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-receipts/sangam-ifms-receipt.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-receipts/forms/challan.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-receipts/forms/resolve.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-receipts/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-receipts/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "receipt.portal",
+      "capabilityClass": "b",
+      "govTag": "G-PG",
+      "purpose": "Challan / payment portal (Bharatkosh, GRAS, GRIPS ...)"
+    },
+    {
+      "id": "treasury.scroll",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Bank / RBI e-scroll"
+    },
+    {
+      "id": "receipt.refund",
+      "capabilityClass": "c",
+      "govTag": "G-PG",
+      "purpose": "Refund of a deposit"
+    }
+  ],
+  "covers": [
+    "IFC-126",
+    "IFC-127",
+    "IFC-128",
+    "IFC-129",
+    "IFC-130",
+    "IFC-131",
+    "IFC-132",
+    "IFC-133",
+    "IFC-134",
+    "IFC-135",
+    "IFC-136",
+    "IFC-137",
+    "IFC-139",
+    "IFC-141",
+    "IFS-027",
+    "IFS-028",
+    "IFS-055",
+    "IFS-RJ-008",
+    "IFS-PB-001",
+    "IFS-JH-003",
+    "IFS-TN-004",
+    "IFS-WB-003",
+    "IFS-AP-006",
+    "IFS-UP-004",
+    "IFS-AS-005",
+    "IFS-MN-004",
+    "IFS-DL-003",
+    "IFS-KL-008",
+    "IFS-MP-005",
+    "GA-11",
+    "GP-31",
+    "GP-55"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_up18_approver" name="CAPA approver" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="up18-approver" name="CAPA approver" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="up18-approver_t" hitPolicy="FIRST">
+      <input id="up18-approver_i0" label="Amount"><inputExpression id="up18-approver_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="up18-approver_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="up18-approver_r0">
+        <inputEntry id="up18-approver_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="up18-approver_r0_o0"><text>"QAHEAD"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

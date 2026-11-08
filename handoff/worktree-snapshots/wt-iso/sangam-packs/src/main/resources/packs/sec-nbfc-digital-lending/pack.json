@@ -1,0 +1,113 @@
+{
+  "id": "sec.nbfc.digital-lending",
+  "version": "1.0.0",
+  "name": {
+    "en": "Digital lending through an app or LSP",
+    "hi": "ऐप या ऋण सेवा प्रदाता द्वारा डिजिटल ऋण"
+  },
+  "domain": "NBFC / fintech",
+  "description": "RBI Digital Lending Directions: explicit consent for each data use, Account Aggregator consent, bureau, credit decision by the regulated entity (not the LSP), KFS with APR before the contract, acceptance within the KFS validity, disbursal straight to the borrower account (no pass-through or pool account), cooling-off exit with principal and proportionate APR only, reporting to CICs, nodal grievance officer of the RE and the LSP.",
+  "mainProcesses": [
+    "sangam-sec-nbfc-digital-loan"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-nbfc-digital-lending/sangam-sec-nbfc-digital-loan.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-nbfc-digital-lending/sec-nbfc-dl-policy.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-nbfc-digital-lending/sec-nbfc-dl-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-nbfc-digital-lending/sec-nbfc-dl-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-nbfc-digital-lending/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-nbfc-digital-lending/forms/accept.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-nbfc-digital-lending/seed.json"
+    }
+  ],
+  "seed": "packs/sec-nbfc-digital-lending/seed.json",
+  "connectors": [
+    {
+      "id": "aa.fetch",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Account Aggregator data (consent artefact)"
+    },
+    {
+      "id": "bureau.pull",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "CIC"
+    },
+    {
+      "id": "docs.kfs",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "KFS"
+    },
+    {
+      "id": "bank.transfer",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Disbursal to the borrower account"
+    },
+    {
+      "id": "lms.book",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Book loan"
+    },
+    {
+      "id": "lms.foreclose",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Cooling-off exit"
+    },
+    {
+      "id": "cic.report",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Credit information reporting"
+    }
+  ],
+  "covers": [
+    "SEC-NBFC-001",
+    "SEC-NBFC-002",
+    "SEC-NBFC-003",
+    "SEC-NBFC-004",
+    "SEC-NBFC-005",
+    "SEC-NBFC-006",
+    "GP-12",
+    "GP-44",
+    "UP-01",
+    "UP-22",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

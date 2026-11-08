@@ -1,0 +1,47 @@
+{
+  "key": "up11-change-window/verify",
+  "version": "1.0.0",
+  "pack": "universal.up11-change-window",
+  "title": {
+    "en": "Verify change",
+    "hi": "परिवर्तन सत्यापित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "verificationResult",
+    "required": true,
+    "options": [
+      {
+        "value": "success",
+        "label": {
+          "en": "Successful",
+          "hi": "सफल"
+        }
+      },
+      {
+        "value": "rollback",
+        "label": {
+          "en": "Roll back",
+          "hi": "वापस लें (रोलबैक)"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "id": "gov.ifms.sna-sparsh",
+  "version": "1.0.0",
+  "name": {
+    "en": "SNA-SPARSH just-in-time release",
+    "hi": "एसएनए-स्पर्श समय पर विमुक्ति"
+  },
+  "domain": "IFMS",
+  "description": "Mother sanction per SLS (one active, lapse 23:59 on 31 March IST) held as a ledger limit; state treasury pushes IA payment files with centre / state / top-up shares; daily sanction by the PD checker (DSC), Pr.AO payment authorisation, PAO pass, batch to RBI before the 15:00 cut-off (next business day after it), reissue tag on re-push, SLS reconciliation. 3-role chain by default, 7-role chain by profile.",
+  "mainProcesses": [
+    "sangam-ifms-sna-sparsh-release"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-sna-sparsh/sangam-ifms-sna-sparsh-release.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-sna-sparsh/ifms-sna-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-sna-sparsh/forms/claim.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-sna-sparsh/forms/daily.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-sna-sparsh/forms/authorise.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-sna-sparsh/forms/pao.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-sna-sparsh/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-sna-sparsh/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "ledger.available",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Mother sanction balance (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "ledger.consume",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Daily sanction against the mother sanction (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "rail.ekuber",
+      "capabilityClass": "c",
+      "govTag": "G-RBI",
+      "purpose": "Batch to RBI"
+    },
+    {
+      "id": "pfms.childSanction",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Child sanction / DN-CN notifications"
+    }
+  ],
+  "covers": [
+    "IFC-157",
+    "IFC-158",
+    "IFC-159",
+    "IFC-160",
+    "IFC-161",
+    "IFC-242",
+    "IFC-144",
+    "IFS-011",
+    "IFS-012",
+    "IFS-013",
+    "IFS-014",
+    "IFS-015",
+    "IFS-016",
+    "IFS-017",
+    "IFS-018",
+    "IFS-019",
+    "IFS-020",
+    "IFS-021",
+    "IFS-022",
+    "IFS-023",
+    "IFS-024",
+    "IFS-035",
+    "IFS-051",
+    "IFS-052",
+    "IFS-029",
+    "IFS-RJ-003",
+    "IFS-MP-004",
+    "IFS-BR-004",
+    "IFS-HR-001",
+    "IFS-KA-005",
+    "IFS-SK-003",
+    "IFS-WB-004",
+    "IFS-OD-007",
+    "IFS-OD-008",
+    "IFS-CT-002",
+    "IFS-JH-006",
+    "IFS-AR-006",
+    "IFS-NL-005",
+    "GA-09",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "centreShare",
+      "stateShare"
+    ]
+  }
+}

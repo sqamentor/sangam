@@ -1,0 +1,36 @@
+{
+  "key": "land-acquisition/sia",
+  "version": "1.0.0",
+  "pack": "gov.land-acquisition",
+  "title": {
+    "en": "Social impact assessment (s.4)",
+    "hi": "सामाजिक प्रभाव आकलन (धारा 4)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "siaReport",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Social impact assessment report",
+        "hi": "सामाजिक प्रभाव आकलन रिपोर्ट"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

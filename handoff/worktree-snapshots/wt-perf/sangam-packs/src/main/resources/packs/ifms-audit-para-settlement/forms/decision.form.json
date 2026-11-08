@@ -1,0 +1,47 @@
+{
+  "key": "ifms-audit-para-settlement/decision",
+  "version": "1.0.0",
+  "pack": "gov.ifms.audit-para-settlement",
+  "title": {
+    "en": "Record audit decision",
+    "hi": "लेखापरीक्षा निर्णय दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "paraDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "settlePara",
+        "label": {
+          "en": "Settle",
+          "hi": "निपटान करें"
+        }
+      },
+      {
+        "value": "furtherAction",
+        "label": {
+          "en": "Further action required",
+          "hi": "आगे कार्रवाई आवश्यक"
+        }
+      }
+    ]
+  }
+}

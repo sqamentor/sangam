@@ -1,0 +1,74 @@
+{
+  "key": "sec-ins-intermediary-licensing/apply",
+  "version": "1.0.0",
+  "pack": "sec.ins.intermediary-licensing",
+  "title": {
+    "en": "Intermediary application",
+    "hi": "मध्यस्थ आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "intermediaryType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Intermediary type",
+        "hi": "मध्यस्थ का प्रकार"
+      }
+    },
+    {
+      "id": "pan",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "PAN",
+        "hi": "पैन"
+      }
+    },
+    {
+      "id": "qualification",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Educational qualification",
+        "hi": "शैक्षिक योग्यता"
+      }
+    },
+    {
+      "id": "netWorth",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Net worth (INR)",
+        "hi": "निवल मूल्य (रुपये)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

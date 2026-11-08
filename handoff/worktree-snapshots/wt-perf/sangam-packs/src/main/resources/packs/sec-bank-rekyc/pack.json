@@ -1,0 +1,70 @@
+{
+  "id": "sec.bank.rekyc",
+  "version": "1.0.0",
+  "name": {
+    "en": "Periodic updation of KYC (re-KYC)",
+    "hi": "केवाईसी का आवधिक अद्यतन (पुनः केवाईसी)"
+  },
+  "domain": "Banking",
+  "description": "Monthly campaign: every customer due by risk category (2 / 8 / 10 years) gets its own case (GP-09); advance intimation and reminders, self-declaration (no change) through any channel or fresh KYC (V-CIP allowed); the decision to restrict an account after notice is never automated (KYC MD, RBI FAQ June 2025); CKYCR is updated.",
+  "mainProcesses": [
+    "sangam-sec-bank-rekyc-campaign"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-rekyc/sangam-sec-bank-rekyc-campaign.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-rekyc/sangam-sec-bank-rekyc-customer.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-rekyc/forms/verify.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-rekyc/forms/decide.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-rekyc/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-rekyc/seed.json",
+  "connectors": [
+    {
+      "id": "cbs.kycDue",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Customers due for periodic updation"
+    },
+    {
+      "id": "ckycr.update",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "CKYCR update"
+    },
+    {
+      "id": "cbs.restrict",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Partial freeze after notice"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-007",
+    "SEC-BANK-008",
+    "UP-15",
+    "GP-30",
+    "GP-08",
+    "GP-09"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

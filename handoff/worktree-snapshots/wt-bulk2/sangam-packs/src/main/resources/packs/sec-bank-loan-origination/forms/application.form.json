@@ -1,0 +1,108 @@
+{
+  "key": "sec-bank-loan-origination/application",
+  "version": "1.0.0",
+  "pack": "sec.bank.loan-origination",
+  "title": {
+    "en": "Loan application",
+    "hi": "ऋण आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "loanProduct",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Loan product",
+        "hi": "ऋण उत्पाद"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "tenureMonths",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Tenure (months)",
+        "hi": "अवधि (माह)"
+      }
+    },
+    {
+      "id": "monthlyIncome",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Monthly income (INR)",
+        "hi": "मासिक आय (रुपये)"
+      }
+    },
+    {
+      "id": "existingEmi",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Existing EMIs per month (INR)",
+        "hi": "मौजूदा मासिक किस्तें (रुपये)"
+      }
+    },
+    {
+      "id": "collateralType",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Collateral",
+        "hi": "प्रतिभूति"
+      }
+    },
+    {
+      "id": "consentGiven",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Consent recorded",
+        "hi": "सहमति दर्ज"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

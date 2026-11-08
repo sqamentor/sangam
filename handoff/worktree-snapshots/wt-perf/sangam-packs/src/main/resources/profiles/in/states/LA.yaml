@@ -1,0 +1,160 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: LA
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-UT-NOLEG
+  name:
+    en: Ladakh
+    hi: लद्दाख
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources LA1-LA2, accessed 2026-11-04)
+placeholders:
+- path: seasonalCalendar
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live'
+- path: classification.defaultScheme
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (no official
+    code structure found; Union layout used)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 7
+  sources: LA1-LA2
+locale:
+  languages:
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: hi
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+  - tag: ur
+    script: Arab
+    scope: statewide
+    docClass:
+    - statutory
+    direction: rtl
+  - tag: bo
+    script: Tibt
+    scope: statewide
+    docClass:
+    - statutory
+    note: Bhoti; Regulation 2025, commencement [U]
+    effectiveFrom: '2025-01-01'
+  - tag: prx
+    script: Arab
+    scope: statewide
+    docClass:
+    - statutory
+    note: Purgi; Regulation 2025, commencement [U]
+    direction: rtl
+    effectiveFrom: '2025-01-01'
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: V
+integrations:
+  systems:
+  - LIFMS (BEAMS-derived)
+  - PFMS (Nov 2025)
+  snaSparsh: {}
+orgTopology:
+  directorate: Directorate of Accounts & Treasuries
+  unitTypes:
+    PAO: 2
+  ddoCount: null
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+paymentRails:
+  default: PFMS
+  migration:
+    from: TREASURYNET
+    to: PFMS
+    perDdoSwitchDate: true
+    parallelRun: true
+subStateEntities:
+- id: LAHDC-LEH
+  type: HILL_COUNCIL
+  nonLapsable: true
+- id: LAHDC-KARGIL
+  type: HILL_COUNCIL
+  nonLapsable: true
+councilPowersVestedIn: DC
+unionDemand: 55
+seasonalCalendar: true
+classification:
+  defaultScheme: HOA
+procurement:
+  family: CENTRAL
+  rule: GFR 2017
+  worksCode: Works Manual 2019
+regime:
+  accountsRenderedTo: CGA
+  reportingUnit: Ladakh Finance Department & Treasuries
+  ruleRef: 'IFMS-RESEARCH-DELTA IFC-237: each UT reports to the CGA directly (not via MHA PAOs)'
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/LA/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: LA
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/LA/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: LA
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (was: RPR 2022: DDO draws within a sanction; no sanction power
+        of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (was: DFPR 2024 r.12(4) and department re-delegation order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (was: DFPR 2024 r.12(2) re-delegation to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (was: DFPR 2024 r.11 (open / limited tender up to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (was: DFPR 2024 r.11: above the Secretary; no upper limit in this
+        table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

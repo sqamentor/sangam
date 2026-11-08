@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Loan closure. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_loan_closure" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-bank-loan-closure" name="Loan closure" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.loan-closure</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>loanAccountNo,customerId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="lc_start" name="Loan repaid / settled" operaton:initiator="initiator" operaton:formKey="sangam:sec-bank-loan-closure/request"></startEvent>
+    <serviceTask id="lc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>loanAccountNo=@customerId;closureDuesNil=true;compensationDue=false;docsSeat=DOCS-CUSTODIAN;compensationAmount=0;delayDays=0;applicantRef=@customerId;executionConnector=bank.credit;executionStep=delay-compensation;verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerId,compensationAmount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="lc_check" name="Closure check" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>lms.closureCheck</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>loanAccountNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>closure</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lc_gw" name="Dues nil?" default="sec_bank_loan_closure_f5"></exclusiveGateway>
+    <endEvent id="lc_endDues" name="Dues outstanding: not closed"></endEvent>
+    <serviceTask id="lc_clock" name="Regulatory clock: release" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>release</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>30D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="lc_release" name="Release original documents and NOC" operaton:candidateGroups="${docsSeat}" operaton:formKey="sangam:sec-bank-loan-closure/release" operaton:dueDate="${releaseDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>releaseDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lc_lateFlag" name="Delay recorded" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>compensationDue=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lc_lateEnd" name="Delay recorded"></endEvent>
+    <exclusiveGateway id="lc_relGw" name="" default="sec_bank_loan_closure_f11"></exclusiveGateway>
+    <userTask id="lc_duplicate" name="Obtain certified copies at the bank's cost" operaton:candidateGroups="${docsSeat}" operaton:formKey="sangam:sec-bank-loan-closure/duplicate"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lc_satisfy" name="Remove charge (CERSAI / ROC)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cersai.satisfy</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>satisfy</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>loanAccountNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cersai</operaton:string></operaton:field><operaton:field name="step"><operaton:string>satisfy</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="lc_noc" name="Issue NOC" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.noc</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>issue</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>loanAccountNo,customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>noc</operaton:string></operaton:field><operaton:field name="step"><operaton:string>noc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="lc_compute" name="Compute compensation (Rs 5,000 / day, delay attributable)" operaton:candidateGroups="BRANCH-MGR" operaton:formKey="sangam:sec-bank-loan-closure/compensation"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="lc_compGw" name="Released late?" default="sec_bank_loan_closure_f16"></exclusiveGateway>
+    <exclusiveGateway id="lc_compMerge" name=""></exclusiveGateway>
+    <callActivity id="lc_pay" name="Credit compensation (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="lc_payGw" name="Attributable to the bank?" default="sec_bank_loan_closure_f19"></exclusiveGateway>
+    <endEvent id="lc_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="lc_late" name="30 days passed" attachedToRef="lc_release" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${releaseDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_bank_loan_closure_f1" sourceRef="lc_start" targetRef="lc_defaults"/>
+    <sequenceFlow id="sec_bank_loan_closure_f2" sourceRef="lc_defaults" targetRef="lc_check"/>
+    <sequenceFlow id="sec_bank_loan_closure_f3" sourceRef="lc_check" targetRef="lc_gw"/>
+    <sequenceFlow id="sec_bank_loan_closure_f4" name="no" sourceRef="lc_gw" targetRef="lc_endDues"><conditionExpression xsi:type="tFormalExpression">${!closureDuesNil}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_closure_f5" name="yes" sourceRef="lc_gw" targetRef="lc_clock"/>
+    <sequenceFlow id="sec_bank_loan_closure_f6" sourceRef="lc_clock" targetRef="lc_release"/>
+    <sequenceFlow id="sec_bank_loan_closure_f7" sourceRef="lc_late" targetRef="lc_lateFlag"/>
+    <sequenceFlow id="sec_bank_loan_closure_f8" sourceRef="lc_lateFlag" targetRef="lc_lateEnd"/>
+    <sequenceFlow id="sec_bank_loan_closure_f9" sourceRef="lc_release" targetRef="lc_relGw"/>
+    <sequenceFlow id="sec_bank_loan_closure_f10" name="lost / damaged" sourceRef="lc_relGw" targetRef="lc_duplicate"><conditionExpression xsi:type="tFormalExpression">${releaseDecision == 'docsLost'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_closure_f11" name="released" sourceRef="lc_relGw" targetRef="lc_satisfy"/>
+    <sequenceFlow id="sec_bank_loan_closure_f12" sourceRef="lc_duplicate" targetRef="lc_satisfy"/>
+    <sequenceFlow id="sec_bank_loan_closure_f13" sourceRef="lc_satisfy" targetRef="lc_noc"/>
+    <sequenceFlow id="sec_bank_loan_closure_f14" sourceRef="lc_noc" targetRef="lc_compGw"/>
+    <sequenceFlow id="sec_bank_loan_closure_f15" name="yes" sourceRef="lc_compGw" targetRef="lc_compute"><conditionExpression xsi:type="tFormalExpression">${compensationDue}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_closure_f16" name="no" sourceRef="lc_compGw" targetRef="lc_compMerge"/>
+    <sequenceFlow id="sec_bank_loan_closure_f17" sourceRef="lc_compute" targetRef="lc_payGw"/>
+    <sequenceFlow id="sec_bank_loan_closure_f18" name="amount due" sourceRef="lc_payGw" targetRef="lc_pay"><conditionExpression xsi:type="tFormalExpression">${compensationAmount &gt; 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_closure_f19" name="not attributable" sourceRef="lc_payGw" targetRef="lc_compMerge"/>
+    <sequenceFlow id="sec_bank_loan_closure_f20" sourceRef="lc_pay" targetRef="lc_compMerge"/>
+    <sequenceFlow id="sec_bank_loan_closure_f21" sourceRef="lc_compMerge" targetRef="lc_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_loan_closure_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_loan_closure_plane" bpmnElement="sangam-sec-bank-loan-closure">
+      <bpmndi:BPMNShape id="lc_start_di" bpmnElement="lc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_defaults_di" bpmnElement="lc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_check_di" bpmnElement="lc_check"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_gw_di" bpmnElement="lc_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_endDues_di" bpmnElement="lc_endDues"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_clock_di" bpmnElement="lc_clock"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_release_di" bpmnElement="lc_release"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_lateFlag_di" bpmnElement="lc_lateFlag"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_lateEnd_di" bpmnElement="lc_lateEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_relGw_di" bpmnElement="lc_relGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_duplicate_di" bpmnElement="lc_duplicate"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_satisfy_di" bpmnElement="lc_satisfy"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_noc_di" bpmnElement="lc_noc"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_compute_di" bpmnElement="lc_compute"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_compGw_di" bpmnElement="lc_compGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_compMerge_di" bpmnElement="lc_compMerge"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_pay_di" bpmnElement="lc_pay"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_payGw_di" bpmnElement="lc_payGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_end_di" bpmnElement="lc_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lc_late_di" bpmnElement="lc_late"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f1_di" bpmnElement="sec_bank_loan_closure_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f2_di" bpmnElement="sec_bank_loan_closure_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f3_di" bpmnElement="sec_bank_loan_closure_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f4_di" bpmnElement="sec_bank_loan_closure_f4"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f5_di" bpmnElement="sec_bank_loan_closure_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f6_di" bpmnElement="sec_bank_loan_closure_f6"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f7_di" bpmnElement="sec_bank_loan_closure_f7"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f8_di" bpmnElement="sec_bank_loan_closure_f8"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f9_di" bpmnElement="sec_bank_loan_closure_f9"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f10_di" bpmnElement="sec_bank_loan_closure_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f11_di" bpmnElement="sec_bank_loan_closure_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f12_di" bpmnElement="sec_bank_loan_closure_f12"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f13_di" bpmnElement="sec_bank_loan_closure_f13"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f14_di" bpmnElement="sec_bank_loan_closure_f14"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f15_di" bpmnElement="sec_bank_loan_closure_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f16_di" bpmnElement="sec_bank_loan_closure_f16"><di:waypoint x="1745" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f17_di" bpmnElement="sec_bank_loan_closure_f17"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f18_di" bpmnElement="sec_bank_loan_closure_f18"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f19_di" bpmnElement="sec_bank_loan_closure_f19"><di:waypoint x="2075" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f20_di" bpmnElement="sec_bank_loan_closure_f20"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_closure_f21_di" bpmnElement="sec_bank_loan_closure_f21"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_sma" name="SMA / NPA classification by days past due" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-bank-sma" name="SMA / NPA classification by days past due" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-bank-sma_t" hitPolicy="FIRST">
+      <input id="sec-bank-sma_i0" label="Days past due"><inputExpression id="sec-bank-sma_ie0" typeRef="integer"><text>dpd</text></inputExpression></input>
+      <output id="sec-bank-sma_o0" label="Class" name="smaClass" typeRef="string"/>
+      <rule id="sec-bank-sma_r0"><description>1-30 days</description>
+        <inputEntry id="sec-bank-sma_r0_i0"><text>&lt;= 30</text></inputEntry>
+        <outputEntry id="sec-bank-sma_r0_o0"><text>"SMA-0"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-sma_r1"><description>31-60 days</description>
+        <inputEntry id="sec-bank-sma_r1_i0"><text>&lt;= 60</text></inputEntry>
+        <outputEntry id="sec-bank-sma_r1_o0"><text>"SMA-1"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-sma_r2"><description>61-90 days</description>
+        <inputEntry id="sec-bank-sma_r2_i0"><text>&lt;= 90</text></inputEntry>
+        <outputEntry id="sec-bank-sma_r2_o0"><text>"SMA-2"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-sma_r3"><description>more than 90 days (IRACP)</description>
+        <inputEntry id="sec-bank-sma_r3_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-sma_r3_o0"><text>"NPA"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

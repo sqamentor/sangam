@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Seller onboarding. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ecom_seller_onboardi" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-ecom-seller-onboarding" name="Seller onboarding" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ecom.seller-onboarding</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>sellerName,gstin,pan,category</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="es_start" name="Seller applies" operaton:initiator="initiator" operaton:formKey="sangam:sec-ecom-seller-onboarding/apply"></startEvent>
+    <serviceTask id="es_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>sellerName=@supplierName;gstin=X;category=GENERAL;gstActive=true;beneNameMatch=true;reviewSeat=SELLER-ONBOARDING</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="es_gst" name="Verify GSTIN" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>gst.verify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>verify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>gstin</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>gst</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="es_pan" name="Verify PAN" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>pan.verify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>verify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>pan,sellerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>pan</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="es_bank" name="Penny-drop bank account" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>bene.validate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>lookup</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>bankAccount,ifsc,sellerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bene</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="es_kycGw" name="KYC passed?" default="sec_ecom_seller_onboardi_f13"></exclusiveGateway>
+    <userTask id="es_correct" name="Correct registration details" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:sec-ecom-seller-onboarding/correct"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>es_correctDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="es_correct_gw" name="Resubmit?" default="sec_ecom_seller_onboardi_f11"></exclusiveGateway>
+    <serviceTask id="es_correct_version" name="New case version" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUBMIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="es_correct_wd_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="es_correct_wd_call" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="es_correct_wd_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <businessRuleTask id="es_docs" name="Category licences required (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ecom-seller-docs</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="es_review_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>es_review</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>3WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="es_review" name="Review licences and agreement" operaton:candidateGroups="${reviewSeat}" operaton:formKey="sangam:sec-ecom-seller-onboarding/review" operaton:dueDate="${es_reviewDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>sellerDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="es_review_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>es_review</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reviewSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="es_review_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="es_review_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>es_review</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>reviewSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>sellerDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="es_review_breachGw" name="Deemed?" default="sec_ecom_seller_onboardi_f19"></exclusiveGateway>
+    <exclusiveGateway id="es_review_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="es_revGw" name="" default="sec_ecom_seller_onboardi_f28"></exclusiveGateway>
+    <serviceTask id="es_group" name="Seller portal group" operaton:expression="${execution.setVariable('sellerGroup', 'external:'.concat(gstin))}"></serviceTask>
+    <userTask id="es_portal" name="Upload requested documents" operaton:candidateGroups="${sellerGroup}" operaton:formKey="sangam:sec-ecom-seller-onboarding/portal"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="es_endRejected" name="Rejected (reasons given)"></endEvent>
+    <userTask id="es_approve" name="Approve seller (checker)" operaton:candidateGroups="SELLER-APPROVER" operaton:formKey="sangam:sec-ecom-seller-onboarding/approve"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>approveDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="es_apGw" name="" default="sec_ecom_seller_onboardi_f31"></exclusiveGateway>
+    <serviceTask id="es_create" name="Create seller account" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>marketplace.createSeller</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>create</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>sellerName,gstin</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>seller</operaton:string></operaton:field><operaton:field name="step"><operaton:string>create</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="es_publish" name="Publish seller profile and grievance officer" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>catalogue.publishSeller</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>publish</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>sellerName,grievanceOfficerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>profile</operaton:string></operaton:field><operaton:field name="step"><operaton:string>publish</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="es_end" name="Seller live"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="es_review_warn" name="SLA warning (75%)" attachedToRef="es_review" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${es_reviewWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="es_review_breach" name="SLA breached" attachedToRef="es_review" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${es_reviewDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f1" sourceRef="es_start" targetRef="es_defaults"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f2" sourceRef="es_defaults" targetRef="es_gst"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f3" sourceRef="es_gst" targetRef="es_pan"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f4" sourceRef="es_pan" targetRef="es_bank"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f5" sourceRef="es_bank" targetRef="es_kycGw"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f6" sourceRef="es_correct" targetRef="es_correct_gw"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f7" name="resubmit" sourceRef="es_correct_gw" targetRef="es_correct_version"><conditionExpression xsi:type="tFormalExpression">${es_correctDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f8" sourceRef="es_correct_version" targetRef="es_gst"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f9" sourceRef="es_correct_wd_kind" targetRef="es_correct_wd_call"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f10" sourceRef="es_correct_wd_call" targetRef="es_correct_wd_end"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f11" name="withdraw" sourceRef="es_correct_gw" targetRef="es_correct_wd_kind"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f12" name="no" sourceRef="es_kycGw" targetRef="es_correct"><conditionExpression xsi:type="tFormalExpression">${!gstActive || !beneNameMatch}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f13" name="yes" sourceRef="es_kycGw" targetRef="es_docs"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f14" sourceRef="es_review_warn" targetRef="es_review_warnNotify"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f15" sourceRef="es_review_warnNotify" targetRef="es_review_warnEnd"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f16" sourceRef="es_review_breach" targetRef="es_review_breachAct"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f17" sourceRef="es_review_breachAct" targetRef="es_review_breachGw"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f18" name="deemed" sourceRef="es_review_breachGw" targetRef="es_review_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f19" name="escalated" sourceRef="es_review_breachGw" targetRef="es_review_slaPlan"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f20" sourceRef="es_review_slaPlan" targetRef="es_review"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f21" sourceRef="es_review" targetRef="es_review_done"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f22" sourceRef="es_docs" targetRef="es_review_slaPlan"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f23" sourceRef="es_review_done" targetRef="es_revGw"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f24" name="clarify" sourceRef="es_revGw" targetRef="es_group"><conditionExpression xsi:type="tFormalExpression">${sellerDecision == 'clarify'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f25" sourceRef="es_group" targetRef="es_portal"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f26" sourceRef="es_portal" targetRef="es_review_slaPlan"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f27" name="reject" sourceRef="es_revGw" targetRef="es_endRejected"><conditionExpression xsi:type="tFormalExpression">${sellerDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f28" name="accept" sourceRef="es_revGw" targetRef="es_approve"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f29" sourceRef="es_approve" targetRef="es_apGw"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f30" name="return" sourceRef="es_apGw" targetRef="es_review_slaPlan"><conditionExpression xsi:type="tFormalExpression">${approveDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f31" name="approve" sourceRef="es_apGw" targetRef="es_create"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f32" sourceRef="es_create" targetRef="es_publish"/>
+    <sequenceFlow id="sec_ecom_seller_onboardi_f33" sourceRef="es_publish" targetRef="es_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ecom_seller_onboardi_diagram">
+    <bpmndi:BPMNPlane id="sec_ecom_seller_onboardi_plane" bpmnElement="sangam-sec-ecom-seller-onboarding">
+      <bpmndi:BPMNShape id="es_start_di" bpmnElement="es_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_defaults_di" bpmnElement="es_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_gst_di" bpmnElement="es_gst"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_pan_di" bpmnElement="es_pan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_bank_di" bpmnElement="es_bank"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_kycGw_di" bpmnElement="es_kycGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_correct_di" bpmnElement="es_correct"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_correct_gw_di" bpmnElement="es_correct_gw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_correct_version_di" bpmnElement="es_correct_version"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_correct_wd_kind_di" bpmnElement="es_correct_wd_kind"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_correct_wd_call_di" bpmnElement="es_correct_wd_call"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_correct_wd_end_di" bpmnElement="es_correct_wd_end"><dc:Bounds x="1702" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_docs_di" bpmnElement="es_docs"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_review_slaPlan_di" bpmnElement="es_review_slaPlan"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_review_di" bpmnElement="es_review"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_review_warnNotify_di" bpmnElement="es_review_warnNotify"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_review_warnEnd_di" bpmnElement="es_review_warnEnd"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_review_breachAct_di" bpmnElement="es_review_breachAct"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_review_breachGw_di" bpmnElement="es_review_breachGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_review_done_di" bpmnElement="es_review_done"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_revGw_di" bpmnElement="es_revGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_group_di" bpmnElement="es_group"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_portal_di" bpmnElement="es_portal"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_endRejected_di" bpmnElement="es_endRejected"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_approve_di" bpmnElement="es_approve"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_apGw_di" bpmnElement="es_apGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_create_di" bpmnElement="es_create"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_publish_di" bpmnElement="es_publish"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_end_di" bpmnElement="es_end"><dc:Bounds x="2857" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_review_warn_di" bpmnElement="es_review_warn"><dc:Bounds x="1348" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="es_review_breach_di" bpmnElement="es_review_breach"><dc:Bounds x="1378" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f1_di" bpmnElement="sec_ecom_seller_onboardi_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f2_di" bpmnElement="sec_ecom_seller_onboardi_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f3_di" bpmnElement="sec_ecom_seller_onboardi_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f4_di" bpmnElement="sec_ecom_seller_onboardi_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f5_di" bpmnElement="sec_ecom_seller_onboardi_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f6_di" bpmnElement="sec_ecom_seller_onboardi_f6"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f7_di" bpmnElement="sec_ecom_seller_onboardi_f7"><di:waypoint x="1250" y="195"/><di:waypoint x="1295" y="195"/><di:waypoint x="1295" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f8_di" bpmnElement="sec_ecom_seller_onboardi_f8"><di:waypoint x="1390" y="360"/><di:waypoint x="1390" y="399"/><di:waypoint x="400" y="399"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f9_di" bpmnElement="sec_ecom_seller_onboardi_f9"><di:waypoint x="1440" y="195"/><di:waypoint x="1472" y="195"/><di:waypoint x="1472" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f10_di" bpmnElement="sec_ecom_seller_onboardi_f10"><di:waypoint x="1605" y="320"/><di:waypoint x="1702" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f11_di" bpmnElement="sec_ecom_seller_onboardi_f11"><di:waypoint x="1250" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f12_di" bpmnElement="sec_ecom_seller_onboardi_f12"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f13_di" bpmnElement="sec_ecom_seller_onboardi_f13"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f14_di" bpmnElement="sec_ecom_seller_onboardi_f14"><di:waypoint x="1366" y="128"/><di:waypoint x="1366" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f15_di" bpmnElement="sec_ecom_seller_onboardi_f15"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f16_di" bpmnElement="sec_ecom_seller_onboardi_f16"><di:waypoint x="1396" y="128"/><di:waypoint x="1396" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f17_di" bpmnElement="sec_ecom_seller_onboardi_f17"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f18_di" bpmnElement="sec_ecom_seller_onboardi_f18"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f19_di" bpmnElement="sec_ecom_seller_onboardi_f19"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="142"/><di:waypoint x="1225" y="142"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f20_di" bpmnElement="sec_ecom_seller_onboardi_f20"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f21_di" bpmnElement="sec_ecom_seller_onboardi_f21"><di:waypoint x="1440" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f22_di" bpmnElement="sec_ecom_seller_onboardi_f22"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f23_di" bpmnElement="sec_ecom_seller_onboardi_f23"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f24_di" bpmnElement="sec_ecom_seller_onboardi_f24"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f25_di" bpmnElement="sec_ecom_seller_onboardi_f25"><di:waypoint x="2265" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f26_di" bpmnElement="sec_ecom_seller_onboardi_f26"><di:waypoint x="2380" y="360"/><di:waypoint x="2380" y="385"/><di:waypoint x="1225" y="385"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f27_di" bpmnElement="sec_ecom_seller_onboardi_f27"><di:waypoint x="2075" y="70"/><di:waypoint x="2136" y="70"/><di:waypoint x="2136" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f28_di" bpmnElement="sec_ecom_seller_onboardi_f28"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f29_di" bpmnElement="sec_ecom_seller_onboardi_f29"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f30_di" bpmnElement="sec_ecom_seller_onboardi_f30"><di:waypoint x="2380" y="95"/><di:waypoint x="2380" y="135"/><di:waypoint x="1225" y="135"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f31_di" bpmnElement="sec_ecom_seller_onboardi_f31"><di:waypoint x="2405" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f32_di" bpmnElement="sec_ecom_seller_onboardi_f32"><di:waypoint x="2595" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_seller_onboardi_f33_di" bpmnElement="sec_ecom_seller_onboardi_f33"><di:waypoint x="2760" y="70"/><di:waypoint x="2857" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

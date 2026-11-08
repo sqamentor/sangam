@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Customer complaint. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_fin_complaint" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_complaint_reopen" name="sangam.complaint.reopen"/>
+  <process id="sangam-sec-fin-complaint" name="Customer complaint" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.fin.complaint</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,regulatorScheme,grievanceText</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="fc_start" name="Complaint received" operaton:initiator="initiator" operaton:formKey="sangam:sec-fin-complaint/complaint"></startEvent>
+    <serviceTask id="fc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>regulatorScheme=RBI;groSeat=GRO;ioSeat=INTERNAL-OMBUDSMAN;reopened=false;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="fc_tat" name="Clocks by regulator scheme (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-fin-complaint-tat</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="fc_crm" name="Register complaint reference" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>crm.case</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>register</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,regulatorScheme</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>crm</operaton:string></operaton:field><operaton:field name="step"><operaton:string>register</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="fc_ack" name="Acknowledge with reference and timeline" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>complaint-ack</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="fc_resolve_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>fc_resolve</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${resolveSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="fc_resolve" name="Resolve complaint" operaton:candidateGroups="${groSeat}" operaton:formKey="sangam:sec-fin-complaint/resolve" operaton:dueDate="${fc_resolveDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>complaintDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="fc_resolve_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>fc_resolve</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>groSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="fc_resolve_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="fc_resolve_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>fc_resolve</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>groSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>complaintDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="fc_resolve_breachGw" name="Deemed?" default="sec_fin_complaint_f10"></exclusiveGateway>
+    <exclusiveGateway id="fc_resolve_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="fc_gw" name="Rejected or partly?" default="sec_fin_complaint_f19"></exclusiveGateway>
+    <userTask id="fc_io" name="Internal ombudsman review before rejection" operaton:candidateGroups="${ioSeat}" operaton:formKey="sangam:sec-fin-complaint/io"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>ioDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="fc_ioGw" name="" default="sec_fin_complaint_f18"></exclusiveGateway>
+    <serviceTask id="fc_reply" name="Final reply with the escalation route" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>complaint-final-reply</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email,letter</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="fc_wait" name="Reopen or close"></eventBasedGateway>
+    <intermediateCatchEvent id="fc_reopen" name="Customer not satisfied"><messageEventDefinition messageRef="msg_sangam_complaint_reopen"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="fc_closeAfter" name="Window over"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P30D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <exclusiveGateway id="fc_reopenGw" name="First reopen?" default="sec_fin_complaint_f26"></exclusiveGateway>
+    <serviceTask id="fc_mark" name="Reopened" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>reopened=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="fc_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="fc_resolve_warn" name="SLA warning (75%)" attachedToRef="fc_resolve" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${fc_resolveWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="fc_resolve_breach" name="SLA breached" attachedToRef="fc_resolve" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${fc_resolveDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_fin_complaint_f1" sourceRef="fc_start" targetRef="fc_defaults"/>
+    <sequenceFlow id="sec_fin_complaint_f2" sourceRef="fc_defaults" targetRef="fc_tat"/>
+    <sequenceFlow id="sec_fin_complaint_f3" sourceRef="fc_tat" targetRef="fc_crm"/>
+    <sequenceFlow id="sec_fin_complaint_f4" sourceRef="fc_crm" targetRef="fc_ack"/>
+    <sequenceFlow id="sec_fin_complaint_f5" sourceRef="fc_resolve_warn" targetRef="fc_resolve_warnNotify"/>
+    <sequenceFlow id="sec_fin_complaint_f6" sourceRef="fc_resolve_warnNotify" targetRef="fc_resolve_warnEnd"/>
+    <sequenceFlow id="sec_fin_complaint_f7" sourceRef="fc_resolve_breach" targetRef="fc_resolve_breachAct"/>
+    <sequenceFlow id="sec_fin_complaint_f8" sourceRef="fc_resolve_breachAct" targetRef="fc_resolve_breachGw"/>
+    <sequenceFlow id="sec_fin_complaint_f9" name="deemed" sourceRef="fc_resolve_breachGw" targetRef="fc_resolve_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_complaint_f10" name="escalated" sourceRef="fc_resolve_breachGw" targetRef="fc_resolve_slaPlan"/>
+    <sequenceFlow id="sec_fin_complaint_f11" sourceRef="fc_resolve_slaPlan" targetRef="fc_resolve"/>
+    <sequenceFlow id="sec_fin_complaint_f12" sourceRef="fc_resolve" targetRef="fc_resolve_done"/>
+    <sequenceFlow id="sec_fin_complaint_f13" sourceRef="fc_ack" targetRef="fc_resolve_slaPlan"/>
+    <sequenceFlow id="sec_fin_complaint_f14" sourceRef="fc_resolve_done" targetRef="fc_gw"/>
+    <sequenceFlow id="sec_fin_complaint_f15" name="reject (IO first)" sourceRef="fc_gw" targetRef="fc_io"><conditionExpression xsi:type="tFormalExpression">${complaintDecision == 'reject' &amp;&amp; ioRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_complaint_f16" sourceRef="fc_io" targetRef="fc_ioGw"/>
+    <sequenceFlow id="sec_fin_complaint_f17" name="overturned: resolve" sourceRef="fc_ioGw" targetRef="fc_resolve_slaPlan"><conditionExpression xsi:type="tFormalExpression">${ioDecision == 'overturn'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_complaint_f18" name="upheld" sourceRef="fc_ioGw" targetRef="fc_reply"/>
+    <sequenceFlow id="sec_fin_complaint_f19" name="resolved" sourceRef="fc_gw" targetRef="fc_reply"/>
+    <sequenceFlow id="sec_fin_complaint_f20" sourceRef="fc_reply" targetRef="fc_wait"/>
+    <sequenceFlow id="sec_fin_complaint_f21" sourceRef="fc_wait" targetRef="fc_reopen"/>
+    <sequenceFlow id="sec_fin_complaint_f22" sourceRef="fc_wait" targetRef="fc_closeAfter"/>
+    <sequenceFlow id="sec_fin_complaint_f23" sourceRef="fc_reopen" targetRef="fc_reopenGw"/>
+    <sequenceFlow id="sec_fin_complaint_f24" name="yes" sourceRef="fc_reopenGw" targetRef="fc_mark"><conditionExpression xsi:type="tFormalExpression">${!reopened}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_complaint_f25" sourceRef="fc_mark" targetRef="fc_resolve_slaPlan"/>
+    <sequenceFlow id="sec_fin_complaint_f26" name="already reopened: regulator route" sourceRef="fc_reopenGw" targetRef="fc_end"/>
+    <sequenceFlow id="sec_fin_complaint_f27" sourceRef="fc_closeAfter" targetRef="fc_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_fin_complaint_diagram">
+    <bpmndi:BPMNPlane id="sec_fin_complaint_plane" bpmnElement="sangam-sec-fin-complaint">
+      <bpmndi:BPMNShape id="fc_start_di" bpmnElement="fc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_defaults_di" bpmnElement="fc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_tat_di" bpmnElement="fc_tat"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_crm_di" bpmnElement="fc_crm"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_ack_di" bpmnElement="fc_ack"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_resolve_slaPlan_di" bpmnElement="fc_resolve_slaPlan"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_resolve_di" bpmnElement="fc_resolve"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_resolve_warnNotify_di" bpmnElement="fc_resolve_warnNotify"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_resolve_warnEnd_di" bpmnElement="fc_resolve_warnEnd"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_resolve_breachAct_di" bpmnElement="fc_resolve_breachAct"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_resolve_breachGw_di" bpmnElement="fc_resolve_breachGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_resolve_done_di" bpmnElement="fc_resolve_done"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_gw_di" bpmnElement="fc_gw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_io_di" bpmnElement="fc_io"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_ioGw_di" bpmnElement="fc_ioGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_reply_di" bpmnElement="fc_reply"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_wait_di" bpmnElement="fc_wait"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_reopen_di" bpmnElement="fc_reopen"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_closeAfter_di" bpmnElement="fc_closeAfter"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_reopenGw_di" bpmnElement="fc_reopenGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_mark_di" bpmnElement="fc_mark"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_end_di" bpmnElement="fc_end"><dc:Bounds x="2857" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_resolve_warn_di" bpmnElement="fc_resolve_warn"><dc:Bounds x="1018" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fc_resolve_breach_di" bpmnElement="fc_resolve_breach"><dc:Bounds x="1048" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f1_di" bpmnElement="sec_fin_complaint_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f2_di" bpmnElement="sec_fin_complaint_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f3_di" bpmnElement="sec_fin_complaint_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f4_di" bpmnElement="sec_fin_complaint_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f5_di" bpmnElement="sec_fin_complaint_f5"><di:waypoint x="1036" y="128"/><di:waypoint x="1036" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f6_di" bpmnElement="sec_fin_complaint_f6"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f7_di" bpmnElement="sec_fin_complaint_f7"><di:waypoint x="1066" y="128"/><di:waypoint x="1066" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f8_di" bpmnElement="sec_fin_complaint_f8"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f9_di" bpmnElement="sec_fin_complaint_f9"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f10_di" bpmnElement="sec_fin_complaint_f10"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="135"/><di:waypoint x="895" y="135"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f11_di" bpmnElement="sec_fin_complaint_f11"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f12_di" bpmnElement="sec_fin_complaint_f12"><di:waypoint x="1110" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f13_di" bpmnElement="sec_fin_complaint_f13"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f14_di" bpmnElement="sec_fin_complaint_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f15_di" bpmnElement="sec_fin_complaint_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f16_di" bpmnElement="sec_fin_complaint_f16"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f17_di" bpmnElement="sec_fin_complaint_f17"><di:waypoint x="2050" y="95"/><di:waypoint x="2050" y="128"/><di:waypoint x="895" y="128"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f18_di" bpmnElement="sec_fin_complaint_f18"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f19_di" bpmnElement="sec_fin_complaint_f19"><di:waypoint x="1745" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f20_di" bpmnElement="sec_fin_complaint_f20"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f21_di" bpmnElement="sec_fin_complaint_f21"><di:waypoint x="2405" y="70"/><di:waypoint x="2466" y="70"/><di:waypoint x="2466" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f22_di" bpmnElement="sec_fin_complaint_f22"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f23_di" bpmnElement="sec_fin_complaint_f23"><di:waypoint x="2563" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f24_di" bpmnElement="sec_fin_complaint_f24"><di:waypoint x="2735" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f25_di" bpmnElement="sec_fin_complaint_f25"><di:waypoint x="2875" y="235"/><di:waypoint x="2875" y="253"/><di:waypoint x="895" y="253"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f26_di" bpmnElement="sec_fin_complaint_f26"><di:waypoint x="2735" y="195"/><di:waypoint x="2796" y="195"/><di:waypoint x="2796" y="70"/><di:waypoint x="2857" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_complaint_f27_di" bpmnElement="sec_fin_complaint_f27"><di:waypoint x="2563" y="70"/><di:waypoint x="2857" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

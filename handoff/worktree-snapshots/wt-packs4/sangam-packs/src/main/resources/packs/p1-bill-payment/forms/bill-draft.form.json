@@ -1,0 +1,119 @@
+{
+  "key": "p1-bill-payment/bill-draft",
+  "version": "1.0.0",
+  "pack": "gov.p1.bill-payment",
+  "title": {
+    "en": "Bill for payment",
+    "hi": "भुगतान हेतु बिल"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "payee",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "account",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Bank account number",
+        "hi": "बैंक खाता संख्या"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "invoiceNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Invoice number",
+        "hi": "बीजक संख्या"
+      }
+    },
+    {
+      "id": "invoiceDate",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Invoice date",
+        "hi": "बीजक तिथि"
+      }
+    },
+    {
+      "id": "budgetHead",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Budget head",
+        "hi": "बजट शीर्ष"
+      }
+    },
+    {
+      "id": "sanctionRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Sanction reference",
+        "hi": "स्वीकृति संदर्भ"
+      }
+    },
+    {
+      "id": "billType",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Bill type",
+        "hi": "बिल का प्रकार"
+      }
+    },
+    {
+      "id": "selectedSeat",
+      "type": "seat",
+      "required": false,
+      "label": {
+        "en": "Selected checker (seat)",
+        "hi": "चयनित जाँचकर्ता (पद)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

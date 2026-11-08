@@ -1,0 +1,27 @@
+{
+  "key": "sec-eu-gdpr-dsr/respond",
+  "version": "1.0.0",
+  "pack": "sec.eu.gdpr-dsr",
+  "title": {
+    "en": "Respond to the data subject",
+    "hi": "डेटा विषय को उत्तर"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "responseText",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Response to the data subject",
+        "hi": "डेटा विषय को उत्तर"
+      }
+    }
+  ]
+}

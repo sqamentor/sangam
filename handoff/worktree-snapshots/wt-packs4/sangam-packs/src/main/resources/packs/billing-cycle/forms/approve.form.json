@@ -1,0 +1,67 @@
+{
+  "key": "billing-cycle/approve",
+  "version": "1.0.0",
+  "pack": "universal.billing-cycle",
+  "title": {
+    "en": "Approve waiver (checker)",
+    "hi": "माफ़ी का अनुमोदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "waiverAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount to waive / write off",
+        "hi": "माफ़ / बट्टे खाते की राशि"
+      }
+    },
+    {
+      "id": "orderRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Order reference",
+        "hi": "आदेश संदर्भ"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "waiverDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

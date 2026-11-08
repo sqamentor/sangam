@@ -1,0 +1,56 @@
+{
+  "key": "sec-ushealth-claim/write-off",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "Approve the write-off (segregation of duties)",
+    "es": "Aprobar la cancelación (separación de funciones)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "writeOffAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Write-off amount (INR)",
+        "es": "Importe de cancelación (USD)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "writeOffDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "es": "Aprobar"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "es": "Rechazar"
+        }
+      }
+    ]
+  }
+}

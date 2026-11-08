@@ -1,0 +1,72 @@
+{
+  "key": "sec-ushealth-claim/denial",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "Work the denial: correct, appeal or write off",
+    "es": "Gestionar la denegación"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "remitSummary",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Remittance (835)",
+        "es": "Remesa (835)"
+      }
+    },
+    {
+      "id": "adjustmentCodes",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Adjustment reason codes (CARC / RARC)",
+        "es": "Códigos de motivo de ajuste (CARC / RARC)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "denialAction",
+    "required": true,
+    "options": [
+      {
+        "value": "resubmit",
+        "label": {
+          "en": "Resubmit",
+          "es": "Corregir y volver a enviar"
+        }
+      },
+      {
+        "value": "appeal",
+        "label": {
+          "en": "File appeal",
+          "es": "Apelar"
+        }
+      },
+      {
+        "value": "writeOff",
+        "label": {
+          "en": "Write off",
+          "es": "Cancelar el saldo"
+        }
+      }
+    ]
+  }
+}

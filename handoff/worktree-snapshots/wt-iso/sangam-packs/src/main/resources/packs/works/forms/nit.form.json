@@ -1,0 +1,54 @@
+{
+  "key": "works/nit",
+  "version": "1.0.0",
+  "pack": "gov.works",
+  "title": {
+    "en": "Prepare NIT",
+    "hi": "निविदा सूचना तैयार करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "tenderId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Tender ID",
+        "hi": "निविदा आईडी"
+      }
+    },
+    {
+      "id": "nitText",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Notice inviting tender",
+        "hi": "निविदा आमंत्रण सूचना"
+      }
+    },
+    {
+      "id": "bidDueAt",
+      "type": "datetime",
+      "required": true,
+      "label": {
+        "en": "Bid submission closes at",
+        "hi": "बोली जमा करने की अंतिम तिथि"
+      }
+    },
+    {
+      "id": "openingAt",
+      "type": "datetime",
+      "required": true,
+      "label": {
+        "en": "Bid opening at",
+        "hi": "बोली खोलने का समय"
+      }
+    }
+  ]
+}

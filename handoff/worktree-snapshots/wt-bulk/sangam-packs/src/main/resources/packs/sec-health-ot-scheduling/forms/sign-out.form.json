@@ -1,0 +1,36 @@
+{
+  "key": "sec-health-ot-scheduling/sign-out",
+  "version": "1.0.0",
+  "pack": "sec.health.ot-scheduling",
+  "title": {
+    "en": "Sign out: counts, specimen, notes",
+    "hi": "साइन आउट: गणना, नमूना, टिप्पणी"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "checklistDone",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Checklist completed",
+        "hi": "जाँच-सूची पूर्ण"
+      }
+    },
+    {
+      "id": "clinicalNotes",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Clinical notes",
+        "hi": "नैदानिक टिप्पणियाँ"
+      }
+    }
+  ]
+}

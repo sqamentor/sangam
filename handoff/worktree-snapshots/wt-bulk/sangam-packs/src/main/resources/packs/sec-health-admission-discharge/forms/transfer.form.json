@@ -1,0 +1,27 @@
+{
+  "key": "sec-health-admission-discharge/transfer",
+  "version": "1.0.0",
+  "pack": "sec.health.admission-discharge",
+  "title": {
+    "en": "Transfer with referral note",
+    "hi": "रेफरल नोट सहित स्थानांतरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "dischargeSummary",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Discharge summary",
+        "hi": "डिस्चार्ज सारांश"
+      }
+    }
+  ]
+}

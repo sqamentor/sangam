@@ -1,0 +1,183 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: ML
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-NE-HIMALAYAN
+  name:
+    en: Meghalaya
+    hi: मेघालय
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources ML1-ML2, accessed 2026-11-04)
+  adopt:
+  - profile: AS
+    sections:
+    - rulebooks.budgetManual
+placeholders:
+- path: classification.defaultScheme
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (no official
+    code structure found; Union layout used)'
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 5
+  sources: ML1-ML2
+locale:
+  languages:
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: kha
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+    note: 2026-04-27 ordinance; commencement [U]
+    effectiveFrom: '2026-04-27'
+  - tag: grt
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+    note: 2026-04-27 ordinance; commencement [U]
+    effectiveFrom: '2026-04-27'
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - MeghIFMS
+  - IOBS
+  - BEAMS
+  - TreasuryNET
+  - e-Billing
+  - CPPS
+  - GRAS
+  - eProposal
+  snaSparsh:
+    onboarded: '2024-12-17'
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Accounts & Treasuries
+  unitTypes:
+    DISTRICT_TREASURY: 13
+    SUB_TREASURY: 3
+    CYBER_TREASURY_RECEIPTS: 1
+  ddoCount: null
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: ML_TR_1985
+    title: Meghalaya Treasury Rules 1985
+  - id: ML_FR_1981
+    title: Meghalaya Financial Rules 1981
+  - id: ML_DFPR_2006
+    title: DFPR 2006
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+multiGovernmentUnits:
+- id: SHILLONG_SOUTH
+  servedGovernments:
+  - ML
+  - AS
+  - MZ
+  - AR
+agencyBankPerTreasury:
+- SBI
+- PNB
+treasury:
+  mayEdit: false
+signatures:
+  releaseOtp:
+  - SANDES
+  - EMAIL
+accounts:
+  monthlyDueDay: 5
+subStateEntities:
+- id: KHADC
+  type: SIXTH_SCHEDULE_ADC
+- id: JHADC
+  type: SIXTH_SCHEDULE_ADC
+- id: GHADC
+  type: SIXTH_SCHEDULE_ADC
+statutoryTransfers:
+- to: ADC
+  basis: FOREST_REVENUE_SHARE
+- to: ADC
+  basis: PROFESSION_TAX_SHARE
+classification:
+  defaultScheme: HOA
+procurement:
+  family: RULES
+  rule: Procurement Rules 2018
+  worksCode: '[U]'
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/ML/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: ML
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/ML/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: ML
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Procurement Rules 2018 (was: RPR 2022: DDO draws within a sanction; no sanction
+        power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Procurement Rules 2018 (was: DFPR 2024 r.12(4) and department re-delegation
+        order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Procurement Rules 2018 (was: DFPR 2024 r.12(2) re-delegation to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Procurement Rules 2018 (was: DFPR 2024 r.11 (open / limited tender up to
+        100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Procurement Rules 2018 (was: DFPR 2024 r.11: above the Secretary; no upper
+        limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from Procurement Rules 2018 (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

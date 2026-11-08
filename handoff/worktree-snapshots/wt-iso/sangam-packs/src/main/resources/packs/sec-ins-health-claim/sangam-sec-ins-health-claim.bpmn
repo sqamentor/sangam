@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Health claim. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ins_health_claim" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_hcx_dischargeRequest" name="sangam.hcx.dischargeRequest"/>
+  <message id="msg_sangam_hcx_enhancement" name="sangam.hcx.enhancement"/>
+  <message id="msg_sangam_hcx_queryReply" name="sangam.hcx.queryReply"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ins-health-claim" name="Health claim" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ins.health-claim</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>policyNo,patientName,hospitalId,estimatedCost</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="hc_start" name="Pre-authorisation / claim request" operaton:initiator="initiator" operaton:formKey="sangam:sec-ins-health-claim/request"></startEvent>
+    <serviceTask id="hc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@policyNo;hospitalId=NETWORK-HOSP-1;admissionType=EMERGENCY;estimatedCost=@amount;coverActive=true;networkHospital=true;tpaSeat=TPA-DOCTOR;executionConnector=hcx.settle;executionStep=settle;verifyApproval=false;reconcileRequired=false;executionPayloadFields=policyNo,hospitalId,approvedAmount;approvedAmount=@estimatedCost;appellateSeat=CLAIMS-REVIEW-COMMITTEE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="hc_tat" name="Health claim timelines (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ins-health-tat</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="hc_cover" name="Cover and NHCX eligibility" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hcx.eligibility</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>eligibility</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>policyNo,hospitalId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cover</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hc_coverGw" name="Covered?" default="sec_ins_health_claim_f8"></exclusiveGateway>
+    <serviceTask id="hc_rjCover_code" name="Reason: NOT_COVERED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=NOT_COVERED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="hc_rjCover_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="hc_rjCover_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="hc_netGw" name="Cashless at a network hospital?" default="sec_ins_health_claim_f48"></exclusiveGateway>
+    <serviceTask id="hc_preauth_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_preauth</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${preauthSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="hc_preauth" name="Cashless pre-authorisation (1 hour)" operaton:candidateGroups="${tpaSeat}" operaton:formKey="sangam:sec-ins-health-claim/preauth" operaton:dueDate="${hc_preauthDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>preauthDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="hc_preauth_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_preauth</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>tpaSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hc_preauth_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="hc_preauth_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_preauth</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>tpaSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>preauthDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hc_preauth_breachGw" name="Deemed?" default="sec_ins_health_claim_f14"></exclusiveGateway>
+    <exclusiveGateway id="hc_preauth_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="hc_preGw" name="" default="sec_ins_health_claim_f24"></exclusiveGateway>
+    <serviceTask id="hc_query" name="Query to the hospital" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hcx.preauthReply</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>query</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>policyNo,hospitalId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>hq</operaton:string></operaton:field><operaton:field name="step"><operaton:string>query</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="hc_queryReply" name="Hospital replies"><messageEventDefinition messageRef="msg_sangam_hcx_queryReply"/></intermediateCatchEvent>
+    <callActivity id="hc_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="hc_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="hc_reply" name="Authorisation to the hospital" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hcx.preauthReply</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>policyNo,hospitalId,approvedAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>auth</operaton:string></operaton:field><operaton:field name="step"><operaton:string>authorise</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="hc_stay" name="Enhancement or discharge"></eventBasedGateway>
+    <intermediateCatchEvent id="hc_enh" name="Enhancement request"><messageEventDefinition messageRef="msg_sangam_hcx_enhancement"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="hc_dis" name="Discharge request"><messageEventDefinition messageRef="msg_sangam_hcx_dischargeRequest"/></intermediateCatchEvent>
+    <serviceTask id="hc_enhance_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_enhance</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${preauthSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="hc_enhance" name="Enhancement (1 hour)" operaton:candidateGroups="${tpaSeat}" operaton:formKey="sangam:sec-ins-health-claim/enhance" operaton:dueDate="${hc_enhanceDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="hc_enhance_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_enhance</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>tpaSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hc_enhance_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="hc_enhance_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_enhance</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>tpaSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hc_enhance_breachGw" name="Deemed?" default="sec_ins_health_claim_f33"></exclusiveGateway>
+    <exclusiveGateway id="hc_enhance_done" name=""></exclusiveGateway>
+    <serviceTask id="hc_discharge_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_discharge</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${dischargeSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="hc_discharge" name="Final discharge authorisation (3 hours)" operaton:candidateGroups="${tpaSeat}" operaton:formKey="sangam:sec-ins-health-claim/discharge" operaton:dueDate="${hc_dischargeDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="hc_discharge_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_discharge</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>tpaSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hc_discharge_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="hc_discharge_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_discharge</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>tpaSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hc_discharge_breachGw" name="Deemed?" default="sec_ins_health_claim_f43"></exclusiveGateway>
+    <exclusiveGateway id="hc_discharge_done" name=""></exclusiveGateway>
+    <callActivity id="hc_settle" name="Settle with the hospital (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="hc_insGroup" name="Insured group" operaton:expression="${execution.setVariable('insuredGroup', 'external:'.concat(policyNo))}"></serviceTask>
+    <serviceTask id="hc_docs_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_docs</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>30D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="hc_docs" name="Submit claim documents" operaton:candidateGroups="${insuredGroup}" operaton:formKey="sangam:sec-ins-health-claim/documents" operaton:dueDate="${hc_docsDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="hc_docs_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_docs</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>insuredGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hc_docs_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="hc_docs_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_docs</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>insuredGroup</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hc_docs_breachGw" name="Deemed?" default="sec_ins_health_claim_f54"></exclusiveGateway>
+    <exclusiveGateway id="hc_docs_done" name=""></exclusiveGateway>
+    <serviceTask id="hc_assess_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_assess</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${reimbursementSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="hc_assess" name="Assess reimbursement claim" operaton:candidateGroups="${tpaSeat}" operaton:formKey="sangam:sec-ins-health-claim/assess" operaton:dueDate="${hc_assessDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reimbDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="hc_assess_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_assess</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>tpaSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hc_assess_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="hc_assess_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hc_assess</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>tpaSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>reimbDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hc_assess_breachGw" name="Deemed?" default="sec_ins_health_claim_f63"></exclusiveGateway>
+    <exclusiveGateway id="hc_assess_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="hc_reimbGw" name="" default="sec_ins_health_claim_f69"></exclusiveGateway>
+    <serviceTask id="hc_payFailed" name="Settlement failed" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>claim-payment-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hc_end" name="Settled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="hc_payGw" name="executionOutcome?" default="sec_ins_health_claim_f71"></exclusiveGateway>
+    <endEvent id="hc_endPayFailed" name="Settlement failed (reconciliation)"></endEvent>
+    <boundaryEvent id="hc_preauth_warn" name="SLA warning (75%)" attachedToRef="hc_preauth" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_preauthWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hc_preauth_breach" name="SLA breached" attachedToRef="hc_preauth" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_preauthDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hc_enhance_warn" name="SLA warning (75%)" attachedToRef="hc_enhance" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_enhanceWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hc_enhance_breach" name="SLA breached" attachedToRef="hc_enhance" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_enhanceDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hc_discharge_warn" name="SLA warning (75%)" attachedToRef="hc_discharge" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_dischargeWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hc_discharge_breach" name="SLA breached" attachedToRef="hc_discharge" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_dischargeDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hc_docs_warn" name="SLA warning (75%)" attachedToRef="hc_docs" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_docsWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hc_docs_breach" name="SLA breached" attachedToRef="hc_docs" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_docsDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hc_assess_warn" name="SLA warning (75%)" attachedToRef="hc_assess" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_assessWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="hc_assess_breach" name="SLA breached" attachedToRef="hc_assess" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hc_assessDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_ins_health_claim_f1" sourceRef="hc_start" targetRef="hc_defaults"/>
+    <sequenceFlow id="sec_ins_health_claim_f2" sourceRef="hc_defaults" targetRef="hc_tat"/>
+    <sequenceFlow id="sec_ins_health_claim_f3" sourceRef="hc_tat" targetRef="hc_cover"/>
+    <sequenceFlow id="sec_ins_health_claim_f4" sourceRef="hc_cover" targetRef="hc_coverGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f5" sourceRef="hc_rjCover_reject" targetRef="hc_rjCover_endRejected"/>
+    <sequenceFlow id="sec_ins_health_claim_f6" sourceRef="hc_rjCover_code" targetRef="hc_rjCover_reject"/>
+    <sequenceFlow id="sec_ins_health_claim_f7" name="no" sourceRef="hc_coverGw" targetRef="hc_rjCover_code"><conditionExpression xsi:type="tFormalExpression">${!coverActive}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f8" name="yes" sourceRef="hc_coverGw" targetRef="hc_netGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f9" sourceRef="hc_preauth_warn" targetRef="hc_preauth_warnNotify"/>
+    <sequenceFlow id="sec_ins_health_claim_f10" sourceRef="hc_preauth_warnNotify" targetRef="hc_preauth_warnEnd"/>
+    <sequenceFlow id="sec_ins_health_claim_f11" sourceRef="hc_preauth_breach" targetRef="hc_preauth_breachAct"/>
+    <sequenceFlow id="sec_ins_health_claim_f12" sourceRef="hc_preauth_breachAct" targetRef="hc_preauth_breachGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f13" name="deemed" sourceRef="hc_preauth_breachGw" targetRef="hc_preauth_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f14" name="escalated" sourceRef="hc_preauth_breachGw" targetRef="hc_preauth_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f15" sourceRef="hc_preauth_slaPlan" targetRef="hc_preauth"/>
+    <sequenceFlow id="sec_ins_health_claim_f16" sourceRef="hc_preauth" targetRef="hc_preauth_done"/>
+    <sequenceFlow id="sec_ins_health_claim_f17" name="cashless" sourceRef="hc_netGw" targetRef="hc_preauth_slaPlan"><conditionExpression xsi:type="tFormalExpression">${networkHospital}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f18" sourceRef="hc_preauth_done" targetRef="hc_preGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f19" name="query" sourceRef="hc_preGw" targetRef="hc_query"><conditionExpression xsi:type="tFormalExpression">${preauthDecision == 'clarify'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f20" sourceRef="hc_query" targetRef="hc_queryReply"/>
+    <sequenceFlow id="sec_ins_health_claim_f21" sourceRef="hc_queryReply" targetRef="hc_preauth_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f22" sourceRef="hc_rj_reject" targetRef="hc_rj_endRejected"/>
+    <sequenceFlow id="sec_ins_health_claim_f23" name="reject" sourceRef="hc_preGw" targetRef="hc_rj_reject"><conditionExpression xsi:type="tFormalExpression">${preauthDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f24" name="approve" sourceRef="hc_preGw" targetRef="hc_reply"/>
+    <sequenceFlow id="sec_ins_health_claim_f25" sourceRef="hc_reply" targetRef="hc_stay"/>
+    <sequenceFlow id="sec_ins_health_claim_f26" sourceRef="hc_stay" targetRef="hc_enh"/>
+    <sequenceFlow id="sec_ins_health_claim_f27" sourceRef="hc_stay" targetRef="hc_dis"/>
+    <sequenceFlow id="sec_ins_health_claim_f28" sourceRef="hc_enhance_warn" targetRef="hc_enhance_warnNotify"/>
+    <sequenceFlow id="sec_ins_health_claim_f29" sourceRef="hc_enhance_warnNotify" targetRef="hc_enhance_warnEnd"/>
+    <sequenceFlow id="sec_ins_health_claim_f30" sourceRef="hc_enhance_breach" targetRef="hc_enhance_breachAct"/>
+    <sequenceFlow id="sec_ins_health_claim_f31" sourceRef="hc_enhance_breachAct" targetRef="hc_enhance_breachGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f32" name="deemed" sourceRef="hc_enhance_breachGw" targetRef="hc_enhance_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f33" name="escalated" sourceRef="hc_enhance_breachGw" targetRef="hc_enhance_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f34" sourceRef="hc_enhance_slaPlan" targetRef="hc_enhance"/>
+    <sequenceFlow id="sec_ins_health_claim_f35" sourceRef="hc_enhance" targetRef="hc_enhance_done"/>
+    <sequenceFlow id="sec_ins_health_claim_f36" sourceRef="hc_enh" targetRef="hc_enhance_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f37" sourceRef="hc_enhance_done" targetRef="hc_stay"/>
+    <sequenceFlow id="sec_ins_health_claim_f38" sourceRef="hc_discharge_warn" targetRef="hc_discharge_warnNotify"/>
+    <sequenceFlow id="sec_ins_health_claim_f39" sourceRef="hc_discharge_warnNotify" targetRef="hc_discharge_warnEnd"/>
+    <sequenceFlow id="sec_ins_health_claim_f40" sourceRef="hc_discharge_breach" targetRef="hc_discharge_breachAct"/>
+    <sequenceFlow id="sec_ins_health_claim_f41" sourceRef="hc_discharge_breachAct" targetRef="hc_discharge_breachGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f42" name="deemed" sourceRef="hc_discharge_breachGw" targetRef="hc_discharge_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f43" name="escalated" sourceRef="hc_discharge_breachGw" targetRef="hc_discharge_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f44" sourceRef="hc_discharge_slaPlan" targetRef="hc_discharge"/>
+    <sequenceFlow id="sec_ins_health_claim_f45" sourceRef="hc_discharge" targetRef="hc_discharge_done"/>
+    <sequenceFlow id="sec_ins_health_claim_f46" sourceRef="hc_dis" targetRef="hc_discharge_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f47" sourceRef="hc_discharge_done" targetRef="hc_settle"/>
+    <sequenceFlow id="sec_ins_health_claim_f48" name="reimbursement" sourceRef="hc_netGw" targetRef="hc_insGroup"/>
+    <sequenceFlow id="sec_ins_health_claim_f49" sourceRef="hc_docs_warn" targetRef="hc_docs_warnNotify"/>
+    <sequenceFlow id="sec_ins_health_claim_f50" sourceRef="hc_docs_warnNotify" targetRef="hc_docs_warnEnd"/>
+    <sequenceFlow id="sec_ins_health_claim_f51" sourceRef="hc_docs_breach" targetRef="hc_docs_breachAct"/>
+    <sequenceFlow id="sec_ins_health_claim_f52" sourceRef="hc_docs_breachAct" targetRef="hc_docs_breachGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f53" name="deemed" sourceRef="hc_docs_breachGw" targetRef="hc_docs_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f54" name="escalated" sourceRef="hc_docs_breachGw" targetRef="hc_docs_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f55" sourceRef="hc_docs_slaPlan" targetRef="hc_docs"/>
+    <sequenceFlow id="sec_ins_health_claim_f56" sourceRef="hc_docs" targetRef="hc_docs_done"/>
+    <sequenceFlow id="sec_ins_health_claim_f57" sourceRef="hc_insGroup" targetRef="hc_docs_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f58" sourceRef="hc_assess_warn" targetRef="hc_assess_warnNotify"/>
+    <sequenceFlow id="sec_ins_health_claim_f59" sourceRef="hc_assess_warnNotify" targetRef="hc_assess_warnEnd"/>
+    <sequenceFlow id="sec_ins_health_claim_f60" sourceRef="hc_assess_breach" targetRef="hc_assess_breachAct"/>
+    <sequenceFlow id="sec_ins_health_claim_f61" sourceRef="hc_assess_breachAct" targetRef="hc_assess_breachGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f62" name="deemed" sourceRef="hc_assess_breachGw" targetRef="hc_assess_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f63" name="escalated" sourceRef="hc_assess_breachGw" targetRef="hc_assess_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f64" sourceRef="hc_assess_slaPlan" targetRef="hc_assess"/>
+    <sequenceFlow id="sec_ins_health_claim_f65" sourceRef="hc_assess" targetRef="hc_assess_done"/>
+    <sequenceFlow id="sec_ins_health_claim_f66" sourceRef="hc_docs_done" targetRef="hc_assess_slaPlan"/>
+    <sequenceFlow id="sec_ins_health_claim_f67" sourceRef="hc_assess_done" targetRef="hc_reimbGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f68" name="approve" sourceRef="hc_reimbGw" targetRef="hc_settle"><conditionExpression xsi:type="tFormalExpression">${reimbDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f69" name="reject" sourceRef="hc_reimbGw" targetRef="hc_rj_reject"/>
+    <sequenceFlow id="sec_ins_health_claim_f70" name="DONE" sourceRef="hc_payGw" targetRef="hc_end"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ins_health_claim_f71" name="otherwise" sourceRef="hc_payGw" targetRef="hc_payFailed"/>
+    <sequenceFlow id="sec_ins_health_claim_f72" sourceRef="hc_settle" targetRef="hc_payGw"/>
+    <sequenceFlow id="sec_ins_health_claim_f73" sourceRef="hc_payFailed" targetRef="hc_endPayFailed"/>
+    <subProcess id="hc_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="hc_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="hc_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="hc_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="hc_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_health_claim_f74" sourceRef="hc_withdrawStart" targetRef="hc_withdrawKind"/>
+      <sequenceFlow id="sec_ins_health_claim_f75" sourceRef="hc_withdrawKind" targetRef="hc_withdrawCall"/>
+      <sequenceFlow id="sec_ins_health_claim_f76" sourceRef="hc_withdrawCall" targetRef="hc_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="hc_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="hc_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="hc_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="hc_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="hc_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ins_health_claim_f77" sourceRef="hc_cancelStart" targetRef="hc_cancelKind"/>
+      <sequenceFlow id="sec_ins_health_claim_f78" sourceRef="hc_cancelKind" targetRef="hc_cancelCall"/>
+      <sequenceFlow id="sec_ins_health_claim_f79" sourceRef="hc_cancelCall" targetRef="hc_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ins_health_claim_diagram">
+    <bpmndi:BPMNPlane id="sec_ins_health_claim_plane" bpmnElement="sangam-sec-ins-health-claim">
+      <bpmndi:BPMNShape id="hc_start_di" bpmnElement="hc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_defaults_di" bpmnElement="hc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_tat_di" bpmnElement="hc_tat"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_cover_di" bpmnElement="hc_cover"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_coverGw_di" bpmnElement="hc_coverGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_rjCover_code_di" bpmnElement="hc_rjCover_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_rjCover_reject_di" bpmnElement="hc_rjCover_reject"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_rjCover_endRejected_di" bpmnElement="hc_rjCover_endRejected"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_netGw_di" bpmnElement="hc_netGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preauth_slaPlan_di" bpmnElement="hc_preauth_slaPlan"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preauth_di" bpmnElement="hc_preauth"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preauth_warnNotify_di" bpmnElement="hc_preauth_warnNotify"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preauth_warnEnd_di" bpmnElement="hc_preauth_warnEnd"><dc:Bounds x="1537" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preauth_breachAct_di" bpmnElement="hc_preauth_breachAct"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preauth_breachGw_di" bpmnElement="hc_preauth_breachGw"><dc:Bounds x="1530" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preauth_done_di" bpmnElement="hc_preauth_done"><dc:Bounds x="1695" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preGw_di" bpmnElement="hc_preGw"><dc:Bounds x="1860" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_query_di" bpmnElement="hc_query"><dc:Bounds x="2000" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_queryReply_di" bpmnElement="hc_queryReply"><dc:Bounds x="2197" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_rj_reject_di" bpmnElement="hc_rj_reject"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_rj_endRejected_di" bpmnElement="hc_rj_endRejected"><dc:Bounds x="3187" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_reply_di" bpmnElement="hc_reply"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_stay_di" bpmnElement="hc_stay"><dc:Bounds x="2190" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enh_di" bpmnElement="hc_enh"><dc:Bounds x="2362" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_dis_di" bpmnElement="hc_dis"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enhance_slaPlan_di" bpmnElement="hc_enhance_slaPlan"><dc:Bounds x="2495" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enhance_di" bpmnElement="hc_enhance"><dc:Bounds x="2660" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enhance_warnNotify_di" bpmnElement="hc_enhance_warnNotify"><dc:Bounds x="2825" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enhance_warnEnd_di" bpmnElement="hc_enhance_warnEnd"><dc:Bounds x="3022" y="677" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enhance_breachAct_di" bpmnElement="hc_enhance_breachAct"><dc:Bounds x="2825" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enhance_breachGw_di" bpmnElement="hc_enhance_breachGw"><dc:Bounds x="3015" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enhance_done_di" bpmnElement="hc_enhance_done"><dc:Bounds x="3180" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_discharge_slaPlan_di" bpmnElement="hc_discharge_slaPlan"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_discharge_di" bpmnElement="hc_discharge"><dc:Bounds x="2660" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_discharge_warnNotify_di" bpmnElement="hc_discharge_warnNotify"><dc:Bounds x="2825" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_discharge_warnEnd_di" bpmnElement="hc_discharge_warnEnd"><dc:Bounds x="3022" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_discharge_breachAct_di" bpmnElement="hc_discharge_breachAct"><dc:Bounds x="2825" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_discharge_breachGw_di" bpmnElement="hc_discharge_breachGw"><dc:Bounds x="3015" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_discharge_done_di" bpmnElement="hc_discharge_done"><dc:Bounds x="3180" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_settle_di" bpmnElement="hc_settle"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_insGroup_di" bpmnElement="hc_insGroup"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_docs_slaPlan_di" bpmnElement="hc_docs_slaPlan"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_docs_di" bpmnElement="hc_docs"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_docs_warnNotify_di" bpmnElement="hc_docs_warnNotify"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_docs_warnEnd_di" bpmnElement="hc_docs_warnEnd"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_docs_breachAct_di" bpmnElement="hc_docs_breachAct"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_docs_breachGw_di" bpmnElement="hc_docs_breachGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_docs_done_di" bpmnElement="hc_docs_done"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_assess_slaPlan_di" bpmnElement="hc_assess_slaPlan"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_assess_di" bpmnElement="hc_assess"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_assess_warnNotify_di" bpmnElement="hc_assess_warnNotify"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_assess_warnEnd_di" bpmnElement="hc_assess_warnEnd"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_assess_breachAct_di" bpmnElement="hc_assess_breachAct"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_assess_breachGw_di" bpmnElement="hc_assess_breachGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_assess_done_di" bpmnElement="hc_assess_done"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_reimbGw_di" bpmnElement="hc_reimbGw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_payFailed_di" bpmnElement="hc_payFailed"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_end_di" bpmnElement="hc_end"><dc:Bounds x="3682" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_payGw_di" bpmnElement="hc_payGw"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_endPayFailed_di" bpmnElement="hc_endPayFailed"><dc:Bounds x="3847" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preauth_warn_di" bpmnElement="hc_preauth_warn"><dc:Bounds x="1183" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_preauth_breach_di" bpmnElement="hc_preauth_breach"><dc:Bounds x="1213" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enhance_warn_di" bpmnElement="hc_enhance_warn"><dc:Bounds x="2668" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_enhance_breach_di" bpmnElement="hc_enhance_breach"><dc:Bounds x="2698" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_discharge_warn_di" bpmnElement="hc_discharge_warn"><dc:Bounds x="2668" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_discharge_breach_di" bpmnElement="hc_discharge_breach"><dc:Bounds x="2698" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_docs_warn_di" bpmnElement="hc_docs_warn"><dc:Bounds x="1348" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_docs_breach_di" bpmnElement="hc_docs_breach"><dc:Bounds x="1378" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_assess_warn_di" bpmnElement="hc_assess_warn"><dc:Bounds x="2173" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_assess_breach_di" bpmnElement="hc_assess_breach"><dc:Bounds x="2203" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_withdraw_di" bpmnElement="hc_withdraw" isExpanded="true"><dc:Bounds x="30" y="785" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_withdrawStart_di" bpmnElement="hc_withdrawStart"><dc:Bounds x="92" y="847" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_withdrawKind_di" bpmnElement="hc_withdrawKind"><dc:Bounds x="225" y="825" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_withdrawCall_di" bpmnElement="hc_withdrawCall"><dc:Bounds x="390" y="825" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_withdrawEnd_di" bpmnElement="hc_withdrawEnd"><dc:Bounds x="587" y="847" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_cancel_di" bpmnElement="hc_cancel" isExpanded="true"><dc:Bounds x="30" y="975" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_cancelStart_di" bpmnElement="hc_cancelStart"><dc:Bounds x="92" y="1037" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_cancelKind_di" bpmnElement="hc_cancelKind"><dc:Bounds x="225" y="1015" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_cancelCall_di" bpmnElement="hc_cancelCall"><dc:Bounds x="390" y="1015" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hc_cancelEnd_di" bpmnElement="hc_cancelEnd"><dc:Bounds x="587" y="1037" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f1_di" bpmnElement="sec_ins_health_claim_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f2_di" bpmnElement="sec_ins_health_claim_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f3_di" bpmnElement="sec_ins_health_claim_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f4_di" bpmnElement="sec_ins_health_claim_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f5_di" bpmnElement="sec_ins_health_claim_f5"><di:waypoint x="1110" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f6_di" bpmnElement="sec_ins_health_claim_f6"><di:waypoint x="945" y="195"/><di:waypoint x="977" y="195"/><di:waypoint x="977" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f7_di" bpmnElement="sec_ins_health_claim_f7"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f8_di" bpmnElement="sec_ins_health_claim_f8"><di:waypoint x="755" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f9_di" bpmnElement="sec_ins_health_claim_f9"><di:waypoint x="1201" y="253"/><di:waypoint x="1201" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f10_di" bpmnElement="sec_ins_health_claim_f10"><di:waypoint x="1440" y="320"/><di:waypoint x="1488" y="320"/><di:waypoint x="1488" y="445"/><di:waypoint x="1537" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f11_di" bpmnElement="sec_ins_health_claim_f11"><di:waypoint x="1231" y="253"/><di:waypoint x="1231" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f12_di" bpmnElement="sec_ins_health_claim_f12"><di:waypoint x="1440" y="195"/><di:waypoint x="1485" y="195"/><di:waypoint x="1485" y="320"/><di:waypoint x="1530" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f13_di" bpmnElement="sec_ins_health_claim_f13"><di:waypoint x="1580" y="320"/><di:waypoint x="1695" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f14_di" bpmnElement="sec_ins_health_claim_f14"><di:waypoint x="1555" y="345"/><di:waypoint x="1555" y="370"/><di:waypoint x="1060" y="370"/><di:waypoint x="1060" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f15_di" bpmnElement="sec_ins_health_claim_f15"><di:waypoint x="1110" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f16_di" bpmnElement="sec_ins_health_claim_f16"><di:waypoint x="1275" y="195"/><di:waypoint x="1485" y="195"/><di:waypoint x="1485" y="320"/><di:waypoint x="1695" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f17_di" bpmnElement="sec_ins_health_claim_f17"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f18_di" bpmnElement="sec_ins_health_claim_f18"><di:waypoint x="1745" y="320"/><di:waypoint x="1860" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f19_di" bpmnElement="sec_ins_health_claim_f19"><di:waypoint x="1910" y="320"/><di:waypoint x="1955" y="320"/><di:waypoint x="1955" y="445"/><di:waypoint x="2000" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f20_di" bpmnElement="sec_ins_health_claim_f20"><di:waypoint x="2100" y="445"/><di:waypoint x="2197" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f21_di" bpmnElement="sec_ins_health_claim_f21"><di:waypoint x="2215" y="463"/><di:waypoint x="2215" y="481"/><di:waypoint x="1060" y="481"/><di:waypoint x="1060" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f22_di" bpmnElement="sec_ins_health_claim_f22"><di:waypoint x="3090" y="70"/><di:waypoint x="3187" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f23_di" bpmnElement="sec_ins_health_claim_f23"><di:waypoint x="1910" y="320"/><di:waypoint x="2450" y="320"/><di:waypoint x="2450" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f24_di" bpmnElement="sec_ins_health_claim_f24"><di:waypoint x="1910" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f25_di" bpmnElement="sec_ins_health_claim_f25"><di:waypoint x="2100" y="320"/><di:waypoint x="2190" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f26_di" bpmnElement="sec_ins_health_claim_f26"><di:waypoint x="2240" y="320"/><di:waypoint x="2301" y="320"/><di:waypoint x="2301" y="445"/><di:waypoint x="2362" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f27_di" bpmnElement="sec_ins_health_claim_f27"><di:waypoint x="2240" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f28_di" bpmnElement="sec_ins_health_claim_f28"><di:waypoint x="2686" y="503"/><di:waypoint x="2686" y="695"/><di:waypoint x="2825" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f29_di" bpmnElement="sec_ins_health_claim_f29"><di:waypoint x="2925" y="695"/><di:waypoint x="3022" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f30_di" bpmnElement="sec_ins_health_claim_f30"><di:waypoint x="2716" y="503"/><di:waypoint x="2716" y="570"/><di:waypoint x="2825" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f31_di" bpmnElement="sec_ins_health_claim_f31"><di:waypoint x="2925" y="570"/><di:waypoint x="3015" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f32_di" bpmnElement="sec_ins_health_claim_f32"><di:waypoint x="3065" y="570"/><di:waypoint x="3122" y="570"/><di:waypoint x="3122" y="445"/><di:waypoint x="3180" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f33_di" bpmnElement="sec_ins_health_claim_f33"><di:waypoint x="3040" y="595"/><di:waypoint x="3040" y="613"/><di:waypoint x="2545" y="613"/><di:waypoint x="2545" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f34_di" bpmnElement="sec_ins_health_claim_f34"><di:waypoint x="2595" y="445"/><di:waypoint x="2660" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f35_di" bpmnElement="sec_ins_health_claim_f35"><di:waypoint x="2760" y="445"/><di:waypoint x="3180" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f36_di" bpmnElement="sec_ins_health_claim_f36"><di:waypoint x="2398" y="445"/><di:waypoint x="2495" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f37_di" bpmnElement="sec_ins_health_claim_f37"><di:waypoint x="3205" y="470"/><di:waypoint x="3205" y="488"/><di:waypoint x="2215" y="488"/><di:waypoint x="2215" y="345"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f38_di" bpmnElement="sec_ins_health_claim_f38"><di:waypoint x="2686" y="378"/><di:waypoint x="2686" y="445"/><di:waypoint x="2825" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f39_di" bpmnElement="sec_ins_health_claim_f39"><di:waypoint x="2925" y="445"/><di:waypoint x="3022" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f40_di" bpmnElement="sec_ins_health_claim_f40"><di:waypoint x="2716" y="378"/><di:waypoint x="2716" y="320"/><di:waypoint x="2825" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f41_di" bpmnElement="sec_ins_health_claim_f41"><di:waypoint x="2925" y="320"/><di:waypoint x="3015" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f42_di" bpmnElement="sec_ins_health_claim_f42"><di:waypoint x="3065" y="320"/><di:waypoint x="3180" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f43_di" bpmnElement="sec_ins_health_claim_f43"><di:waypoint x="3040" y="345"/><di:waypoint x="3040" y="392"/><di:waypoint x="2545" y="392"/><di:waypoint x="2545" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f44_di" bpmnElement="sec_ins_health_claim_f44"><di:waypoint x="2595" y="320"/><di:waypoint x="2660" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f45_di" bpmnElement="sec_ins_health_claim_f45"><di:waypoint x="2760" y="320"/><di:waypoint x="3180" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f46_di" bpmnElement="sec_ins_health_claim_f46"><di:waypoint x="2398" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f47_di" bpmnElement="sec_ins_health_claim_f47"><di:waypoint x="3230" y="320"/><di:waypoint x="3275" y="320"/><di:waypoint x="3275" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f48_di" bpmnElement="sec_ins_health_claim_f48"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f49_di" bpmnElement="sec_ins_health_claim_f49"><di:waypoint x="1366" y="128"/><di:waypoint x="1366" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f50_di" bpmnElement="sec_ins_health_claim_f50"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f51_di" bpmnElement="sec_ins_health_claim_f51"><di:waypoint x="1396" y="128"/><di:waypoint x="1396" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f52_di" bpmnElement="sec_ins_health_claim_f52"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f53_di" bpmnElement="sec_ins_health_claim_f53"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f54_di" bpmnElement="sec_ins_health_claim_f54"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="135"/><di:waypoint x="1225" y="135"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f55_di" bpmnElement="sec_ins_health_claim_f55"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f56_di" bpmnElement="sec_ins_health_claim_f56"><di:waypoint x="1440" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f57_di" bpmnElement="sec_ins_health_claim_f57"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f58_di" bpmnElement="sec_ins_health_claim_f58"><di:waypoint x="2191" y="128"/><di:waypoint x="2191" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f59_di" bpmnElement="sec_ins_health_claim_f59"><di:waypoint x="2430" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f60_di" bpmnElement="sec_ins_health_claim_f60"><di:waypoint x="2221" y="128"/><di:waypoint x="2221" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f61_di" bpmnElement="sec_ins_health_claim_f61"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f62_di" bpmnElement="sec_ins_health_claim_f62"><di:waypoint x="2570" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f63_di" bpmnElement="sec_ins_health_claim_f63"><di:waypoint x="2545" y="95"/><di:waypoint x="2545" y="142"/><di:waypoint x="2050" y="142"/><di:waypoint x="2050" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f64_di" bpmnElement="sec_ins_health_claim_f64"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f65_di" bpmnElement="sec_ins_health_claim_f65"><di:waypoint x="2265" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f66_di" bpmnElement="sec_ins_health_claim_f66"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f67_di" bpmnElement="sec_ins_health_claim_f67"><di:waypoint x="2735" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f68_di" bpmnElement="sec_ins_health_claim_f68"><di:waypoint x="2900" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f69_di" bpmnElement="sec_ins_health_claim_f69"><di:waypoint x="2900" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f70_di" bpmnElement="sec_ins_health_claim_f70"><di:waypoint x="3560" y="70"/><di:waypoint x="3621" y="70"/><di:waypoint x="3621" y="195"/><di:waypoint x="3682" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f71_di" bpmnElement="sec_ins_health_claim_f71"><di:waypoint x="3560" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f72_di" bpmnElement="sec_ins_health_claim_f72"><di:waypoint x="3420" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f73_di" bpmnElement="sec_ins_health_claim_f73"><di:waypoint x="3750" y="70"/><di:waypoint x="3847" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f74_di" bpmnElement="sec_ins_health_claim_f74"><di:waypoint x="128" y="865"/><di:waypoint x="225" y="865"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f75_di" bpmnElement="sec_ins_health_claim_f75"><di:waypoint x="325" y="865"/><di:waypoint x="390" y="865"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f76_di" bpmnElement="sec_ins_health_claim_f76"><di:waypoint x="490" y="865"/><di:waypoint x="587" y="865"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f77_di" bpmnElement="sec_ins_health_claim_f77"><di:waypoint x="128" y="1055"/><di:waypoint x="225" y="1055"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f78_di" bpmnElement="sec_ins_health_claim_f78"><di:waypoint x="325" y="1055"/><di:waypoint x="390" y="1055"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ins_health_claim_f79_di" bpmnElement="sec_ins_health_claim_f79"><di:waypoint x="490" y="1055"/><di:waypoint x="587" y="1055"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

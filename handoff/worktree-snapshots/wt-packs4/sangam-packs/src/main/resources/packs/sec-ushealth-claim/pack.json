@@ -1,0 +1,151 @@
+{
+  "id": "sec.ushealth.claim",
+  "version": "1.0.0",
+  "name": {
+    "en": "Claim submission, status, remittance posting, denial and appeal",
+    "es": "Envío de reclamaciones, estado, contabilización de remesas, denegación y apelación"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "Coding and scrub, timely-filing clock from DMN, 837P / 837I through the clearinghouse with the 999 acknowledgment, front-end rejection fix, 276/277 status follow-up, 835 remittance parsed and posted (CARC / RARC, patient responsibility, balancing), denial routing by adjustment code, corrected claim (frequency 7), appeal with its filing window, write-off with segregation of duties.",
+  "mainProcesses": [
+    "sangam-sec-ushealth-claim"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-claim/sangam-sec-ushealth-claim.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-claim/sangam-sec-ushealth-remittance.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-claim/sec-ushealth-claim-clocks.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-claim/sec-ushealth-claim-denials.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/encounter.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/scrub.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/fix.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/receivable-exception.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/post-exception.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/patient-bill.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/denial.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/appeal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/appeal-outcome.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/write-off.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-claim/forms/remittance-exception.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-claim/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ushealth-claim/registry/identifier-types-us.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-claim/seed.json",
+  "connectors": [
+    {
+      "id": "x12.claim",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "837 submission"
+    },
+    {
+      "id": "x12.claimStatus",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "276/277 status"
+    },
+    {
+      "id": "x12.remit",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "835 decode"
+    },
+    {
+      "id": "payer.appeal",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Appeal / redetermination"
+    },
+    {
+      "id": "ledger.post",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Payment posting"
+    }
+  ],
+  "covers": [
+    "US-HLT-086",
+    "US-HLT-088",
+    "US-HLT-089",
+    "US-HLT-090",
+    "US-HLT-093",
+    "US-HLT-095",
+    "US-HLT-100",
+    "US-HLT-101",
+    "US-HLT-102",
+    "US-HLT-103",
+    "US-HLT-104",
+    "US-HLT-105",
+    "US-HLT-106",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "patientBalance",
+      "totalCharge",
+      "writeOffAmount"
+    ]
+  }
+}

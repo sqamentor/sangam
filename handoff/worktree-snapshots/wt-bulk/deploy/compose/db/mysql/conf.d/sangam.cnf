@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# MySQL 8.4 settings required by Sangam (ARCHITECTURE.md 1.5, P-1). The same values are passed on the command
+# line in docker-compose.yml; this file documents them for VM installs.
+[mysqld]
+transaction_isolation    = READ-COMMITTED
+character_set_server     = utf8mb4
+collation_server         = utf8mb4_bin
+default_time_zone        = '+00:00'
+max_connections          = 300
+log_bin                  = mysql-bin
+binlog_format            = ROW
+gtid_mode                = ON
+enforce_gtid_consistency = ON
+innodb_flush_log_at_trx_commit = 1
+sync_binlog              = 1
+
+[client]
+default-character-set = utf8mb4

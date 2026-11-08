@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: PHL
+  layer: jurisdiction
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL
+  - INTL-PFM
+  - REGIME-ALLOTMENT-NCA
+  name:
+    en: Philippines (national)
+  source: INTERNATIONAL-PFM 5
+placeholders:
+- path: integrations
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources'
+- path: classification
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (UACS)'
+- path: ledgers
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (appropriation validity
+    per GAA)'
+locale:
+  zone: Asia/Manila
+  currency: PHP
+  grouping:
+    first: 3
+    rest: 3
+  units:
+    K: 1000
+    M: 1000000
+    BN: 1000000000
+  fiscal:
+    startMonth: 1
+    startDay: 1
+    label: START
+  languages:
+  - tag: en
+    script: Latn
+    default: true
+  - tag: fil
+    script: Latn
+    default: false
+integrations:
+  systems:
+  - BTMS [U]
+ledgers:
+- id: BUDGET
+  currency: PHP
+accountingBasis:
+- basis: ACCRUAL
+  standard: PPSAS [U]
+releases:
+  authority:
+  - GAA_AS_ALLOTMENT
+  - SARO
+  cash: NCA
+paymentChain:
+- ORS
+- DV
+- LDDAP-ADA
+treasury:
+  manager: BTr
+  servicingBanks: MDS
+audit:
+  sai: COA
+  issuesAccountingManual: true

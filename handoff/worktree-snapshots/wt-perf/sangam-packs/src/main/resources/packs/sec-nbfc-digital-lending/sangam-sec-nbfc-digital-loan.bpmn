@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Digital loan. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_nbfc_digital_loan" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_loan_exitCoolingOff" name="sangam.loan.exitCoolingOff"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-nbfc-digital-loan" name="Digital loan" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.nbfc.digital-lending</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,amount,tenureDays,aprPct</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="dl_start" name="Application in the app" operaton:initiator="initiator" operaton:formKey="sangam:sec-nbfc-digital-lending/application"></startEvent>
+    <serviceTask id="dl_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>tenureDays=90;lspName=DIRECT;consentGiven=true;bureauScore=720;aprPct=24;caseType=LOAN;routingDecisionKey=sec-nbfc-dl-authority;powersDecisionKey=sec-nbfc-dl-powers;executionConnector=bank.transfer;executionStep=disburse;reconcileRequired=true;executionPayloadFields=customerId,amount;appealAllowed=false;outputTemplate=loan-documents</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dl_consentGw" name="Explicit consent?" default="sec_nbfc_digital_loan_f4"></exclusiveGateway>
+    <endEvent id="dl_endNoConsent" name="Stopped: no consent"></endEvent>
+    <serviceTask id="dl_aa" name="Fetch bank statements via Account Aggregator" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>aa.fetch</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>fetch</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>aa</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dl_bureau" name="Bureau report" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>bureau.pull</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bureau</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="dl_policy" name="Credit decision of the RE (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-nbfc-dl-policy</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="dl_policyGw" name="Decision?" default="sec_nbfc_digital_loan_f11"></exclusiveGateway>
+    <serviceTask id="dl_rj_code" name="Reason: CREDIT_POLICY_DECLINE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=CREDIT_POLICY_DECLINE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="dl_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="dl_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="dl_sanction" name="Credit officer of the RE sanctions (core sanction)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="dl_kfs" name="KFS with APR, cooling-off, recovery agents, grievance officers" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.kfs</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>issue</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,amount,tenureDays,aprPct,lspName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>kfs</operaton:string></operaton:field><operaton:field name="step"><operaton:string>kfs</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="dl_rjS_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="dl_rjS_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="dl_sanGw" name="sanctionOutcome?" default="sec_nbfc_digital_loan_f14"></exclusiveGateway>
+    <serviceTask id="dl_group" name="Borrower group" operaton:expression="${execution.setVariable('borrowerGroup', 'external:'.concat(customerId))}"></serviceTask>
+    <serviceTask id="dl_accept_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dl_accept</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${kfsValidity}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dl_accept" name="Accept KFS and loan agreement" operaton:candidateGroups="${borrowerGroup}" operaton:formKey="sangam:sec-nbfc-digital-lending/accept" operaton:dueDate="${dl_acceptDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>kfsDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dl_accept_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dl_accept</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>borrowerGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dl_accept_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="dl_accept_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dl_accept</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>DEEMED_REFUSAL</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>borrowerGroup</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>kfsDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>accept</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>declined</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dl_accept_breachGw" name="Deemed?" default="sec_nbfc_digital_loan_f21"></exclusiveGateway>
+    <exclusiveGateway id="dl_accept_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="dl_acceptGw" name="" default="sec_nbfc_digital_loan_f28"></exclusiveGateway>
+    <endEvent id="dl_endLapsed" name="Offer lapsed / declined"></endEvent>
+    <callActivity id="dl_disburse" name="Disburse to the borrower account only (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="dl_cooling" name="Regulatory clock: coolingOff" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>coolingOff</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${coolingOffSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dl_failed" name="Disbursal failed" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>disbursal-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dl_exGw" name="executionOutcome?" default="sec_nbfc_digital_loan_f30"></exclusiveGateway>
+    <endEvent id="dl_endFailed" name="Disbursal failed"></endEvent>
+    <eventBasedGateway id="dl_coolWait" name="Exit or cooling-off ends"></eventBasedGateway>
+    <intermediateCatchEvent id="dl_exit" name="Borrower exits in cooling-off"><messageEventDefinition messageRef="msg_sangam_loan_exitCoolingOff"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="dl_coolEnd" name="Cooling-off over"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${coolingOffDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="dl_foreclose" name="Foreclose: principal + proportionate APR, no penalty" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>lms.foreclose</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>foreclose</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>exit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>cooling-off-exit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dl_endExited" name="Exited in cooling-off"></endEvent>
+    <serviceTask id="dl_book" name="Book loan" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>lms.book</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>book</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,amount,tenureDays,aprPct</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>lms</operaton:string></operaton:field><operaton:field name="step"><operaton:string>book</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dl_cic" name="Report to CICs" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cic.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cic</operaton:string></operaton:field><operaton:field name="step"><operaton:string>cic</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dl_end" name="Loan active"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="dl_accept_warn" name="SLA warning (75%)" attachedToRef="dl_accept" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dl_acceptWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dl_accept_breach" name="SLA breached" attachedToRef="dl_accept" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dl_acceptDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_nbfc_digital_loan_f1" sourceRef="dl_start" targetRef="dl_defaults"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f2" sourceRef="dl_defaults" targetRef="dl_consentGw"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f3" name="no" sourceRef="dl_consentGw" targetRef="dl_endNoConsent"><conditionExpression xsi:type="tFormalExpression">${!consentGiven}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_digital_loan_f4" name="yes" sourceRef="dl_consentGw" targetRef="dl_aa"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f5" sourceRef="dl_aa" targetRef="dl_bureau"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f6" sourceRef="dl_bureau" targetRef="dl_policy"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f7" sourceRef="dl_policy" targetRef="dl_policyGw"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f8" sourceRef="dl_rj_reject" targetRef="dl_rj_endRejected"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f9" sourceRef="dl_rj_code" targetRef="dl_rj_reject"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f10" name="decline" sourceRef="dl_policyGw" targetRef="dl_rj_code"><conditionExpression xsi:type="tFormalExpression">${creditDecision == 'DECLINE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_digital_loan_f11" name="approve / refer" sourceRef="dl_policyGw" targetRef="dl_sanction"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f12" sourceRef="dl_rjS_reject" targetRef="dl_rjS_endRejected"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f13" name="SANCTIONED" sourceRef="dl_sanGw" targetRef="dl_kfs"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_digital_loan_f14" name="otherwise" sourceRef="dl_sanGw" targetRef="dl_rjS_reject"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f15" sourceRef="dl_sanction" targetRef="dl_sanGw"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f16" sourceRef="dl_accept_warn" targetRef="dl_accept_warnNotify"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f17" sourceRef="dl_accept_warnNotify" targetRef="dl_accept_warnEnd"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f18" sourceRef="dl_accept_breach" targetRef="dl_accept_breachAct"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f19" sourceRef="dl_accept_breachAct" targetRef="dl_accept_breachGw"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f20" name="deemed" sourceRef="dl_accept_breachGw" targetRef="dl_accept_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_digital_loan_f21" name="escalated" sourceRef="dl_accept_breachGw" targetRef="dl_accept_slaPlan"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f22" sourceRef="dl_accept_slaPlan" targetRef="dl_accept"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f23" sourceRef="dl_accept" targetRef="dl_accept_done"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f24" sourceRef="dl_kfs" targetRef="dl_group"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f25" sourceRef="dl_group" targetRef="dl_accept_slaPlan"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f26" sourceRef="dl_accept_done" targetRef="dl_acceptGw"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f27" name="no" sourceRef="dl_acceptGw" targetRef="dl_endLapsed"><conditionExpression xsi:type="tFormalExpression">${kfsDecision != 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_digital_loan_f28" name="accepted" sourceRef="dl_acceptGw" targetRef="dl_disburse"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f29" name="DONE" sourceRef="dl_exGw" targetRef="dl_cooling"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_nbfc_digital_loan_f30" name="otherwise" sourceRef="dl_exGw" targetRef="dl_failed"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f31" sourceRef="dl_disburse" targetRef="dl_exGw"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f32" sourceRef="dl_failed" targetRef="dl_endFailed"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f33" sourceRef="dl_cooling" targetRef="dl_coolWait"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f34" sourceRef="dl_coolWait" targetRef="dl_exit"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f35" sourceRef="dl_coolWait" targetRef="dl_coolEnd"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f36" sourceRef="dl_exit" targetRef="dl_foreclose"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f37" sourceRef="dl_foreclose" targetRef="dl_endExited"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f38" sourceRef="dl_coolEnd" targetRef="dl_book"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f39" sourceRef="dl_book" targetRef="dl_cic"/>
+    <sequenceFlow id="sec_nbfc_digital_loan_f40" sourceRef="dl_cic" targetRef="dl_end"/>
+    <subProcess id="dl_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="dl_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="dl_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dl_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dl_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_nbfc_digital_loan_f41" sourceRef="dl_withdrawStart" targetRef="dl_withdrawKind"/>
+      <sequenceFlow id="sec_nbfc_digital_loan_f42" sourceRef="dl_withdrawKind" targetRef="dl_withdrawCall"/>
+      <sequenceFlow id="sec_nbfc_digital_loan_f43" sourceRef="dl_withdrawCall" targetRef="dl_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="dl_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="dl_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="dl_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dl_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dl_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_nbfc_digital_loan_f44" sourceRef="dl_cancelStart" targetRef="dl_cancelKind"/>
+      <sequenceFlow id="sec_nbfc_digital_loan_f45" sourceRef="dl_cancelKind" targetRef="dl_cancelCall"/>
+      <sequenceFlow id="sec_nbfc_digital_loan_f46" sourceRef="dl_cancelCall" targetRef="dl_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_nbfc_digital_loan_diagram">
+    <bpmndi:BPMNPlane id="sec_nbfc_digital_loan_plane" bpmnElement="sangam-sec-nbfc-digital-loan">
+      <bpmndi:BPMNShape id="dl_start_di" bpmnElement="dl_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_defaults_di" bpmnElement="dl_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_consentGw_di" bpmnElement="dl_consentGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_endNoConsent_di" bpmnElement="dl_endNoConsent"><dc:Bounds x="547" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_aa_di" bpmnElement="dl_aa"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_bureau_di" bpmnElement="dl_bureau"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_policy_di" bpmnElement="dl_policy"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_policyGw_di" bpmnElement="dl_policyGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_rj_code_di" bpmnElement="dl_rj_code"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_rj_reject_di" bpmnElement="dl_rj_reject"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_rj_endRejected_di" bpmnElement="dl_rj_endRejected"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_sanction_di" bpmnElement="dl_sanction"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_kfs_di" bpmnElement="dl_kfs"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_rjS_reject_di" bpmnElement="dl_rjS_reject"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_rjS_endRejected_di" bpmnElement="dl_rjS_endRejected"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_sanGw_di" bpmnElement="dl_sanGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_group_di" bpmnElement="dl_group"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_accept_slaPlan_di" bpmnElement="dl_accept_slaPlan"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_accept_di" bpmnElement="dl_accept"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_accept_warnNotify_di" bpmnElement="dl_accept_warnNotify"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_accept_warnEnd_di" bpmnElement="dl_accept_warnEnd"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_accept_breachAct_di" bpmnElement="dl_accept_breachAct"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_accept_breachGw_di" bpmnElement="dl_accept_breachGw"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_accept_done_di" bpmnElement="dl_accept_done"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_acceptGw_di" bpmnElement="dl_acceptGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_endLapsed_di" bpmnElement="dl_endLapsed"><dc:Bounds x="2857" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_disburse_di" bpmnElement="dl_disburse"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_cooling_di" bpmnElement="dl_cooling"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_failed_di" bpmnElement="dl_failed"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_exGw_di" bpmnElement="dl_exGw"><dc:Bounds x="3015" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_endFailed_di" bpmnElement="dl_endFailed"><dc:Bounds x="3352" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_coolWait_di" bpmnElement="dl_coolWait"><dc:Bounds x="3345" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_exit_di" bpmnElement="dl_exit"><dc:Bounds x="3517" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_coolEnd_di" bpmnElement="dl_coolEnd"><dc:Bounds x="3517" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_foreclose_di" bpmnElement="dl_foreclose"><dc:Bounds x="3650" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_endExited_di" bpmnElement="dl_endExited"><dc:Bounds x="3847" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_book_di" bpmnElement="dl_book"><dc:Bounds x="3650" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_cic_di" bpmnElement="dl_cic"><dc:Bounds x="3815" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_end_di" bpmnElement="dl_end"><dc:Bounds x="4012" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_accept_warn_di" bpmnElement="dl_accept_warn"><dc:Bounds x="2008" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_accept_breach_di" bpmnElement="dl_accept_breach"><dc:Bounds x="2038" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_withdraw_di" bpmnElement="dl_withdraw" isExpanded="true"><dc:Bounds x="30" y="535" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_withdrawStart_di" bpmnElement="dl_withdrawStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_withdrawKind_di" bpmnElement="dl_withdrawKind"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_withdrawCall_di" bpmnElement="dl_withdrawCall"><dc:Bounds x="390" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_withdrawEnd_di" bpmnElement="dl_withdrawEnd"><dc:Bounds x="587" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_cancel_di" bpmnElement="dl_cancel" isExpanded="true"><dc:Bounds x="30" y="725" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_cancelStart_di" bpmnElement="dl_cancelStart"><dc:Bounds x="92" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_cancelKind_di" bpmnElement="dl_cancelKind"><dc:Bounds x="225" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_cancelCall_di" bpmnElement="dl_cancelCall"><dc:Bounds x="390" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dl_cancelEnd_di" bpmnElement="dl_cancelEnd"><dc:Bounds x="587" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f1_di" bpmnElement="sec_nbfc_digital_loan_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f2_di" bpmnElement="sec_nbfc_digital_loan_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f3_di" bpmnElement="sec_nbfc_digital_loan_f3"><di:waypoint x="425" y="70"/><di:waypoint x="486" y="70"/><di:waypoint x="486" y="195"/><di:waypoint x="547" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f4_di" bpmnElement="sec_nbfc_digital_loan_f4"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f5_di" bpmnElement="sec_nbfc_digital_loan_f5"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f6_di" bpmnElement="sec_nbfc_digital_loan_f6"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f7_di" bpmnElement="sec_nbfc_digital_loan_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f8_di" bpmnElement="sec_nbfc_digital_loan_f8"><di:waypoint x="1440" y="195"/><di:waypoint x="1488" y="195"/><di:waypoint x="1488" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f9_di" bpmnElement="sec_nbfc_digital_loan_f9"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f10_di" bpmnElement="sec_nbfc_digital_loan_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f11_di" bpmnElement="sec_nbfc_digital_loan_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f12_di" bpmnElement="sec_nbfc_digital_loan_f12"><di:waypoint x="1605" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f13_di" bpmnElement="sec_nbfc_digital_loan_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f14_di" bpmnElement="sec_nbfc_digital_loan_f14"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f15_di" bpmnElement="sec_nbfc_digital_loan_f15"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f16_di" bpmnElement="sec_nbfc_digital_loan_f16"><di:waypoint x="2026" y="253"/><di:waypoint x="2026" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f17_di" bpmnElement="sec_nbfc_digital_loan_f17"><di:waypoint x="2265" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f18_di" bpmnElement="sec_nbfc_digital_loan_f18"><di:waypoint x="2056" y="253"/><di:waypoint x="2056" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f19_di" bpmnElement="sec_nbfc_digital_loan_f19"><di:waypoint x="2265" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f20_di" bpmnElement="sec_nbfc_digital_loan_f20"><di:waypoint x="2405" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f21_di" bpmnElement="sec_nbfc_digital_loan_f21"><di:waypoint x="2380" y="220"/><di:waypoint x="2380" y="253"/><di:waypoint x="1885" y="253"/><di:waypoint x="1885" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f22_di" bpmnElement="sec_nbfc_digital_loan_f22"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f23_di" bpmnElement="sec_nbfc_digital_loan_f23"><di:waypoint x="2100" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f24_di" bpmnElement="sec_nbfc_digital_loan_f24"><di:waypoint x="1605" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f25_di" bpmnElement="sec_nbfc_digital_loan_f25"><di:waypoint x="1770" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f26_di" bpmnElement="sec_nbfc_digital_loan_f26"><di:waypoint x="2570" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f27_di" bpmnElement="sec_nbfc_digital_loan_f27"><di:waypoint x="2735" y="195"/><di:waypoint x="2796" y="195"/><di:waypoint x="2796" y="320"/><di:waypoint x="2857" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f28_di" bpmnElement="sec_nbfc_digital_loan_f28"><di:waypoint x="2735" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f29_di" bpmnElement="sec_nbfc_digital_loan_f29"><di:waypoint x="3065" y="195"/><di:waypoint x="3110" y="195"/><di:waypoint x="3110" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f30_di" bpmnElement="sec_nbfc_digital_loan_f30"><di:waypoint x="3065" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f31_di" bpmnElement="sec_nbfc_digital_loan_f31"><di:waypoint x="2925" y="195"/><di:waypoint x="3015" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f32_di" bpmnElement="sec_nbfc_digital_loan_f32"><di:waypoint x="3255" y="195"/><di:waypoint x="3352" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f33_di" bpmnElement="sec_nbfc_digital_loan_f33"><di:waypoint x="3255" y="320"/><di:waypoint x="3345" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f34_di" bpmnElement="sec_nbfc_digital_loan_f34"><di:waypoint x="3395" y="320"/><di:waypoint x="3456" y="320"/><di:waypoint x="3456" y="445"/><di:waypoint x="3517" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f35_di" bpmnElement="sec_nbfc_digital_loan_f35"><di:waypoint x="3395" y="320"/><di:waypoint x="3517" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f36_di" bpmnElement="sec_nbfc_digital_loan_f36"><di:waypoint x="3553" y="445"/><di:waypoint x="3650" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f37_di" bpmnElement="sec_nbfc_digital_loan_f37"><di:waypoint x="3750" y="445"/><di:waypoint x="3847" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f38_di" bpmnElement="sec_nbfc_digital_loan_f38"><di:waypoint x="3553" y="320"/><di:waypoint x="3650" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f39_di" bpmnElement="sec_nbfc_digital_loan_f39"><di:waypoint x="3750" y="320"/><di:waypoint x="3815" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f40_di" bpmnElement="sec_nbfc_digital_loan_f40"><di:waypoint x="3915" y="320"/><di:waypoint x="4012" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f41_di" bpmnElement="sec_nbfc_digital_loan_f41"><di:waypoint x="128" y="615"/><di:waypoint x="225" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f42_di" bpmnElement="sec_nbfc_digital_loan_f42"><di:waypoint x="325" y="615"/><di:waypoint x="390" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f43_di" bpmnElement="sec_nbfc_digital_loan_f43"><di:waypoint x="490" y="615"/><di:waypoint x="587" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f44_di" bpmnElement="sec_nbfc_digital_loan_f44"><di:waypoint x="128" y="805"/><di:waypoint x="225" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f45_di" bpmnElement="sec_nbfc_digital_loan_f45"><di:waypoint x="325" y="805"/><di:waypoint x="390" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_nbfc_digital_loan_f46_di" bpmnElement="sec_nbfc_digital_loan_f46"><di:waypoint x="490" y="805"/><di:waypoint x="587" y="805"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Transaction dispute. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_txn_dispute" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_chargeback_representment" name="sangam.chargeback.representment"/>
+  <message id="msg_sangam_chargeback_ruling" name="sangam.chargeback.ruling"/>
+  <process id="sangam-sec-bank-txn-dispute" name="Transaction dispute" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.txn-dispute</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,disputeType,txnRef,amount,channel</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="dp_start" name="Dispute reported" operaton:initiator="initiator" operaton:formKey="sangam:sec-bank-txn-dispute/report"></startEvent>
+    <serviceTask id="dp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>disputeType=FAILED_TXN;channel=UPI;txnRef=@customerId;reportedWithinDays=1;txnFailed=true;tatBreached=false;opsSeat=DISPUTE-DESK;executionConnector=cbs.reversal;executionStep=reversal;verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerId,txnRef,amount;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="dp_tat" name="TAT, compensation and liability (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-dispute-tat</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="dp_typeGw" name="Dispute type?" default="sec_bank_txn_dispute_f39"></exclusiveGateway>
+    <serviceTask id="dp_tatClock" name="Regulatory clock: tat" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>tat</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${tatSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dp_status" name="Transaction status from the switch" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>switch.status</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>status</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>txnRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>txn</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dp_failGw" name="Debited, not credited?" default="sec_bank_txn_dispute_f8"></exclusiveGateway>
+    <endEvent id="dp_endSuccess" name="Transaction was successful (evidence sent)"></endEvent>
+    <userTask id="dp_reverse" name="Reverse the failed debit" operaton:candidateGroups="${opsSeat}" operaton:formKey="sangam:sec-bank-txn-dispute/reverse" operaton:dueDate="${tatDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dp_lateFlag" name="Compensation due" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>tatBreached=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dp_lateEnd" name="Recorded"></endEvent>
+    <callActivity id="dp_reversal" name="Reversal (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="dp_compGw" name="Beyond TAT?" default="sec_bank_txn_dispute_f14"></exclusiveGateway>
+    <serviceTask id="dp_compensate" name="Suo moto compensation credit" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.compensation</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>credit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,txnRef,compensationPerDay</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>comp</operaton:string></operaton:field><operaton:field name="step"><operaton:string>compensation</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dp_endReversed" name="Reversed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="dp_block" name="Block the instrument" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cards.block</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>block</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,txnRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>block</operaton:string></operaton:field><operaton:field name="step"><operaton:string>block</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dp_shadow_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dp_shadow</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>10WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dp_shadow" name="Shadow credit (10 working days)" operaton:candidateGroups="${opsSeat}" operaton:formKey="sangam:sec-bank-txn-dispute/shadow" operaton:dueDate="${dp_shadowDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dp_shadow_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dp_shadow</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>opsSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dp_shadow_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="dp_shadow_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dp_shadow</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>opsSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dp_shadow_breachGw" name="Deemed?" default="sec_bank_txn_dispute_f22"></exclusiveGateway>
+    <exclusiveGateway id="dp_shadow_done" name=""></exclusiveGateway>
+    <serviceTask id="dp_investigate_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dp_investigate</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>90D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dp_investigate" name="Investigate and decide liability (90 days)" operaton:candidateGroups="${opsSeat}" operaton:formKey="sangam:sec-bank-txn-dispute/investigate" operaton:dueDate="${dp_investigateDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>liabilityDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dp_investigate_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dp_investigate</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>opsSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dp_investigate_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="dp_investigate_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dp_investigate</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>opsSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>liabilityDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dp_investigate_breachGw" name="Deemed?" default="sec_bank_txn_dispute_f31"></exclusiveGateway>
+    <exclusiveGateway id="dp_investigate_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="dp_liabGw" name="" default="sec_bank_txn_dispute_f37"></exclusiveGateway>
+    <endEvent id="dp_endBank" name="Credit made final"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="dp_reverseShadow" name="Shadow credit reversed with reasons and the RB-IOS route" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>dispute-customer-liable</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email,letter</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dp_endCustomer" name="Closed: customer liable"></endEvent>
+    <serviceTask id="dp_chargeback" name="Raise chargeback with the network" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>card.chargeback</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>raise</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>txnRef,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cb</operaton:string></operaton:field><operaton:field name="step"><operaton:string>chargeback</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="dp_cbWait" name="Representment or network window"></eventBasedGateway>
+    <intermediateCatchEvent id="dp_repr" name="Merchant representment"><messageEventDefinition messageRef="msg_sangam_chargeback_representment"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="dp_cbWindow" name="No representment in the window"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P45D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="dp_endCbWon" name="Chargeback final"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="dp_review" name="Review representment" operaton:candidateGroups="${opsSeat}" operaton:formKey="sangam:sec-bank-txn-dispute/representment"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reprDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="dp_reprGw" name="" default="sec_bank_txn_dispute_f47"></exclusiveGateway>
+    <endEvent id="dp_endCbLost" name="Representment accepted: customer informed"></endEvent>
+    <serviceTask id="dp_preArb" name="Pre-arbitration / arbitration" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>card.chargeback</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>pre-arbitration</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>txnRef,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>arb</operaton:string></operaton:field><operaton:field name="step"><operaton:string>pre-arbitration</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="dp_ruling" name="Network ruling"><messageEventDefinition messageRef="msg_sangam_chargeback_ruling"/></intermediateCatchEvent>
+    <endEvent id="dp_endRuling" name="Ruling applied"></endEvent>
+    <boundaryEvent id="dp_tatLate" name="TAT exceeded" attachedToRef="dp_reverse" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${tatDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dp_shadow_warn" name="SLA warning (75%)" attachedToRef="dp_shadow" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dp_shadowWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dp_shadow_breach" name="SLA breached" attachedToRef="dp_shadow" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dp_shadowDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dp_investigate_warn" name="SLA warning (75%)" attachedToRef="dp_investigate" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dp_investigateWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dp_investigate_breach" name="SLA breached" attachedToRef="dp_investigate" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dp_investigateDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_bank_txn_dispute_f1" sourceRef="dp_start" targetRef="dp_defaults"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f2" sourceRef="dp_defaults" targetRef="dp_tat"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f3" sourceRef="dp_tat" targetRef="dp_typeGw"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f4" name="failed transaction" sourceRef="dp_typeGw" targetRef="dp_tatClock"><conditionExpression xsi:type="tFormalExpression">${disputeType == 'FAILED_TXN'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_txn_dispute_f5" sourceRef="dp_tatClock" targetRef="dp_status"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f6" sourceRef="dp_status" targetRef="dp_failGw"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f7" name="no" sourceRef="dp_failGw" targetRef="dp_endSuccess"><conditionExpression xsi:type="tFormalExpression">${!txnFailed}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_txn_dispute_f8" name="yes" sourceRef="dp_failGw" targetRef="dp_reverse"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f9" sourceRef="dp_tatLate" targetRef="dp_lateFlag"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f10" sourceRef="dp_lateFlag" targetRef="dp_lateEnd"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f11" sourceRef="dp_reverse" targetRef="dp_reversal"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f12" sourceRef="dp_reversal" targetRef="dp_compGw"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f13" name="yes" sourceRef="dp_compGw" targetRef="dp_compensate"><conditionExpression xsi:type="tFormalExpression">${tatBreached}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_txn_dispute_f14" name="within TAT" sourceRef="dp_compGw" targetRef="dp_endReversed"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f15" sourceRef="dp_compensate" targetRef="dp_endReversed"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f16" name="unauthorised" sourceRef="dp_typeGw" targetRef="dp_block"><conditionExpression xsi:type="tFormalExpression">${disputeType == 'UNAUTHORISED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_txn_dispute_f17" sourceRef="dp_shadow_warn" targetRef="dp_shadow_warnNotify"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f18" sourceRef="dp_shadow_warnNotify" targetRef="dp_shadow_warnEnd"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f19" sourceRef="dp_shadow_breach" targetRef="dp_shadow_breachAct"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f20" sourceRef="dp_shadow_breachAct" targetRef="dp_shadow_breachGw"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f21" name="deemed" sourceRef="dp_shadow_breachGw" targetRef="dp_shadow_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_txn_dispute_f22" name="escalated" sourceRef="dp_shadow_breachGw" targetRef="dp_shadow_slaPlan"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f23" sourceRef="dp_shadow_slaPlan" targetRef="dp_shadow"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f24" sourceRef="dp_shadow" targetRef="dp_shadow_done"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f25" sourceRef="dp_block" targetRef="dp_shadow_slaPlan"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f26" sourceRef="dp_investigate_warn" targetRef="dp_investigate_warnNotify"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f27" sourceRef="dp_investigate_warnNotify" targetRef="dp_investigate_warnEnd"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f28" sourceRef="dp_investigate_breach" targetRef="dp_investigate_breachAct"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f29" sourceRef="dp_investigate_breachAct" targetRef="dp_investigate_breachGw"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f30" name="deemed" sourceRef="dp_investigate_breachGw" targetRef="dp_investigate_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_txn_dispute_f31" name="escalated" sourceRef="dp_investigate_breachGw" targetRef="dp_investigate_slaPlan"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f32" sourceRef="dp_investigate_slaPlan" targetRef="dp_investigate"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f33" sourceRef="dp_investigate" targetRef="dp_investigate_done"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f34" sourceRef="dp_shadow_done" targetRef="dp_investigate_slaPlan"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f35" sourceRef="dp_investigate_done" targetRef="dp_liabGw"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f36" name="bank liable" sourceRef="dp_liabGw" targetRef="dp_endBank"><conditionExpression xsi:type="tFormalExpression">${liabilityDecision == 'bankLiable'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_txn_dispute_f37" name="customer liable" sourceRef="dp_liabGw" targetRef="dp_reverseShadow"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f38" sourceRef="dp_reverseShadow" targetRef="dp_endCustomer"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f39" name="card chargeback" sourceRef="dp_typeGw" targetRef="dp_chargeback"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f40" sourceRef="dp_chargeback" targetRef="dp_cbWait"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f41" sourceRef="dp_cbWait" targetRef="dp_repr"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f42" sourceRef="dp_cbWait" targetRef="dp_cbWindow"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f43" sourceRef="dp_cbWindow" targetRef="dp_endCbWon"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f44" sourceRef="dp_repr" targetRef="dp_review"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f45" sourceRef="dp_review" targetRef="dp_reprGw"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f46" name="accept" sourceRef="dp_reprGw" targetRef="dp_endCbLost"><conditionExpression xsi:type="tFormalExpression">${reprDecision == 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_txn_dispute_f47" name="pre-arbitration" sourceRef="dp_reprGw" targetRef="dp_preArb"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f48" sourceRef="dp_preArb" targetRef="dp_ruling"/>
+    <sequenceFlow id="sec_bank_txn_dispute_f49" sourceRef="dp_ruling" targetRef="dp_endRuling"/>
+    <subProcess id="dp_ombudsman" name="Unresolved after 30 days" triggeredByEvent="true">
+      <startEvent id="dp_omStart" name="30 days" isInterrupting="false"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P30D</timeDuration></timerEventDefinition></startEvent>
+      <serviceTask id="dp_omNotify" name="Tell the customer about the RB-IOS route" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rbios-route</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="dp_omEnd" name="Informed"></endEvent>
+      <sequenceFlow id="sec_bank_txn_dispute_f50" sourceRef="dp_omStart" targetRef="dp_omNotify"/>
+      <sequenceFlow id="sec_bank_txn_dispute_f51" sourceRef="dp_omNotify" targetRef="dp_omEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_txn_dispute_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_txn_dispute_plane" bpmnElement="sangam-sec-bank-txn-dispute">
+      <bpmndi:BPMNShape id="dp_start_di" bpmnElement="dp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_defaults_di" bpmnElement="dp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_tat_di" bpmnElement="dp_tat"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_typeGw_di" bpmnElement="dp_typeGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_tatClock_di" bpmnElement="dp_tatClock"><dc:Bounds x="680" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_status_di" bpmnElement="dp_status"><dc:Bounds x="845" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_failGw_di" bpmnElement="dp_failGw"><dc:Bounds x="1035" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endSuccess_di" bpmnElement="dp_endSuccess"><dc:Bounds x="1207" y="677" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_reverse_di" bpmnElement="dp_reverse"><dc:Bounds x="1175" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_lateFlag_di" bpmnElement="dp_lateFlag"><dc:Bounds x="1340" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_lateEnd_di" bpmnElement="dp_lateEnd"><dc:Bounds x="1537" y="677" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_reversal_di" bpmnElement="dp_reversal"><dc:Bounds x="1340" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_compGw_di" bpmnElement="dp_compGw"><dc:Bounds x="1530" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_compensate_di" bpmnElement="dp_compensate"><dc:Bounds x="1670" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endReversed_di" bpmnElement="dp_endReversed"><dc:Bounds x="1867" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_block_di" bpmnElement="dp_block"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_shadow_slaPlan_di" bpmnElement="dp_shadow_slaPlan"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_shadow_di" bpmnElement="dp_shadow"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_shadow_warnNotify_di" bpmnElement="dp_shadow_warnNotify"><dc:Bounds x="1175" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_shadow_warnEnd_di" bpmnElement="dp_shadow_warnEnd"><dc:Bounds x="1372" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_shadow_breachAct_di" bpmnElement="dp_shadow_breachAct"><dc:Bounds x="1175" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_shadow_breachGw_di" bpmnElement="dp_shadow_breachGw"><dc:Bounds x="1365" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_shadow_done_di" bpmnElement="dp_shadow_done"><dc:Bounds x="1530" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_investigate_slaPlan_di" bpmnElement="dp_investigate_slaPlan"><dc:Bounds x="1670" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_investigate_di" bpmnElement="dp_investigate"><dc:Bounds x="1835" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_investigate_warnNotify_di" bpmnElement="dp_investigate_warnNotify"><dc:Bounds x="2000" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_investigate_warnEnd_di" bpmnElement="dp_investigate_warnEnd"><dc:Bounds x="2197" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_investigate_breachAct_di" bpmnElement="dp_investigate_breachAct"><dc:Bounds x="2000" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_investigate_breachGw_di" bpmnElement="dp_investigate_breachGw"><dc:Bounds x="2190" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_investigate_done_di" bpmnElement="dp_investigate_done"><dc:Bounds x="2355" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_liabGw_di" bpmnElement="dp_liabGw"><dc:Bounds x="2520" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endBank_di" bpmnElement="dp_endBank"><dc:Bounds x="2692" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_reverseShadow_di" bpmnElement="dp_reverseShadow"><dc:Bounds x="2660" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endCustomer_di" bpmnElement="dp_endCustomer"><dc:Bounds x="2857" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_chargeback_di" bpmnElement="dp_chargeback"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_cbWait_di" bpmnElement="dp_cbWait"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_repr_di" bpmnElement="dp_repr"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_cbWindow_di" bpmnElement="dp_cbWindow"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endCbWon_di" bpmnElement="dp_endCbWon"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_review_di" bpmnElement="dp_review"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_reprGw_di" bpmnElement="dp_reprGw"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endCbLost_di" bpmnElement="dp_endCbLost"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_preArb_di" bpmnElement="dp_preArb"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_ruling_di" bpmnElement="dp_ruling"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_endRuling_di" bpmnElement="dp_endRuling"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_tatLate_di" bpmnElement="dp_tatLate"><dc:Bounds x="1183" y="592" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_shadow_warn_di" bpmnElement="dp_shadow_warn"><dc:Bounds x="1018" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_shadow_breach_di" bpmnElement="dp_shadow_breach"><dc:Bounds x="1048" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_investigate_warn_di" bpmnElement="dp_investigate_warn"><dc:Bounds x="1843" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_investigate_breach_di" bpmnElement="dp_investigate_breach"><dc:Bounds x="1873" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_ombudsman_di" bpmnElement="dp_ombudsman" isExpanded="true"><dc:Bounds x="30" y="785" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_omStart_di" bpmnElement="dp_omStart"><dc:Bounds x="92" y="847" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_omNotify_di" bpmnElement="dp_omNotify"><dc:Bounds x="225" y="825" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dp_omEnd_di" bpmnElement="dp_omEnd"><dc:Bounds x="422" y="847" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f1_di" bpmnElement="sec_bank_txn_dispute_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f2_di" bpmnElement="sec_bank_txn_dispute_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f3_di" bpmnElement="sec_bank_txn_dispute_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f4_di" bpmnElement="sec_bank_txn_dispute_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="320"/><di:waypoint x="680" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f5_di" bpmnElement="sec_bank_txn_dispute_f5"><di:waypoint x="780" y="320"/><di:waypoint x="845" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f6_di" bpmnElement="sec_bank_txn_dispute_f6"><di:waypoint x="945" y="320"/><di:waypoint x="990" y="320"/><di:waypoint x="990" y="445"/><di:waypoint x="1035" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f7_di" bpmnElement="sec_bank_txn_dispute_f7"><di:waypoint x="1085" y="445"/><di:waypoint x="1146" y="445"/><di:waypoint x="1146" y="695"/><di:waypoint x="1207" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f8_di" bpmnElement="sec_bank_txn_dispute_f8"><di:waypoint x="1085" y="445"/><di:waypoint x="1130" y="445"/><di:waypoint x="1130" y="570"/><di:waypoint x="1175" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f9_di" bpmnElement="sec_bank_txn_dispute_f9"><di:waypoint x="1201" y="628"/><di:waypoint x="1201" y="695"/><di:waypoint x="1340" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f10_di" bpmnElement="sec_bank_txn_dispute_f10"><di:waypoint x="1440" y="695"/><di:waypoint x="1537" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f11_di" bpmnElement="sec_bank_txn_dispute_f11"><di:waypoint x="1275" y="570"/><di:waypoint x="1340" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f12_di" bpmnElement="sec_bank_txn_dispute_f12"><di:waypoint x="1440" y="570"/><di:waypoint x="1530" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f13_di" bpmnElement="sec_bank_txn_dispute_f13"><di:waypoint x="1580" y="570"/><di:waypoint x="1670" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f14_di" bpmnElement="sec_bank_txn_dispute_f14"><di:waypoint x="1580" y="570"/><di:waypoint x="1867" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f15_di" bpmnElement="sec_bank_txn_dispute_f15"><di:waypoint x="1770" y="570"/><di:waypoint x="1867" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f16_di" bpmnElement="sec_bank_txn_dispute_f16"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f17_di" bpmnElement="sec_bank_txn_dispute_f17"><di:waypoint x="1036" y="378"/><di:waypoint x="1036" y="445"/><di:waypoint x="1175" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f18_di" bpmnElement="sec_bank_txn_dispute_f18"><di:waypoint x="1275" y="445"/><di:waypoint x="1372" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f19_di" bpmnElement="sec_bank_txn_dispute_f19"><di:waypoint x="1066" y="378"/><di:waypoint x="1066" y="320"/><di:waypoint x="1175" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f20_di" bpmnElement="sec_bank_txn_dispute_f20"><di:waypoint x="1275" y="320"/><di:waypoint x="1365" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f21_di" bpmnElement="sec_bank_txn_dispute_f21"><di:waypoint x="1415" y="320"/><di:waypoint x="1472" y="320"/><di:waypoint x="1472" y="445"/><di:waypoint x="1530" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f22_di" bpmnElement="sec_bank_txn_dispute_f22"><di:waypoint x="1390" y="345"/><di:waypoint x="1390" y="370"/><di:waypoint x="895" y="370"/><di:waypoint x="895" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f23_di" bpmnElement="sec_bank_txn_dispute_f23"><di:waypoint x="945" y="195"/><di:waypoint x="977" y="195"/><di:waypoint x="977" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f24_di" bpmnElement="sec_bank_txn_dispute_f24"><di:waypoint x="1110" y="320"/><di:waypoint x="1320" y="320"/><di:waypoint x="1320" y="445"/><di:waypoint x="1530" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f25_di" bpmnElement="sec_bank_txn_dispute_f25"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f26_di" bpmnElement="sec_bank_txn_dispute_f26"><di:waypoint x="1861" y="503"/><di:waypoint x="1861" y="570"/><di:waypoint x="2000" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f27_di" bpmnElement="sec_bank_txn_dispute_f27"><di:waypoint x="2100" y="570"/><di:waypoint x="2197" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f28_di" bpmnElement="sec_bank_txn_dispute_f28"><di:waypoint x="1891" y="503"/><di:waypoint x="1891" y="445"/><di:waypoint x="2000" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f29_di" bpmnElement="sec_bank_txn_dispute_f29"><di:waypoint x="2100" y="445"/><di:waypoint x="2190" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f30_di" bpmnElement="sec_bank_txn_dispute_f30"><di:waypoint x="2240" y="445"/><di:waypoint x="2355" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f31_di" bpmnElement="sec_bank_txn_dispute_f31"><di:waypoint x="2215" y="470"/><di:waypoint x="2215" y="517"/><di:waypoint x="1720" y="517"/><di:waypoint x="1720" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f32_di" bpmnElement="sec_bank_txn_dispute_f32"><di:waypoint x="1770" y="445"/><di:waypoint x="1835" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f33_di" bpmnElement="sec_bank_txn_dispute_f33"><di:waypoint x="1935" y="445"/><di:waypoint x="2355" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f34_di" bpmnElement="sec_bank_txn_dispute_f34"><di:waypoint x="1580" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f35_di" bpmnElement="sec_bank_txn_dispute_f35"><di:waypoint x="2405" y="445"/><di:waypoint x="2520" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f36_di" bpmnElement="sec_bank_txn_dispute_f36"><di:waypoint x="2570" y="445"/><di:waypoint x="2631" y="445"/><di:waypoint x="2631" y="570"/><di:waypoint x="2692" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f37_di" bpmnElement="sec_bank_txn_dispute_f37"><di:waypoint x="2570" y="445"/><di:waypoint x="2660" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f38_di" bpmnElement="sec_bank_txn_dispute_f38"><di:waypoint x="2760" y="445"/><di:waypoint x="2857" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f39_di" bpmnElement="sec_bank_txn_dispute_f39"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f40_di" bpmnElement="sec_bank_txn_dispute_f40"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f41_di" bpmnElement="sec_bank_txn_dispute_f41"><di:waypoint x="920" y="70"/><di:waypoint x="981" y="70"/><di:waypoint x="981" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f42_di" bpmnElement="sec_bank_txn_dispute_f42"><di:waypoint x="920" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f43_di" bpmnElement="sec_bank_txn_dispute_f43"><di:waypoint x="1078" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f44_di" bpmnElement="sec_bank_txn_dispute_f44"><di:waypoint x="1078" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f45_di" bpmnElement="sec_bank_txn_dispute_f45"><di:waypoint x="1275" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f46_di" bpmnElement="sec_bank_txn_dispute_f46"><di:waypoint x="1415" y="195"/><di:waypoint x="1476" y="195"/><di:waypoint x="1476" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f47_di" bpmnElement="sec_bank_txn_dispute_f47"><di:waypoint x="1415" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f48_di" bpmnElement="sec_bank_txn_dispute_f48"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f49_di" bpmnElement="sec_bank_txn_dispute_f49"><di:waypoint x="1738" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f50_di" bpmnElement="sec_bank_txn_dispute_f50"><di:waypoint x="128" y="865"/><di:waypoint x="225" y="865"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_txn_dispute_f51_di" bpmnElement="sec_bank_txn_dispute_f51"><di:waypoint x="325" y="865"/><di:waypoint x="422" y="865"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

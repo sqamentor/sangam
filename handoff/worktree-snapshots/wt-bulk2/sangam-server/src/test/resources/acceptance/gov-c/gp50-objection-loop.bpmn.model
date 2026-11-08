@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp50">
+  <!-- GP-50 return to the originating seat under the same identity: the treasury's verdict is correlated by the bill
+       number (business key); an objection goes back to the DDO and the SAME instance is resubmitted. -->
+  <message id="m_verdict" name="treasuryVerdict"/>
+  <process id="gp50-objection-loop" name="GP-50 Treasury objection loop" isExecutable="true">
+    <startEvent id="gp50_start"/>
+    <sequenceFlow id="f1" sourceRef="gp50_start" targetRef="gp50_prepare"/>
+    <userTask id="gp50_prepare" name="DDO prepares bill"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ddo)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp50_prepare" targetRef="gp50_submit"/>
+    <serviceTask id="gp50_submit" name="Submit to treasury" @@ext|treasury-submit@@/>
+    <sequenceFlow id="f3" sourceRef="gp50_submit" targetRef="gp50_verdict"/>
+    <intermediateCatchEvent id="gp50_verdict"><messageEventDefinition messageRef="m_verdict"/></intermediateCatchEvent>
+    <sequenceFlow id="f4" sourceRef="gp50_verdict" targetRef="gp50_gw"/>
+    <exclusiveGateway id="gp50_gw" default="f6"/>
+    <sequenceFlow id="f5" sourceRef="gp50_gw" targetRef="gp50_end_passed"><conditionExpression xsi:type="tFormalExpression">${verdict == 'PASSED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f6" sourceRef="gp50_gw" targetRef="gp50_count"/>
+    <endEvent id="gp50_end_passed"/>
+    <serviceTask id="gp50_count" name="Count objection" @@expr|${execution.setVariable('objectionCount', objectionCount + 1)}@@/>
+    <sequenceFlow id="f7" sourceRef="gp50_count" targetRef="gp50_rectify"/>
+    <userTask id="gp50_rectify" name="DDO rectifies objection"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ddo)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f8" sourceRef="gp50_rectify" targetRef="gp50_submit"/>
+  </process>
+</definitions>

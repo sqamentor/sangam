@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Mandate lifecycle. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_emandate" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_mandate_modify" name="sangam.mandate.modify"/>
+  <message id="msg_sangam_mandate_revoke" name="sangam.mandate.revoke"/>
+  <process id="sangam-sec-bank-emandate" name="Mandate lifecycle" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.emandate</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,account,amount,frequency,mandateType</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="em_start" name="Mandate requested" operaton:initiator="initiator" operaton:formKey="sangam:sec-bank-emandate/register"></startEvent>
+    <serviceTask id="em_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>mandateType=API_EMANDATE;frequency=MONTHLY;merchantCategory=GENERAL;debitCycle=P30D;opsSeat=MANDATE-MAKER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="em_typeGw" name="Physical NACH form?" default="sec_bank_emandate_f5"></exclusiveGateway>
+    <userTask id="em_verify" name="Verify signed NACH form (maker)" operaton:candidateGroups="${opsSeat}" operaton:formKey="sangam:sec-bank-emandate/verify"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="em_check" name="Approve mandate (checker)" operaton:candidateGroups="MANDATE-CHECKER" operaton:formKey="sangam:sec-bank-emandate/check"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>mandateDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="em_register" name="Register mandate (AFA by the customer)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>npci.mandate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>register</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,account,amount,frequency</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>mandate</operaton:string></operaton:field><operaton:field name="step"><operaton:string>register</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="em_checkGw" name="" default="sec_bank_emandate_f8"></exclusiveGateway>
+    <endEvent id="em_endRejected" name="Mandate rejected"></endEvent>
+    <exclusiveGateway id="em_regGw" name="Registered?" default="sec_bank_emandate_f11"></exclusiveGateway>
+    <endEvent id="em_endFailed" name="Registration failed"></endEvent>
+    <eventBasedGateway id="em_wait" name="Next debit, change or revocation"></eventBasedGateway>
+    <intermediateCatchEvent id="em_next" name="Next debit cycle"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${debitCycle}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="em_modify" name="Modification (with AFA)"><messageEventDefinition messageRef="msg_sangam_mandate_modify"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="em_revoke" name="Revocation (with AFA)"><messageEventDefinition messageRef="msg_sangam_mandate_revoke"/></intermediateCatchEvent>
+    <serviceTask id="em_spawn" name="Start the debit as a linked case" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-sec-bank-emandate-debit</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>debit</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>customerId,account,amount,merchantCategory</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="em_doModify" name="Modify mandate" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>npci.mandate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>modify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>mandateMod</operaton:string></operaton:field><operaton:field name="step"><operaton:string>modify</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="em_doRevoke" name="Revoke mandate" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>npci.mandate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>revoke</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>mandateRev</operaton:string></operaton:field><operaton:field name="step"><operaton:string>revoke</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="em_endRevoked" name="Revoked"></endEvent>
+    <sequenceFlow id="sec_bank_emandate_f1" sourceRef="em_start" targetRef="em_defaults"/>
+    <sequenceFlow id="sec_bank_emandate_f2" sourceRef="em_defaults" targetRef="em_typeGw"/>
+    <sequenceFlow id="sec_bank_emandate_f3" name="physical" sourceRef="em_typeGw" targetRef="em_verify"><conditionExpression xsi:type="tFormalExpression">${mandateType == 'NACH_PHYSICAL'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_emandate_f4" sourceRef="em_verify" targetRef="em_check"/>
+    <sequenceFlow id="sec_bank_emandate_f5" name="e-mandate / UPI AutoPay / card" sourceRef="em_typeGw" targetRef="em_register"/>
+    <sequenceFlow id="sec_bank_emandate_f6" sourceRef="em_check" targetRef="em_checkGw"/>
+    <sequenceFlow id="sec_bank_emandate_f7" name="approve" sourceRef="em_checkGw" targetRef="em_register"><conditionExpression xsi:type="tFormalExpression">${mandateDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_emandate_f8" name="reject" sourceRef="em_checkGw" targetRef="em_endRejected"/>
+    <sequenceFlow id="sec_bank_emandate_f9" sourceRef="em_register" targetRef="em_regGw"/>
+    <sequenceFlow id="sec_bank_emandate_f10" name="failed" sourceRef="em_regGw" targetRef="em_endFailed"><conditionExpression xsi:type="tFormalExpression">${mandateStatus == 'FAILED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_emandate_f11" name="active" sourceRef="em_regGw" targetRef="em_wait"/>
+    <sequenceFlow id="sec_bank_emandate_f12" sourceRef="em_wait" targetRef="em_next"/>
+    <sequenceFlow id="sec_bank_emandate_f13" sourceRef="em_wait" targetRef="em_modify"/>
+    <sequenceFlow id="sec_bank_emandate_f14" sourceRef="em_wait" targetRef="em_revoke"/>
+    <sequenceFlow id="sec_bank_emandate_f15" sourceRef="em_next" targetRef="em_spawn"/>
+    <sequenceFlow id="sec_bank_emandate_f16" sourceRef="em_spawn" targetRef="em_wait"/>
+    <sequenceFlow id="sec_bank_emandate_f17" sourceRef="em_modify" targetRef="em_doModify"/>
+    <sequenceFlow id="sec_bank_emandate_f18" sourceRef="em_doModify" targetRef="em_wait"/>
+    <sequenceFlow id="sec_bank_emandate_f19" sourceRef="em_revoke" targetRef="em_doRevoke"/>
+    <sequenceFlow id="sec_bank_emandate_f20" sourceRef="em_doRevoke" targetRef="em_endRevoked"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_emandate_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_emandate_plane" bpmnElement="sangam-sec-bank-emandate">
+      <bpmndi:BPMNShape id="em_start_di" bpmnElement="em_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_defaults_di" bpmnElement="em_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_typeGw_di" bpmnElement="em_typeGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_verify_di" bpmnElement="em_verify"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_check_di" bpmnElement="em_check"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_register_di" bpmnElement="em_register"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_checkGw_di" bpmnElement="em_checkGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_endRejected_di" bpmnElement="em_endRejected"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_regGw_di" bpmnElement="em_regGw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_endFailed_di" bpmnElement="em_endFailed"><dc:Bounds x="1372" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_wait_di" bpmnElement="em_wait"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_next_di" bpmnElement="em_next"><dc:Bounds x="1537" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_modify_di" bpmnElement="em_modify"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_revoke_di" bpmnElement="em_revoke"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_spawn_di" bpmnElement="em_spawn"><dc:Bounds x="1670" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_doModify_di" bpmnElement="em_doModify"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_doRevoke_di" bpmnElement="em_doRevoke"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="em_endRevoked_di" bpmnElement="em_endRevoked"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f1_di" bpmnElement="sec_bank_emandate_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f2_di" bpmnElement="sec_bank_emandate_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f3_di" bpmnElement="sec_bank_emandate_f3"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f4_di" bpmnElement="sec_bank_emandate_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f5_di" bpmnElement="sec_bank_emandate_f5"><di:waypoint x="425" y="70"/><di:waypoint x="717" y="70"/><di:waypoint x="717" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f6_di" bpmnElement="sec_bank_emandate_f6"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f7_di" bpmnElement="sec_bank_emandate_f7"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f8_di" bpmnElement="sec_bank_emandate_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f9_di" bpmnElement="sec_bank_emandate_f9"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f10_di" bpmnElement="sec_bank_emandate_f10"><di:waypoint x="1250" y="195"/><di:waypoint x="1311" y="195"/><di:waypoint x="1311" y="320"/><di:waypoint x="1372" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f11_di" bpmnElement="sec_bank_emandate_f11"><di:waypoint x="1250" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f12_di" bpmnElement="sec_bank_emandate_f12"><di:waypoint x="1415" y="195"/><di:waypoint x="1476" y="195"/><di:waypoint x="1476" y="445"/><di:waypoint x="1537" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f13_di" bpmnElement="sec_bank_emandate_f13"><di:waypoint x="1415" y="195"/><di:waypoint x="1476" y="195"/><di:waypoint x="1476" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f14_di" bpmnElement="sec_bank_emandate_f14"><di:waypoint x="1415" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f15_di" bpmnElement="sec_bank_emandate_f15"><di:waypoint x="1573" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f16_di" bpmnElement="sec_bank_emandate_f16"><di:waypoint x="1720" y="485"/><di:waypoint x="1720" y="524"/><di:waypoint x="1390" y="524"/><di:waypoint x="1390" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f17_di" bpmnElement="sec_bank_emandate_f17"><di:waypoint x="1573" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f18_di" bpmnElement="sec_bank_emandate_f18"><di:waypoint x="1720" y="360"/><di:waypoint x="1720" y="385"/><di:waypoint x="1390" y="385"/><di:waypoint x="1390" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f19_di" bpmnElement="sec_bank_emandate_f19"><di:waypoint x="1573" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_emandate_f20_di" bpmnElement="sec_bank_emandate_f20"><di:waypoint x="1770" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

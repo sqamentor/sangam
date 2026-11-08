@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: IN-PRESET-UT-NOLEG
+  layer: category
+  version: 2026.11.0
+  effectiveFrom: '2017-04-01'
+  name:
+    en: Union Territory without legislature
+  source: IFMS-STATES 6.1 L1 category preset
+regime:
+  category: UT_WITHOUT_LEGISLATURE
+  budgetMode: UNION_DEMAND
+  accountsRenderedTo: CGA
+  cssSharing: UT_WITHOUT_LEGISLATURE
+  administratorDelegation:
+    governorOrLg: 50CR
+    other: 25CR
+    ruleRef: CAG Report 3 of 2018
+integrations:
+  pfms:
+    model: 3
+  snaSparsh:
+    enabled: true
+    directInPfms: true

@@ -1,0 +1,38 @@
+{
+  "key": "sec-hr-employee-exit/fnf",
+  "version": "1.0.0",
+  "pack": "sec.hr.employee-exit",
+  "title": {
+    "en": "Full and final settlement (2 working days)",
+    "hi": "पूर्ण एवं अंतिम निपटान (2 कार्य दिवस)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fnfAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Settlement amount (INR)",
+        "hi": "निपटान राशि (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

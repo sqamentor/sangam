@@ -1,0 +1,56 @@
+{
+  "key": "sec-bank-txn-dispute/representment",
+  "version": "1.0.0",
+  "pack": "sec.bank.txn-dispute",
+  "title": {
+    "en": "Review representment",
+    "hi": "प्रति-प्रस्तुति की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "findings",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reprDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "preArbitration",
+        "label": {
+          "en": "Pre-arbitration",
+          "hi": "पूर्व-मध्यस्थता"
+        }
+      }
+    ]
+  }
+}

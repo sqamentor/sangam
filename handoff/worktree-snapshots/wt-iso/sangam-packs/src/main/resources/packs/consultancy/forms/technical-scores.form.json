@@ -1,0 +1,36 @@
+{
+  "key": "consultancy/technical-scores",
+  "version": "1.0.0",
+  "pack": "gov.consultancy",
+  "title": {
+    "en": "Record technical scores",
+    "hi": "तकनीकी अंक दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "technicalScore",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Technical score",
+        "hi": "तकनीकी अंक"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

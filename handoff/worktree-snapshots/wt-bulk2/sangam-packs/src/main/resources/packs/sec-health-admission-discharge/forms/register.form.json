@@ -1,0 +1,72 @@
+{
+  "key": "sec-health-admission-discharge/register",
+  "version": "1.0.0",
+  "pack": "sec.health.admission-discharge",
+  "title": {
+    "en": "Patient registration",
+    "hi": "रोगी पंजीकरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "hi": "रोगी का नाम"
+      }
+    },
+    {
+      "id": "abhaNumber",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "ABHA number / address",
+        "hi": "आभा संख्या / पता"
+      }
+    },
+    {
+      "id": "admissionType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Admission type",
+        "hi": "भर्ती का प्रकार"
+      }
+    },
+    {
+      "id": "payerType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Payer",
+        "hi": "भुगतानकर्ता"
+      }
+    },
+    {
+      "id": "wardType",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Ward / room category",
+        "hi": "वार्ड / कक्ष श्रेणी"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    }
+  ]
+}

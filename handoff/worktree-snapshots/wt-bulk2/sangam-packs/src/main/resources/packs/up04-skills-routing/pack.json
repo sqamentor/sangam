@@ -1,0 +1,50 @@
+{
+  "id": "universal.up04-skills-routing",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-04 SLA-based and skills-based routing",
+    "hi": "यूपी-04 एसएलए एवं कौशल आधारित आवंटन"
+  },
+  "domain": "Universal",
+  "description": "Priority sets the SLA and the pool by rule; the case goes to the first pool member whose skills cover the request (R82); breach escalates (R79).",
+  "mainProcesses": [
+    "sangam-up04-skills-routing"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up04-skills-routing/sangam-up04-skills-routing.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up04-skills-routing/up04-sla.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up04-skills-routing/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up04-skills-routing/forms/resolve.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up04-skills-routing/seed.json"
+    }
+  ],
+  "seed": "packs/up04-skills-routing/seed.json",
+  "connectors": [],
+  "covers": [
+    "UP-04",
+    "R79",
+    "R82",
+    "GP-06",
+    "GP-17"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

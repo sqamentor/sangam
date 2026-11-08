@@ -1,0 +1,63 @@
+{
+  "key": "security-instrument/expiry",
+  "version": "1.0.0",
+  "pack": "gov.security-instrument",
+  "title": {
+    "en": "Guarantee expiring: extend, encash or release",
+    "hi": "गारंटी समाप्ति: विस्तार, भुनाना या मुक्त करना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "bgExpiryAt",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Guarantee valid till",
+        "hi": "गारंटी वैधता तिथि"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "expiryDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "extend",
+        "label": {
+          "en": "Extend",
+          "hi": "विस्तार करें"
+        }
+      },
+      {
+        "value": "encash",
+        "label": {
+          "en": "Encash",
+          "hi": "भुनाएँ"
+        }
+      },
+      {
+        "value": "release",
+        "label": {
+          "en": "Release",
+          "hi": "मुक्त करें"
+        }
+      }
+    ]
+  }
+}

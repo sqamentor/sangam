@@ -1,0 +1,63 @@
+{
+  "key": "ifms-surrender-lapse/surrender",
+  "version": "1.0.0",
+  "pack": "gov.ifms.surrender-lapse",
+  "title": {
+    "en": "Surrender of savings",
+    "hi": "बचत का समर्पण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fiscalYear",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Financial year",
+        "hi": "वित्तीय वर्ष"
+      }
+    },
+    {
+      "id": "headOfAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Head of account",
+        "hi": "लेखा शीर्ष"
+      }
+    },
+    {
+      "id": "surrenderAmount",
+      "type": "money",
+      "required": true,
+      "label": {
+        "en": "Amount to surrender",
+        "hi": "समर्पित राशि"
+      }
+    },
+    {
+      "id": "holder",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Holder (office / DDO)",
+        "hi": "धारक (कार्यालय / डीडीओ)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

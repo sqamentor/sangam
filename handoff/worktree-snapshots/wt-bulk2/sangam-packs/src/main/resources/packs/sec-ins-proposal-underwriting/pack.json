@@ -1,0 +1,95 @@
+{
+  "id": "sec.ins.proposal-underwriting",
+  "version": "1.0.0",
+  "name": {
+    "en": "Proposal, underwriting and policy issuance",
+    "hi": "प्रस्ताव, हामीदारी एवं पॉलिसी जारी करना"
+  },
+  "domain": "Insurance",
+  "description": "Proposal decided within the IRDAI time limit: KYC, underwriting rule (straight-through or manual), medicals at the insurer's cost, decision with reasons (accept, accept with loading after the proposer's consent, postpone, decline), premium collected once, policy and e-insurance account, free-look cancellation with refund less proportionate risk premium and expenses.",
+  "mainProcesses": [
+    "sangam-sec-ins-proposal"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ins-proposal-underwriting/sangam-sec-ins-proposal.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ins-proposal-underwriting/sec-ins-uw.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-proposal-underwriting/forms/proposal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-proposal-underwriting/forms/decide.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-proposal-underwriting/forms/consent.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ins-proposal-underwriting/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ins-proposal-underwriting/seed.json",
+  "connectors": [
+    {
+      "id": "ckycr.search",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "CKYC"
+    },
+    {
+      "id": "tpa.medicals",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Medical examination schedule"
+    },
+    {
+      "id": "pg.collect",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Premium collection"
+    },
+    {
+      "id": "policy.issue",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Policy and e-IA"
+    },
+    {
+      "id": "pg.refund",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Free-look refund"
+    }
+  ],
+  "covers": [
+    "SEC-INS-001",
+    "SEC-INS-002",
+    "SEC-INS-003",
+    "SEC-INS-004",
+    "GP-06",
+    "GP-12",
+    "GP-29",
+    "UP-06",
+    "UP-08",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-execution",
+    "sangam-core-rejection"
+  ]
+}

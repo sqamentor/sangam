@@ -1,0 +1,45 @@
+{
+  "key": "sec-cap-surveillance-alert/alert",
+  "version": "1.0.0",
+  "pack": "sec.cap.surveillance-alert",
+  "title": {
+    "en": "Surveillance alert",
+    "hi": "निगरानी चेतावनी"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "clientCode",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Client code",
+        "hi": "ग्राहक कोड"
+      }
+    },
+    {
+      "id": "alertType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Alert scenario",
+        "hi": "चेतावनी परिदृश्य"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    }
+  ]
+}

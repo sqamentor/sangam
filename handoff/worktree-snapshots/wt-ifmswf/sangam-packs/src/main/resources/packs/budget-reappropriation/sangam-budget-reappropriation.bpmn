@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Budget re-appropriation. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_budget_reappropriation" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-budget-reappropriation" name="Budget re-appropriation" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.budget-reappropriation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>fromHead,toHead,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="br_start" name="Proposal submitted" operaton:initiator="initiator" operaton:formKey="sangam:budget-reappropriation/proposal"></startEvent>
+    <serviceTask id="br_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=REAPPROPRIATION;routingDecisionKey=reapp-authority;scrutinySeat=BUDGET-SO;referToTenant=finance;referralQuestion=Concurrence for re-appropriation;executionConnector=ledger.transfer;executionStep=reappropriate;ledgerId=BUDGET;reconcileRequired=false;outputTemplate=reappropriation-order;appealAllowed=false;budgetAvailable=0;budgetHead=@fromHead</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="br_savings" name="Savings in the source head" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.available</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>available</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,fromHead,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>budget</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="br_savGw" name="Savings enough?" default="budget_reappropriation_f7"></exclusiveGateway>
+    <callActivity id="br_scrutiny" name="Budget section scrutiny (core)" calledElement="sangam-core-scrutiny" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="br_rjSav_code" name="Reason: SAVINGS_NOT_AVAILABLE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=SAVINGS_NOT_AVAILABLE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="br_rjSav_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="br_rjSav_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="br_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="br_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="br_finance" name="Finance concurrence (core referral)" calledElement="sangam-core-referral" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="br_scrGw" name="scrutinyOutcome?" default="budget_reappropriation_f10"></exclusiveGateway>
+    <callActivity id="br_sanction" name="Sanction by re-appropriation power (core)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="br_concurGw" name="Finance concurs?" default="budget_reappropriation_f16"></exclusiveGateway>
+    <serviceTask id="br_rjFin_code" name="Reason: FINANCE_NOT_CONCURRED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=FINANCE_NOT_CONCURRED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="br_rjFin_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="br_rjFin_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="br_post" name="Post in IFMS (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="br_sanGw" name="sanctionOutcome?" default="budget_reappropriation_f19"></exclusiveGateway>
+    <callActivity id="br_close" name="Order and closure (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="br_postFailed" name="IFMS rejected the posting" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>ifms-posting-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="br_exGw" name="executionOutcome?" default="budget_reappropriation_f22"></exclusiveGateway>
+    <endEvent id="br_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="budget_reappropriation_f1" sourceRef="br_start" targetRef="br_defaults"/>
+    <sequenceFlow id="budget_reappropriation_f2" sourceRef="br_defaults" targetRef="br_savings"/>
+    <sequenceFlow id="budget_reappropriation_f3" sourceRef="br_savings" targetRef="br_savGw"/>
+    <sequenceFlow id="budget_reappropriation_f4" name="yes" sourceRef="br_savGw" targetRef="br_scrutiny"><conditionExpression xsi:type="tFormalExpression">${budgetAvailable &gt;= amount}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="budget_reappropriation_f5" sourceRef="br_rjSav_reject" targetRef="br_rjSav_endRejected"/>
+    <sequenceFlow id="budget_reappropriation_f6" sourceRef="br_rjSav_code" targetRef="br_rjSav_reject"/>
+    <sequenceFlow id="budget_reappropriation_f7" name="no" sourceRef="br_savGw" targetRef="br_rjSav_code"/>
+    <sequenceFlow id="budget_reappropriation_f8" sourceRef="br_rj_reject" targetRef="br_rj_endRejected"/>
+    <sequenceFlow id="budget_reappropriation_f9" name="ACCEPTED" sourceRef="br_scrGw" targetRef="br_finance"><conditionExpression xsi:type="tFormalExpression">${scrutinyOutcome == 'ACCEPTED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="budget_reappropriation_f10" name="otherwise" sourceRef="br_scrGw" targetRef="br_rj_reject"/>
+    <sequenceFlow id="budget_reappropriation_f11" sourceRef="br_scrutiny" targetRef="br_scrGw"/>
+    <sequenceFlow id="budget_reappropriation_f12" sourceRef="br_finance" targetRef="br_concurGw"/>
+    <sequenceFlow id="budget_reappropriation_f13" name="concur" sourceRef="br_concurGw" targetRef="br_sanction"><conditionExpression xsi:type="tFormalExpression">${referralDecision == 'concur'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="budget_reappropriation_f14" sourceRef="br_rjFin_reject" targetRef="br_rjFin_endRejected"/>
+    <sequenceFlow id="budget_reappropriation_f15" sourceRef="br_rjFin_code" targetRef="br_rjFin_reject"/>
+    <sequenceFlow id="budget_reappropriation_f16" name="not concurred" sourceRef="br_concurGw" targetRef="br_rjFin_code"/>
+    <sequenceFlow id="budget_reappropriation_f17" name="SANCTIONED" sourceRef="br_sanGw" targetRef="br_post"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="budget_reappropriation_f18" name="RETURNED" sourceRef="br_sanGw" targetRef="br_scrutiny"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="budget_reappropriation_f19" name="otherwise" sourceRef="br_sanGw" targetRef="br_rj_reject"/>
+    <sequenceFlow id="budget_reappropriation_f20" sourceRef="br_sanction" targetRef="br_sanGw"/>
+    <sequenceFlow id="budget_reappropriation_f21" name="DONE" sourceRef="br_exGw" targetRef="br_close"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="budget_reappropriation_f22" name="otherwise" sourceRef="br_exGw" targetRef="br_postFailed"/>
+    <sequenceFlow id="budget_reappropriation_f23" sourceRef="br_post" targetRef="br_exGw"/>
+    <sequenceFlow id="budget_reappropriation_f24" sourceRef="br_postFailed" targetRef="br_scrutiny"/>
+    <sequenceFlow id="budget_reappropriation_f25" sourceRef="br_close" targetRef="br_end"/>
+    <subProcess id="br_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="br_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="br_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="br_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="br_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="budget_reappropriation_f26" sourceRef="br_withdrawStart" targetRef="br_withdrawKind"/>
+      <sequenceFlow id="budget_reappropriation_f27" sourceRef="br_withdrawKind" targetRef="br_withdrawCall"/>
+      <sequenceFlow id="budget_reappropriation_f28" sourceRef="br_withdrawCall" targetRef="br_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="br_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="br_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="br_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="br_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="br_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="budget_reappropriation_f29" sourceRef="br_cancelStart" targetRef="br_cancelKind"/>
+      <sequenceFlow id="budget_reappropriation_f30" sourceRef="br_cancelKind" targetRef="br_cancelCall"/>
+      <sequenceFlow id="budget_reappropriation_f31" sourceRef="br_cancelCall" targetRef="br_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="budget_reappropriation_diagram">
+    <bpmndi:BPMNPlane id="budget_reappropriation_plane" bpmnElement="sangam-budget-reappropriation">
+      <bpmndi:BPMNShape id="br_start_di" bpmnElement="br_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_defaults_di" bpmnElement="br_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_savings_di" bpmnElement="br_savings"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_savGw_di" bpmnElement="br_savGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_scrutiny_di" bpmnElement="br_scrutiny"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rjSav_code_di" bpmnElement="br_rjSav_code"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rjSav_reject_di" bpmnElement="br_rjSav_reject"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rjSav_endRejected_di" bpmnElement="br_rjSav_endRejected"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rj_reject_di" bpmnElement="br_rj_reject"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rj_endRejected_di" bpmnElement="br_rj_endRejected"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_finance_di" bpmnElement="br_finance"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_scrGw_di" bpmnElement="br_scrGw"><dc:Bounds x="870" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_sanction_di" bpmnElement="br_sanction"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_concurGw_di" bpmnElement="br_concurGw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rjFin_code_di" bpmnElement="br_rjFin_code"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rjFin_reject_di" bpmnElement="br_rjFin_reject"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_rjFin_endRejected_di" bpmnElement="br_rjFin_endRejected"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_post_di" bpmnElement="br_post"><dc:Bounds x="1670" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_sanGw_di" bpmnElement="br_sanGw"><dc:Bounds x="1530" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_close_di" bpmnElement="br_close"><dc:Bounds x="2000" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_postFailed_di" bpmnElement="br_postFailed"><dc:Bounds x="2000" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_exGw_di" bpmnElement="br_exGw"><dc:Bounds x="1860" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_end_di" bpmnElement="br_end"><dc:Bounds x="2197" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdraw_di" bpmnElement="br_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdrawStart_di" bpmnElement="br_withdrawStart"><dc:Bounds x="92" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdrawKind_di" bpmnElement="br_withdrawKind"><dc:Bounds x="225" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdrawCall_di" bpmnElement="br_withdrawCall"><dc:Bounds x="390" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdrawEnd_di" bpmnElement="br_withdrawEnd"><dc:Bounds x="587" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancel_di" bpmnElement="br_cancel" isExpanded="true"><dc:Bounds x="30" y="850" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancelStart_di" bpmnElement="br_cancelStart"><dc:Bounds x="92" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancelKind_di" bpmnElement="br_cancelKind"><dc:Bounds x="225" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancelCall_di" bpmnElement="br_cancelCall"><dc:Bounds x="390" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancelEnd_di" bpmnElement="br_cancelEnd"><dc:Bounds x="587" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f1_di" bpmnElement="budget_reappropriation_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f2_di" bpmnElement="budget_reappropriation_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f3_di" bpmnElement="budget_reappropriation_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f4_di" bpmnElement="budget_reappropriation_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f5_di" bpmnElement="budget_reappropriation_f5"><di:waypoint x="945" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f6_di" bpmnElement="budget_reappropriation_f6"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f7_di" bpmnElement="budget_reappropriation_f7"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f8_di" bpmnElement="budget_reappropriation_f8"><di:waypoint x="1770" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f9_di" bpmnElement="budget_reappropriation_f9"><di:waypoint x="920" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f10_di" bpmnElement="budget_reappropriation_f10"><di:waypoint x="920" y="195"/><di:waypoint x="1295" y="195"/><di:waypoint x="1295" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f11_di" bpmnElement="budget_reappropriation_f11"><di:waypoint x="780" y="195"/><di:waypoint x="870" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f12_di" bpmnElement="budget_reappropriation_f12"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f13_di" bpmnElement="budget_reappropriation_f13"><di:waypoint x="1250" y="195"/><di:waypoint x="1295" y="195"/><di:waypoint x="1295" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f14_di" bpmnElement="budget_reappropriation_f14"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f15_di" bpmnElement="budget_reappropriation_f15"><di:waypoint x="1440" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f16_di" bpmnElement="budget_reappropriation_f16"><di:waypoint x="1250" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f17_di" bpmnElement="budget_reappropriation_f17"><di:waypoint x="1580" y="320"/><di:waypoint x="1625" y="320"/><di:waypoint x="1625" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f18_di" bpmnElement="budget_reappropriation_f18"><di:waypoint x="1555" y="345"/><di:waypoint x="1555" y="370"/><di:waypoint x="730" y="370"/><di:waypoint x="730" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f19_di" bpmnElement="budget_reappropriation_f19"><di:waypoint x="1580" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f20_di" bpmnElement="budget_reappropriation_f20"><di:waypoint x="1440" y="320"/><di:waypoint x="1530" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f21_di" bpmnElement="budget_reappropriation_f21"><di:waypoint x="1910" y="445"/><di:waypoint x="1955" y="445"/><di:waypoint x="1955" y="570"/><di:waypoint x="2000" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f22_di" bpmnElement="budget_reappropriation_f22"><di:waypoint x="1910" y="445"/><di:waypoint x="2000" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f23_di" bpmnElement="budget_reappropriation_f23"><di:waypoint x="1770" y="445"/><di:waypoint x="1860" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f24_di" bpmnElement="budget_reappropriation_f24"><di:waypoint x="2050" y="485"/><di:waypoint x="2050" y="524"/><di:waypoint x="730" y="524"/><di:waypoint x="730" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f25_di" bpmnElement="budget_reappropriation_f25"><di:waypoint x="2100" y="570"/><di:waypoint x="2197" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f26_di" bpmnElement="budget_reappropriation_f26"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f27_di" bpmnElement="budget_reappropriation_f27"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f28_di" bpmnElement="budget_reappropriation_f28"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f29_di" bpmnElement="budget_reappropriation_f29"><di:waypoint x="128" y="930"/><di:waypoint x="225" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f30_di" bpmnElement="budget_reappropriation_f30"><di:waypoint x="325" y="930"/><di:waypoint x="390" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="budget_reappropriation_f31_di" bpmnElement="budget_reappropriation_f31"><di:waypoint x="490" y="930"/><di:waypoint x="587" y="930"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

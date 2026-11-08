@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ecom_return_policy" name="Return policy (SYNTHETIC; shown to the consumer before purchase)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-ecom-return-policy" name="Return policy (SYNTHETIC; shown to the consumer before purchase)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ecom-return-policy_t" hitPolicy="FIRST">
+      <input id="sec-ecom-return-policy_i0" label="Reason"><inputExpression id="sec-ecom-return-policy_ie0" typeRef="string"><text>returnReason</text></inputExpression></input>
+      <input id="sec-ecom-return-policy_i1" label="Category"><inputExpression id="sec-ecom-return-policy_ie1" typeRef="string"><text>category</text></inputExpression></input>
+      <output id="sec-ecom-return-policy_o0" label="Eligible" name="returnEligible" typeRef="boolean"/>
+      <rule id="sec-ecom-return-policy_r0"><description>perishables not returnable unless damaged on arrival</description>
+        <inputEntry id="sec-ecom-return-policy_r0_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-ecom-return-policy_r0_i1"><text>"PERISHABLE"</text></inputEntry>
+        <outputEntry id="sec-ecom-return-policy_r0_o0"><text>false</text></outputEntry>
+      </rule>
+      <rule id="sec-ecom-return-policy_r1">
+        <inputEntry id="sec-ecom-return-policy_r1_i0"><text>"CHANGED_MIND"</text></inputEntry>
+        <inputEntry id="sec-ecom-return-policy_r1_i1"><text>"INNERWEAR"</text></inputEntry>
+        <outputEntry id="sec-ecom-return-policy_r1_o0"><text>false</text></outputEntry>
+      </rule>
+      <rule id="sec-ecom-return-policy_r2">
+        <inputEntry id="sec-ecom-return-policy_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-ecom-return-policy_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-ecom-return-policy_r2_o0"><text>true</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_scm_payment_terms" name="Payment term" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-scm-payment-terms" name="Payment term" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-scm-payment-terms_t" hitPolicy="FIRST">
+      <input id="sec-scm-payment-terms_i0" label="MSME supplier"><inputExpression id="sec-scm-payment-terms_ie0" typeRef="boolean"><text>msmeSupplier</text></inputExpression></input>
+      <output id="sec-scm-payment-terms_o0" label="Pay within" name="paymentTermSpec" typeRef="string"/>
+      <rule id="sec-scm-payment-terms_r0"><description>MSMED Act s.15: within 45 days of acceptance</description>
+        <inputEntry id="sec-scm-payment-terms_r0_i0"><text>true</text></inputEntry>
+        <outputEntry id="sec-scm-payment-terms_r0_o0"><text>"45D"</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-payment-terms_r1"><description>SYNTHETIC</description>
+        <inputEntry id="sec-scm-payment-terms_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-scm-payment-terms_r1_o0"><text>"60D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

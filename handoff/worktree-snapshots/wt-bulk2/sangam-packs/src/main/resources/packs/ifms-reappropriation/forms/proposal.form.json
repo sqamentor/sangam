@@ -1,0 +1,108 @@
+{
+  "key": "ifms-reappropriation/proposal",
+  "version": "1.0.0",
+  "pack": "gov.ifms.reappropriation",
+  "title": {
+    "en": "Re-appropriation proposal",
+    "hi": "पुनर्विनियोजन प्रस्ताव"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fiscalYear",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Financial year",
+        "hi": "वित्तीय वर्ष"
+      }
+    },
+    {
+      "id": "fromHead",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Re-appropriate from head",
+        "hi": "किस शीर्ष से पुनर्विनियोजन"
+      }
+    },
+    {
+      "id": "toHead",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Re-appropriate to head",
+        "hi": "किस शीर्ष में पुनर्विनियोजन"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "objectGroup",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Object-head group",
+        "hi": "उद्देश्य शीर्ष समूह"
+      }
+    },
+    {
+      "id": "reappFlags",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Line flags (charged, NS/NIS, supplementary, CF advance, secret service ...)",
+        "hi": "शीर्ष फ़्लैग"
+      }
+    },
+    {
+      "id": "percentOfBe",
+      "type": "number",
+      "required": false,
+      "label": {
+        "en": "Increase as % of BE",
+        "hi": "बजट अनुमान का % वृद्धि"
+      }
+    },
+    {
+      "id": "beAmount",
+      "type": "money",
+      "required": false,
+      "label": {
+        "en": "Budget estimate (BE)",
+        "hi": "बजट अनुमान"
+      }
+    },
+    {
+      "id": "justification",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Justification",
+        "hi": "औचित्य"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

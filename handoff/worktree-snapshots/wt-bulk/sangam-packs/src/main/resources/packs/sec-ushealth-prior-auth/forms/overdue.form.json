@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-prior-auth/overdue",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.prior-auth",
+  "title": {
+    "en": "Payer decision overdue: escalate and record for metrics",
+    "es": "Decisión del pagador vencida: escalar y registrar para métricas"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "escalationNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Escalation to the payer / regulator",
+        "es": "Escalamiento al pagador / regulador"
+      }
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "key": "sec-ushealth-baa/propose",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.baa",
+  "title": {
+    "en": "Business associate",
+    "es": "Socio comercial"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "baName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Business associate",
+        "es": "Socio comercial"
+      }
+    },
+    {
+      "id": "phiScope",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "PHI created, received, maintained or transmitted",
+        "es": "PHI creada, recibida, mantenida o transmitida"
+      }
+    },
+    {
+      "id": "subcontractors",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Subcontractors with flow-down BAAs",
+        "es": "Subcontratistas con BAA derivados"
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_nbfc_dlg_invocation" name="DLG invocation window" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-nbfc-dlg-invocation" name="DLG invocation window" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-nbfc-dlg-invocation_t" hitPolicy="FIRST">
+      <input id="sec-nbfc-dlg-invocation_i0" label="Days overdue"><inputExpression id="sec-nbfc-dlg-invocation_ie0" typeRef="integer"><text>daysOverdue</text></inputExpression></input>
+      <output id="sec-nbfc-dlg-invocation_o0" label="Allowed" name="invocationAllowed" typeRef="boolean"/>
+      <rule id="sec-nbfc-dlg-invocation_r0"><description>within 120 days of overdue</description>
+        <inputEntry id="sec-nbfc-dlg-invocation_r0_i0"><text>&lt;= 120</text></inputEntry>
+        <outputEntry id="sec-nbfc-dlg-invocation_r0_o0"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-nbfc-dlg-invocation_r1">
+        <inputEntry id="sec-nbfc-dlg-invocation_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-nbfc-dlg-invocation_r1_o0"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

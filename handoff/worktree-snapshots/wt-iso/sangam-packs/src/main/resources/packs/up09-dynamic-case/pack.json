@@ -1,0 +1,35 @@
+{
+  "id": "universal.up09-dynamic-case",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-09 Dynamic case with ad-hoc work and external experts",
+    "hi": "यूपी-09 तदर्थ कार्य एवं बाह्य विशेषज्ञों सहित गतिशील प्रकरण"
+  },
+  "domain": "Universal",
+  "description": "Claim investigation as a CMMN case: discretionary, repeatable investigation steps and an external expert report; decision after triage (R45, R76).",
+  "mainProcesses": [
+    "sangam-up09-claim-investigation"
+  ],
+  "resources": [
+    {
+      "kind": "CMMN",
+      "path": "packs/up09-dynamic-case/sangam-up09-claim-investigation.cmmn"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up09-dynamic-case/seed.json"
+    }
+  ],
+  "seed": "packs/up09-dynamic-case/seed.json",
+  "connectors": [],
+  "covers": [
+    "UP-09",
+    "R45",
+    "R76",
+    "GP-21"
+  ],
+  "acceptance": [],
+  "dependsOn": [],
+  "tenantOverrides": [],
+  "calls": []
+}

@@ -1,0 +1,63 @@
+{
+  "key": "sec-ushealth-access-request/request",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.access-request",
+  "title": {
+    "en": "Access request",
+    "es": "Solicitud de acceso"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "requesterName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Requester name",
+        "es": "Nombre del solicitante"
+      }
+    },
+    {
+      "id": "requestType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Request type",
+        "es": "Tipo de solicitud (individuo, representante personal, envío a terceros)"
+      }
+    },
+    {
+      "id": "recordsRequested",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Records requested (designated record set)",
+        "es": "Registros solicitados (conjunto designado de registros)"
+      }
+    },
+    {
+      "id": "formatRequested",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Form and format requested",
+        "es": "Forma y formato solicitados"
+      }
+    },
+    {
+      "id": "thirdPartyRecipient",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Third-party recipient",
+        "es": "Destinatario tercero"
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_tel_ucc" name="UCC complaint timeline and graded action (TCCCPR 2018 as amended 2025; verify)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-tel-ucc" name="UCC complaint timeline and graded action (TCCCPR 2018 as amended 2025; verify)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-tel-ucc_t" hitPolicy="FIRST">
+      <input id="sec-tel-ucc_i0" label="Prior violations"><inputExpression id="sec-tel-ucc_ie0" typeRef="integer"><text>priorViolations</text></inputExpression></input>
+      <output id="sec-tel-ucc_o0" label="Act within" name="uccSpec" typeRef="string"/>
+      <output id="sec-tel-ucc_o1" label="Action" name="senderAction" typeRef="string"/>
+      <rule id="sec-tel-ucc_r0"><description>repeat offender</description>
+        <inputEntry id="sec-tel-ucc_r0_i0"><text>&gt;= 2</text></inputEntry>
+        <outputEntry id="sec-tel-ucc_r0_o0"><text>"5D"</text></outputEntry>
+        <outputEntry id="sec-tel-ucc_r0_o1"><text>"BLACKLIST"</text></outputEntry>
+      </rule>
+      <rule id="sec-tel-ucc_r1">
+        <inputEntry id="sec-tel-ucc_r1_i0"><text>&gt;= 1</text></inputEntry>
+        <outputEntry id="sec-tel-ucc_r1_o0"><text>"5D"</text></outputEntry>
+        <outputEntry id="sec-tel-ucc_r1_o1"><text>"SUSPEND"</text></outputEntry>
+      </rule>
+      <rule id="sec-tel-ucc_r2"><description>first violation</description>
+        <inputEntry id="sec-tel-ucc_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-tel-ucc_r2_o0"><text>"5D"</text></outputEntry>
+        <outputEntry id="sec-tel-ucc_r2_o1"><text>"WARN"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_health_ot_urgency" name="OT slot window (SYNTHETIC hospital policy)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-health-ot-urgency" name="OT slot window (SYNTHETIC hospital policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-health-ot-urgency_t" hitPolicy="FIRST">
+      <input id="sec-health-ot-urgency_i0" label="Urgency"><inputExpression id="sec-health-ot-urgency_ie0" typeRef="string"><text>urgency</text></inputExpression></input>
+      <output id="sec-health-ot-urgency_o0" label="Operate within" name="otWindow" typeRef="string"/>
+      <rule id="sec-health-ot-urgency_r0">
+        <inputEntry id="sec-health-ot-urgency_r0_i0"><text>"EMERGENCY"</text></inputEntry>
+        <outputEntry id="sec-health-ot-urgency_r0_o0"><text>"1H"</text></outputEntry>
+      </rule>
+      <rule id="sec-health-ot-urgency_r1">
+        <inputEntry id="sec-health-ot-urgency_r1_i0"><text>"URGENT"</text></inputEntry>
+        <outputEntry id="sec-health-ot-urgency_r1_o0"><text>"24H"</text></outputEntry>
+      </rule>
+      <rule id="sec-health-ot-urgency_r2"><description>elective</description>
+        <inputEntry id="sec-health-ot-urgency_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-health-ot-urgency_r2_o0"><text>"14D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,76 @@
+{
+  "id": "sec.bank.cheque-return",
+  "version": "1.0.0",
+  "name": {
+    "en": "Cheque return and Section 138 NI Act",
+    "hi": "चेक वापसी एवं परक्राम्य लिखत अधिनियम धारा 138"
+  },
+  "domain": "Banking",
+  "description": "CTS return: memo with the reason the same day, charges by schedule, repeated dishonour control (cheque facility withdrawn after the board threshold); payee side: legal notice within 30 days of the return memo, 15 days for the drawer to pay, complaint within one month after that, or re-presentation within validity.",
+  "mainProcesses": [
+    "sangam-sec-bank-cheque-return"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-cheque-return/sangam-sec-bank-cheque-return.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-cheque-return/sec-bank-cheque-rules.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-cheque-return/forms/return.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-cheque-return/forms/withdraw.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-cheque-return/forms/payee.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-cheque-return/forms/complaint.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-cheque-return/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-cheque-return/seed.json",
+  "connectors": [
+    {
+      "id": "cts.returnMemo",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Return memo"
+    },
+    {
+      "id": "cts.present",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Re-presentation"
+    },
+    {
+      "id": "docs.notice",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Legal notice"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-030",
+    "SEC-BANK-031",
+    "GP-35",
+    "GP-46"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

@@ -1,0 +1,45 @@
+{
+  "key": "sec-bank-loan-closure/request",
+  "version": "1.0.0",
+  "pack": "sec.bank.loan-closure",
+  "title": {
+    "en": "Loan closure",
+    "hi": "ऋण समापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "loanAccountNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Loan account number",
+        "hi": "ऋण खाता संख्या"
+      }
+    },
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    }
+  ]
+}

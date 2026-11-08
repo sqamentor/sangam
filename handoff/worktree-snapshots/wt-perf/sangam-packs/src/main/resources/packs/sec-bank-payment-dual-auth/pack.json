@@ -1,0 +1,141 @@
+{
+  "id": "sec.bank.payment-dual-auth",
+  "version": "1.0.0",
+  "name": {
+    "en": "Payment initiation with maker, checker and authoriser",
+    "hi": "निर्माता, जाँचकर्ता एवं प्राधिकारी सहित भुगतान प्रारंभ"
+  },
+  "domain": "Banking",
+  "description": "Corporate / treasury payment (NEFT, RTGS, IMPS, SWIFT): beneficiary name validation, sanctions screening, rail limits by rule (RTGS minimum, IMPS cap), checker and a second authoriser above the band with SoD by person and seat and approval bound to the payload hash; the transfer is class (c): lost response goes to UNKNOWN_OUTCOME and reconciliation with the statement; returns credited back.",
+  "mainProcesses": [
+    "sangam-sec-bank-payment"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-payment-dual-auth/sangam-sec-bank-payment.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-payment-dual-auth/sec-bank-pay-limits.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-payment-dual-auth/sec-bank-pay-checker.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-payment-dual-auth/sec-bank-pay-authoriser.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-payment-dual-auth/sec-bank-pay-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-payment-dual-auth/forms/initiate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-payment-dual-auth/forms/correct.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-payment-dual-auth/forms/screening.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-payment-dual-auth/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-payment-dual-auth/seed.json",
+  "connectors": [
+    {
+      "id": "bene.validate",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Beneficiary name lookup"
+    },
+    {
+      "id": "sanctions.screen",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Screening"
+    },
+    {
+      "id": "bank.transfer",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Payment rail"
+    },
+    {
+      "id": "cbs.credit",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Credit back a returned payment"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-020",
+    "SEC-BANK-021",
+    "SEC-BANK-022",
+    "UP-05",
+    "GP-01",
+    "GP-12",
+    "GP-34",
+    "AC-02",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [
+    {
+      "id": "SEC-BANK-PY-1",
+      "title": "Above-band payment needs two different approvers",
+      "refs": [
+        "SEC-BANK-020",
+        "UP-05"
+      ],
+      "given": "amount = 3,000,000 by NEFT",
+      "when": "the checker approves",
+      "then": "an authoriser task opens; the checker cannot take it",
+      "startVariables": {
+        "amount": 3000000
+      },
+      "expectState": null,
+      "run": {
+        "expect": {
+          "tasks": [
+            "sn_sanction",
+            "sn_sanction"
+          ],
+          "audit": [
+            "CASE_CLOSED"
+          ]
+        }
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "placeholders": [
+    {
+      "decision": "sec-bank-pay-limits",
+      "rule": "SYNTHETIC band amounts (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000)",
+      "reason": "tenant-specific band amounts: the concurrence rule itself is decided (owner, SL-50, 2026-11-08: checker concurrence capped at the band of the authoriser covering the amount); the band amounts are SYNTHETIC; confirm them from the board-approved delegation of financial powers and deploy sec-bank-pay-limits and sec-bank-pay-powers together as tenant DMN overrides"
+    },
+    {
+      "decision": "sec-bank-pay-powers",
+      "rule": "SYNTHETIC band amounts (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000)",
+      "reason": "tenant-specific band amounts: the concurrence rule itself is decided (owner, SL-50, 2026-11-08: checker concurrence capped at the band of the authoriser covering the amount); the band amounts are SYNTHETIC; confirm them from the board-approved delegation of financial powers and deploy sec-bank-pay-limits and sec-bank-pay-powers together as tenant DMN overrides"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "RETURNS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "RETURNS-QC",
+      "role": "QC",
+      "office": "RETURNS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "MARKETPLACE-ARB",
+      "name": {
+        "en": "Returns quality check",
+        "hi": "वापसी गुणवत्ता जाँच"
+      }
+    },
+    {
+      "id": "MARKETPLACE-ARB",
+      "role": "ARBITER",
+      "office": "RETURNS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Marketplace dispute desk",
+        "hi": "मार्केटप्लेस विवाद डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "RETURNS-QC",
+      "person": "eer.returns-qc",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "MARKETPLACE-ARB",
+      "person": "eer.marketplace-arb",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "QC",
+      "name": {
+        "en": "Returns quality check",
+        "hi": "वापसी गुणवत्ता जाँच"
+      }
+    },
+    {
+      "code": "ARBITER",
+      "name": {
+        "en": "Marketplace dispute desk",
+        "hi": "मार्केटप्लेस विवाद डेस्क"
+      }
+    }
+  ]
+}

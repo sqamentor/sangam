@@ -1,0 +1,75 @@
+{
+  "id": "sec.health.abdm-consent",
+  "version": "1.0.0",
+  "name": {
+    "en": "ABDM consent and health information exchange",
+    "hi": "एबीडीएम सहमति एवं स्वास्थ्य सूचना आदान-प्रदान"
+  },
+  "domain": "Healthcare",
+  "description": "Health Information User flow: consent request through the consent manager (purpose, HI types, date range, expiry), patient grants or denies, data request to the HIPs with encrypted transfer, clinician review, records purged at consent expiry or revocation; break-the-glass access with post-facto review; every step audited (DPDP data fiduciary duties).",
+  "mainProcesses": [
+    "sangam-sec-health-abdm-consent"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-health-abdm-consent/sangam-sec-health-abdm-consent.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-abdm-consent/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-abdm-consent/forms/btg.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-abdm-consent/forms/btg-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-health-abdm-consent/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-health-abdm-consent/seed.json"
+    }
+  ],
+  "seed": "packs/sec-health-abdm-consent/seed.json",
+  "connectors": [
+    {
+      "id": "abdm.consentRequest",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Consent request (HIU to CM)"
+    },
+    {
+      "id": "abdm.hiRequest",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Health information request"
+    },
+    {
+      "id": "records.purge",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Purge fetched data"
+    }
+  ],
+  "covers": [
+    "SEC-HEALTH-006",
+    "SEC-HEALTH-007",
+    "SEC-HEALTH-008",
+    "SEC-LEGAL-001",
+    "UP-17",
+    "GP-15",
+    "GP-52"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

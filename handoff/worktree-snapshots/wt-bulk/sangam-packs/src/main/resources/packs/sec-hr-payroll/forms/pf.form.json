@@ -1,0 +1,27 @@
+{
+  "key": "sec-hr-payroll/pf",
+  "version": "1.0.0",
+  "pack": "sec.hr.payroll",
+  "title": {
+    "en": "File PF ECR and pay",
+    "hi": "पीएफ ईसीआर दाखिल एवं भुगतान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

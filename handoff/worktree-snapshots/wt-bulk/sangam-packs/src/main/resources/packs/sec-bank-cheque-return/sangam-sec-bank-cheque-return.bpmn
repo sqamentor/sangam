@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Cheque return. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_cheque_return" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cheque_paid" name="sangam.cheque.paid"/>
+  <process id="sangam-sec-bank-cheque-return" name="Cheque return" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.cheque-return</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>chequeNo,amount,returnReason</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="cq_start" name="Cheque returned in clearing" operaton:initiator="initiator" operaton:formKey="sangam:sec-bank-cheque-return/return"></startEvent>
+    <serviceTask id="cq_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>chequeNo=@customerId;returnReason=FUNDS_INSUFFICIENT;drawerName=X;returnCount=1;payeeSeat=PAYEE-DESK;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cq_memo" name="Return memo with reason" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cts.returnMemo</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>memo</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>chequeNo,returnReason</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>memo</operaton:string></operaton:field><operaton:field name="step"><operaton:string>memo</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cq_notify" name="Tell the customer the same day" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>cheque-returned</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="cq_rule" name="Charges and repeated dishonour (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-cheque-rules</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <userTask id="cq_withdraw" name="Withdraw cheque facility (repeated dishonour)" operaton:candidateGroups="BRANCH-MGR" operaton:formKey="sangam:sec-bank-cheque-return/withdraw"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="cq_repGw" name="Repeated dishonour?" default="sec_bank_cheque_return_f6"></exclusiveGateway>
+    <exclusiveGateway id="cq_repMerge" name=""></exclusiveGateway>
+    <serviceTask id="cq_payee_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cq_payee</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>30D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="cq_payee" name="Payee: legal notice or re-present (30 days)" operaton:candidateGroups="${payeeSeat}" operaton:formKey="sangam:sec-bank-cheque-return/payee" operaton:dueDate="${cq_payeeDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>payeeDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cq_payee_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cq_payee</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>payeeSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cq_payee_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="cq_payee_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cq_payee</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>DEEMED_REFUSAL</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>payeeSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>payeeDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>issueNotice</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>drop</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cq_payee_breachGw" name="Deemed?" default="sec_bank_cheque_return_f14"></exclusiveGateway>
+    <exclusiveGateway id="cq_payee_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="cq_payeeGw" name="" default="sec_bank_cheque_return_f22"></exclusiveGateway>
+    <serviceTask id="cq_represent" name="Re-present the cheque" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cts.present</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>present</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>chequeNo,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>present</operaton:string></operaton:field><operaton:field name="step"><operaton:string>represent</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cq_endRepresented" name="Re-presented"></endEvent>
+    <serviceTask id="cq_notice" name="Legal notice to the drawer" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.notice</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>s138</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>chequeNo,amount,drawerName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>notice</operaton:string></operaton:field><operaton:field name="step"><operaton:string>s138</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cq_endDropped" name="No action"></endEvent>
+    <eventBasedGateway id="cq_wait" name="Payment or 15 days"></eventBasedGateway>
+    <intermediateCatchEvent id="cq_paid" name="Drawer paid"><messageEventDefinition messageRef="msg_sangam_cheque_paid"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="cq_15d" name="15 days after notice"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P15D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="cq_endPaid" name="Paid after notice"></endEvent>
+    <serviceTask id="cq_complaint_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cq_complaint</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>30D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="cq_complaint" name="File complaint before the magistrate (one month)" operaton:candidateGroups="${payeeSeat}" operaton:formKey="sangam:sec-bank-cheque-return/complaint" operaton:dueDate="${cq_complaintDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cq_complaint_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cq_complaint</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>payeeSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cq_complaint_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="cq_complaint_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cq_complaint</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>payeeSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cq_complaint_breachGw" name="Deemed?" default="sec_bank_cheque_return_f32"></exclusiveGateway>
+    <exclusiveGateway id="cq_complaint_done" name=""></exclusiveGateway>
+    <endEvent id="cq_endComplaint" name="Complaint filed"></endEvent>
+    <boundaryEvent id="cq_payee_warn" name="SLA warning (75%)" attachedToRef="cq_payee" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${cq_payeeWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="cq_payee_breach" name="SLA breached" attachedToRef="cq_payee" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${cq_payeeDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="cq_complaint_warn" name="SLA warning (75%)" attachedToRef="cq_complaint" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${cq_complaintWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="cq_complaint_breach" name="SLA breached" attachedToRef="cq_complaint" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${cq_complaintDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_bank_cheque_return_f1" sourceRef="cq_start" targetRef="cq_defaults"/>
+    <sequenceFlow id="sec_bank_cheque_return_f2" sourceRef="cq_defaults" targetRef="cq_memo"/>
+    <sequenceFlow id="sec_bank_cheque_return_f3" sourceRef="cq_memo" targetRef="cq_notify"/>
+    <sequenceFlow id="sec_bank_cheque_return_f4" sourceRef="cq_notify" targetRef="cq_rule"/>
+    <sequenceFlow id="sec_bank_cheque_return_f5" name="yes" sourceRef="cq_repGw" targetRef="cq_withdraw"><conditionExpression xsi:type="tFormalExpression">${withdrawChequeBook}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_cheque_return_f6" name="no" sourceRef="cq_repGw" targetRef="cq_repMerge"/>
+    <sequenceFlow id="sec_bank_cheque_return_f7" sourceRef="cq_withdraw" targetRef="cq_repMerge"/>
+    <sequenceFlow id="sec_bank_cheque_return_f8" sourceRef="cq_rule" targetRef="cq_repGw"/>
+    <sequenceFlow id="sec_bank_cheque_return_f9" sourceRef="cq_payee_warn" targetRef="cq_payee_warnNotify"/>
+    <sequenceFlow id="sec_bank_cheque_return_f10" sourceRef="cq_payee_warnNotify" targetRef="cq_payee_warnEnd"/>
+    <sequenceFlow id="sec_bank_cheque_return_f11" sourceRef="cq_payee_breach" targetRef="cq_payee_breachAct"/>
+    <sequenceFlow id="sec_bank_cheque_return_f12" sourceRef="cq_payee_breachAct" targetRef="cq_payee_breachGw"/>
+    <sequenceFlow id="sec_bank_cheque_return_f13" name="deemed" sourceRef="cq_payee_breachGw" targetRef="cq_payee_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_cheque_return_f14" name="escalated" sourceRef="cq_payee_breachGw" targetRef="cq_payee_slaPlan"/>
+    <sequenceFlow id="sec_bank_cheque_return_f15" sourceRef="cq_payee_slaPlan" targetRef="cq_payee"/>
+    <sequenceFlow id="sec_bank_cheque_return_f16" sourceRef="cq_payee" targetRef="cq_payee_done"/>
+    <sequenceFlow id="sec_bank_cheque_return_f17" sourceRef="cq_repMerge" targetRef="cq_payee_slaPlan"/>
+    <sequenceFlow id="sec_bank_cheque_return_f18" sourceRef="cq_payee_done" targetRef="cq_payeeGw"/>
+    <sequenceFlow id="sec_bank_cheque_return_f19" name="re-present" sourceRef="cq_payeeGw" targetRef="cq_represent"><conditionExpression xsi:type="tFormalExpression">${payeeDecision == 'represent'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_cheque_return_f20" sourceRef="cq_represent" targetRef="cq_endRepresented"/>
+    <sequenceFlow id="sec_bank_cheque_return_f21" name="notice" sourceRef="cq_payeeGw" targetRef="cq_notice"><conditionExpression xsi:type="tFormalExpression">${payeeDecision == 'issueNotice'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_cheque_return_f22" name="drop" sourceRef="cq_payeeGw" targetRef="cq_endDropped"/>
+    <sequenceFlow id="sec_bank_cheque_return_f23" sourceRef="cq_notice" targetRef="cq_wait"/>
+    <sequenceFlow id="sec_bank_cheque_return_f24" sourceRef="cq_wait" targetRef="cq_paid"/>
+    <sequenceFlow id="sec_bank_cheque_return_f25" sourceRef="cq_wait" targetRef="cq_15d"/>
+    <sequenceFlow id="sec_bank_cheque_return_f26" sourceRef="cq_paid" targetRef="cq_endPaid"/>
+    <sequenceFlow id="sec_bank_cheque_return_f27" sourceRef="cq_complaint_warn" targetRef="cq_complaint_warnNotify"/>
+    <sequenceFlow id="sec_bank_cheque_return_f28" sourceRef="cq_complaint_warnNotify" targetRef="cq_complaint_warnEnd"/>
+    <sequenceFlow id="sec_bank_cheque_return_f29" sourceRef="cq_complaint_breach" targetRef="cq_complaint_breachAct"/>
+    <sequenceFlow id="sec_bank_cheque_return_f30" sourceRef="cq_complaint_breachAct" targetRef="cq_complaint_breachGw"/>
+    <sequenceFlow id="sec_bank_cheque_return_f31" name="deemed" sourceRef="cq_complaint_breachGw" targetRef="cq_complaint_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_cheque_return_f32" name="escalated" sourceRef="cq_complaint_breachGw" targetRef="cq_complaint_slaPlan"/>
+    <sequenceFlow id="sec_bank_cheque_return_f33" sourceRef="cq_complaint_slaPlan" targetRef="cq_complaint"/>
+    <sequenceFlow id="sec_bank_cheque_return_f34" sourceRef="cq_complaint" targetRef="cq_complaint_done"/>
+    <sequenceFlow id="sec_bank_cheque_return_f35" sourceRef="cq_15d" targetRef="cq_complaint_slaPlan"/>
+    <sequenceFlow id="sec_bank_cheque_return_f36" sourceRef="cq_complaint_done" targetRef="cq_endComplaint"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_cheque_return_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_cheque_return_plane" bpmnElement="sangam-sec-bank-cheque-return">
+      <bpmndi:BPMNShape id="cq_start_di" bpmnElement="cq_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_defaults_di" bpmnElement="cq_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_memo_di" bpmnElement="cq_memo"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_notify_di" bpmnElement="cq_notify"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_rule_di" bpmnElement="cq_rule"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_withdraw_di" bpmnElement="cq_withdraw"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_repGw_di" bpmnElement="cq_repGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_repMerge_di" bpmnElement="cq_repMerge"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payee_slaPlan_di" bpmnElement="cq_payee_slaPlan"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payee_di" bpmnElement="cq_payee"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payee_warnNotify_di" bpmnElement="cq_payee_warnNotify"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payee_warnEnd_di" bpmnElement="cq_payee_warnEnd"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payee_breachAct_di" bpmnElement="cq_payee_breachAct"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payee_breachGw_di" bpmnElement="cq_payee_breachGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payee_done_di" bpmnElement="cq_payee_done"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payeeGw_di" bpmnElement="cq_payeeGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_represent_di" bpmnElement="cq_represent"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_endRepresented_di" bpmnElement="cq_endRepresented"><dc:Bounds x="2527" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_notice_di" bpmnElement="cq_notice"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_endDropped_di" bpmnElement="cq_endDropped"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_wait_di" bpmnElement="cq_wait"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_paid_di" bpmnElement="cq_paid"><dc:Bounds x="2692" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_15d_di" bpmnElement="cq_15d"><dc:Bounds x="2692" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_endPaid_di" bpmnElement="cq_endPaid"><dc:Bounds x="2857" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_complaint_slaPlan_di" bpmnElement="cq_complaint_slaPlan"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_complaint_di" bpmnElement="cq_complaint"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_complaint_warnNotify_di" bpmnElement="cq_complaint_warnNotify"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_complaint_warnEnd_di" bpmnElement="cq_complaint_warnEnd"><dc:Bounds x="3352" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_complaint_breachAct_di" bpmnElement="cq_complaint_breachAct"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_complaint_breachGw_di" bpmnElement="cq_complaint_breachGw"><dc:Bounds x="3345" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_complaint_done_di" bpmnElement="cq_complaint_done"><dc:Bounds x="3510" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_endComplaint_di" bpmnElement="cq_endComplaint"><dc:Bounds x="3682" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payee_warn_di" bpmnElement="cq_payee_warn"><dc:Bounds x="1513" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_payee_breach_di" bpmnElement="cq_payee_breach"><dc:Bounds x="1543" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_complaint_warn_di" bpmnElement="cq_complaint_warn"><dc:Bounds x="2998" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cq_complaint_breach_di" bpmnElement="cq_complaint_breach"><dc:Bounds x="3028" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f1_di" bpmnElement="sec_bank_cheque_return_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f2_di" bpmnElement="sec_bank_cheque_return_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f3_di" bpmnElement="sec_bank_cheque_return_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f4_di" bpmnElement="sec_bank_cheque_return_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f5_di" bpmnElement="sec_bank_cheque_return_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f6_di" bpmnElement="sec_bank_cheque_return_f6"><di:waypoint x="920" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f7_di" bpmnElement="sec_bank_cheque_return_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f8_di" bpmnElement="sec_bank_cheque_return_f8"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f9_di" bpmnElement="sec_bank_cheque_return_f9"><di:waypoint x="1531" y="128"/><di:waypoint x="1531" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f10_di" bpmnElement="sec_bank_cheque_return_f10"><di:waypoint x="1770" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f11_di" bpmnElement="sec_bank_cheque_return_f11"><di:waypoint x="1561" y="128"/><di:waypoint x="1561" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f12_di" bpmnElement="sec_bank_cheque_return_f12"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f13_di" bpmnElement="sec_bank_cheque_return_f13"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f14_di" bpmnElement="sec_bank_cheque_return_f14"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="135"/><di:waypoint x="1390" y="135"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f15_di" bpmnElement="sec_bank_cheque_return_f15"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f16_di" bpmnElement="sec_bank_cheque_return_f16"><di:waypoint x="1605" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f17_di" bpmnElement="sec_bank_cheque_return_f17"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f18_di" bpmnElement="sec_bank_cheque_return_f18"><di:waypoint x="2075" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f19_di" bpmnElement="sec_bank_cheque_return_f19"><di:waypoint x="2240" y="70"/><di:waypoint x="2285" y="70"/><di:waypoint x="2285" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f20_di" bpmnElement="sec_bank_cheque_return_f20"><di:waypoint x="2430" y="320"/><di:waypoint x="2527" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f21_di" bpmnElement="sec_bank_cheque_return_f21"><di:waypoint x="2240" y="70"/><di:waypoint x="2285" y="70"/><di:waypoint x="2285" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f22_di" bpmnElement="sec_bank_cheque_return_f22"><di:waypoint x="2240" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f23_di" bpmnElement="sec_bank_cheque_return_f23"><di:waypoint x="2430" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f24_di" bpmnElement="sec_bank_cheque_return_f24"><di:waypoint x="2570" y="195"/><di:waypoint x="2631" y="195"/><di:waypoint x="2631" y="320"/><di:waypoint x="2692" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f25_di" bpmnElement="sec_bank_cheque_return_f25"><di:waypoint x="2570" y="195"/><di:waypoint x="2692" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f26_di" bpmnElement="sec_bank_cheque_return_f26"><di:waypoint x="2728" y="320"/><di:waypoint x="2857" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f27_di" bpmnElement="sec_bank_cheque_return_f27"><di:waypoint x="3016" y="253"/><di:waypoint x="3016" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f28_di" bpmnElement="sec_bank_cheque_return_f28"><di:waypoint x="3255" y="320"/><di:waypoint x="3352" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f29_di" bpmnElement="sec_bank_cheque_return_f29"><di:waypoint x="3046" y="253"/><di:waypoint x="3046" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f30_di" bpmnElement="sec_bank_cheque_return_f30"><di:waypoint x="3255" y="195"/><di:waypoint x="3345" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f31_di" bpmnElement="sec_bank_cheque_return_f31"><di:waypoint x="3395" y="195"/><di:waypoint x="3510" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f32_di" bpmnElement="sec_bank_cheque_return_f32"><di:waypoint x="3370" y="220"/><di:waypoint x="3370" y="274"/><di:waypoint x="2875" y="274"/><di:waypoint x="2875" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f33_di" bpmnElement="sec_bank_cheque_return_f33"><di:waypoint x="2925" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f34_di" bpmnElement="sec_bank_cheque_return_f34"><di:waypoint x="3090" y="195"/><di:waypoint x="3510" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f35_di" bpmnElement="sec_bank_cheque_return_f35"><di:waypoint x="2728" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_cheque_return_f36_di" bpmnElement="sec_bank_cheque_return_f36"><di:waypoint x="3560" y="195"/><di:waypoint x="3682" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,27 @@
+{
+  "key": "sec-mfg-mrp-planning/review",
+  "version": "1.0.0",
+  "pack": "sec.mfg.mrp-planning",
+  "title": {
+    "en": "Review exception messages",
+    "hi": "अपवाद संदेशों की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

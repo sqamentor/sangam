@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Return and refund. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ecom_return" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_returnReceived" name="sangam.returnReceived"/>
+  <process id="sangam-sec-ecom-return" name="Return and refund" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ecom.return-refund</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>orderId,returnReason,refundAmount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="er_start" name="Return requested" operaton:initiator="initiator" operaton:formKey="sangam:sec-ecom-return-refund/request"></startEvent>
+    <serviceTask id="er_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>returnReason=DAMAGED;resolutionPref=REFUND;category=GENERAL;qcSeat=RETURNS-QC;executionConnector=pg.refund;executionStep=refund;verifyApproval=false;reconcileRequired=false;executionPayloadFields=orderId,refundAmount;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="er_policy" name="Return policy (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ecom-return-policy</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="er_gw" name="Eligible?" default="sec_ecom_return_f6"></exclusiveGateway>
+    <serviceTask id="er_notEligible" name="Not eligible: reason given" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>return-not-eligible</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="er_endIneligible" name="Not eligible"></endEvent>
+    <serviceTask id="er_pickup" name="Arrange reverse pickup" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>shipping.pickup</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>pickup</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>pickup</operaton:string></operaton:field><operaton:field name="step"><operaton:string>pickup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="er_wait" name="Received or pickup failed"></eventBasedGateway>
+    <intermediateCatchEvent id="er_received" name="Received at the warehouse"><messageEventDefinition messageRef="msg_sangam_returnReceived"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="er_pickFail" name="Pickup not done"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P10D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="er_pickNotify" name="Pickup failed: reschedule or self-ship" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>pickup-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="er_endPickFailed" name="Pickup failed"></endEvent>
+    <userTask id="er_qc" name="Quality check" operaton:candidateGroups="${qcSeat}" operaton:formKey="sangam:sec-ecom-return-refund/qc"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>qcDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="er_qcGw" name="" default="sec_ecom_return_f17"></exclusiveGateway>
+    <userTask id="er_dispute" name="Marketplace arbitration of the seller dispute" operaton:candidateGroups="MARKETPLACE-ARB" operaton:formKey="sangam:sec-ecom-return-refund/dispute"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>disputeDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="er_dispGw" name="" default="sec_ecom_return_f18"></exclusiveGateway>
+    <endEvent id="er_endRejected" name="Return rejected: item sent back"></endEvent>
+    <exclusiveGateway id="er_resGw" name="Refund or replacement?" default="sec_ecom_return_f21"></exclusiveGateway>
+    <serviceTask id="er_replace" name="Create replacement order" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>order.replacement</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>create</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>orderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>repl</operaton:string></operaton:field><operaton:field name="step"><operaton:string>replacement</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="er_endReplaced" name="Replaced"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="er_refund" name="Refund to the original method (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="er_end" name="Refunded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ecom_return_f1" sourceRef="er_start" targetRef="er_defaults"/>
+    <sequenceFlow id="sec_ecom_return_f2" sourceRef="er_defaults" targetRef="er_policy"/>
+    <sequenceFlow id="sec_ecom_return_f3" sourceRef="er_policy" targetRef="er_gw"/>
+    <sequenceFlow id="sec_ecom_return_f4" name="no" sourceRef="er_gw" targetRef="er_notEligible"><conditionExpression xsi:type="tFormalExpression">${!returnEligible}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_return_f5" sourceRef="er_notEligible" targetRef="er_endIneligible"/>
+    <sequenceFlow id="sec_ecom_return_f6" name="yes" sourceRef="er_gw" targetRef="er_pickup"/>
+    <sequenceFlow id="sec_ecom_return_f7" sourceRef="er_pickup" targetRef="er_wait"/>
+    <sequenceFlow id="sec_ecom_return_f8" sourceRef="er_wait" targetRef="er_received"/>
+    <sequenceFlow id="sec_ecom_return_f9" sourceRef="er_wait" targetRef="er_pickFail"/>
+    <sequenceFlow id="sec_ecom_return_f10" sourceRef="er_pickFail" targetRef="er_pickNotify"/>
+    <sequenceFlow id="sec_ecom_return_f11" sourceRef="er_pickNotify" targetRef="er_endPickFailed"/>
+    <sequenceFlow id="sec_ecom_return_f12" sourceRef="er_received" targetRef="er_qc"/>
+    <sequenceFlow id="sec_ecom_return_f13" sourceRef="er_qc" targetRef="er_qcGw"/>
+    <sequenceFlow id="sec_ecom_return_f14" name="QC failed" sourceRef="er_qcGw" targetRef="er_dispute"><conditionExpression xsi:type="tFormalExpression">${qcDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_return_f15" sourceRef="er_dispute" targetRef="er_dispGw"/>
+    <sequenceFlow id="sec_ecom_return_f16" name="seller" sourceRef="er_dispGw" targetRef="er_endRejected"><conditionExpression xsi:type="tFormalExpression">${disputeDecision == 'seller'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_return_f17" name="accept" sourceRef="er_qcGw" targetRef="er_resGw"/>
+    <sequenceFlow id="sec_ecom_return_f18" name="customer" sourceRef="er_dispGw" targetRef="er_resGw"/>
+    <sequenceFlow id="sec_ecom_return_f19" name="replace" sourceRef="er_resGw" targetRef="er_replace"><conditionExpression xsi:type="tFormalExpression">${resolutionPref == 'REPLACE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ecom_return_f20" sourceRef="er_replace" targetRef="er_endReplaced"/>
+    <sequenceFlow id="sec_ecom_return_f21" name="refund" sourceRef="er_resGw" targetRef="er_refund"/>
+    <sequenceFlow id="sec_ecom_return_f22" sourceRef="er_refund" targetRef="er_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ecom_return_diagram">
+    <bpmndi:BPMNPlane id="sec_ecom_return_plane" bpmnElement="sangam-sec-ecom-return">
+      <bpmndi:BPMNShape id="er_start_di" bpmnElement="er_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_defaults_di" bpmnElement="er_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_policy_di" bpmnElement="er_policy"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_gw_di" bpmnElement="er_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_notEligible_di" bpmnElement="er_notEligible"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_endIneligible_di" bpmnElement="er_endIneligible"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_pickup_di" bpmnElement="er_pickup"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_wait_di" bpmnElement="er_wait"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_received_di" bpmnElement="er_received"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_pickFail_di" bpmnElement="er_pickFail"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_pickNotify_di" bpmnElement="er_pickNotify"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_endPickFailed_di" bpmnElement="er_endPickFailed"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_qc_di" bpmnElement="er_qc"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_qcGw_di" bpmnElement="er_qcGw"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_dispute_di" bpmnElement="er_dispute"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_dispGw_di" bpmnElement="er_dispGw"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_endRejected_di" bpmnElement="er_endRejected"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_resGw_di" bpmnElement="er_resGw"><dc:Bounds x="1860" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_replace_di" bpmnElement="er_replace"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_endReplaced_di" bpmnElement="er_endReplaced"><dc:Bounds x="2197" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_refund_di" bpmnElement="er_refund"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="er_end_di" bpmnElement="er_end"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f1_di" bpmnElement="sec_ecom_return_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f2_di" bpmnElement="sec_ecom_return_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f3_di" bpmnElement="sec_ecom_return_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f4_di" bpmnElement="sec_ecom_return_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f5_di" bpmnElement="sec_ecom_return_f5"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f6_di" bpmnElement="sec_ecom_return_f6"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f7_di" bpmnElement="sec_ecom_return_f7"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f8_di" bpmnElement="sec_ecom_return_f8"><di:waypoint x="920" y="70"/><di:waypoint x="981" y="70"/><di:waypoint x="981" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f9_di" bpmnElement="sec_ecom_return_f9"><di:waypoint x="920" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f10_di" bpmnElement="sec_ecom_return_f10"><di:waypoint x="1078" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f11_di" bpmnElement="sec_ecom_return_f11"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f12_di" bpmnElement="sec_ecom_return_f12"><di:waypoint x="1078" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f13_di" bpmnElement="sec_ecom_return_f13"><di:waypoint x="1275" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f14_di" bpmnElement="sec_ecom_return_f14"><di:waypoint x="1415" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f15_di" bpmnElement="sec_ecom_return_f15"><di:waypoint x="1605" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f16_di" bpmnElement="sec_ecom_return_f16"><di:waypoint x="1745" y="195"/><di:waypoint x="1806" y="195"/><di:waypoint x="1806" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f17_di" bpmnElement="sec_ecom_return_f17"><di:waypoint x="1415" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f18_di" bpmnElement="sec_ecom_return_f18"><di:waypoint x="1745" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f19_di" bpmnElement="sec_ecom_return_f19"><di:waypoint x="1910" y="195"/><di:waypoint x="1955" y="195"/><di:waypoint x="1955" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f20_di" bpmnElement="sec_ecom_return_f20"><di:waypoint x="2100" y="320"/><di:waypoint x="2197" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f21_di" bpmnElement="sec_ecom_return_f21"><di:waypoint x="1910" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ecom_return_f22_di" bpmnElement="sec_ecom_return_f22"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

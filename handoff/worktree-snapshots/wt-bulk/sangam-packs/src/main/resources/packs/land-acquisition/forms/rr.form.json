@@ -1,0 +1,36 @@
+{
+  "key": "land-acquisition/rr",
+  "version": "1.0.0",
+  "pack": "gov.land-acquisition",
+  "title": {
+    "en": "R&R scheme",
+    "hi": "पुनर्वास एवं पुनर्व्यवस्थापन योजना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

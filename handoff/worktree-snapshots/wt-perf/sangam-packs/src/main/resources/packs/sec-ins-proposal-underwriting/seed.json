@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "UW",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "UNDERWRITER",
+      "role": "UNDERWRITER",
+      "office": "UW",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CHIEF-UW",
+      "name": {
+        "en": "Underwriter",
+        "hi": "हामीदार"
+      }
+    },
+    {
+      "id": "CHIEF-UW",
+      "role": "CHIEFUW",
+      "office": "UW",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Chief underwriter",
+        "hi": "मुख्य हामीदार"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "UNDERWRITER",
+      "person": "iip.underwriter",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CHIEF-UW",
+      "person": "iip.chief-uw",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "UNDERWRITER",
+      "name": {
+        "en": "Underwriter",
+        "hi": "हामीदार"
+      }
+    },
+    {
+      "code": "CHIEFUW",
+      "name": {
+        "en": "Chief underwriter",
+        "hi": "मुख्य हामीदार"
+      }
+    }
+  ]
+}

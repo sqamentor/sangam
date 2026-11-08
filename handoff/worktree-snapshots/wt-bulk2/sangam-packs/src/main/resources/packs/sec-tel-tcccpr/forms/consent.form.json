@@ -1,0 +1,45 @@
+{
+  "key": "sec-tel-tcccpr/consent",
+  "version": "1.0.0",
+  "pack": "sec.tel.tcccpr",
+  "title": {
+    "en": "Consent request",
+    "hi": "सहमति अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "msisdn",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Mobile number to port",
+        "hi": "पोर्ट किया जाने वाला मोबाइल नंबर"
+      }
+    },
+    {
+      "id": "principalEntity",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Principal entity",
+        "hi": "प्रधान इकाई"
+      }
+    },
+    {
+      "id": "consentPurpose",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Consent purpose",
+        "hi": "सहमति का प्रयोजन"
+      }
+    }
+  ]
+}

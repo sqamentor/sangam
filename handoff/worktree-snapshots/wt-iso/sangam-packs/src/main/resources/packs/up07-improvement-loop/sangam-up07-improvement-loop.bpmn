@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-07 Improvement loop. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up07_improvement_loop" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-up07-improvement-loop" name="UP-07 Improvement loop" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up07-improvement-loop</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>improvementProposal</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u7_start" name="Quarterly"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 5 1 1/3 ?</timeCycle></timerEventDefinition></startEvent>
+    <serviceTask id="u7_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=CHANGE;amount=0;routingDecisionKey=up07-approver;measurePeriod=P30D;ownerSeat=PROCESS-OWNER;improvementProposal=;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u7_discover" name="Discover variants and bottlenecks" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>analytics.discover</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>discover</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>discovery</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u7_review" name="Review variants and bottlenecks" operaton:candidateGroups="${ownerSeat}" operaton:formKey="sangam:up07-improvement-loop/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>improveDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u7_gw" name="Improve?" default="up07_improvement_loop_f6"></exclusiveGateway>
+    <callActivity id="u7_approve" name="Approve change (core sanction)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="u7_endNoChange" name="No change"></endEvent>
+    <serviceTask id="u7_deploy" name="Deploy new version" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>deploy.package</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>publish</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>improvementProposal</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>deploy</operaton:string></operaton:field><operaton:field name="step"><operaton:string>deploy</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="u7_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="u7_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="u7_sanGw" name="sanctionOutcome?" default="up07_improvement_loop_f9"></exclusiveGateway>
+    <intermediateCatchEvent id="u7_measure" name="Measure"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${measurePeriod}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="u7_compare" name="Compare versions" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>analytics.compare</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>compare</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>compare</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u7_decide" name="Compare before and after" operaton:candidateGroups="${ownerSeat}" operaton:formKey="sangam:up07-improvement-loop/compare"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>keepDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u7_keepGw" name="" default="up07_improvement_loop_f17"></exclusiveGateway>
+    <serviceTask id="u7_rollback" name="Roll back version" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>deploy.rollback</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>rollback</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rollback</operaton:string></operaton:field><operaton:field name="step"><operaton:string>rollback</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u7_endRolledBack" name="Rolled back"></endEvent>
+    <endEvent id="u7_end" name="Kept"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="up07_improvement_loop_f1" sourceRef="u7_start" targetRef="u7_defaults"/>
+    <sequenceFlow id="up07_improvement_loop_f2" sourceRef="u7_defaults" targetRef="u7_discover"/>
+    <sequenceFlow id="up07_improvement_loop_f3" sourceRef="u7_discover" targetRef="u7_review"/>
+    <sequenceFlow id="up07_improvement_loop_f4" sourceRef="u7_review" targetRef="u7_gw"/>
+    <sequenceFlow id="up07_improvement_loop_f5" name="proceed" sourceRef="u7_gw" targetRef="u7_approve"><conditionExpression xsi:type="tFormalExpression">${improveDecision == 'proceed'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up07_improvement_loop_f6" name="drop" sourceRef="u7_gw" targetRef="u7_endNoChange"/>
+    <sequenceFlow id="up07_improvement_loop_f7" sourceRef="u7_rj_reject" targetRef="u7_rj_endRejected"/>
+    <sequenceFlow id="up07_improvement_loop_f8" name="SANCTIONED" sourceRef="u7_sanGw" targetRef="u7_deploy"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up07_improvement_loop_f9" name="otherwise" sourceRef="u7_sanGw" targetRef="u7_rj_reject"/>
+    <sequenceFlow id="up07_improvement_loop_f10" sourceRef="u7_approve" targetRef="u7_sanGw"/>
+    <sequenceFlow id="up07_improvement_loop_f11" sourceRef="u7_deploy" targetRef="u7_measure"/>
+    <sequenceFlow id="up07_improvement_loop_f12" sourceRef="u7_measure" targetRef="u7_compare"/>
+    <sequenceFlow id="up07_improvement_loop_f13" sourceRef="u7_compare" targetRef="u7_decide"/>
+    <sequenceFlow id="up07_improvement_loop_f14" sourceRef="u7_decide" targetRef="u7_keepGw"/>
+    <sequenceFlow id="up07_improvement_loop_f15" name="roll back" sourceRef="u7_keepGw" targetRef="u7_rollback"><conditionExpression xsi:type="tFormalExpression">${keepDecision == 'rollback'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up07_improvement_loop_f16" sourceRef="u7_rollback" targetRef="u7_endRolledBack"/>
+    <sequenceFlow id="up07_improvement_loop_f17" name="keep" sourceRef="u7_keepGw" targetRef="u7_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up07_improvement_loop_diagram">
+    <bpmndi:BPMNPlane id="up07_improvement_loop_plane" bpmnElement="sangam-up07-improvement-loop">
+      <bpmndi:BPMNShape id="u7_start_di" bpmnElement="u7_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_defaults_di" bpmnElement="u7_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_discover_di" bpmnElement="u7_discover"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_review_di" bpmnElement="u7_review"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_gw_di" bpmnElement="u7_gw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_approve_di" bpmnElement="u7_approve"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_endNoChange_di" bpmnElement="u7_endNoChange"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_deploy_di" bpmnElement="u7_deploy"><dc:Bounds x="1175" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_rj_reject_di" bpmnElement="u7_rj_reject"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_rj_endRejected_di" bpmnElement="u7_rj_endRejected"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_sanGw_di" bpmnElement="u7_sanGw"><dc:Bounds x="1035" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_measure_di" bpmnElement="u7_measure"><dc:Bounds x="1372" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_compare_di" bpmnElement="u7_compare"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_decide_di" bpmnElement="u7_decide"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_keepGw_di" bpmnElement="u7_keepGw"><dc:Bounds x="1860" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_rollback_di" bpmnElement="u7_rollback"><dc:Bounds x="2000" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_endRolledBack_di" bpmnElement="u7_endRolledBack"><dc:Bounds x="2197" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u7_end_di" bpmnElement="u7_end"><dc:Bounds x="2032" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f1_di" bpmnElement="up07_improvement_loop_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f2_di" bpmnElement="up07_improvement_loop_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f3_di" bpmnElement="up07_improvement_loop_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f4_di" bpmnElement="up07_improvement_loop_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f5_di" bpmnElement="up07_improvement_loop_f5"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f6_di" bpmnElement="up07_improvement_loop_f6"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f7_di" bpmnElement="up07_improvement_loop_f7"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f8_di" bpmnElement="up07_improvement_loop_f8"><di:waypoint x="1085" y="195"/><di:waypoint x="1130" y="195"/><di:waypoint x="1130" y="320"/><di:waypoint x="1175" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f9_di" bpmnElement="up07_improvement_loop_f9"><di:waypoint x="1085" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f10_di" bpmnElement="up07_improvement_loop_f10"><di:waypoint x="945" y="195"/><di:waypoint x="1035" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f11_di" bpmnElement="up07_improvement_loop_f11"><di:waypoint x="1275" y="320"/><di:waypoint x="1372" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f12_di" bpmnElement="up07_improvement_loop_f12"><di:waypoint x="1408" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f13_di" bpmnElement="up07_improvement_loop_f13"><di:waypoint x="1605" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f14_di" bpmnElement="up07_improvement_loop_f14"><di:waypoint x="1770" y="320"/><di:waypoint x="1860" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f15_di" bpmnElement="up07_improvement_loop_f15"><di:waypoint x="1910" y="320"/><di:waypoint x="1955" y="320"/><di:waypoint x="1955" y="445"/><di:waypoint x="2000" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f16_di" bpmnElement="up07_improvement_loop_f16"><di:waypoint x="2100" y="445"/><di:waypoint x="2197" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up07_improvement_loop_f17_di" bpmnElement="up07_improvement_loop_f17"><di:waypoint x="1910" y="320"/><di:waypoint x="2032" y="320"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

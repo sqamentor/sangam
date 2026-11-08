@@ -1,0 +1,19 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- net8.0 is the supported target; SangamTargetFramework overrides it only for compile checks on older SDKs -->
+    <SangamTargetFramework Condition="'$(SangamTargetFramework)' == ''">net8.0</SangamTargetFramework>
+    <TargetFramework>$(SangamTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Sangam.Sdk\Sangam.Sdk.csproj" />
+  </ItemGroup>
+
+</Project>

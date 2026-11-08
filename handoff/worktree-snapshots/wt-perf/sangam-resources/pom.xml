@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- sangam-resources: generic resources (capabilities N01 booking/allotment/scheduling, N07 queue/token, N08 rostering).
+     Resource types, entitlement, priority, tariff, cancellation and roster constraints are configuration or DMN data;
+     no country, department or sector names in code (SANGAM.md X.0e). -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-resources</artifactId>
+  <name>Sangam resources (booking, allotment, queue/token, rostering)</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-core</artifactId>
+    </dependency>
+    <!-- ADR-D-26: standalone DMN engines use Sangam's FEEL policies (SangamFeel); supplied at runtime by sangam-server -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-engine</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-config</artifactId>
+    </dependency>
+    <!-- seats, postings and leave (N08 leave integration and the duty => seat link) -->
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-security</artifactId>
+    </dependency>
+    <!-- Operaton is supplied at runtime by sangam-engine / sangam-server (ADR-D-16); compile against it only. -->
+    <dependency>
+      <groupId>org.operaton.bpm</groupId>
+      <artifactId>operaton-engine</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.operaton.bpm.dmn</groupId>
+      <artifactId>operaton-engine-dmn</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

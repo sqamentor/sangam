@@ -1,0 +1,81 @@
+{
+  "key": "ifms-receipts/resolve",
+  "version": "1.0.0",
+  "pack": "gov.ifms.receipts",
+  "title": {
+    "en": "Resolve receipt discrepancy",
+    "hi": "प्राप्ति विसंगति का निवारण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "challanNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Challan / CIN",
+        "hi": "चालान / सीआईएन"
+      }
+    },
+    {
+      "id": "utr",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "UTR / CIN",
+        "hi": "यूटीआर / सीआईएन"
+      }
+    },
+    {
+      "id": "discrepancyCause",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Cause of discrepancy",
+        "hi": "विसंगति का कारण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "receiptDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "book",
+        "label": {
+          "en": "Book to head",
+          "hi": "शीर्ष में दर्ज करें"
+        }
+      },
+      {
+        "value": "refund",
+        "label": {
+          "en": "Refund",
+          "hi": "वापसी करें"
+        }
+      },
+      {
+        "value": "unaccounted",
+        "label": {
+          "en": "Unaccounted",
+          "hi": "अलेखित"
+        }
+      }
+    ]
+  }
+}

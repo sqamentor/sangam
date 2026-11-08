@@ -1,0 +1,89 @@
+{
+  "id": "sec.legal.dpdp-rights",
+  "version": "1.0.0",
+  "name": {
+    "en": "Data principal rights request (DPDP Act 2023)",
+    "hi": "डेटा प्रधान अधिकार अनुरोध (डीपीडीपी अधिनियम 2023)"
+  },
+  "domain": "Legal / privacy",
+  "description": "Access, correction, erasure, nomination, consent withdrawal and grievance: identity verified, request routed by type, erasure checked against retention duties (PMLA five years, sector rules, legal hold) and propagated to processors, consent withdrawn through the consent manager, reply by the DPO within 90 days with the route to the Data Protection Board.",
+  "mainProcesses": [
+    "sangam-sec-legal-dpdp-request"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-legal-dpdp-rights/sangam-sec-legal-dpdp-request.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-legal-dpdp-rights/sec-legal-dpdp-tat.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-dpdp-rights/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-dpdp-rights/forms/retention.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-dpdp-rights/forms/correct.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-legal-dpdp-rights/forms/reply.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-legal-dpdp-rights/seed.json"
+    }
+  ],
+  "seed": "packs/sec-legal-dpdp-rights/seed.json",
+  "connectors": [
+    {
+      "id": "idv.verify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Identity verification"
+    },
+    {
+      "id": "records.summary",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Personal data summary"
+    },
+    {
+      "id": "records.erase",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Erasure"
+    },
+    {
+      "id": "processors.erase",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Erasure at processors"
+    },
+    {
+      "id": "consent.withdraw",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Consent manager"
+    }
+  ],
+  "covers": [
+    "SEC-LEGAL-001",
+    "SEC-LEGAL-002",
+    "GP-35",
+    "GP-52",
+    "UP-17"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

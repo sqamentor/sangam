@@ -1,0 +1,12 @@
+{
+  "apiBase": "/api/v1",
+  "environment": "dev",
+  "authMode": "dev",
+  "oidc": {
+    "issuer": "http://localhost:8180/realms/sangam",
+    "clientId": "sangam-ui"
+  },
+  "defaultLocale": "en",
+  "locales": ["en", "hi"],
+  "devToken": "dev-token"
+}

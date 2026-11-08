@@ -1,0 +1,72 @@
+{
+  "key": "sec-tel-mnp-port-in/request",
+  "version": "1.0.0",
+  "pack": "sec.tel.mnp-port-in",
+  "title": {
+    "en": "Port-in request",
+    "hi": "पोर्ट-इन अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "msisdn",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Mobile number to port",
+        "hi": "पोर्ट किया जाने वाला मोबाइल नंबर"
+      }
+    },
+    {
+      "id": "customerName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer name",
+        "hi": "ग्राहक का नाम"
+      }
+    },
+    {
+      "id": "upc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Unique porting code",
+        "hi": "विशिष्ट पोर्टिंग कोड"
+      }
+    },
+    {
+      "id": "donorOperator",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Current operator",
+        "hi": "वर्तमान ऑपरेटर"
+      }
+    },
+    {
+      "id": "lsaType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Within or across service area",
+        "hi": "सेवा क्षेत्र के भीतर या बाहर"
+      }
+    },
+    {
+      "id": "customerType",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Customer type",
+        "hi": "ग्राहक का प्रकार"
+      }
+    }
+  ]
+}

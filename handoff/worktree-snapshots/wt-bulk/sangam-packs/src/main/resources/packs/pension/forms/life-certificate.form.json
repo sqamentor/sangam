@@ -1,0 +1,56 @@
+{
+  "key": "pension/life-certificate",
+  "version": "1.0.0",
+  "pack": "gov.pension",
+  "title": {
+    "en": "Life certificate awaited",
+    "hi": "जीवन प्रमाण पत्र प्रतीक्षित"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "lifeCertificate",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Life certificate received",
+        "hi": "जीवन प्रमाण पत्र प्राप्त"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "lifeDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "proceed",
+        "label": {
+          "en": "Proceed",
+          "hi": "आगे बढ़ें"
+        }
+      },
+      {
+        "value": "drop",
+        "label": {
+          "en": "Drop the proposal",
+          "hi": "प्रस्ताव छोड़ें"
+        }
+      }
+    ]
+  }
+}

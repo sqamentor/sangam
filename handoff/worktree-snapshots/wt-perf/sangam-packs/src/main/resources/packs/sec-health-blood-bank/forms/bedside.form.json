@@ -1,0 +1,36 @@
+{
+  "key": "sec-health-blood-bank/bedside",
+  "version": "1.0.0",
+  "pack": "sec.health.blood-bank",
+  "title": {
+    "en": "Bedside identity check and transfuse",
+    "hi": "शय्या पर पहचान जाँच एवं आधान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "checklistDone",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Checklist completed",
+        "hi": "जाँच-सूची पूर्ण"
+      }
+    },
+    {
+      "id": "reaction",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Transfusion reaction",
+        "hi": "आधान प्रतिक्रिया"
+      }
+    }
+  ]
+}

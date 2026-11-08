@@ -1,0 +1,27 @@
+{
+  "key": "sec-legal-litigation/comply",
+  "version": "1.0.0",
+  "pack": "sec.legal.litigation",
+  "title": {
+    "en": "Comply with the order",
+    "hi": "आदेश का अनुपालन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "actionTaken",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Action taken report",
+        "hi": "की गई कार्रवाई की रिपोर्ट"
+      }
+    }
+  ]
+}

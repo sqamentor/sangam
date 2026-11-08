@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Breach notification. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_breach" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-breach" name="Breach notification" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.breach</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>incidentSummary,discoveryDate,affectedCount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="bn_start" name="Incident reported" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-breach/incident"></startEvent>
+    <serviceTask id="bn_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>incidentSummary=@incidentSummary;affectedCount=1;maxStateCount=1;lawEnforcementDelay=false;leDelayDays=0;substituteNotice=false;reportedByBa=false;privacySeat=PRIVACY-OFFICE;securitySeat=SECURITY-OFFICE;counselSeat=COUNSEL</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="bn_cfg" name="Notification rules (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-breach-clocks</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="bn_indClock" name="Due date: individual" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>individual</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>discoveryDate</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${individualLead}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <userTask id="bn_risk" name="Four-factor risk assessment" operaton:candidateGroups="${securitySeat}" operaton:formKey="sangam:sec-ushealth-breach/risk" operaton:dueDate="${individualDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>riskDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="bn_riskGw" name="" default="sec_ushealth_breach_f10"></exclusiveGateway>
+    <userTask id="bn_lowProb" name="Approve the low-probability determination (kept 6 years)" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-ushealth-breach/low-probability"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>bn_risk</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>lowDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="bn_lowGw" name="" default="sec_ushealth_breach_f9"></exclusiveGateway>
+    <endEvent id="bn_endNoBreach" name="Not a reportable breach (documented)"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>NOT_BREACH</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="bn_le" name="Law-enforcement delay statement" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-ushealth-breach/law-enforcement"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="bn_leShift" name="Delay the notice clocks by the stated period" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>SHIFT</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>individualDueAt</operaton:string></operaton:field><operaton:field name="daysVar"><operaton:string>leDelayDays</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bn_leOptGw" name="Delay requested?" default="sec_ushealth_breach_f12"></exclusiveGateway>
+    <exclusiveGateway id="bn_leOptMerge" name=""></exclusiveGateway>
+    <parallelGateway id="bn_fork" name="Notices in parallel"></parallelGateway>
+    <parallelGateway id="bn_join" name=""></parallelGateway>
+    <userTask id="bn_individuals" name="Notify affected individuals (content per 164.404(c))" operaton:candidateGroups="${privacySeat}" operaton:formKey="sangam:sec-ushealth-breach/individuals" operaton:dueDate="${individualDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="bn_mail" name="Send the individual notices" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>notify.mail</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>send</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>incidentSummary,affectedCount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>mail</operaton:string></operaton:field><operaton:field name="step"><operaton:string>individual-notice</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="bn_substitute" name="Substitute notice: website 90 days or media, toll-free number 90 days" operaton:candidateGroups="${privacySeat}" operaton:formKey="sangam:sec-ushealth-breach/substitute"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="bn_subOptGw" name="Substitute notice needed?" default="sec_ushealth_breach_f17"></exclusiveGateway>
+    <exclusiveGateway id="bn_subOptMerge" name=""></exclusiveGateway>
+    <userTask id="bn_media" name="Notify prominent media in each affected state" operaton:candidateGroups="${counselSeat}" operaton:formKey="sangam:sec-ushealth-breach/media" operaton:dueDate="${individualDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="bn_mediaOptGw" name="More than 500 in a state?" default="sec_ushealth_breach_f24"></exclusiveGateway>
+    <exclusiveGateway id="bn_mediaOptMerge" name=""></exclusiveGateway>
+    <exclusiveGateway id="bn_hhsGw" name="500 or more?" default="sec_ushealth_breach_f31"></exclusiveGateway>
+    <exclusiveGateway id="bn_hhsMerge" name=""></exclusiveGateway>
+    <serviceTask id="bn_hhs" name="Report to HHS (breach portal) with the individual notices" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hhs.breachPortal</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>incidentSummary,affectedCount,discoveryDate</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>hhs</operaton:string></operaton:field><operaton:field name="step"><operaton:string>hhs-immediate</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="bn_log" name="Enter in the annual breach log" operaton:candidateGroups="${privacySeat}" operaton:formKey="sangam:sec-ushealth-breach/log"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="bn_annualClock" name="Due date: hhsAnnual" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>hhsAnnual</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>annualLogYearEnd</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${annualLead}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="bn_annualWait" name="Annual report due"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hhsAnnualDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="bn_hhsAnnual" name="Annual report to HHS (fewer than 500)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>hhs.breachPortal</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>incidentSummary,affectedCount,discoveryDate</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>hhsa</operaton:string></operaton:field><operaton:field name="step"><operaton:string>hhs-annual</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="bn_close" name="Retain the documentation (6 years) and close" operaton:candidateGroups="${privacySeat}" operaton:formKey="sangam:sec-ushealth-breach/close"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="bn_end" name="Breach notifications complete"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>NOTIFIED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ushealth_breach_f1" sourceRef="bn_start" targetRef="bn_defaults"/>
+    <sequenceFlow id="sec_ushealth_breach_f2" sourceRef="bn_defaults" targetRef="bn_cfg"/>
+    <sequenceFlow id="sec_ushealth_breach_f3" sourceRef="bn_cfg" targetRef="bn_indClock"/>
+    <sequenceFlow id="sec_ushealth_breach_f4" sourceRef="bn_indClock" targetRef="bn_risk"/>
+    <sequenceFlow id="sec_ushealth_breach_f5" sourceRef="bn_risk" targetRef="bn_riskGw"/>
+    <sequenceFlow id="sec_ushealth_breach_f6" name="low probability" sourceRef="bn_riskGw" targetRef="bn_lowProb"><conditionExpression xsi:type="tFormalExpression">${riskDecision == 'lowProbability'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_breach_f7" sourceRef="bn_lowProb" targetRef="bn_lowGw"/>
+    <sequenceFlow id="sec_ushealth_breach_f8" name="approved" sourceRef="bn_lowGw" targetRef="bn_endNoBreach"><conditionExpression xsi:type="tFormalExpression">${lowDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_breach_f9" name="not approved: breach" sourceRef="bn_lowGw" targetRef="bn_le"/>
+    <sequenceFlow id="sec_ushealth_breach_f10" name="breach" sourceRef="bn_riskGw" targetRef="bn_le"/>
+    <sequenceFlow id="sec_ushealth_breach_f11" name="yes" sourceRef="bn_leOptGw" targetRef="bn_leShift"><conditionExpression xsi:type="tFormalExpression">${lawEnforcementDelay}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_breach_f12" name="no" sourceRef="bn_leOptGw" targetRef="bn_leOptMerge"/>
+    <sequenceFlow id="sec_ushealth_breach_f13" sourceRef="bn_leShift" targetRef="bn_leOptMerge"/>
+    <sequenceFlow id="sec_ushealth_breach_f14" sourceRef="bn_le" targetRef="bn_leOptGw"/>
+    <sequenceFlow id="sec_ushealth_breach_f15" sourceRef="bn_leOptMerge" targetRef="bn_fork"/>
+    <sequenceFlow id="sec_ushealth_breach_f16" name="yes" sourceRef="bn_subOptGw" targetRef="bn_substitute"><conditionExpression xsi:type="tFormalExpression">${substituteNotice}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_breach_f17" name="no" sourceRef="bn_subOptGw" targetRef="bn_subOptMerge"/>
+    <sequenceFlow id="sec_ushealth_breach_f18" sourceRef="bn_substitute" targetRef="bn_subOptMerge"/>
+    <sequenceFlow id="sec_ushealth_breach_f19" sourceRef="bn_fork" targetRef="bn_individuals"/>
+    <sequenceFlow id="sec_ushealth_breach_f20" sourceRef="bn_individuals" targetRef="bn_mail"/>
+    <sequenceFlow id="sec_ushealth_breach_f21" sourceRef="bn_mail" targetRef="bn_subOptGw"/>
+    <sequenceFlow id="sec_ushealth_breach_f22" sourceRef="bn_subOptMerge" targetRef="bn_join"/>
+    <sequenceFlow id="sec_ushealth_breach_f23" name="yes" sourceRef="bn_mediaOptGw" targetRef="bn_media"><conditionExpression xsi:type="tFormalExpression">${mediaRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_breach_f24" name="no" sourceRef="bn_mediaOptGw" targetRef="bn_mediaOptMerge"/>
+    <sequenceFlow id="sec_ushealth_breach_f25" sourceRef="bn_media" targetRef="bn_mediaOptMerge"/>
+    <sequenceFlow id="sec_ushealth_breach_f26" sourceRef="bn_fork" targetRef="bn_mediaOptGw"/>
+    <sequenceFlow id="sec_ushealth_breach_f27" sourceRef="bn_mediaOptMerge" targetRef="bn_join"/>
+    <sequenceFlow id="sec_ushealth_breach_f28" sourceRef="bn_fork" targetRef="bn_hhsGw"/>
+    <sequenceFlow id="sec_ushealth_breach_f29" name="500 or more" sourceRef="bn_hhsGw" targetRef="bn_hhs"><conditionExpression xsi:type="tFormalExpression">${hhsMode == 'IMMEDIATE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_breach_f30" sourceRef="bn_hhs" targetRef="bn_hhsMerge"/>
+    <sequenceFlow id="sec_ushealth_breach_f31" name="fewer than 500" sourceRef="bn_hhsGw" targetRef="bn_log"/>
+    <sequenceFlow id="sec_ushealth_breach_f32" sourceRef="bn_log" targetRef="bn_annualClock"/>
+    <sequenceFlow id="sec_ushealth_breach_f33" sourceRef="bn_annualClock" targetRef="bn_annualWait"/>
+    <sequenceFlow id="sec_ushealth_breach_f34" sourceRef="bn_annualWait" targetRef="bn_hhsAnnual"/>
+    <sequenceFlow id="sec_ushealth_breach_f35" sourceRef="bn_hhsAnnual" targetRef="bn_hhsMerge"/>
+    <sequenceFlow id="sec_ushealth_breach_f36" sourceRef="bn_hhsMerge" targetRef="bn_join"/>
+    <sequenceFlow id="sec_ushealth_breach_f37" sourceRef="bn_join" targetRef="bn_close"/>
+    <sequenceFlow id="sec_ushealth_breach_f38" sourceRef="bn_close" targetRef="bn_end"/>
+    <subProcess id="bn_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="bn_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="bn_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="bn_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="bn_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_breach_f39" sourceRef="bn_withdrawStart" targetRef="bn_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_breach_f40" sourceRef="bn_withdrawKind" targetRef="bn_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_breach_f41" sourceRef="bn_withdrawCall" targetRef="bn_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="bn_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="bn_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="bn_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="bn_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="bn_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_breach_f42" sourceRef="bn_cancelStart" targetRef="bn_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_breach_f43" sourceRef="bn_cancelKind" targetRef="bn_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_breach_f44" sourceRef="bn_cancelCall" targetRef="bn_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_breach_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_breach_plane" bpmnElement="sangam-sec-ushealth-breach">
+      <bpmndi:BPMNShape id="bn_start_di" bpmnElement="bn_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_defaults_di" bpmnElement="bn_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_cfg_di" bpmnElement="bn_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_indClock_di" bpmnElement="bn_indClock"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_risk_di" bpmnElement="bn_risk"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_riskGw_di" bpmnElement="bn_riskGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_lowProb_di" bpmnElement="bn_lowProb"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_lowGw_di" bpmnElement="bn_lowGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_endNoBreach_di" bpmnElement="bn_endNoBreach"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_le_di" bpmnElement="bn_le"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_leShift_di" bpmnElement="bn_leShift"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_leOptGw_di" bpmnElement="bn_leOptGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_leOptMerge_di" bpmnElement="bn_leOptMerge"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_fork_di" bpmnElement="bn_fork"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_join_di" bpmnElement="bn_join"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_individuals_di" bpmnElement="bn_individuals"><dc:Bounds x="2165" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_mail_di" bpmnElement="bn_mail"><dc:Bounds x="2330" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_substitute_di" bpmnElement="bn_substitute"><dc:Bounds x="2660" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_subOptGw_di" bpmnElement="bn_subOptGw"><dc:Bounds x="2520" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_subOptMerge_di" bpmnElement="bn_subOptMerge"><dc:Bounds x="2850" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_media_di" bpmnElement="bn_media"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_mediaOptGw_di" bpmnElement="bn_mediaOptGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_mediaOptMerge_di" bpmnElement="bn_mediaOptMerge"><dc:Bounds x="2520" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_hhsGw_di" bpmnElement="bn_hhsGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_hhsMerge_di" bpmnElement="bn_hhsMerge"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_hhs_di" bpmnElement="bn_hhs"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_log_di" bpmnElement="bn_log"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_annualClock_di" bpmnElement="bn_annualClock"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_annualWait_di" bpmnElement="bn_annualWait"><dc:Bounds x="2692" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_hhsAnnual_di" bpmnElement="bn_hhsAnnual"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_close_di" bpmnElement="bn_close"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_end_di" bpmnElement="bn_end"><dc:Bounds x="3517" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_withdraw_di" bpmnElement="bn_withdraw" isExpanded="true"><dc:Bounds x="30" y="535" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_withdrawStart_di" bpmnElement="bn_withdrawStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_withdrawKind_di" bpmnElement="bn_withdrawKind"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_withdrawCall_di" bpmnElement="bn_withdrawCall"><dc:Bounds x="390" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_withdrawEnd_di" bpmnElement="bn_withdrawEnd"><dc:Bounds x="587" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_cancel_di" bpmnElement="bn_cancel" isExpanded="true"><dc:Bounds x="30" y="725" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_cancelStart_di" bpmnElement="bn_cancelStart"><dc:Bounds x="92" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_cancelKind_di" bpmnElement="bn_cancelKind"><dc:Bounds x="225" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_cancelCall_di" bpmnElement="bn_cancelCall"><dc:Bounds x="390" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bn_cancelEnd_di" bpmnElement="bn_cancelEnd"><dc:Bounds x="587" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f1_di" bpmnElement="sec_ushealth_breach_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f2_di" bpmnElement="sec_ushealth_breach_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f3_di" bpmnElement="sec_ushealth_breach_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f4_di" bpmnElement="sec_ushealth_breach_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f5_di" bpmnElement="sec_ushealth_breach_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f6_di" bpmnElement="sec_ushealth_breach_f6"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f7_di" bpmnElement="sec_ushealth_breach_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f8_di" bpmnElement="sec_ushealth_breach_f8"><di:waypoint x="1250" y="70"/><di:waypoint x="1311" y="70"/><di:waypoint x="1311" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f9_di" bpmnElement="sec_ushealth_breach_f9"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f10_di" bpmnElement="sec_ushealth_breach_f10"><di:waypoint x="920" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f11_di" bpmnElement="sec_ushealth_breach_f11"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f12_di" bpmnElement="sec_ushealth_breach_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f13_di" bpmnElement="sec_ushealth_breach_f13"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f14_di" bpmnElement="sec_ushealth_breach_f14"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f15_di" bpmnElement="sec_ushealth_breach_f15"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f16_di" bpmnElement="sec_ushealth_breach_f16"><di:waypoint x="2570" y="445"/><di:waypoint x="2660" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f17_di" bpmnElement="sec_ushealth_breach_f17"><di:waypoint x="2570" y="445"/><di:waypoint x="2850" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f18_di" bpmnElement="sec_ushealth_breach_f18"><di:waypoint x="2760" y="445"/><di:waypoint x="2850" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f19_di" bpmnElement="sec_ushealth_breach_f19"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="320"/><di:waypoint x="2165" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f20_di" bpmnElement="sec_ushealth_breach_f20"><di:waypoint x="2265" y="320"/><di:waypoint x="2297" y="320"/><di:waypoint x="2297" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f21_di" bpmnElement="sec_ushealth_breach_f21"><di:waypoint x="2430" y="445"/><di:waypoint x="2520" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f22_di" bpmnElement="sec_ushealth_breach_f22"><di:waypoint x="2900" y="445"/><di:waypoint x="3040" y="445"/><di:waypoint x="3040" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f23_di" bpmnElement="sec_ushealth_breach_f23"><di:waypoint x="2240" y="195"/><di:waypoint x="2285" y="195"/><di:waypoint x="2285" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f24_di" bpmnElement="sec_ushealth_breach_f24"><di:waypoint x="2240" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f25_di" bpmnElement="sec_ushealth_breach_f25"><di:waypoint x="2430" y="320"/><di:waypoint x="2475" y="320"/><di:waypoint x="2475" y="195"/><di:waypoint x="2520" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f26_di" bpmnElement="sec_ushealth_breach_f26"><di:waypoint x="2075" y="70"/><di:waypoint x="2132" y="70"/><di:waypoint x="2132" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f27_di" bpmnElement="sec_ushealth_breach_f27"><di:waypoint x="2570" y="195"/><di:waypoint x="2875" y="195"/><di:waypoint x="2875" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f28_di" bpmnElement="sec_ushealth_breach_f28"><di:waypoint x="2075" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f29_di" bpmnElement="sec_ushealth_breach_f29"><di:waypoint x="2240" y="70"/><di:waypoint x="2285" y="70"/><di:waypoint x="2285" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f30_di" bpmnElement="sec_ushealth_breach_f30"><di:waypoint x="2430" y="195"/><di:waypoint x="2722" y="195"/><di:waypoint x="2722" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f31_di" bpmnElement="sec_ushealth_breach_f31"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f32_di" bpmnElement="sec_ushealth_breach_f32"><di:waypoint x="2430" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f33_di" bpmnElement="sec_ushealth_breach_f33"><di:waypoint x="2595" y="70"/><di:waypoint x="2692" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f34_di" bpmnElement="sec_ushealth_breach_f34"><di:waypoint x="2728" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f35_di" bpmnElement="sec_ushealth_breach_f35"><di:waypoint x="2925" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f36_di" bpmnElement="sec_ushealth_breach_f36"><di:waypoint x="3065" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f37_di" bpmnElement="sec_ushealth_breach_f37"><di:waypoint x="3230" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f38_di" bpmnElement="sec_ushealth_breach_f38"><di:waypoint x="3420" y="70"/><di:waypoint x="3517" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f39_di" bpmnElement="sec_ushealth_breach_f39"><di:waypoint x="128" y="615"/><di:waypoint x="225" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f40_di" bpmnElement="sec_ushealth_breach_f40"><di:waypoint x="325" y="615"/><di:waypoint x="390" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f41_di" bpmnElement="sec_ushealth_breach_f41"><di:waypoint x="490" y="615"/><di:waypoint x="587" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f42_di" bpmnElement="sec_ushealth_breach_f42"><di:waypoint x="128" y="805"/><di:waypoint x="225" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f43_di" bpmnElement="sec_ushealth_breach_f43"><di:waypoint x="325" y="805"/><di:waypoint x="390" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_breach_f44_di" bpmnElement="sec_ushealth_breach_f44"><di:waypoint x="490" y="805"/><di:waypoint x="587" y="805"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

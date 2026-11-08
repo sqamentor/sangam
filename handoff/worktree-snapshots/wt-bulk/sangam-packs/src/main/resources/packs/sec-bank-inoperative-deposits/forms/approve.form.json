@@ -1,0 +1,47 @@
+{
+  "key": "sec-bank-inoperative-deposits/approve",
+  "version": "1.0.0",
+  "pack": "sec.bank.inoperative-deposits",
+  "title": {
+    "en": "Approve DEA Fund transfer (checker)",
+    "hi": "डीईए निधि अंतरण का अनुमोदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "deaDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "retain",
+        "label": {
+          "en": "Retain",
+          "hi": "प्रतिधारित करें"
+        }
+      }
+    ]
+  }
+}

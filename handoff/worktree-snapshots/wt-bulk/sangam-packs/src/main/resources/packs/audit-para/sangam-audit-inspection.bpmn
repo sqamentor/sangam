@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Audit inspection report. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_audit_inspection" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-audit-inspection" name="Audit inspection report" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.audit-para</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>subject</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ai_start" name="Inspection report received" operaton:initiator="initiator" operaton:formKey="sangam:audit-para/inspection-report"></startEvent>
+    <serviceTask id="ai_defaults" name="Paras as items" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>items=@auditParas</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ai_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ai_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-audit-para</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>subject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ai_fanGw" name="All started?" default="audit_inspection_f5"></exclusiveGateway>
+    <intermediateCatchEvent id="ai_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT1H</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="ai_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ai_doneGw" name="Round complete?" default="audit_inspection_f10"></exclusiveGateway>
+    <serviceTask id="ai_report" name="Status of paras" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>audit-para-status</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ai_end" name="Report closed"></endEvent>
+    <sequenceFlow id="audit_inspection_f1" sourceRef="ai_start" targetRef="ai_defaults"/>
+    <sequenceFlow id="audit_inspection_f2" sourceRef="ai_open" targetRef="ai_fanOut"/>
+    <sequenceFlow id="audit_inspection_f3" sourceRef="ai_fanOut" targetRef="ai_fanGw"/>
+    <sequenceFlow id="audit_inspection_f4" name="next chunk" sourceRef="ai_fanGw" targetRef="ai_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="audit_inspection_f5" name="all started" sourceRef="ai_fanGw" targetRef="ai_poll"/>
+    <sequenceFlow id="audit_inspection_f6" sourceRef="ai_poll" targetRef="ai_aggregate"/>
+    <sequenceFlow id="audit_inspection_f7" sourceRef="ai_aggregate" targetRef="ai_doneGw"/>
+    <sequenceFlow id="audit_inspection_f8" name="not yet" sourceRef="ai_doneGw" targetRef="ai_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="audit_inspection_f9" sourceRef="ai_defaults" targetRef="ai_open"/>
+    <sequenceFlow id="audit_inspection_f10" name="all settled" sourceRef="ai_doneGw" targetRef="ai_report"/>
+    <sequenceFlow id="audit_inspection_f11" sourceRef="ai_report" targetRef="ai_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="audit_inspection_diagram">
+    <bpmndi:BPMNPlane id="audit_inspection_plane" bpmnElement="sangam-audit-inspection">
+      <bpmndi:BPMNShape id="ai_start_di" bpmnElement="ai_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ai_defaults_di" bpmnElement="ai_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ai_open_di" bpmnElement="ai_open"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ai_fanOut_di" bpmnElement="ai_fanOut"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ai_fanGw_di" bpmnElement="ai_fanGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ai_poll_di" bpmnElement="ai_poll"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ai_aggregate_di" bpmnElement="ai_aggregate"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ai_doneGw_di" bpmnElement="ai_doneGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ai_report_di" bpmnElement="ai_report"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ai_end_di" bpmnElement="ai_end"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="audit_inspection_f1_di" bpmnElement="audit_inspection_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f2_di" bpmnElement="audit_inspection_f2"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f3_di" bpmnElement="audit_inspection_f3"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f4_di" bpmnElement="audit_inspection_f4"><di:waypoint x="730" y="95"/><di:waypoint x="730" y="149"/><di:waypoint x="565" y="149"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f5_di" bpmnElement="audit_inspection_f5"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f6_di" bpmnElement="audit_inspection_f6"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f7_di" bpmnElement="audit_inspection_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f8_di" bpmnElement="audit_inspection_f8"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="134"/><di:waypoint x="895" y="134"/><di:waypoint x="895" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f9_di" bpmnElement="audit_inspection_f9"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f10_di" bpmnElement="audit_inspection_f10"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="audit_inspection_f11_di" bpmnElement="audit_inspection_f11"><di:waypoint x="1440" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

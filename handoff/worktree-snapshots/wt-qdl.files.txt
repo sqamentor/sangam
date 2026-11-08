@@ -1,0 +1,10 @@
+# files that differ from the main tree (changed) or exist only here (added)
+M sangam-core/src/main/java/org/sangam/core/quota/TenantQuotas.java
+M sangam-security/src/main/java/org/sangam/security/quota/JdbcTenantQuotas.java
+M sangam-security/src/test/java/org/sangam/security/quota/JdbcTenantQuotasTest.java
+M sangam-server/src/main/java/org/sangam/server/bridge/OnboardingBridges.java
+M sangam-server/src/main/java/org/sangam/server/bridge/SecurityAdminBridge.java
+M sangam-server/src/main/java/org/sangam/server/config/QuotaWiring.java
+A sangam-server/src/test/java/org/sangam/server/bridge/QuotaPoolDeadlockH2Support.java
+A sangam-server/src/test/java/org/sangam/server/bridge/QuotaPoolDeadlockTtl0H2Test.java
+A sangam-server/src/test/java/org/sangam/server/bridge/QuotaPoolDeadlockTtl30sH2Test.java

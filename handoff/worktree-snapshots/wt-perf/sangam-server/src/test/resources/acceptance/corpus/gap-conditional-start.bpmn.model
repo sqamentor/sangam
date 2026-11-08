@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GAP set (SANGAM.md XI.3, CF-13 / R34): process-level conditional start event. SHARED, standard BPMN 2.0.2.
+  Condition: ${feePaid == true}. There is no standard API to "evaluate start conditions"; the experiment
+  uses the engine's own trigger (Operaton: RuntimeService.createConditionEvaluation() with feePaid=true).
+  Pass: evaluating with feePaid=true creates one instance waiting in gap_condStart_probe;
+  feePaid=false creates none.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             id="gap-conditional-start-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <process id="gap-conditional-start" name="GAP conditional start event" isExecutable="true">
+    <startEvent id="gap_condStart_start" name="Fee paid">
+      <conditionalEventDefinition id="gap_condStart_startDef">
+        <condition xsi:type="tFormalExpression">${feePaid == true}</condition>
+      </conditionalEventDefinition>
+    </startEvent>
+    <sequenceFlow id="gap_condStart_f1" sourceRef="gap_condStart_start" targetRef="gap_condStart_probe"/>
+    <userTask id="gap_condStart_probe" name="Started by condition"/>
+    <sequenceFlow id="gap_condStart_f2" sourceRef="gap_condStart_probe" targetRef="gap_condStart_end"/>
+    <endEvent id="gap_condStart_end"/>
+  </process>
+</definitions>

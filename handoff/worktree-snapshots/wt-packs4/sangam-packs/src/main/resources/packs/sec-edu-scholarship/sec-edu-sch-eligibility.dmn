@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_edu_sch_eligibility" name="Income ceiling (SYNTHETIC; per scheme guidelines)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-edu-sch-eligibility" name="Income ceiling (SYNTHETIC; per scheme guidelines)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-edu-sch-eligibility_t" hitPolicy="FIRST">
+      <input id="sec-edu-sch-eligibility_i0" label="Income"><inputExpression id="sec-edu-sch-eligibility_ie0" typeRef="number"><text>income</text></inputExpression></input>
+      <output id="sec-edu-sch-eligibility_o0" label="Eligible" name="eligible" typeRef="boolean"/>
+      <rule id="sec-edu-sch-eligibility_r0"><description>post-matric style ceiling Rs 2.5 lakh</description>
+        <inputEntry id="sec-edu-sch-eligibility_r0_i0"><text>&lt;= 25000000</text></inputEntry>
+        <outputEntry id="sec-edu-sch-eligibility_r0_o0"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-edu-sch-eligibility_r1">
+        <inputEntry id="sec-edu-sch-eligibility_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-edu-sch-eligibility_r1_o0"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

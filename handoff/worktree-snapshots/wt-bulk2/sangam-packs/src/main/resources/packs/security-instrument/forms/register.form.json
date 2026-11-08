@@ -1,0 +1,90 @@
+{
+  "key": "security-instrument/register",
+  "version": "1.0.0",
+  "pack": "gov.security-instrument",
+  "title": {
+    "en": "Register guarantee",
+    "hi": "गारंटी पंजीकृत करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "bgNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Bank guarantee number",
+        "hi": "बैंक गारंटी संख्या"
+      }
+    },
+    {
+      "id": "bgBank",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Issuing bank",
+        "hi": "जारीकर्ता बैंक"
+      }
+    },
+    {
+      "id": "bgAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Guarantee amount (INR)",
+        "hi": "गारंटी राशि (रुपये)"
+      }
+    },
+    {
+      "id": "bgExpiryAt",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Guarantee valid till",
+        "hi": "गारंटी वैधता तिथि"
+      }
+    },
+    {
+      "id": "bgClaimAt",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Claim period ends",
+        "hi": "दावा अवधि समाप्ति"
+      }
+    },
+    {
+      "id": "contractorId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Contractor",
+        "hi": "ठेकेदार"
+      }
+    },
+    {
+      "id": "physicalReceived",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Physical item received",
+        "hi": "भौतिक वस्तु प्राप्त हुई"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

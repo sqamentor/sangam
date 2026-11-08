@@ -1,0 +1,54 @@
+{
+  "key": "recruitment/requisition",
+  "version": "1.0.0",
+  "pack": "gov.recruitment",
+  "title": {
+    "en": "Recruitment requisition",
+    "hi": "भर्ती मांग"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "postName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Post",
+        "hi": "पद"
+      }
+    },
+    {
+      "id": "vacancies",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Vacancies by category (JSON)",
+        "hi": "श्रेणीवार रिक्तियाँ"
+      }
+    },
+    {
+      "id": "qualification",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Educational qualification",
+        "hi": "शैक्षिक योग्यता"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-prior-auth/documentation",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.prior-auth",
+  "title": {
+    "en": "Complete the documentation questionnaire",
+    "es": "Completar el cuestionario de documentación"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "questionnaireResponse",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Documentation questionnaire (DTR)",
+        "es": "Cuestionario de documentación (DTR)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "es": "Documentos"
+      }
+    }
+  ]
+}

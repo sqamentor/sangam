@@ -1,0 +1,54 @@
+{
+  "key": "sec-cap-corporate-action/declare",
+  "version": "1.0.0",
+  "pack": "sec.cap.corporate-action",
+  "title": {
+    "en": "Dividend declaration",
+    "hi": "लाभांश घोषणा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "companyName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Company",
+        "hi": "कंपनी"
+      }
+    },
+    {
+      "id": "dividendPerShare",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Dividend per share (INR)",
+        "hi": "प्रति शेयर लाभांश (रुपये)"
+      }
+    },
+    {
+      "id": "recordDate",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Record date",
+        "hi": "अभिलेख तिथि"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

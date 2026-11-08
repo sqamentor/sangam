@@ -1,0 +1,17 @@
+MariaDB Connector/J - written offer of source code (SANGAM.md X.3a LIC-5)
+
+This directory contains the MariaDB Connector/J JDBC driver (org.mariadb.jdbc:mariadb-java-client),
+licensed under the GNU Lesser General Public License, version 2.1 (LGPL-2.1).
+
+- The driver is shipped as a separate, unmodified jar. It is NOT shaded or merged into the Sangam server
+  jar, and you may replace it with any compatible version: put the new jar here (or mount a volume over
+  /opt/sangam/lib-ext) and restart the server.
+- The corresponding source code is included next to the binary as mariadb-java-client-<version>-sources.jar
+  when the image build could fetch it, and is always available from:
+    https://github.com/mariadb-corporation/mariadb-connector-j (tag matching the jar version)
+    https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/
+- On request, for at least three years from the date you received this image, the Sangam project will
+  provide the complete corresponding source code of this driver for no more than the cost of physically
+  performing the distribution. Contact the maintainers listed in the project's NOTICE file.
+
+The LGPL-2.1 text: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt

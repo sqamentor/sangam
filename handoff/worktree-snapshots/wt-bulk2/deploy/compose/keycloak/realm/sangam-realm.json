@@ -1,0 +1,1692 @@
+{
+  "realm": "sangam",
+  "displayName": "Sangam (development)",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "failureFactor": 10,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "en",
+    "hi"
+  ],
+  "defaultLocale": "en",
+  "passwordPolicy": "length(12) and notUsername",
+  "eventsEnabled": true,
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "sangam-admin",
+        "description": "Platform administrator (tenants, policies, seats)"
+      },
+      {
+        "name": "sangam-operator",
+        "description": "Operations: incidents, jobs, outbox, reconciliation console"
+      },
+      {
+        "name": "sangam-auditor",
+        "description": "Read audit timelines and verify audit chains (READ_AUDIT)"
+      },
+      {
+        "name": "sangam-modeller",
+        "description": "Author BPMN/DMN/forms packages"
+      },
+      {
+        "name": "MODEL_REVIEWER",
+        "description": "Review a model package (reviewer != author, by person and seat)"
+      },
+      {
+        "name": "MODEL_APPROVER",
+        "description": "Approve a model package for deployment"
+      },
+      {
+        "name": "sangam-deployer",
+        "description": "Deploy approved packages"
+      },
+      {
+        "name": "sangam-worker",
+        "description": "External-task worker (worker API /api/v1/work)"
+      },
+      {
+        "name": "sangam-user",
+        "description": "Every interactive user"
+      },
+      {
+        "name": "p1-initiator",
+        "description": "P1 Bill / payment approval: Initiator (DDO office)"
+      },
+      {
+        "name": "p1-checker",
+        "description": "P1 Bill / payment approval: Financial checker"
+      },
+      {
+        "name": "p1-approver",
+        "description": "P1 Bill / payment approval: Final approver (by amount band)"
+      },
+      {
+        "name": "p1-treasury",
+        "description": "P1 Bill / payment approval: Treasury / payment system operator"
+      },
+      {
+        "name": "p2-dealing-assistant",
+        "description": "P2 File movement (e-Office style): Dealing assistant"
+      },
+      {
+        "name": "p2-section-officer",
+        "description": "P2 File movement (e-Office style): Section officer"
+      },
+      {
+        "name": "p2-under-secretary",
+        "description": "P2 File movement (e-Office style): Under secretary"
+      },
+      {
+        "name": "p2-deputy-secretary",
+        "description": "P2 File movement (e-Office style): Deputy secretary"
+      },
+      {
+        "name": "p2-competent-authority",
+        "description": "P2 File movement (e-Office style): Competent authority"
+      },
+      {
+        "name": "p3-applicant",
+        "description": "P3 Grant / scheme sanction: Applicant or field office"
+      },
+      {
+        "name": "p3-verifier",
+        "description": "P3 Grant / scheme sanction: Verifier"
+      },
+      {
+        "name": "p3-sanctioning-authority",
+        "description": "P3 Grant / scheme sanction: Sanctioning authority"
+      },
+      {
+        "name": "p3-finance",
+        "description": "P3 Grant / scheme sanction: Finance"
+      },
+      {
+        "name": "p4-citizen",
+        "description": "P4 Licence / permit service: Citizen / applicant"
+      },
+      {
+        "name": "p4-scrutiny-clerk",
+        "description": "P4 Licence / permit service: Scrutiny clerk"
+      },
+      {
+        "name": "p4-inspector",
+        "description": "P4 Licence / permit service: Inspector"
+      },
+      {
+        "name": "p4-approving-officer",
+        "description": "P4 Licence / permit service: Approving officer"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "tenants",
+      "subGroups": [
+        {
+          "name": "dept-finance",
+          "attributes": {
+            "tenant": [
+              "dept-finance"
+            ]
+          },
+          "subGroups": [
+            {
+              "name": "DDO-001",
+              "attributes": {
+                "office": [
+                  "DDO-001"
+                ],
+                "officeName": [
+                  "District Treasury Office"
+                ]
+              },
+              "subGroups": [
+                {
+                  "name": "P1",
+                  "attributes": {
+                    "pack": [
+                      "P1"
+                    ],
+                    "office": [
+                      "DDO-001"
+                    ],
+                    "packRoles": [
+                      "p1-initiator",
+                      "p1-checker",
+                      "p1-approver",
+                      "p1-treasury"
+                    ]
+                  },
+                  "realmRoles": [
+                    "sangam-user"
+                  ],
+                  "subGroups": []
+                }
+              ]
+            },
+            {
+              "name": "SECRETARIAT-FIN",
+              "attributes": {
+                "office": [
+                  "SECRETARIAT-FIN"
+                ],
+                "officeName": [
+                  "Finance Department Secretariat"
+                ]
+              },
+              "subGroups": [
+                {
+                  "name": "P2",
+                  "attributes": {
+                    "pack": [
+                      "P2"
+                    ],
+                    "office": [
+                      "SECRETARIAT-FIN"
+                    ],
+                    "packRoles": [
+                      "p2-dealing-assistant",
+                      "p2-section-officer",
+                      "p2-under-secretary",
+                      "p2-deputy-secretary",
+                      "p2-competent-authority"
+                    ]
+                  },
+                  "realmRoles": [
+                    "sangam-user"
+                  ],
+                  "subGroups": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dept-social-welfare",
+          "attributes": {
+            "tenant": [
+              "dept-social-welfare"
+            ]
+          },
+          "subGroups": [
+            {
+              "name": "DIST-SW-01",
+              "attributes": {
+                "office": [
+                  "DIST-SW-01"
+                ],
+                "officeName": [
+                  "District Social Welfare Office"
+                ]
+              },
+              "subGroups": [
+                {
+                  "name": "P3",
+                  "attributes": {
+                    "pack": [
+                      "P3"
+                    ],
+                    "office": [
+                      "DIST-SW-01"
+                    ],
+                    "packRoles": [
+                      "p3-applicant",
+                      "p3-verifier",
+                      "p3-sanctioning-authority",
+                      "p3-finance"
+                    ]
+                  },
+                  "realmRoles": [
+                    "sangam-user"
+                  ],
+                  "subGroups": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dept-industries",
+          "attributes": {
+            "tenant": [
+              "dept-industries"
+            ]
+          },
+          "subGroups": [
+            {
+              "name": "DIC-01",
+              "attributes": {
+                "office": [
+                  "DIC-01"
+                ],
+                "officeName": [
+                  "District Industries Centre"
+                ]
+              },
+              "subGroups": [
+                {
+                  "name": "P4",
+                  "attributes": {
+                    "pack": [
+                      "P4"
+                    ],
+                    "office": [
+                      "DIC-01"
+                    ],
+                    "packRoles": [
+                      "p4-citizen",
+                      "p4-scrutiny-clerk",
+                      "p4-inspector",
+                      "p4-approving-officer"
+                    ]
+                  },
+                  "realmRoles": [
+                    "sangam-user"
+                  ],
+                  "subGroups": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "platform",
+      "subGroups": [
+        {
+          "name": "admins",
+          "realmRoles": [
+            "sangam-admin",
+            "sangam-user"
+          ],
+          "subGroups": []
+        },
+        {
+          "name": "operators",
+          "realmRoles": [
+            "sangam-operator",
+            "sangam-user"
+          ],
+          "subGroups": []
+        },
+        {
+          "name": "auditors",
+          "realmRoles": [
+            "sangam-auditor",
+            "sangam-user"
+          ],
+          "subGroups": []
+        },
+        {
+          "name": "model-lifecycle",
+          "realmRoles": [
+            "sangam-modeller",
+            "sangam-user"
+          ],
+          "subGroups": []
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "p1.initiator1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p1.initiator1@sangam.test",
+      "firstName": "Asha",
+      "lastName": "Initiator",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P1-DDO-001-INIT-1"
+        ],
+        "office": [
+          "DDO-001"
+        ]
+      },
+      "realmRoles": [
+        "p1-initiator",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/DDO-001/P1"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p1.initiator2",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p1.initiator2@sangam.test",
+      "firstName": "Ravi",
+      "lastName": "Initiator",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P1-DDO-001-INIT-2"
+        ],
+        "office": [
+          "DDO-001"
+        ]
+      },
+      "realmRoles": [
+        "p1-initiator",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/DDO-001/P1"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p1.checker1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p1.checker1@sangam.test",
+      "firstName": "Meena",
+      "lastName": "Checker",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P1-DDO-001-CHK-1"
+        ],
+        "office": [
+          "DDO-001"
+        ]
+      },
+      "realmRoles": [
+        "p1-checker",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/DDO-001/P1"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p1.checker2",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p1.checker2@sangam.test",
+      "firstName": "Arjun",
+      "lastName": "Checker",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P1-DDO-001-CHK-2"
+        ],
+        "office": [
+          "DDO-001"
+        ]
+      },
+      "realmRoles": [
+        "p1-checker",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/DDO-001/P1"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p1.approver1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p1.approver1@sangam.test",
+      "firstName": "Sunita",
+      "lastName": "Approver",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P1-DDO-001-APR-BAND1"
+        ],
+        "office": [
+          "DDO-001"
+        ]
+      },
+      "realmRoles": [
+        "p1-approver",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/DDO-001/P1"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p1.approver2",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p1.approver2@sangam.test",
+      "firstName": "Vikram",
+      "lastName": "Approver",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P1-DDO-001-APR-BAND2"
+        ],
+        "office": [
+          "DDO-001"
+        ]
+      },
+      "realmRoles": [
+        "p1-approver",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/DDO-001/P1"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p1.treasury1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p1.treasury1@sangam.test",
+      "firstName": "Kiran",
+      "lastName": "Treasury",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P1-DDO-001-TRSY-1"
+        ],
+        "office": [
+          "DDO-001"
+        ]
+      },
+      "realmRoles": [
+        "p1-treasury",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/DDO-001/P1"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p2.da1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p2.da1@sangam.test",
+      "firstName": "Pooja",
+      "lastName": "DealingAsst",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P2-SECRETARIAT-FIN-DA-1"
+        ],
+        "office": [
+          "SECRETARIAT-FIN"
+        ]
+      },
+      "realmRoles": [
+        "p2-dealing-assistant",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/SECRETARIAT-FIN/P2"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p2.so1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p2.so1@sangam.test",
+      "firstName": "Rahul",
+      "lastName": "SectionOfficer",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P2-SECRETARIAT-FIN-SO-1"
+        ],
+        "office": [
+          "SECRETARIAT-FIN"
+        ]
+      },
+      "realmRoles": [
+        "p2-section-officer",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/SECRETARIAT-FIN/P2"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p2.so2",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p2.so2@sangam.test",
+      "firstName": "Neha",
+      "lastName": "SectionOfficer",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P2-SECRETARIAT-FIN-SO-2"
+        ],
+        "office": [
+          "SECRETARIAT-FIN"
+        ]
+      },
+      "realmRoles": [
+        "p2-section-officer",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/SECRETARIAT-FIN/P2"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p2.us1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p2.us1@sangam.test",
+      "firstName": "Anil",
+      "lastName": "UnderSecy",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P2-SECRETARIAT-FIN-US-1",
+          "SEAT-P2-SECRETARIAT-FIN-DS-1"
+        ],
+        "office": [
+          "SECRETARIAT-FIN"
+        ],
+        "additionalCharge": [
+          "SEAT-P2-SECRETARIAT-FIN-DS-1:2026-11-01/2026-11-30"
+        ]
+      },
+      "realmRoles": [
+        "p2-under-secretary",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/SECRETARIAT-FIN/P2"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p2.ds1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p2.ds1@sangam.test",
+      "firstName": "Geeta",
+      "lastName": "DeputySecy",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P2-SECRETARIAT-FIN-DS-1"
+        ],
+        "office": [
+          "SECRETARIAT-FIN"
+        ]
+      },
+      "realmRoles": [
+        "p2-deputy-secretary",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/SECRETARIAT-FIN/P2"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p2.ca1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p2.ca1@sangam.test",
+      "firstName": "Rajesh",
+      "lastName": "CompetentAuth",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-P2-SECRETARIAT-FIN-CA-1"
+        ],
+        "office": [
+          "SECRETARIAT-FIN"
+        ]
+      },
+      "realmRoles": [
+        "p2-competent-authority",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-finance/SECRETARIAT-FIN/P2"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p3.applicant1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p3.applicant1@sangam.test",
+      "firstName": "Lata",
+      "lastName": "Applicant",
+      "attributes": {
+        "tenant": [
+          "dept-social-welfare"
+        ],
+        "seat": [
+          "SEAT-P3-DIST-SW-01-APPL-1"
+        ],
+        "office": [
+          "DIST-SW-01"
+        ]
+      },
+      "realmRoles": [
+        "p3-applicant",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-social-welfare/DIST-SW-01/P3"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p3.verifier1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p3.verifier1@sangam.test",
+      "firstName": "Mohan",
+      "lastName": "Verifier",
+      "attributes": {
+        "tenant": [
+          "dept-social-welfare"
+        ],
+        "seat": [
+          "SEAT-P3-DIST-SW-01-VER-1"
+        ],
+        "office": [
+          "DIST-SW-01"
+        ]
+      },
+      "realmRoles": [
+        "p3-verifier",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-social-welfare/DIST-SW-01/P3"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p3.verifier2",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p3.verifier2@sangam.test",
+      "firstName": "Farah",
+      "lastName": "Verifier",
+      "attributes": {
+        "tenant": [
+          "dept-social-welfare"
+        ],
+        "seat": [
+          "SEAT-P3-DIST-SW-01-VER-2"
+        ],
+        "office": [
+          "DIST-SW-01"
+        ]
+      },
+      "realmRoles": [
+        "p3-verifier",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-social-welfare/DIST-SW-01/P3"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p3.sanction1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p3.sanction1@sangam.test",
+      "firstName": "Deepak",
+      "lastName": "SanctionAuth",
+      "attributes": {
+        "tenant": [
+          "dept-social-welfare"
+        ],
+        "seat": [
+          "SEAT-P3-DIST-SW-01-SANC-1"
+        ],
+        "office": [
+          "DIST-SW-01"
+        ]
+      },
+      "realmRoles": [
+        "p3-sanctioning-authority",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-social-welfare/DIST-SW-01/P3"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p3.finance1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p3.finance1@sangam.test",
+      "firstName": "Usha",
+      "lastName": "Finance",
+      "attributes": {
+        "tenant": [
+          "dept-social-welfare"
+        ],
+        "seat": [
+          "SEAT-P3-DIST-SW-01-FIN-1"
+        ],
+        "office": [
+          "DIST-SW-01"
+        ]
+      },
+      "realmRoles": [
+        "p3-finance",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-social-welfare/DIST-SW-01/P3"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p4.citizen1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p4.citizen1@sangam.test",
+      "firstName": "Imran",
+      "lastName": "Citizen",
+      "attributes": {
+        "tenant": [
+          "dept-industries"
+        ],
+        "seat": [
+          "SEAT-P4-DIC-01-CIT-1"
+        ],
+        "office": [
+          "DIC-01"
+        ]
+      },
+      "realmRoles": [
+        "p4-citizen",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-industries/DIC-01/P4"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p4.clerk1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p4.clerk1@sangam.test",
+      "firstName": "Savita",
+      "lastName": "Clerk",
+      "attributes": {
+        "tenant": [
+          "dept-industries"
+        ],
+        "seat": [
+          "SEAT-P4-DIC-01-SCR-1"
+        ],
+        "office": [
+          "DIC-01"
+        ]
+      },
+      "realmRoles": [
+        "p4-scrutiny-clerk",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-industries/DIC-01/P4"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p4.inspector1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p4.inspector1@sangam.test",
+      "firstName": "Harish",
+      "lastName": "Inspector",
+      "attributes": {
+        "tenant": [
+          "dept-industries"
+        ],
+        "seat": [
+          "SEAT-P4-DIC-01-INSP-1"
+        ],
+        "office": [
+          "DIC-01"
+        ]
+      },
+      "realmRoles": [
+        "p4-inspector",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-industries/DIC-01/P4"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p4.inspector2",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p4.inspector2@sangam.test",
+      "firstName": "Nisha",
+      "lastName": "Inspector",
+      "attributes": {
+        "tenant": [
+          "dept-industries"
+        ],
+        "seat": [
+          "SEAT-P4-DIC-01-INSP-2"
+        ],
+        "office": [
+          "DIC-01"
+        ]
+      },
+      "realmRoles": [
+        "p4-inspector",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-industries/DIC-01/P4"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "p4.approver1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "p4.approver1@sangam.test",
+      "firstName": "Prakash",
+      "lastName": "ApprovingOfficer",
+      "attributes": {
+        "tenant": [
+          "dept-industries"
+        ],
+        "seat": [
+          "SEAT-P4-DIC-01-APO-1"
+        ],
+        "office": [
+          "DIC-01"
+        ]
+      },
+      "realmRoles": [
+        "p4-approving-officer",
+        "sangam-user"
+      ],
+      "groups": [
+        "/tenants/dept-industries/DIC-01/P4"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "admin.dev",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin.dev@sangam.test",
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": []
+      },
+      "realmRoles": [
+        "sangam-admin",
+        "sangam-user"
+      ],
+      "groups": [
+        "/platform/admins"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "operator.dev",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "operator.dev@sangam.test",
+      "firstName": "Ops",
+      "lastName": "Operator",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": []
+      },
+      "realmRoles": [
+        "sangam-operator",
+        "sangam-user"
+      ],
+      "groups": [
+        "/platform/operators"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "auditor.dev",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "auditor.dev@sangam.test",
+      "firstName": "Audit",
+      "lastName": "Reader",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": []
+      },
+      "realmRoles": [
+        "sangam-auditor",
+        "sangam-user"
+      ],
+      "groups": [
+        "/platform/auditors"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "modeller.dev",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "modeller.dev@sangam.test",
+      "firstName": "Model",
+      "lastName": "Author",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-PLATFORM-MODEL-AUTHOR-1"
+        ]
+      },
+      "realmRoles": [
+        "sangam-modeller",
+        "sangam-user"
+      ],
+      "groups": [
+        "/platform/model-lifecycle"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "reviewer.dev",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "reviewer.dev@sangam.test",
+      "firstName": "Model",
+      "lastName": "Reviewer",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-PLATFORM-MODEL-REVIEW-1"
+        ]
+      },
+      "realmRoles": [
+        "MODEL_REVIEWER",
+        "sangam-user"
+      ],
+      "groups": [
+        "/platform/model-lifecycle"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "approver.dev",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "approver.dev@sangam.test",
+      "firstName": "Model",
+      "lastName": "Approver",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ],
+        "seat": [
+          "SEAT-PLATFORM-MODEL-APPROVE-1"
+        ]
+      },
+      "realmRoles": [
+        "MODEL_APPROVER",
+        "sangam-deployer",
+        "sangam-user"
+      ],
+      "groups": [
+        "/platform/model-lifecycle"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sangam@Test-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "service-account-sangam-worker",
+      "enabled": true,
+      "serviceAccountClientId": "sangam-worker",
+      "attributes": {
+        "tenant": [
+          "dept-finance"
+        ]
+      },
+      "realmRoles": [
+        "sangam-worker"
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "sangam-ui",
+      "name": "Sangam web UI",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/*##http://localhost:5173/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant",
+            "claim.name": "tenant",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "seats",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "seat",
+            "claim.name": "seats",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "office",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "office",
+            "claim.name": "office",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "additional-charge",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "additionalCharge",
+            "claim.name": "additional_charge",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "true",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "audience-sangam-server",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "sangam-server",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "sangam-server",
+      "name": "Sangam API (resource server / audience)",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "secret": "sangam-server-dev-secret"
+    },
+    {
+      "clientId": "sangam-worker",
+      "name": "Sangam external-task workers (client credentials)",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "sangam-worker-dev-secret",
+      "protocolMappers": [
+        {
+          "name": "tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant",
+            "claim.name": "tenant",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "seats",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "seat",
+            "claim.name": "seats",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "office",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "office",
+            "claim.name": "office",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "additional-charge",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "additionalCharge",
+            "claim.name": "additional_charge",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "true",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "audience-sangam-server",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "sangam-server",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "sangam-cli",
+      "name": "Developer CLI / API tests (password grant, dev realm only)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant",
+            "claim.name": "tenant",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "seats",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "seat",
+            "claim.name": "seats",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "office",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "office",
+            "claim.name": "office",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "additional-charge",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "additionalCharge",
+            "claim.name": "additional_charge",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "aggregate.attrs": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "true",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "audience-sangam-server",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "sangam-server",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"unmanagedAttributePolicy\": \"ADMIN_EDIT\", \"attributes\": [{\"name\": \"username\", \"displayName\": \"${username}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}, \"validations\": {\"length\": {\"min\": 3, \"max\": 255}, \"username-prohibited-characters\": {}, \"up-username-not-idn-homograph\": {}}}, {\"name\": \"email\", \"displayName\": \"${email}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}, \"validations\": {\"email\": {}, \"length\": {\"max\": 255}}}, {\"name\": \"firstName\", \"displayName\": \"${firstName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}, \"validations\": {\"length\": {\"max\": 255}, \"person-name-prohibited-characters\": {}}}, {\"name\": \"lastName\", \"displayName\": \"${lastName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}, \"validations\": {\"length\": {\"max\": 255}, \"person-name-prohibited-characters\": {}}}, {\"name\": \"tenant\", \"displayName\": \"Tenant\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}, \"multivalued\": false}, {\"name\": \"seat\", \"displayName\": \"Seats (posts)\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}, \"multivalued\": true}, {\"name\": \"office\", \"displayName\": \"Office\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}, \"multivalued\": false}, {\"name\": \"additionalCharge\", \"displayName\": \"Additional charge (seat:from/to)\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}, \"multivalued\": true}], \"groups\": [{\"name\": \"user-metadata\", \"displayHeader\": \"User metadata\", \"displayDescription\": \"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "id": "universal.up02-saga",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-02 Saga across services",
+    "hi": "यूपी-02 सेवाओं के पार सागा"
+  },
+  "domain": "Universal",
+  "description": "Forward steps with compensations, per-step timeouts and unknown outcomes: reserve stock, charge (core execution: UNKNOWN_OUTCOME and reconciliation for class c), book shipment; any failure or timeout compensates the completed steps in reverse.",
+  "mainProcesses": [
+    "sangam-up02-saga"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up02-saga/sangam-up02-saga.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up02-saga/forms/order.form.json"
+    }
+  ],
+  "seed": null,
+  "connectors": [
+    {
+      "id": "inventory.reserve",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Reserve"
+    },
+    {
+      "id": "inventory.release",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Release (compensation)"
+    },
+    {
+      "id": "saga.charge",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Charge"
+    },
+    {
+      "id": "payment.refund",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Refund (compensation)"
+    },
+    {
+      "id": "shipping.create",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Book"
+    },
+    {
+      "id": "shipping.cancel",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Cancel (compensation)"
+    }
+  ],
+  "covers": [
+    "UP-02",
+    "R36",
+    "R37",
+    "R23",
+    "GP-11",
+    "GP-12",
+    "GP-13"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

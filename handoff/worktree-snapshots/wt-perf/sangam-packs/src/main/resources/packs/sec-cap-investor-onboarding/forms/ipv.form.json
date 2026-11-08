@@ -1,0 +1,54 @@
+{
+  "key": "sec-cap-investor-onboarding/ipv",
+  "version": "1.0.0",
+  "pack": "sec.cap.investor-onboarding",
+  "title": {
+    "en": "In-person / video verification (IPV / VIPV)",
+    "hi": "व्यक्तिगत / वीडियो सत्यापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "livenessChecked",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Liveness checked",
+        "hi": "सजीवता जाँची गई"
+      }
+    },
+    {
+      "id": "geoTag",
+      "type": "geo",
+      "required": false,
+      "label": {
+        "en": "Geo-tag",
+        "hi": "जियो-टैग"
+      }
+    },
+    {
+      "id": "vcipRecordingRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Video recording reference",
+        "hi": "वीडियो रिकॉर्डिंग संदर्भ"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

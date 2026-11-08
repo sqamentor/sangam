@@ -1,0 +1,90 @@
+{
+  "key": "sec-ins-proposal-underwriting/proposal",
+  "version": "1.0.0",
+  "pack": "sec.ins.proposal-underwriting",
+  "title": {
+    "en": "Insurance proposal",
+    "hi": "बीमा प्रस्ताव"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer name",
+        "hi": "ग्राहक का नाम"
+      }
+    },
+    {
+      "id": "productCode",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Product",
+        "hi": "उत्पाद"
+      }
+    },
+    {
+      "id": "sumAssured",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Sum assured (INR)",
+        "hi": "बीमित राशि (रुपये)"
+      }
+    },
+    {
+      "id": "age",
+      "type": "integer",
+      "required": true,
+      "label": {
+        "en": "Age",
+        "hi": "आयु"
+      }
+    },
+    {
+      "id": "smoker",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Tobacco user",
+        "hi": "तंबाकू उपयोगकर्ता"
+      }
+    },
+    {
+      "id": "medicalDisclosures",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Medical history disclosed",
+        "hi": "प्रकट चिकित्सा इतिहास"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

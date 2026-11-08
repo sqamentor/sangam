@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- P2 File movement. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_p2_file_movement" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_openPartFile" name="sangam.openPartFile"/>
+  <message id="msg_sangam_physicalFileMoved" name="sangam.physicalFileMoved"/>
+  <message id="msg_sangam_referFile" name="sangam.referFile"/>
+  <message id="msg_sangam_rtiLinked" name="sangam.rtiLinked"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <error id="err_APPROVAL_INVALIDATED" name="APPROVAL_INVALIDATED" errorCode="APPROVAL_INVALIDATED"/>
+  <process id="sangam-p2-file-movement" name="P2 File movement" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Pack P2. Material fields: subject, noting, draftLetter (the approval binds note + draft letter).</documentation>
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.p2.file-movement</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>subject,noting,draftLetter</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="p2_start" name="File opened" operaton:initiator="initiator" operaton:formKey="sangam:p2-file-movement/file-open"></startEvent>
+    <serviceTask id="p2_defaults" name="Pack configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>caseType=FILE;signEachLevel=true;signMethod=dsc;signatureRequired=true;resubmitTo=START;routingDecisionKey=p2-disposal-authority;powersDecisionKey=p2-disposal-powers;recommendationSla=3WD;sanctionSla=3WD;executionConnector=dak.dispatch;executionOperation=dispatch;executionStep=dispatch;reconcileRequired=false;issueOutput=false;retentionCategory=C;retentionYears=10;appealAllowed=false;custodianSeat=@initiatorSeat;closureTemplate=file-closed</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="p2_putUpTo" name="&quot;Put up to&quot; chain (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>p2-put-up-to</operaton:string></operaton:field><operaton:field name="binding"><operaton:string>latest</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="p2_chain" name="Chain of seats" operaton:class="org.sangam.packs.core.SeatResolutionDelegate"><extensionElements><operaton:field name="op"><operaton:string>ROLES</operaton:string></operaton:field><operaton:field name="rolesVar"><operaton:string>recommendationRoles</operaton:string></operaton:field><operaton:field name="targetVar"><operaton:string>recommendationSeats</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p2_signNote" name="Initiator signs the note" operaton:class="org.sangam.packs.core.SignatureDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>REQUEST</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>noting</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="p2_signGw" name="Signed?" default="p2_file_movement_f12"></exclusiveGateway>
+    <userTask id="p2_resign" name="Signature not applied: sign again" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:p2-file-movement/resign"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>resignDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="p2_resignGw" name="" default="p2_file_movement_f11"></exclusiveGateway>
+    <serviceTask id="p2_wdSign_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p2_wdSign_call" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p2_wdSign_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="p2_movement" name="Movement up the hierarchy (core)" calledElement="sangam-core-recommendation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="p2_disposal" name="Disposal by competent authority (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <userTask id="p2_revise" name="Revise note and draft" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:p2-file-movement/revise"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>p2_reviseDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="p2_revise_gw" name="Resubmit?" default="p2_file_movement_f18"></exclusiveGateway>
+    <serviceTask id="p2_revise_version" name="New case version" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUBMIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="p2_revise_wd_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p2_revise_wd_call" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p2_revise_wd_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="p2_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p2_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="p2_recGw" name="recOutcome?" default="p2_file_movement_f22"></exclusiveGateway>
+    <userTask id="p2_dispatch" name="Issue the approved letter" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:p2-file-movement/dispatch"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="p2_sanGw" name="sanctionOutcome?" default="p2_file_movement_f26"></exclusiveGateway>
+    <serviceTask id="p2_letter" name="Render letter from the approved version" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>dispatch-letter</operaton:string></operaton:field><operaton:field name="requireApproval"><operaton:string>true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="p2_send" name="Dispatch (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="p2_partial" name="Partial success: some recipients not reached" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>dispatch-partial</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="p2_close" name="Close file: retention category" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:p2-file-movement/close"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="p2_exGw" name="executionOutcome?" default="p2_file_movement_f32"></exclusiveGateway>
+    <callActivity id="p2_closure" name="Closure (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="p2_end" name="File closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="p2_invalidated" name="Draft changed after approval" attachedToRef="p2_send" cancelActivity="true"><errorEventDefinition errorRef="err_APPROVAL_INVALIDATED"/></boundaryEvent>
+    <sequenceFlow id="p2_file_movement_f1" sourceRef="p2_start" targetRef="p2_defaults"/>
+    <sequenceFlow id="p2_file_movement_f2" sourceRef="p2_defaults" targetRef="p2_putUpTo"/>
+    <sequenceFlow id="p2_file_movement_f3" sourceRef="p2_putUpTo" targetRef="p2_chain"/>
+    <sequenceFlow id="p2_file_movement_f4" sourceRef="p2_chain" targetRef="p2_signNote"/>
+    <sequenceFlow id="p2_file_movement_f5" sourceRef="p2_signNote" targetRef="p2_signGw"/>
+    <sequenceFlow id="p2_file_movement_f6" name="J-P2-E06" sourceRef="p2_signGw" targetRef="p2_resign"><conditionExpression xsi:type="tFormalExpression">${signatureStatus != 'COMPLETED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p2_file_movement_f7" sourceRef="p2_resign" targetRef="p2_resignGw"/>
+    <sequenceFlow id="p2_file_movement_f8" name="sign again" sourceRef="p2_resignGw" targetRef="p2_signNote"><conditionExpression xsi:type="tFormalExpression">${resignDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p2_file_movement_f9" sourceRef="p2_wdSign_kind" targetRef="p2_wdSign_call"/>
+    <sequenceFlow id="p2_file_movement_f10" sourceRef="p2_wdSign_call" targetRef="p2_wdSign_end"/>
+    <sequenceFlow id="p2_file_movement_f11" name="withdraw" sourceRef="p2_resignGw" targetRef="p2_wdSign_kind"/>
+    <sequenceFlow id="p2_file_movement_f12" name="signed" sourceRef="p2_signGw" targetRef="p2_movement"/>
+    <sequenceFlow id="p2_file_movement_f13" sourceRef="p2_revise" targetRef="p2_revise_gw"/>
+    <sequenceFlow id="p2_file_movement_f14" name="resubmit" sourceRef="p2_revise_gw" targetRef="p2_revise_version"><conditionExpression xsi:type="tFormalExpression">${p2_reviseDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p2_file_movement_f15" sourceRef="p2_revise_version" targetRef="p2_movement"/>
+    <sequenceFlow id="p2_file_movement_f16" sourceRef="p2_revise_wd_kind" targetRef="p2_revise_wd_call"/>
+    <sequenceFlow id="p2_file_movement_f17" sourceRef="p2_revise_wd_call" targetRef="p2_revise_wd_end"/>
+    <sequenceFlow id="p2_file_movement_f18" name="withdraw" sourceRef="p2_revise_gw" targetRef="p2_revise_wd_kind"/>
+    <sequenceFlow id="p2_file_movement_f19" sourceRef="p2_rj_reject" targetRef="p2_rj_endRejected"/>
+    <sequenceFlow id="p2_file_movement_f20" name="RECOMMENDED" sourceRef="p2_recGw" targetRef="p2_disposal"><conditionExpression xsi:type="tFormalExpression">${recOutcome == 'RECOMMENDED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p2_file_movement_f21" name="RETURNED" sourceRef="p2_recGw" targetRef="p2_revise"><conditionExpression xsi:type="tFormalExpression">${recOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p2_file_movement_f22" name="otherwise" sourceRef="p2_recGw" targetRef="p2_rj_reject"/>
+    <sequenceFlow id="p2_file_movement_f23" sourceRef="p2_movement" targetRef="p2_recGw"/>
+    <sequenceFlow id="p2_file_movement_f24" name="SANCTIONED" sourceRef="p2_sanGw" targetRef="p2_dispatch"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p2_file_movement_f25" name="RETURNED" sourceRef="p2_sanGw" targetRef="p2_movement"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p2_file_movement_f26" name="otherwise" sourceRef="p2_sanGw" targetRef="p2_rj_reject"/>
+    <sequenceFlow id="p2_file_movement_f27" sourceRef="p2_disposal" targetRef="p2_sanGw"/>
+    <sequenceFlow id="p2_file_movement_f28" sourceRef="p2_dispatch" targetRef="p2_letter"/>
+    <sequenceFlow id="p2_file_movement_f29" sourceRef="p2_letter" targetRef="p2_send"/>
+    <sequenceFlow id="p2_file_movement_f30" sourceRef="p2_invalidated" targetRef="p2_movement"/>
+    <sequenceFlow id="p2_file_movement_f31" name="DONE" sourceRef="p2_exGw" targetRef="p2_close"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="p2_file_movement_f32" name="otherwise" sourceRef="p2_exGw" targetRef="p2_partial"/>
+    <sequenceFlow id="p2_file_movement_f33" sourceRef="p2_send" targetRef="p2_exGw"/>
+    <sequenceFlow id="p2_file_movement_f34" sourceRef="p2_partial" targetRef="p2_close"/>
+    <sequenceFlow id="p2_file_movement_f35" sourceRef="p2_close" targetRef="p2_closure"/>
+    <sequenceFlow id="p2_file_movement_f36" sourceRef="p2_closure" targetRef="p2_end"/>
+    <subProcess id="p2_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="p2_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="p2_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="p2_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="p2_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="p2_file_movement_f37" sourceRef="p2_withdrawStart" targetRef="p2_withdrawKind"/>
+      <sequenceFlow id="p2_file_movement_f38" sourceRef="p2_withdrawKind" targetRef="p2_withdrawCall"/>
+      <sequenceFlow id="p2_file_movement_f39" sourceRef="p2_withdrawCall" targetRef="p2_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="p2_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="p2_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="p2_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="p2_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="p2_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="p2_file_movement_f40" sourceRef="p2_cancelStart" targetRef="p2_cancelKind"/>
+      <sequenceFlow id="p2_file_movement_f41" sourceRef="p2_cancelKind" targetRef="p2_cancelCall"/>
+      <sequenceFlow id="p2_file_movement_f42" sourceRef="p2_cancelCall" targetRef="p2_cancelEnd"/>
+    </subProcess>
+    <subProcess id="p2_partFile" name="Open a part file" triggeredByEvent="true">
+      <startEvent id="p2_partStart" name="Part file requested" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_openPartFile"/></startEvent>
+      <serviceTask id="p2_partLink" name="Start linked part file" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-p2-file-movement</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>part</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>subject,subjectHead,fileNo,partFileReason,initiatorSeat,actingSeat,initiator</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="p2_partEnd" name="Part file opened"></endEvent>
+      <sequenceFlow id="p2_file_movement_f43" sourceRef="p2_partStart" targetRef="p2_partLink"/>
+      <sequenceFlow id="p2_file_movement_f44" sourceRef="p2_partLink" targetRef="p2_partEnd"/>
+    </subProcess>
+    <subProcess id="p2_physical" name="Physical file custody" triggeredByEvent="true">
+      <startEvent id="p2_physStart" name="Physical file moved" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_physicalFileMoved"/></startEvent>
+      <userTask id="p2_physAck" name="Acknowledge receipt of the physical file" operaton:candidateGroups="${custodianSeat}" operaton:formKey="sangam:p2-file-movement/physical-receipt"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+      <endEvent id="p2_physEnd" name="Custody recorded"></endEvent>
+      <sequenceFlow id="p2_file_movement_f45" sourceRef="p2_physStart" targetRef="p2_physAck"/>
+      <sequenceFlow id="p2_file_movement_f46" sourceRef="p2_physAck" targetRef="p2_physEnd"/>
+    </subProcess>
+    <subProcess id="p2_refer" name="Refer to another department" triggeredByEvent="true">
+      <startEvent id="p2_referStart" name="Referral requested" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_referFile"/></startEvent>
+      <callActivity id="p2_referCall" name="Referral (core)" calledElement="sangam-core-referral"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="p2_referEnd" name="Reply on file"></endEvent>
+      <sequenceFlow id="p2_file_movement_f47" sourceRef="p2_referStart" targetRef="p2_referCall"/>
+      <sequenceFlow id="p2_file_movement_f48" sourceRef="p2_referCall" targetRef="p2_referEnd"/>
+    </subProcess>
+    <subProcess id="p2_rti" name="RTI request linked" triggeredByEvent="true">
+      <startEvent id="p2_rtiStart" name="RTI linked" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_rtiLinked"/></startEvent>
+      <serviceTask id="p2_rtiHold" name="Legal hold while the RTI is open" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>LEGAL_HOLD</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="p2_rtiEnd" name="Hold set"></endEvent>
+      <sequenceFlow id="p2_file_movement_f49" sourceRef="p2_rtiStart" targetRef="p2_rtiHold"/>
+      <sequenceFlow id="p2_file_movement_f50" sourceRef="p2_rtiHold" targetRef="p2_rtiEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="p2_file_movement_diagram">
+    <bpmndi:BPMNPlane id="p2_file_movement_plane" bpmnElement="sangam-p2-file-movement">
+      <bpmndi:BPMNShape id="p2_start_di" bpmnElement="p2_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_defaults_di" bpmnElement="p2_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_putUpTo_di" bpmnElement="p2_putUpTo"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_chain_di" bpmnElement="p2_chain"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_signNote_di" bpmnElement="p2_signNote"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_signGw_di" bpmnElement="p2_signGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_resign_di" bpmnElement="p2_resign"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_resignGw_di" bpmnElement="p2_resignGw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_wdSign_kind_di" bpmnElement="p2_wdSign_kind"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_wdSign_call_di" bpmnElement="p2_wdSign_call"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_wdSign_end_di" bpmnElement="p2_wdSign_end"><dc:Bounds x="1702" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_movement_di" bpmnElement="p2_movement"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_disposal_di" bpmnElement="p2_disposal"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_revise_di" bpmnElement="p2_revise"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_revise_gw_di" bpmnElement="p2_revise_gw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_revise_version_di" bpmnElement="p2_revise_version"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_revise_wd_kind_di" bpmnElement="p2_revise_wd_kind"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_revise_wd_call_di" bpmnElement="p2_revise_wd_call"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_revise_wd_end_di" bpmnElement="p2_revise_wd_end"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rj_reject_di" bpmnElement="p2_rj_reject"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rj_endRejected_di" bpmnElement="p2_rj_endRejected"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_recGw_di" bpmnElement="p2_recGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_dispatch_di" bpmnElement="p2_dispatch"><dc:Bounds x="1670" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_sanGw_di" bpmnElement="p2_sanGw"><dc:Bounds x="1530" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_letter_di" bpmnElement="p2_letter"><dc:Bounds x="1835" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_send_di" bpmnElement="p2_send"><dc:Bounds x="2000" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_partial_di" bpmnElement="p2_partial"><dc:Bounds x="2330" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_close_di" bpmnElement="p2_close"><dc:Bounds x="2495" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_exGw_di" bpmnElement="p2_exGw"><dc:Bounds x="2190" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_closure_di" bpmnElement="p2_closure"><dc:Bounds x="2660" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_end_di" bpmnElement="p2_end"><dc:Bounds x="2857" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_invalidated_di" bpmnElement="p2_invalidated"><dc:Bounds x="2008" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_withdraw_di" bpmnElement="p2_withdraw" isExpanded="true"><dc:Bounds x="30" y="638" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_withdrawStart_di" bpmnElement="p2_withdrawStart"><dc:Bounds x="92" y="700" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_withdrawKind_di" bpmnElement="p2_withdrawKind"><dc:Bounds x="225" y="678" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_withdrawCall_di" bpmnElement="p2_withdrawCall"><dc:Bounds x="390" y="678" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_withdrawEnd_di" bpmnElement="p2_withdrawEnd"><dc:Bounds x="587" y="700" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_cancel_di" bpmnElement="p2_cancel" isExpanded="true"><dc:Bounds x="30" y="828" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_cancelStart_di" bpmnElement="p2_cancelStart"><dc:Bounds x="92" y="890" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_cancelKind_di" bpmnElement="p2_cancelKind"><dc:Bounds x="225" y="868" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_cancelCall_di" bpmnElement="p2_cancelCall"><dc:Bounds x="390" y="868" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_cancelEnd_di" bpmnElement="p2_cancelEnd"><dc:Bounds x="587" y="890" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_partFile_di" bpmnElement="p2_partFile" isExpanded="true"><dc:Bounds x="30" y="1018" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_partStart_di" bpmnElement="p2_partStart"><dc:Bounds x="92" y="1080" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_partLink_di" bpmnElement="p2_partLink"><dc:Bounds x="225" y="1058" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_partEnd_di" bpmnElement="p2_partEnd"><dc:Bounds x="422" y="1080" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_physical_di" bpmnElement="p2_physical" isExpanded="true"><dc:Bounds x="30" y="1208" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_physStart_di" bpmnElement="p2_physStart"><dc:Bounds x="92" y="1270" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_physAck_di" bpmnElement="p2_physAck"><dc:Bounds x="225" y="1248" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_physEnd_di" bpmnElement="p2_physEnd"><dc:Bounds x="422" y="1270" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_refer_di" bpmnElement="p2_refer" isExpanded="true"><dc:Bounds x="30" y="1398" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_referStart_di" bpmnElement="p2_referStart"><dc:Bounds x="92" y="1460" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_referCall_di" bpmnElement="p2_referCall"><dc:Bounds x="225" y="1438" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_referEnd_di" bpmnElement="p2_referEnd"><dc:Bounds x="422" y="1460" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rti_di" bpmnElement="p2_rti" isExpanded="true"><dc:Bounds x="30" y="1588" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rtiStart_di" bpmnElement="p2_rtiStart"><dc:Bounds x="92" y="1650" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rtiHold_di" bpmnElement="p2_rtiHold"><dc:Bounds x="225" y="1628" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rtiEnd_di" bpmnElement="p2_rtiEnd"><dc:Bounds x="422" y="1650" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="p2_file_movement_f1_di" bpmnElement="p2_file_movement_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f2_di" bpmnElement="p2_file_movement_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f3_di" bpmnElement="p2_file_movement_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f4_di" bpmnElement="p2_file_movement_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f5_di" bpmnElement="p2_file_movement_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f6_di" bpmnElement="p2_file_movement_f6"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f7_di" bpmnElement="p2_file_movement_f7"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f8_di" bpmnElement="p2_file_movement_f8"><di:waypoint x="1225" y="220"/><di:waypoint x="1225" y="259"/><di:waypoint x="730" y="259"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f9_di" bpmnElement="p2_file_movement_f9"><di:waypoint x="1440" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f10_di" bpmnElement="p2_file_movement_f10"><di:waypoint x="1605" y="320"/><di:waypoint x="1653" y="320"/><di:waypoint x="1653" y="570"/><di:waypoint x="1702" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f11_di" bpmnElement="p2_file_movement_f11"><di:waypoint x="1250" y="195"/><di:waypoint x="1295" y="195"/><di:waypoint x="1295" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f12_di" bpmnElement="p2_file_movement_f12"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f13_di" bpmnElement="p2_file_movement_f13"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f14_di" bpmnElement="p2_file_movement_f14"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f15_di" bpmnElement="p2_file_movement_f15"><di:waypoint x="1720" y="235"/><di:waypoint x="1720" y="267"/><di:waypoint x="1060" y="267"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f16_di" bpmnElement="p2_file_movement_f16"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f17_di" bpmnElement="p2_file_movement_f17"><di:waypoint x="1935" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f18_di" bpmnElement="p2_file_movement_f18"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f19_di" bpmnElement="p2_file_movement_f19"><di:waypoint x="1770" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f20_di" bpmnElement="p2_file_movement_f20"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f21_di" bpmnElement="p2_file_movement_f21"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f22_di" bpmnElement="p2_file_movement_f22"><di:waypoint x="1250" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f23_di" bpmnElement="p2_file_movement_f23"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f24_di" bpmnElement="p2_file_movement_f24"><di:waypoint x="1580" y="195"/><di:waypoint x="1625" y="195"/><di:waypoint x="1625" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f25_di" bpmnElement="p2_file_movement_f25"><di:waypoint x="1555" y="220"/><di:waypoint x="1555" y="238"/><di:waypoint x="1060" y="238"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f26_di" bpmnElement="p2_file_movement_f26"><di:waypoint x="1580" y="195"/><di:waypoint x="1625" y="195"/><di:waypoint x="1625" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f27_di" bpmnElement="p2_file_movement_f27"><di:waypoint x="1440" y="195"/><di:waypoint x="1530" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f28_di" bpmnElement="p2_file_movement_f28"><di:waypoint x="1770" y="445"/><di:waypoint x="1835" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f29_di" bpmnElement="p2_file_movement_f29"><di:waypoint x="1935" y="445"/><di:waypoint x="2000" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f30_di" bpmnElement="p2_file_movement_f30"><di:waypoint x="2026" y="503"/><di:waypoint x="2026" y="528"/><di:waypoint x="1060" y="528"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f31_di" bpmnElement="p2_file_movement_f31"><di:waypoint x="2240" y="445"/><di:waypoint x="2495" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f32_di" bpmnElement="p2_file_movement_f32"><di:waypoint x="2240" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f33_di" bpmnElement="p2_file_movement_f33"><di:waypoint x="2100" y="445"/><di:waypoint x="2190" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f34_di" bpmnElement="p2_file_movement_f34"><di:waypoint x="2430" y="445"/><di:waypoint x="2495" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f35_di" bpmnElement="p2_file_movement_f35"><di:waypoint x="2595" y="445"/><di:waypoint x="2660" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f36_di" bpmnElement="p2_file_movement_f36"><di:waypoint x="2760" y="445"/><di:waypoint x="2857" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f37_di" bpmnElement="p2_file_movement_f37"><di:waypoint x="128" y="718"/><di:waypoint x="225" y="718"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f38_di" bpmnElement="p2_file_movement_f38"><di:waypoint x="325" y="718"/><di:waypoint x="390" y="718"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f39_di" bpmnElement="p2_file_movement_f39"><di:waypoint x="490" y="718"/><di:waypoint x="587" y="718"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f40_di" bpmnElement="p2_file_movement_f40"><di:waypoint x="128" y="908"/><di:waypoint x="225" y="908"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f41_di" bpmnElement="p2_file_movement_f41"><di:waypoint x="325" y="908"/><di:waypoint x="390" y="908"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f42_di" bpmnElement="p2_file_movement_f42"><di:waypoint x="490" y="908"/><di:waypoint x="587" y="908"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f43_di" bpmnElement="p2_file_movement_f43"><di:waypoint x="128" y="1098"/><di:waypoint x="225" y="1098"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f44_di" bpmnElement="p2_file_movement_f44"><di:waypoint x="325" y="1098"/><di:waypoint x="422" y="1098"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f45_di" bpmnElement="p2_file_movement_f45"><di:waypoint x="128" y="1288"/><di:waypoint x="225" y="1288"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f46_di" bpmnElement="p2_file_movement_f46"><di:waypoint x="325" y="1288"/><di:waypoint x="422" y="1288"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f47_di" bpmnElement="p2_file_movement_f47"><di:waypoint x="128" y="1478"/><di:waypoint x="225" y="1478"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f48_di" bpmnElement="p2_file_movement_f48"><di:waypoint x="325" y="1478"/><di:waypoint x="422" y="1478"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f49_di" bpmnElement="p2_file_movement_f49"><di:waypoint x="128" y="1668"/><di:waypoint x="225" y="1668"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f50_di" bpmnElement="p2_file_movement_f50"><di:waypoint x="325" y="1668"/><di:waypoint x="422" y="1668"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_baa_config" name="BAA review policy (SYNTHETIC; tenant overridable)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- US-HLT-038. -->
+  <decision id="sec-ushealth-baa-config" name="BAA review policy (SYNTHETIC; tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ushealth-baa-config_t" hitPolicy="FIRST">
+      <input id="sec-ushealth-baa-config_i0" label="PHI scope"><inputExpression id="sec-ushealth-baa-config_ie0" typeRef="string"><text>phiScope</text></inputExpression></input>
+      <output id="sec-ushealth-baa-config_o0" label="Review before the end date" name="reviewLead" typeRef="string"/>
+      <rule id="sec-ushealth-baa-config_r0"><description>review 60 days before the BAA end date; annual review recommended</description>
+        <inputEntry id="sec-ushealth-baa-config_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-ushealth-baa-config_r0_o0"><text>"P60D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_scm_ewb" name="E-way bill threshold and validity (CGST Rules r.138; verify state thresholds)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-scm-ewb" name="E-way bill threshold and validity (CGST Rules r.138; verify state thresholds)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-scm-ewb_t" hitPolicy="FIRST">
+      <input id="sec-scm-ewb_i0" label="Value"><inputExpression id="sec-scm-ewb_ie0" typeRef="number"><text>consignmentValue</text></inputExpression></input>
+      <input id="sec-scm-ewb_i1" label="Distance (km)"><inputExpression id="sec-scm-ewb_ie1" typeRef="integer"><text>distanceKm</text></inputExpression></input>
+      <output id="sec-scm-ewb_o0" label="Required" name="ewbRequired" typeRef="boolean"/>
+      <output id="sec-scm-ewb_o1" label="Validity" name="validitySpec" typeRef="string"/>
+      <rule id="sec-scm-ewb_r0"><description>threshold Rs 50,000</description>
+        <inputEntry id="sec-scm-ewb_r0_i0"><text>&lt;= 5000000</text></inputEntry>
+        <inputEntry id="sec-scm-ewb_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-scm-ewb_r0_o0"><text>false</text></outputEntry>
+        <outputEntry id="sec-scm-ewb_r0_o1"><text>"1D"</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-ewb_r1"><description>1 day per 200 km</description>
+        <inputEntry id="sec-scm-ewb_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-scm-ewb_r1_i1"><text>&lt;= 200</text></inputEntry>
+        <outputEntry id="sec-scm-ewb_r1_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-scm-ewb_r1_o1"><text>"1D"</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-ewb_r2">
+        <inputEntry id="sec-scm-ewb_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-scm-ewb_r2_i1"><text>&lt;= 400</text></inputEntry>
+        <outputEntry id="sec-scm-ewb_r2_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-scm-ewb_r2_o1"><text>"2D"</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-ewb_r3">
+        <inputEntry id="sec-scm-ewb_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-scm-ewb_r3_i1"><text>&lt;= 800</text></inputEntry>
+        <outputEntry id="sec-scm-ewb_r3_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-scm-ewb_r3_o1"><text>"4D"</text></outputEntry>
+      </rule>
+      <rule id="sec-scm-ewb_r4"><description>long distance (SYNTHETIC cap)</description>
+        <inputEntry id="sec-scm-ewb_r4_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-scm-ewb_r4_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-scm-ewb_r4_o0"><text>true</text></outputEntry>
+        <outputEntry id="sec-scm-ewb_r4_o1"><text>"8D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

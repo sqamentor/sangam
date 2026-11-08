@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_nbfc_dlg_cap" name="DLG cap (RBI DLG guidelines, 8 Jun 2023)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-nbfc-dlg-cap" name="DLG cap (RBI DLG guidelines, 8 Jun 2023)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-nbfc-dlg-cap_t" hitPolicy="FIRST">
+      <input id="sec-nbfc-dlg-cap_i0" label="Cover %"><inputExpression id="sec-nbfc-dlg-cap_ie0" typeRef="number"><text>dlgPct</text></inputExpression></input>
+      <input id="sec-nbfc-dlg-cap_i1" label="Form"><inputExpression id="sec-nbfc-dlg-cap_ie1" typeRef="string"><text>dlgForm</text></inputExpression></input>
+      <output id="sec-nbfc-dlg-cap_o0" label="Allowed" name="dlgAllowed" typeRef="boolean"/>
+      <rule id="sec-nbfc-dlg-cap_r0"><description>above 5 % of the portfolio</description>
+        <inputEntry id="sec-nbfc-dlg-cap_r0_i0"><text>&gt; 5</text></inputEntry>
+        <inputEntry id="sec-nbfc-dlg-cap_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-nbfc-dlg-cap_r0_o0"><text>false</text></outputEntry>
+      </rule>
+      <rule id="sec-nbfc-dlg-cap_r1">
+        <inputEntry id="sec-nbfc-dlg-cap_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-nbfc-dlg-cap_r1_i1"><text>"CASH","FIXED_DEPOSIT","BANK_GUARANTEE"</text></inputEntry>
+        <outputEntry id="sec-nbfc-dlg-cap_r1_o0"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-nbfc-dlg-cap_r2"><description>only cash, FD lien or bank guarantee</description>
+        <inputEntry id="sec-nbfc-dlg-cap_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-nbfc-dlg-cap_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-nbfc-dlg-cap_r2_o0"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

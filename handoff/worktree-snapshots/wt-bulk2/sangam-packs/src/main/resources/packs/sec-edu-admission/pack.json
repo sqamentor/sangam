@@ -1,0 +1,93 @@
+{
+  "id": "sec.edu.admission",
+  "version": "1.0.0",
+  "name": {
+    "en": "Admission with fee refund on withdrawal",
+    "hi": "प्रवेश एवं प्रत्याहरण पर शुल्क वापसी"
+  },
+  "domain": "Education",
+  "description": "Application, marksheets pulled from DigiLocker / APAAR, eligibility by rule with reservation, document scrutiny (core), merit publication, offer accepted with fee within the window (lapse frees the seat), enrolment and ABC registration; withdrawal refunds by the UGC refund schedule (100 % less a capped processing fee 15 days or more before the last date of admission, then 90 / 80 / 50 / 0 %).",
+  "mainProcesses": [
+    "sangam-sec-edu-admission"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-edu-admission/sangam-sec-edu-admission.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-edu-admission/sec-edu-eligibility.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-edu-admission/sec-edu-refund.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-admission/forms/apply.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-admission/forms/accept.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-edu-admission/seed.json"
+    }
+  ],
+  "seed": "packs/sec-edu-admission/seed.json",
+  "connectors": [
+    {
+      "id": "digilocker.pull",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Marksheets"
+    },
+    {
+      "id": "pg.collect",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Fee"
+    },
+    {
+      "id": "pg.refund",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Refund"
+    },
+    {
+      "id": "sis.enrol",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Student information system"
+    },
+    {
+      "id": "abc.register",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Academic Bank of Credits"
+    }
+  ],
+  "covers": [
+    "SEC-EDU-001",
+    "SEC-EDU-002",
+    "SEC-EDU-003",
+    "UP-22",
+    "GP-16",
+    "GP-26",
+    "GP-44",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-scrutiny"
+  ]
+}

@@ -1,0 +1,351 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: RJ
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Rajasthan
+    hi: राजस्थान
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources RJ1-RJ4, accessed 2026-11-04)
+placeholders:
+- path: rulebooks.own.PWFAR
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live'
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 8
+  sources: RJ1-RJ4
+locale:
+  languages:
+  - tag: hi
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - IFMS 3.0
+  - Pay Manager
+  - WAM
+  - e-GRAS
+  - SNA-SPARSH
+  - Aadhaar Vault
+  snaSparsh:
+    onboarded: '2023-08-07'
+    hosting: CYBER_TREASURY
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Treasuries & Accounts
+  unitTypes:
+    DISTRICT_TREASURY: 49
+    SUB_TREASURY: 247
+    CYBER_TREASURY_SNA: 1
+  ddoCount: 33337
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: GFAR
+    title: GF&AR Parts I-III
+  - id: RJ_BUDGET_MANUAL
+    title: Budget Manual Vol-I
+  - id: RTPP
+    title: RTPP Act 2012 / Rules 2013, 7th amdt 17-11-2025
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+documentTypes:
+- id: RJ_SALARY
+  formNumber: SALARY
+  family: ESTABLISHMENT_PAY
+  approvalChain: TREASURY_STD
+  sanction: REFERENCE
+  integrations:
+    sourceSystem: PAY_MANAGER
+- id: RJ_GIA
+  formNumber: GIA
+  family: GRANT
+  approvalChain: TREASURY_STD
+  sanction: REFERENCE
+  integrations: {}
+- id: RJ_FVC
+  formNumber: FVC
+  family: CONTINGENT
+  approvalChain: TREASURY_STD
+  sanction: REFERENCE
+  integrations: {}
+- id: RJ_GST_TDS
+  formNumber: GST_TDS
+  family: DEDUCTION
+  approvalChain: TREASURY_STD
+  sanction: REFERENCE
+  integrations: {}
+- id: RJ_SD_REFUND
+  formNumber: SD_REFUND
+  family: REFUND
+  approvalChain: TREASURY_STD
+  sanction: REFERENCE
+  integrations: {}
+- id: RJ_WORKS
+  formNumber: WORKS
+  family: WORKS
+  approvalChain: TREASURY_STD
+  sanction: REFERENCE
+  integrations:
+    sourceSystem: WAM
+- id: RJ_PENSION
+  formNumber: PENSION
+  family: PENSION
+  approvalChain: TREASURY_STD
+  sanction: REFERENCE
+  integrations: {}
+- id: RJ_GA_55
+  formNumber: GA-55
+  kind: REPORT
+  family: EMPLOYEE_REPORT
+  sanction: NONE
+  report:
+    parameters: [employee, year, month]
+    output: PDF
+    menu: Employee Management > GA-55
+    selfService: mobile app, next to the salary slip and Form 16
+  template:
+    ownerConfigurable: true
+    fields: []
+    note: field layout not yet transcribed (official form text needs OCR); the owner configures it
+  evidence:
+    report:
+      status: V
+      value: per-employee, per-period (year, month) official form / report
+      sources:
+      - IFMS 3.0 Employee Module user manual 8.2.2
+      - IFMS 3.0 mobile app user manual
+      - SIPF form SI-GA-55, https://sipf.rajasthan.gov.in/FORMS/SI-GA-55.pdf
+      - 'SNA SOP: GA-55 Report Generation in SNA (MIS Report Agency)'
+    purpose:
+      status: I
+      value: annual pay-and-allowances statement of the employee (inferred, not verified)
+    fieldLayout:
+      status: U
+      value: null
+      note: official form PDF text layer is a legacy Hindi font; layout unverified until OCR by owner / IFMS
+approvalChains:
+- id: TREASURY_STD
+  steps:
+  - role: DEALING_ASSISTANT
+  - role: ACCOUNTANT
+  - role: TREASURY_OFFICER
+    sign: true
+  returnBy:
+  - TREASURY_OFFICER
+  mayEdit: false
+  queue:
+    token: true
+    tokenSeries: TOKEN
+    fifo: true
+budgetControl:
+  holdForBudgetQueue: true
+  autoForwardToSubTreasury: true
+unitChanges:
+- date: '2025-01-15'
+  event: DEMOTE
+  count: 7
+  from: DISTRICT_TREASURY
+  to: SUB_TREASURY
+publicAccounts:
+  types:
+  - id: PD
+    controls:
+      cfTransferAlert: 10CR
+receipts:
+  portal: EGRAS
+  defacement: true
+  refund: true
+  challanAsBidSecurity:
+    ruleRef: RTPP r.42(6)
+security:
+  aadhaarVault: true
+  sso: RAJ_SSO_OTP
+outputs:
+  auditReports:
+  - hi
+classification:
+  schemes:
+  - id: HOA_RJ
+    separator: '-'
+    segments:
+    - id: demand
+      width: 2
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: subHead
+      width: 2
+    - id: groupHead
+      width: 2
+      optional: true
+    - id: object
+      width: 2
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: 4202 01 202 (01) [90] 17
+    evidence: V
+    source: RJ Budget Manual Vol-I s.3.11
+  defaultScheme: HOA_RJ
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+procurement:
+  family: ACT
+  rule: RTPP Act 2012 / Rules 2013
+  worksCode: PWF&AR Parts I-III [U edition]
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/RJ/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: RJ
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/RJ/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: RJ
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from RTPP Act 2012 / Rules 2013 (was: RPR 2022: DDO draws within a sanction;
+        no sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from RTPP Act 2012 / Rules 2013 (was: DFPR 2024 r.12(4) and department re-delegation
+        order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from RTPP Act 2012 / Rules 2013 (was: DFPR 2024 r.12(2) re-delegation to HoD
+        [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from RTPP Act 2012 / Rules 2013 (was: DFPR 2024 r.11 (open / limited tender up
+        to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from RTPP Act 2012 / Rules 2013 (was: DFPR 2024 r.11: above the Secretary; no
+        upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from RTPP Act 2012 / Rules 2013 (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

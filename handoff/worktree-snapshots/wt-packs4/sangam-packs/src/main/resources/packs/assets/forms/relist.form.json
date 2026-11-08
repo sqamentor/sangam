@@ -1,0 +1,29 @@
+{
+  "key": "assets/relist",
+  "version": "1.0.0",
+  "pack": "gov.assets",
+  "title": {
+    "en": "No bid: revise reserve price and relist",
+    "hi": "बोली नहीं: आरक्षित मूल्य संशोधित कर पुनः सूचीबद्ध करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "reservePrice",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Reserve price (INR)",
+        "hi": "आरक्षित मूल्य (रुपये)"
+      }
+    }
+  ]
+}

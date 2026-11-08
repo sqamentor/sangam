@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GAP set (SANGAM.md XI.3, CF-13 / R34): compensation event sub-process. SHARED, standard BPMN 2.0.2.
+  gap_comp_work (embedded sub-process) contains an event sub-process whose start event is a
+  compensation start event. After gap_comp_work completes, the user task gap_comp_decide is reached;
+  completing it reaches the compensation throw (activityRef = gap_comp_work).
+  Pass: the compensation handler runs, i.e. user task gap_comp_undo "Undo reservation" appears;
+  completing it lets the instance end at gap_comp_end.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="gap-compensation-event-subprocess-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <process id="gap-compensation-event-subprocess" name="GAP compensation event sub-process" isExecutable="true">
+    <startEvent id="gap_comp_start"/>
+    <sequenceFlow id="gap_comp_f1" sourceRef="gap_comp_start" targetRef="gap_comp_work"/>
+
+    <subProcess id="gap_comp_work" name="Reserve fee">
+      <startEvent id="gap_comp_workStart"/>
+      <sequenceFlow id="gap_comp_f2" sourceRef="gap_comp_workStart" targetRef="gap_comp_reserve"/>
+      <manualTask id="gap_comp_reserve" name="Reserve"/>
+      <sequenceFlow id="gap_comp_f3" sourceRef="gap_comp_reserve" targetRef="gap_comp_workEnd"/>
+      <endEvent id="gap_comp_workEnd"/>
+
+      <subProcess id="gap_comp_handler" name="Compensate reservation" triggeredByEvent="true">
+        <startEvent id="gap_comp_handlerStart" name="On compensation">
+          <compensateEventDefinition id="gap_comp_handlerStartDef"/>
+        </startEvent>
+        <sequenceFlow id="gap_comp_f4" sourceRef="gap_comp_handlerStart" targetRef="gap_comp_undo"/>
+        <userTask id="gap_comp_undo" name="Undo reservation"/>
+        <sequenceFlow id="gap_comp_f5" sourceRef="gap_comp_undo" targetRef="gap_comp_handlerEnd"/>
+        <endEvent id="gap_comp_handlerEnd"/>
+      </subProcess>
+    </subProcess>
+    <sequenceFlow id="gap_comp_f6" sourceRef="gap_comp_work" targetRef="gap_comp_decide"/>
+
+    <userTask id="gap_comp_decide" name="Decide to cancel"/>
+    <sequenceFlow id="gap_comp_f7" sourceRef="gap_comp_decide" targetRef="gap_comp_throw"/>
+
+    <intermediateThrowEvent id="gap_comp_throw" name="Compensate reservation">
+      <compensateEventDefinition id="gap_comp_throwDef" activityRef="gap_comp_work" waitForCompletion="true"/>
+    </intermediateThrowEvent>
+    <sequenceFlow id="gap_comp_f8" sourceRef="gap_comp_throw" targetRef="gap_comp_end"/>
+    <endEvent id="gap_comp_end"/>
+  </process>
+</definitions>

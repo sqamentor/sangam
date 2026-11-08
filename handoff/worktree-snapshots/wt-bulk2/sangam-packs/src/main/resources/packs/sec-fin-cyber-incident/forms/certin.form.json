@@ -1,0 +1,36 @@
+{
+  "key": "sec-fin-cyber-incident/certin",
+  "version": "1.0.0",
+  "pack": "sec.fin.cyber-incident",
+  "title": {
+    "en": "Report to CERT-In (6 hours)",
+    "hi": "सर्ट-इन को रिपोर्ट (6 घंटे)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "incidentSummary",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Incident summary",
+        "hi": "घटना सारांश"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

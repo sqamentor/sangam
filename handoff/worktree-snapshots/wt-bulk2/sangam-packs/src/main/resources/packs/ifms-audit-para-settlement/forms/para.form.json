@@ -1,0 +1,45 @@
+{
+  "key": "ifms-audit-para-settlement/para",
+  "version": "1.0.0",
+  "pack": "gov.ifms.audit-para-settlement",
+  "title": {
+    "en": "Audit para",
+    "hi": "लेखापरीक्षा पैरा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "paraNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Audit para number",
+        "hi": "लेखापरीक्षा पैरा संख्या"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

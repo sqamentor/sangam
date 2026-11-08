@@ -1,0 +1,92 @@
+{
+  "key": "sec-ins-health-claim/request",
+  "version": "1.0.0",
+  "pack": "sec.ins.health-claim",
+  "title": {
+    "en": "Health claim request",
+    "hi": "स्वास्थ्य दावा अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "policyNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Policy / subscription",
+        "hi": "पॉलिसी / सदस्यता"
+      }
+    },
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "hi": "रोगी का नाम"
+      }
+    },
+    {
+      "id": "hospitalId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Hospital",
+        "hi": "अस्पताल"
+      }
+    },
+    {
+      "id": "admissionType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Admission type",
+        "hi": "भर्ती का प्रकार"
+      }
+    },
+    {
+      "id": "estimatedCost",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Estimated cost (INR)",
+        "hi": "अनुमानित व्यय (रुपये)"
+      }
+    },
+    {
+      "id": "diagnosis",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Diagnosis (ICD-10)",
+        "hi": "निदान (आईसीडी-10)"
+      }
+    },
+    {
+      "id": "abhaNumber",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "ABHA number / address",
+        "hi": "आभा संख्या / पता"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

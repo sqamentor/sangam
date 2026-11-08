@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-08 Entity lifecycle. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up08_entity_lifecycle" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_entity_cancel" name="sangam.entity.cancel"/>
+  <message id="msg_sangam_entity_endorsement" name="sangam.entity.endorsement"/>
+  <process id="sangam-up08-entity-lifecycle" name="UP-08 Entity lifecycle" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up08-entity-lifecycle</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>policyNo,customerId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u8_start" name="Entity created" operaton:initiator="initiator" operaton:formKey="sangam:up08-entity-lifecycle/create"></startEvent>
+    <serviceTask id="u8_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>renewalCycle=P365D;cycles=0;continueAsNewAfter=5;serviceSeat=SERVICE-DESK</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="u8_wait" name="Event or anniversary"></eventBasedGateway>
+    <intermediateCatchEvent id="u8_endorse" name="Endorsement requested"><messageEventDefinition messageRef="msg_sangam_entity_endorsement"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="u8_anniversary" name="Anniversary"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${renewalCycle}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="u8_cancel" name="Cancelled"><messageEventDefinition messageRef="msg_sangam_entity_cancel"/></intermediateCatchEvent>
+    <userTask id="u8_endorsement" name="Process endorsement" operaton:candidateGroups="${serviceSeat}" operaton:formKey="sangam:up08-entity-lifecycle/endorsement"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="u8_renew" name="Renew or terminate" operaton:candidateGroups="${serviceSeat}" operaton:formKey="sangam:up08-entity-lifecycle/renew"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>renewalDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="u8_rg" name="" default="up08_entity_lifecycle_f11"></exclusiveGateway>
+    <serviceTask id="u8_cycle" name="Count cycle" operaton:expression="${execution.setVariable('cycles', cycles + 1)}"></serviceTask>
+    <endEvent id="u8_endTerminated" name="Terminated"></endEvent>
+    <exclusiveGateway id="u8_can" name="Continue as new?" default="up08_entity_lifecycle_f14"></exclusiveGateway>
+    <serviceTask id="u8_continue" name="Continue as a new linked instance" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-up08-entity-lifecycle</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>continuation</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>policyNo,customerId,renewalCycle,continueAsNewAfter</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u8_endContinued" name="Continued"></endEvent>
+    <endEvent id="u8_endCancelled" name="Cancelled"></endEvent>
+    <sequenceFlow id="up08_entity_lifecycle_f1" sourceRef="u8_start" targetRef="u8_defaults"/>
+    <sequenceFlow id="up08_entity_lifecycle_f2" sourceRef="u8_defaults" targetRef="u8_wait"/>
+    <sequenceFlow id="up08_entity_lifecycle_f3" sourceRef="u8_wait" targetRef="u8_endorse"/>
+    <sequenceFlow id="up08_entity_lifecycle_f4" sourceRef="u8_wait" targetRef="u8_anniversary"/>
+    <sequenceFlow id="up08_entity_lifecycle_f5" sourceRef="u8_wait" targetRef="u8_cancel"/>
+    <sequenceFlow id="up08_entity_lifecycle_f6" sourceRef="u8_endorse" targetRef="u8_endorsement"/>
+    <sequenceFlow id="up08_entity_lifecycle_f7" sourceRef="u8_endorsement" targetRef="u8_wait"/>
+    <sequenceFlow id="up08_entity_lifecycle_f8" sourceRef="u8_anniversary" targetRef="u8_renew"/>
+    <sequenceFlow id="up08_entity_lifecycle_f9" sourceRef="u8_renew" targetRef="u8_rg"/>
+    <sequenceFlow id="up08_entity_lifecycle_f10" name="renew" sourceRef="u8_rg" targetRef="u8_cycle"><conditionExpression xsi:type="tFormalExpression">${renewalDecision == 'renew'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up08_entity_lifecycle_f11" name="terminate" sourceRef="u8_rg" targetRef="u8_endTerminated"/>
+    <sequenceFlow id="up08_entity_lifecycle_f12" sourceRef="u8_cycle" targetRef="u8_can"/>
+    <sequenceFlow id="up08_entity_lifecycle_f13" name="same instance" sourceRef="u8_can" targetRef="u8_wait"><conditionExpression xsi:type="tFormalExpression">${cycles &lt; continueAsNewAfter}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up08_entity_lifecycle_f14" name="bounded history" sourceRef="u8_can" targetRef="u8_continue"/>
+    <sequenceFlow id="up08_entity_lifecycle_f15" sourceRef="u8_continue" targetRef="u8_endContinued"/>
+    <sequenceFlow id="up08_entity_lifecycle_f16" sourceRef="u8_cancel" targetRef="u8_endCancelled"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up08_entity_lifecycle_diagram">
+    <bpmndi:BPMNPlane id="up08_entity_lifecycle_plane" bpmnElement="sangam-up08-entity-lifecycle">
+      <bpmndi:BPMNShape id="u8_start_di" bpmnElement="u8_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_defaults_di" bpmnElement="u8_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_wait_di" bpmnElement="u8_wait"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_endorse_di" bpmnElement="u8_endorse"><dc:Bounds x="547" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_anniversary_di" bpmnElement="u8_anniversary"><dc:Bounds x="547" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_cancel_di" bpmnElement="u8_cancel"><dc:Bounds x="547" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_endorsement_di" bpmnElement="u8_endorsement"><dc:Bounds x="680" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_renew_di" bpmnElement="u8_renew"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_rg_di" bpmnElement="u8_rg"><dc:Bounds x="870" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_cycle_di" bpmnElement="u8_cycle"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_endTerminated_di" bpmnElement="u8_endTerminated"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_can_di" bpmnElement="u8_can"><dc:Bounds x="1200" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_continue_di" bpmnElement="u8_continue"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_endContinued_di" bpmnElement="u8_endContinued"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u8_endCancelled_di" bpmnElement="u8_endCancelled"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f1_di" bpmnElement="up08_entity_lifecycle_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f2_di" bpmnElement="up08_entity_lifecycle_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f3_di" bpmnElement="up08_entity_lifecycle_f3"><di:waypoint x="425" y="70"/><di:waypoint x="486" y="70"/><di:waypoint x="486" y="320"/><di:waypoint x="547" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f4_di" bpmnElement="up08_entity_lifecycle_f4"><di:waypoint x="425" y="70"/><di:waypoint x="486" y="70"/><di:waypoint x="486" y="195"/><di:waypoint x="547" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f5_di" bpmnElement="up08_entity_lifecycle_f5"><di:waypoint x="425" y="70"/><di:waypoint x="547" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f6_di" bpmnElement="up08_entity_lifecycle_f6"><di:waypoint x="583" y="320"/><di:waypoint x="680" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f7_di" bpmnElement="up08_entity_lifecycle_f7"><di:waypoint x="730" y="360"/><di:waypoint x="730" y="392"/><di:waypoint x="400" y="392"/><di:waypoint x="400" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f8_di" bpmnElement="up08_entity_lifecycle_f8"><di:waypoint x="583" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f9_di" bpmnElement="up08_entity_lifecycle_f9"><di:waypoint x="780" y="195"/><di:waypoint x="870" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f10_di" bpmnElement="up08_entity_lifecycle_f10"><di:waypoint x="920" y="195"/><di:waypoint x="965" y="195"/><di:waypoint x="965" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f11_di" bpmnElement="up08_entity_lifecycle_f11"><di:waypoint x="920" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f12_di" bpmnElement="up08_entity_lifecycle_f12"><di:waypoint x="1110" y="320"/><di:waypoint x="1200" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f13_di" bpmnElement="up08_entity_lifecycle_f13"><di:waypoint x="1225" y="345"/><di:waypoint x="1225" y="363"/><di:waypoint x="400" y="363"/><di:waypoint x="400" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f14_di" bpmnElement="up08_entity_lifecycle_f14"><di:waypoint x="1250" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f15_di" bpmnElement="up08_entity_lifecycle_f15"><di:waypoint x="1440" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up08_entity_lifecycle_f16_di" bpmnElement="up08_entity_lifecycle_f16"><di:waypoint x="583" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

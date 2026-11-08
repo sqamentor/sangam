@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_up11_risk" name="Change risk" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="up11-risk" name="Change risk" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="up11-risk_t" hitPolicy="FIRST">
+      <input id="up11-risk_i0" label="Priority"><inputExpression id="up11-risk_ie0" typeRef="string"><text>priority</text></inputExpression></input>
+      <output id="up11-risk_o0" label="CAB" name="cabRequired" typeRef="boolean"/>
+      <rule id="up11-risk_r0"><description>emergency changes still go to the e-CAB</description>
+        <inputEntry id="up11-risk_r0_i0"><text>"P1"</text></inputEntry>
+        <outputEntry id="up11-risk_r0_o0"><text>true</text></outputEntry>
+      </rule>
+      <rule id="up11-risk_r1">
+        <inputEntry id="up11-risk_r1_i0"><text>"P2"</text></inputEntry>
+        <outputEntry id="up11-risk_r1_o0"><text>true</text></outputEntry>
+      </rule>
+      <rule id="up11-risk_r2">
+        <inputEntry id="up11-risk_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="up11-risk_r2_o0"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

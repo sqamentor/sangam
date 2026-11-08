@@ -1,0 +1,47 @@
+{
+  "key": "sec-health-blood-bank/xmatch",
+  "version": "1.0.0",
+  "pack": "sec.health.blood-bank",
+  "title": {
+    "en": "Grouping and cross-match",
+    "hi": "समूहन एवं क्रॉस-मैच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "results",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Results",
+        "hi": "परिणाम"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "xmDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "compatible",
+        "label": {
+          "en": "Compatible",
+          "hi": "संगत"
+        }
+      },
+      {
+        "value": "incompatible",
+        "label": {
+          "en": "Incompatible",
+          "hi": "असंगत"
+        }
+      }
+    ]
+  }
+}

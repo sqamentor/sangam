@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp49">
+  <!-- GP-49 partial batch failure: one payment file out, one result per item (correlated to that item's branch), each
+       failure routed by its reason code to a different desk, then only the failed items go out again. -->
+  <message id="m_itemResult" name="itemResult"/>
+  <process id="gp49-dbt" name="GP-49 DBT batch with partial failure" isExecutable="true">
+    <startEvent id="gp49_start"/>
+    <sequenceFlow id="f1" sourceRef="gp49_start" targetRef="gp49_send"/>
+    <serviceTask id="gp49_send" name="Send payment file" @@ext|dbt-send@@/>
+    <sequenceFlow id="f2" sourceRef="gp49_send" targetRef="gp49_items"/>
+    <subProcess id="gp49_items" name="Per-item outcome">
+      <multiInstanceLoopCharacteristics isSequential="false"><loopCardinality xsi:type="tFormalExpression">${itemCount}</loopCardinality></multiInstanceLoopCharacteristics>
+      <startEvent id="gp49_iStart"/>
+      <sequenceFlow id="i1" sourceRef="gp49_iStart" targetRef="gp49_await"/>
+      <intermediateCatchEvent id="gp49_await" name="Bank response for the item"><messageEventDefinition messageRef="m_itemResult"/></intermediateCatchEvent>
+      <sequenceFlow id="i2" sourceRef="gp49_await" targetRef="gp49_route"/>
+      <exclusiveGateway id="gp49_route" default="i6"/>
+      <sequenceFlow id="i3" sourceRef="gp49_route" targetRef="gp49_iEndPaid"><conditionExpression xsi:type="tFormalExpression">${status == 'PAID'}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="i4" sourceRef="gp49_route" targetRef="gp49_fixAccount"><conditionExpression xsi:type="tFormalExpression">${status == 'ACCOUNT_INVALID'}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="i5" sourceRef="gp49_route" targetRef="gp49_seedAadhaar"><conditionExpression xsi:type="tFormalExpression">${status == 'AADHAAR_NOT_SEEDED'}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="i6" sourceRef="gp49_route" targetRef="gp49_ddoReview"/>
+      <userTask id="gp49_fixAccount" name="Correct bank account"><potentialOwner><resourceAssignmentExpression><formalExpression>group(bank-desk)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <userTask id="gp49_seedAadhaar" name="Get Aadhaar seeded"><potentialOwner><resourceAssignmentExpression><formalExpression>group(dbt-cell)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <userTask id="gp49_ddoReview" name="DDO reviews other rejection"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ddo)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="i7" sourceRef="gp49_fixAccount" targetRef="gp49_iEndFixed"/>
+      <sequenceFlow id="i8" sourceRef="gp49_seedAadhaar" targetRef="gp49_iEndFixed"/>
+      <sequenceFlow id="i9" sourceRef="gp49_ddoReview" targetRef="gp49_iEndFixed"/>
+      <endEvent id="gp49_iEndPaid"/>
+      <endEvent id="gp49_iEndFixed"/>
+    </subProcess>
+    <sequenceFlow id="f3" sourceRef="gp49_items" targetRef="gp49_closeRound"/>
+    <serviceTask id="gp49_closeRound" name="Close round, pick failures" @@ext|dbt-close-round@@/>
+    <sequenceFlow id="f4" sourceRef="gp49_closeRound" targetRef="gp49_more"/>
+    <exclusiveGateway id="gp49_more" default="f6"/>
+    <sequenceFlow id="f5" sourceRef="gp49_more" targetRef="gp49_send"><conditionExpression xsi:type="tFormalExpression">${itemCount gt 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f6" sourceRef="gp49_more" targetRef="gp49_end"/>
+    <endEvent id="gp49_end"/>
+  </process>
+</definitions>

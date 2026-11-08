@@ -1,0 +1,63 @@
+{
+  "key": "up17-prior-authorisation/request",
+  "version": "1.0.0",
+  "pack": "universal.up17-prior-authorisation",
+  "title": {
+    "en": "Prior authorisation request",
+    "hi": "पूर्व प्राधिकरण अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    },
+    {
+      "id": "priority",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Priority",
+        "hi": "प्राथमिकता"
+      }
+    },
+    {
+      "id": "consentGiven",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Consent recorded",
+        "hi": "सहमति दर्ज"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

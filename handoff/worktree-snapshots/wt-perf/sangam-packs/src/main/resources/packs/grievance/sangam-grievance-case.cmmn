@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL"
+             xmlns:operaton="http://operaton.org/schema/1.0/cmmn"
+             id="defs_grievance_case" targetNamespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Grievance, case variant (hardened from spike D-GRIEVANCE, GP-21): examine at once; seek field report
+       (repeatable), forward to a subordinate office and personal hearing are discretionary; dispose needs examine;
+       the SLA watch is a blocking process task exited on disposal (CMMN timer listeners unsupported, E16-b). -->
+  <case id="sangam-grievance-case" name="Public grievance (case)" operaton:historyTimeToLive="3650">
+    <casePlanModel id="grvc_plan" name="Grievance" autoComplete="true">
+      <planItem id="grvc_pi_examine" definitionRef="grvc_examine"/>
+      <planItem id="grvc_pi_report" definitionRef="grvc_report">
+        <itemControl id="grvc_ic1">
+          <repetitionRule id="grvc_rep1"><condition id="grvc_c1">${true}</condition></repetitionRule>
+          <manualActivationRule id="grvc_mar1"><condition id="grvc_c2">${true}</condition></manualActivationRule>
+        </itemControl>
+      </planItem>
+      <planItem id="grvc_pi_forward" definitionRef="grvc_forward">
+        <itemControl id="grvc_ic2">
+          <manualActivationRule id="grvc_mar2"><condition id="grvc_c3">${true}</condition></manualActivationRule>
+        </itemControl>
+      </planItem>
+      <planItem id="grvc_pi_hearing" definitionRef="grvc_hearing">
+        <itemControl id="grvc_ic3">
+          <manualActivationRule id="grvc_mar3"><condition id="grvc_c4">${true}</condition></manualActivationRule>
+        </itemControl>
+      </planItem>
+      <planItem id="grvc_pi_dispose" definitionRef="grvc_dispose">
+        <itemControl id="grvc_ic4">
+          <requiredRule id="grvc_req"><condition id="grvc_c5">${true}</condition></requiredRule>
+        </itemControl>
+        <entryCriterion id="grvc_ec_dispose" sentryRef="grvc_s_examined"/>
+      </planItem>
+      <planItem id="grvc_pi_sla" definitionRef="grvc_sla">
+        <exitCriterion id="grvc_xc_sla" sentryRef="grvc_s_disposed"/>
+      </planItem>
+      <planItem id="grvc_pi_disposed" definitionRef="grvc_disposedMs">
+        <entryCriterion id="grvc_ec_ms" sentryRef="grvc_s_disposed"/>
+      </planItem>
+      <sentry id="grvc_s_examined" name="Examined">
+        <planItemOnPart id="grvc_op1" sourceRef="grvc_pi_examine"><standardEvent>complete</standardEvent></planItemOnPart>
+      </sentry>
+      <sentry id="grvc_s_disposed" name="Disposed">
+        <planItemOnPart id="grvc_op2" sourceRef="grvc_pi_dispose"><standardEvent>complete</standardEvent></planItemOnPart>
+      </sentry>
+      <humanTask id="grvc_examine" name="Examine grievance" operaton:candidateGroups="GRO-1"/>
+      <humanTask id="grvc_report" name="Seek report from field office" operaton:candidateGroups="GRO-F"/>
+      <humanTask id="grvc_forward" name="Forward to subordinate office" operaton:candidateGroups="GRO-1"/>
+      <humanTask id="grvc_hearing" name="Personal hearing of complainant" operaton:candidateGroups="GRO-1"/>
+      <humanTask id="grvc_dispose" name="Dispose grievance (final reply)" operaton:candidateGroups="GRO-1"/>
+      <processTask id="grvc_sla" name="SLA watch" processRef="sangam-grievance-sla" isBlocking="true"/>
+      <milestone id="grvc_disposedMs" name="Disposed"/>
+    </casePlanModel>
+  </case>
+</definitions>

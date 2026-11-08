@@ -1,0 +1,134 @@
+{
+  "offices": [
+    {
+      "id": "TREASURY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PAY-MAKER",
+      "role": "PAYMAKER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "PAY-CHECKER",
+      "name": {
+        "en": "Payment maker",
+        "hi": "भुगतान निर्माता"
+      }
+    },
+    {
+      "id": "PAY-CHECKER",
+      "role": "PAYCHECKER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "PAY-AUTH",
+      "name": {
+        "en": "Payment checker",
+        "hi": "भुगतान जाँचकर्ता"
+      }
+    },
+    {
+      "id": "PAY-AUTH",
+      "role": "PAYAUTH",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "TREASURY-HEAD",
+      "name": {
+        "en": "Payment authoriser",
+        "hi": "भुगतान प्राधिकारी"
+      }
+    },
+    {
+      "id": "TREASURY-HEAD",
+      "role": "TREASURYHEAD",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of treasury operations",
+        "hi": "कोष संचालन प्रमुख"
+      }
+    },
+    {
+      "id": "AML-COMPLIANCE",
+      "role": "COMPLIANCE",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "AML compliance officer",
+        "hi": "धन-शोधन निवारण अनुपालन अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PAY-MAKER",
+      "person": "bpy.pay-maker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PAY-CHECKER",
+      "person": "bpy.pay-checker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PAY-AUTH",
+      "person": "bpy.pay-auth",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TREASURY-HEAD",
+      "person": "bpy.treasury-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AML-COMPLIANCE",
+      "person": "bpy.aml-compliance",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PAYMAKER",
+      "name": {
+        "en": "Payment maker",
+        "hi": "भुगतान निर्माता"
+      }
+    },
+    {
+      "code": "PAYCHECKER",
+      "name": {
+        "en": "Payment checker",
+        "hi": "भुगतान जाँचकर्ता"
+      }
+    },
+    {
+      "code": "PAYAUTH",
+      "name": {
+        "en": "Payment authoriser",
+        "hi": "भुगतान प्राधिकारी"
+      }
+    },
+    {
+      "code": "TREASURYHEAD",
+      "name": {
+        "en": "Head of treasury operations",
+        "hi": "कोष संचालन प्रमुख"
+      }
+    },
+    {
+      "code": "COMPLIANCE",
+      "name": {
+        "en": "AML compliance officer",
+        "hi": "धन-शोधन निवारण अनुपालन अधिकारी"
+      }
+    }
+  ]
+}

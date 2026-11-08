@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "OPS-U6",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "REVIEWER-AI",
+      "role": "REVIEWER",
+      "office": "OPS-U6",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Human reviewer",
+        "hi": "मानव समीक्षक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "REVIEWER-AI",
+      "person": "u6.reviewer-ai",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "REVIEWER",
+      "name": {
+        "en": "Human reviewer",
+        "hi": "मानव समीक्षक"
+      }
+    }
+  ]
+}

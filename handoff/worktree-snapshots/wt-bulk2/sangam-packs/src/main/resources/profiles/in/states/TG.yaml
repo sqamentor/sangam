@@ -1,0 +1,168 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: TG
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Telangana
+    hi: तेलंगाना
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources TG1-TG2, accessed 2026-11-04)
+  adopt:
+  - profile: AP
+    sections:
+    - chartOfAccounts
+placeholders:
+- path: classification.defaultScheme
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (no official
+    code structure found; Union layout used)'
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 7
+  sources: TG1-TG2
+locale:
+  languages:
+  - tag: te
+    script: Telu
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: ur
+    script: Arab
+    scope: statewide
+    docClass:
+    - statutory
+    direction: rtl
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - accounts
+    - audit
+    note: accounts and audit outputs are usually English (IFMS-STATES 9.1)
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - IFMIS (2018)
+  - Work ID
+  - PD accounts
+  snaSparsh:
+    onboarded: '2024-05-22'
+    hosting: MODULE
+    orders:
+    - G.O.Ms.76
+    - G.O.Ms.77
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Treasuries & Accounts
+  unitTypes:
+    DISTRICT_TREASURY: 33
+    DIVISIONAL_SUB_TREASURY: 27
+    SUB_TREASURY: 67
+    PAO: 1
+  ddoCount: 15000
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: TG_FC
+    title: Telangana Financial Code
+  - id: TG_TC
+    title: Treasury Code
+  - id: TG_AC
+    title: Account Code
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+publicAccounts:
+  types:
+  - id: PD
+    controls:
+      lapseRule: GO 25/2019
+      inactivityAlert: true
+pdAccounts: 20000
+ddoSuccession: true
+treasury:
+  tokenUniquePerUnitPerDay: true
+budgetControl:
+  stages:
+  - BRO
+  - AUTHORISATION
+dbtBurst:
+  maxPerDay: 6000CR
+classification:
+  defaultScheme: HOA
+procurement:
+  family: RULES
+  rule: '[U] AP rules presumed'
+  worksCode: '[U]'
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/TG/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: TG
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/TG/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: TG
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from [U] AP rules presumed (was: RPR 2022: DDO draws within a sanction; no sanction
+        power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from [U] AP rules presumed (was: DFPR 2024 r.12(4) and department re-delegation
+        order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from [U] AP rules presumed (was: DFPR 2024 r.12(2) re-delegation to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from [U] AP rules presumed (was: DFPR 2024 r.11 (open / limited tender up to
+        100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from [U] AP rules presumed (was: DFPR 2024 r.11: above the Secretary; no upper
+        limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from [U] AP rules presumed (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

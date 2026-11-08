@@ -1,0 +1,65 @@
+{
+  "key": "sec-bank-inoperative-deposits/verify",
+  "version": "1.0.0",
+  "pack": "sec.bank.inoperative-deposits",
+  "title": {
+    "en": "Verify KYC and entitlement (holder, nominee, legal heir)",
+    "hi": "केवाईसी एवं पात्रता सत्यापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "transferredToDea",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Already transferred to the DEA Fund",
+        "hi": "डीईए निधि में पहले से अंतरित"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "claimDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

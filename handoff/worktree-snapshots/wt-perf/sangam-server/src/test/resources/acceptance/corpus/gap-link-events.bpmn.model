@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GAP set (SANGAM.md XI.3, CF-13 / R34): link intermediate throw / catch. SHARED, standard BPMN 2.0.2.
+  Pass: after start, the instance waits in gap_link_probe (the token jumped from the throw to the catch by link name).
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             id="gap-link-events-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <process id="gap-link-events" name="GAP link events" isExecutable="true">
+    <startEvent id="gap_link_start"/>
+    <sequenceFlow id="gap_link_f1" sourceRef="gap_link_start" targetRef="gap_link_throw"/>
+
+    <intermediateThrowEvent id="gap_link_throw" name="Go to B">
+      <linkEventDefinition id="gap_link_throwDef" name="LinkB"/>
+    </intermediateThrowEvent>
+
+    <intermediateCatchEvent id="gap_link_catch" name="B">
+      <linkEventDefinition id="gap_link_catchDef" name="LinkB"/>
+    </intermediateCatchEvent>
+    <sequenceFlow id="gap_link_f2" sourceRef="gap_link_catch" targetRef="gap_link_probe"/>
+
+    <userTask id="gap_link_probe" name="Reached after link"/>
+    <sequenceFlow id="gap_link_f3" sourceRef="gap_link_probe" targetRef="gap_link_end"/>
+    <endEvent id="gap_link_end"/>
+  </process>
+</definitions>

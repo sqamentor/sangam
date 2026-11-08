@@ -1,0 +1,56 @@
+{
+  "key": "sec-health-admission-discharge/admit",
+  "version": "1.0.0",
+  "pack": "sec.health.admission-discharge",
+  "title": {
+    "en": "Admit: bed, estimate of charges, consent",
+    "hi": "भर्ती: बिस्तर, अनुमानित व्यय, सहमति"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "wardType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Ward / room category",
+        "hi": "वार्ड / कक्ष श्रेणी"
+      }
+    },
+    {
+      "id": "estimatedCost",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Estimated cost (INR)",
+        "hi": "अनुमानित व्यय (रुपये)"
+      }
+    },
+    {
+      "id": "consentGiven",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Consent recorded",
+        "hi": "सहमति दर्ज"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

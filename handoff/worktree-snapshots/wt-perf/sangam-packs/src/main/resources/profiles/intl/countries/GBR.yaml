@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: GBR
+  layer: jurisdiction
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL
+  - INTL-PFM
+  - REGIME-WESTMINSTER-SUPPLY
+  name:
+    en: United Kingdom (central government)
+  source: INTERNATIONAL-PFM 5
+placeholders:
+- path: integrations.systems
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (departmental ERPs, Government
+    Banking)'
+locale:
+  zone: Europe/London
+  currency: GBP
+  grouping:
+    first: 3
+    rest: 3
+  units:
+    K: 1000
+    M: 1000000
+    BN: 1000000000
+  fiscal:
+    startMonth: 4
+    startDay: 1
+    label: END
+  languages:
+  - tag: en
+    script: Latn
+    default: true
+integrations:
+  systems:
+  - OSCAR II
+  - departmental ERPs [U]
+  - Government Banking [U]
+ledgers:
+- id: BUDGET
+  currency: GBP
+  allowNegative: true
+  stages:
+  - ESTIMATE
+  - DEPARTMENTAL_BUDGET
+  - RELEASE
+  checks:
+    ESTIMATE: HARD
+    DEPARTMENTAL_BUDGET: HARD
+    RELEASE: HARD
+  transfer:
+    sameAttributes:
+    - limitType
+    - resourceCapital
+    ruleRefs:
+      limitType: virement within a limit only
+accountingBasis:
+- basis: ACCRUAL
+  standard: FReM 2026-27
+  effectiveFrom: '2000-01-01'
+estimates:
+  limits:
+  - RDEL
+  - CDEL
+  - RAME
+  - CAME
+  - NON_BUDGET
+  - NET_CASH_REQUIREMENT
+  netAndNegativeLimits: true
+  tokenAmount: '1000'
+  ambits: true
+  acts:
+  - MAIN_ESTIMATES
+  - SUPPLY_AND_APPROPRIATION_ANTICIPATION_AND_ADJUSTMENTS
+  voteOnAccount:
+    kind: VOTE_ON_ACCOUNT
+    formula: PERCENT_OF_PRIOR
+breach:
+  statutory: true
+  remedy: EXCESS_VOTE
+  chain: PFM-CH-7
+accountability:
+  accountingOfficer: true
+  ministerialDirection:
+    record: true
+    copyTo:
+    - NAO
+    - PAC
+    publish: true
+consolidation:
+  system: OSCAR
+  monthly: true
+  wga: true
+classification:
+  schemes:
+  - id: OSCAR
+    separator: '-'
+    segments:
+    - id: organisation
+      width: 6
+      pattern: '[A-Z0-9]{1,6}'
+    - id: controlBudget
+      width: 3
+      pattern: '[A-Z]{3,4}'
+    - id: segment
+      width: 6
+      pattern: '[A-Z0-9]{1,6}'
+    - id: economic
+      width: 8
+      pattern: '[A-Z0-9]{1,8}'

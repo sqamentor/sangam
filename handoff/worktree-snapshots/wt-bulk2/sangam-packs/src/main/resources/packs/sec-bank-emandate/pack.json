@@ -1,0 +1,74 @@
+{
+  "id": "sec.bank.emandate",
+  "version": "1.0.0",
+  "name": {
+    "en": "NACH / e-mandate registration and recurring debits",
+    "hi": "एनएसीएच / ई-अधिदेश पंजीकरण एवं आवर्ती नामे"
+  },
+  "domain": "Banking",
+  "description": "Mandate registered with AFA (or a signed NACH form verified by maker and checker); every debit is its own linked case: pre-debit notice at least 24 hours before, customer opt-out, AFA above the no-AFA limit (Rs 15,000; Rs 1 lakh for mutual funds, insurance premium, card bills), debit by operationId, bounce handling; modification and revocation with AFA.",
+  "mainProcesses": [
+    "sangam-sec-bank-emandate"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-emandate/sangam-sec-bank-emandate.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-emandate/sangam-sec-bank-emandate-debit.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-emandate/sec-bank-afa-limit.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-emandate/forms/register.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-emandate/forms/verify.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-emandate/forms/check.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-emandate/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-emandate/seed.json",
+  "connectors": [
+    {
+      "id": "npci.mandate",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Mandate register / modify / revoke"
+    },
+    {
+      "id": "npci.debit",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Debit"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-027",
+    "SEC-BANK-028",
+    "SEC-BANK-029",
+    "UP-08",
+    "GP-10",
+    "GP-12"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "key": "work-order/site-handover",
+  "version": "1.0.0",
+  "pack": "gov.work-order",
+  "title": {
+    "en": "Hand over site",
+    "hi": "स्थल सौंपें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "physicalReceived",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Physical item received",
+        "hi": "भौतिक वस्तु प्राप्त हुई"
+      }
+    }
+  ]
+}

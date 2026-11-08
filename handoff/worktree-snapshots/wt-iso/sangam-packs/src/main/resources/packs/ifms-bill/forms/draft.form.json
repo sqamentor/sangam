@@ -1,0 +1,126 @@
+{
+  "key": "ifms-bill/draft",
+  "version": "1.0.0",
+  "pack": "gov.ifms.bill",
+  "title": {
+    "en": "Bill",
+    "hi": "बिल"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "billType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Bill type",
+        "hi": "बिल का प्रकार"
+      }
+    },
+    {
+      "id": "headOfAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Head of account",
+        "hi": "लेखा शीर्ष"
+      }
+    },
+    {
+      "id": "grantNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Grant / demand number",
+        "hi": "अनुदान / माँग संख्या"
+      }
+    },
+    {
+      "id": "chargedVoted",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Charged / voted",
+        "hi": "भारित / दत्तमत"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "payee",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "payeeAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee bank account",
+        "hi": "आदाता का बैंक खाता"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "sanctionRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Sanction reference",
+        "hi": "स्वीकृति संदर्भ"
+      }
+    },
+    {
+      "id": "claimPeriod",
+      "type": "date",
+      "required": false,
+      "label": {
+        "en": "Claim period / due date",
+        "hi": "दावा अवधि / देय तिथि"
+      }
+    },
+    {
+      "id": "ddoCode",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "DDO code",
+        "hi": "आहरण एवं संवितरण अधिकारी कोड"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

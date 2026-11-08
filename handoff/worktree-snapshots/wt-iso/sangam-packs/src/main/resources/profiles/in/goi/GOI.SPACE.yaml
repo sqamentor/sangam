@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: GOI.SPACE
+  layer: department
+  version: 2026.11.0
+  effectiveFrom: '2024-04-01'
+  name:
+    en: Department of Space
+    hi: अंतरिक्ष विभाग
+  source: IFMS-CENTRAL section O
+regime:
+  dfprApplies: false
+  delegationBook: DOS_BOOK_2016
+  ruleRef: DFPR 2024 r.21(2)(c)
+  concurrenceBy: MEMBER_FINANCE
+procurement:
+  scientificDepartment: true

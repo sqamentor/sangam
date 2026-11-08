@@ -1,0 +1,70 @@
+{
+  "id": "sec.fin.complaint",
+  "version": "1.0.0",
+  "name": {
+    "en": "Customer complaint with regulator timelines",
+    "hi": "नियामक समय-सीमा सहित ग्राहक शिकायत"
+  },
+  "domain": "Financial services (cross-sector)",
+  "description": "One complaint process for every regulated entity: the regulator scheme sets the acknowledgement, resolution and escalation clocks by rule (RBI internal ombudsman before any rejection and RB-IOS after 30 days; IRDAI Bima Bharosa 14 days; SEBI SCORES 21 days; e-commerce grievance officer 48 hours / one month; TRAI; DPDP 90 days; electricity CGRF); final reply carries the escalation route; reopen within the window.",
+  "mainProcesses": [
+    "sangam-sec-fin-complaint"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-fin-complaint/sangam-sec-fin-complaint.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-fin-complaint/sec-fin-complaint-tat.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-complaint/forms/complaint.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-complaint/forms/resolve.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-fin-complaint/forms/io.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-fin-complaint/seed.json"
+    }
+  ],
+  "seed": "packs/sec-fin-complaint/seed.json",
+  "connectors": [
+    {
+      "id": "crm.case",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "CRM / CMS case reference"
+    }
+  ],
+  "covers": [
+    "SEC-FIN-001",
+    "SEC-FIN-002",
+    "SEC-FIN-003",
+    "SEC-ECOM-007",
+    "SEC-INS-010",
+    "SEC-CAP-005",
+    "SEC-TEL-003",
+    "SEC-UTIL-003",
+    "GP-06",
+    "GP-22",
+    "UP-04",
+    "UP-10",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

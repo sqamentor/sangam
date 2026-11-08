@@ -1,0 +1,27 @@
+{
+  "key": "sec-legal-dpdp-rights/reply",
+  "version": "1.0.0",
+  "pack": "sec.legal.dpdp-rights",
+  "title": {
+    "en": "DPO reply (90 days)",
+    "hi": "डीपीओ उत्तर (90 दिन)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "replyText",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Reply",
+        "hi": "उत्तर"
+      }
+    }
+  ]
+}

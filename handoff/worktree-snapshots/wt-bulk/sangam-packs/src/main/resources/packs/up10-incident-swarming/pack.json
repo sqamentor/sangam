@@ -1,0 +1,69 @@
+{
+  "id": "universal.up10-incident-swarming",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-10 Tiered escalation and swarming",
+    "hi": "यूपी-10 स्तरीय वृद्धि एवं सामूहिक समाधान"
+  },
+  "domain": "Universal",
+  "description": "Priority sets the resolver group and SLA; breaches escalate in tiers; a major incident opens a bridge with parallel resolver groups (swarming); priority can change in flight (R79, R82).",
+  "mainProcesses": [
+    "sangam-up10-incident"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up10-incident-swarming/sangam-up10-incident.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up10-incident-swarming/up10-priority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up10-incident-swarming/forms/raise.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up10-incident-swarming/forms/resolve.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up10-incident-swarming/forms/swarm-net-ops.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up10-incident-swarming/forms/swarm-app-ops.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up10-incident-swarming/forms/swarm-db-ops.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up10-incident-swarming/forms/swarm-incident-mgr.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up10-incident-swarming/forms/confirm.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up10-incident-swarming/seed.json"
+    }
+  ],
+  "seed": "packs/up10-incident-swarming/seed.json",
+  "connectors": [],
+  "covers": [
+    "UP-10",
+    "R79",
+    "R82",
+    "GP-06"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

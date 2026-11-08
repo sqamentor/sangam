@@ -1,0 +1,36 @@
+{
+  "key": "sec-health-lab-order/run",
+  "version": "1.0.0",
+  "pack": "sec.health.lab-order",
+  "title": {
+    "en": "Run test and technical validation",
+    "hi": "परीक्षण एवं तकनीकी सत्यापन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "results",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Results",
+        "hi": "परिणाम"
+      }
+    },
+    {
+      "id": "criticalValue",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Critical value present",
+        "hi": "गंभीर मान उपस्थित"
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "RET",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "RETURNS-DESK",
+      "role": "RETURNS",
+      "office": "RET",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Returns desk",
+        "hi": "वापसी डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "RETURNS-DESK",
+      "person": "u13.returns-desk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "RETURNS",
+      "name": {
+        "en": "Returns desk",
+        "hi": "वापसी डेस्क"
+      }
+    }
+  ]
+}

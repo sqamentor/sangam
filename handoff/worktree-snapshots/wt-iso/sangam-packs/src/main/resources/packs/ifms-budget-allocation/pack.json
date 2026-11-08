@@ -1,0 +1,107 @@
+{
+  "id": "gov.ifms.budget-allocation",
+  "version": "1.0.0",
+  "name": {
+    "en": "Budget allocation, release, authorisation, sub-allotment",
+    "hi": "बजट आवंटन, विमुक्ति, प्राधिकार, उप-आवंटन"
+  },
+  "domain": "IFMS",
+  "description": "Distribution of the grant down the N-stage chain the profile defines (appropriation -> allocation -> release / BRO -> authorisation (AIE, BEAMS slip, e-Vitran) -> DDO sub-allotment), each stage a ledger DISTRIBUTE guarded under row locks; held bills are released when the allotment arrives; ceilings and freeze orders are ledger policies.",
+  "mainProcesses": [
+    "sangam-ifms-budget-allocation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-budget-allocation/sangam-ifms-budget-allocation.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-budget-allocation/ifms-allocation-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-budget-allocation/forms/proposal.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-budget-allocation/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-budget-allocation/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "ledger.distribute",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Pass the limit to the next stage (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "ledger.releaseHolds",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Release bills held for budget (sangam-ledger, idempotent by operationId)"
+    }
+  ],
+  "covers": [
+    "IFC-046",
+    "IFC-047",
+    "IFC-056",
+    "IFC-057",
+    "IFC-071",
+    "IFC-072",
+    "IFS-040",
+    "IFS-041",
+    "IFS-042",
+    "IFS-032",
+    "IFS-KA-002",
+    "IFS-JK-001",
+    "IFS-MN-002",
+    "IFS-NL-001",
+    "IFS-TG-006",
+    "IFS-CT-001",
+    "IFS-TN-005",
+    "GA-03",
+    "GP-01",
+    "GP-11",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-core-scrutiny"
+  ]
+}

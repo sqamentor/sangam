@@ -1,0 +1,74 @@
+{
+  "key": "stores/investigate",
+  "version": "1.0.0",
+  "pack": "gov.stores",
+  "title": {
+    "en": "Investigate discrepancy",
+    "hi": "विसंगति की जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "discrepancyCause",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Cause of discrepancy",
+        "hi": "विसंगति का कारण"
+      }
+    },
+    {
+      "id": "recoveryFrom",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Recovery from (person)",
+        "hi": "वसूली किससे (व्यक्ति)"
+      }
+    },
+    {
+      "id": "writeOffAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Write-off amount (INR)",
+        "hi": "बट्टे खाते राशि (रुपये)"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "discDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "recover",
+        "label": {
+          "en": "Recover from responsible person",
+          "hi": "उत्तरदायी व्यक्ति से वसूली"
+        }
+      },
+      {
+        "value": "writeOff",
+        "label": {
+          "en": "Write off",
+          "hi": "बट्टे खाते डालें"
+        }
+      },
+      {
+        "value": "adjust",
+        "label": {
+          "en": "Adjust in books",
+          "hi": "बही में समायोजन"
+        }
+      }
+    ]
+  }
+}

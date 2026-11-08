@@ -1,0 +1,47 @@
+{
+  "key": "sec-ecom-seller-onboarding/approve",
+  "version": "1.0.0",
+  "pack": "sec.ecom.seller-onboarding",
+  "title": {
+    "en": "Approve seller (checker)",
+    "hi": "विक्रेता अनुमोदन (जाँचकर्ता)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "approveDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_dbt_failure_routing" name="DBT failure desk by reason code (GP-49)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="dbt-failure-routing" name="DBT failure desk by reason code (GP-49)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="dbt-failure-routing_t" hitPolicy="FIRST">
+      <input id="dbt-failure-routing_i0" label="Reason code"><inputExpression id="dbt-failure-routing_ie0" typeRef="string"><text>opReasonCode</text></inputExpression></input>
+      <output id="dbt-failure-routing_o0" label="Desk" name="failureDesk" typeRef="string"/>
+      <rule id="dbt-failure-routing_r0">
+        <inputEntry id="dbt-failure-routing_r0_i0"><text>"ACCOUNT_INVALID"</text></inputEntry>
+        <outputEntry id="dbt-failure-routing_r0_o0"><text>"BANK-DESK"</text></outputEntry>
+      </rule>
+      <rule id="dbt-failure-routing_r1">
+        <inputEntry id="dbt-failure-routing_r1_i0"><text>"ACCOUNT_CLOSED"</text></inputEntry>
+        <outputEntry id="dbt-failure-routing_r1_o0"><text>"BANK-DESK"</text></outputEntry>
+      </rule>
+      <rule id="dbt-failure-routing_r2">
+        <inputEntry id="dbt-failure-routing_r2_i0"><text>"NAME_MISMATCH"</text></inputEntry>
+        <outputEntry id="dbt-failure-routing_r2_o0"><text>"BANK-DESK"</text></outputEntry>
+      </rule>
+      <rule id="dbt-failure-routing_r3">
+        <inputEntry id="dbt-failure-routing_r3_i0"><text>"AADHAAR_NOT_SEEDED"</text></inputEntry>
+        <outputEntry id="dbt-failure-routing_r3_o0"><text>"DBT-CELL"</text></outputEntry>
+      </rule>
+      <rule id="dbt-failure-routing_r4"><description>other rejections to the DDO</description>
+        <inputEntry id="dbt-failure-routing_r4_i0"><text>-</text></inputEntry>
+        <outputEntry id="dbt-failure-routing_r4_o0"><text>"DDO-DBT"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,80 @@
+{
+  "id": "universal.up16-provisioning",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-16 Fan-out provisioning and de-provisioning with deadline and evidence",
+    "hi": "यूपी-16 समय-सीमा एवं साक्ष्य सहित प्रावधान एवं प्रावधान-निरसन"
+  },
+  "domain": "Universal",
+  "description": "Joiner: account, badge and laptop in parallel, compensated if any fails; leaver: revoke-all in parallel within the deadline, escalated when late; evidence document of completion (R71, R36, R42).",
+  "mainProcesses": [
+    "sangam-up16-provisioning"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up16-provisioning/sangam-up16-provisioning.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up16-provisioning/forms/request.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up16-provisioning/seed.json"
+    }
+  ],
+  "seed": "packs/up16-provisioning/seed.json",
+  "connectors": [
+    {
+      "id": "provision.account",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Accounts"
+    },
+    {
+      "id": "provision.badge",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Badge"
+    },
+    {
+      "id": "provision.laptop",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Laptop"
+    },
+    {
+      "id": "iam.revokeAll",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Revoke all access"
+    },
+    {
+      "id": "provision.recoverAssets",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Recover assets"
+    },
+    {
+      "id": "provision.undo",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Undo (compensation)"
+    }
+  ],
+  "covers": [
+    "UP-16",
+    "R36",
+    "R42",
+    "R71",
+    "GP-05",
+    "GP-33"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

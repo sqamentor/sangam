@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_gp52">
+  <!-- GP-52 record lifecycle after closure: the closed file stays in the instance for its retention period (timer),
+       can be reopened meanwhile, and is reviewed (retain / transfer / weed) when retention ends. -->
+  <message id="m_reopen" name="fileReopened"/>
+  <process id="gp52-retention" name="GP-52 File retention and review" isExecutable="true">
+    <startEvent id="gp52_start"/>
+    <sequenceFlow id="f1" sourceRef="gp52_start" targetRef="gp52_work"/>
+    <userTask id="gp52_work" name="Work on file"><potentialOwner><resourceAssignmentExpression><formalExpression>group(section)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f2" sourceRef="gp52_work" targetRef="gp52_close"/>
+    <userTask id="gp52_close" name="Close file, set retention"><potentialOwner><resourceAssignmentExpression><formalExpression>group(section-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="gp52_close" targetRef="gp52_retention"/>
+    <eventBasedGateway id="gp52_retention" name="In retention"/>
+    <sequenceFlow id="f4" sourceRef="gp52_retention" targetRef="gp52_retentionOver"/>
+    <sequenceFlow id="f5" sourceRef="gp52_retention" targetRef="gp52_reopened"/>
+    <intermediateCatchEvent id="gp52_retentionOver"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${retentionUntil}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="gp52_reopened"><messageEventDefinition messageRef="m_reopen"/></intermediateCatchEvent>
+    <sequenceFlow id="f6" sourceRef="gp52_reopened" targetRef="gp52_work"/>
+    <sequenceFlow id="f7" sourceRef="gp52_retentionOver" targetRef="gp52_review"/>
+    <userTask id="gp52_review" name="Record review"><potentialOwner><resourceAssignmentExpression><formalExpression>group(record-officer)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f8" sourceRef="gp52_review" targetRef="gp52_gw"/>
+    <exclusiveGateway id="gp52_gw" default="f11"/>
+    <sequenceFlow id="f9" sourceRef="gp52_gw" targetRef="gp52_retention"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'RETAIN'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f10" sourceRef="gp52_gw" targetRef="gp52_end_transferred"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'TRANSFER'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f11" sourceRef="gp52_gw" targetRef="gp52_end_weeded"/>
+    <endEvent id="gp52_end_transferred"/>
+    <endEvent id="gp52_end_weeded"/>
+  </process>
+</definitions>

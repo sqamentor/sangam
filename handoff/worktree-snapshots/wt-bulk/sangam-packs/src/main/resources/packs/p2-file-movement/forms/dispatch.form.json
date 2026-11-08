@@ -1,0 +1,36 @@
+{
+  "key": "p2-file-movement/dispatch",
+  "version": "1.0.0",
+  "pack": "gov.p2.file-movement",
+  "title": {
+    "en": "Issue the approved letter",
+    "hi": "अनुमोदित पत्र जारी करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "letterNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Letter number",
+        "hi": "पत्र संख्या"
+      }
+    },
+    {
+      "id": "dispatchRecipients",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Dispatch recipients",
+        "hi": "प्रेषण के प्राप्तकर्ता"
+      }
+    }
+  ]
+}

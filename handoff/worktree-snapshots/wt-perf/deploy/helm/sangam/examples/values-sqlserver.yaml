@@ -1,0 +1,20 @@
+database:
+  type: sqlserver
+  host: mssql-ag-listener.dc.example.gov.in
+  name: sangam
+  existingSecret: sangam-db
+  sqlserver:
+    encrypt: true
+    trustServerCertificate: false
+  params: "multiSubnetFailover=true"
+oidc:
+  issuerUri: https://sso.example.gov.in/realms/sangam
+networkPolicy:
+  database:
+    cidrs: [10.30.2.0/28]
+backup:
+  enabled: true
+  existingSecret: sangam-db-backup   # login with db_backupoperator
+  sqlserver:
+    destination: /var/opt/mssql/backup/sangam
+    destinationType: DISK

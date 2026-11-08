@@ -1,0 +1,61 @@
+{
+  "id": "universal.up15-recertification",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-15 Periodic recertification at scale",
+    "hi": "यूपी-15 बड़े पैमाने पर आवधिक पुनः प्रमाणन"
+  },
+  "domain": "Universal",
+  "description": "Monthly: every entity due (access, KYC, licence renewal) gets its own case in staggered chunks (GP-09); the reviewer recertifies or revokes; no answer by the deadline revokes automatically (R31, R64).",
+  "mainProcesses": [
+    "sangam-up15-recertification"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up15-recertification/sangam-up15-recertification.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/up15-recertification/sangam-up15-recertify.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up15-recertification/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up15-recertification/seed.json"
+    }
+  ],
+  "seed": "packs/up15-recertification/seed.json",
+  "connectors": [
+    {
+      "id": "iam.entitiesDue",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Entities due"
+    },
+    {
+      "id": "iam.revoke",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Revocation"
+    }
+  ],
+  "covers": [
+    "UP-15",
+    "R31",
+    "R64",
+    "GP-30",
+    "GP-08",
+    "GP-09",
+    "GP-44"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

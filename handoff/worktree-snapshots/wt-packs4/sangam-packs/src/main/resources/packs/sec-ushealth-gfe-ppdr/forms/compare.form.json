@@ -1,0 +1,38 @@
+{
+  "key": "sec-ushealth-gfe-ppdr/compare",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.gfe-ppdr",
+  "title": {
+    "en": "Compare the bill with the estimate",
+    "es": "Comparar la factura con el presupuesto"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "billedAmount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Billed amount (USD)",
+        "es": "Importe facturado (USD)"
+      }
+    },
+    {
+      "id": "billDate",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Date the bill was received",
+        "es": "Fecha de recepción de la factura"
+      }
+    }
+  ]
+}

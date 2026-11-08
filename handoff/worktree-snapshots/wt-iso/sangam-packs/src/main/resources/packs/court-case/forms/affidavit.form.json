@@ -1,0 +1,36 @@
+{
+  "key": "court-case/affidavit",
+  "version": "1.0.0",
+  "pack": "gov.court-case",
+  "title": {
+    "en": "File counter affidavit",
+    "hi": "प्रति-शपथपत्र दाखिल करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

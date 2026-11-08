@@ -1,0 +1,110 @@
+{
+  "offices": [
+    {
+      "id": "CLAIMS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CLAIMS-HANDLER",
+      "role": "HANDLER",
+      "office": "CLAIMS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CLAIMS-MANAGER",
+      "name": {
+        "en": "Claims handler",
+        "hi": "दावा संचालक"
+      }
+    },
+    {
+      "id": "INVESTIGATOR",
+      "role": "INVESTIGATOR",
+      "office": "CLAIMS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CLAIMS-MANAGER",
+      "name": {
+        "en": "Investigator",
+        "hi": "अन्वेषक"
+      }
+    },
+    {
+      "id": "EXTERNAL-EXPERT",
+      "role": "EXTERNAL",
+      "office": "CLAIMS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "External expert (portal)",
+        "hi": "बाह्य विशेषज्ञ (पोर्टल)"
+      }
+    },
+    {
+      "id": "CLAIMS-MANAGER",
+      "role": "MANAGER",
+      "office": "CLAIMS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Claims manager",
+        "hi": "दावा प्रबंधक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CLAIMS-HANDLER",
+      "person": "u9.claims-handler",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "INVESTIGATOR",
+      "person": "u9.investigator",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EXTERNAL-EXPERT",
+      "person": "u9.external-expert",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CLAIMS-MANAGER",
+      "person": "u9.claims-manager",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "HANDLER",
+      "name": {
+        "en": "Claims handler",
+        "hi": "दावा संचालक"
+      }
+    },
+    {
+      "code": "INVESTIGATOR",
+      "name": {
+        "en": "Investigator",
+        "hi": "अन्वेषक"
+      }
+    },
+    {
+      "code": "EXTERNAL",
+      "name": {
+        "en": "External expert (portal)",
+        "hi": "बाह्य विशेषज्ञ (पोर्टल)"
+      }
+    },
+    {
+      "code": "MANAGER",
+      "name": {
+        "en": "Claims manager",
+        "hi": "दावा प्रबंधक"
+      }
+    }
+  ]
+}

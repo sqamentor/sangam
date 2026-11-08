@@ -1,0 +1,111 @@
+{
+  "id": "gov.tender",
+  "version": "1.0.0",
+  "name": {
+    "en": "Tender / e-procurement",
+    "hi": "निविदा / ई-प्रापण"
+  },
+  "domain": "Procurement",
+  "description": "NIT approval and publication (CPPP / GePNIC), corrigendum extending the bid date on the running case, bid opening not before the opening time, two-envelope opening by committee, technical evaluation by quorum, financial opening, L1 by rule, negotiation and retender loops, award sanction, EMD refund by compensation (D-TENDER).",
+  "mainProcesses": [
+    "sangam-tender"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/tender/sangam-tender.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/tender/tender-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/tender/tender-l1-acceptability.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/tender/forms/nit.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/tender/forms/qualified.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/tender/forms/negotiation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/tender/forms/reissue.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/tender/seed.json"
+    }
+  ],
+  "seed": "packs/tender/seed.json",
+  "connectors": [
+    {
+      "id": "cppp.publish",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "NIT / corrigendum on CPPP / GePNIC"
+    },
+    {
+      "id": "eproc.bidsReceived",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Bids received at closing"
+    },
+    {
+      "id": "eproc.evaluate",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Financial comparison, L1"
+    },
+    {
+      "id": "emd.refund",
+      "capabilityClass": "a",
+      "govTag": "G-PG",
+      "purpose": "EMD refund to bidders"
+    }
+  ],
+  "covers": [
+    "D-TENDER",
+    "GP-03",
+    "GP-04",
+    "GP-07",
+    "GP-13",
+    "GP-23",
+    "GP-24",
+    "GP-25",
+    "GP-41",
+    "GP-15",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-committee",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "emdAmount",
+      "estimateAmount",
+      "evaluateL1Amount",
+      "negotiatedAmount"
+    ]
+  }
+}

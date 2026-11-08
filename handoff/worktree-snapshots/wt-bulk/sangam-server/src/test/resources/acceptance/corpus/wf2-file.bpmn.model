@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WF-2 file movement, e-Office style (SANGAM.md XI.3, pack P2, AC-04). SHARED by both engines:
+  standard BPMN 2.0.2 only, no vendor namespace. Candidate groups use the standard
+  potentialOwner / resourceAssignmentExpression, which both engines parse into candidate groups.
+  Returns go back exactly one level; L1 "return" goes back to the initiator ("Revise note").
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             id="wf2-file-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <process id="wf2-file" name="WF-2 File movement" isExecutable="true">
+
+    <startEvent id="wf2_start" name="Note created"/>
+    <sequenceFlow id="wf2_f01" sourceRef="wf2_start" targetRef="wf2_l1MergeGw"/>
+
+    <!-- Level 1 -->
+    <exclusiveGateway id="wf2_l1MergeGw" name="Merge into L1"/>
+    <sequenceFlow id="wf2_f02" sourceRef="wf2_l1MergeGw" targetRef="wf2_l1Review"/>
+    <userTask id="wf2_l1Review" name="L1 review">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${l1Group})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf2_f03" sourceRef="wf2_l1Review" targetRef="wf2_l1DecisionGw"/>
+    <exclusiveGateway id="wf2_l1DecisionGw" name="L1 decision?"/>
+    <sequenceFlow id="wf2_f04" name="forward" sourceRef="wf2_l1DecisionGw" targetRef="wf2_l2MergeGw">
+      <conditionExpression xsi:type="tFormalExpression">${l1Decision == 'forward'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf2_f05" name="return" sourceRef="wf2_l1DecisionGw" targetRef="wf2_reviseNote">
+      <conditionExpression xsi:type="tFormalExpression">${l1Decision == 'return'}</conditionExpression>
+    </sequenceFlow>
+
+    <userTask id="wf2_reviseNote" name="Revise note">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${initiatorSeat})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf2_f06" name="resubmit" sourceRef="wf2_reviseNote" targetRef="wf2_l1MergeGw"/>
+
+    <!-- Level 2 -->
+    <exclusiveGateway id="wf2_l2MergeGw" name="Merge into L2"/>
+    <sequenceFlow id="wf2_f07" sourceRef="wf2_l2MergeGw" targetRef="wf2_l2Review"/>
+    <userTask id="wf2_l2Review" name="L2 review">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${l2Group})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf2_f08" sourceRef="wf2_l2Review" targetRef="wf2_l2DecisionGw"/>
+    <exclusiveGateway id="wf2_l2DecisionGw" name="L2 decision?"/>
+    <sequenceFlow id="wf2_f09" name="forward" sourceRef="wf2_l2DecisionGw" targetRef="wf2_l3Review">
+      <conditionExpression xsi:type="tFormalExpression">${l2Decision == 'forward'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf2_f10" name="return" sourceRef="wf2_l2DecisionGw" targetRef="wf2_l1MergeGw">
+      <conditionExpression xsi:type="tFormalExpression">${l2Decision == 'return'}</conditionExpression>
+    </sequenceFlow>
+
+    <!-- Level 3 -->
+    <userTask id="wf2_l3Review" name="L3 review">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${l3Group})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf2_f11" sourceRef="wf2_l3Review" targetRef="wf2_l3DecisionGw"/>
+    <exclusiveGateway id="wf2_l3DecisionGw" name="L3 decision?"/>
+    <sequenceFlow id="wf2_f12" name="forward" sourceRef="wf2_l3DecisionGw" targetRef="wf2_commentsFork">
+      <conditionExpression xsi:type="tFormalExpression">${l3Decision == 'forward'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf2_f13" name="return" sourceRef="wf2_l3DecisionGw" targetRef="wf2_l2MergeGw">
+      <conditionExpression xsi:type="tFormalExpression">${l3Decision == 'return'}</conditionExpression>
+    </sequenceFlow>
+
+    <!-- Parallel comments from two sections (join concurrency, VI.1) -->
+    <parallelGateway id="wf2_commentsFork" name="Seek comments"/>
+    <sequenceFlow id="wf2_f14" sourceRef="wf2_commentsFork" targetRef="wf2_commentsSectionA"/>
+    <sequenceFlow id="wf2_f15" sourceRef="wf2_commentsFork" targetRef="wf2_commentsSectionB"/>
+    <userTask id="wf2_commentsSectionA" name="Comments: section A">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${sectionAGroup})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <userTask id="wf2_commentsSectionB" name="Comments: section B">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${sectionBGroup})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf2_f16" sourceRef="wf2_commentsSectionA" targetRef="wf2_commentsJoin"/>
+    <sequenceFlow id="wf2_f17" sourceRef="wf2_commentsSectionB" targetRef="wf2_commentsJoin"/>
+    <parallelGateway id="wf2_commentsJoin" name="Comments received"/>
+    <sequenceFlow id="wf2_f18" sourceRef="wf2_commentsJoin" targetRef="wf2_finalDisposal"/>
+
+    <userTask id="wf2_finalDisposal" name="Final disposal">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${disposalGroup})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf2_f19" sourceRef="wf2_finalDisposal" targetRef="wf2_disposedEnd"/>
+    <endEvent id="wf2_disposedEnd" name="Disposed"/>
+  </process>
+</definitions>

@@ -1,0 +1,27 @@
+{
+  "key": "up19-contract-lifecycle/term",
+  "version": "1.0.0",
+  "pack": "universal.up19-contract-lifecycle",
+  "title": {
+    "en": "Record term and expiry",
+    "hi": "अवधि एवं समाप्ति दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "dueDate",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Due date",
+        "hi": "नियत तिथि"
+      }
+    }
+  ]
+}

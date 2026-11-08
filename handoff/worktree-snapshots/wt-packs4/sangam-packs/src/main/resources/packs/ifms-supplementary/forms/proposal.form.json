@@ -1,0 +1,74 @@
+{
+  "key": "ifms-supplementary/proposal",
+  "version": "1.0.0",
+  "pack": "gov.ifms.supplementary",
+  "title": {
+    "en": "Supplementary proposal",
+    "hi": "अनुपूरक प्रस्ताव"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fiscalYear",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Financial year",
+        "hi": "वित्तीय वर्ष"
+      }
+    },
+    {
+      "id": "headOfAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Head of account",
+        "hi": "लेखा शीर्ष"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "supplementaryKind",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Supplementary kind (cash / technical / token)",
+        "hi": "अनुपूरक का प्रकार"
+      }
+    },
+    {
+      "id": "newServiceFlag",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "New service / new instrument of service",
+        "hi": "नई सेवा / सेवा का नया साधन"
+      }
+    },
+    {
+      "id": "justification",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Justification",
+        "hi": "औचित्य"
+      }
+    }
+  ]
+}

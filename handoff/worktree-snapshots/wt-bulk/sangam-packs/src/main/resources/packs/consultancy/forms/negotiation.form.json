@@ -1,0 +1,56 @@
+{
+  "key": "consultancy/negotiation",
+  "version": "1.0.0",
+  "pack": "gov.consultancy",
+  "title": {
+    "en": "Negotiate with the top-ranked firm",
+    "hi": "शीर्ष फर्म से वार्ता"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "negotiatedAmount",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Negotiated amount (INR)",
+        "hi": "वार्ता के बाद राशि (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "negDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accepted",
+        "label": {
+          "en": "Accepted",
+          "hi": "स्वीकृत"
+        }
+      },
+      {
+        "value": "declined",
+        "label": {
+          "en": "Declined",
+          "hi": "अस्वीकार किया"
+        }
+      }
+    ]
+  }
+}

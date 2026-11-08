@@ -1,0 +1,81 @@
+{
+  "key": "sec-util-new-connection/apply",
+  "version": "1.0.0",
+  "pack": "sec.util.new-connection",
+  "title": {
+    "en": "New connection application",
+    "hi": "नए कनेक्शन हेतु आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "premisesAddress",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Premises address",
+        "hi": "परिसर का पता"
+      }
+    },
+    {
+      "id": "areaType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Area (metro, municipal, rural)",
+        "hi": "क्षेत्र (महानगर, नगरीय, ग्रामीण)"
+      }
+    },
+    {
+      "id": "loadKw",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Load applied (kW)",
+        "hi": "आवेदित भार (किलोवाट)"
+      }
+    },
+    {
+      "id": "category",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Category",
+        "hi": "श्रेणी"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "key": "sec-hr-employee-exit/gratuity",
+  "version": "1.0.0",
+  "pack": "sec.hr.employee-exit",
+  "title": {
+    "en": "Gratuity (30 days)",
+    "hi": "ग्रेच्युटी (30 दिन)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "gratuityAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Gratuity (INR)",
+        "hi": "ग्रेच्युटी (रुपये)"
+      }
+    }
+  ]
+}

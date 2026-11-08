@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Grant release. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_gia_release" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-ifms-gia-release" name="Grant release" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.gia-uc</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>grantee,amount,releasePercent</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="gr_start" name="Release proposed" operaton:initiator="initiator" operaton:formKey="sangam:ifms-gia-uc/release"></startEvent>
+    <serviceTask id="gr_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>amount=0;releasePercent=0;recurringGrant=false;ucStatus=SUBMITTED;unspentBalance=0;granteeType=INSTITUTION;faSeat=FA-1;billType=GIA;caseType=GIA;routingDecisionKey=ifms-gia-authority;scrutinySeat=PRAO-1;outputTemplate=grant-sanction;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="gr_rules" name="Release rules (GFR 230(7), 238)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>ifms-gia-release</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="gr_okGw" name="Release allowed?" default="ifms_gia_release_f15"></exclusiveGateway>
+    <serviceTask id="gr_rjRule_code" name="Reason: GIA_RULE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=GIA_RULE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="gr_rjRule_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gr_rjRule_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="gr_fa_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gr_fa</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="gr_fa" name="FA concurrence" operaton:candidateGroups="${faSeat}" operaton:formKey="sangam:ifms-gia-uc/fa" operaton:dueDate="${gr_faDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>faDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="gr_fa_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gr_fa</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="gr_fa_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="gr_fa_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>gr_fa</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>faSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>faDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="gr_fa_breachGw" name="Deemed?" default="ifms_gia_release_f12"></exclusiveGateway>
+    <exclusiveGateway id="gr_fa_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="gr_faGw" name="" default="ifms_gia_release_f19"></exclusiveGateway>
+    <callActivity id="gr_sanction" name="Sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="gr_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gr_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="gr_bill" name="Release bill (catalogue GIA)" calledElement="sangam-ifms-bill"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="gr_sanGw" name="sanctionOutcome?" default="ifms_gia_release_f21"></exclusiveGateway>
+    <serviceTask id="gr_uc" name="Open the UC case (linked)" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-ifms-uc</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>utilisation-certificate</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>grantee,amount,granteeType</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="gr_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="gr_fa_warn" name="SLA warning (75%)" attachedToRef="gr_fa" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gr_faWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="gr_fa_breach" name="SLA breached" attachedToRef="gr_fa" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${gr_faDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_gia_release_f1" sourceRef="gr_start" targetRef="gr_defaults"/>
+    <sequenceFlow id="ifms_gia_release_f2" sourceRef="gr_defaults" targetRef="gr_rules"/>
+    <sequenceFlow id="ifms_gia_release_f3" sourceRef="gr_rules" targetRef="gr_okGw"/>
+    <sequenceFlow id="ifms_gia_release_f4" sourceRef="gr_rjRule_reject" targetRef="gr_rjRule_endRejected"/>
+    <sequenceFlow id="ifms_gia_release_f5" sourceRef="gr_rjRule_code" targetRef="gr_rjRule_reject"/>
+    <sequenceFlow id="ifms_gia_release_f6" name="refused (rule cited)" sourceRef="gr_okGw" targetRef="gr_rjRule_code"><conditionExpression xsi:type="tFormalExpression">${releaseAllowed == false}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_gia_release_f7" sourceRef="gr_fa_warn" targetRef="gr_fa_warnNotify"/>
+    <sequenceFlow id="ifms_gia_release_f8" sourceRef="gr_fa_warnNotify" targetRef="gr_fa_warnEnd"/>
+    <sequenceFlow id="ifms_gia_release_f9" sourceRef="gr_fa_breach" targetRef="gr_fa_breachAct"/>
+    <sequenceFlow id="ifms_gia_release_f10" sourceRef="gr_fa_breachAct" targetRef="gr_fa_breachGw"/>
+    <sequenceFlow id="ifms_gia_release_f11" name="deemed" sourceRef="gr_fa_breachGw" targetRef="gr_fa_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_gia_release_f12" name="escalated" sourceRef="gr_fa_breachGw" targetRef="gr_fa_slaPlan"/>
+    <sequenceFlow id="ifms_gia_release_f13" sourceRef="gr_fa_slaPlan" targetRef="gr_fa"/>
+    <sequenceFlow id="ifms_gia_release_f14" sourceRef="gr_fa" targetRef="gr_fa_done"/>
+    <sequenceFlow id="ifms_gia_release_f15" name="allowed" sourceRef="gr_okGw" targetRef="gr_fa_slaPlan"/>
+    <sequenceFlow id="ifms_gia_release_f16" sourceRef="gr_fa_done" targetRef="gr_faGw"/>
+    <sequenceFlow id="ifms_gia_release_f17" sourceRef="gr_rj_reject" targetRef="gr_rj_endRejected"/>
+    <sequenceFlow id="ifms_gia_release_f18" name="concur" sourceRef="gr_faGw" targetRef="gr_sanction"><conditionExpression xsi:type="tFormalExpression">${faDecision == 'faConcur'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_gia_release_f19" name="not concurred" sourceRef="gr_faGw" targetRef="gr_rj_reject"/>
+    <sequenceFlow id="ifms_gia_release_f20" name="SANCTIONED" sourceRef="gr_sanGw" targetRef="gr_bill"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_gia_release_f21" name="otherwise" sourceRef="gr_sanGw" targetRef="gr_rj_reject"/>
+    <sequenceFlow id="ifms_gia_release_f22" sourceRef="gr_sanction" targetRef="gr_sanGw"/>
+    <sequenceFlow id="ifms_gia_release_f23" sourceRef="gr_bill" targetRef="gr_uc"/>
+    <sequenceFlow id="ifms_gia_release_f24" sourceRef="gr_uc" targetRef="gr_end"/>
+    <subProcess id="gr_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="gr_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="gr_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gr_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gr_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_gia_release_f25" sourceRef="gr_withdrawStart" targetRef="gr_withdrawKind"/>
+      <sequenceFlow id="ifms_gia_release_f26" sourceRef="gr_withdrawKind" targetRef="gr_withdrawCall"/>
+      <sequenceFlow id="ifms_gia_release_f27" sourceRef="gr_withdrawCall" targetRef="gr_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="gr_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="gr_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="gr_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gr_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gr_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_gia_release_f28" sourceRef="gr_cancelStart" targetRef="gr_cancelKind"/>
+      <sequenceFlow id="ifms_gia_release_f29" sourceRef="gr_cancelKind" targetRef="gr_cancelCall"/>
+      <sequenceFlow id="ifms_gia_release_f30" sourceRef="gr_cancelCall" targetRef="gr_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_gia_release_diagram">
+    <bpmndi:BPMNPlane id="ifms_gia_release_plane" bpmnElement="sangam-ifms-gia-release">
+      <bpmndi:BPMNShape id="gr_start_di" bpmnElement="gr_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_defaults_di" bpmnElement="gr_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_rules_di" bpmnElement="gr_rules"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_okGw_di" bpmnElement="gr_okGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_rjRule_code_di" bpmnElement="gr_rjRule_code"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_rjRule_reject_di" bpmnElement="gr_rjRule_reject"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_rjRule_endRejected_di" bpmnElement="gr_rjRule_endRejected"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_fa_slaPlan_di" bpmnElement="gr_fa_slaPlan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_fa_di" bpmnElement="gr_fa"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_fa_warnNotify_di" bpmnElement="gr_fa_warnNotify"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_fa_warnEnd_di" bpmnElement="gr_fa_warnEnd"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_fa_breachAct_di" bpmnElement="gr_fa_breachAct"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_fa_breachGw_di" bpmnElement="gr_fa_breachGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_fa_done_di" bpmnElement="gr_fa_done"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_faGw_di" bpmnElement="gr_faGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_sanction_di" bpmnElement="gr_sanction"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_rj_reject_di" bpmnElement="gr_rj_reject"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_rj_endRejected_di" bpmnElement="gr_rj_endRejected"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_bill_di" bpmnElement="gr_bill"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_sanGw_di" bpmnElement="gr_sanGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_uc_di" bpmnElement="gr_uc"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_end_di" bpmnElement="gr_end"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_fa_warn_di" bpmnElement="gr_fa_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_fa_breach_di" bpmnElement="gr_fa_breach"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_withdraw_di" bpmnElement="gr_withdraw" isExpanded="true"><dc:Bounds x="30" y="388" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_withdrawStart_di" bpmnElement="gr_withdrawStart"><dc:Bounds x="92" y="450" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_withdrawKind_di" bpmnElement="gr_withdrawKind"><dc:Bounds x="225" y="428" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_withdrawCall_di" bpmnElement="gr_withdrawCall"><dc:Bounds x="390" y="428" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_withdrawEnd_di" bpmnElement="gr_withdrawEnd"><dc:Bounds x="587" y="450" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_cancel_di" bpmnElement="gr_cancel" isExpanded="true"><dc:Bounds x="30" y="578" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_cancelStart_di" bpmnElement="gr_cancelStart"><dc:Bounds x="92" y="640" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_cancelKind_di" bpmnElement="gr_cancelKind"><dc:Bounds x="225" y="618" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_cancelCall_di" bpmnElement="gr_cancelCall"><dc:Bounds x="390" y="618" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gr_cancelEnd_di" bpmnElement="gr_cancelEnd"><dc:Bounds x="587" y="640" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f1_di" bpmnElement="ifms_gia_release_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f2_di" bpmnElement="ifms_gia_release_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f3_di" bpmnElement="ifms_gia_release_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f4_di" bpmnElement="ifms_gia_release_f4"><di:waypoint x="945" y="195"/><di:waypoint x="993" y="195"/><di:waypoint x="993" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f5_di" bpmnElement="ifms_gia_release_f5"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f6_di" bpmnElement="ifms_gia_release_f6"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f7_di" bpmnElement="ifms_gia_release_f7"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f8_di" bpmnElement="ifms_gia_release_f8"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f9_di" bpmnElement="ifms_gia_release_f9"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f10_di" bpmnElement="ifms_gia_release_f10"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f11_di" bpmnElement="ifms_gia_release_f11"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f12_di" bpmnElement="ifms_gia_release_f12"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="149"/><di:waypoint x="730" y="149"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f13_di" bpmnElement="ifms_gia_release_f13"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f14_di" bpmnElement="ifms_gia_release_f14"><di:waypoint x="945" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f15_di" bpmnElement="ifms_gia_release_f15"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f16_di" bpmnElement="ifms_gia_release_f16"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f17_di" bpmnElement="ifms_gia_release_f17"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f18_di" bpmnElement="ifms_gia_release_f18"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f19_di" bpmnElement="ifms_gia_release_f19"><di:waypoint x="1580" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f20_di" bpmnElement="ifms_gia_release_f20"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f21_di" bpmnElement="ifms_gia_release_f21"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f22_di" bpmnElement="ifms_gia_release_f22"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f23_di" bpmnElement="ifms_gia_release_f23"><di:waypoint x="2100" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f24_di" bpmnElement="ifms_gia_release_f24"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f25_di" bpmnElement="ifms_gia_release_f25"><di:waypoint x="128" y="468"/><di:waypoint x="225" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f26_di" bpmnElement="ifms_gia_release_f26"><di:waypoint x="325" y="468"/><di:waypoint x="390" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f27_di" bpmnElement="ifms_gia_release_f27"><di:waypoint x="490" y="468"/><di:waypoint x="587" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f28_di" bpmnElement="ifms_gia_release_f28"><di:waypoint x="128" y="658"/><di:waypoint x="225" y="658"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f29_di" bpmnElement="ifms_gia_release_f29"><di:waypoint x="325" y="658"/><di:waypoint x="390" y="658"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gia_release_f30_di" bpmnElement="ifms_gia_release_f30"><di:waypoint x="490" y="658"/><di:waypoint x="587" y="658"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,60 @@
+{
+  "key": "ifms-pao-chain/distribute",
+  "version": "1.0.0",
+  "pack": "gov.ifms.pao-chain",
+  "title": {
+    "en": "Assign bill in FIFO order",
+    "hi": "फीफो क्रम में बिल सौंपें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "tokenNo",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Token number",
+        "hi": "टोकन संख्या"
+      }
+    },
+    {
+      "id": "billType",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Bill type",
+        "hi": "बिल का प्रकार"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "distributeDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "forwardNext",
+        "label": {
+          "en": "Forward to next level",
+          "hi": "अगले स्तर को अग्रेषित करें"
+        }
+      }
+    ]
+  }
+}

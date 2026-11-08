@@ -1,0 +1,76 @@
+{
+  "id": "sec.tel.tcccpr",
+  "version": "1.0.0",
+  "name": {
+    "en": "Commercial communications: consent and spam complaints (TCCCPR)",
+    "hi": "वाणिज्यिक संचार: सहमति एवं स्पैम शिकायतें (टीसीसीसीपीआर)"
+  },
+  "domain": "Telecom",
+  "description": "TCCCPR 2018 (amended 2025): consent recorded on the DLT consent register through a verified acquisition, revocable at any time; unsolicited commercial communication complaints verified against preferences and consent, the sender warned / blocked by the graded action rule, complainant informed within the regulatory timeline.",
+  "mainProcesses": [
+    "sangam-sec-tel-ucc-complaint"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-tel-tcccpr/sangam-sec-tel-ucc-complaint.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-tel-tcccpr/sangam-sec-tel-consent.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-tel-tcccpr/sec-tel-ucc.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-tel-tcccpr/forms/complaint.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-tel-tcccpr/forms/verify.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-tel-tcccpr/forms/consent.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-tel-tcccpr/seed.json"
+    }
+  ],
+  "seed": "packs/sec-tel-tcccpr/seed.json",
+  "connectors": [
+    {
+      "id": "dlt.consent",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "DLT consent register"
+    },
+    {
+      "id": "dlt.preference",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Preference register"
+    },
+    {
+      "id": "dlt.action",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Action on sender"
+    }
+  ],
+  "covers": [
+    "SEC-TEL-004",
+    "GP-06",
+    "GP-33",
+    "UP-03"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

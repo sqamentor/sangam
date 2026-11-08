@@ -1,0 +1,63 @@
+{
+  "key": "ifms-receipts/challan",
+  "version": "1.0.0",
+  "pack": "gov.ifms.receipts",
+  "title": {
+    "en": "Challan",
+    "hi": "चालान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "receiptHead",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Receipt head",
+        "hi": "प्राप्ति शीर्ष"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "payee",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "challanNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Challan / CIN",
+        "hi": "चालान / सीआईएन"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

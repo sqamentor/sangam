@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Core: execution with operationId, acknowledgement and reconciliation. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_core_execution" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_operationResult" name="sangam.operationResult"/>
+  <message id="msg_sangam_reconciliationResolved" name="sangam.reconciliationResolved"/>
+  <process id="sangam-core-execution" name="Core: execution with operationId, acknowledgement and reconciliation" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>EXECUTION &gt; ACKNOWLEDGED &gt; RECONCILED with UNKNOWN_OUTCOME (IX.3, VI.3, A-2, AC-03). The approval hash is re-verified first (K4: a change after approval throws APPROVAL_INVALIDATED, J-P1-E01); the effect goes through the ConnectorGateway with operationId = UUIDv5(businessKey, step, attempt); an unknown outcome opens a reconciliation item and nothing is repeated automatically for class (c). Inputs: executionConnector, executionOperation, executionStep, reconcileRequired, ackWindow. Output: executionOutcome DONE / FAILED (opReasonCode).</documentation>
+    <startEvent id="ex_start" name="Execution requested"></startEvent>
+    <serviceTask id="ex_defaults" name="Defaults" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>ackWindow=PT4H;reconcileRequired=false;verifyApproval=true;executionStep=execute;executionOperation=execute;executionPayloadFields=;reconRetry=PT1H;reconciliationSeat=reconciliation-desk</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ex_state" name="State: EXECUTION" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>EXECUTION</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ex_prepare" name="Verify approval, derive operationId" operaton:class="org.sangam.packs.core.ExternalOperationDelegate"><extensionElements><operaton:field name="op"><operaton:string>PREPARE</operaton:string></operaton:field><operaton:field name="step"><operaton:expression>${executionStep}</operaton:expression></operaton:field><operaton:field name="connector"><operaton:expression>${executionConnector}</operaton:expression></operaton:field><operaton:field name="verifyApproval"><operaton:expression>${verifyApproval}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ex_submit" name="Submit external operation" operaton:class="org.sangam.packs.core.ExternalOperationDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>SUBMIT</operaton:string></operaton:field><operaton:field name="connector"><operaton:expression>${executionConnector}</operaton:expression></operaton:field><operaton:field name="operation"><operaton:expression>${executionOperation}</operaton:expression></operaton:field><operaton:field name="payloadFields"><operaton:expression>${executionPayloadFields}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ex_status" name="Outcome?" default="core_execution_f17"></exclusiveGateway>
+    <serviceTask id="ex_ack" name="State: ACKNOWLEDGED" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>ACKNOWLEDGED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ex_failed" name="Failed" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionOutcome=FAILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ex_endFailed" name="Confirmed failure"></endEvent>
+    <eventBasedGateway id="ex_wait" name="Result or window"></eventBasedGateway>
+    <intermediateCatchEvent id="ex_result" name="Operation result (inbox)"><messageEventDefinition messageRef="msg_sangam_operationResult"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="ex_window" name="Acknowledgement window"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${ackWindow}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="ex_applyResult" name="Apply result" operaton:class="org.sangam.packs.core.ExternalOperationDelegate"><extensionElements><operaton:field name="op"><operaton:string>APPLY_RESULT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ex_lookup" name="Look up outcome" operaton:class="org.sangam.packs.core.ExternalOperationDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOOKUP</operaton:string></operaton:field><operaton:field name="maxLookups"><operaton:expression>${maxLookups}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ex_unknown" name="UNKNOWN_OUTCOME: open reconciliation item" operaton:class="org.sangam.packs.core.ExternalOperationDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN_RECON</operaton:string></operaton:field><operaton:field name="kind"><operaton:string>UNKNOWN_OUTCOME</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ex_notifyOps" name="Alert reconciliation desk" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>recon-item-opened</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>reconciliationSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="ex_resolved" name="Resolved by operator"><messageEventDefinition messageRef="msg_sangam_reconciliationResolved"/></intermediateCatchEvent>
+    <serviceTask id="ex_applyResolution" name="Apply resolution" operaton:class="org.sangam.packs.core.ExternalOperationDelegate"><extensionElements><operaton:field name="op"><operaton:string>APPLY_RESOLUTION</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ex_reconGw" name="Reconcile with statement?" default="core_execution_f23"></exclusiveGateway>
+    <serviceTask id="ex_done" name="Done" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>executionOutcome=DONE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ex_endDone" name="Done"></endEvent>
+    <serviceTask id="ex_reconcile" name="Match with bank / treasury statement" operaton:class="org.sangam.packs.core.ExternalOperationDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>RECONCILE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ex_matchGw" name="Matched?" default="core_execution_f36"></exclusiveGateway>
+    <serviceTask id="ex_reconciled" name="State: RECONCILED" operaton:class="org.sangam.packs.core.LifecycleStateDelegate"><extensionElements><operaton:field name="state"><operaton:string>RECONCILED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ex_mismatch" name="Open mismatch item" operaton:class="org.sangam.packs.core.ExternalOperationDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN_RECON</operaton:string></operaton:field><operaton:field name="kind"><operaton:string>MISMATCH</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="ex_mmResolved" name="Mismatch resolved"><messageEventDefinition messageRef="msg_sangam_reconciliationResolved"/></intermediateCatchEvent>
+    <serviceTask id="ex_mmApply" name="Apply resolution" operaton:class="org.sangam.packs.core.ExternalOperationDelegate"><extensionElements><operaton:field name="op"><operaton:string>APPLY_RESOLUTION</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ex_mmGw" name="Resolution?" default="core_execution_f35"></exclusiveGateway>
+    <intermediateCatchEvent id="ex_reconWait" name="Statement not yet in"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${reconRetry}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <sequenceFlow id="core_execution_f1" sourceRef="ex_start" targetRef="ex_defaults"/>
+    <sequenceFlow id="core_execution_f2" sourceRef="ex_defaults" targetRef="ex_state"/>
+    <sequenceFlow id="core_execution_f3" sourceRef="ex_state" targetRef="ex_prepare"/>
+    <sequenceFlow id="core_execution_f4" sourceRef="ex_prepare" targetRef="ex_submit"/>
+    <sequenceFlow id="core_execution_f5" sourceRef="ex_submit" targetRef="ex_status"/>
+    <sequenceFlow id="core_execution_f6" name="completed" sourceRef="ex_status" targetRef="ex_ack"><conditionExpression xsi:type="tFormalExpression">${opStatus == 'COMPLETED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_execution_f7" name="failed" sourceRef="ex_status" targetRef="ex_failed"><conditionExpression xsi:type="tFormalExpression">${opStatus == 'FAILED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_execution_f8" sourceRef="ex_failed" targetRef="ex_endFailed"/>
+    <sequenceFlow id="core_execution_f9" name="pending" sourceRef="ex_status" targetRef="ex_wait"><conditionExpression xsi:type="tFormalExpression">${opStatus == 'PENDING'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_execution_f10" sourceRef="ex_wait" targetRef="ex_result"/>
+    <sequenceFlow id="core_execution_f11" sourceRef="ex_wait" targetRef="ex_window"/>
+    <sequenceFlow id="core_execution_f12" sourceRef="ex_result" targetRef="ex_applyResult"/>
+    <sequenceFlow id="core_execution_f13" sourceRef="ex_applyResult" targetRef="ex_status"/>
+    <sequenceFlow id="core_execution_f14" sourceRef="ex_window" targetRef="ex_lookup"/>
+    <sequenceFlow id="core_execution_f15" sourceRef="ex_lookup" targetRef="ex_status"/>
+    <sequenceFlow id="core_execution_f16" name="retry same operationId" sourceRef="ex_status" targetRef="ex_submit"><conditionExpression xsi:type="tFormalExpression">${opStatus == 'RETRY'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_execution_f17" name="unknown" sourceRef="ex_status" targetRef="ex_unknown"/>
+    <sequenceFlow id="core_execution_f18" sourceRef="ex_unknown" targetRef="ex_notifyOps"/>
+    <sequenceFlow id="core_execution_f19" sourceRef="ex_notifyOps" targetRef="ex_resolved"/>
+    <sequenceFlow id="core_execution_f20" sourceRef="ex_resolved" targetRef="ex_applyResolution"/>
+    <sequenceFlow id="core_execution_f21" sourceRef="ex_applyResolution" targetRef="ex_status"/>
+    <sequenceFlow id="core_execution_f22" sourceRef="ex_ack" targetRef="ex_reconGw"/>
+    <sequenceFlow id="core_execution_f23" name="no" sourceRef="ex_reconGw" targetRef="ex_done"/>
+    <sequenceFlow id="core_execution_f24" sourceRef="ex_done" targetRef="ex_endDone"/>
+    <sequenceFlow id="core_execution_f25" name="yes" sourceRef="ex_reconGw" targetRef="ex_reconcile"><conditionExpression xsi:type="tFormalExpression">${reconcileRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_execution_f26" sourceRef="ex_reconcile" targetRef="ex_matchGw"/>
+    <sequenceFlow id="core_execution_f27" name="matched" sourceRef="ex_matchGw" targetRef="ex_reconciled"><conditionExpression xsi:type="tFormalExpression">${reconStatus == 'MATCHED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_execution_f28" sourceRef="ex_reconciled" targetRef="ex_done"/>
+    <sequenceFlow id="core_execution_f29" name="mismatch" sourceRef="ex_matchGw" targetRef="ex_mismatch"><conditionExpression xsi:type="tFormalExpression">${reconStatus == 'MISMATCH'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_execution_f30" sourceRef="ex_mismatch" targetRef="ex_mmResolved"/>
+    <sequenceFlow id="core_execution_f31" sourceRef="ex_mmResolved" targetRef="ex_mmApply"/>
+    <sequenceFlow id="core_execution_f32" sourceRef="ex_mmApply" targetRef="ex_mmGw"/>
+    <sequenceFlow id="core_execution_f33" name="confirmed" sourceRef="ex_mmGw" targetRef="ex_reconciled"><conditionExpression xsi:type="tFormalExpression">${opStatus == 'COMPLETED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_execution_f34" name="failed" sourceRef="ex_mmGw" targetRef="ex_failed"><conditionExpression xsi:type="tFormalExpression">${opStatus == 'FAILED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="core_execution_f35" name="check again" sourceRef="ex_mmGw" targetRef="ex_reconcile"/>
+    <sequenceFlow id="core_execution_f36" name="pending" sourceRef="ex_matchGw" targetRef="ex_reconWait"/>
+    <sequenceFlow id="core_execution_f37" sourceRef="ex_reconWait" targetRef="ex_reconcile"/>
+  </process>
+  <bpmndi:BPMNDiagram id="core_execution_diagram">
+    <bpmndi:BPMNPlane id="core_execution_plane" bpmnElement="sangam-core-execution">
+      <bpmndi:BPMNShape id="ex_start_di" bpmnElement="ex_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_defaults_di" bpmnElement="ex_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_state_di" bpmnElement="ex_state"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_prepare_di" bpmnElement="ex_prepare"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_submit_di" bpmnElement="ex_submit"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_status_di" bpmnElement="ex_status"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_ack_di" bpmnElement="ex_ack"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_failed_di" bpmnElement="ex_failed"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_endFailed_di" bpmnElement="ex_endFailed"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_wait_di" bpmnElement="ex_wait"><dc:Bounds x="1035" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_result_di" bpmnElement="ex_result"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_window_di" bpmnElement="ex_window"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_applyResult_di" bpmnElement="ex_applyResult"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_lookup_di" bpmnElement="ex_lookup"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_unknown_di" bpmnElement="ex_unknown"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_notifyOps_di" bpmnElement="ex_notifyOps"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_resolved_di" bpmnElement="ex_resolved"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_applyResolution_di" bpmnElement="ex_applyResolution"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_reconGw_di" bpmnElement="ex_reconGw"><dc:Bounds x="1200" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_done_di" bpmnElement="ex_done"><dc:Bounds x="2495" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_endDone_di" bpmnElement="ex_endDone"><dc:Bounds x="2692" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_reconcile_di" bpmnElement="ex_reconcile"><dc:Bounds x="1340" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_matchGw_di" bpmnElement="ex_matchGw"><dc:Bounds x="1530" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_reconciled_di" bpmnElement="ex_reconciled"><dc:Bounds x="2330" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_mismatch_di" bpmnElement="ex_mismatch"><dc:Bounds x="1670" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_mmResolved_di" bpmnElement="ex_mmResolved"><dc:Bounds x="1867" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_mmApply_di" bpmnElement="ex_mmApply"><dc:Bounds x="2000" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_mmGw_di" bpmnElement="ex_mmGw"><dc:Bounds x="2190" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ex_reconWait_di" bpmnElement="ex_reconWait"><dc:Bounds x="1702" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="core_execution_f1_di" bpmnElement="core_execution_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f2_di" bpmnElement="core_execution_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f3_di" bpmnElement="core_execution_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f4_di" bpmnElement="core_execution_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f5_di" bpmnElement="core_execution_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f6_di" bpmnElement="core_execution_f6"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f7_di" bpmnElement="core_execution_f7"><di:waypoint x="920" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f8_di" bpmnElement="core_execution_f8"><di:waypoint x="2430" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f9_di" bpmnElement="core_execution_f9"><di:waypoint x="920" y="70"/><di:waypoint x="977" y="70"/><di:waypoint x="977" y="195"/><di:waypoint x="1035" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f10_di" bpmnElement="core_execution_f10"><di:waypoint x="1085" y="195"/><di:waypoint x="1146" y="195"/><di:waypoint x="1146" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f11_di" bpmnElement="core_execution_f11"><di:waypoint x="1085" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f12_di" bpmnElement="core_execution_f12"><di:waypoint x="1243" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f13_di" bpmnElement="core_execution_f13"><di:waypoint x="1390" y="360"/><di:waypoint x="1390" y="378"/><di:waypoint x="895" y="378"/><di:waypoint x="895" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f14_di" bpmnElement="core_execution_f14"><di:waypoint x="1243" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f15_di" bpmnElement="core_execution_f15"><di:waypoint x="1390" y="235"/><di:waypoint x="1390" y="267"/><di:waypoint x="895" y="267"/><di:waypoint x="895" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f16_di" bpmnElement="core_execution_f16"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="149"/><di:waypoint x="730" y="149"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f17_di" bpmnElement="core_execution_f17"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f18_di" bpmnElement="core_execution_f18"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f19_di" bpmnElement="core_execution_f19"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f20_di" bpmnElement="core_execution_f20"><di:waypoint x="1408" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f21_di" bpmnElement="core_execution_f21"><di:waypoint x="1555" y="110"/><di:waypoint x="1555" y="128"/><di:waypoint x="895" y="128"/><di:waypoint x="895" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f22_di" bpmnElement="core_execution_f22"><di:waypoint x="1110" y="320"/><di:waypoint x="1155" y="320"/><di:waypoint x="1155" y="445"/><di:waypoint x="1200" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f23_di" bpmnElement="core_execution_f23"><di:waypoint x="1250" y="445"/><di:waypoint x="2495" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f24_di" bpmnElement="core_execution_f24"><di:waypoint x="2595" y="445"/><di:waypoint x="2692" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f25_di" bpmnElement="core_execution_f25"><di:waypoint x="1250" y="445"/><di:waypoint x="1340" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f26_di" bpmnElement="core_execution_f26"><di:waypoint x="1440" y="445"/><di:waypoint x="1530" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f27_di" bpmnElement="core_execution_f27"><di:waypoint x="1580" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f28_di" bpmnElement="core_execution_f28"><di:waypoint x="2430" y="445"/><di:waypoint x="2495" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f29_di" bpmnElement="core_execution_f29"><di:waypoint x="1580" y="445"/><di:waypoint x="1625" y="445"/><di:waypoint x="1625" y="570"/><di:waypoint x="1670" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f30_di" bpmnElement="core_execution_f30"><di:waypoint x="1770" y="570"/><di:waypoint x="1867" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f31_di" bpmnElement="core_execution_f31"><di:waypoint x="1903" y="570"/><di:waypoint x="2000" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f32_di" bpmnElement="core_execution_f32"><di:waypoint x="2100" y="570"/><di:waypoint x="2190" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f33_di" bpmnElement="core_execution_f33"><di:waypoint x="2240" y="570"/><di:waypoint x="2285" y="570"/><di:waypoint x="2285" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f34_di" bpmnElement="core_execution_f34"><di:waypoint x="2240" y="570"/><di:waypoint x="2285" y="570"/><di:waypoint x="2285" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f35_di" bpmnElement="core_execution_f35"><di:waypoint x="2215" y="595"/><di:waypoint x="2215" y="627"/><di:waypoint x="1390" y="627"/><di:waypoint x="1390" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f36_di" bpmnElement="core_execution_f36"><di:waypoint x="1580" y="445"/><di:waypoint x="1702" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="core_execution_f37_di" bpmnElement="core_execution_f37"><di:waypoint x="1720" y="463"/><di:waypoint x="1720" y="503"/><di:waypoint x="1390" y="503"/><di:waypoint x="1390" y="485"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

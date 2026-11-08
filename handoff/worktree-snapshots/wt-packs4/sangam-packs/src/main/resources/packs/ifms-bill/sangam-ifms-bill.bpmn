@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Bill by catalogue type. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_bill" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_ifms_fundsAllotted" name="sangam.ifms.fundsAllotted"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-ifms-bill" name="Bill by catalogue type" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.bill</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>billType,headOfAccount,amount,payee,payeeAccount,sanctionRef</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="bl_start" name="Bill drafted by the DDO" operaton:initiator="initiator" operaton:formKey="sangam:ifms-bill/draft"></startEvent>
+    <serviceTask id="bl_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>billType=CONTINGENT;headOfAccount=2054-00-001-01-00-13;amount=0;payee=;payeeAccount=;sanctionRef=;ddoCode=DDO-1;ledgerId=BUDGET;fundsAvailable=99999999999900;docValid=true;clsValid=true;dupDuplicate=false;payeeMultiple=false;partyId=;ifsc=;docPaymentRail=DEFAULT;docApprovalChain=PAO_3;paoOutcome=PASSED;caseType=BILL;routingDecisionKey=ifms-bill-authority;scrutinySeat=DDO-1;executionStep=pay;reconcileRequired=true;outputTemplate=payment-advice;appealAllowed=false;encumbranceLedger=BUDGET;releaseConnector=ledger.release</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_profile" name="Bind profile version" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>config.profile</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>profile.binding</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>billType</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>prof</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_type" name="Bill type from the catalogue" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>config.documentType</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>documentType.get</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>billType</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>doc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_cls" name="Validate head of account" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>config.classification</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>classification.validate</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>headOfAccount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>cls</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_check" name="Check bill against its type" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>config.documentType</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>documentType.check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>billType,headOfAccount,amount,sanctionRef,claimPeriod</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>doc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_dup" name="Duplicate / similar claim" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ifms.duplicateBill</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>payee,amount,claimPeriod</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>dup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_payee" name="Payee golden record (party registry)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>registry.party</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>payee.resolve</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>partyId,payee,payeeAccount,ifsc</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>payee</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bl_validGw" name="Valid?" sangam:routingPolicy="priority" default="ifms_bill_f21"></exclusiveGateway>
+    <serviceTask id="bl_rjInvalid_code" name="Reason: BILL_INVALID" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=BILL_INVALID</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="bl_rjInvalid_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="bl_rjInvalid_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="bl_rjDup_code" name="Reason: DUPLICATE_CLAIM" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=DUPLICATE_CLAIM</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="bl_rjDup_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="bl_rjDup_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="bl_funds" name="Funds at the control dimension" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.available</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>available</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,headOfAccount,ddoCode</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>funds</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="bl_payeeReview" name="Confirm payee: account held by several parties" operaton:candidateGroups="PAO-1" operaton:formKey="sangam:ifms-bill/payee-review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>payeeDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="bl_payeeGw" name="" default="ifms_bill_f20"></exclusiveGateway>
+    <serviceTask id="bl_rjPayee_code" name="Reason: PAYEE_NOT_CONFIRMED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=PAYEE_NOT_CONFIRMED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="bl_rjPayee_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="bl_rjPayee_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="bl_fundsGw" name="Funds available?" default="ifms_bill_f25"></exclusiveGateway>
+    <intermediateCatchEvent id="bl_hold" name="Held for budget (released on allotment)"><messageEventDefinition messageRef="msg_sangam_ifms_fundsAllotted"/></intermediateCatchEvent>
+    <serviceTask id="bl_encumber" name="Encumber" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.encumber</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>encumber</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,headOfAccount,ddoCode,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>enc</operaton:string></operaton:field><operaton:field name="step"><operaton:string>encumber</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="bl_rail" name="Payment rail (profile / tenant DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>ifms-rail-connector</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <callActivity id="bl_chain" name="PAO / treasury chain" calledElement="sangam-ifms-pao-chain"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="bl_release" name="Release encumbrance" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.release</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>release</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,headOfAccount,ddoCode,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rel</operaton:string></operaton:field><operaton:field name="step"><operaton:string>release</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="bl_revise" name="Reply to objection / correct" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:ifms-bill/revise"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviseDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <callActivity id="bl_pay" name="Payment through the rail (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="bl_chainGw" name="paoOutcome?" default="ifms_bill_f29"></exclusiveGateway>
+    <exclusiveGateway id="bl_revGw" name="" default="ifms_bill_f37"></exclusiveGateway>
+    <serviceTask id="bl_version" name="New bill version (same case, GP-50)" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUBMIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bl_wd_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="bl_wd_call" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="bl_wd_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="bl_consume" name="Post payment (consume)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.consume</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>consume</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,headOfAccount,ddoCode,amount,operationId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>con</operaton:string></operaton:field><operaton:field name="step"><operaton:string>consume</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="bl_close" name="Payment advice and voucher (core closure)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="bl_payFailed" name="Payment failed: suspense, reissue with a new operation" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>ifms-payment-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bl_exGw" name="executionOutcome?" default="ifms_bill_f39"></exclusiveGateway>
+    <serviceTask id="bl_reissue" name="Reissue tag" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>reissueTag=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="bl_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="ifms_bill_f1" sourceRef="bl_start" targetRef="bl_defaults"/>
+    <sequenceFlow id="ifms_bill_f2" sourceRef="bl_defaults" targetRef="bl_profile"/>
+    <sequenceFlow id="ifms_bill_f3" sourceRef="bl_profile" targetRef="bl_type"/>
+    <sequenceFlow id="ifms_bill_f4" sourceRef="bl_type" targetRef="bl_cls"/>
+    <sequenceFlow id="ifms_bill_f5" sourceRef="bl_cls" targetRef="bl_check"/>
+    <sequenceFlow id="ifms_bill_f6" sourceRef="bl_check" targetRef="bl_dup"/>
+    <sequenceFlow id="ifms_bill_f7" sourceRef="bl_dup" targetRef="bl_payee"/>
+    <sequenceFlow id="ifms_bill_f8" sourceRef="bl_payee" targetRef="bl_validGw"/>
+    <sequenceFlow id="ifms_bill_f9" sourceRef="bl_rjInvalid_reject" targetRef="bl_rjInvalid_endRejected"/>
+    <sequenceFlow id="ifms_bill_f10" sourceRef="bl_rjInvalid_code" targetRef="bl_rjInvalid_reject"/>
+    <sequenceFlow id="ifms_bill_f11" name="invalid (findings cite the rule)" sangam:priority="1" sourceRef="bl_validGw" targetRef="bl_rjInvalid_code"><conditionExpression xsi:type="tFormalExpression">${!docValid || !clsValid}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f12" sourceRef="bl_rjDup_reject" targetRef="bl_rjDup_endRejected"/>
+    <sequenceFlow id="ifms_bill_f13" sourceRef="bl_rjDup_code" targetRef="bl_rjDup_reject"/>
+    <sequenceFlow id="ifms_bill_f14" name="duplicate" sangam:priority="2" sourceRef="bl_validGw" targetRef="bl_rjDup_code"><conditionExpression xsi:type="tFormalExpression">${dupDuplicate}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f15" name="several beneficiaries on the account" sangam:priority="3" sourceRef="bl_validGw" targetRef="bl_payeeReview"><conditionExpression xsi:type="tFormalExpression">${payeeMultiple}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f16" sourceRef="bl_payeeReview" targetRef="bl_payeeGw"/>
+    <sequenceFlow id="ifms_bill_f17" name="confirmed" sourceRef="bl_payeeGw" targetRef="bl_funds"><conditionExpression xsi:type="tFormalExpression">${payeeDecision == 'approve'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f18" sourceRef="bl_rjPayee_reject" targetRef="bl_rjPayee_endRejected"/>
+    <sequenceFlow id="ifms_bill_f19" sourceRef="bl_rjPayee_code" targetRef="bl_rjPayee_reject"/>
+    <sequenceFlow id="ifms_bill_f20" name="rejected" sourceRef="bl_payeeGw" targetRef="bl_rjPayee_code"/>
+    <sequenceFlow id="ifms_bill_f21" name="valid" sourceRef="bl_validGw" targetRef="bl_funds"/>
+    <sequenceFlow id="ifms_bill_f22" sourceRef="bl_funds" targetRef="bl_fundsGw"/>
+    <sequenceFlow id="ifms_bill_f23" name="pending for budget" sourceRef="bl_fundsGw" targetRef="bl_hold"><conditionExpression xsi:type="tFormalExpression">${fundsAvailable &lt; amount}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f24" sourceRef="bl_hold" targetRef="bl_funds"/>
+    <sequenceFlow id="ifms_bill_f25" name="available" sourceRef="bl_fundsGw" targetRef="bl_encumber"/>
+    <sequenceFlow id="ifms_bill_f26" sourceRef="bl_encumber" targetRef="bl_rail"/>
+    <sequenceFlow id="ifms_bill_f27" sourceRef="bl_rail" targetRef="bl_chain"/>
+    <sequenceFlow id="ifms_bill_f28" name="PASSED" sourceRef="bl_chainGw" targetRef="bl_pay"><conditionExpression xsi:type="tFormalExpression">${paoOutcome == 'PASSED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f29" name="otherwise" sourceRef="bl_chainGw" targetRef="bl_release"/>
+    <sequenceFlow id="ifms_bill_f30" sourceRef="bl_chain" targetRef="bl_chainGw"/>
+    <sequenceFlow id="ifms_bill_f31" sourceRef="bl_release" targetRef="bl_revise"/>
+    <sequenceFlow id="ifms_bill_f32" sourceRef="bl_revise" targetRef="bl_revGw"/>
+    <sequenceFlow id="ifms_bill_f33" name="resubmit" sourceRef="bl_revGw" targetRef="bl_version"><conditionExpression xsi:type="tFormalExpression">${reviseDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f34" sourceRef="bl_version" targetRef="bl_type"/>
+    <sequenceFlow id="ifms_bill_f35" sourceRef="bl_wd_kind" targetRef="bl_wd_call"/>
+    <sequenceFlow id="ifms_bill_f36" sourceRef="bl_wd_call" targetRef="bl_wd_end"/>
+    <sequenceFlow id="ifms_bill_f37" name="withdraw" sourceRef="bl_revGw" targetRef="bl_wd_kind"/>
+    <sequenceFlow id="ifms_bill_f38" name="DONE" sourceRef="bl_exGw" targetRef="bl_consume"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_bill_f39" name="otherwise" sourceRef="bl_exGw" targetRef="bl_payFailed"/>
+    <sequenceFlow id="ifms_bill_f40" sourceRef="bl_pay" targetRef="bl_exGw"/>
+    <sequenceFlow id="ifms_bill_f41" sourceRef="bl_payFailed" targetRef="bl_reissue"/>
+    <sequenceFlow id="ifms_bill_f42" sourceRef="bl_reissue" targetRef="bl_pay"/>
+    <sequenceFlow id="ifms_bill_f43" sourceRef="bl_consume" targetRef="bl_close"/>
+    <sequenceFlow id="ifms_bill_f44" sourceRef="bl_close" targetRef="bl_end"/>
+    <subProcess id="bl_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="bl_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="bl_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="bl_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="bl_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_bill_f45" sourceRef="bl_withdrawStart" targetRef="bl_withdrawKind"/>
+      <sequenceFlow id="ifms_bill_f46" sourceRef="bl_withdrawKind" targetRef="bl_withdrawCall"/>
+      <sequenceFlow id="ifms_bill_f47" sourceRef="bl_withdrawCall" targetRef="bl_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="bl_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="bl_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="bl_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="bl_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="bl_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_bill_f48" sourceRef="bl_cancelStart" targetRef="bl_cancelKind"/>
+      <sequenceFlow id="ifms_bill_f49" sourceRef="bl_cancelKind" targetRef="bl_cancelCall"/>
+      <sequenceFlow id="ifms_bill_f50" sourceRef="bl_cancelCall" targetRef="bl_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_bill_diagram">
+    <bpmndi:BPMNPlane id="ifms_bill_plane" bpmnElement="sangam-ifms-bill">
+      <bpmndi:BPMNShape id="bl_start_di" bpmnElement="bl_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_defaults_di" bpmnElement="bl_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_profile_di" bpmnElement="bl_profile"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_type_di" bpmnElement="bl_type"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_cls_di" bpmnElement="bl_cls"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_check_di" bpmnElement="bl_check"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_dup_di" bpmnElement="bl_dup"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_payee_di" bpmnElement="bl_payee"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_validGw_di" bpmnElement="bl_validGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rjInvalid_code_di" bpmnElement="bl_rjInvalid_code"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rjInvalid_reject_di" bpmnElement="bl_rjInvalid_reject"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rjInvalid_endRejected_di" bpmnElement="bl_rjInvalid_endRejected"><dc:Bounds x="1867" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rjDup_code_di" bpmnElement="bl_rjDup_code"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rjDup_reject_di" bpmnElement="bl_rjDup_reject"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rjDup_endRejected_di" bpmnElement="bl_rjDup_endRejected"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_funds_di" bpmnElement="bl_funds"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_payeeReview_di" bpmnElement="bl_payeeReview"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_payeeGw_di" bpmnElement="bl_payeeGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rjPayee_code_di" bpmnElement="bl_rjPayee_code"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rjPayee_reject_di" bpmnElement="bl_rjPayee_reject"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rjPayee_endRejected_di" bpmnElement="bl_rjPayee_endRejected"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_fundsGw_di" bpmnElement="bl_fundsGw"><dc:Bounds x="2025" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_hold_di" bpmnElement="bl_hold"><dc:Bounds x="2197" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_encumber_di" bpmnElement="bl_encumber"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_rail_di" bpmnElement="bl_rail"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_chain_di" bpmnElement="bl_chain"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_release_di" bpmnElement="bl_release"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_revise_di" bpmnElement="bl_revise"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_pay_di" bpmnElement="bl_pay"><dc:Bounds x="2825" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_chainGw_di" bpmnElement="bl_chainGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_revGw_di" bpmnElement="bl_revGw"><dc:Bounds x="3180" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_version_di" bpmnElement="bl_version"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_wd_kind_di" bpmnElement="bl_wd_kind"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_wd_call_di" bpmnElement="bl_wd_call"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_wd_end_di" bpmnElement="bl_wd_end"><dc:Bounds x="3682" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_consume_di" bpmnElement="bl_consume"><dc:Bounds x="3155" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_close_di" bpmnElement="bl_close"><dc:Bounds x="3320" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_payFailed_di" bpmnElement="bl_payFailed"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_exGw_di" bpmnElement="bl_exGw"><dc:Bounds x="3015" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_reissue_di" bpmnElement="bl_reissue"><dc:Bounds x="3320" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_end_di" bpmnElement="bl_end"><dc:Bounds x="3517" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_withdraw_di" bpmnElement="bl_withdraw" isExpanded="true"><dc:Bounds x="30" y="660" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_withdrawStart_di" bpmnElement="bl_withdrawStart"><dc:Bounds x="92" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_withdrawKind_di" bpmnElement="bl_withdrawKind"><dc:Bounds x="225" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_withdrawCall_di" bpmnElement="bl_withdrawCall"><dc:Bounds x="390" y="700" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_withdrawEnd_di" bpmnElement="bl_withdrawEnd"><dc:Bounds x="587" y="722" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_cancel_di" bpmnElement="bl_cancel" isExpanded="true"><dc:Bounds x="30" y="850" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_cancelStart_di" bpmnElement="bl_cancelStart"><dc:Bounds x="92" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_cancelKind_di" bpmnElement="bl_cancelKind"><dc:Bounds x="225" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_cancelCall_di" bpmnElement="bl_cancelCall"><dc:Bounds x="390" y="890" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bl_cancelEnd_di" bpmnElement="bl_cancelEnd"><dc:Bounds x="587" y="912" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_bill_f1_di" bpmnElement="ifms_bill_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f2_di" bpmnElement="ifms_bill_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f3_di" bpmnElement="ifms_bill_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f4_di" bpmnElement="ifms_bill_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f5_di" bpmnElement="ifms_bill_f5"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f6_di" bpmnElement="ifms_bill_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f7_di" bpmnElement="ifms_bill_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f8_di" bpmnElement="ifms_bill_f8"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f9_di" bpmnElement="ifms_bill_f9"><di:waypoint x="1770" y="320"/><di:waypoint x="1818" y="320"/><di:waypoint x="1818" y="445"/><di:waypoint x="1867" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f10_di" bpmnElement="ifms_bill_f10"><di:waypoint x="1605" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f11_di" bpmnElement="ifms_bill_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f12_di" bpmnElement="ifms_bill_f12"><di:waypoint x="1770" y="195"/><di:waypoint x="1818" y="195"/><di:waypoint x="1818" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f13_di" bpmnElement="ifms_bill_f13"><di:waypoint x="1605" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f14_di" bpmnElement="ifms_bill_f14"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f15_di" bpmnElement="ifms_bill_f15"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f16_di" bpmnElement="ifms_bill_f16"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f17_di" bpmnElement="ifms_bill_f17"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f18_di" bpmnElement="ifms_bill_f18"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f19_di" bpmnElement="ifms_bill_f19"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f20_di" bpmnElement="ifms_bill_f20"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f21_di" bpmnElement="ifms_bill_f21"><di:waypoint x="1415" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f22_di" bpmnElement="ifms_bill_f22"><di:waypoint x="1935" y="195"/><di:waypoint x="2025" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f23_di" bpmnElement="ifms_bill_f23"><di:waypoint x="2075" y="195"/><di:waypoint x="2136" y="195"/><di:waypoint x="2136" y="320"/><di:waypoint x="2197" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f24_di" bpmnElement="ifms_bill_f24"><di:waypoint x="2215" y="338"/><di:waypoint x="2215" y="377"/><di:waypoint x="1885" y="377"/><di:waypoint x="1885" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f25_di" bpmnElement="ifms_bill_f25"><di:waypoint x="2075" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f26_di" bpmnElement="ifms_bill_f26"><di:waypoint x="2265" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f27_di" bpmnElement="ifms_bill_f27"><di:waypoint x="2430" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f28_di" bpmnElement="ifms_bill_f28"><di:waypoint x="2735" y="195"/><di:waypoint x="2780" y="195"/><di:waypoint x="2780" y="320"/><di:waypoint x="2825" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f29_di" bpmnElement="ifms_bill_f29"><di:waypoint x="2735" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f30_di" bpmnElement="ifms_bill_f30"><di:waypoint x="2595" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f31_di" bpmnElement="ifms_bill_f31"><di:waypoint x="2925" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f32_di" bpmnElement="ifms_bill_f32"><di:waypoint x="3090" y="195"/><di:waypoint x="3180" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f33_di" bpmnElement="ifms_bill_f33"><di:waypoint x="3230" y="195"/><di:waypoint x="3275" y="195"/><di:waypoint x="3275" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f34_di" bpmnElement="ifms_bill_f34"><di:waypoint x="3370" y="360"/><di:waypoint x="3370" y="385"/><di:waypoint x="565" y="385"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f35_di" bpmnElement="ifms_bill_f35"><di:waypoint x="3420" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f36_di" bpmnElement="ifms_bill_f36"><di:waypoint x="3585" y="195"/><di:waypoint x="3682" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f37_di" bpmnElement="ifms_bill_f37"><di:waypoint x="3230" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f38_di" bpmnElement="ifms_bill_f38"><di:waypoint x="3065" y="320"/><di:waypoint x="3110" y="320"/><di:waypoint x="3110" y="445"/><di:waypoint x="3155" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f39_di" bpmnElement="ifms_bill_f39"><di:waypoint x="3065" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f40_di" bpmnElement="ifms_bill_f40"><di:waypoint x="2925" y="320"/><di:waypoint x="3015" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f41_di" bpmnElement="ifms_bill_f41"><di:waypoint x="3255" y="320"/><di:waypoint x="3287" y="320"/><di:waypoint x="3287" y="445"/><di:waypoint x="3320" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f42_di" bpmnElement="ifms_bill_f42"><di:waypoint x="3370" y="485"/><di:waypoint x="3370" y="510"/><di:waypoint x="2875" y="510"/><di:waypoint x="2875" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f43_di" bpmnElement="ifms_bill_f43"><di:waypoint x="3255" y="445"/><di:waypoint x="3287" y="445"/><di:waypoint x="3287" y="570"/><di:waypoint x="3320" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f44_di" bpmnElement="ifms_bill_f44"><di:waypoint x="3420" y="570"/><di:waypoint x="3517" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f45_di" bpmnElement="ifms_bill_f45"><di:waypoint x="128" y="740"/><di:waypoint x="225" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f46_di" bpmnElement="ifms_bill_f46"><di:waypoint x="325" y="740"/><di:waypoint x="390" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f47_di" bpmnElement="ifms_bill_f47"><di:waypoint x="490" y="740"/><di:waypoint x="587" y="740"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f48_di" bpmnElement="ifms_bill_f48"><di:waypoint x="128" y="930"/><di:waypoint x="225" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f49_di" bpmnElement="ifms_bill_f49"><di:waypoint x="325" y="930"/><di:waypoint x="390" y="930"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_bill_f50_di" bpmnElement="ifms_bill_f50"><di:waypoint x="490" y="930"/><di:waypoint x="587" y="930"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

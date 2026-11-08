@@ -1,0 +1,117 @@
+{
+  "id": "sec.cap.investor-onboarding",
+  "version": "1.0.0",
+  "name": {
+    "en": "Investor onboarding (KRA KYC, demat and trading account)",
+    "hi": "निवेशक पंजीकरण (केआरए केवाईसी, डीमैट एवं ट्रेडिंग खाता)"
+  },
+  "domain": "Capital markets",
+  "description": "Stock broker / depository participant onboarding: KRA fetch or fresh KYC with Aadhaar e-KYC or video IPV, PAN-Aadhaar link status, nomination or a recorded opt-out, segment activation by financial proof, maker-checker by compliance, KRA upload, UCC to the exchange, BO account at the depository, account opening kit.",
+  "mainProcesses": [
+    "sangam-sec-cap-investor-onboarding"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-cap-investor-onboarding/sangam-sec-cap-investor-onboarding.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-cap-investor-onboarding/sec-cap-segments.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-cap-investor-onboarding/sec-cap-checker.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-cap-investor-onboarding/sec-cap-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-investor-onboarding/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-investor-onboarding/forms/ipv.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-investor-onboarding/forms/optout.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-cap-investor-onboarding/seed.json"
+    }
+  ],
+  "seed": "packs/sec-cap-investor-onboarding/seed.json",
+  "connectors": [
+    {
+      "id": "kra.fetch",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "KRA download"
+    },
+    {
+      "id": "kra.upload",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "KRA upload"
+    },
+    {
+      "id": "pan.verify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "PAN status and Aadhaar link"
+    },
+    {
+      "id": "uidai.ekyc",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "e-KYC"
+    },
+    {
+      "id": "exchange.ucc",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "UCC registration"
+    },
+    {
+      "id": "depository.openBo",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "BO account"
+    }
+  ],
+  "covers": [
+    "SEC-CAP-001",
+    "SEC-CAP-002",
+    "SEC-CAP-004",
+    "UP-05",
+    "UP-22",
+    "GP-16",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
+}

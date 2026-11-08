@@ -1,0 +1,47 @@
+{
+  "key": "sec-nbfc-digital-lending/accept",
+  "version": "1.0.0",
+  "pack": "sec.nbfc.digital-lending",
+  "title": {
+    "en": "Accept KFS and loan agreement",
+    "hi": "केएफएस एवं ऋण अनुबंध स्वीकार करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "kfsDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "declined",
+        "label": {
+          "en": "Declined",
+          "hi": "अस्वीकार किया"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "key": "p3-grant-sanction/recommend",
+  "version": "1.0.0",
+  "pack": "gov.p3.grant-sanction",
+  "title": {
+    "en": "Recommend with entitlement",
+    "hi": "पात्रता सहित अनुशंसा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "entitlementOverride",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Entitlement override (INR)",
+        "hi": "पात्रता राशि में परिवर्तन (रुपये)"
+      }
+    },
+    {
+      "id": "overrideReason",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Reason for override",
+        "hi": "परिवर्तन का कारण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "p3RecDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "recommend",
+        "label": {
+          "en": "Recommend / forward",
+          "hi": "अनुशंसा / अग्रेषित करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

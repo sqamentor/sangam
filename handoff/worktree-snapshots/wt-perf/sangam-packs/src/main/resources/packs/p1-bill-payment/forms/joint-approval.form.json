@@ -1,0 +1,56 @@
+{
+  "key": "p1-bill-payment/joint-approval",
+  "version": "1.0.0",
+  "pack": "gov.p1.bill-payment",
+  "title": {
+    "en": "Joint approval",
+    "hi": "संयुक्त अनुमोदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "presentedPayloadHash",
+      "type": "hidden",
+      "required": false,
+      "label": {
+        "en": "Shown payload hash",
+        "hi": "प्रदर्शित विवरण का हैश"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "jointDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

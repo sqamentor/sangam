@@ -1,0 +1,109 @@
+{
+  "id": "gov.ifms.loans-advances",
+  "version": "1.0.0",
+  "name": {
+    "en": "Loans and advances to employees",
+    "hi": "कर्मचारियों को ऋण और अग्रिम"
+  },
+  "domain": "IFMS",
+  "description": "HBA, computer and short-term advances: eligibility and amount by DMN, sanction, payment bill, recovery schedule as a RECEIVABLE ledger (instalments, interest), closure on full recovery.",
+  "mainProcesses": [
+    "sangam-ifms-advance"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-loans-advances/sangam-ifms-advance.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-loans-advances/ifms-advance-limits.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-loans-advances/ifms-advance-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-loans-advances/ifms-advance-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-loans-advances/forms/application.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-loans-advances/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-loans-advances/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "ledger.allocate",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Raise the recovery demand (RECEIVABLE) (sangam-ledger, idempotent by operationId)"
+    }
+  ],
+  "covers": [
+    "IFC-180",
+    "IFC-107",
+    "IFC-210",
+    "IFC-025",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "gov.ifms.pao-chain",
+    "gov.ifms.bill"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-ifms-bill"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-advance-powers",
+      "rule": "HOO ADVANCE no monetary limit",
+      "reason": "the Compendium of Rules on Advances is not read (corpus IFC-025 / IFC-180 [U]); confirm the sanctioning authority and its limit and deploy it as a tenant DMN override"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
+}

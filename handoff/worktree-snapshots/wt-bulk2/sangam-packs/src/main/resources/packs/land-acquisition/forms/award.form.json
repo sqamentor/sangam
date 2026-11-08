@@ -1,0 +1,36 @@
+{
+  "key": "land-acquisition/award",
+  "version": "1.0.0",
+  "pack": "gov.land-acquisition",
+  "title": {
+    "en": "Make award (s.23)",
+    "hi": "अधिनिर्णय (धारा 23)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "awardAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Award amount (INR)",
+        "hi": "अधिनिर्णय राशि (रुपये)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

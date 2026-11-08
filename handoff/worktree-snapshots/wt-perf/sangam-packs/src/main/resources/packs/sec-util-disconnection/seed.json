@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "O-AND-M",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "LINEMAN",
+      "role": "LINEMAN",
+      "office": "O-AND-M",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Lineman",
+        "hi": "लाइनमैन"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "LINEMAN",
+      "person": "uds.lineman",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "LINEMAN",
+      "name": {
+        "en": "Lineman",
+        "hi": "लाइनमैन"
+      }
+    }
+  ]
+}

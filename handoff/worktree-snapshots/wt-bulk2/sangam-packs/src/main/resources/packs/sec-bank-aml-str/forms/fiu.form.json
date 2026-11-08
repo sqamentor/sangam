@@ -1,0 +1,36 @@
+{
+  "key": "sec-bank-aml-str/fiu",
+  "version": "1.0.0",
+  "pack": "sec.bank.aml-str",
+  "title": {
+    "en": "Reply to FIU-IND",
+    "hi": "एफआईयू-आईएनडी को उत्तर"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "replyText",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Reply",
+        "hi": "उत्तर"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "id": "sec.ushealth.discharge",
+  "version": "1.0.0",
+  "name": {
+    "en": "Discharge planning (CMS Conditions of Participation)",
+    "es": "Planificación del alta (Condiciones de Participación de CMS)"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "Early screening for patients at risk without a plan, Important Message from Medicare within 2 days of admission and a follow-up copy no more than 2 days before discharge, MOON within 36 hours of observation, evaluation with patient and caregiver goals, patient choice of post-acute provider with quality data, transfer of the necessary medical information and the ADT event notification.",
+  "mainProcesses": [
+    "sangam-sec-ushealth-discharge"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-discharge/sangam-sec-ushealth-discharge.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-discharge/sec-ushealth-discharge-clocks.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-discharge/forms/admit.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-discharge/forms/moon.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-discharge/forms/im.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-discharge/forms/screen.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-discharge/forms/evaluation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-discharge/forms/choice.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-discharge/forms/im-followup.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-discharge/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-discharge/seed.json",
+  "connectors": [
+    {
+      "id": "fhir.transition",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Transition-of-care document (FHIR)"
+    },
+    {
+      "id": "fhir.adt",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "ADT event notification"
+    }
+  ],
+  "covers": [
+    "US-HLT-080",
+    "US-HLT-125",
+    "US-HLT-126",
+    "US-HLT-127",
+    "US-HLT-128",
+    "US-HLT-129",
+    "US-HLT-130",
+    "US-HLT-131",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

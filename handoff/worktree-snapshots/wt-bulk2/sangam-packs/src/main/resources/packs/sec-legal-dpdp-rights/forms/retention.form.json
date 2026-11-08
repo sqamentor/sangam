@@ -1,0 +1,56 @@
+{
+  "key": "sec-legal-dpdp-rights/retention",
+  "version": "1.0.0",
+  "pack": "sec.legal.dpdp-rights",
+  "title": {
+    "en": "Check retention duties before erasure",
+    "hi": "मिटाने से पूर्व प्रतिधारण दायित्व जाँचें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "legalHold",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Legal hold",
+        "hi": "विधिक रोक"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "eraseDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "erase",
+        "label": {
+          "en": "Erase",
+          "hi": "मिटाएँ"
+        }
+      },
+      {
+        "value": "retain",
+        "label": {
+          "en": "Retain",
+          "hi": "प्रतिधारित करें"
+        }
+      }
+    ]
+  }
+}

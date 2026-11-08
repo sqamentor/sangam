@@ -1,0 +1,111 @@
+{
+  "id": "sec.ushealth.prior-auth",
+  "version": "1.0.0",
+  "name": {
+    "en": "Prior authorization (CRD, DTR, PAS) with CMS-0057-F clocks",
+    "es": "Autorización previa (CRD, DTR, PAS) con plazos de CMS-0057-F"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "Coverage requirements discovery at order-sign (CDS Hooks CRD), documentation templates (DTR), submission through the Da Vinci PAS API (or X12 278), decision clocks by payer program from DMN (MA / Medicaid / CHIP: 72 hours expedited, 7 calendar days standard from 2026; QHP and commercial by their own rules), pended answers through a Subscription, specific denial reason, peer-to-peer and appeal, overdue-decision escalation and the public metrics event.",
+  "mainProcesses": [
+    "sangam-sec-ushealth-prior-auth"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-prior-auth/sangam-sec-ushealth-prior-auth.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-prior-auth/sec-ushealth-pa-clocks.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-prior-auth/sec-ushealth-pa-denial-reasons.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-prior-auth/forms/order.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-prior-auth/forms/documentation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-prior-auth/forms/overdue.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-prior-auth/forms/denied.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-prior-auth/forms/p2p.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-prior-auth/forms/appeal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-prior-auth/forms/appeal-outcome.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-prior-auth/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-prior-auth/seed.json",
+  "connectors": [
+    {
+      "id": "cdshooks.crd",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "CRD order-sign"
+    },
+    {
+      "id": "davinci.dtr",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "DTR questionnaire package"
+    },
+    {
+      "id": "davinci.pas",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "PAS Claim/$submit"
+    },
+    {
+      "id": "payer.appeal",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Appeal / reconsideration"
+    }
+  ],
+  "covers": [
+    "US-HLT-055",
+    "US-HLT-056",
+    "US-HLT-057",
+    "US-HLT-058",
+    "US-HLT-059",
+    "US-HLT-060",
+    "US-HLT-065",
+    "US-HLT-070",
+    "US-HLT-071",
+    "US-HLT-072",
+    "US-HLT-073",
+    "US-HLT-087",
+    "US-HLT-104",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

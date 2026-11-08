@@ -1,0 +1,110 @@
+{
+  "key": "sec-ushealth-claim/encounter",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "Encounter",
+    "es": "Encuentro"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "es": "Nombre del paciente"
+      }
+    },
+    {
+      "id": "memberId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Member ID",
+        "es": "Número de afiliado"
+      }
+    },
+    {
+      "id": "payerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payer ID",
+        "es": "Identificador del pagador"
+      }
+    },
+    {
+      "id": "payerProgram",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Payer program (MA, MEDICAID, CHIP, QHP_FFE, COMMERCIAL, MEDICARE_FFS)",
+        "es": "Programa del pagador (MA, MEDICAID, CHIP, QHP_FFE, COMERCIAL, MEDICARE_FFS)"
+      }
+    },
+    {
+      "id": "providerNpi",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Provider NPI",
+        "es": "NPI del proveedor"
+      }
+    },
+    {
+      "id": "patientControlNumber",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient control number",
+        "es": "Número de control del paciente"
+      }
+    },
+    {
+      "id": "totalCharge",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Total charge (USD)",
+        "es": "Cargo total (USD)"
+      }
+    },
+    {
+      "id": "serviceDate",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Date of service",
+        "es": "Fecha del servicio"
+      }
+    },
+    {
+      "id": "claimType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Claim type (837P professional / 837I institutional)",
+        "es": "Tipo de reclamación (837P profesional / 837I institucional)"
+      }
+    },
+    {
+      "id": "priorAuthNumber",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Prior authorization number",
+        "es": "Número de autorización previa"
+      }
+    }
+  ]
+}

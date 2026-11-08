@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sangam_core_competent_authority" name="Competent authority (generic amount bands)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- SYNTHETIC bands for the pilot tenant, not a real delegation-of-powers order. Packs set routingDecisionKey to their own table. -->
+  <decision id="sangam-core-competent-authority" name="Competent authority (generic amount bands)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sangam-core-competent-authority_t" hitPolicy="FIRST">
+      <input id="sangam-core-competent-authority_i0" label="Case type"><inputExpression id="sangam-core-competent-authority_ie0" typeRef="string"><text>caseType</text></inputExpression></input>
+      <input id="sangam-core-competent-authority_i1" label="Amount (INR)"><inputExpression id="sangam-core-competent-authority_ie1" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="sangam-core-competent-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="sangam-core-competent-authority_r0"><description>up to 100000</description>
+        <inputEntry id="sangam-core-competent-authority_r0_i0"><text>-</text></inputEntry>
+        <inputEntry id="sangam-core-competent-authority_r0_i1"><text>&lt;= 10000000</text></inputEntry>
+        <outputEntry id="sangam-core-competent-authority_r0_o0"><text>"SO"</text></outputEntry>
+      </rule>
+      <rule id="sangam-core-competent-authority_r1"><description>up to 500000</description>
+        <inputEntry id="sangam-core-competent-authority_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="sangam-core-competent-authority_r1_i1"><text>&lt;= 50000000</text></inputEntry>
+        <outputEntry id="sangam-core-competent-authority_r1_o0"><text>"US"</text></outputEntry>
+      </rule>
+      <rule id="sangam-core-competent-authority_r2"><description>up to 2500000</description>
+        <inputEntry id="sangam-core-competent-authority_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sangam-core-competent-authority_r2_i1"><text>&lt;= 250000000</text></inputEntry>
+        <outputEntry id="sangam-core-competent-authority_r2_o0"><text>"DS"</text></outputEntry>
+      </rule>
+      <rule id="sangam-core-competent-authority_r3"><description>up to 10000000</description>
+        <inputEntry id="sangam-core-competent-authority_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="sangam-core-competent-authority_r3_i1"><text>&lt;= 1000000000</text></inputEntry>
+        <outputEntry id="sangam-core-competent-authority_r3_o0"><text>"JS"</text></outputEntry>
+      </rule>
+      <rule id="sangam-core-competent-authority_r4"><description>up to 100000000</description>
+        <inputEntry id="sangam-core-competent-authority_r4_i0"><text>-</text></inputEntry>
+        <inputEntry id="sangam-core-competent-authority_r4_i1"><text>&lt;= 10000000000</text></inputEntry>
+        <outputEntry id="sangam-core-competent-authority_r4_o0"><text>"SECRETARY"</text></outputEntry>
+      </rule>
+      <rule id="sangam-core-competent-authority_r5"><description>above all bands</description>
+        <inputEntry id="sangam-core-competent-authority_r5_i0"><text>-</text></inputEntry>
+        <inputEntry id="sangam-core-competent-authority_r5_i1"><text>-</text></inputEntry>
+        <outputEntry id="sangam-core-competent-authority_r5_o0"><text>"SECRETARY"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,317 @@
+{
+  "id": "gov.p1.bill-payment",
+  "version": "1.0.0",
+  "name": {
+    "en": "P1 Bill / payment approval",
+    "hi": "पी1 बिल / भुगतान अनुमोदन"
+  },
+  "domain": "IFMS",
+  "description": "IFMIS-style bill: draft, duplicate and budget checks with encumbrance, checker selected from the eligible list, n-level recommendation, approver by amount band (delegation of financial powers), optional joint approval, signed approval bound to the payload hash, payment file to PFMS/IFMIS with operationId, acknowledgement, bank reconciliation, payment advice and voucher (IX.4 P1, X.4.3).",
+  "mainProcesses": [
+    "sangam-p1-bill-payment"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/p1-bill-payment/sangam-p1-bill-payment.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/p1-bill-payment/p1-competent-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p1-bill-payment/forms/bill-draft.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p1-bill-payment/forms/duplicate-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p1-bill-payment/forms/revise.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p1-bill-payment/forms/joint-approval.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/p1-bill-payment/forms/treasury-rejection.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/p1-bill-payment/seed.json"
+    }
+  ],
+  "seed": "packs/p1-bill-payment/seed.json",
+  "connectors": [
+    {
+      "id": "ifms.duplicateBill",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Duplicate-bill check (read-only)"
+    },
+    {
+      "id": "ifms.budget",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Budget-head availability (read-only)"
+    },
+    {
+      "id": "ifms.encumber",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Commitment control: encumbrance (GP-11)"
+    },
+    {
+      "id": "ifms.release",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Release of the encumbrance on cancel"
+    },
+    {
+      "id": "pfms.payment",
+      "capabilityClass": "c",
+      "govTag": "G-PFMS",
+      "purpose": "Signed payment file with SSID (SFTP / API)"
+    },
+    {
+      "id": "bank.statement",
+      "capabilityClass": "b",
+      "govTag": "G-PFMS",
+      "purpose": "Bank debit confirmation by operationId"
+    },
+    {
+      "id": "esign.sign",
+      "capabilityClass": "b",
+      "govTag": "G-SIGN",
+      "purpose": "Approver signature"
+    },
+    {
+      "id": "notify.sms",
+      "capabilityClass": "b",
+      "govTag": "G-DLT",
+      "purpose": "Payee SMS on a -G header"
+    }
+  ],
+  "covers": [
+    "AC-01",
+    "AC-02",
+    "AC-03",
+    "GP-01",
+    "GP-11",
+    "GP-12",
+    "GP-18",
+    "GP-19",
+    "GP-29",
+    "GP-33",
+    "GP-34",
+    "GP-50",
+    "J-P1-H",
+    "J-P1-E01",
+    "J-P1-E02",
+    "J-P1-E03",
+    "J-P1-E04",
+    "J-P1-E05",
+    "J-P1-E06",
+    "J-P1-E07",
+    "J-P1-E08",
+    "J-P1-E09",
+    "J-P1-E10",
+    "J-P1-E11",
+    "J-P1-E12",
+    "J-P1-E13",
+    "J-P1-E14",
+    "R58",
+    "D-IFMS-BILL",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "title": "Initiator > selected checker > approver by band; payment reconciles",
+      "refs": [
+        "T16",
+        "T17",
+        "T19",
+        "T27"
+      ],
+      "given": "bill of 4,75,000 by CLERK-DDO, checker AO-2 selected",
+      "when": "checker forwards; EE approves and signs",
+      "then": "payment COMPLETED, bank statement MATCHED, caseState CLOSED; audit shows seat, person, rule version",
+      "startVariables": {
+        "payee": "M/s Shree Constructions",
+        "account": "50100012345678",
+        "ifsc": "SBIN0001234",
+        "amount": 475000.0,
+        "invoiceNo": "INV-2026-0412",
+        "budgetHead": "4059-01-051",
+        "sanctionRef": "AA/2026/77",
+        "actingSeat": "CLERK-DDO",
+        "initiator": "p1.clerk",
+        "officeId": "DPW-X",
+        "selectedSeat": "AO-2"
+      },
+      "expectState": "CLOSED",
+      "run": {
+        "expect": {
+          "tasks": [
+            "sc_scrutiny",
+            "sn_sanction"
+          ],
+          "audit": [
+            "RULE_EVALUATED",
+            "APPROVAL_RECORDED",
+            "CASE_RECONCILED"
+          ]
+        }
+      }
+    },
+    {
+      "id": "AC-02",
+      "title": "Change after approval invalidates the approval",
+      "refs": [
+        "T16",
+        "J-P1-E01",
+        "J-P1-E12"
+      ],
+      "given": "an approved bill",
+      "when": "the amount is changed before the payment step",
+      "then": "APPROVAL_INVALIDATED; back to recommendation; DMN re-routes; no payment with the old hash",
+      "startVariables": {
+        "payee": "M/s Shree Constructions",
+        "account": "50100012345678",
+        "ifsc": "SBIN0001234",
+        "amount": 475000.0,
+        "invoiceNo": "INV-2026-0412",
+        "budgetHead": "4059-01-051",
+        "sanctionRef": "AA/2026/77",
+        "actingSeat": "CLERK-DDO",
+        "initiator": "p1.clerk",
+        "officeId": "DPW-X",
+        "selectedSeat": "AO-2"
+      },
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: the amount is changed between approval and payment"
+      }
+    },
+    {
+      "id": "AC-03",
+      "title": "Payment success with lost response reconciles without a duplicate",
+      "refs": [
+        "T02",
+        "T27",
+        "J-P1-E04"
+      ],
+      "given": "sim_pfms_payment = UNKNOWN_THEN_COMPLETED",
+      "when": "the payment response is lost",
+      "then": "UNKNOWN_OUTCOME item; no automatic retry (class c); operator confirms success with the UTR",
+      "startVariables": {
+        "payee": "M/s Shree Constructions",
+        "account": "50100012345678",
+        "ifsc": "SBIN0001234",
+        "amount": 475000.0,
+        "invoiceNo": "INV-2026-0412",
+        "budgetHead": "4059-01-051",
+        "sanctionRef": "AA/2026/77",
+        "actingSeat": "CLERK-DDO",
+        "initiator": "p1.clerk",
+        "officeId": "DPW-X",
+        "selectedSeat": "AO-2",
+        "sim_pfms_payment": "UNKNOWN"
+      },
+      "expectState": null,
+      "run": {
+        "expect": {
+          "audit": [
+            "EXT_OP_UNKNOWN",
+            "RECON_ITEM_OPENED"
+          ],
+          "notAudit": [
+            "CASE_CLOSED",
+            "EXT_OP_ACKNOWLEDGED"
+          ],
+          "ended": false
+        }
+      }
+    },
+    {
+      "id": "J-P1-E11",
+      "title": "Budget insufficient",
+      "refs": [
+        "T19"
+      ],
+      "given": "sim_ifms_budget = available=310000",
+      "when": "submit",
+      "then": "returned to the initiator with the shortfall",
+      "startVariables": {
+        "payee": "M/s Shree Constructions",
+        "account": "50100012345678",
+        "ifsc": "SBIN0001234",
+        "amount": 475000.0,
+        "invoiceNo": "INV-2026-0412",
+        "budgetHead": "4059-01-051",
+        "sanctionRef": "AA/2026/77",
+        "actingSeat": "CLERK-DDO",
+        "initiator": "p1.clerk",
+        "officeId": "DPW-X",
+        "selectedSeat": "AO-2",
+        "sim_ifms_budget": "available=310000"
+      },
+      "expectState": null,
+      "run": {
+        "stopAt": "p1_revise",
+        "expect": {
+          "openTask": "p1_revise",
+          "notAudit": [
+            "CASE_IN_SANCTION"
+          ]
+        }
+      }
+    },
+    {
+      "id": "J-P1-E09",
+      "title": "Joint approval for high-value bills",
+      "refs": [
+        "T16",
+        "T17"
+      ],
+      "given": "amount above jointApprovalThreshold",
+      "when": "two joint approvers approve",
+      "then": "both approvals bound to the same payload hash",
+      "startVariables": {
+        "payee": "M/s Shree Constructions",
+        "account": "50100012345678",
+        "ifsc": "SBIN0001234",
+        "amount": 12500000.0,
+        "invoiceNo": "INV-2026-0412",
+        "budgetHead": "4059-01-051",
+        "sanctionRef": "AA/2026/77",
+        "actingSeat": "CLERK-DDO",
+        "initiator": "p1.clerk",
+        "officeId": "DPW-X",
+        "selectedSeat": "AO-2"
+      },
+      "expectState": null,
+      "run": {
+        "manual": "needs scenario steering beyond configuration answers: two joint approvers act on the same payload"
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-recommendation",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-core-scrutiny"
+  ]
+}

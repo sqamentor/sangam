@@ -1,0 +1,65 @@
+{
+  "key": "sec-legal-litigation/intake",
+  "version": "1.0.0",
+  "pack": "sec.legal.litigation",
+  "title": {
+    "en": "Legal matter intake",
+    "hi": "विधिक मामला प्रविष्टि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "matterType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Matter type",
+        "hi": "मामले का प्रकार"
+      }
+    },
+    {
+      "id": "counterpartyName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Counterparty",
+        "hi": "प्रतिपक्ष"
+      }
+    },
+    {
+      "id": "court",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Court / tribunal",
+        "hi": "न्यायालय / अधिकरण"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

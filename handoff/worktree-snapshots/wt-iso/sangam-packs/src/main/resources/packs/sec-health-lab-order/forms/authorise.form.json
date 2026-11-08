@@ -1,0 +1,56 @@
+{
+  "key": "sec-health-lab-order/authorise",
+  "version": "1.0.0",
+  "pack": "sec.health.lab-order",
+  "title": {
+    "en": "Pathologist authorisation",
+    "hi": "रोगविज्ञानी अनुमोदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "results",
+      "type": "json",
+      "required": false,
+      "label": {
+        "en": "Results",
+        "hi": "परिणाम"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "authDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "release",
+        "label": {
+          "en": "Release",
+          "hi": "मुक्त करें"
+        }
+      },
+      {
+        "value": "repeat",
+        "label": {
+          "en": "Repeat test",
+          "hi": "परीक्षण दोहराएँ"
+        }
+      }
+    ]
+  }
+}

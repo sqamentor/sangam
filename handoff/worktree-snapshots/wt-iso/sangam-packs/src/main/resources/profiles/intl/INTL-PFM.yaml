@@ -1,0 +1,338 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: INTL-PFM
+  layer: international
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL
+  name:
+    en: International PFM generic reference
+  source: INTERNATIONAL-PFM 2.1-2.5, 4.3, 4.4
+placeholders:
+- path: classification.schemes.GFS
+  reason: GFSM 2014 loaded to two levels only [U]
+classification:
+  schemes:
+  - id: GFS
+    separator: ''
+    segments:
+    - id: economic
+      width: 2
+      master: true
+      pattern: '[1-3][0-9]?'
+  attributes:
+    counterpartySector:
+    - DOMESTIC_GG
+    - DOMESTIC_PUBLIC_CORP
+    - DOMESTIC_PRIVATE
+    - EXTERNAL
+    institutionalSector:
+    - BUDGETARY_CENTRAL
+    - EXTRABUDGETARY_UNIT
+    - SOCIAL_SECURITY_FUND
+    - STATE_REGIONAL
+    - LOCAL
+    - PUBLIC_CORPORATION
+  tags:
+  - id: CLIMATE
+    splitAllowed: true
+  - id: GENDER
+    splitAllowed: true
+  - id: SDG
+    splitAllowed: true
+  - id: POVERTY
+  - id: DISASTER_RISK
+seeds:
+- scheme: GFS
+  file: intl/seeds/gfsm-2014-economic.csv
+crosswalks:
+- id: NATIONAL_TO_GFS
+  from: NATIONAL
+  to: GFS
+  rows: []
+  note: per country
+documentTypes:
+- id: APPROPRIATION_LINE
+  family: PFM
+  formNumber: APPROPRIATION_LINE
+  name:
+    en: Appropriation Line
+  stage: APPROPRIATION
+  fields:
+  - id: legalRef
+    required: true
+  - id: limitType
+    required: true
+  - id: availability
+    required: true
+  localNames:
+  - TAS line
+  - Estimate limit
+  - LOA line
+  - DIPA line
+- id: APPORTIONMENT
+  family: PFM
+  formNumber: APPORTIONMENT
+  name:
+    en: Apportionment
+  stage: APPORTIONMENT
+  fields:
+  - id: category
+    required: true
+  - id: conditions
+    required: true
+  localNames:
+  - SF 132
+  - warrant
+- id: RELEASE_ORDER
+  family: PFM
+  formNumber: RELEASE_ORDER
+  name:
+    en: Release Order
+  stage: RELEASE
+  fields:
+  - id: period
+    required: true
+  - id: cashOrAuthority
+    required: true
+  - id: noticeDate
+    required: true
+  localNames:
+  - allotment
+  - SARO / NCA
+  - cota
+  - exchequer issue
+- id: COMMITMENT
+  family: PFM
+  formNumber: COMMITMENT
+  name:
+    en: Commitment
+  stage: COMMITMENT
+  fields:
+  - id: subtype
+    required: true
+  - id: currency
+    required: true
+  - id: schedule
+    required: true
+  - id: supplier
+    required: true
+  localNames:
+  - obligation
+  - empenho
+  - ORS
+  - LPO
+  subtypes:
+  - ORDINARY
+  - ESTIMATIVE
+  - GLOBAL
+- id: VERIFICATION
+  family: PFM
+  formNumber: VERIFICATION
+  name:
+    en: Verification
+  stage: VERIFICATION
+  fields:
+  - id: receiptEvidence
+    required: true
+  - id: invoiceMatch
+    required: true
+  - id: instalment
+    required: true
+  localNames:
+  - receiving report
+  - liquidacao
+  - SPP
+- id: PAYMENT_ORDER
+  family: PFM
+  formNumber: PAYMENT_ORDER
+  name:
+    en: Payment Order
+  stage: PAYMENT_ORDER
+  fields:
+  - id: certifier
+    required: true
+  - id: payeeChecks
+    required: true
+  - id: rail
+    required: true
+  - id: valueDate
+    required: true
+  localNames:
+  - certified voucher
+  - OB
+  - SPM / SP2D
+  - LDDAP-ADA
+  approvalChain: PFM-CH-3
+- id: PAYMENT_ADVICE
+  family: PFM
+  formNumber: PAYMENT_ADVICE
+  name:
+    en: Payment Advice
+  stage: PAYMENT
+  fields:
+  - id: railRef
+    required: true
+  - id: status
+    required: true
+  localNames:
+  - PAM schedule
+  - bank file
+- id: ADVANCE
+  family: PFM
+  formNumber: ADVANCE
+  name:
+    en: Advance
+  stage: ADVANCE
+  fields:
+  - id: purpose
+    required: true
+  - id: deadline
+    required: true
+  localNames:
+  - imprest
+  - suprimento de fundos
+- id: IG_AGREEMENT
+  family: PFM
+  formNumber: IG_AGREEMENT
+  name:
+    en: Ig Agreement
+  stage: INTRAGOVERNMENTAL
+  fields:
+  - id: buyer
+    required: true
+  - id: seller
+    required: true
+  - id: settlement
+    required: true
+  localNames:
+  - G-Invoicing GT&C
+  - intra-SIAFI
+  parties:
+  - role: BUYER
+  - role: SELLER
+- id: WITHDRAWAL_APPLICATION
+  family: PFM
+  formNumber: WITHDRAWAL_APPLICATION
+  name:
+    en: Withdrawal Application
+  stage: DONOR_ACCOUNT
+  fields:
+  - id: agreement
+    required: true
+  - id: category
+    required: true
+  - id: soe
+    required: true
+  localNames:
+  - donor WA
+  approvalChain: PFM-CH-6
+- id: LIMIT_FREEZE_ORDER
+  family: PFM
+  formNumber: LIMIT_FREEZE_ORDER
+  name:
+    en: Limit Freeze Order
+  stage: ANY
+  fields:
+  - id: scope
+    required: true
+  - id: percentOrAmount
+    required: true
+  - id: effectiveFrom
+    required: true
+  localNames:
+  - limitacao de empenho
+- id: VIREMENT
+  family: PFM
+  formNumber: VIREMENT
+  name:
+    en: Virement
+  stage: APPROPRIATION
+  fields:
+  - id: from
+    required: true
+  - id: to
+    required: true
+  - id: ruleOutcome
+    required: true
+  localNames:
+  - virement
+  - re-appropriation
+  approvalChain: PFM-CH-4
+approvalChains:
+- id: PFM-CH-1
+  name: Release
+  steps:
+  - role: BUDGET_OFFICE
+  - role: TREASURY_CASH
+  - role: INDEPENDENT_AUTHORITY
+    external: true
+    optional: true
+  - role: RELEASE_SIGNATORY
+    sign: true
+- id: PFM-CH-2
+  name: Commitment
+  steps:
+  - role: REQUESTER
+  - role: BUDGET_HOLDER
+  - role: PROCUREMENT
+    optional: true
+  - role: COMMITMENT_APPROVER
+    sign: true
+- id: PFM-CH-3
+  name: Verification and payment
+  steps:
+  - role: RECEIVER
+  - role: VERIFIER
+  - role: CERTIFYING_OFFICER
+    sign: true
+    liability: PERSONAL
+  - role: DISBURSING_OFFICER
+    sign: true
+  sod:
+  - - COMMITMENT_APPROVER
+    - VERIFIER
+  - - VERIFIER
+    - CERTIFYING_OFFICER
+- id: PFM-CH-4
+  name: Virement
+  steps:
+  - role: PROPOSER
+  - role: FINANCE_UNIT
+  - role: BUDGET_OFFICE
+  legislatureReportList: true
+- id: PFM-CH-5
+  name: Year-end
+  steps:
+  - role: ACCOUNTANT
+  - role: BUDGET_OFFICE
+    sign: true
+  ledgerAction: closePeriod
+- id: PFM-CH-6
+  name: Donor replenishment
+  steps:
+  - role: PROJECT_UNIT
+  - role: TREASURY
+  - role: DONOR
+    external: true
+    optional: true
+  - role: PROJECT_SIGNATORY
+    sign: true
+- id: PFM-CH-7
+  name: Breach
+  steps:
+  - role: BUDGET_OFFICE
+  - role: INVESTIGATOR
+  - role: REPORTING_AUTHORITY
+    external: true
+  trigger: LEDGER_BREACH
+accountingBasis:
+- basis: CASH
+  effectiveFrom: '2000-01-01'
+pefa:
+  framework: PEFA 2016
+  evidencePack: not built (PFM-080)

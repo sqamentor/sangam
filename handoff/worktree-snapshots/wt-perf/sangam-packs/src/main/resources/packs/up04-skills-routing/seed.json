@@ -1,0 +1,110 @@
+{
+  "offices": [
+    {
+      "id": "SUPPORT",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "TEAM-A",
+      "role": "AGENT",
+      "office": "SUPPORT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "TEAM-LEAD",
+      "name": {
+        "en": "Team A",
+        "hi": "टीम ए"
+      }
+    },
+    {
+      "id": "TEAM-B",
+      "role": "AGENT",
+      "office": "SUPPORT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "TEAM-LEAD",
+      "name": {
+        "en": "Team B",
+        "hi": "टीम बी"
+      }
+    },
+    {
+      "id": "TEAM-C",
+      "role": "AGENT",
+      "office": "SUPPORT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "TEAM-LEAD",
+      "name": {
+        "en": "Team C (senior)",
+        "hi": "टीम सी (वरिष्ठ)"
+      }
+    },
+    {
+      "id": "TEAM-LEAD",
+      "role": "LEAD",
+      "office": "SUPPORT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Team lead",
+        "hi": "टीम प्रमुख"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "TEAM-A",
+      "person": "u4.team-a",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TEAM-B",
+      "person": "u4.team-b",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TEAM-C",
+      "person": "u4.team-c",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TEAM-LEAD",
+      "person": "u4.team-lead",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "AGENT",
+      "name": {
+        "en": "Team A",
+        "hi": "टीम ए"
+      }
+    },
+    {
+      "code": "AGENT",
+      "name": {
+        "en": "Team B",
+        "hi": "टीम बी"
+      }
+    },
+    {
+      "code": "AGENT",
+      "name": {
+        "en": "Team C (senior)",
+        "hi": "टीम सी (वरिष्ठ)"
+      }
+    },
+    {
+      "code": "LEAD",
+      "name": {
+        "en": "Team lead",
+        "hi": "टीम प्रमुख"
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "key": "up20-rpa/manual",
+  "version": "1.0.0",
+  "pack": "universal.up20-rpa",
+  "title": {
+    "en": "Attended step",
+    "hi": "सहायक चरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

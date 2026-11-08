@@ -1,0 +1,39 @@
+{
+  "key": "sec-ins-health-claim/discharge",
+  "version": "1.0.0",
+  "pack": "sec.ins.health-claim",
+  "title": {
+    "en": "Final discharge authorisation (3 hours)",
+    "hi": "अंतिम डिस्चार्ज प्राधिकरण (3 घंटे)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "approvedAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Approved amount (INR)",
+        "hi": "स्वीकृत राशि (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "help": "The patient is never made to wait; charges for delay beyond three hours are borne by the insurer from the shareholders' fund."
+}

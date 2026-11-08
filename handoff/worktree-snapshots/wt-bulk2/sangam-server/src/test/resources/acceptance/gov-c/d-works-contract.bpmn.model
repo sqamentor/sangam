@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" targetNamespace="http://sangam.spike/gov-c" id="defs_dcv">
+  <!-- D-CONTRACT-VARIATION: a running works contract receives variations (EoT, extra item, LD waiver). Each runs its own
+       approval chain as a child (d-variation); the approved result changes the parent's data, and an EoT must move the
+       LD timer of the running contract. -->
+  <message id="m_variation" name="variationProposed"/>
+  <process id="d-works-contract" name="D-CONTRACT-VARIATION Works contract" isExecutable="true">
+    <startEvent id="dcv_start"/>
+    <sequenceFlow id="f1" sourceRef="dcv_start" targetRef="dcv_execute"/>
+    <userTask id="dcv_execute" name="Execute work"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <boundaryEvent id="dcv_ldStart" attachedToRef="dcv_execute" cancelActivity="false">
+      <timerEventDefinition><timeDate xsi:type="tFormalExpression">${completionDate}</timeDate></timerEventDefinition>
+    </boundaryEvent>
+    <sequenceFlow id="f2" sourceRef="dcv_ldStart" targetRef="dcv_ldAccrues"/>
+    <userTask id="dcv_ldAccrues" name="LD accrues: stipulated date passed"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f3" sourceRef="dcv_ldAccrues" targetRef="dcv_ldEnd"/>
+    <endEvent id="dcv_ldEnd"/>
+    <sequenceFlow id="f4" sourceRef="dcv_execute" targetRef="dcv_finalBill"/>
+    <userTask id="dcv_finalBill" name="Final bill with LD"><potentialOwner><resourceAssignmentExpression><formalExpression>group(accounts)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+    <sequenceFlow id="f5" sourceRef="dcv_finalBill" targetRef="dcv_end"/>
+    <endEvent id="dcv_end"/>
+    <subProcess id="dcv_varSub" triggeredByEvent="true">
+      <startEvent id="dcv_varStart" isInterrupting="false"><messageEventDefinition messageRef="m_variation"/></startEvent>
+      <sequenceFlow id="v1" sourceRef="dcv_varStart" targetRef="dcv_variation"/>
+      <callActivity id="dcv_variation" name="Variation approval" calledElement="d-variation">@@callio|in=varType,days,amount,contractValue,proposedCompletion;out=approved,approvedCompletion,approvedAmount,approvalLevel@@</callActivity>
+      <sequenceFlow id="v2" sourceRef="dcv_variation" targetRef="dcv_gwApproved"/>
+      <exclusiveGateway id="dcv_gwApproved" default="v4"/>
+      <sequenceFlow id="v3" sourceRef="dcv_gwApproved" targetRef="dcv_gwType"><conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="v4" sourceRef="dcv_gwApproved" targetRef="dcv_varRejected"/>
+      <endEvent id="dcv_varRejected"/>
+      <exclusiveGateway id="dcv_gwType" default="v7"/>
+      <sequenceFlow id="v5" sourceRef="dcv_gwType" targetRef="dcv_applyEot"><conditionExpression xsi:type="tFormalExpression">${varType == 'EOT'}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="v6" sourceRef="dcv_gwType" targetRef="dcv_applyExtra"><conditionExpression xsi:type="tFormalExpression">${varType == 'EXTRA_ITEM'}</conditionExpression></sequenceFlow>
+      <sequenceFlow id="v7" sourceRef="dcv_gwType" targetRef="dcv_applyWaiver"/>
+      <serviceTask id="dcv_applyEot" @@expr|${execution.setVariable('completionDate', approvedCompletion)}@@/>
+      <sequenceFlow id="v8" sourceRef="dcv_applyEot" targetRef="dcv_eotEnd"/>
+      <endEvent id="dcv_eotEnd"/>
+      <serviceTask id="dcv_applyExtra" @@expr|${execution.setVariable('contractValue', contractValue + approvedAmount)}@@/>
+      <sequenceFlow id="v9" sourceRef="dcv_applyExtra" targetRef="dcv_extraItem"/>
+      <userTask id="dcv_extraItem" name="Execute extra item"><potentialOwner><resourceAssignmentExpression><formalExpression>group(ee)</formalExpression></resourceAssignmentExpression></potentialOwner></userTask>
+      <sequenceFlow id="v10" sourceRef="dcv_extraItem" targetRef="dcv_extraEnd"/>
+      <endEvent id="dcv_extraEnd"/>
+      <serviceTask id="dcv_applyWaiver" @@expr|${execution.setVariable('ldWaived', true)}@@/>
+      <sequenceFlow id="v11" sourceRef="dcv_applyWaiver" targetRef="dcv_waiverEnd"/>
+      <endEvent id="dcv_waiverEnd"/>
+    </subProcess>
+  </process>
+</definitions>

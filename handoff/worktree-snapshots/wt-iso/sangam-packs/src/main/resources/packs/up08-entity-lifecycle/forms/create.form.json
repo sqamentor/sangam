@@ -1,0 +1,36 @@
+{
+  "key": "up08-entity-lifecycle/create",
+  "version": "1.0.0",
+  "pack": "universal.up08-entity-lifecycle",
+  "title": {
+    "en": "Create policy / subscription",
+    "hi": "पॉलिसी / सदस्यता बनाएँ"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "policyNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Policy / subscription",
+        "hi": "पॉलिसी / सदस्यता"
+      }
+    },
+    {
+      "id": "customerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Customer",
+        "hi": "ग्राहक"
+      }
+    }
+  ]
+}

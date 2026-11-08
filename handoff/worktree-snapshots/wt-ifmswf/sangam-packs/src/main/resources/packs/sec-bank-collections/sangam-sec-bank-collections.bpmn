@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Collections case. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_collections" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_borrower_representation" name="sangam.borrower.representation"/>
+  <message id="msg_sangam_loan_closed" name="sangam.loan.closed"/>
+  <message id="msg_sangam_loan_overdue" name="sangam.loan.overdue"/>
+  <process id="sangam-sec-bank-collections" name="Collections case" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.collections</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>loanAccountNo,customerId,amount,dpd</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="co_start" name="Loan overdue (LMS end of day)"><messageEventDefinition messageRef="msg_sangam_loan_overdue"/></startEvent>
+    <serviceTask id="co_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>dpd=1;amount=0;loanAccountNo=@customerId;ptpDays=P7D;agentPool=COLL-AGENT-1,COLL-AGENT-2;caseType=SETTLEMENT;routingDecisionKey=sec-bank-ots-authority;powersDecisionKey=sec-bank-ots-powers;loanCured=false;appealAllowed=false;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="co_class" name="SMA / NPA classification (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-sma</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="co_crilc" name="Report to CRILC / CICs" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>crilc.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>loanAccountNo,smaClass,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>crilc</operaton:string></operaton:field><operaton:field name="step"><operaton:string>crilc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="co_crilcOptGw" name="Exposure 5 crore or more?" default="sec_bank_collections_f4"></exclusiveGateway>
+    <exclusiveGateway id="co_crilcOptMerge" name=""></exclusiveGateway>
+    <serviceTask id="co_remind" name="Overdue reminder" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>loan-overdue</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="co_assign" name="Allocate collection agent" operaton:class="org.sangam.packs.core.AssignmentStrategyDelegate"><extensionElements><operaton:field name="strategy"><operaton:string>LEAST_LOADED</operaton:string></operaton:field><operaton:field name="candidatesVar"><operaton:string>agentPool</operaton:string></operaton:field><operaton:field name="resultVar"><operaton:string>agentSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="co_contact_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>co_contact</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>3WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="co_contact" name="Contact borrower (08:00-19:00, agent identity disclosed)" operaton:candidateGroups="${agentSeat}" operaton:formKey="sangam:sec-bank-collections/contact" operaton:dueDate="${co_contactDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>collectDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="co_contact_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>co_contact</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>agentSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="co_contact_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="co_contact_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>co_contact</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>agentSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>collectDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="co_contact_breachGw" name="Deemed?" default="sec_bank_collections_f14"></exclusiveGateway>
+    <exclusiveGateway id="co_contact_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="co_gw" name="Outcome?" default="sec_bank_collections_f36"></exclusiveGateway>
+    <endEvent id="co_endPaid" name="Regularised"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <intermediateCatchEvent id="co_ptp" name="Promise-to-pay date"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${ptpDays}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="co_status" name="Check repayment" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>lms.status</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>status</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>loanAccountNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>loan</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="co_curedGw" name="Cured?" default="sec_bank_collections_f24"></exclusiveGateway>
+    <endEvent id="co_endCured" name="Cured"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="co_restructure" name="Restructuring sanction (core sanction, SoD)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="co_kindR" name="Kind: restructuring" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>caseType=RESTRUCTURING</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="co_ots" name="One-time settlement sanction (core sanction, SoD)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="co_kindO" name="Kind: settlement" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>caseType=SETTLEMENT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="co_post" name="Post restructuring / settlement terms in the LMS" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>lms.settle</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>settle</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>loanAccountNo,amount,caseType</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>settle</operaton:string></operaton:field><operaton:field name="step"><operaton:string>settle</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="co_restructureGw" name="sanctionOutcome?" default="sec_bank_collections_f30"></exclusiveGateway>
+    <exclusiveGateway id="co_otsGw" name="sanctionOutcome?" default="sec_bank_collections_f33"></exclusiveGateway>
+    <endEvent id="co_endSettled" name="Settled / restructured"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="co_notice132" name="SARFAESI s.13(2) demand notice" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.notice</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>s13-2</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>loanAccountNo,amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>n132</operaton:string></operaton:field><operaton:field name="step"><operaton:string>s13-2</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="co_window" name="Representation or 60 days"></eventBasedGateway>
+    <intermediateCatchEvent id="co_rep" name="Borrower representation"><messageEventDefinition messageRef="msg_sangam_borrower_representation"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="co_60d" name="60 days over"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P60D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="co_reply_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>co_reply</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>15D</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="co_reply" name="Reply to representation with reasons (15 days)" operaton:candidateGroups="${legalSeat}" operaton:formKey="sangam:sec-bank-collections/reply" operaton:dueDate="${co_replyDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="co_reply_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>co_reply</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>legalSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="co_reply_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="co_reply_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>co_reply</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>legalSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="co_reply_breachGw" name="Deemed?" default="sec_bank_collections_f45"></exclusiveGateway>
+    <exclusiveGateway id="co_reply_done" name=""></exclusiveGateway>
+    <serviceTask id="co_legal" name="Authorised officer" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>legalSeat=AUTHORISED-OFFICER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="co_next" name="Measures under s.13(4)?" operaton:candidateGroups="AUTHORISED-OFFICER" operaton:formKey="sangam:sec-bank-collections/measures"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>measureDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="co_nextGw" name="" default="sec_bank_collections_f56"></exclusiveGateway>
+    <serviceTask id="co_notice134" name="Possession notice s.13(4)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.notice</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>s13-4</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>loanAccountNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>n134</operaton:string></operaton:field><operaton:field name="step"><operaton:string>s13-4</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="co_endPossession" name="Recovery under SARFAESI"></endEvent>
+    <endEvent id="co_endDropped" name="Legal action dropped"></endEvent>
+    <boundaryEvent id="co_contact_warn" name="SLA warning (75%)" attachedToRef="co_contact" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${co_contactWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="co_contact_breach" name="SLA breached" attachedToRef="co_contact" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${co_contactDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="co_reply_warn" name="SLA warning (75%)" attachedToRef="co_reply" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${co_replyWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="co_reply_breach" name="SLA breached" attachedToRef="co_reply" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${co_replyDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_bank_collections_f1" sourceRef="co_start" targetRef="co_defaults"/>
+    <sequenceFlow id="sec_bank_collections_f2" sourceRef="co_defaults" targetRef="co_class"/>
+    <sequenceFlow id="sec_bank_collections_f3" name="yes" sourceRef="co_crilcOptGw" targetRef="co_crilc"><conditionExpression xsi:type="tFormalExpression">${amount &gt;= 50000000}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f4" name="no" sourceRef="co_crilcOptGw" targetRef="co_crilcOptMerge"/>
+    <sequenceFlow id="sec_bank_collections_f5" sourceRef="co_crilc" targetRef="co_crilcOptMerge"/>
+    <sequenceFlow id="sec_bank_collections_f6" sourceRef="co_class" targetRef="co_crilcOptGw"/>
+    <sequenceFlow id="sec_bank_collections_f7" sourceRef="co_crilcOptMerge" targetRef="co_remind"/>
+    <sequenceFlow id="sec_bank_collections_f8" sourceRef="co_remind" targetRef="co_assign"/>
+    <sequenceFlow id="sec_bank_collections_f9" sourceRef="co_contact_warn" targetRef="co_contact_warnNotify"/>
+    <sequenceFlow id="sec_bank_collections_f10" sourceRef="co_contact_warnNotify" targetRef="co_contact_warnEnd"/>
+    <sequenceFlow id="sec_bank_collections_f11" sourceRef="co_contact_breach" targetRef="co_contact_breachAct"/>
+    <sequenceFlow id="sec_bank_collections_f12" sourceRef="co_contact_breachAct" targetRef="co_contact_breachGw"/>
+    <sequenceFlow id="sec_bank_collections_f13" name="deemed" sourceRef="co_contact_breachGw" targetRef="co_contact_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f14" name="escalated" sourceRef="co_contact_breachGw" targetRef="co_contact_slaPlan"/>
+    <sequenceFlow id="sec_bank_collections_f15" sourceRef="co_contact_slaPlan" targetRef="co_contact"/>
+    <sequenceFlow id="sec_bank_collections_f16" sourceRef="co_contact" targetRef="co_contact_done"/>
+    <sequenceFlow id="sec_bank_collections_f17" sourceRef="co_assign" targetRef="co_contact_slaPlan"/>
+    <sequenceFlow id="sec_bank_collections_f18" sourceRef="co_contact_done" targetRef="co_gw"/>
+    <sequenceFlow id="sec_bank_collections_f19" name="paid" sourceRef="co_gw" targetRef="co_endPaid"><conditionExpression xsi:type="tFormalExpression">${collectDecision == 'paid'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f20" name="promise to pay" sourceRef="co_gw" targetRef="co_ptp"><conditionExpression xsi:type="tFormalExpression">${collectDecision == 'promise'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f21" sourceRef="co_ptp" targetRef="co_status"/>
+    <sequenceFlow id="sec_bank_collections_f22" sourceRef="co_status" targetRef="co_curedGw"/>
+    <sequenceFlow id="sec_bank_collections_f23" name="yes" sourceRef="co_curedGw" targetRef="co_endCured"><conditionExpression xsi:type="tFormalExpression">${loanCured}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f24" name="broken promise: reclassify" sourceRef="co_curedGw" targetRef="co_class"/>
+    <sequenceFlow id="sec_bank_collections_f25" name="restructure" sourceRef="co_gw" targetRef="co_kindR"><conditionExpression xsi:type="tFormalExpression">${collectDecision == 'restructure'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f26" sourceRef="co_kindR" targetRef="co_restructure"/>
+    <sequenceFlow id="sec_bank_collections_f27" name="one-time settlement" sourceRef="co_gw" targetRef="co_kindO"><conditionExpression xsi:type="tFormalExpression">${collectDecision == 'settle'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f28" sourceRef="co_kindO" targetRef="co_ots"/>
+    <sequenceFlow id="sec_bank_collections_f29" name="SANCTIONED" sourceRef="co_restructureGw" targetRef="co_post"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f30" name="otherwise" sourceRef="co_restructureGw" targetRef="co_contact_slaPlan"/>
+    <sequenceFlow id="sec_bank_collections_f31" sourceRef="co_restructure" targetRef="co_restructureGw"/>
+    <sequenceFlow id="sec_bank_collections_f32" name="SANCTIONED" sourceRef="co_otsGw" targetRef="co_post"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f33" name="otherwise" sourceRef="co_otsGw" targetRef="co_contact_slaPlan"/>
+    <sequenceFlow id="sec_bank_collections_f34" sourceRef="co_ots" targetRef="co_otsGw"/>
+    <sequenceFlow id="sec_bank_collections_f35" sourceRef="co_post" targetRef="co_endSettled"/>
+    <sequenceFlow id="sec_bank_collections_f36" name="legal (NPA, secured)" sourceRef="co_gw" targetRef="co_notice132"/>
+    <sequenceFlow id="sec_bank_collections_f37" sourceRef="co_notice132" targetRef="co_window"/>
+    <sequenceFlow id="sec_bank_collections_f38" sourceRef="co_window" targetRef="co_rep"/>
+    <sequenceFlow id="sec_bank_collections_f39" sourceRef="co_window" targetRef="co_60d"/>
+    <sequenceFlow id="sec_bank_collections_f40" sourceRef="co_reply_warn" targetRef="co_reply_warnNotify"/>
+    <sequenceFlow id="sec_bank_collections_f41" sourceRef="co_reply_warnNotify" targetRef="co_reply_warnEnd"/>
+    <sequenceFlow id="sec_bank_collections_f42" sourceRef="co_reply_breach" targetRef="co_reply_breachAct"/>
+    <sequenceFlow id="sec_bank_collections_f43" sourceRef="co_reply_breachAct" targetRef="co_reply_breachGw"/>
+    <sequenceFlow id="sec_bank_collections_f44" name="deemed" sourceRef="co_reply_breachGw" targetRef="co_reply_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f45" name="escalated" sourceRef="co_reply_breachGw" targetRef="co_reply_slaPlan"/>
+    <sequenceFlow id="sec_bank_collections_f46" sourceRef="co_reply_slaPlan" targetRef="co_reply"/>
+    <sequenceFlow id="sec_bank_collections_f47" sourceRef="co_reply" targetRef="co_reply_done"/>
+    <sequenceFlow id="sec_bank_collections_f48" sourceRef="co_rep" targetRef="co_legal"/>
+    <sequenceFlow id="sec_bank_collections_f49" sourceRef="co_legal" targetRef="co_reply_slaPlan"/>
+    <sequenceFlow id="sec_bank_collections_f50" sourceRef="co_reply_done" targetRef="co_next"/>
+    <sequenceFlow id="sec_bank_collections_f51" sourceRef="co_60d" targetRef="co_next"/>
+    <sequenceFlow id="sec_bank_collections_f52" sourceRef="co_next" targetRef="co_nextGw"/>
+    <sequenceFlow id="sec_bank_collections_f53" name="settle" sourceRef="co_nextGw" targetRef="co_kindO"><conditionExpression xsi:type="tFormalExpression">${measureDecision == 'settle'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f54" name="proceed" sourceRef="co_nextGw" targetRef="co_notice134"><conditionExpression xsi:type="tFormalExpression">${measureDecision == 'proceed'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_collections_f55" sourceRef="co_notice134" targetRef="co_endPossession"/>
+    <sequenceFlow id="sec_bank_collections_f56" name="drop" sourceRef="co_nextGw" targetRef="co_endDropped"/>
+    <subProcess id="co_closedSub" name="Loan closed during collections" triggeredByEvent="true">
+      <startEvent id="co_closedStart" name="Paid in full" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_loan_closed"/></startEvent>
+      <endEvent id="co_closedEnd" name="Closed"></endEvent>
+      <sequenceFlow id="sec_bank_collections_f57" sourceRef="co_closedStart" targetRef="co_closedEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_collections_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_collections_plane" bpmnElement="sangam-sec-bank-collections">
+      <bpmndi:BPMNShape id="co_start_di" bpmnElement="co_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_defaults_di" bpmnElement="co_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_class_di" bpmnElement="co_class"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_crilc_di" bpmnElement="co_crilc"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_crilcOptGw_di" bpmnElement="co_crilcOptGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_crilcOptMerge_di" bpmnElement="co_crilcOptMerge"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_remind_di" bpmnElement="co_remind"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_assign_di" bpmnElement="co_assign"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_contact_slaPlan_di" bpmnElement="co_contact_slaPlan"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_contact_di" bpmnElement="co_contact"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_contact_warnNotify_di" bpmnElement="co_contact_warnNotify"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_contact_warnEnd_di" bpmnElement="co_contact_warnEnd"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_contact_breachAct_di" bpmnElement="co_contact_breachAct"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_contact_breachGw_di" bpmnElement="co_contact_breachGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_contact_done_di" bpmnElement="co_contact_done"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_gw_di" bpmnElement="co_gw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_endPaid_di" bpmnElement="co_endPaid"><dc:Bounds x="2362" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_ptp_di" bpmnElement="co_ptp"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_status_di" bpmnElement="co_status"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_curedGw_di" bpmnElement="co_curedGw"><dc:Bounds x="2685" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_endCured_di" bpmnElement="co_endCured"><dc:Bounds x="2857" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_restructure_di" bpmnElement="co_restructure"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_kindR_di" bpmnElement="co_kindR"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_ots_di" bpmnElement="co_ots"><dc:Bounds x="4310" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_kindO_di" bpmnElement="co_kindO"><dc:Bounds x="4145" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_post_di" bpmnElement="co_post"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_restructureGw_di" bpmnElement="co_restructureGw"><dc:Bounds x="2685" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_otsGw_di" bpmnElement="co_otsGw"><dc:Bounds x="4500" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_endSettled_di" bpmnElement="co_endSettled"><dc:Bounds x="4837" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_notice132_di" bpmnElement="co_notice132"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_window_di" bpmnElement="co_window"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_rep_di" bpmnElement="co_rep"><dc:Bounds x="2692" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_60d_di" bpmnElement="co_60d"><dc:Bounds x="2692" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_reply_slaPlan_di" bpmnElement="co_reply_slaPlan"><dc:Bounds x="2990" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_reply_di" bpmnElement="co_reply"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_reply_warnNotify_di" bpmnElement="co_reply_warnNotify"><dc:Bounds x="3320" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_reply_warnEnd_di" bpmnElement="co_reply_warnEnd"><dc:Bounds x="3517" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_reply_breachAct_di" bpmnElement="co_reply_breachAct"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_reply_breachGw_di" bpmnElement="co_reply_breachGw"><dc:Bounds x="3510" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_reply_done_di" bpmnElement="co_reply_done"><dc:Bounds x="3675" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_legal_di" bpmnElement="co_legal"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_next_di" bpmnElement="co_next"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_nextGw_di" bpmnElement="co_nextGw"><dc:Bounds x="4005" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_notice134_di" bpmnElement="co_notice134"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_endPossession_di" bpmnElement="co_endPossession"><dc:Bounds x="4342" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_endDropped_di" bpmnElement="co_endDropped"><dc:Bounds x="4177" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_contact_warn_di" bpmnElement="co_contact_warn"><dc:Bounds x="1513" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_contact_breach_di" bpmnElement="co_contact_breach"><dc:Bounds x="1543" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_reply_warn_di" bpmnElement="co_reply_warn"><dc:Bounds x="3163" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_reply_breach_di" bpmnElement="co_reply_breach"><dc:Bounds x="3193" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_closedSub_di" bpmnElement="co_closedSub" isExpanded="true"><dc:Bounds x="30" y="520" width="300" height="128"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_closedStart_di" bpmnElement="co_closedStart"><dc:Bounds x="92" y="582" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="co_closedEnd_di" bpmnElement="co_closedEnd"><dc:Bounds x="257" y="582" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f1_di" bpmnElement="sec_bank_collections_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f2_di" bpmnElement="sec_bank_collections_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f3_di" bpmnElement="sec_bank_collections_f3"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f4_di" bpmnElement="sec_bank_collections_f4"><di:waypoint x="590" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f5_di" bpmnElement="sec_bank_collections_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f6_di" bpmnElement="sec_bank_collections_f6"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f7_di" bpmnElement="sec_bank_collections_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f8_di" bpmnElement="sec_bank_collections_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f9_di" bpmnElement="sec_bank_collections_f9"><di:waypoint x="1531" y="128"/><di:waypoint x="1531" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f10_di" bpmnElement="sec_bank_collections_f10"><di:waypoint x="1770" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f11_di" bpmnElement="sec_bank_collections_f11"><di:waypoint x="1561" y="128"/><di:waypoint x="1561" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f12_di" bpmnElement="sec_bank_collections_f12"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f13_di" bpmnElement="sec_bank_collections_f13"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f14_di" bpmnElement="sec_bank_collections_f14"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="135"/><di:waypoint x="1390" y="135"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f15_di" bpmnElement="sec_bank_collections_f15"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f16_di" bpmnElement="sec_bank_collections_f16"><di:waypoint x="1605" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f17_di" bpmnElement="sec_bank_collections_f17"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f18_di" bpmnElement="sec_bank_collections_f18"><di:waypoint x="2075" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f19_di" bpmnElement="sec_bank_collections_f19"><di:waypoint x="2240" y="70"/><di:waypoint x="2301" y="70"/><di:waypoint x="2301" y="445"/><di:waypoint x="2362" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f20_di" bpmnElement="sec_bank_collections_f20"><di:waypoint x="2240" y="70"/><di:waypoint x="2301" y="70"/><di:waypoint x="2301" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f21_di" bpmnElement="sec_bank_collections_f21"><di:waypoint x="2398" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f22_di" bpmnElement="sec_bank_collections_f22"><di:waypoint x="2595" y="320"/><di:waypoint x="2640" y="320"/><di:waypoint x="2640" y="445"/><di:waypoint x="2685" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f23_di" bpmnElement="sec_bank_collections_f23"><di:waypoint x="2735" y="445"/><di:waypoint x="2857" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f24_di" bpmnElement="sec_bank_collections_f24"><di:waypoint x="2710" y="470"/><di:waypoint x="2710" y="509"/><di:waypoint x="400" y="509"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f25_di" bpmnElement="sec_bank_collections_f25"><di:waypoint x="2240" y="70"/><di:waypoint x="2285" y="70"/><di:waypoint x="2285" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f26_di" bpmnElement="sec_bank_collections_f26"><di:waypoint x="2430" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f27_di" bpmnElement="sec_bank_collections_f27"><di:waypoint x="2240" y="70"/><di:waypoint x="3192" y="70"/><di:waypoint x="3192" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f28_di" bpmnElement="sec_bank_collections_f28"><di:waypoint x="4245" y="320"/><di:waypoint x="4310" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f29_di" bpmnElement="sec_bank_collections_f29"><di:waypoint x="2735" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f30_di" bpmnElement="sec_bank_collections_f30"><di:waypoint x="2710" y="345"/><di:waypoint x="2710" y="370"/><di:waypoint x="1390" y="370"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f31_di" bpmnElement="sec_bank_collections_f31"><di:waypoint x="2595" y="195"/><di:waypoint x="2640" y="195"/><di:waypoint x="2640" y="320"/><di:waypoint x="2685" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f32_di" bpmnElement="sec_bank_collections_f32"><di:waypoint x="4550" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f33_di" bpmnElement="sec_bank_collections_f33"><di:waypoint x="4525" y="345"/><di:waypoint x="4525" y="363"/><di:waypoint x="1390" y="363"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f34_di" bpmnElement="sec_bank_collections_f34"><di:waypoint x="4410" y="320"/><di:waypoint x="4500" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f35_di" bpmnElement="sec_bank_collections_f35"><di:waypoint x="4740" y="320"/><di:waypoint x="4837" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f36_di" bpmnElement="sec_bank_collections_f36"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f37_di" bpmnElement="sec_bank_collections_f37"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f38_di" bpmnElement="sec_bank_collections_f38"><di:waypoint x="2570" y="70"/><di:waypoint x="2631" y="70"/><di:waypoint x="2631" y="195"/><di:waypoint x="2692" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f39_di" bpmnElement="sec_bank_collections_f39"><di:waypoint x="2570" y="70"/><di:waypoint x="2692" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f40_di" bpmnElement="sec_bank_collections_f40"><di:waypoint x="3181" y="253"/><di:waypoint x="3181" y="320"/><di:waypoint x="3320" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f41_di" bpmnElement="sec_bank_collections_f41"><di:waypoint x="3420" y="320"/><di:waypoint x="3517" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f42_di" bpmnElement="sec_bank_collections_f42"><di:waypoint x="3211" y="253"/><di:waypoint x="3211" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f43_di" bpmnElement="sec_bank_collections_f43"><di:waypoint x="3420" y="195"/><di:waypoint x="3510" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f44_di" bpmnElement="sec_bank_collections_f44"><di:waypoint x="3560" y="195"/><di:waypoint x="3675" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f45_di" bpmnElement="sec_bank_collections_f45"><di:waypoint x="3535" y="220"/><di:waypoint x="3535" y="253"/><di:waypoint x="3040" y="253"/><di:waypoint x="3040" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f46_di" bpmnElement="sec_bank_collections_f46"><di:waypoint x="3090" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f47_di" bpmnElement="sec_bank_collections_f47"><di:waypoint x="3255" y="195"/><di:waypoint x="3675" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f48_di" bpmnElement="sec_bank_collections_f48"><di:waypoint x="2728" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f49_di" bpmnElement="sec_bank_collections_f49"><di:waypoint x="2925" y="195"/><di:waypoint x="2990" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f50_di" bpmnElement="sec_bank_collections_f50"><di:waypoint x="3725" y="195"/><di:waypoint x="3770" y="195"/><di:waypoint x="3770" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f51_di" bpmnElement="sec_bank_collections_f51"><di:waypoint x="2728" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f52_di" bpmnElement="sec_bank_collections_f52"><di:waypoint x="3915" y="70"/><di:waypoint x="4005" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f53_di" bpmnElement="sec_bank_collections_f53"><di:waypoint x="4055" y="70"/><di:waypoint x="4100" y="70"/><di:waypoint x="4100" y="320"/><di:waypoint x="4145" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f54_di" bpmnElement="sec_bank_collections_f54"><di:waypoint x="4055" y="70"/><di:waypoint x="4100" y="70"/><di:waypoint x="4100" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f55_di" bpmnElement="sec_bank_collections_f55"><di:waypoint x="4245" y="195"/><di:waypoint x="4342" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f56_di" bpmnElement="sec_bank_collections_f56"><di:waypoint x="4055" y="70"/><di:waypoint x="4177" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_collections_f57_di" bpmnElement="sec_bank_collections_f57"><di:waypoint x="128" y="600"/><di:waypoint x="257" y="600"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

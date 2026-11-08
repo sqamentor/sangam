@@ -1,0 +1,134 @@
+{
+  "id": "gov.ifms.pao-chain",
+  "version": "1.0.0",
+  "name": {
+    "en": "Pay and accounts office pre-check chain",
+    "hi": "वेतन एवं लेखा कार्यालय पूर्व-जाँच शृंखला"
+  },
+  "domain": "IFMS",
+  "description": "Token from the number series (unique per office per day), bill distributor with FIFO assignment, dealing hand and AAO checks, PAO pass / objection / return (only the PAO returns a bill), objection memo citing the rule, signature count from the chain template (two DSCs at or above the profile threshold), treasury variant of configurable depth with no-edit policy. Called by every gov.ifms bill.",
+  "mainProcesses": [
+    "sangam-ifms-pao-chain"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-pao-chain/sangam-ifms-pao-chain.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-pao-chain/forms/distribute.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-pao-chain/forms/dealing.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-pao-chain/forms/aao.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-pao-chain/forms/pao.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-pao-chain/forms/second.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-pao-chain/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-pao-chain/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    }
+  ],
+  "covers": [
+    "IFC-093",
+    "IFC-094",
+    "IFC-095",
+    "IFC-096",
+    "IFC-097",
+    "IFC-098",
+    "IFC-112",
+    "IFC-256",
+    "IFS-047",
+    "IFS-048",
+    "IFS-073",
+    "IFS-ML-003",
+    "IFS-ML-004",
+    "IFS-HR-002",
+    "IFS-OD-003",
+    "IFS-TG-005",
+    "IFS-KL-007",
+    "IFS-UP-003",
+    "IFS-AP-004",
+    "GA-07",
+    "GA-23",
+    "GP-02",
+    "GP-17"
+  ],
+  "acceptance": [
+    {
+      "id": "PC-1",
+      "title": "Two signatures at or above the threshold",
+      "refs": [
+        "IFC-098"
+      ],
+      "given": "chain PAO_3 with band 10 lakh",
+      "when": "a bill of 12 lakh passes",
+      "then": "the second-signatory task is created",
+      "startVariables": {
+        "amount": 120000000,
+        "chainSignatures": 2
+      },
+      "expectState": null,
+      "run": {
+        "expect": {
+          "tasks": [
+            "pc_pao",
+            "pc_second"
+          ],
+          "ended": true
+        }
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

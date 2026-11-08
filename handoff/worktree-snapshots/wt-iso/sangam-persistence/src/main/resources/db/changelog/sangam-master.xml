@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Sangam product schema, master changelog (R12, D-7: Liquibase 4.33.0, per-dialect formatted SQL).
+
+  Every dialect file is included; each changeset carries dbms:<name>, so Liquibase applies exactly one dialect:
+  postgresql, oracle, mssql (SQL Server), mysql (MySQL 8.4, utf8mb4, InnoDB) and h2 (development only).
+  The session lock is Liquibase's DATABASECHANGELOGLOCK (R12: one controlled migration job at a time).
+
+  The Operaton engine tables (ACT_*) are NOT created here: the engine owns them. Engine schema patches
+  (P-1, P-2) are in sangam-engine-patches.xml and run after the engine created or upgraded its schema.
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.33.xsd">
+
+  <include file="postgresql/sangam-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="oracle/sangam-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="mssql/sangam-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="mysql/sangam-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="h2/sangam-0001-baseline.sql" relativeToChangelogFile="true"/>
+  <include file="sangam-0002-onboarding.sql" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>

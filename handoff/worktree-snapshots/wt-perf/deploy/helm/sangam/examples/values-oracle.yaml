@@ -1,0 +1,19 @@
+# Oracle JDBC is customer-supplied (LIC-2): build `registry.local/sangam/ojdbc:23` with /drivers/ojdbc11.jar.
+database:
+  type: oracle
+  host: ora-scan.dc.example.gov.in
+  port: 1521
+  name: SANGAMPDB           # service name
+  existingSecret: sangam-db
+drivers:
+  initImage: registry.local/sangam/ojdbc:23
+oidc:
+  issuerUri: https://sso.example.gov.in/realms/sangam
+networkPolicy:
+  database:
+    cidrs: [10.30.1.0/28]
+backup:
+  enabled: true
+  existingSecret: sangam-db-sysbackup
+  oracle:
+    image: registry.local/dba/oracle-client-rman:23

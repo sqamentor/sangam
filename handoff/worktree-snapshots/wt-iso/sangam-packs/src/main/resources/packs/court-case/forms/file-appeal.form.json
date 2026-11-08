@@ -1,0 +1,45 @@
+{
+  "key": "court-case/file-appeal",
+  "version": "1.0.0",
+  "pack": "gov.court-case",
+  "title": {
+    "en": "File appeal before limitation",
+    "hi": "परिसीमा से पूर्व अपील दायर करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "caseNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Court case number",
+        "hi": "न्यायालय वाद संख्या"
+      }
+    },
+    {
+      "id": "court",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Court / tribunal",
+        "hi": "न्यायालय / अधिकरण"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

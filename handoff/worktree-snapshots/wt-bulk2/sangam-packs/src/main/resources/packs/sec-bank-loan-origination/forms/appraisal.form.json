@@ -1,0 +1,81 @@
+{
+  "key": "sec-bank-loan-origination/appraisal",
+  "version": "1.0.0",
+  "pack": "sec.bank.loan-origination",
+  "title": {
+    "en": "Credit appraisal",
+    "hi": "ऋण मूल्यांकन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "bureauScore",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Bureau score",
+        "hi": "क्रेडिट ब्यूरो अंक"
+      }
+    },
+    {
+      "id": "foirPct",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "FOIR (%)",
+        "hi": "एफओआईआर (%)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "appraisalDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "recommend",
+        "label": {
+          "en": "Recommend / forward",
+          "hi": "अनुशंसा / अग्रेषित करें"
+        }
+      },
+      {
+        "value": "clarify",
+        "label": {
+          "en": "Seek clarification",
+          "hi": "स्पष्टीकरण मांगें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

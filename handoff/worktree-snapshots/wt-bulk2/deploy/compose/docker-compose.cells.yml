@@ -1,0 +1,142 @@
+# SPDX-License-Identifier: Apache-2.0
+# Two-cell local setup (SCALE-ARCHITECTURE.md section 12): control plane + gateway + national roll-up + cells
+# "in-ra-01" and "in-rb-01", each with its own database. Development tokens and passwords only.
+#
+#   cd deploy/compose
+#   docker compose -f docker-compose.cells.yml --profile two-cells up -d --build
+#   # create tenants with the ADMIN token on :8090, then call cell APIs through the gateway on :8000
+#   # with header X-Sangam-Tenant: <code> (or a JWT carrying the tenant claim)
+#
+# The cells run the normal sangam-server image. In-server cell registration, the roll-up publisher and the
+# cell-prefixed id generator are wired by the integrator (sangam-cell README IR-1..IR-4); until then the
+# `cell-register` service registers and heartbeats both cells and the roll-up receives no events.
+
+name: sangam-cells
+
+x-cell: &cell
+  image: ${SANGAM_REGISTRY:-sangam}/sangam-server:${SANGAM_VERSION:-dev}
+  build:
+    context: ../..
+    dockerfile: deploy/docker/server.Dockerfile
+  restart: unless-stopped
+  profiles: [two-cells]
+  networks: [cells]
+  depends_on:
+    cells-postgres:
+      condition: service_healthy
+
+x-cell-env: &cell-env
+  TZ: UTC
+  SPRING_PROFILES_ACTIVE: postgres
+  SANGAM_LIQUIBASE_MODE: startup
+  SANGAM_SECURITY_DEV_TOKEN_ENABLED: "true"
+  SANGAM_CONTROL_PLANE_URL: http://control-plane:8090
+  SANGAM_CONTROL_PLANE_TOKEN: dev-cell-token
+  SANGAM_ROLLUP_INGEST_URL: http://rollup:8095/api/v1/ingest
+  SANGAM_ROLLUP_TOKEN: dev-rollup-ingest-token
+  SANGAM_OUTBOX_DESTINATIONS: rollup:national
+
+services:
+  cells-postgres:
+    image: postgres:17
+    profiles: [two-cells]
+    networks: [cells]
+    environment:
+      POSTGRES_PASSWORD: ${CELLS_PG_PASSWORD:-postgres-dev-only}
+    volumes:
+      - ./cells/db:/docker-entrypoint-initdb.d:ro
+      - cells-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 30
+
+  cell-a:
+    <<: *cell
+    environment:
+      <<: *cell-env
+      SANGAM_CELL_ID: in-ra-01
+      SANGAM_CELL_RESIDENCY: IN-RA
+      SPRING_DATASOURCE_URL: jdbc:postgresql://cells-postgres:5432/sangam_cell_a?ApplicationName=cell-a
+      SPRING_DATASOURCE_USERNAME: sangam_cell_a
+      SPRING_DATASOURCE_PASSWORD: cell-a-dev-only
+
+  cell-b:
+    <<: *cell
+    environment:
+      <<: *cell-env
+      SANGAM_CELL_ID: in-rb-01
+      SANGAM_CELL_RESIDENCY: IN-RB
+      SPRING_DATASOURCE_URL: jdbc:postgresql://cells-postgres:5432/sangam_cell_b?ApplicationName=cell-b
+      SPRING_DATASOURCE_USERNAME: sangam_cell_b
+      SPRING_DATASOURCE_PASSWORD: cell-b-dev-only
+
+  control-plane:
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-control-plane:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/scale.Dockerfile
+      args: { MODULE: sangam-control-plane }
+    restart: unless-stopped
+    profiles: [two-cells]
+    networks: [cells]
+    depends_on:
+      cells-postgres:
+        condition: service_healthy
+    environment:
+      SANGAM_CP_DB_URL: jdbc:postgresql://cells-postgres:5432/sangam_cp
+      SANGAM_CP_DB_USER: sangam_cp
+      SANGAM_CP_DB_PASSWORD: cp-dev-only
+      SANGAM_CP_TOKENS: dev-admin-token:ADMIN,dev-cell-token:CELL,dev-gateway-token:GATEWAY,dev-rollup-token:ROLLUP
+      SANGAM_CP_CELL_ADMIN_TOKEN: dev-cell-admin-token
+    ports: ["127.0.0.1:8090:8090"]
+
+  gateway:
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-gateway:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/scale.Dockerfile
+      args: { MODULE: sangam-gateway }
+    restart: unless-stopped
+    profiles: [two-cells]
+    networks: [cells]
+    depends_on: [control-plane]
+    environment:
+      SANGAM_GW_CONTROL_PLANE_URL: http://control-plane:8090
+      SANGAM_GW_CONTROL_PLANE_TOKEN: dev-gateway-token
+    ports: ["8000:8000"]
+
+  rollup:
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-rollup:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/scale.Dockerfile
+      args: { MODULE: sangam-rollup }
+    restart: unless-stopped
+    profiles: [two-cells]
+    networks: [cells]
+    depends_on:
+      cells-postgres:
+        condition: service_healthy
+    environment:
+      SANGAM_RU_DB_URL: jdbc:postgresql://cells-postgres:5432/sangam_rollup
+      SANGAM_RU_DB_USER: sangam_rollup
+      SANGAM_RU_DB_PASSWORD: rollup-dev-only
+      SANGAM_RU_TOKENS: dev-rollup-ingest-token:CELL,dev-dashboard-token:DASHBOARD
+    ports: ["127.0.0.1:8095:8095"]
+
+  cell-register:
+    image: curlimages/curl:8.15.0
+    restart: unless-stopped
+    profiles: [two-cells]
+    networks: [cells]
+    depends_on: [control-plane]
+    volumes:
+      - ./cells/register-cells.sh:/register-cells.sh:ro
+    entrypoint: ["/bin/sh", "/register-cells.sh"]
+
+networks:
+  cells: {}
+
+volumes:
+  cells-pg-data: {}

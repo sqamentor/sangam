@@ -1,0 +1,56 @@
+{
+  "id": "universal.up20-rpa",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-20 RPA step against a legacy UI",
+    "hi": "यूपी-20 पुराने यूआई पर आरपीए चरण"
+  },
+  "domain": "Universal",
+  "description": "A versioned bot script runs as an external task under the worker lease (topic sangam.rpa, bot pool, credentials by reference); a screen failure becomes a BPMN error handled by a person who retries or does the step in attended mode (R73).",
+  "mainProcesses": [
+    "sangam-up20-rpa"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up20-rpa/sangam-up20-rpa.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up20-rpa/forms/item.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up20-rpa/forms/handle.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up20-rpa/forms/manual.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up20-rpa/seed.json"
+    }
+  ],
+  "seed": "packs/up20-rpa/seed.json",
+  "connectors": [
+    {
+      "id": "rpa.bot",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Bot run"
+    }
+  ],
+  "covers": [
+    "UP-20",
+    "R73",
+    "GP-27",
+    "GP-31"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

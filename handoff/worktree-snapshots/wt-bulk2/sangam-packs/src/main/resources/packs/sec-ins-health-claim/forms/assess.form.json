@@ -1,0 +1,65 @@
+{
+  "key": "sec-ins-health-claim/assess",
+  "version": "1.0.0",
+  "pack": "sec.ins.health-claim",
+  "title": {
+    "en": "Assess reimbursement claim",
+    "hi": "प्रतिपूर्ति दावे का आकलन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "approvedAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Approved amount (INR)",
+        "hi": "स्वीकृत राशि (रुपये)"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reimbDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

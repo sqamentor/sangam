@@ -1,0 +1,82 @@
+{
+  "id": "universal.up19-contract-lifecycle",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-19 Contract lifecycle (CLM)",
+    "hi": "यूपी-19 अनुबंध जीवनचक्र (सीएलएम)"
+  },
+  "domain": "Universal",
+  "description": "Draft, redlining loop with the counterparty (external party), parallel legal and finance review, signing authority, signature over the approved version, obligation reminders and renewal decision before expiry with a linked renewal (R74, R57-style, R79).",
+  "mainProcesses": [
+    "sangam-up19-clm"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up19-contract-lifecycle/sangam-up19-clm.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up19-contract-lifecycle/up19-signatory.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up19-contract-lifecycle/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up19-contract-lifecycle/forms/draft.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up19-contract-lifecycle/forms/redline.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up19-contract-lifecycle/forms/legal-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up19-contract-lifecycle/forms/finance-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up19-contract-lifecycle/forms/term.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up19-contract-lifecycle/forms/renewal.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up19-contract-lifecycle/seed.json"
+    }
+  ],
+  "seed": "packs/up19-contract-lifecycle/seed.json",
+  "connectors": [
+    {
+      "id": "esign.sign",
+      "capabilityClass": "b",
+      "govTag": "G-SIGN",
+      "purpose": "Signature"
+    }
+  ],
+  "covers": [
+    "UP-19",
+    "R57",
+    "R74",
+    "R79",
+    "GP-02",
+    "GP-03",
+    "GP-25",
+    "GP-30"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-sanction"
+  ]
+}

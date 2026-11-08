@@ -1,0 +1,22 @@
+# kubectl create secret generic sangam-db --from-literal=username=sangam --from-literal=password='...'
+database:
+  type: postgres
+  host: pg-primary.db.svc.cluster.local
+  name: sangam
+  existingSecret: sangam-db
+  params: "sslmode=verify-full"
+oidc:
+  issuerUri: https://sso.example.gov.in/realms/sangam
+ingress:
+  enabled: true
+  className: nginx
+  host: sangam.example.gov.in
+networkPolicy:
+  database:
+    namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: db } }
+    podSelector: { matchLabels: { app: pg-primary } }
+  oidc:
+    cidrs: [10.20.0.10/32]
+backup:
+  enabled: true
+  existingSecret: sangam-db-backup   # user with REPLICATION

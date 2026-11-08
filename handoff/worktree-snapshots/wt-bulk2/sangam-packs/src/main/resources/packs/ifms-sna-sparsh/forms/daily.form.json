@@ -1,0 +1,65 @@
+{
+  "key": "ifms-sna-sparsh/daily",
+  "version": "1.0.0",
+  "pack": "gov.ifms.sna-sparsh",
+  "title": {
+    "en": "Daily sanction (DSC)",
+    "hi": "दैनिक स्वीकृति (डीएससी)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "slsCode",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "State-linked scheme (SLS)",
+        "hi": "राज्य-संबद्ध योजना"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "dscSerial",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "DSC serial",
+        "hi": "डीएससी क्रमांक"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "pdDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "signed",
+        "label": {
+          "en": "Signed (DSC)",
+          "hi": "हस्ताक्षरित (डीएससी)"
+        }
+      },
+      {
+        "value": "returnBill",
+        "label": {
+          "en": "Return to DDO",
+          "hi": "डीडीओ को वापस करें"
+        }
+      }
+    ]
+  }
+}

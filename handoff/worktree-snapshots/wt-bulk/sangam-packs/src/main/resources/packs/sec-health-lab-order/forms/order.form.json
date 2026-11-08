@@ -1,0 +1,54 @@
+{
+  "key": "sec-health-lab-order/order",
+  "version": "1.0.0",
+  "pack": "sec.health.lab-order",
+  "title": {
+    "en": "Laboratory order",
+    "hi": "प्रयोगशाला आदेश"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "hi": "रोगी का नाम"
+      }
+    },
+    {
+      "id": "testCodes",
+      "type": "multiselect",
+      "required": true,
+      "label": {
+        "en": "Tests ordered",
+        "hi": "आदेशित परीक्षण"
+      }
+    },
+    {
+      "id": "priority",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Priority",
+        "hi": "प्राथमिकता"
+      }
+    },
+    {
+      "id": "clinicalNotes",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Clinical notes",
+        "hi": "नैदानिक टिप्पणियाँ"
+      }
+    }
+  ]
+}

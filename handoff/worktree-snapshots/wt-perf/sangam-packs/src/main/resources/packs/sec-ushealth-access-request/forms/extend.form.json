@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-access-request/extend",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.access-request",
+  "title": {
+    "en": "Send the extension notice (reason and expected date)",
+    "es": "Enviar el aviso de prórroga"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "extensionReason",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Reason for the 30-day extension and expected date",
+        "es": "Motivo de la prórroga de 30 días y fecha prevista"
+      }
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "key": "sec-ushealth-prior-auth/order",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.prior-auth",
+  "title": {
+    "en": "Service order",
+    "es": "Orden de servicio"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "es": "Nombre del paciente"
+      }
+    },
+    {
+      "id": "memberId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Member ID",
+        "es": "Número de afiliado"
+      }
+    },
+    {
+      "id": "payerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payer ID",
+        "es": "Identificador del pagador"
+      }
+    },
+    {
+      "id": "payerProgram",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Payer program (MA, MEDICAID, CHIP, QHP_FFE, COMMERCIAL, MEDICARE_FFS)",
+        "es": "Programa del pagador (MA, MEDICAID, CHIP, QHP_FFE, COMERCIAL, MEDICARE_FFS)"
+      }
+    },
+    {
+      "id": "providerNpi",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Provider NPI",
+        "es": "NPI del proveedor"
+      }
+    },
+    {
+      "id": "procedureCode",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Procedure code (CPT / HCPCS)",
+        "es": "Código de procedimiento (CPT / HCPCS)"
+      }
+    },
+    {
+      "id": "diagnosisCode",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Diagnosis code (ICD-10-CM)",
+        "es": "Código de diagnóstico (CIE-10-MC)"
+      }
+    },
+    {
+      "id": "priority",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Priority",
+        "es": "Prioridad"
+      }
+    }
+  ]
+}

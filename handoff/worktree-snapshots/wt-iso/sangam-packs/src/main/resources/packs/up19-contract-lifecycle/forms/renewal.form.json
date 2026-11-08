@@ -1,0 +1,47 @@
+{
+  "key": "up19-contract-lifecycle/renewal",
+  "version": "1.0.0",
+  "pack": "universal.up19-contract-lifecycle",
+  "title": {
+    "en": "Renewal decision",
+    "hi": "नवीनीकरण निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "renewalDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "renew",
+        "label": {
+          "en": "Renew",
+          "hi": "नवीनीकरण करें"
+        }
+      },
+      {
+        "value": "terminate",
+        "label": {
+          "en": "Terminate",
+          "hi": "समाप्त करें"
+        }
+      }
+    ]
+  }
+}

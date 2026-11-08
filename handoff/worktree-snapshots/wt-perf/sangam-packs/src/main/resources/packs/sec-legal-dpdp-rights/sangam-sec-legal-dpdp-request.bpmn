@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Data principal request. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_legal_dpdp_request" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-legal-dpdp-request" name="Data principal request" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.legal.dpdp-rights</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,requestType</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="dr_start" name="Request received" operaton:initiator="initiator" operaton:formKey="sangam:sec-legal-dpdp-rights/request"></startEvent>
+    <serviceTask id="dr_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>requestType=ACCESS;idVerified=true;dpoSeat=DPO;applicantRef=@customerId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dr_idv" name="Verify identity" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>idv.verify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>verify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>id</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dr_idGw" name="Verified?" default="sec_legal_dpdp_request_f5"></exclusiveGateway>
+    <endEvent id="dr_endUnverified" name="Identity not verified (data principal told)"></endEvent>
+    <businessRuleTask id="dr_tat" name="Response period (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-legal-dpdp-tat</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="dr_clock" name="Regulatory clock: response" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>response</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${respondSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dr_typeGw" name="Request type?" default="sec_legal_dpdp_request_f18"></exclusiveGateway>
+    <exclusiveGateway id="dr_join" name=""></exclusiveGateway>
+    <serviceTask id="dr_summary" name="Summary of personal data and processing" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.summary</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>summary</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>summary</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dr_retention" name="Check retention duties before erasure" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-legal-dpdp-rights/retention"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>eraseDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="dr_eraseGw" name="" default="sec_legal_dpdp_request_f15"></exclusiveGateway>
+    <serviceTask id="dr_erase" name="Erase" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.erase</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>erase</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>erase</operaton:string></operaton:field><operaton:field name="step"><operaton:string>erase</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dr_eraseProc" name="Erase at processors" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>processors.erase</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>erase</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>peErase</operaton:string></operaton:field><operaton:field name="step"><operaton:string>processor-erase</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dr_withdraw" name="Withdraw consent (consent manager)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>consent.withdraw</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>withdraw</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>consentW</operaton:string></operaton:field><operaton:field name="step"><operaton:string>withdraw</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dr_correct" name="Correct / complete / record nominee" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-legal-dpdp-rights/correct"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dr_reply_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dr_reply</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${respondSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field><operaton:field name="boundByCase"><operaton:string>false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="dr_reply" name="DPO reply (90 days)" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-legal-dpdp-rights/reply" operaton:dueDate="${dr_replyDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="dr_reply_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dr_reply</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>dpoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dr_reply_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="dr_reply_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>dr_reply</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>dpoSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dr_reply_breachGw" name="Deemed?" default="sec_legal_dpdp_request_f25"></exclusiveGateway>
+    <exclusiveGateway id="dr_reply_done" name=""></exclusiveGateway>
+    <serviceTask id="dr_notify" name="Reply with the route to the Data Protection Board" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>dpdp-reply</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dr_end" name="Answered"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="dr_reply_warn" name="SLA warning (75%)" attachedToRef="dr_reply" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dr_replyWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="dr_reply_breach" name="SLA breached" attachedToRef="dr_reply" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dr_replyDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_legal_dpdp_request_f1" sourceRef="dr_start" targetRef="dr_defaults"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f2" sourceRef="dr_defaults" targetRef="dr_idv"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f3" sourceRef="dr_idv" targetRef="dr_idGw"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f4" name="no" sourceRef="dr_idGw" targetRef="dr_endUnverified"><conditionExpression xsi:type="tFormalExpression">${!idVerified}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_dpdp_request_f5" name="yes" sourceRef="dr_idGw" targetRef="dr_tat"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f6" sourceRef="dr_tat" targetRef="dr_clock"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f7" sourceRef="dr_clock" targetRef="dr_typeGw"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f8" name="access" sourceRef="dr_typeGw" targetRef="dr_summary"><conditionExpression xsi:type="tFormalExpression">${requestType == 'ACCESS'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_dpdp_request_f9" sourceRef="dr_summary" targetRef="dr_join"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f10" name="erasure" sourceRef="dr_typeGw" targetRef="dr_retention"><conditionExpression xsi:type="tFormalExpression">${requestType == 'ERASURE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_dpdp_request_f11" sourceRef="dr_retention" targetRef="dr_eraseGw"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f12" name="erase" sourceRef="dr_eraseGw" targetRef="dr_erase"><conditionExpression xsi:type="tFormalExpression">${eraseDecision == 'erase'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_dpdp_request_f13" sourceRef="dr_erase" targetRef="dr_eraseProc"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f14" sourceRef="dr_eraseProc" targetRef="dr_join"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f15" name="retain with reasons" sourceRef="dr_eraseGw" targetRef="dr_join"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f16" name="withdraw consent" sourceRef="dr_typeGw" targetRef="dr_withdraw"><conditionExpression xsi:type="tFormalExpression">${requestType == 'WITHDRAW_CONSENT'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_dpdp_request_f17" sourceRef="dr_withdraw" targetRef="dr_join"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f18" name="correction / nomination / grievance" sourceRef="dr_typeGw" targetRef="dr_correct"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f19" sourceRef="dr_correct" targetRef="dr_join"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f20" sourceRef="dr_reply_warn" targetRef="dr_reply_warnNotify"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f21" sourceRef="dr_reply_warnNotify" targetRef="dr_reply_warnEnd"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f22" sourceRef="dr_reply_breach" targetRef="dr_reply_breachAct"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f23" sourceRef="dr_reply_breachAct" targetRef="dr_reply_breachGw"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f24" name="deemed" sourceRef="dr_reply_breachGw" targetRef="dr_reply_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_legal_dpdp_request_f25" name="escalated" sourceRef="dr_reply_breachGw" targetRef="dr_reply_slaPlan"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f26" sourceRef="dr_reply_slaPlan" targetRef="dr_reply"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f27" sourceRef="dr_reply" targetRef="dr_reply_done"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f28" sourceRef="dr_join" targetRef="dr_reply_slaPlan"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f29" sourceRef="dr_reply_done" targetRef="dr_notify"/>
+    <sequenceFlow id="sec_legal_dpdp_request_f30" sourceRef="dr_notify" targetRef="dr_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_legal_dpdp_request_diagram">
+    <bpmndi:BPMNPlane id="sec_legal_dpdp_request_plane" bpmnElement="sangam-sec-legal-dpdp-request">
+      <bpmndi:BPMNShape id="dr_start_di" bpmnElement="dr_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_defaults_di" bpmnElement="dr_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_idv_di" bpmnElement="dr_idv"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_idGw_di" bpmnElement="dr_idGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_endUnverified_di" bpmnElement="dr_endUnverified"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_tat_di" bpmnElement="dr_tat"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_clock_di" bpmnElement="dr_clock"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_typeGw_di" bpmnElement="dr_typeGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_join_di" bpmnElement="dr_join"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_summary_di" bpmnElement="dr_summary"><dc:Bounds x="1175" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_retention_di" bpmnElement="dr_retention"><dc:Bounds x="1175" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_eraseGw_di" bpmnElement="dr_eraseGw"><dc:Bounds x="1365" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_erase_di" bpmnElement="dr_erase"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_eraseProc_di" bpmnElement="dr_eraseProc"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_withdraw_di" bpmnElement="dr_withdraw"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_correct_di" bpmnElement="dr_correct"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_reply_slaPlan_di" bpmnElement="dr_reply_slaPlan"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_reply_di" bpmnElement="dr_reply"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_reply_warnNotify_di" bpmnElement="dr_reply_warnNotify"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_reply_warnEnd_di" bpmnElement="dr_reply_warnEnd"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_reply_breachAct_di" bpmnElement="dr_reply_breachAct"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_reply_breachGw_di" bpmnElement="dr_reply_breachGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_reply_done_di" bpmnElement="dr_reply_done"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_notify_di" bpmnElement="dr_notify"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_end_di" bpmnElement="dr_end"><dc:Bounds x="3022" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_reply_warn_di" bpmnElement="dr_reply_warn"><dc:Bounds x="2173" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dr_reply_breach_di" bpmnElement="dr_reply_breach"><dc:Bounds x="2203" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f1_di" bpmnElement="sec_legal_dpdp_request_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f2_di" bpmnElement="sec_legal_dpdp_request_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f3_di" bpmnElement="sec_legal_dpdp_request_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f4_di" bpmnElement="sec_legal_dpdp_request_f4"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f5_di" bpmnElement="sec_legal_dpdp_request_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f6_di" bpmnElement="sec_legal_dpdp_request_f6"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f7_di" bpmnElement="sec_legal_dpdp_request_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f8_di" bpmnElement="sec_legal_dpdp_request_f8"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="445"/><di:waypoint x="1175" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f9_di" bpmnElement="sec_legal_dpdp_request_f9"><di:waypoint x="1275" y="445"/><di:waypoint x="1567" y="445"/><di:waypoint x="1567" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f10_di" bpmnElement="sec_legal_dpdp_request_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="320"/><di:waypoint x="1175" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f11_di" bpmnElement="sec_legal_dpdp_request_f11"><di:waypoint x="1275" y="320"/><di:waypoint x="1365" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f12_di" bpmnElement="sec_legal_dpdp_request_f12"><di:waypoint x="1415" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f13_di" bpmnElement="sec_legal_dpdp_request_f13"><di:waypoint x="1605" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f14_di" bpmnElement="sec_legal_dpdp_request_f14"><di:waypoint x="1770" y="320"/><di:waypoint x="1815" y="320"/><di:waypoint x="1815" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f15_di" bpmnElement="sec_legal_dpdp_request_f15"><di:waypoint x="1415" y="320"/><di:waypoint x="1637" y="320"/><di:waypoint x="1637" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f16_di" bpmnElement="sec_legal_dpdp_request_f16"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f17_di" bpmnElement="sec_legal_dpdp_request_f17"><di:waypoint x="1275" y="195"/><di:waypoint x="1567" y="195"/><di:waypoint x="1567" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f18_di" bpmnElement="sec_legal_dpdp_request_f18"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f19_di" bpmnElement="sec_legal_dpdp_request_f19"><di:waypoint x="1275" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f20_di" bpmnElement="sec_legal_dpdp_request_f20"><di:waypoint x="2191" y="128"/><di:waypoint x="2191" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f21_di" bpmnElement="sec_legal_dpdp_request_f21"><di:waypoint x="2430" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f22_di" bpmnElement="sec_legal_dpdp_request_f22"><di:waypoint x="2221" y="128"/><di:waypoint x="2221" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f23_di" bpmnElement="sec_legal_dpdp_request_f23"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f24_di" bpmnElement="sec_legal_dpdp_request_f24"><di:waypoint x="2570" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f25_di" bpmnElement="sec_legal_dpdp_request_f25"><di:waypoint x="2545" y="95"/><di:waypoint x="2545" y="128"/><di:waypoint x="2050" y="128"/><di:waypoint x="2050" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f26_di" bpmnElement="sec_legal_dpdp_request_f26"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f27_di" bpmnElement="sec_legal_dpdp_request_f27"><di:waypoint x="2265" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f28_di" bpmnElement="sec_legal_dpdp_request_f28"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f29_di" bpmnElement="sec_legal_dpdp_request_f29"><di:waypoint x="2735" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_legal_dpdp_request_f30_di" bpmnElement="sec_legal_dpdp_request_f30"><di:waypoint x="2925" y="70"/><di:waypoint x="3022" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

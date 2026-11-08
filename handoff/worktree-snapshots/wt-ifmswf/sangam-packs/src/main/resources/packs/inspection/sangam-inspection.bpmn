@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Inspection of an establishment. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_inspection" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_complianceReported" name="sangam.complianceReported"/>
+  <process id="sangam-inspection" name="Inspection of an establishment" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.inspection</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,premisesId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="in_start" name="Inspection due" operaton:initiator="initiator" operaton:formKey="sangam:inspection/case"></startEvent>
+    <serviceTask id="in_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>inspectorPool=INSP-1,INSP-2,INSP-3;complianceWindow=P30D;caseType=PENALTY;routingDecisionKey=inspection-penalty-authority;amount=0;appealAllowed=true;appellateSeat=APPELLATE-INSP;reinspection=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="in_assign" name="Least-loaded inspector (R82)" operaton:class="org.sangam.packs.core.AssignmentStrategyDelegate"><extensionElements><operaton:field name="strategy"><operaton:string>LEAST_LOADED</operaton:string></operaton:field><operaton:field name="candidatesVar"><operaton:string>inspectorPool</operaton:string></operaton:field><operaton:field name="resultVar"><operaton:string>inspectorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="in_inspect_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>in_inspect</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="in_inspect" name="Schedule and inspect" operaton:candidateGroups="${inspectorSeat}" operaton:formKey="sangam:inspection/inspect" operaton:dueDate="${in_inspectDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>inspectionDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="in_inspect_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>in_inspect</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>inspectorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="in_inspect_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="in_inspect_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>in_inspect</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>inspectorSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>inspectionDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="in_inspect_breachGw" name="Deemed?" default="inspection_f6"></exclusiveGateway>
+    <exclusiveGateway id="in_inspect_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="in_gw" name="Result?" default="inspection_f17"></exclusiveGateway>
+    <serviceTask id="in_reassign" name="Reassign (round robin)" operaton:class="org.sangam.packs.core.AssignmentStrategyDelegate"><extensionElements><operaton:field name="strategy"><operaton:string>ROUND_ROBIN</operaton:string></operaton:field><operaton:field name="candidatesVar"><operaton:string>inspectorPool</operaton:string></operaton:field><operaton:field name="resultVar"><operaton:string>inspectorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="in_report" name="Inspection report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>inspection-report</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="in_end" name="Inspected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="in_notice" name="Compliance notice" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>compliance-notice</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="in_tell" name="Serve notice" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>compliance-notice</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>premisesId</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="in_window" name="Compliance window" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>compliance</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${complianceWindow}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="in_wait" name="Compliance reported?"></eventBasedGateway>
+    <intermediateCatchEvent id="in_reported" name="Compliance reported"><messageEventDefinition messageRef="msg_sangam_complianceReported"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="in_lapse" name="Window lapsed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${complianceDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="in_reinspect" name="Re-inspection" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>reinspection=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="in_penalty" name="Penalty order (core sanction)" calledElement="sangam-core-sanction" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="in_penaltyOrder" name="Penalty order" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>penalty-order</operaton:string></operaton:field><operaton:field name="requireApproval"><operaton:string>true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="in_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="in_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="in_sanGw" name="sanctionOutcome?" default="inspection_f28"></exclusiveGateway>
+    <endEvent id="in_endPenalty" name="Penalty imposed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>PENALTY</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="in_inspect_warn" name="SLA warning (75%)" attachedToRef="in_inspect" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${in_inspectWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="in_inspect_breach" name="SLA breached" attachedToRef="in_inspect" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${in_inspectDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="inspection_f1" sourceRef="in_inspect_warn" targetRef="in_inspect_warnNotify"/>
+    <sequenceFlow id="inspection_f2" sourceRef="in_inspect_warnNotify" targetRef="in_inspect_warnEnd"/>
+    <sequenceFlow id="inspection_f3" sourceRef="in_inspect_breach" targetRef="in_inspect_breachAct"/>
+    <sequenceFlow id="inspection_f4" sourceRef="in_inspect_breachAct" targetRef="in_inspect_breachGw"/>
+    <sequenceFlow id="inspection_f5" name="deemed" sourceRef="in_inspect_breachGw" targetRef="in_inspect_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="inspection_f6" name="escalated" sourceRef="in_inspect_breachGw" targetRef="in_inspect_slaPlan"/>
+    <sequenceFlow id="inspection_f7" sourceRef="in_inspect_slaPlan" targetRef="in_inspect"/>
+    <sequenceFlow id="inspection_f8" sourceRef="in_inspect" targetRef="in_inspect_done"/>
+    <sequenceFlow id="inspection_f9" sourceRef="in_start" targetRef="in_defaults"/>
+    <sequenceFlow id="inspection_f10" sourceRef="in_defaults" targetRef="in_assign"/>
+    <sequenceFlow id="inspection_f11" sourceRef="in_assign" targetRef="in_inspect_slaPlan"/>
+    <sequenceFlow id="inspection_f12" sourceRef="in_inspect_done" targetRef="in_gw"/>
+    <sequenceFlow id="inspection_f13" name="reschedule (GP-17)" sourceRef="in_gw" targetRef="in_reassign"><conditionExpression xsi:type="tFormalExpression">${inspectionDecision == 'reschedule'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="inspection_f14" sourceRef="in_reassign" targetRef="in_inspect_slaPlan"/>
+    <sequenceFlow id="inspection_f15" name="satisfactory" sourceRef="in_gw" targetRef="in_report"><conditionExpression xsi:type="tFormalExpression">${inspectionDecision == 'satisfactory'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="inspection_f16" sourceRef="in_report" targetRef="in_end"/>
+    <sequenceFlow id="inspection_f17" name="unsatisfactory" sourceRef="in_gw" targetRef="in_notice"/>
+    <sequenceFlow id="inspection_f18" sourceRef="in_notice" targetRef="in_tell"/>
+    <sequenceFlow id="inspection_f19" sourceRef="in_tell" targetRef="in_window"/>
+    <sequenceFlow id="inspection_f20" sourceRef="in_window" targetRef="in_wait"/>
+    <sequenceFlow id="inspection_f21" sourceRef="in_wait" targetRef="in_reported"/>
+    <sequenceFlow id="inspection_f22" sourceRef="in_wait" targetRef="in_lapse"/>
+    <sequenceFlow id="inspection_f23" sourceRef="in_reported" targetRef="in_reinspect"/>
+    <sequenceFlow id="inspection_f24" sourceRef="in_reinspect" targetRef="in_inspect_slaPlan"/>
+    <sequenceFlow id="inspection_f25" sourceRef="in_lapse" targetRef="in_penalty"/>
+    <sequenceFlow id="inspection_f26" sourceRef="in_rj_reject" targetRef="in_rj_endRejected"/>
+    <sequenceFlow id="inspection_f27" name="SANCTIONED" sourceRef="in_sanGw" targetRef="in_penaltyOrder"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="inspection_f28" name="otherwise" sourceRef="in_sanGw" targetRef="in_rj_reject"/>
+    <sequenceFlow id="inspection_f29" sourceRef="in_penalty" targetRef="in_sanGw"/>
+    <sequenceFlow id="inspection_f30" sourceRef="in_penaltyOrder" targetRef="in_endPenalty"/>
+  </process>
+  <bpmndi:BPMNDiagram id="inspection_diagram">
+    <bpmndi:BPMNPlane id="inspection_plane" bpmnElement="sangam-inspection">
+      <bpmndi:BPMNShape id="in_start_di" bpmnElement="in_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_defaults_di" bpmnElement="in_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_assign_di" bpmnElement="in_assign"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_inspect_slaPlan_di" bpmnElement="in_inspect_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_inspect_di" bpmnElement="in_inspect"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_inspect_warnNotify_di" bpmnElement="in_inspect_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_inspect_warnEnd_di" bpmnElement="in_inspect_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_inspect_breachAct_di" bpmnElement="in_inspect_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_inspect_breachGw_di" bpmnElement="in_inspect_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_inspect_done_di" bpmnElement="in_inspect_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_gw_di" bpmnElement="in_gw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_reassign_di" bpmnElement="in_reassign"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_report_di" bpmnElement="in_report"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_end_di" bpmnElement="in_end"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_notice_di" bpmnElement="in_notice"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_tell_di" bpmnElement="in_tell"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_window_di" bpmnElement="in_window"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_wait_di" bpmnElement="in_wait"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_reported_di" bpmnElement="in_reported"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_lapse_di" bpmnElement="in_lapse"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_reinspect_di" bpmnElement="in_reinspect"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_penalty_di" bpmnElement="in_penalty"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_penaltyOrder_di" bpmnElement="in_penaltyOrder"><dc:Bounds x="2660" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_rj_reject_di" bpmnElement="in_rj_reject"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_rj_endRejected_di" bpmnElement="in_rj_endRejected"><dc:Bounds x="2857" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_sanGw_di" bpmnElement="in_sanGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_endPenalty_di" bpmnElement="in_endPenalty"><dc:Bounds x="2857" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_inspect_warn_di" bpmnElement="in_inspect_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="in_inspect_breach_di" bpmnElement="in_inspect_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="inspection_f1_di" bpmnElement="inspection_f1"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f2_di" bpmnElement="inspection_f2"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f3_di" bpmnElement="inspection_f3"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f4_di" bpmnElement="inspection_f4"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f5_di" bpmnElement="inspection_f5"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f6_di" bpmnElement="inspection_f6"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="135"/><di:waypoint x="565" y="135"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f7_di" bpmnElement="inspection_f7"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f8_di" bpmnElement="inspection_f8"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f9_di" bpmnElement="inspection_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f10_di" bpmnElement="inspection_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f11_di" bpmnElement="inspection_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f12_di" bpmnElement="inspection_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f13_di" bpmnElement="inspection_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f14_di" bpmnElement="inspection_f14"><di:waypoint x="1555" y="360"/><di:waypoint x="1555" y="385"/><di:waypoint x="565" y="385"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f15_di" bpmnElement="inspection_f15"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f16_di" bpmnElement="inspection_f16"><di:waypoint x="1605" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f17_di" bpmnElement="inspection_f17"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f18_di" bpmnElement="inspection_f18"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f19_di" bpmnElement="inspection_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f20_di" bpmnElement="inspection_f20"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f21_di" bpmnElement="inspection_f21"><di:waypoint x="2075" y="70"/><di:waypoint x="2136" y="70"/><di:waypoint x="2136" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f22_di" bpmnElement="inspection_f22"><di:waypoint x="2075" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f23_di" bpmnElement="inspection_f23"><di:waypoint x="2233" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f24_di" bpmnElement="inspection_f24"><di:waypoint x="2380" y="235"/><di:waypoint x="2380" y="274"/><di:waypoint x="565" y="274"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f25_di" bpmnElement="inspection_f25"><di:waypoint x="2233" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f26_di" bpmnElement="inspection_f26"><di:waypoint x="2760" y="70"/><di:waypoint x="2857" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f27_di" bpmnElement="inspection_f27"><di:waypoint x="2570" y="70"/><di:waypoint x="2615" y="70"/><di:waypoint x="2615" y="195"/><di:waypoint x="2660" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f28_di" bpmnElement="inspection_f28"><di:waypoint x="2570" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f29_di" bpmnElement="inspection_f29"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="inspection_f30_di" bpmnElement="inspection_f30"><di:waypoint x="2760" y="195"/><di:waypoint x="2857" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

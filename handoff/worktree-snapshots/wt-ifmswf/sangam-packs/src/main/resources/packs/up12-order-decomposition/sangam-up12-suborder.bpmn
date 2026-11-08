@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-12 Sub-order (one line). Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up12_suborder" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_suborder_amend" name="sangam.suborder.amend"/>
+  <process id="sangam-up12-suborder" name="UP-12 Sub-order (one line)" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up12-order-decomposition</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u12s_start" name="Line"></startEvent>
+    <serviceTask id="u12s_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>executionConnector=telecom.activate;executionStep=activate;verifyApproval=false;reconcileRequired=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="u12s_activate" name="Activate (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="u12s_endOk" name="Activated"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="u12s_endFailed" name="Fallout"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="u12s_gw" name="executionOutcome?" default="up12_suborder_f4"></exclusiveGateway>
+    <sequenceFlow id="up12_suborder_f1" sourceRef="u12s_start" targetRef="u12s_defaults"/>
+    <sequenceFlow id="up12_suborder_f2" sourceRef="u12s_defaults" targetRef="u12s_activate"/>
+    <sequenceFlow id="up12_suborder_f3" name="DONE" sourceRef="u12s_gw" targetRef="u12s_endOk"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up12_suborder_f4" name="otherwise" sourceRef="u12s_gw" targetRef="u12s_endFailed"/>
+    <sequenceFlow id="up12_suborder_f5" sourceRef="u12s_activate" targetRef="u12s_gw"/>
+    <subProcess id="u12s_amend" name="Amendment" triggeredByEvent="true">
+      <startEvent id="u12s_amStart" name="Amend" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_suborder_amend"/></startEvent>
+      <serviceTask id="u12s_modify" name="Modify line" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>telecom.modify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>modify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>key</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>modify</operaton:string></operaton:field><operaton:field name="step"><operaton:string>modify</operaton:string></operaton:field></extensionElements></serviceTask>
+      <endEvent id="u12s_amEnd" name="Modified"></endEvent>
+      <sequenceFlow id="up12_suborder_f6" sourceRef="u12s_amStart" targetRef="u12s_modify"/>
+      <sequenceFlow id="up12_suborder_f7" sourceRef="u12s_modify" targetRef="u12s_amEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="up12_suborder_diagram">
+    <bpmndi:BPMNPlane id="up12_suborder_plane" bpmnElement="sangam-up12-suborder">
+      <bpmndi:BPMNShape id="u12s_start_di" bpmnElement="u12s_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12s_defaults_di" bpmnElement="u12s_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12s_activate_di" bpmnElement="u12s_activate"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12s_endOk_di" bpmnElement="u12s_endOk"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12s_endFailed_di" bpmnElement="u12s_endFailed"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12s_gw_di" bpmnElement="u12s_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12s_amend_di" bpmnElement="u12s_amend" isExpanded="true"><dc:Bounds x="30" y="263" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12s_amStart_di" bpmnElement="u12s_amStart"><dc:Bounds x="92" y="325" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12s_modify_di" bpmnElement="u12s_modify"><dc:Bounds x="225" y="303" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u12s_amEnd_di" bpmnElement="u12s_amEnd"><dc:Bounds x="422" y="325" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up12_suborder_f1_di" bpmnElement="up12_suborder_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_suborder_f2_di" bpmnElement="up12_suborder_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_suborder_f3_di" bpmnElement="up12_suborder_f3"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_suborder_f4_di" bpmnElement="up12_suborder_f4"><di:waypoint x="590" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_suborder_f5_di" bpmnElement="up12_suborder_f5"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_suborder_f6_di" bpmnElement="up12_suborder_f6"><di:waypoint x="128" y="343"/><di:waypoint x="225" y="343"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up12_suborder_f7_di" bpmnElement="up12_suborder_f7"><di:waypoint x="325" y="343"/><di:waypoint x="422" y="343"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

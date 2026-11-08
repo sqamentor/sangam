@@ -1,0 +1,47 @@
+{
+  "key": "gov-intl-pfm-execution/certify",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-execution",
+  "title": {
+    "en": "Certify the payment order (PFM-048)",
+    "hi": "भुगतान आदेश प्रमाणित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "certificationNote",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Certification (certifying officer, personal liability recorded)",
+        "hi": "प्रमाणन (प्रमाणन अधिकारी, व्यक्तिगत दायित्व दर्ज)"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "certifyDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "certify",
+        "label": {
+          "en": "Certify",
+          "hi": "प्रमाणित करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

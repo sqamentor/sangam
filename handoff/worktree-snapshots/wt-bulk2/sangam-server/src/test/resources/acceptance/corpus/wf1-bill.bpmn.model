@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WF-1 bill / payment approval (SANGAM.md XI.3, pack P1, AC-01..AC-03). OPERATON 2.2.0 VARIANT.
+  Differs from wf1-bill.flowable.bpmn ONLY in the elements listed in corpus/VARIANTS.md:
+    V-01 wf1_delegationOfPowers  (DMN call from BPMN)
+    V-02 wf1_payment             (external task topic "payment")
+  Everything else is standard BPMN 2.0.2 and is byte-for-byte the same as the Flowable variant.
+-->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+             id="wf1-bill-definitions"
+             targetNamespace="http://sangam.org/spike/corpus">
+
+  <process id="wf1-bill" name="WF-1 Bill / payment approval" isExecutable="true">
+
+    <startEvent id="wf1_start" name="Bill submitted"/>
+    <sequenceFlow id="wf1_f01" sourceRef="wf1_start" targetRef="wf1_reviewMergeGw"/>
+
+    <exclusiveGateway id="wf1_reviewMergeGw" name="Merge (first submit / resubmit)"/>
+    <sequenceFlow id="wf1_f02" sourceRef="wf1_reviewMergeGw" targetRef="wf1_checkerReview"/>
+
+    <userTask id="wf1_checkerReview" name="Checker review">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${checkerGroup})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf1_f03" sourceRef="wf1_checkerReview" targetRef="wf1_checkerDecisionGw"/>
+
+    <exclusiveGateway id="wf1_checkerDecisionGw" name="Checker decision?" default="wf1_f06"/>
+    <sequenceFlow id="wf1_f04" name="forward" sourceRef="wf1_checkerDecisionGw" targetRef="wf1_delegationOfPowers">
+      <conditionExpression xsi:type="tFormalExpression">${checkerDecision == 'forward'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf1_f05" name="return" sourceRef="wf1_checkerDecisionGw" targetRef="wf1_reviseBill">
+      <conditionExpression xsi:type="tFormalExpression">${checkerDecision == 'return'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf1_f06" name="reject (default)" sourceRef="wf1_checkerDecisionGw" targetRef="wf1_rejectedEnd"/>
+
+    <userTask id="wf1_reviseBill" name="Revise bill">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${initiatorSeat})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf1_f07" name="resubmit" sourceRef="wf1_reviseBill" targetRef="wf1_reviewMergeGw"/>
+
+    <!-- V-01 (Operaton): DMN is called by a businessRuleTask with operaton:decisionRef.
+         The decision result is only a local variable "decisionResult" of this (scope) activity,
+         so output mapping copies the two outputs to process variables with the same names
+         that Flowable sets automatically. decisionResult is a java.util.List (DmnDecisionResult), so the
+         method call getSingleResult() is required: the property form .singleResult is resolved by the
+         List EL resolver as an index and fails with NumberFormatException. -->
+    <businessRuleTask id="wf1_delegationOfPowers" name="Delegation of powers (DMN)"
+                      operaton:decisionRef="wf1-delegation-of-powers"
+                      operaton:decisionRefBinding="deployment">
+      <extensionElements>
+        <operaton:inputOutput>
+          <operaton:outputParameter name="approverLevel">${decisionResult.getSingleResult().approverLevel}</operaton:outputParameter>
+          <operaton:outputParameter name="maxAmount">${decisionResult.getSingleResult().maxAmount}</operaton:outputParameter>
+        </operaton:inputOutput>
+      </extensionElements>
+    </businessRuleTask>
+    <sequenceFlow id="wf1_f08" sourceRef="wf1_delegationOfPowers" targetRef="wf1_approverLevelGw"/>
+
+    <exclusiveGateway id="wf1_approverLevelGw" name="Approver level?" default="wf1_f13"/>
+    <sequenceFlow id="wf1_f09" name="SECTION_OFFICER" sourceRef="wf1_approverLevelGw" targetRef="wf1_approve">
+      <conditionExpression xsi:type="tFormalExpression">${approverLevel == 'SECTION_OFFICER'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf1_f10" name="DDO" sourceRef="wf1_approverLevelGw" targetRef="wf1_approve">
+      <conditionExpression xsi:type="tFormalExpression">${approverLevel == 'DDO'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf1_f11" name="HOD" sourceRef="wf1_approverLevelGw" targetRef="wf1_approve">
+      <conditionExpression xsi:type="tFormalExpression">${approverLevel == 'HOD'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf1_f12" name="SECRETARY" sourceRef="wf1_approverLevelGw" targetRef="wf1_approve">
+      <conditionExpression xsi:type="tFormalExpression">${approverLevel == 'SECRETARY'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf1_f13" name="no competent authority (default)" sourceRef="wf1_approverLevelGw" targetRef="wf1_noAuthorityEnd"/>
+
+    <userTask id="wf1_approve" name="Approve">
+      <potentialOwner>
+        <resourceAssignmentExpression>
+          <formalExpression>group(${approverLevel})</formalExpression>
+        </resourceAssignmentExpression>
+      </potentialOwner>
+    </userTask>
+    <sequenceFlow id="wf1_f14" sourceRef="wf1_approve" targetRef="wf1_approverDecisionGw"/>
+
+    <exclusiveGateway id="wf1_approverDecisionGw" name="Approver decision?" default="wf1_f17"/>
+    <sequenceFlow id="wf1_f15" name="approve" sourceRef="wf1_approverDecisionGw" targetRef="wf1_payment">
+      <conditionExpression xsi:type="tFormalExpression">${approverDecision == 'approve'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf1_f16" name="return" sourceRef="wf1_approverDecisionGw" targetRef="wf1_reviseBill">
+      <conditionExpression xsi:type="tFormalExpression">${approverDecision == 'return'}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="wf1_f17" name="reject (default)" sourceRef="wf1_approverDecisionGw" targetRef="wf1_rejectedEnd"/>
+
+    <!-- V-02 (Operaton): external task. -->
+    <serviceTask id="wf1_payment" name="Payment instruction" operaton:type="external" operaton:topic="payment"/>
+    <sequenceFlow id="wf1_f18" sourceRef="wf1_payment" targetRef="wf1_paidEnd"/>
+
+    <endEvent id="wf1_paidEnd" name="Paid"/>
+    <endEvent id="wf1_rejectedEnd" name="Rejected"/>
+    <endEvent id="wf1_noAuthorityEnd" name="Rejected - no competent authority"/>
+  </process>
+</definitions>

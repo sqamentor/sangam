@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "LOGISTICS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "DISPATCH",
+      "role": "DISPATCH",
+      "office": "LOGISTICS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Dispatch desk",
+        "hi": "प्रेषण डेस्क"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DISPATCH",
+      "person": "sew.dispatch",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DISPATCH",
+      "name": {
+        "en": "Dispatch desk",
+        "hi": "प्रेषण डेस्क"
+      }
+    }
+  ]
+}

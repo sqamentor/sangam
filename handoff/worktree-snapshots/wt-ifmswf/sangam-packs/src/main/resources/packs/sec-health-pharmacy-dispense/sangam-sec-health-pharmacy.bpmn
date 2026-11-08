@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Dispensing. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_health_pharmacy" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_rx_clarified" name="sangam.rx.clarified"/>
+  <process id="sangam-sec-health-pharmacy" name="Dispensing" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.health.pharmacy-dispense</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>patientName,prescriptionRef,drugSchedule</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ph_start" name="Prescription presented" operaton:initiator="initiator" operaton:formKey="sangam:sec-health-pharmacy-dispense/prescription"></startEvent>
+    <serviceTask id="ph_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;prescriptionRef=@customerId;drugSchedule=H;prescriberRegNo=NMR-X;prescriberValid=true;pharmacistSeat=PHARMACIST</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ph_rule" name="Schedule controls (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-health-drug-control</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="ph_nmr" name="Verify prescriber on NMR" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>nmr.verify</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>verify</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>prescriberRegNo</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>prescriber</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ph_rxOptGw" name="Prescription drug?" default="sec_health_pharmacy_f4"></exclusiveGateway>
+    <exclusiveGateway id="ph_rxOptMerge" name=""></exclusiveGateway>
+    <exclusiveGateway id="ph_validGw" name="Prescriber valid?" default="sec_health_pharmacy_f11"></exclusiveGateway>
+    <serviceTask id="ph_rjRx_code" name="Reason: PRESCRIBER_NOT_VERIFIED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=PRESCRIBER_NOT_VERIFIED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ph_rjRx_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ph_rjRx_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="ph_review" name="Pharmacist review" operaton:candidateGroups="${pharmacistSeat}" operaton:formKey="sangam:sec-health-pharmacy-dispense/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>rxDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ph_revGw" name="" default="sec_health_pharmacy_f20"></exclusiveGateway>
+    <serviceTask id="ph_ask" name="Ask the prescriber" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>rx-clarification</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="ph_answer" name="Prescriber answers"><messageEventDefinition messageRef="msg_sangam_rx_clarified"/></intermediateCatchEvent>
+    <endEvent id="ph_endRefused" name="Refused (reasons recorded)"></endEvent>
+    <userTask id="ph_second" name="Second pharmacist check (X / NDPS)" operaton:candidateGroups="PHARMACIST-2" operaton:formKey="sangam:sec-health-pharmacy-dispense/second"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ph_dualGw" name="Dual check?" default="sec_health_pharmacy_f18"></exclusiveGateway>
+    <exclusiveGateway id="ph_dualMerge" name=""></exclusiveGateway>
+    <serviceTask id="ph_issue" name="Issue stock by batch and expiry" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>inventory.issue</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>issue</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>prescriptionRef,quantity</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>stock</operaton:string></operaton:field><operaton:field name="step"><operaton:string>issue</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ph_register" name="Register entry (retain 3 years)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.register</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>h1</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName,prescriberRegNo,prescriptionRef,quantity</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>register</operaton:string></operaton:field><operaton:field name="step"><operaton:string>register</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ph_regOptGw" name="Register required?" default="sec_health_pharmacy_f23"></exclusiveGateway>
+    <exclusiveGateway id="ph_regOptMerge" name=""></exclusiveGateway>
+    <endEvent id="ph_end" name="Dispensed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_health_pharmacy_f1" sourceRef="ph_start" targetRef="ph_defaults"/>
+    <sequenceFlow id="sec_health_pharmacy_f2" sourceRef="ph_defaults" targetRef="ph_rule"/>
+    <sequenceFlow id="sec_health_pharmacy_f3" name="yes" sourceRef="ph_rxOptGw" targetRef="ph_nmr"><conditionExpression xsi:type="tFormalExpression">${prescriptionRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_pharmacy_f4" name="no" sourceRef="ph_rxOptGw" targetRef="ph_rxOptMerge"/>
+    <sequenceFlow id="sec_health_pharmacy_f5" sourceRef="ph_nmr" targetRef="ph_rxOptMerge"/>
+    <sequenceFlow id="sec_health_pharmacy_f6" sourceRef="ph_rule" targetRef="ph_rxOptGw"/>
+    <sequenceFlow id="sec_health_pharmacy_f7" sourceRef="ph_rxOptMerge" targetRef="ph_validGw"/>
+    <sequenceFlow id="sec_health_pharmacy_f8" sourceRef="ph_rjRx_reject" targetRef="ph_rjRx_endRejected"/>
+    <sequenceFlow id="sec_health_pharmacy_f9" sourceRef="ph_rjRx_code" targetRef="ph_rjRx_reject"/>
+    <sequenceFlow id="sec_health_pharmacy_f10" name="no" sourceRef="ph_validGw" targetRef="ph_rjRx_code"><conditionExpression xsi:type="tFormalExpression">${prescriptionRequired &amp;&amp; !prescriberValid}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_pharmacy_f11" name="yes" sourceRef="ph_validGw" targetRef="ph_review"/>
+    <sequenceFlow id="sec_health_pharmacy_f12" sourceRef="ph_review" targetRef="ph_revGw"/>
+    <sequenceFlow id="sec_health_pharmacy_f13" name="clarify" sourceRef="ph_revGw" targetRef="ph_ask"><conditionExpression xsi:type="tFormalExpression">${rxDecision == 'clarify'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_pharmacy_f14" sourceRef="ph_ask" targetRef="ph_answer"/>
+    <sequenceFlow id="sec_health_pharmacy_f15" sourceRef="ph_answer" targetRef="ph_review"/>
+    <sequenceFlow id="sec_health_pharmacy_f16" name="refuse" sourceRef="ph_revGw" targetRef="ph_endRefused"><conditionExpression xsi:type="tFormalExpression">${rxDecision == 'refuse'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_pharmacy_f17" name="yes" sourceRef="ph_dualGw" targetRef="ph_second"><conditionExpression xsi:type="tFormalExpression">${dualCheck}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_pharmacy_f18" name="no" sourceRef="ph_dualGw" targetRef="ph_dualMerge"/>
+    <sequenceFlow id="sec_health_pharmacy_f19" sourceRef="ph_second" targetRef="ph_dualMerge"/>
+    <sequenceFlow id="sec_health_pharmacy_f20" name="dispense" sourceRef="ph_revGw" targetRef="ph_dualGw"/>
+    <sequenceFlow id="sec_health_pharmacy_f21" sourceRef="ph_dualMerge" targetRef="ph_issue"/>
+    <sequenceFlow id="sec_health_pharmacy_f22" name="yes" sourceRef="ph_regOptGw" targetRef="ph_register"><conditionExpression xsi:type="tFormalExpression">${registerRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_pharmacy_f23" name="no" sourceRef="ph_regOptGw" targetRef="ph_regOptMerge"/>
+    <sequenceFlow id="sec_health_pharmacy_f24" sourceRef="ph_register" targetRef="ph_regOptMerge"/>
+    <sequenceFlow id="sec_health_pharmacy_f25" sourceRef="ph_issue" targetRef="ph_regOptGw"/>
+    <sequenceFlow id="sec_health_pharmacy_f26" sourceRef="ph_regOptMerge" targetRef="ph_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_health_pharmacy_diagram">
+    <bpmndi:BPMNPlane id="sec_health_pharmacy_plane" bpmnElement="sangam-sec-health-pharmacy">
+      <bpmndi:BPMNShape id="ph_start_di" bpmnElement="ph_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_defaults_di" bpmnElement="ph_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_rule_di" bpmnElement="ph_rule"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_nmr_di" bpmnElement="ph_nmr"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_rxOptGw_di" bpmnElement="ph_rxOptGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_rxOptMerge_di" bpmnElement="ph_rxOptMerge"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_validGw_di" bpmnElement="ph_validGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_rjRx_code_di" bpmnElement="ph_rjRx_code"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_rjRx_reject_di" bpmnElement="ph_rjRx_reject"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_rjRx_endRejected_di" bpmnElement="ph_rjRx_endRejected"><dc:Bounds x="1537" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_review_di" bpmnElement="ph_review"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_revGw_di" bpmnElement="ph_revGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_ask_di" bpmnElement="ph_ask"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_answer_di" bpmnElement="ph_answer"><dc:Bounds x="1702" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_endRefused_di" bpmnElement="ph_endRefused"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_second_di" bpmnElement="ph_second"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_dualGw_di" bpmnElement="ph_dualGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_dualMerge_di" bpmnElement="ph_dualMerge"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_issue_di" bpmnElement="ph_issue"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_register_di" bpmnElement="ph_register"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_regOptGw_di" bpmnElement="ph_regOptGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_regOptMerge_di" bpmnElement="ph_regOptMerge"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ph_end_di" bpmnElement="ph_end"><dc:Bounds x="2692" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f1_di" bpmnElement="sec_health_pharmacy_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f2_di" bpmnElement="sec_health_pharmacy_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f3_di" bpmnElement="sec_health_pharmacy_f3"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f4_di" bpmnElement="sec_health_pharmacy_f4"><di:waypoint x="590" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f5_di" bpmnElement="sec_health_pharmacy_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f6_di" bpmnElement="sec_health_pharmacy_f6"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f7_di" bpmnElement="sec_health_pharmacy_f7"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f8_di" bpmnElement="sec_health_pharmacy_f8"><di:waypoint x="1440" y="195"/><di:waypoint x="1488" y="195"/><di:waypoint x="1488" y="445"/><di:waypoint x="1537" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f9_di" bpmnElement="sec_health_pharmacy_f9"><di:waypoint x="1275" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f10_di" bpmnElement="sec_health_pharmacy_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f11_di" bpmnElement="sec_health_pharmacy_f11"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f12_di" bpmnElement="sec_health_pharmacy_f12"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f13_di" bpmnElement="sec_health_pharmacy_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f14_di" bpmnElement="sec_health_pharmacy_f14"><di:waypoint x="1605" y="320"/><di:waypoint x="1702" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f15_di" bpmnElement="sec_health_pharmacy_f15"><di:waypoint x="1720" y="338"/><di:waypoint x="1720" y="370"/><di:waypoint x="1225" y="370"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f16_di" bpmnElement="sec_health_pharmacy_f16"><di:waypoint x="1415" y="70"/><di:waypoint x="1476" y="70"/><di:waypoint x="1476" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f17_di" bpmnElement="sec_health_pharmacy_f17"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f18_di" bpmnElement="sec_health_pharmacy_f18"><di:waypoint x="1580" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f19_di" bpmnElement="sec_health_pharmacy_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f20_di" bpmnElement="sec_health_pharmacy_f20"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f21_di" bpmnElement="sec_health_pharmacy_f21"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f22_di" bpmnElement="sec_health_pharmacy_f22"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f23_di" bpmnElement="sec_health_pharmacy_f23"><di:waypoint x="2240" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f24_di" bpmnElement="sec_health_pharmacy_f24"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f25_di" bpmnElement="sec_health_pharmacy_f25"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_pharmacy_f26_di" bpmnElement="sec_health_pharmacy_f26"><di:waypoint x="2570" y="70"/><di:waypoint x="2692" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

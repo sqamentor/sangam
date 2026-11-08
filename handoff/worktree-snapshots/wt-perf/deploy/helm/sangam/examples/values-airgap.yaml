@@ -1,0 +1,18 @@
+# Air-gapped install: images loaded into the internal registry with deploy/airgap/load-images.sh.
+# An overlay: use it together with a database example, e.g. -f examples/values-postgres.yaml -f examples/values-airgap.yaml.
+global:
+  imageRegistry: registry.sdc.local
+  imagePullSecrets: [sdc-registry]
+server:
+  image:
+    registry: registry.sdc.local
+    repository: sangam/sangam-server
+    digest: ""        # paste from the bundle's images.lock (sha256:...)
+ui:
+  image:
+    registry: registry.sdc.local
+    repository: sangam/sangam-ui
+otel:
+  enabled: false
+networkPolicy:
+  extraEgress: []     # no internet egress at all

@@ -1,0 +1,27 @@
+{
+  "key": "up08-entity-lifecycle/endorsement",
+  "version": "1.0.0",
+  "pack": "universal.up08-entity-lifecycle",
+  "title": {
+    "en": "Process endorsement",
+    "hi": "पृष्ठांकन संसाधित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "endorsement",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Endorsement",
+        "hi": "पृष्ठांकन"
+      }
+    }
+  ]
+}

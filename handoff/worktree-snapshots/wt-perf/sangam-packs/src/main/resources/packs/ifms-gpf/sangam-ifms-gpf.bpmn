@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- GPF advance / withdrawal. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_gpf" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-ifms-gpf" name="GPF advance / withdrawal" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.gpf</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>gpfAccount,amount,gpfPurpose</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="gp_start" name="Application" operaton:initiator="initiator" operaton:formKey="sangam:ifms-gpf/application"></startEvent>
+    <serviceTask id="gp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>amount=0;gpfBalance=0;qualifyingService=0;gpfPurpose=OTHER;billType=GPF_WITHDRAWAL;caseType=GPF;routingDecisionKey=ifms-gpf-authority;powersDecisionKey=ifms-gpf-powers;scrutinySeat=DDO-1;sanctionSla=15D;appealAllowed=false;outputTemplate=gpf-sanction</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="gp_rules" name="GPF eligibility (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>gpf-withdrawal</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="gp_okGw" name="" default="ifms_gpf_f7"></exclusiveGateway>
+    <serviceTask id="gp_rjRule_code" name="Reason: GPF_NOT_ELIGIBLE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=GPF_NOT_ELIGIBLE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="gp_rjRule_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gp_rjRule_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="gp_sanction" name="Sanction (core)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="gp_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="gp_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <callActivity id="gp_bill" name="GPF bill" calledElement="sangam-ifms-bill"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="gp_sanGw" name="sanctionOutcome?" default="ifms_gpf_f10"></exclusiveGateway>
+    <endEvent id="gp_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="ifms_gpf_f1" sourceRef="gp_start" targetRef="gp_defaults"/>
+    <sequenceFlow id="ifms_gpf_f2" sourceRef="gp_defaults" targetRef="gp_rules"/>
+    <sequenceFlow id="ifms_gpf_f3" sourceRef="gp_rules" targetRef="gp_okGw"/>
+    <sequenceFlow id="ifms_gpf_f4" sourceRef="gp_rjRule_reject" targetRef="gp_rjRule_endRejected"/>
+    <sequenceFlow id="ifms_gpf_f5" sourceRef="gp_rjRule_code" targetRef="gp_rjRule_reject"/>
+    <sequenceFlow id="ifms_gpf_f6" name="not eligible" sourceRef="gp_okGw" targetRef="gp_rjRule_code"><conditionExpression xsi:type="tFormalExpression">${gpfEligible == false}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_gpf_f7" name="eligible" sourceRef="gp_okGw" targetRef="gp_sanction"/>
+    <sequenceFlow id="ifms_gpf_f8" sourceRef="gp_rj_reject" targetRef="gp_rj_endRejected"/>
+    <sequenceFlow id="ifms_gpf_f9" name="SANCTIONED" sourceRef="gp_sanGw" targetRef="gp_bill"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_gpf_f10" name="otherwise" sourceRef="gp_sanGw" targetRef="gp_rj_reject"/>
+    <sequenceFlow id="ifms_gpf_f11" sourceRef="gp_sanction" targetRef="gp_sanGw"/>
+    <sequenceFlow id="ifms_gpf_f12" sourceRef="gp_bill" targetRef="gp_end"/>
+    <subProcess id="gp_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="gp_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="gp_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gp_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gp_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_gpf_f13" sourceRef="gp_withdrawStart" targetRef="gp_withdrawKind"/>
+      <sequenceFlow id="ifms_gpf_f14" sourceRef="gp_withdrawKind" targetRef="gp_withdrawCall"/>
+      <sequenceFlow id="ifms_gpf_f15" sourceRef="gp_withdrawCall" targetRef="gp_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="gp_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="gp_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="gp_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="gp_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="gp_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="ifms_gpf_f16" sourceRef="gp_cancelStart" targetRef="gp_cancelKind"/>
+      <sequenceFlow id="ifms_gpf_f17" sourceRef="gp_cancelKind" targetRef="gp_cancelCall"/>
+      <sequenceFlow id="ifms_gpf_f18" sourceRef="gp_cancelCall" targetRef="gp_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_gpf_diagram">
+    <bpmndi:BPMNPlane id="ifms_gpf_plane" bpmnElement="sangam-ifms-gpf">
+      <bpmndi:BPMNShape id="gp_start_di" bpmnElement="gp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_defaults_di" bpmnElement="gp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_rules_di" bpmnElement="gp_rules"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_okGw_di" bpmnElement="gp_okGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_rjRule_code_di" bpmnElement="gp_rjRule_code"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_rjRule_reject_di" bpmnElement="gp_rjRule_reject"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_rjRule_endRejected_di" bpmnElement="gp_rjRule_endRejected"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_sanction_di" bpmnElement="gp_sanction"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_rj_reject_di" bpmnElement="gp_rj_reject"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_rj_endRejected_di" bpmnElement="gp_rj_endRejected"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_bill_di" bpmnElement="gp_bill"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_sanGw_di" bpmnElement="gp_sanGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_end_di" bpmnElement="gp_end"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_withdraw_di" bpmnElement="gp_withdraw" isExpanded="true"><dc:Bounds x="30" y="388" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_withdrawStart_di" bpmnElement="gp_withdrawStart"><dc:Bounds x="92" y="450" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_withdrawKind_di" bpmnElement="gp_withdrawKind"><dc:Bounds x="225" y="428" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_withdrawCall_di" bpmnElement="gp_withdrawCall"><dc:Bounds x="390" y="428" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_withdrawEnd_di" bpmnElement="gp_withdrawEnd"><dc:Bounds x="587" y="450" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_cancel_di" bpmnElement="gp_cancel" isExpanded="true"><dc:Bounds x="30" y="578" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_cancelStart_di" bpmnElement="gp_cancelStart"><dc:Bounds x="92" y="640" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_cancelKind_di" bpmnElement="gp_cancelKind"><dc:Bounds x="225" y="618" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_cancelCall_di" bpmnElement="gp_cancelCall"><dc:Bounds x="390" y="618" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gp_cancelEnd_di" bpmnElement="gp_cancelEnd"><dc:Bounds x="587" y="640" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_gpf_f1_di" bpmnElement="ifms_gpf_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f2_di" bpmnElement="ifms_gpf_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f3_di" bpmnElement="ifms_gpf_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f4_di" bpmnElement="ifms_gpf_f4"><di:waypoint x="945" y="195"/><di:waypoint x="993" y="195"/><di:waypoint x="993" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f5_di" bpmnElement="ifms_gpf_f5"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f6_di" bpmnElement="ifms_gpf_f6"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f7_di" bpmnElement="ifms_gpf_f7"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f8_di" bpmnElement="ifms_gpf_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f9_di" bpmnElement="ifms_gpf_f9"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f10_di" bpmnElement="ifms_gpf_f10"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f11_di" bpmnElement="ifms_gpf_f11"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f12_di" bpmnElement="ifms_gpf_f12"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f13_di" bpmnElement="ifms_gpf_f13"><di:waypoint x="128" y="468"/><di:waypoint x="225" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f14_di" bpmnElement="ifms_gpf_f14"><di:waypoint x="325" y="468"/><di:waypoint x="390" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f15_di" bpmnElement="ifms_gpf_f15"><di:waypoint x="490" y="468"/><di:waypoint x="587" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f16_di" bpmnElement="ifms_gpf_f16"><di:waypoint x="128" y="658"/><di:waypoint x="225" y="658"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f17_di" bpmnElement="ifms_gpf_f17"><di:waypoint x="325" y="658"/><di:waypoint x="390" y="658"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_gpf_f18_di" bpmnElement="ifms_gpf_f18"><di:waypoint x="490" y="658"/><di:waypoint x="587" y="658"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

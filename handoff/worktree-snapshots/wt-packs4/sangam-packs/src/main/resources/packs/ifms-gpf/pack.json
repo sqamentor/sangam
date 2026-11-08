@@ -1,0 +1,104 @@
+{
+  "id": "gov.ifms.gpf",
+  "version": "1.0.0",
+  "name": {
+    "en": "GPF advance, withdrawal and final payment",
+    "hi": "जीपीएफ अग्रिम, आहरण और अंतिम भुगतान"
+  },
+  "domain": "IFMS",
+  "description": "GPF advance / withdrawal by DMN (purpose, balance share, service), sanction within the profile SLA (15 days [U]), payment as a gov.ifms.bill of type GPF; final payment on retirement; subscription ceiling from the profile.",
+  "mainProcesses": [
+    "sangam-ifms-gpf"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-gpf/sangam-ifms-gpf.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-gpf/gpf-withdrawal.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-gpf/ifms-gpf-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-gpf/ifms-gpf-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-gpf/forms/application.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-gpf/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-gpf/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    }
+  ],
+  "covers": [
+    "IFC-171",
+    "IFC-026",
+    "IFC-254",
+    "IFS-NL-002",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core",
+    "gov.ifms.pao-chain",
+    "gov.ifms.bill"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-rejection",
+    "sangam-core-sanction",
+    "sangam-ifms-bill"
+  ],
+  "placeholders": [
+    {
+      "decision": "ifms-gpf-powers",
+      "rule": "HOO GPF no monetary limit",
+      "reason": "the GPF (CS) Rules 1960 sanctioning authority is not read (corpus IFC-171 [U: department order]); confirm and deploy it as a tenant DMN override"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "gpfBalance",
+      "powerLimit"
+    ]
+  }
+}

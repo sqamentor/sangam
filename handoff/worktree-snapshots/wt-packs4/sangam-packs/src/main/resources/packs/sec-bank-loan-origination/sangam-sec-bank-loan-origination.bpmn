@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Loan origination. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_bank_loan_originatio" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_clarificationReceived" name="sangam.clarificationReceived"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-bank-loan-origination" name="Loan origination" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.bank.loan-origination</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>customerId,loanProduct,amount,tenureMonths,roiPct</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="lo_start" name="Loan application" operaton:initiator="initiator" operaton:formKey="sangam:sec-bank-loan-origination/application"></startEvent>
+    <serviceTask id="lo_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>loanProduct=PERSONAL;tenureMonths=36;monthlyIncome=5000000;existingEmi=0;collateralType=NONE;consentGiven=true;kycCompliant=true;bureauScore=750;roiPct=12;caseType=LOAN;committeeThreshold=5000000000;routingDecisionKey=sec-bank-loan-authority;powersDecisionKey=sec-bank-loan-powers;signatureRequired=true;committeeSeats=CREDIT-COMM-1,CREDIT-COMM-2,CREDIT-COMM-3;quorumRule=MAJORITY;analystSeat=CREDIT-ANALYST;kfsValidity=3WD;executionConnector=bank.transfer;executionStep=disburse;reconcileRequired=true;executionPayloadFields=customerId,amount;outputTemplate=sanction-letter;appealAllowed=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lo_consentGw" name="Consent for bureau pull?" default="sec_bank_loan_originatio_f4"></exclusiveGateway>
+    <endEvent id="lo_endNoConsent" name="Stopped: no consent"></endEvent>
+    <serviceTask id="lo_kyc" name="KYC status" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cbs.kycStatus</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>status</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>kyc</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lo_kycGw" name="KYC compliant?" default="sec_bank_loan_originatio_f9"></exclusiveGateway>
+    <serviceTask id="lo_rjKyc_code" name="Reason: KYC_NOT_COMPLIANT" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=KYC_NOT_COMPLIANT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="lo_rjKyc_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="lo_rjKyc_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="lo_bureau" name="Credit bureau report" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>bureau.pull</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>bureau</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="lo_foir" name="Indicative FOIR" operaton:expression="${execution.setVariable('foirPct', (existingEmi + amount / tenureMonths) * 100 / monthlyIncome)}"></serviceTask>
+    <businessRuleTask id="lo_policy" name="Credit policy (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-bank-credit-policy</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="lo_policyGw" name="Policy result?" default="sec_bank_loan_originatio_f24"></exclusiveGateway>
+    <serviceTask id="lo_rjPolicy_code" name="Reason: CREDIT_POLICY_DECLINE" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=CREDIT_POLICY_DECLINE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="lo_rjPolicy_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="lo_rjPolicy_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="lo_appraise_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lo_appraise</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>3WD</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="lo_appraise" name="Credit appraisal" operaton:candidateGroups="${analystSeat}" operaton:formKey="sangam:sec-bank-loan-origination/appraisal" operaton:dueDate="${lo_appraiseDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>appraisalDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lo_appraise_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lo_appraise</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>analystSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lo_appraise_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="lo_appraise_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lo_appraise</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>analystSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>appraisalDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lo_appraise_breachGw" name="Deemed?" default="sec_bank_loan_originatio_f21"></exclusiveGateway>
+    <exclusiveGateway id="lo_appraise_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="lo_apprGw" name="" default="sec_bank_loan_originatio_f31"></exclusiveGateway>
+    <serviceTask id="lo_ask" name="Ask the applicant for documents" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>loan-clarification</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>sms,email</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>applicantRef</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="lo_clar" name="Documents received"><messageEventDefinition messageRef="msg_sangam_clarificationReceived"/></intermediateCatchEvent>
+    <callActivity id="lo_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="lo_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="lo_secGw" name="Secured?" default="sec_bank_loan_originatio_f38"></exclusiveGateway>
+    <parallelGateway id="lo_fork" name="Legal and valuation"></parallelGateway>
+    <parallelGateway id="lo_join" name=""></parallelGateway>
+    <userTask id="lo_legalofficer" name="Legal scrutiny of title" operaton:candidateGroups="LEGAL-OFFICER" operaton:formKey="sangam:sec-bank-loan-origination/legal-officer"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="lo_valuer" name="Valuation of collateral" operaton:candidateGroups="VALUER" operaton:formKey="sangam:sec-bank-loan-origination/valuer"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="lo_commGw" name="Above the committee band?" default="sec_bank_loan_originatio_f40"></exclusiveGateway>
+    <callActivity id="lo_committee" name="Credit committee (core committee)" calledElement="sangam-core-committee"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="lo_sanction" name="Sanction by delegated power (core sanction, SoD, signature)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="lo_commRes" name="" default="sec_bank_loan_originatio_f45"></exclusiveGateway>
+    <serviceTask id="lo_rjComm_code" name="Reason: COMMITTEE_DECLINED" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=COMMITTEE_DECLINED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="lo_rjComm_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="lo_rjComm_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="lo_kfs" name="Issue Key Facts Statement (APR, fees, recovery, grievance officer)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>docs.kfs</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>issue</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,amount,tenureMonths,roiPct</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>kfs</operaton:string></operaton:field><operaton:field name="step"><operaton:string>kfs</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lo_sanGw" name="sanctionOutcome?" default="sec_bank_loan_originatio_f48"></exclusiveGateway>
+    <serviceTask id="lo_accept_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lo_accept</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${kfsValidity}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="lo_accept" name="Borrower accepts KFS and sanction terms" operaton:candidateGroups="${borrowerGroup}" operaton:formKey="sangam:sec-bank-loan-origination/accept" operaton:dueDate="${lo_acceptDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>kfsDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="lo_accept_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lo_accept</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>borrowerGroup</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="lo_accept_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="lo_accept_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>lo_accept</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>DEEMED_REFUSAL</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>borrowerGroup</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>kfsDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>accept</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>declined</operaton:string></operaton:field><operaton:field name="maxEscalations"><operaton:string>0</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lo_accept_breachGw" name="Deemed?" default="sec_bank_loan_originatio_f55"></exclusiveGateway>
+    <exclusiveGateway id="lo_accept_done" name=""></exclusiveGateway>
+    <serviceTask id="lo_borrower" name="Borrower portal group" operaton:expression="${execution.setVariable('borrowerGroup', 'external:'.concat(customerId))}"></serviceTask>
+    <exclusiveGateway id="lo_acceptGw" name="Accepted within validity?" default="sec_bank_loan_originatio_f62"></exclusiveGateway>
+    <endEvent id="lo_endDeclined" name="Offer lapsed / declined"></endEvent>
+    <serviceTask id="lo_agreement" name="E-sign loan agreement over the sanctioned terms" operaton:class="org.sangam.packs.core.SignatureDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>REQUEST</operaton:string></operaton:field><operaton:field name="purpose"><operaton:string>loan-agreement</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="lo_disburse" name="Disburse to the borrower account (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <serviceTask id="lo_book" name="Book loan in LMS (repayment schedule)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>lms.book</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>book</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>customerId,amount,tenureMonths,roiPct</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>lms</operaton:string></operaton:field><operaton:field name="step"><operaton:string>book</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="lo_disbFailed" name="Disbursal failed" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>disbursal-failed</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="lo_exGw" name="executionOutcome?" default="sec_bank_loan_originatio_f65"></exclusiveGateway>
+    <callActivity id="lo_close" name="Sanction letter and closure (core)" calledElement="sangam-core-closure"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="lo_end" name="Disbursed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="lo_appraise_warn" name="SLA warning (75%)" attachedToRef="lo_appraise" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lo_appraiseWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="lo_appraise_breach" name="SLA breached" attachedToRef="lo_appraise" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lo_appraiseDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="lo_accept_warn" name="SLA warning (75%)" attachedToRef="lo_accept" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lo_acceptWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="lo_accept_breach" name="SLA breached" attachedToRef="lo_accept" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${lo_acceptDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_bank_loan_originatio_f1" sourceRef="lo_start" targetRef="lo_defaults"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f2" sourceRef="lo_defaults" targetRef="lo_consentGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f3" name="no" sourceRef="lo_consentGw" targetRef="lo_endNoConsent"><conditionExpression xsi:type="tFormalExpression">${!consentGiven}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f4" name="yes" sourceRef="lo_consentGw" targetRef="lo_kyc"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f5" sourceRef="lo_kyc" targetRef="lo_kycGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f6" sourceRef="lo_rjKyc_reject" targetRef="lo_rjKyc_endRejected"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f7" sourceRef="lo_rjKyc_code" targetRef="lo_rjKyc_reject"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f8" name="no" sourceRef="lo_kycGw" targetRef="lo_rjKyc_code"><conditionExpression xsi:type="tFormalExpression">${!kycCompliant}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f9" name="yes" sourceRef="lo_kycGw" targetRef="lo_bureau"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f10" sourceRef="lo_bureau" targetRef="lo_foir"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f11" sourceRef="lo_foir" targetRef="lo_policy"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f12" sourceRef="lo_policy" targetRef="lo_policyGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f13" sourceRef="lo_rjPolicy_reject" targetRef="lo_rjPolicy_endRejected"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f14" sourceRef="lo_rjPolicy_code" targetRef="lo_rjPolicy_reject"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f15" name="decline (reasons communicated)" sourceRef="lo_policyGw" targetRef="lo_rjPolicy_code"><conditionExpression xsi:type="tFormalExpression">${creditDecision == 'DECLINE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f16" sourceRef="lo_appraise_warn" targetRef="lo_appraise_warnNotify"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f17" sourceRef="lo_appraise_warnNotify" targetRef="lo_appraise_warnEnd"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f18" sourceRef="lo_appraise_breach" targetRef="lo_appraise_breachAct"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f19" sourceRef="lo_appraise_breachAct" targetRef="lo_appraise_breachGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f20" name="deemed" sourceRef="lo_appraise_breachGw" targetRef="lo_appraise_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f21" name="escalated" sourceRef="lo_appraise_breachGw" targetRef="lo_appraise_slaPlan"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f22" sourceRef="lo_appraise_slaPlan" targetRef="lo_appraise"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f23" sourceRef="lo_appraise" targetRef="lo_appraise_done"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f24" name="eligible / refer" sourceRef="lo_policyGw" targetRef="lo_appraise_slaPlan"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f25" sourceRef="lo_appraise_done" targetRef="lo_apprGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f26" name="clarify" sourceRef="lo_apprGw" targetRef="lo_ask"><conditionExpression xsi:type="tFormalExpression">${appraisalDecision == 'clarify'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f27" sourceRef="lo_ask" targetRef="lo_clar"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f28" sourceRef="lo_clar" targetRef="lo_appraise_slaPlan"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f29" sourceRef="lo_rj_reject" targetRef="lo_rj_endRejected"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f30" name="reject" sourceRef="lo_apprGw" targetRef="lo_rj_reject"><conditionExpression xsi:type="tFormalExpression">${appraisalDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f31" name="recommend" sourceRef="lo_apprGw" targetRef="lo_secGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f32" name="secured" sourceRef="lo_secGw" targetRef="lo_fork"><conditionExpression xsi:type="tFormalExpression">${collateralType != 'NONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f33" sourceRef="lo_fork" targetRef="lo_legalofficer"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f34" sourceRef="lo_legalofficer" targetRef="lo_join"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f35" sourceRef="lo_fork" targetRef="lo_valuer"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f36" sourceRef="lo_valuer" targetRef="lo_join"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f37" sourceRef="lo_join" targetRef="lo_commGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f38" name="unsecured" sourceRef="lo_secGw" targetRef="lo_commGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f39" name="above 5 crore (committeeThreshold, minor units)" sourceRef="lo_commGw" targetRef="lo_committee"><conditionExpression xsi:type="tFormalExpression">${amount &gt; committeeThreshold}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f40" name="within delegated power" sourceRef="lo_commGw" targetRef="lo_sanction"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f41" sourceRef="lo_committee" targetRef="lo_commRes"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f42" name="approved" sourceRef="lo_commRes" targetRef="lo_sanction"><conditionExpression xsi:type="tFormalExpression">${committeeApproved}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f43" sourceRef="lo_rjComm_reject" targetRef="lo_rjComm_endRejected"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f44" sourceRef="lo_rjComm_code" targetRef="lo_rjComm_reject"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f45" name="declined" sourceRef="lo_commRes" targetRef="lo_rjComm_code"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f46" name="SANCTIONED" sourceRef="lo_sanGw" targetRef="lo_kfs"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f47" name="RETURNED" sourceRef="lo_sanGw" targetRef="lo_appraise_slaPlan"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'RETURNED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f48" name="otherwise" sourceRef="lo_sanGw" targetRef="lo_rj_reject"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f49" sourceRef="lo_sanction" targetRef="lo_sanGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f50" sourceRef="lo_accept_warn" targetRef="lo_accept_warnNotify"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f51" sourceRef="lo_accept_warnNotify" targetRef="lo_accept_warnEnd"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f52" sourceRef="lo_accept_breach" targetRef="lo_accept_breachAct"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f53" sourceRef="lo_accept_breachAct" targetRef="lo_accept_breachGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f54" name="deemed" sourceRef="lo_accept_breachGw" targetRef="lo_accept_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f55" name="escalated" sourceRef="lo_accept_breachGw" targetRef="lo_accept_slaPlan"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f56" sourceRef="lo_accept_slaPlan" targetRef="lo_accept"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f57" sourceRef="lo_accept" targetRef="lo_accept_done"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f58" sourceRef="lo_kfs" targetRef="lo_borrower"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f59" sourceRef="lo_borrower" targetRef="lo_accept_slaPlan"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f60" sourceRef="lo_accept_done" targetRef="lo_acceptGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f61" name="declined / lapsed" sourceRef="lo_acceptGw" targetRef="lo_endDeclined"><conditionExpression xsi:type="tFormalExpression">${kfsDecision != 'accept'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f62" name="accepted" sourceRef="lo_acceptGw" targetRef="lo_agreement"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f63" sourceRef="lo_agreement" targetRef="lo_disburse"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f64" name="DONE" sourceRef="lo_exGw" targetRef="lo_book"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_bank_loan_originatio_f65" name="otherwise" sourceRef="lo_exGw" targetRef="lo_disbFailed"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f66" sourceRef="lo_disburse" targetRef="lo_exGw"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f67" sourceRef="lo_disbFailed" targetRef="lo_sanction"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f68" sourceRef="lo_book" targetRef="lo_close"/>
+    <sequenceFlow id="sec_bank_loan_originatio_f69" sourceRef="lo_close" targetRef="lo_end"/>
+    <subProcess id="lo_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="lo_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="lo_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="lo_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="lo_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_bank_loan_originatio_f70" sourceRef="lo_withdrawStart" targetRef="lo_withdrawKind"/>
+      <sequenceFlow id="sec_bank_loan_originatio_f71" sourceRef="lo_withdrawKind" targetRef="lo_withdrawCall"/>
+      <sequenceFlow id="sec_bank_loan_originatio_f72" sourceRef="lo_withdrawCall" targetRef="lo_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="lo_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="lo_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="lo_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="lo_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="lo_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_bank_loan_originatio_f73" sourceRef="lo_cancelStart" targetRef="lo_cancelKind"/>
+      <sequenceFlow id="sec_bank_loan_originatio_f74" sourceRef="lo_cancelKind" targetRef="lo_cancelCall"/>
+      <sequenceFlow id="sec_bank_loan_originatio_f75" sourceRef="lo_cancelCall" targetRef="lo_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_bank_loan_originatio_diagram">
+    <bpmndi:BPMNPlane id="sec_bank_loan_originatio_plane" bpmnElement="sangam-sec-bank-loan-origination">
+      <bpmndi:BPMNShape id="lo_start_di" bpmnElement="lo_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_defaults_di" bpmnElement="lo_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_consentGw_di" bpmnElement="lo_consentGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_endNoConsent_di" bpmnElement="lo_endNoConsent"><dc:Bounds x="547" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_kyc_di" bpmnElement="lo_kyc"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_kycGw_di" bpmnElement="lo_kycGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rjKyc_code_di" bpmnElement="lo_rjKyc_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rjKyc_reject_di" bpmnElement="lo_rjKyc_reject"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rjKyc_endRejected_di" bpmnElement="lo_rjKyc_endRejected"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_bureau_di" bpmnElement="lo_bureau"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_foir_di" bpmnElement="lo_foir"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_policy_di" bpmnElement="lo_policy"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_policyGw_di" bpmnElement="lo_policyGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rjPolicy_code_di" bpmnElement="lo_rjPolicy_code"><dc:Bounds x="1505" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rjPolicy_reject_di" bpmnElement="lo_rjPolicy_reject"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rjPolicy_endRejected_di" bpmnElement="lo_rjPolicy_endRejected"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_appraise_slaPlan_di" bpmnElement="lo_appraise_slaPlan"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_appraise_di" bpmnElement="lo_appraise"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_appraise_warnNotify_di" bpmnElement="lo_appraise_warnNotify"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_appraise_warnEnd_di" bpmnElement="lo_appraise_warnEnd"><dc:Bounds x="2032" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_appraise_breachAct_di" bpmnElement="lo_appraise_breachAct"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_appraise_breachGw_di" bpmnElement="lo_appraise_breachGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_appraise_done_di" bpmnElement="lo_appraise_done"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_apprGw_di" bpmnElement="lo_apprGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_ask_di" bpmnElement="lo_ask"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_clar_di" bpmnElement="lo_clar"><dc:Bounds x="2692" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rj_reject_di" bpmnElement="lo_rj_reject"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rj_endRejected_di" bpmnElement="lo_rj_endRejected"><dc:Bounds x="4177" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_secGw_di" bpmnElement="lo_secGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_fork_di" bpmnElement="lo_fork"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_join_di" bpmnElement="lo_join"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_legalofficer_di" bpmnElement="lo_legalofficer"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_valuer_di" bpmnElement="lo_valuer"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_commGw_di" bpmnElement="lo_commGw"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_committee_di" bpmnElement="lo_committee"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_sanction_di" bpmnElement="lo_sanction"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_commRes_di" bpmnElement="lo_commRes"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rjComm_code_di" bpmnElement="lo_rjComm_code"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rjComm_reject_di" bpmnElement="lo_rjComm_reject"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_rjComm_endRejected_di" bpmnElement="lo_rjComm_endRejected"><dc:Bounds x="4012" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_kfs_di" bpmnElement="lo_kfs"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_sanGw_di" bpmnElement="lo_sanGw"><dc:Bounds x="3840" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_accept_slaPlan_di" bpmnElement="lo_accept_slaPlan"><dc:Bounds x="4310" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_accept_di" bpmnElement="lo_accept"><dc:Bounds x="4475" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_accept_warnNotify_di" bpmnElement="lo_accept_warnNotify"><dc:Bounds x="4640" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_accept_warnEnd_di" bpmnElement="lo_accept_warnEnd"><dc:Bounds x="4837" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_accept_breachAct_di" bpmnElement="lo_accept_breachAct"><dc:Bounds x="4640" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_accept_breachGw_di" bpmnElement="lo_accept_breachGw"><dc:Bounds x="4830" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_accept_done_di" bpmnElement="lo_accept_done"><dc:Bounds x="4995" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_borrower_di" bpmnElement="lo_borrower"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_acceptGw_di" bpmnElement="lo_acceptGw"><dc:Bounds x="5160" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_endDeclined_di" bpmnElement="lo_endDeclined"><dc:Bounds x="5332" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_agreement_di" bpmnElement="lo_agreement"><dc:Bounds x="5300" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_disburse_di" bpmnElement="lo_disburse"><dc:Bounds x="5465" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_book_di" bpmnElement="lo_book"><dc:Bounds x="5795" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_disbFailed_di" bpmnElement="lo_disbFailed"><dc:Bounds x="5795" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_exGw_di" bpmnElement="lo_exGw"><dc:Bounds x="5655" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_close_di" bpmnElement="lo_close"><dc:Bounds x="5960" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_end_di" bpmnElement="lo_end"><dc:Bounds x="6157" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_appraise_warn_di" bpmnElement="lo_appraise_warn"><dc:Bounds x="1678" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_appraise_breach_di" bpmnElement="lo_appraise_breach"><dc:Bounds x="1708" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_accept_warn_di" bpmnElement="lo_accept_warn"><dc:Bounds x="4483" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_accept_breach_di" bpmnElement="lo_accept_breach"><dc:Bounds x="4513" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_withdraw_di" bpmnElement="lo_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_withdrawStart_di" bpmnElement="lo_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_withdrawKind_di" bpmnElement="lo_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_withdrawCall_di" bpmnElement="lo_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_withdrawEnd_di" bpmnElement="lo_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_cancel_di" bpmnElement="lo_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_cancelStart_di" bpmnElement="lo_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_cancelKind_di" bpmnElement="lo_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_cancelCall_di" bpmnElement="lo_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lo_cancelEnd_di" bpmnElement="lo_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f1_di" bpmnElement="sec_bank_loan_originatio_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f2_di" bpmnElement="sec_bank_loan_originatio_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f3_di" bpmnElement="sec_bank_loan_originatio_f3"><di:waypoint x="425" y="70"/><di:waypoint x="486" y="70"/><di:waypoint x="486" y="195"/><di:waypoint x="547" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f4_di" bpmnElement="sec_bank_loan_originatio_f4"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f5_di" bpmnElement="sec_bank_loan_originatio_f5"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f6_di" bpmnElement="sec_bank_loan_originatio_f6"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f7_di" bpmnElement="sec_bank_loan_originatio_f7"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f8_di" bpmnElement="sec_bank_loan_originatio_f8"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f9_di" bpmnElement="sec_bank_loan_originatio_f9"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f10_di" bpmnElement="sec_bank_loan_originatio_f10"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f11_di" bpmnElement="sec_bank_loan_originatio_f11"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f12_di" bpmnElement="sec_bank_loan_originatio_f12"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f13_di" bpmnElement="sec_bank_loan_originatio_f13"><di:waypoint x="1770" y="195"/><di:waypoint x="1818" y="195"/><di:waypoint x="1818" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f14_di" bpmnElement="sec_bank_loan_originatio_f14"><di:waypoint x="1605" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f15_di" bpmnElement="sec_bank_loan_originatio_f15"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="195"/><di:waypoint x="1505" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f16_di" bpmnElement="sec_bank_loan_originatio_f16"><di:waypoint x="1696" y="128"/><di:waypoint x="1696" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f17_di" bpmnElement="sec_bank_loan_originatio_f17"><di:waypoint x="1935" y="195"/><di:waypoint x="2032" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f18_di" bpmnElement="sec_bank_loan_originatio_f18"><di:waypoint x="1726" y="128"/><di:waypoint x="1726" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f19_di" bpmnElement="sec_bank_loan_originatio_f19"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f20_di" bpmnElement="sec_bank_loan_originatio_f20"><di:waypoint x="2075" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f21_di" bpmnElement="sec_bank_loan_originatio_f21"><di:waypoint x="2050" y="95"/><di:waypoint x="2050" y="128"/><di:waypoint x="1555" y="128"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f22_di" bpmnElement="sec_bank_loan_originatio_f22"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f23_di" bpmnElement="sec_bank_loan_originatio_f23"><di:waypoint x="1770" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f24_di" bpmnElement="sec_bank_loan_originatio_f24"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f25_di" bpmnElement="sec_bank_loan_originatio_f25"><di:waypoint x="2240" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f26_di" bpmnElement="sec_bank_loan_originatio_f26"><di:waypoint x="2405" y="70"/><di:waypoint x="2450" y="70"/><di:waypoint x="2450" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f27_di" bpmnElement="sec_bank_loan_originatio_f27"><di:waypoint x="2595" y="195"/><di:waypoint x="2692" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f28_di" bpmnElement="sec_bank_loan_originatio_f28"><di:waypoint x="2710" y="213"/><di:waypoint x="2710" y="252"/><di:waypoint x="1555" y="252"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f29_di" bpmnElement="sec_bank_loan_originatio_f29"><di:waypoint x="4080" y="320"/><di:waypoint x="4177" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f30_di" bpmnElement="sec_bank_loan_originatio_f30"><di:waypoint x="2405" y="70"/><di:waypoint x="3192" y="70"/><di:waypoint x="3192" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f31_di" bpmnElement="sec_bank_loan_originatio_f31"><di:waypoint x="2405" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f32_di" bpmnElement="sec_bank_loan_originatio_f32"><di:waypoint x="2570" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f33_di" bpmnElement="sec_bank_loan_originatio_f33"><di:waypoint x="2735" y="70"/><di:waypoint x="2780" y="70"/><di:waypoint x="2780" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f34_di" bpmnElement="sec_bank_loan_originatio_f34"><di:waypoint x="2925" y="195"/><di:waypoint x="2970" y="195"/><di:waypoint x="2970" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f35_di" bpmnElement="sec_bank_loan_originatio_f35"><di:waypoint x="2735" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f36_di" bpmnElement="sec_bank_loan_originatio_f36"><di:waypoint x="2925" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f37_di" bpmnElement="sec_bank_loan_originatio_f37"><di:waypoint x="3065" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f38_di" bpmnElement="sec_bank_loan_originatio_f38"><di:waypoint x="2570" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f39_di" bpmnElement="sec_bank_loan_originatio_f39"><di:waypoint x="3230" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f40_di" bpmnElement="sec_bank_loan_originatio_f40"><di:waypoint x="3230" y="70"/><di:waypoint x="3440" y="70"/><di:waypoint x="3440" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f41_di" bpmnElement="sec_bank_loan_originatio_f41"><di:waypoint x="3420" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f42_di" bpmnElement="sec_bank_loan_originatio_f42"><di:waypoint x="3560" y="70"/><di:waypoint x="3605" y="70"/><di:waypoint x="3605" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f43_di" bpmnElement="sec_bank_loan_originatio_f43"><di:waypoint x="3915" y="70"/><di:waypoint x="4012" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f44_di" bpmnElement="sec_bank_loan_originatio_f44"><di:waypoint x="3750" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f45_di" bpmnElement="sec_bank_loan_originatio_f45"><di:waypoint x="3560" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f46_di" bpmnElement="sec_bank_loan_originatio_f46"><di:waypoint x="3890" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f47_di" bpmnElement="sec_bank_loan_originatio_f47"><di:waypoint x="3865" y="220"/><di:waypoint x="3865" y="252"/><di:waypoint x="1555" y="252"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f48_di" bpmnElement="sec_bank_loan_originatio_f48"><di:waypoint x="3890" y="195"/><di:waypoint x="3935" y="195"/><di:waypoint x="3935" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f49_di" bpmnElement="sec_bank_loan_originatio_f49"><di:waypoint x="3750" y="195"/><di:waypoint x="3840" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f50_di" bpmnElement="sec_bank_loan_originatio_f50"><di:waypoint x="4501" y="253"/><di:waypoint x="4501" y="320"/><di:waypoint x="4640" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f51_di" bpmnElement="sec_bank_loan_originatio_f51"><di:waypoint x="4740" y="320"/><di:waypoint x="4837" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f52_di" bpmnElement="sec_bank_loan_originatio_f52"><di:waypoint x="4531" y="253"/><di:waypoint x="4531" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f53_di" bpmnElement="sec_bank_loan_originatio_f53"><di:waypoint x="4740" y="195"/><di:waypoint x="4830" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f54_di" bpmnElement="sec_bank_loan_originatio_f54"><di:waypoint x="4880" y="195"/><di:waypoint x="4995" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f55_di" bpmnElement="sec_bank_loan_originatio_f55"><di:waypoint x="4855" y="220"/><di:waypoint x="4855" y="267"/><di:waypoint x="4360" y="267"/><di:waypoint x="4360" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f56_di" bpmnElement="sec_bank_loan_originatio_f56"><di:waypoint x="4410" y="195"/><di:waypoint x="4475" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f57_di" bpmnElement="sec_bank_loan_originatio_f57"><di:waypoint x="4575" y="195"/><di:waypoint x="4995" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f58_di" bpmnElement="sec_bank_loan_originatio_f58"><di:waypoint x="4080" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f59_di" bpmnElement="sec_bank_loan_originatio_f59"><di:waypoint x="4245" y="195"/><di:waypoint x="4310" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f60_di" bpmnElement="sec_bank_loan_originatio_f60"><di:waypoint x="5045" y="195"/><di:waypoint x="5160" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f61_di" bpmnElement="sec_bank_loan_originatio_f61"><di:waypoint x="5210" y="195"/><di:waypoint x="5271" y="195"/><di:waypoint x="5271" y="320"/><di:waypoint x="5332" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f62_di" bpmnElement="sec_bank_loan_originatio_f62"><di:waypoint x="5210" y="195"/><di:waypoint x="5300" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f63_di" bpmnElement="sec_bank_loan_originatio_f63"><di:waypoint x="5400" y="195"/><di:waypoint x="5465" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f64_di" bpmnElement="sec_bank_loan_originatio_f64"><di:waypoint x="5705" y="195"/><di:waypoint x="5750" y="195"/><di:waypoint x="5750" y="320"/><di:waypoint x="5795" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f65_di" bpmnElement="sec_bank_loan_originatio_f65"><di:waypoint x="5705" y="195"/><di:waypoint x="5795" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f66_di" bpmnElement="sec_bank_loan_originatio_f66"><di:waypoint x="5565" y="195"/><di:waypoint x="5655" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f67_di" bpmnElement="sec_bank_loan_originatio_f67"><di:waypoint x="5845" y="235"/><di:waypoint x="5845" y="267"/><di:waypoint x="3700" y="267"/><di:waypoint x="3700" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f68_di" bpmnElement="sec_bank_loan_originatio_f68"><di:waypoint x="5895" y="320"/><di:waypoint x="5960" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f69_di" bpmnElement="sec_bank_loan_originatio_f69"><di:waypoint x="6060" y="320"/><di:waypoint x="6157" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f70_di" bpmnElement="sec_bank_loan_originatio_f70"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f71_di" bpmnElement="sec_bank_loan_originatio_f71"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f72_di" bpmnElement="sec_bank_loan_originatio_f72"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f73_di" bpmnElement="sec_bank_loan_originatio_f73"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f74_di" bpmnElement="sec_bank_loan_originatio_f74"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_bank_loan_originatio_f75_di" bpmnElement="sec_bank_loan_originatio_f75"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

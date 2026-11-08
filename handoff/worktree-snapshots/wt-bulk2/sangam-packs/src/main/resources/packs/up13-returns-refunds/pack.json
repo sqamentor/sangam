@@ -1,0 +1,64 @@
+{
+  "id": "universal.up13-returns-refunds",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-13 Returns, refunds and partial fulfilment",
+    "hi": "यूपी-13 वापसी, धनवापसी एवं आंशिक पूर्ति"
+  },
+  "domain": "Universal",
+  "description": "Return eligibility by policy, pickup, inspection of the returned quantity, partial refund computed on the accepted quantity and paid once by operationId (R36).",
+  "mainProcesses": [
+    "sangam-up13-returns"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up13-returns-refunds/sangam-up13-returns.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up13-returns-refunds/up13-policy.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up13-returns-refunds/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up13-returns-refunds/forms/inspect.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up13-returns-refunds/seed.json"
+    }
+  ],
+  "seed": "packs/up13-returns-refunds/seed.json",
+  "connectors": [
+    {
+      "id": "shipping.pickup",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Pickup"
+    },
+    {
+      "id": "payment.refund",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Refund"
+    }
+  ],
+  "covers": [
+    "UP-13",
+    "R36",
+    "GP-13",
+    "GP-12"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ]
+}

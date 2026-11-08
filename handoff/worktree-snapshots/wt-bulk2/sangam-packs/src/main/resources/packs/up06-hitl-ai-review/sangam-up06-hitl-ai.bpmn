@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- UP-06 AI proposal with human review. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_up06_hitl_ai" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-up06-hitl-ai" name="UP-06 AI proposal with human review" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>universal.up06-hitl-ai-review</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>extractedFields,correctedFields</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="u6_start" name="Document received" operaton:initiator="initiator" operaton:formKey="sangam:up06-hitl-ai-review/intake"></startEvent>
+    <serviceTask id="u6_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>confidenceThreshold=0.9;writeAction=true;w_confidence=0;extractedFields=;correctedFields=;reviewerSeat=REVIEWER-AI</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="u6_extract" name="Extract with confidence (IDP / agent)" operaton:type="external" operaton:topic="sangam.ai.extract"></serviceTask>
+    <exclusiveGateway id="u6_gw" name="Human review needed?" default="up06_hitl_ai_f5"></exclusiveGateway>
+    <serviceTask id="u6_auto" name="Bind the agent output" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>BIND_DEEMED</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u6_review" name="Review extracted data" operaton:candidateGroups="${reviewerSeat}" operaton:formKey="sangam:up06-hitl-ai-review/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ApprovalBindingListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field><operaton:field name="approveValues"><operaton:string>approve,edit</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="u6_feedback" name="Feed back as evaluation data" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ai.feedback</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>feedback</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>extractedFields,correctedFields,reviewDecision</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>feedback</operaton:string></operaton:field><operaton:field name="step"><operaton:string>feedback</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="u6_rg" name="Approved?" default="up06_hitl_ai_f10"></exclusiveGateway>
+    <serviceTask id="u6_apply" name="Apply reviewed data" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.apply</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>apply</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>extractedFields,correctedFields</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>apply</operaton:string></operaton:field><operaton:field name="step"><operaton:string>apply</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="u6_endRejected" name="Rejected"></endEvent>
+    <endEvent id="u6_end" name="Applied"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="up06_hitl_ai_f1" sourceRef="u6_start" targetRef="u6_defaults"/>
+    <sequenceFlow id="up06_hitl_ai_f2" sourceRef="u6_defaults" targetRef="u6_extract"/>
+    <sequenceFlow id="up06_hitl_ai_f3" sourceRef="u6_extract" targetRef="u6_gw"/>
+    <sequenceFlow id="up06_hitl_ai_f4" name="high confidence, read-only" sourceRef="u6_gw" targetRef="u6_auto"><conditionExpression xsi:type="tFormalExpression">${!writeAction &amp;&amp; w_confidence &gt;= confidenceThreshold}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up06_hitl_ai_f5" name="review (R72 write actions always)" sourceRef="u6_gw" targetRef="u6_review"/>
+    <sequenceFlow id="up06_hitl_ai_f6" sourceRef="u6_review" targetRef="u6_feedback"/>
+    <sequenceFlow id="up06_hitl_ai_f7" sourceRef="u6_feedback" targetRef="u6_rg"/>
+    <sequenceFlow id="up06_hitl_ai_f8" name="approve / edit" sourceRef="u6_rg" targetRef="u6_apply"><conditionExpression xsi:type="tFormalExpression">${reviewDecision != 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="up06_hitl_ai_f9" sourceRef="u6_auto" targetRef="u6_apply"/>
+    <sequenceFlow id="up06_hitl_ai_f10" name="reject" sourceRef="u6_rg" targetRef="u6_endRejected"/>
+    <sequenceFlow id="up06_hitl_ai_f11" sourceRef="u6_apply" targetRef="u6_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="up06_hitl_ai_diagram">
+    <bpmndi:BPMNPlane id="up06_hitl_ai_plane" bpmnElement="sangam-up06-hitl-ai">
+      <bpmndi:BPMNShape id="u6_start_di" bpmnElement="u6_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_defaults_di" bpmnElement="u6_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_extract_di" bpmnElement="u6_extract"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_gw_di" bpmnElement="u6_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_auto_di" bpmnElement="u6_auto"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_review_di" bpmnElement="u6_review"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_feedback_di" bpmnElement="u6_feedback"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_rg_di" bpmnElement="u6_rg"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_apply_di" bpmnElement="u6_apply"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_endRejected_di" bpmnElement="u6_endRejected"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u6_end_di" bpmnElement="u6_end"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f1_di" bpmnElement="up06_hitl_ai_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f2_di" bpmnElement="up06_hitl_ai_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f3_di" bpmnElement="up06_hitl_ai_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f4_di" bpmnElement="up06_hitl_ai_f4"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f5_di" bpmnElement="up06_hitl_ai_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f6_di" bpmnElement="up06_hitl_ai_f6"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f7_di" bpmnElement="up06_hitl_ai_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f8_di" bpmnElement="up06_hitl_ai_f8"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f9_di" bpmnElement="up06_hitl_ai_f9"><di:waypoint x="780" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f10_di" bpmnElement="up06_hitl_ai_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="up06_hitl_ai_f11_di" bpmnElement="up06_hitl_ai_f11"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

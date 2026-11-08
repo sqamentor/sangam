@@ -1,0 +1,131 @@
+{
+  "key": "core/recommendation",
+  "version": "1.0.0",
+  "pack": "sangam.core",
+  "title": {
+    "en": "Recommendation",
+    "hi": "अनुशंसा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "noting",
+      "type": "richtext",
+      "required": false,
+      "label": {
+        "en": "Note",
+        "hi": "टिप्पणी (नोटिंग)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "returnToLevel",
+      "type": "integer",
+      "required": false,
+      "label": {
+        "en": "Return to level (0 = initiator)",
+        "hi": "किस स्तर पर वापस करें (0 = प्रारंभकर्ता)"
+      }
+    },
+    {
+      "id": "returnReason",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Reason for return",
+        "hi": "वापसी का कारण"
+      }
+    },
+    {
+      "id": "commentSeats",
+      "type": "seats",
+      "required": false,
+      "label": {
+        "en": "Seek comments from (seats)",
+        "hi": "टिप्पणी हेतु (पद)"
+      }
+    },
+    {
+      "id": "markToSeat",
+      "type": "seat",
+      "required": false,
+      "label": {
+        "en": "Mark to seat",
+        "hi": "किस पद को चिह्नित करें"
+      }
+    },
+    {
+      "id": "markReason",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Reason for marking out of hierarchy",
+        "hi": "पदानुक्रम से बाहर चिह्नित करने का कारण"
+      }
+    },
+    {
+      "id": "presentedPayloadHash",
+      "type": "hidden",
+      "required": false,
+      "label": {
+        "en": "Shown payload hash",
+        "hi": "प्रदर्शित विवरण का हैश"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "recDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "recommend",
+        "label": {
+          "en": "Recommend / forward",
+          "hi": "अनुशंसा / अग्रेषित करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      },
+      {
+        "value": "seekComments",
+        "label": {
+          "en": "Seek comments",
+          "hi": "टिप्पणी मांगें"
+        }
+      },
+      {
+        "value": "markTo",
+        "label": {
+          "en": "Mark out of hierarchy",
+          "hi": "पदानुक्रम से बाहर चिह्नित करें"
+        }
+      }
+    ]
+  }
+}

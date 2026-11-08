@@ -1,0 +1,71 @@
+{
+  "id": "universal.up17-prior-authorisation",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-17 Regulated clinical / benefit pathway (prior authorisation)",
+    "hi": "यूपी-17 विनियमित नैदानिक / लाभ मार्ग (पूर्व प्राधिकरण)"
+  },
+  "domain": "Universal",
+  "description": "Consent gate, eligibility with the payer, clinical criteria by rule (auto-approve where met), statutory decision clock (72 hours urgent / 14 days standard), clinical and peer review, decision callback to the provider, appeal (R53-style minimum data, R79).",
+  "mainProcesses": [
+    "sangam-up17-prior-auth"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up17-prior-authorisation/sangam-up17-prior-auth.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up17-prior-authorisation/up17-criteria.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up17-prior-authorisation/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up17-prior-authorisation/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up17-prior-authorisation/forms/peer.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up17-prior-authorisation/seed.json"
+    }
+  ],
+  "seed": "packs/up17-prior-authorisation/seed.json",
+  "connectors": [
+    {
+      "id": "payer.eligibility",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Eligibility"
+    },
+    {
+      "id": "provider.callback",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Decision to the provider"
+    }
+  ],
+  "covers": [
+    "UP-17",
+    "R53",
+    "R79",
+    "R38",
+    "GP-35",
+    "GP-22",
+    "GP-15"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-rejection"
+  ]
+}

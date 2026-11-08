@@ -1,0 +1,83 @@
+{
+  "id": "sec.ushealth.baa",
+  "version": "1.0.0",
+  "name": {
+    "en": "Business associate agreement management",
+    "es": "Gestión de acuerdos de socio comercial (BAA)"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "Business associate onboarding with PHI scope, required BAA terms and subcontractor flow-down, security assessment, legal approval with segregation of duties, e-signature, periodic review before the end date (DMN), breach reports from the associate (60 days) routed to breach notification, cure or terminate on a material breach, return or destruction of PHI at termination.",
+  "mainProcesses": [
+    "sangam-sec-ushealth-baa"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-baa/sangam-sec-ushealth-baa.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-baa/sec-ushealth-baa-config.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-baa/forms/propose.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-baa/forms/security.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-baa/forms/terms.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-baa/forms/approve.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-baa/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-baa/forms/cure.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-baa/forms/dispose.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-baa/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-baa/seed.json",
+  "connectors": [
+    {
+      "id": "esign.baa",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "BAA e-signature"
+    }
+  ],
+  "covers": [
+    "US-HLT-035",
+    "US-HLT-036",
+    "US-HLT-037",
+    "US-HLT-038",
+    "US-HLT-028",
+    "US-HLT-040",
+    "US-HLT-009",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

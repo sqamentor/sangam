@@ -1,0 +1,90 @@
+{
+  "key": "pension/papers",
+  "version": "1.0.0",
+  "pack": "gov.pension",
+  "title": {
+    "en": "Pension papers",
+    "hi": "पेंशन कागज़ात"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "employeeId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Employee",
+        "hi": "कर्मचारी"
+      }
+    },
+    {
+      "id": "employeeName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Employee name",
+        "hi": "कर्मचारी का नाम"
+      }
+    },
+    {
+      "id": "retirementDate",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Date of retirement",
+        "hi": "सेवानिवृत्ति तिथि"
+      }
+    },
+    {
+      "id": "qualifyingService",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Qualifying service (years)",
+        "hi": "अर्हक सेवा (वर्ष)"
+      }
+    },
+    {
+      "id": "lastPay",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Last pay drawn (INR)",
+        "hi": "अंतिम आहरित वेतन (रुपये)"
+      }
+    },
+    {
+      "id": "bankAccount",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Beneficiary bank account",
+        "hi": "लाभार्थी बैंक खाता"
+      }
+    },
+    {
+      "id": "ifsc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "IFSC",
+        "hi": "आईएफएससी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

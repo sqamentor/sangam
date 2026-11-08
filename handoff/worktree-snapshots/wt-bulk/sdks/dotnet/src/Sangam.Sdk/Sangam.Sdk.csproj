@@ -1,0 +1,29 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Sangam .NET SDK (WS-SDK): typed REST client + worker runtime. Runtime deps: System.Net.Http + System.Text.Json (in-box). -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0 is the supported target; SangamTargetFramework overrides it only for compile checks on older SDKs -->
+    <SangamTargetFramework Condition="'$(SangamTargetFramework)' == ''">net8.0</SangamTargetFramework>
+    <TargetFramework>$(SangamTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Sangam.Sdk</RootNamespace>
+    <AssemblyName>Sangam.Sdk</AssemblyName>
+    <PackageId>Sangam.Sdk</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Sangam</Authors>
+    <Description>Typed REST client and external-worker runtime for the Sangam API (/api/v1).</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/sqamentor/sangam</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

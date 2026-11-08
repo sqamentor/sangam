@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+# N cells + national services with helmfile (Apache-2.0 tool, not shipped). One release per cell of the same
+# `sangam` chart, so each cell is upgraded, drained and rolled back on its own (cell = blast radius).
+#   helmfile -f deploy/helm/sangam-national/helmfile.yaml.gotmpl --state-values-file cells.yaml apply
+# cells.yaml example:
+#   cells:
+#     - { id: in-rj-01, residency: IN-RJ, dbHost: pg-rj-01.sdc.rajasthan, dbSecret: cell-rj-01-db, replicas: 6 }
+#     - { id: in-mh-01, residency: IN-MH, dbHost: pg-mh-01.sdc.maharashtra, dbSecret: cell-mh-01-db, replicas: 6 }
+#     - { id: in-c-01,  residency: IN,    dbHost: pg-c-01.nic,              dbSecret: cell-c-01-db,  replicas: 8 }
+releases:
+  - name: sangam-national
+    namespace: sangam-national
+    chart: .
+    values:
+      - cell-a: { enabled: false }
+        cell-b: { enabled: false }
+{{- range .StateValues.cells }}
+  - name: cell-{{ .id }}
+    namespace: sangam-cell-{{ .id }}
+    chart: ../sangam
+    values:
+      - database:
+          type: {{ .dbType | default "postgres" }}
+          host: {{ .dbHost }}
+          existingSecret: {{ .dbSecret }}
+        server:
+          replicaCount: {{ .replicas | default 4 }}
+          env:
+            - { name: SANGAM_CELL_ID, value: {{ .id }} }
+            - { name: SANGAM_CELL_RESIDENCY, value: {{ .residency }} }
+            - { name: SANGAM_CONTROL_PLANE_URL, value: "http://sangam-national-control-plane.sangam-national:8090" }
+            - { name: SANGAM_ROLLUP_INGEST_URL, value: "http://sangam-national-rollup.sangam-national:8095/api/v1/ingest" }
+            - { name: SANGAM_OUTBOX_DESTINATIONS, value: "rollup:national" }
+{{- end }}

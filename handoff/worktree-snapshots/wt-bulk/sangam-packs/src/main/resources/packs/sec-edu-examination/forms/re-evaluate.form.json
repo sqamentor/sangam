@@ -1,0 +1,36 @@
+{
+  "key": "sec-edu-examination/re-evaluate",
+  "version": "1.0.0",
+  "pack": "sec.edu.examination",
+  "title": {
+    "en": "Re-evaluate by a different evaluator",
+    "hi": "भिन्न मूल्यांकक द्वारा पुनर्मूल्यांकन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "results",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Results",
+        "hi": "परिणाम"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

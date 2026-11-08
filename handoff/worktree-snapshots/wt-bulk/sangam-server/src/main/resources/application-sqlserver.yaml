@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# SQL Server (Tier 1). READ_COMMITTED_SNAPSHOT (RCSI) must be ON for the database; IsolationGuard refuses to start otherwise.
+spring:
+  datasource:
+    url: ${SANGAM_DB_URL:jdbc:sqlserver://localhost:1433;databaseName=sangam;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=true}
+    username: ${SANGAM_DB_USER:sangam}
+    password: ${SANGAM_DB_PASSWORD:Sangam_Passw0rd}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+operaton:
+  bpm:
+    database:
+      type: mssql
+      schema-update: ${SANGAM_ENGINE_SCHEMA_UPDATE:false}
+
+sangam:
+  db:
+    require-rcsi: true
+
+logging:
+  structured:
+    format:
+      console: ecs

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_p1_competent_authority" name="P1 competent authority by amount band" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- X.4.3 synthetic bands for the pilot tenant (Directorate of Public Works, District X). -->
+  <decision id="p1-competent-authority" name="P1 competent authority by amount band" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="p1-competent-authority_t" hitPolicy="FIRST">
+      <input id="p1-competent-authority_i0" label="Case type"><inputExpression id="p1-competent-authority_ie0" typeRef="string"><text>caseType</text></inputExpression></input>
+      <input id="p1-competent-authority_i1" label="Amount (INR)"><inputExpression id="p1-competent-authority_ie1" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="p1-competent-authority_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="p1-competent-authority_r0"><description>salary bills: drawing and disbursing officer</description>
+        <inputEntry id="p1-competent-authority_r0_i0"><text>"SALARY"</text></inputEntry>
+        <inputEntry id="p1-competent-authority_r0_i1"><text>-</text></inputEntry>
+        <outputEntry id="p1-competent-authority_r0_o0"><text>"DDO"</text></outputEntry>
+      </rule>
+      <rule id="p1-competent-authority_r1"><description>Executive Engineer up to 5,00,000</description>
+        <inputEntry id="p1-competent-authority_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="p1-competent-authority_r1_i1"><text>&lt;= 500000</text></inputEntry>
+        <outputEntry id="p1-competent-authority_r1_o0"><text>"EE"</text></outputEntry>
+      </rule>
+      <rule id="p1-competent-authority_r2"><description>Superintending Engineer up to 25,00,000</description>
+        <inputEntry id="p1-competent-authority_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="p1-competent-authority_r2_i1"><text>&lt;= 2500000</text></inputEntry>
+        <outputEntry id="p1-competent-authority_r2_o0"><text>"SE"</text></outputEntry>
+      </rule>
+      <rule id="p1-competent-authority_r3"><description>Chief Engineer above 25,00,000</description>
+        <inputEntry id="p1-competent-authority_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="p1-competent-authority_r3_i1"><text>&gt; 2500000</text></inputEntry>
+        <outputEntry id="p1-competent-authority_r3_o0"><text>"CE"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

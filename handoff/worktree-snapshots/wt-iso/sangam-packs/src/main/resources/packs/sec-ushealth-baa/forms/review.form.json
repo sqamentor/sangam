@@ -1,0 +1,56 @@
+{
+  "key": "sec-ushealth-baa/review",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.baa",
+  "title": {
+    "en": "Periodic review: renew or terminate",
+    "es": "Revisión periódica: renovar o terminar"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "securityReview",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Security assessment of the business associate",
+        "es": "Evaluación de seguridad del socio comercial"
+      }
+    },
+    {
+      "id": "baaTermEnd",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "BAA end date",
+        "es": "Fecha de fin del BAA"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reviewDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "renew",
+        "label": {
+          "en": "Renew",
+          "es": "Renovar"
+        }
+      },
+      {
+        "value": "terminate",
+        "label": {
+          "en": "Terminate",
+          "es": "Terminar"
+        }
+      }
+    ]
+  }
+}

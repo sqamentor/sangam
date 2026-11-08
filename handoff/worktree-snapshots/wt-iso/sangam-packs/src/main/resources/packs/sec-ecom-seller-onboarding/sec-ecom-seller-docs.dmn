@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ecom_seller_docs" name="Licences by category" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-ecom-seller-docs" name="Licences by category" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ecom-seller-docs_t" hitPolicy="FIRST">
+      <input id="sec-ecom-seller-docs_i0" label="Category"><inputExpression id="sec-ecom-seller-docs_ie0" typeRef="string"><text>category</text></inputExpression></input>
+      <output id="sec-ecom-seller-docs_o0" label="Licences" name="docsRequired" typeRef="string"/>
+      <rule id="sec-ecom-seller-docs_r0">
+        <inputEntry id="sec-ecom-seller-docs_r0_i0"><text>"FOOD"</text></inputEntry>
+        <outputEntry id="sec-ecom-seller-docs_r0_o0"><text>"FSSAI licence"</text></outputEntry>
+      </rule>
+      <rule id="sec-ecom-seller-docs_r1">
+        <inputEntry id="sec-ecom-seller-docs_r1_i0"><text>"PHARMA"</text></inputEntry>
+        <outputEntry id="sec-ecom-seller-docs_r1_o0"><text>"Drug licence (Form 20 / 21)"</text></outputEntry>
+      </rule>
+      <rule id="sec-ecom-seller-docs_r2">
+        <inputEntry id="sec-ecom-seller-docs_r2_i0"><text>"ELECTRONICS"</text></inputEntry>
+        <outputEntry id="sec-ecom-seller-docs_r2_o0"><text>"BIS registration (CRS)"</text></outputEntry>
+      </rule>
+      <rule id="sec-ecom-seller-docs_r3">
+        <inputEntry id="sec-ecom-seller-docs_r3_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-ecom-seller-docs_r3_o0"><text>"none beyond KYC"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

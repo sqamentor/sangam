@@ -1,0 +1,82 @@
+{
+  "id": "sec.ins.death-claim",
+  "version": "1.0.0",
+  "name": {
+    "en": "Life insurance death claim",
+    "hi": "जीवन बीमा मृत्यु दावा"
+  },
+  "domain": "Insurance",
+  "description": "Death claim intimation, documents, early-claim rule (policy younger than 3 years may be investigated; after 3 years no repudiation on any ground under Insurance Act s.45), settlement within the time limit (investigation completed first where warranted), payment to the nominee or legal heir once by operationId, interest for delay, rejection with reasons and the Ombudsman route.",
+  "mainProcesses": [
+    "sangam-sec-ins-death-claim"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ins-death-claim/sangam-sec-ins-death-claim.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ins-death-claim/sec-ins-death-rules.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ins-death-claim/sec-ins-death-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ins-death-claim/sec-ins-death-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-death-claim/forms/intimation.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-death-claim/forms/investigate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ins-death-claim/forms/assess.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ins-death-claim/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ins-death-claim/seed.json",
+  "connectors": [
+    {
+      "id": "policy.coverCheck",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Policy status"
+    },
+    {
+      "id": "claims.pay",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Claim payment"
+    }
+  ],
+  "covers": [
+    "SEC-INS-011",
+    "GP-06",
+    "GP-12",
+    "GP-22",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ]
+}

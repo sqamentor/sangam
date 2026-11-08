@@ -1,0 +1,94 @@
+{
+  "key": "tender/nit",
+  "version": "1.0.0",
+  "pack": "gov.tender",
+  "title": {
+    "en": "Notice inviting tender",
+    "hi": "निविदा आमंत्रण सूचना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "tenderId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Tender ID",
+        "hi": "निविदा आईडी"
+      }
+    },
+    {
+      "id": "itemDescription",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Item / service",
+        "hi": "वस्तु / सेवा"
+      }
+    },
+    {
+      "id": "estimateAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Estimated cost (INR)",
+        "hi": "अनुमानित लागत (रुपये)"
+      }
+    },
+    {
+      "id": "emdAmount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "EMD (INR)",
+        "hi": "बयाना राशि (रुपये)"
+      }
+    },
+    {
+      "id": "nitText",
+      "type": "richtext",
+      "required": true,
+      "label": {
+        "en": "Notice inviting tender",
+        "hi": "निविदा आमंत्रण सूचना"
+      }
+    },
+    {
+      "id": "bidDueAt",
+      "type": "datetime",
+      "required": true,
+      "label": {
+        "en": "Bid submission closes at",
+        "hi": "बोली जमा करने की अंतिम तिथि"
+      }
+    },
+    {
+      "id": "openingAt",
+      "type": "datetime",
+      "required": true,
+      "label": {
+        "en": "Bid opening at",
+        "hi": "बोली खोलने का समय"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

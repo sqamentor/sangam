@@ -1,0 +1,69 @@
+{
+  "id": "universal.up18-capa",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-18 Non-conformance to CAPA with effectiveness check",
+    "hi": "यूपी-18 गैर-अनुरूपता से सीएपीए एवं प्रभावशीलता जाँच"
+  },
+  "domain": "Universal",
+  "description": "Non-conformance, root cause, CAPA plan approved, actions implemented, effectiveness checked after N days (loops back when not effective), closure e-signed (R45, R57-style, R31).",
+  "mainProcesses": [
+    "sangam-up18-capa"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up18-capa/sangam-up18-capa.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up18-capa/up18-approver.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up18-capa/forms/nc.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up18-capa/forms/investigate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up18-capa/forms/implement.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up18-capa/forms/effectiveness.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up18-capa/seed.json"
+    }
+  ],
+  "seed": "packs/up18-capa/seed.json",
+  "connectors": [],
+  "covers": [
+    "UP-18",
+    "R31",
+    "R45",
+    "R57",
+    "GP-22",
+    "GP-34"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

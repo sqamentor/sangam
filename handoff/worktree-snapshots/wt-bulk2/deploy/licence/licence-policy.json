@@ -1,0 +1,89 @@
+{
+  "_comment": "SPDX-License-Identifier: Apache-2.0. Licence policy for what Sangam ships (SANGAM.md X.3, X.3a LIC-1..LIC-11). Used by check_licences.py in CI (licence-check.yml, release.yml).",
+  "allowed": [
+    "Apache-2.0", "MIT", "MIT-0", "BSD-2-Clause", "BSD-3-Clause", "0BSD", "ISC", "Zlib", "Unlicense", "CC0-1.0",
+    "PostgreSQL", "EPL-1.0", "EPL-2.0", "EDL-1.0", "BSD-3-Clause-Clear", "Python-2.0", "BlueOak-1.0.0",
+    "CDDL-1.0", "CDDL-1.1", "MPL-2.0", "CC-BY-3.0", "CC-BY-4.0", "W3C", "Unicode-DFS-2016", "Unicode-3.0",
+    "UPL-1.0", "Bouncy-Castle", "Plexus", "GPL-2.0-with-classpath-exception", "Classpath-exception-2.0",
+    "LicenseRef-Public-Domain"
+  ],
+  "_comment_conditional": "Allowed only for the named components and only under the stated condition.",
+  "conditional": [
+    {
+      "license": "LGPL-2.1",
+      "components": ["pkg:maven/org.mariadb.jdbc/mariadb-java-client"],
+      "condition": "LIC-5: separate replaceable jar in /opt/sangam/lib-ext with source offer; never inside the fat jar (checked by --jar)"
+    },
+    {
+      "license": "LicenseRef-bpmn.io",
+      "components": ["pkg:npm/bpmn-js", "pkg:npm/dmn-js", "pkg:npm/form-js", "pkg:npm/%40bpmn-io/form-js", "pkg:npm/%40bpmn-io/form-js-viewer", "pkg:npm/%40bpmn-io/form-js-editor", "pkg:npm/%40bpmn-io/form-js-playground", "pkg:npm/cmmn-js", "pkg:npm/diagram-js", "pkg:npm/bpmn-js-properties-panel", "pkg:npm/dmn-js-shared", "pkg:npm/dmn-js-drd", "pkg:npm/dmn-js-decision-table", "pkg:npm/dmn-js-literal-expression", "pkg:npm/dmn-js-boxed-expression", "pkg:npm/%40bpmn-io/properties-panel"],
+      "condition": "LIC-8: unmodified, watermark kept visible in modeller and viewer screens"
+    }
+  ],
+  "_comment_forbidden": "Fails the build when found in what Sangam ships (runtime/compile scope SBOM, npm production deps).",
+  "forbidden_licenses": [
+    "GPL-1.0", "GPL-2.0", "GPL-2.0-only", "GPL-2.0-or-later", "GPL-3.0", "GPL-3.0-only", "GPL-3.0-or-later",
+    "AGPL-1.0", "AGPL-3.0", "AGPL-3.0-only", "AGPL-3.0-or-later", "SSPL-1.0", "BUSL-1.1", "FSL-1.0", "FSL-1.1",
+    "FSL-1.1-ALv2", "FSL-1.1-MIT", "Elastic-2.0", "Commons-Clause", "CC-BY-NC-4.0", "CC-BY-NC-SA-4.0",
+    "CC-BY-NC-ND-4.0", "JSON", "RPL-1.5", "OSL-3.0", "LicenseRef-GFTC", "LicenseRef-Oracle-Free-Use-Terms",
+    "LicenseRef-IBM-IPLA"
+  ],
+  "forbidden_license_name_patterns": [
+    "(?i)graalvm free terms", "(?i)\\bgftc\\b", "(?i)oracle free use", "(?i)oracle technology network",
+    "(?i)international program license", "(?i)functional source license", "(?i)business source license",
+    "(?i)server side public license", "(?i)commons clause", "(?i)non-?commercial"
+  ],
+  "_comment_components": "Components that must never ship, whatever their declared licence (purl prefix match).",
+  "forbidden_components": [
+    { "purl": "pkg:maven/com.oracle.database.jdbc/", "rule": "LIC-2 Oracle JDBC is customer-supplied (bring your own driver)" },
+    { "purl": "pkg:maven/com.oracle.database.", "rule": "LIC-2 Oracle client libraries (ucp, ons, security) are not shipped" },
+    { "purl": "pkg:maven/com.ibm.db2/", "rule": "LIC-3 IBM Db2 JCC is customer-supplied" },
+    { "purl": "pkg:maven/com.ibm.db2.jcc/", "rule": "LIC-3 IBM Db2 JCC is customer-supplied" },
+    { "purl": "pkg:maven/com.mysql/mysql-connector-j", "rule": "LIC-4 MySQL Connector/J is not shipped (use MariaDB Connector/J)" },
+    { "purl": "pkg:maven/mysql/mysql-connector-java", "rule": "LIC-4 MySQL Connector/J is not shipped" },
+    { "purl": "pkg:maven/org.graalvm.polyglot/js", "rule": "LIC-1 GraalJS (GFTC) is stripped from every build (D-8)" },
+    { "purl": "pkg:maven/org.graalvm.js/", "rule": "LIC-1 GraalJS (GFTC) is stripped from every build (D-8)" },
+    { "purl": "pkg:maven/org.graalvm.polyglot/polyglot", "rule": "LIC-1/D-8 no in-engine polyglot scripting" },
+    { "purl": "pkg:maven/org.mozilla/rhino", "rule": "LIC-10 Rhino stays out of the default build (D-8)" },
+    { "purl": "pkg:maven/org.openjdk.nashorn/", "rule": "LIC-10 Nashorn stays out of the default build (D-8)" },
+    { "purl": "pkg:maven/org.python/jython", "rule": "LIC-10 Jython stays out of the default build (D-8)" },
+    { "purl": "pkg:maven/org.jruby/", "rule": "LIC-10 JRuby stays out of the default build (D-8)" },
+    { "purl": "pkg:npm/angular@1", "rule": "LIC-6 legacy AngularJS webapps are not shipped" },
+    { "purl": "pkg:npm/angular@", "rule": "LIC-6 legacy AngularJS (angular 1.x package) is not shipped" }
+  ],
+  "_comment_namespace_bans": "Namespaces banned by a downstream programme (purl prefix), with exact group:artifact:version exceptions. Any version or artifact not listed fails; a listed one must carry exactly the stated SPDX licence.",
+  "namespace_bans": [
+    {
+      "purl": "pkg:maven/org.camunda",
+      "rule": "OneIFMS SD-301 bans org.camunda* at the workflow-engine boundary"
+    }
+  ],
+  "_comment_pinned_exceptions": "SG-27 owner exception (deploy/licence/SG-27-SD-301-exception.md). Each entry is one exact coordinate. watch=true: any OTHER version of the same group:artifact fails, so a version change must be re-verified and re-listed.",
+  "pinned_exceptions_evidence": "deploy/licence/SG-27-SD-301-exception.md",
+  "pinned_exceptions": [
+    { "purl": "pkg:maven/org.camunda.feel/feel-engine@1.22.1", "license": "Apache-2.0", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine" },
+    { "purl": "pkg:maven/org.scala-lang/scala-library@2.13.18", "license": "Apache-2.0", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (runtime of feel-engine)" },
+    { "purl": "pkg:maven/com.lihaoyi/fastparse_2.13@3.1.1", "license": "MIT", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (parser of feel-engine)" },
+    { "purl": "pkg:maven/com.lihaoyi/sourcecode_2.13@0.4.0", "license": "MIT", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (via fastparse)" },
+    { "purl": "pkg:maven/com.lihaoyi/geny_2.13@1.1.0", "license": "MIT", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (via fastparse)" },
+    { "purl": "pkg:maven/com.fasterxml.jackson.module/jackson-module-scala_2.13@2.22.3", "license": "Apache-2.0", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (JSON values of feel-engine)" }
+  ],
+  "_comment_versions":"Version ceilings (LIC-7 Liquibase >= 5.0 is FSL until the D-7 legal review).",
+  "max_versions": [
+    { "purl": "pkg:maven/org.liquibase/liquibase-core", "below": "5.0.0", "rule": "LIC-7 Liquibase pinned at 4.33.0" }
+  ],
+  "min_versions": [
+    { "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-databind", "atLeast": "2.22.3", "rule": "ARCHITECTURE.md 1.7 Jackson >= 2.22.3 (spike E12-E15)" }
+  ],
+  "_comment_jar": "Patterns of nested jars forbidden INSIDE the Spring Boot fat jar (BOOT-INF/lib).",
+  "forbidden_jar_entries": [
+    { "pattern": "^BOOT-INF/lib/(ojdbc|ucp|ons|oraclepki|osdt_)[^/]*\\.jar$", "rule": "LIC-2" },
+    { "pattern": "^BOOT-INF/lib/(db2jcc|jcc-)[^/]*\\.jar$", "rule": "LIC-3" },
+    { "pattern": "^BOOT-INF/lib/mysql-connector[^/]*\\.jar$", "rule": "LIC-4" },
+    { "pattern": "^BOOT-INF/lib/mariadb-java-client[^/]*\\.jar$", "rule": "LIC-5 MariaDB driver must be a separate replaceable jar, not inside the fat jar" },
+    { "pattern": "^BOOT-INF/lib/(js|js-language|polyglot|truffle-api|js-scriptengine)-[0-9][^/]*\\.jar$", "rule": "LIC-1 GraalJS" },
+    { "pattern": "^BOOT-INF/lib/(rhino|nashorn-core|jython|jruby)[^/]*\\.jar$", "rule": "LIC-10" },
+    { "pattern": "^BOOT-INF/lib/liquibase-core-([5-9]|[1-9][0-9])\\.[^/]*\\.jar$", "rule": "LIC-7" }
+  ],
+  "unknown_license": "warn"
+}

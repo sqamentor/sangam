@@ -1,0 +1,36 @@
+{
+  "key": "sec-ins-health-claim/enhance",
+  "version": "1.0.0",
+  "pack": "sec.ins.health-claim",
+  "title": {
+    "en": "Enhancement (1 hour)",
+    "hi": "वृद्धि अनुरोध (1 घंटा)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "approvedAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Approved amount (INR)",
+        "hi": "स्वीकृत राशि (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "id": "sec.cap.ipo-allotment",
+  "version": "1.0.0",
+  "name": {
+    "en": "IPO from bid close to listing (T+3)",
+    "hi": "आईपीओ: बोली समापन से सूचीबद्धता (टी+3)"
+  },
+  "domain": "Capital markets",
+  "description": "Public issue timeline after the issue closes: UPI mandates and ASBA blocks reconciled, basis of allotment approved with the designated stock exchange on T+1, credit of shares and unblocking of funds on T+2, listing and trading on T+3 (SEBI, mandatory from 1 Dec 2023); investor compensation for late unblocking.",
+  "mainProcesses": [
+    "sangam-sec-cap-ipo"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-cap-ipo-allotment/sangam-sec-cap-ipo.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-ipo-allotment/forms/close.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-ipo-allotment/forms/basis.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-cap-ipo-allotment/forms/compensation.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-cap-ipo-allotment/seed.json"
+    }
+  ],
+  "seed": "packs/sec-cap-ipo-allotment/seed.json",
+  "connectors": [
+    {
+      "id": "rta.reconcile",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Bid reconciliation"
+    },
+    {
+      "id": "exchange.basis",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Basis of allotment"
+    },
+    {
+      "id": "depository.credit",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Credit of shares"
+    },
+    {
+      "id": "sponsorbank.unblock",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Unblock ASBA / UPI"
+    },
+    {
+      "id": "exchange.listing",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Listing application"
+    }
+  ],
+  "covers": [
+    "SEC-CAP-008",
+    "GP-06",
+    "GP-12",
+    "GP-24"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "compensationAmount"
+    ]
+  }
+}

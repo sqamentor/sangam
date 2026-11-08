@@ -1,0 +1,36 @@
+{
+  "key": "sec-util-meter-to-cash/exception",
+  "version": "1.0.0",
+  "pack": "sec.util.meter-to-cash",
+  "title": {
+    "en": "Resolve read exception (provisional bill if meter defective)",
+    "hi": "रीडिंग अपवाद का समाधान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "units",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Units consumed",
+        "hi": "उपभुक्त इकाइयाँ"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

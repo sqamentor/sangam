@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Dividend to one holder. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_cap_dividend_holder" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-cap-dividend-holder" name="Dividend to one holder" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.cap.corporate-action</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ch_start" name="Holder"></startEvent>
+    <serviceTask id="ch_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>executionConnector=bank.transfer;executionStep=dividend;verifyApproval=false;reconcileRequired=false;executionPayloadFields=key,dividendPerShare</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="ch_pay" name="Pay dividend net of TDS (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="ch_end" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="ch_endUnpaid" name="Unpaid (to unpaid dividend account)"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="ch_gw" name="executionOutcome?" default="sec_cap_dividend_holder_f4"></exclusiveGateway>
+    <sequenceFlow id="sec_cap_dividend_holder_f1" sourceRef="ch_start" targetRef="ch_defaults"/>
+    <sequenceFlow id="sec_cap_dividend_holder_f2" sourceRef="ch_defaults" targetRef="ch_pay"/>
+    <sequenceFlow id="sec_cap_dividend_holder_f3" name="DONE" sourceRef="ch_gw" targetRef="ch_end"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_dividend_holder_f4" name="otherwise" sourceRef="ch_gw" targetRef="ch_endUnpaid"/>
+    <sequenceFlow id="sec_cap_dividend_holder_f5" sourceRef="ch_pay" targetRef="ch_gw"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_cap_dividend_holder_diagram">
+    <bpmndi:BPMNPlane id="sec_cap_dividend_holder_plane" bpmnElement="sangam-sec-cap-dividend-holder">
+      <bpmndi:BPMNShape id="ch_start_di" bpmnElement="ch_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ch_defaults_di" bpmnElement="ch_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ch_pay_di" bpmnElement="ch_pay"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ch_end_di" bpmnElement="ch_end"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ch_endUnpaid_di" bpmnElement="ch_endUnpaid"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ch_gw_di" bpmnElement="ch_gw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_holder_f1_di" bpmnElement="sec_cap_dividend_holder_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_holder_f2_di" bpmnElement="sec_cap_dividend_holder_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_holder_f3_di" bpmnElement="sec_cap_dividend_holder_f3"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_holder_f4_di" bpmnElement="sec_cap_dividend_holder_f4"><di:waypoint x="590" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_holder_f5_di" bpmnElement="sec_cap_dividend_holder_f5"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

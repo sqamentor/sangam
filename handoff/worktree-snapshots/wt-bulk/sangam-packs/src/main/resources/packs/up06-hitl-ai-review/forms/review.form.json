@@ -1,0 +1,81 @@
+{
+  "key": "up06-hitl-ai-review/review",
+  "version": "1.0.0",
+  "pack": "universal.up06-hitl-ai-review",
+  "title": {
+    "en": "Review extracted data",
+    "hi": "निकाले गए डेटा की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "confidence",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Extraction confidence",
+        "hi": "निष्कर्षण विश्वास स्तर"
+      }
+    },
+    {
+      "id": "extractedFields",
+      "type": "json",
+      "required": false,
+      "label": {
+        "en": "Extracted fields (JSON)",
+        "hi": "निकाले गए फ़ील्ड"
+      }
+    },
+    {
+      "id": "correctedFields",
+      "type": "json",
+      "required": false,
+      "label": {
+        "en": "Corrected fields (JSON)",
+        "hi": "सुधारे गए फ़ील्ड"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reviewDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "edit",
+        "label": {
+          "en": "Edit and approve",
+          "hi": "संपादित कर अनुमोदित करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "key": "sec-bank-cheque-return/complaint",
+  "version": "1.0.0",
+  "pack": "sec.bank.cheque-return",
+  "title": {
+    "en": "File complaint before the magistrate (one month)",
+    "hi": "मजिस्ट्रेट के समक्ष परिवाद (एक माह)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "caseNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Court case number",
+        "hi": "न्यायालय वाद संख्या"
+      }
+    },
+    {
+      "id": "court",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Court / tribunal",
+        "hi": "न्यायालय / अधिकरण"
+      }
+    }
+  ]
+}

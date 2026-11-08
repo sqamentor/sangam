@@ -1,0 +1,74 @@
+{
+  "key": "sec-scm-procure-to-pay/requisition",
+  "version": "1.0.0",
+  "pack": "sec.scm.procure-to-pay",
+  "title": {
+    "en": "Purchase requisition",
+    "hi": "क्रय माँग-पत्र"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "itemDescription",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Item / service",
+        "hi": "वस्तु / सेवा"
+      }
+    },
+    {
+      "id": "quantity",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Quantity",
+        "hi": "मात्रा"
+      }
+    },
+    {
+      "id": "unitPrice",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Unit price (INR)",
+        "hi": "इकाई मूल्य (रुपये)"
+      }
+    },
+    {
+      "id": "supplierName",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Supplier",
+        "hi": "आपूर्तिकर्ता"
+      }
+    },
+    {
+      "id": "msmeSupplier",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "MSME supplier (Udyam)",
+        "hi": "एमएसएमई आपूर्तिकर्ता (उद्यम)"
+      }
+    },
+    {
+      "id": "justification",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Justification",
+        "hi": "औचित्य"
+      }
+    }
+  ]
+}

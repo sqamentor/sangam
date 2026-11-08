@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_eligibility_config" name="Eligibility policy (SYNTHETIC)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-ushealth-eligibility-config" name="Eligibility policy (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ushealth-eligibility-config_t" hitPolicy="FIRST">
+      <input id="sec-ushealth-eligibility-config_i0" label="Visit type"><inputExpression id="sec-ushealth-eligibility-config_ie0" typeRef="string"><text>visitType</text></inputExpression></input>
+      <output id="sec-ushealth-eligibility-config_o0" label="Retry after (payer unavailable)" name="eligRetryAfter" typeRef="string"/>
+      <rule id="sec-ushealth-eligibility-config_r0"><description>never blocks care</description>
+        <inputEntry id="sec-ushealth-eligibility-config_r0_i0"><text>"EMERGENCY"</text></inputEntry>
+        <outputEntry id="sec-ushealth-eligibility-config_r0_o0"><text>"PT5M"</text></outputEntry>
+      </rule>
+      <rule id="sec-ushealth-eligibility-config_r1"><description>scheduled</description>
+        <inputEntry id="sec-ushealth-eligibility-config_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-ushealth-eligibility-config_r1_o0"><text>"PT15M"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

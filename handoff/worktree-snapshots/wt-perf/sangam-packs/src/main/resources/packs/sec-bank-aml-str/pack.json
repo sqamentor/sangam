@@ -1,0 +1,102 @@
+{
+  "id": "sec.bank.aml-str",
+  "version": "1.0.0",
+  "name": {
+    "en": "AML alert investigation and STR / CTR to FIU-IND",
+    "hi": "धन-शोधन चेतावनी जाँच एवं एफआईयू-आईएनडी को एसटीआर / सीटीआर"
+  },
+  "domain": "Banking",
+  "description": "Transaction-monitoring alert: L1 triage, L2 investigation, Principal Officer decision recorded with reasons; STR filed on FINnet within 7 days of the conclusion of suspicion; no tipping-off (no customer notification); risk re-categorised; FIU requests answered; monthly CTR by the 15th (PML Rules r.7-8).",
+  "mainProcesses": [
+    "sangam-sec-bank-aml-alert"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-aml-str/sangam-sec-bank-aml-alert.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-bank-aml-str/sangam-sec-bank-ctr.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-bank-aml-str/sec-bank-aml-priority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-aml-str/forms/alert.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-aml-str/forms/l1.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-aml-str/forms/l2.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-aml-str/forms/po.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-aml-str/forms/prepare.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-aml-str/forms/fiu.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-aml-str/forms/ctr.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-bank-aml-str/seed.json"
+    }
+  ],
+  "seed": "packs/sec-bank-aml-str/seed.json",
+  "connectors": [
+    {
+      "id": "cbs.txnHistory",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Transaction history"
+    },
+    {
+      "id": "fiu.finnet",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "FINnet 2.0 filing"
+    },
+    {
+      "id": "cbs.riskUpdate",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Customer risk update"
+    },
+    {
+      "id": "cbs.cashTxns",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Cash transactions for CTR"
+    }
+  ],
+  "covers": [
+    "SEC-BANK-023",
+    "SEC-BANK-024",
+    "SEC-BANK-025",
+    "SEC-BANK-026",
+    "GP-06",
+    "GP-30",
+    "UP-03",
+    "UP-06"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

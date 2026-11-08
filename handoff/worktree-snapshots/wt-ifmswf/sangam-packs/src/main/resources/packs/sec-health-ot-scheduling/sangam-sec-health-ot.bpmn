@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Surgery. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_health_ot" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-health-ot" name="Surgery" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.health.ot-scheduling</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>patientName,procedureName,urgency</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ot_start" name="Surgery requested" operaton:initiator="initiator" operaton:formKey="sangam:sec-health-ot-scheduling/request"></startEvent>
+    <serviceTask id="ot_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;procedureName=X;urgency=ELECTIVE;surgeonSeat=SURGEON;anaesSeat=ANAESTHETIST;otSeat=OT-NURSE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ot_rule" name="Slot window by urgency (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-health-ot-urgency</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <userTask id="ot_pac" name="Pre-anaesthetic check" operaton:candidateGroups="${anaesSeat}" operaton:formKey="sangam:sec-health-ot-scheduling/pac"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>pacDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ot_pacGw" name="" default="sec_health_ot_f6"></exclusiveGateway>
+    <endEvent id="ot_endDeferred" name="Deferred (optimise and re-request)"></endEvent>
+    <userTask id="ot_consent" name="Informed consent for surgery and anaesthesia" operaton:candidateGroups="${surgeonSeat}" operaton:formKey="sangam:sec-health-ot-scheduling/consent"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ot_book" name="Book OT slot" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ot.book</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>book</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName,procedureName,otWindow</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ot</operaton:string></operaton:field><operaton:field name="step"><operaton:string>book</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ot_signIn" name="Sign in (before induction)" operaton:candidateGroups="${otSeat}" operaton:formKey="sangam:sec-health-ot-scheduling/sign-in"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="ot_timeOut" name="Time out (before incision)" operaton:candidateGroups="${surgeonSeat}" operaton:formKey="sangam:sec-health-ot-scheduling/time-out"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>timeOutDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ot_toGw" name="" default="sec_health_ot_f12"></exclusiveGateway>
+    <endEvent id="ot_endAborted" name="Aborted at time out"></endEvent>
+    <userTask id="ot_signOut" name="Sign out: counts, specimen, notes" operaton:candidateGroups="${otSeat}" operaton:formKey="sangam:sec-health-ot-scheduling/sign-out"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ot_specimen" name="Specimen to histopathology" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>lis.specimen</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>send</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>patientName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>spec</operaton:string></operaton:field><operaton:field name="step"><operaton:string>specimen</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ot_recovery" name="Post-operative recovery and handover" operaton:candidateGroups="RECOVERY-NURSE" operaton:formKey="sangam:sec-health-ot-scheduling/recovery"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="ot_end" name="Surgery complete"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_health_ot_f1" sourceRef="ot_start" targetRef="ot_defaults"/>
+    <sequenceFlow id="sec_health_ot_f2" sourceRef="ot_defaults" targetRef="ot_rule"/>
+    <sequenceFlow id="sec_health_ot_f3" sourceRef="ot_rule" targetRef="ot_pac"/>
+    <sequenceFlow id="sec_health_ot_f4" sourceRef="ot_pac" targetRef="ot_pacGw"/>
+    <sequenceFlow id="sec_health_ot_f5" name="unfit / defer" sourceRef="ot_pacGw" targetRef="ot_endDeferred"><conditionExpression xsi:type="tFormalExpression">${pacDecision == 'defer'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_ot_f6" name="fit" sourceRef="ot_pacGw" targetRef="ot_consent"/>
+    <sequenceFlow id="sec_health_ot_f7" sourceRef="ot_consent" targetRef="ot_book"/>
+    <sequenceFlow id="sec_health_ot_f8" sourceRef="ot_book" targetRef="ot_signIn"/>
+    <sequenceFlow id="sec_health_ot_f9" sourceRef="ot_signIn" targetRef="ot_timeOut"/>
+    <sequenceFlow id="sec_health_ot_f10" sourceRef="ot_timeOut" targetRef="ot_toGw"/>
+    <sequenceFlow id="sec_health_ot_f11" name="abort" sourceRef="ot_toGw" targetRef="ot_endAborted"><conditionExpression xsi:type="tFormalExpression">${timeOutDecision == 'abort'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_ot_f12" name="proceed" sourceRef="ot_toGw" targetRef="ot_signOut"/>
+    <sequenceFlow id="sec_health_ot_f13" sourceRef="ot_signOut" targetRef="ot_specimen"/>
+    <sequenceFlow id="sec_health_ot_f14" sourceRef="ot_specimen" targetRef="ot_recovery"/>
+    <sequenceFlow id="sec_health_ot_f15" sourceRef="ot_recovery" targetRef="ot_end"/>
+    <subProcess id="ot_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="ot_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="ot_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ot_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ot_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_health_ot_f16" sourceRef="ot_withdrawStart" targetRef="ot_withdrawKind"/>
+      <sequenceFlow id="sec_health_ot_f17" sourceRef="ot_withdrawKind" targetRef="ot_withdrawCall"/>
+      <sequenceFlow id="sec_health_ot_f18" sourceRef="ot_withdrawCall" targetRef="ot_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="ot_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="ot_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="ot_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="ot_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="ot_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_health_ot_f19" sourceRef="ot_cancelStart" targetRef="ot_cancelKind"/>
+      <sequenceFlow id="sec_health_ot_f20" sourceRef="ot_cancelKind" targetRef="ot_cancelCall"/>
+      <sequenceFlow id="sec_health_ot_f21" sourceRef="ot_cancelCall" targetRef="ot_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_health_ot_diagram">
+    <bpmndi:BPMNPlane id="sec_health_ot_plane" bpmnElement="sangam-sec-health-ot">
+      <bpmndi:BPMNShape id="ot_start_di" bpmnElement="ot_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_defaults_di" bpmnElement="ot_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_rule_di" bpmnElement="ot_rule"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_pac_di" bpmnElement="ot_pac"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_pacGw_di" bpmnElement="ot_pacGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_endDeferred_di" bpmnElement="ot_endDeferred"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_consent_di" bpmnElement="ot_consent"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_book_di" bpmnElement="ot_book"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_signIn_di" bpmnElement="ot_signIn"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_timeOut_di" bpmnElement="ot_timeOut"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_toGw_di" bpmnElement="ot_toGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_endAborted_di" bpmnElement="ot_endAborted"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_signOut_di" bpmnElement="ot_signOut"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_specimen_di" bpmnElement="ot_specimen"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_recovery_di" bpmnElement="ot_recovery"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_end_di" bpmnElement="ot_end"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_withdraw_di" bpmnElement="ot_withdraw" isExpanded="true"><dc:Bounds x="30" y="263" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_withdrawStart_di" bpmnElement="ot_withdrawStart"><dc:Bounds x="92" y="325" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_withdrawKind_di" bpmnElement="ot_withdrawKind"><dc:Bounds x="225" y="303" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_withdrawCall_di" bpmnElement="ot_withdrawCall"><dc:Bounds x="390" y="303" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_withdrawEnd_di" bpmnElement="ot_withdrawEnd"><dc:Bounds x="587" y="325" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_cancel_di" bpmnElement="ot_cancel" isExpanded="true"><dc:Bounds x="30" y="453" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_cancelStart_di" bpmnElement="ot_cancelStart"><dc:Bounds x="92" y="515" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_cancelKind_di" bpmnElement="ot_cancelKind"><dc:Bounds x="225" y="493" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_cancelCall_di" bpmnElement="ot_cancelCall"><dc:Bounds x="390" y="493" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ot_cancelEnd_di" bpmnElement="ot_cancelEnd"><dc:Bounds x="587" y="515" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_health_ot_f1_di" bpmnElement="sec_health_ot_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f2_di" bpmnElement="sec_health_ot_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f3_di" bpmnElement="sec_health_ot_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f4_di" bpmnElement="sec_health_ot_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f5_di" bpmnElement="sec_health_ot_f5"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f6_di" bpmnElement="sec_health_ot_f6"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f7_di" bpmnElement="sec_health_ot_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f8_di" bpmnElement="sec_health_ot_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f9_di" bpmnElement="sec_health_ot_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f10_di" bpmnElement="sec_health_ot_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f11_di" bpmnElement="sec_health_ot_f11"><di:waypoint x="1580" y="70"/><di:waypoint x="1641" y="70"/><di:waypoint x="1641" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f12_di" bpmnElement="sec_health_ot_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f13_di" bpmnElement="sec_health_ot_f13"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f14_di" bpmnElement="sec_health_ot_f14"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f15_di" bpmnElement="sec_health_ot_f15"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f16_di" bpmnElement="sec_health_ot_f16"><di:waypoint x="128" y="343"/><di:waypoint x="225" y="343"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f17_di" bpmnElement="sec_health_ot_f17"><di:waypoint x="325" y="343"/><di:waypoint x="390" y="343"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f18_di" bpmnElement="sec_health_ot_f18"><di:waypoint x="490" y="343"/><di:waypoint x="587" y="343"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f19_di" bpmnElement="sec_health_ot_f19"><di:waypoint x="128" y="533"/><di:waypoint x="225" y="533"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f20_di" bpmnElement="sec_health_ot_f20"><di:waypoint x="325" y="533"/><di:waypoint x="390" y="533"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_ot_f21_di" bpmnElement="sec_health_ot_f21"><di:waypoint x="490" y="533"/><di:waypoint x="587" y="533"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

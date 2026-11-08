@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_tender_l1_acceptability" name="L1 acceptability against the justified estimate" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="tender-l1-acceptability" name="L1 acceptability against the justified estimate" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="tender-l1-acceptability_t" hitPolicy="FIRST">
+      <input id="tender-l1-acceptability_i0" label="L1 amount"><inputExpression id="tender-l1-acceptability_ie0" typeRef="number"><text>evaluateL1Amount</text></inputExpression></input>
+      <input id="tender-l1-acceptability_i1" label="Estimate"><inputExpression id="tender-l1-acceptability_ie1" typeRef="number"><text>estimateAmount</text></inputExpression></input>
+      <input id="tender-l1-acceptability_i2" label="Responsive bids"><inputExpression id="tender-l1-acceptability_ie2" typeRef="integer"><text>evaluateResponsiveBids</text></inputExpression></input>
+      <input id="tender-l1-acceptability_i3" label="Negotiation rounds"><inputExpression id="tender-l1-acceptability_ie3" typeRef="integer"><text>negotiationRounds</text></inputExpression></input>
+      <output id="tender-l1-acceptability_o0" label="Action" name="l1Action" typeRef="string"/>
+      <rule id="tender-l1-acceptability_r0"><description>no responsive bid</description>
+        <inputEntry id="tender-l1-acceptability_r0_i0"><text>-</text></inputEntry>
+        <inputEntry id="tender-l1-acceptability_r0_i1"><text>-</text></inputEntry>
+        <inputEntry id="tender-l1-acceptability_r0_i2"><text>&lt; 1</text></inputEntry>
+        <inputEntry id="tender-l1-acceptability_r0_i3"><text>-</text></inputEntry>
+        <outputEntry id="tender-l1-acceptability_r0_o0"><text>"RETENDER"</text></outputEntry>
+      </rule>
+      <rule id="tender-l1-acceptability_r1"><description>within 5% accept, up to 20% negotiate, beyond retender</description>
+        <inputEntry id="tender-l1-acceptability_r1_i0"><text>-</text></inputEntry>
+        <inputEntry id="tender-l1-acceptability_r1_i1"><text>-</text></inputEntry>
+        <inputEntry id="tender-l1-acceptability_r1_i2"><text>-</text></inputEntry>
+        <inputEntry id="tender-l1-acceptability_r1_i3"><text>-</text></inputEntry>
+        <outputEntry id="tender-l1-acceptability_r1_o0"><text>if evaluateL1Amount &lt;= estimateAmount * 1.05 then "ACCEPT" else if evaluateL1Amount &lt;= estimateAmount * 1.2 then "NEGOTIATE" else "RETENDER"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

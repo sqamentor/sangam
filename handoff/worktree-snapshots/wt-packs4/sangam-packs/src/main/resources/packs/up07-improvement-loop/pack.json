@@ -1,0 +1,86 @@
+{
+  "id": "universal.up07-improvement-loop",
+  "version": "1.0.0",
+  "name": {
+    "en": "UP-07 Process-mining improvement loop",
+    "hi": "यूपी-07 प्रक्रिया-खनन सुधार चक्र"
+  },
+  "domain": "Universal",
+  "description": "Quarterly: discover variants and bottlenecks from history, decide an improvement, approve and deploy a new package version, measure for a period, compare versions, keep or roll back (R65, R66, R43).",
+  "mainProcesses": [
+    "sangam-up07-improvement-loop"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/up07-improvement-loop/sangam-up07-improvement-loop.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/up07-improvement-loop/up07-approver.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up07-improvement-loop/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/up07-improvement-loop/forms/compare.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/up07-improvement-loop/seed.json"
+    }
+  ],
+  "seed": "packs/up07-improvement-loop/seed.json",
+  "connectors": [
+    {
+      "id": "analytics.discover",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Discovery / conformance"
+    },
+    {
+      "id": "analytics.compare",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Version comparison"
+    },
+    {
+      "id": "deploy.package",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Publish new package version"
+    },
+    {
+      "id": "deploy.rollback",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Roll back"
+    }
+  ],
+  "covers": [
+    "UP-07",
+    "R43",
+    "R65",
+    "R66",
+    "GP-36"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

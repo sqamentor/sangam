@@ -1,0 +1,231 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: LD
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-UT-NOLEG
+  name:
+    en: Lakshadweep
+    hi: लक्षद्वीप
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources LD1, accessed 2026-11-04)
+placeholders:
+- path: chartOfAccounts
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (state digit
+    structure not found)'
+- path: classification.schemes
+  reason: partially verified code structure (delta P)
+- path: locale.documentLanguages
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
+    language)'
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 8
+  sources: LD1
+locale:
+  languages:
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: P
+integrations:
+  systems:
+  - e-Lekha
+  - PFMS (EIS, DBT, EAT)
+  snaSparsh: {}
+orgTopology:
+  directorate: Principal PAO Kavaratti
+  unitTypes:
+    PRINCIPAL_PAO: 1
+    FIELD_PAY_UNIT: 1
+  ddoCount: null
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: RPR2022
+    title: R&P Rules
+  - id: CAM2024
+    title: Civil Accounts Manual
+paymentRails:
+  default: PFMS
+offlineUnits:
+- OUTER_ISLANDS
+workflows:
+- SHIP_OPERATIONS
+- SHIP_TICKET_RECEIPTS
+committeesIncludePao: true
+unionDemand: 56
+classification:
+  schemes:
+  - id: HOA_LD
+    separator: '-'
+    segments:
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: subHead
+      width: 2
+    - id: detailed
+      width: 2
+    - id: object
+      width: 2
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: Union layout
+    evidence: P
+    source: LMMH para 8
+  defaultScheme: HOA_LD
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+procurement:
+  family: CENTRAL
+  rule: GFR 2017 (assumed)
+  worksCode: '[U]'
+regime:
+  accountsRenderedTo: CGA
+  reportingUnit: Lakshadweep Pay & Accounts
+  ruleRef: 'IFMS-RESEARCH-DELTA IFC-237: each UT reports to the CGA directly (not via MHA PAOs)'
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/LD/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: LD
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/LD/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: LD
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (assumed) (was: RPR 2022: DDO draws within a sanction; no sanction
+        power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (assumed) (was: DFPR 2024 r.12(4) and department re-delegation
+        order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (assumed) (was: DFPR 2024 r.12(2) re-delegation to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (assumed) (was: DFPR 2024 r.11 (open / limited tender up to 100
+        cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (assumed) (was: DFPR 2024 r.11: above the Secretary; no upper limit
+        in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from GFR 2017 (assumed) (was: advice / concurrence only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

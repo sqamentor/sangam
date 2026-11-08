@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Dividend corporate action. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_cap_dividend" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-cap-dividend" name="Dividend corporate action" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.cap.corporate-action</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>companyName,dividendPerShare,recordDate</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="cd_start" name="Board declares dividend" operaton:initiator="initiator" operaton:formKey="sangam:sec-cap-corporate-action/declare"></startEvent>
+    <serviceTask id="cd_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>companyName=@customerId;dividendPerShare=100;csSeat=COMPANY-SECRETARY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cd_intimate" name="Intimate the exchanges (outcome of the board meeting, record date)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>exchange.intimate</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>intimate</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>companyName,dividendPerShare,recordDate</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>exInt</operaton:string></operaton:field><operaton:field name="step"><operaton:string>intimation</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cd_clock" name="Regulatory clock: payment" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>payment</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>30D</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cd_rd" name="Due date: record" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BEFORE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>record</operaton:string></operaton:field><operaton:field name="dateVar"><operaton:string>recordDate</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>PT0S</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="cd_recordDate" name="Record date"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${recordDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="cd_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cd_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-sec-cap-dividend-holder</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>200</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>companyName,dividendPerShare</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cd_fanGw" name="All started?" default="sec_cap_dividend_f9"></exclusiveGateway>
+    <intermediateCatchEvent id="cd_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT1H</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="cd_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cd_doneGw" name="Round complete?" default="sec_cap_dividend_f15"></exclusiveGateway>
+    <serviceTask id="cd_benpos" name="Beneficiary positions at the record date" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>depository.benpos</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="cd_review" name="Review payment outcome before the 30-day limit" operaton:candidateGroups="${csSeat}" operaton:formKey="sangam:sec-cap-corporate-action/review" operaton:dueDate="${paymentDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cd_unpaid" name="Move unpaid amounts to the unpaid dividend account (7 days)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>bank.unpaidDividend</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>transfer</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>companyName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>unpaid</operaton:string></operaton:field><operaton:field name="step"><operaton:string>unpaid-dividend</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cd_end" name="Dividend closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_cap_dividend_f1" sourceRef="cd_start" targetRef="cd_defaults"/>
+    <sequenceFlow id="sec_cap_dividend_f2" sourceRef="cd_defaults" targetRef="cd_intimate"/>
+    <sequenceFlow id="sec_cap_dividend_f3" sourceRef="cd_intimate" targetRef="cd_clock"/>
+    <sequenceFlow id="sec_cap_dividend_f4" sourceRef="cd_clock" targetRef="cd_rd"/>
+    <sequenceFlow id="sec_cap_dividend_f5" sourceRef="cd_rd" targetRef="cd_recordDate"/>
+    <sequenceFlow id="sec_cap_dividend_f6" sourceRef="cd_open" targetRef="cd_fanOut"/>
+    <sequenceFlow id="sec_cap_dividend_f7" sourceRef="cd_fanOut" targetRef="cd_fanGw"/>
+    <sequenceFlow id="sec_cap_dividend_f8" name="next chunk" sourceRef="cd_fanGw" targetRef="cd_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_dividend_f9" name="all started" sourceRef="cd_fanGw" targetRef="cd_poll"/>
+    <sequenceFlow id="sec_cap_dividend_f10" sourceRef="cd_poll" targetRef="cd_aggregate"/>
+    <sequenceFlow id="sec_cap_dividend_f11" sourceRef="cd_aggregate" targetRef="cd_doneGw"/>
+    <sequenceFlow id="sec_cap_dividend_f12" name="not yet" sourceRef="cd_doneGw" targetRef="cd_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_cap_dividend_f13" sourceRef="cd_recordDate" targetRef="cd_benpos"/>
+    <sequenceFlow id="sec_cap_dividend_f14" sourceRef="cd_benpos" targetRef="cd_open"/>
+    <sequenceFlow id="sec_cap_dividend_f15" name="complete" sourceRef="cd_doneGw" targetRef="cd_review"/>
+    <sequenceFlow id="sec_cap_dividend_f16" sourceRef="cd_review" targetRef="cd_unpaid"/>
+    <sequenceFlow id="sec_cap_dividend_f17" sourceRef="cd_unpaid" targetRef="cd_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_cap_dividend_diagram">
+    <bpmndi:BPMNPlane id="sec_cap_dividend_plane" bpmnElement="sangam-sec-cap-dividend">
+      <bpmndi:BPMNShape id="cd_start_di" bpmnElement="cd_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_defaults_di" bpmnElement="cd_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_intimate_di" bpmnElement="cd_intimate"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_clock_di" bpmnElement="cd_clock"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_rd_di" bpmnElement="cd_rd"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_recordDate_di" bpmnElement="cd_recordDate"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_open_di" bpmnElement="cd_open"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_fanOut_di" bpmnElement="cd_fanOut"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_fanGw_di" bpmnElement="cd_fanGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_poll_di" bpmnElement="cd_poll"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_aggregate_di" bpmnElement="cd_aggregate"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_doneGw_di" bpmnElement="cd_doneGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_benpos_di" bpmnElement="cd_benpos"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_review_di" bpmnElement="cd_review"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_unpaid_di" bpmnElement="cd_unpaid"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cd_end_di" bpmnElement="cd_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f1_di" bpmnElement="sec_cap_dividend_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f2_di" bpmnElement="sec_cap_dividend_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f3_di" bpmnElement="sec_cap_dividend_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f4_di" bpmnElement="sec_cap_dividend_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f5_di" bpmnElement="sec_cap_dividend_f5"><di:waypoint x="780" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f6_di" bpmnElement="sec_cap_dividend_f6"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f7_di" bpmnElement="sec_cap_dividend_f7"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f8_di" bpmnElement="sec_cap_dividend_f8"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="149"/><di:waypoint x="1390" y="149"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f9_di" bpmnElement="sec_cap_dividend_f9"><di:waypoint x="1580" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f10_di" bpmnElement="sec_cap_dividend_f10"><di:waypoint x="1738" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f11_di" bpmnElement="sec_cap_dividend_f11"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f12_di" bpmnElement="sec_cap_dividend_f12"><di:waypoint x="2050" y="95"/><di:waypoint x="2050" y="134"/><di:waypoint x="1720" y="134"/><di:waypoint x="1720" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f13_di" bpmnElement="sec_cap_dividend_f13"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f14_di" bpmnElement="sec_cap_dividend_f14"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f15_di" bpmnElement="sec_cap_dividend_f15"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f16_di" bpmnElement="sec_cap_dividend_f16"><di:waypoint x="2265" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_cap_dividend_f17_di" bpmnElement="sec_cap_dividend_f17"><di:waypoint x="2430" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

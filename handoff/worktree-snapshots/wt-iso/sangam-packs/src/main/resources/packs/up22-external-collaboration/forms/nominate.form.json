@@ -1,0 +1,36 @@
+{
+  "key": "up22-external-collaboration/nominate",
+  "version": "1.0.0",
+  "pack": "universal.up22-external-collaboration",
+  "title": {
+    "en": "Nominate supplier",
+    "hi": "आपूर्तिकर्ता नामित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "supplierName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Supplier",
+        "hi": "आपूर्तिकर्ता"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "offices": [
+    {
+      "id": "BRANCH-001",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "OPS-MAKER",
+      "role": "OPSMAKER",
+      "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "OPS-CHECKER",
+      "name": {
+        "en": "Operations maker",
+        "hi": "संचालन निर्माता"
+      }
+    },
+    {
+      "id": "OPS-CHECKER",
+      "role": "OPSCHECKER",
+      "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "BRANCH-HEAD",
+      "name": {
+        "en": "Operations checker",
+        "hi": "संचालन जाँचकर्ता"
+      }
+    },
+    {
+      "id": "VCIP-OFFICIAL",
+      "role": "VCIP",
+      "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "BRANCH-HEAD",
+      "name": {
+        "en": "V-CIP official",
+        "hi": "वी-सीआईपी अधिकारी"
+      }
+    },
+    {
+      "id": "AML-COMPLIANCE",
+      "role": "COMPLIANCE",
+      "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "AML compliance officer",
+        "hi": "धन-शोधन निवारण अनुपालन अधिकारी"
+      }
+    },
+    {
+      "id": "BRANCH-HEAD",
+      "role": "BRANCHHEAD",
+      "office": "BRANCH-001",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Branch head",
+        "hi": "शाखा प्रमुख"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "OPS-MAKER",
+      "person": "bao.ops-maker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "OPS-CHECKER",
+      "person": "bao.ops-checker",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "VCIP-OFFICIAL",
+      "person": "bao.vcip-official",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AML-COMPLIANCE",
+      "person": "bao.aml-compliance",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BRANCH-HEAD",
+      "person": "bao.branch-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "OPSMAKER",
+      "name": {
+        "en": "Operations maker",
+        "hi": "संचालन निर्माता"
+      }
+    },
+    {
+      "code": "OPSCHECKER",
+      "name": {
+        "en": "Operations checker",
+        "hi": "संचालन जाँचकर्ता"
+      }
+    },
+    {
+      "code": "VCIP",
+      "name": {
+        "en": "V-CIP official",
+        "hi": "वी-सीआईपी अधिकारी"
+      }
+    },
+    {
+      "code": "COMPLIANCE",
+      "name": {
+        "en": "AML compliance officer",
+        "hi": "धन-शोधन निवारण अनुपालन अधिकारी"
+      }
+    },
+    {
+      "code": "BRANCHHEAD",
+      "name": {
+        "en": "Branch head",
+        "hi": "शाखा प्रमुख"
+      }
+    }
+  ]
+}

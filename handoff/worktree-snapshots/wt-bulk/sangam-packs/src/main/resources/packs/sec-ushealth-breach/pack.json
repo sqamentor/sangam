@@ -1,0 +1,110 @@
+{
+  "id": "sec.ushealth.breach",
+  "version": "1.0.0",
+  "name": {
+    "en": "HIPAA breach notification",
+    "es": "Notificación de violaciones de HIPAA"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "Incident logged with the date of discovery, four-factor risk assessment (breach presumed unless low probability is documented), law-enforcement delay, notices to individuals within 60 days of discovery (substitute notice when contacts are out of date), media notice when more than 500 residents of a state are affected, HHS notice with the individual notices for 500 or more, or in the annual log within 60 days after the calendar year end for fewer; business-associate reports; documentation kept 6 years. All limits in DMN (state laws override).",
+  "mainProcesses": [
+    "sangam-sec-ushealth-breach"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-breach/sangam-sec-ushealth-breach.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-breach/sec-ushealth-breach-clocks.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-breach/forms/incident.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-breach/forms/risk.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-breach/forms/low-probability.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-breach/forms/law-enforcement.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-breach/forms/individuals.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-breach/forms/substitute.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-breach/forms/media.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-breach/forms/log.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-breach/forms/close.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-breach/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-breach/seed.json",
+  "connectors": [
+    {
+      "id": "notify.mail",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Individual notices"
+    },
+    {
+      "id": "hhs.breachPortal",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "HHS OCR breach portal"
+    },
+    {
+      "id": "media.release",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Media notice"
+    }
+  ],
+  "covers": [
+    "US-HLT-020",
+    "US-HLT-021",
+    "US-HLT-022",
+    "US-HLT-023",
+    "US-HLT-024",
+    "US-HLT-025",
+    "US-HLT-026",
+    "US-HLT-027",
+    "US-HLT-028",
+    "US-HLT-029",
+    "US-HLT-030",
+    "US-HLT-031",
+    "US-HLT-009",
+    "US-HLT-041",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

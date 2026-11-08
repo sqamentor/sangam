@@ -1,0 +1,45 @@
+{
+  "key": "ifms-year-end-closing/cut",
+  "version": "1.0.0",
+  "pack": "gov.ifms.year-end-closing",
+  "title": {
+    "en": "Closing cut",
+    "hi": "समापन चरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "fiscalYear",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Financial year",
+        "hi": "वित्तीय वर्ष"
+      }
+    },
+    {
+      "id": "closingCut",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Closing cut",
+        "hi": "समापन चरण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

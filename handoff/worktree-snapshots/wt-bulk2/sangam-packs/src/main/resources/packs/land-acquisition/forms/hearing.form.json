@@ -1,0 +1,36 @@
+{
+  "key": "land-acquisition/hearing",
+  "version": "1.0.0",
+  "pack": "gov.land-acquisition",
+  "title": {
+    "en": "Hear objections (s.15)",
+    "hi": "आपत्तियों की सुनवाई (धारा 15)"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "objectionsSummary",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Summary of objections heard",
+        "hi": "सुनी गई आपत्तियों का सारांश"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

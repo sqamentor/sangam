@@ -1,0 +1,36 @@
+{
+  "key": "court-case/counsel",
+  "version": "1.0.0",
+  "pack": "gov.court-case",
+  "title": {
+    "en": "Engage counsel and assign",
+    "hi": "अधिवक्ता नियुक्त करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "counselName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Counsel engaged",
+        "hi": "नियुक्त अधिवक्ता"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

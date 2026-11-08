@@ -1,0 +1,99 @@
+{
+  "key": "p4-licence/inspection",
+  "version": "1.0.0",
+  "pack": "gov.p4.licence",
+  "title": {
+    "en": "Schedule and conduct inspection",
+    "hi": "निरीक्षण निर्धारित एवं संपन्न करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "inspectionSlot",
+      "type": "datetime",
+      "required": false,
+      "label": {
+        "en": "Inspection slot",
+        "hi": "निरीक्षण समय"
+      }
+    },
+    {
+      "id": "findings",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Findings",
+        "hi": "निष्कर्ष"
+      }
+    },
+    {
+      "id": "photos",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Photographs (geo-tagged)",
+        "hi": "फ़ोटो (जियो-टैग)"
+      }
+    },
+    {
+      "id": "geoTag",
+      "type": "geo",
+      "required": false,
+      "label": {
+        "en": "Geo-tag",
+        "hi": "जियो-टैग"
+      }
+    },
+    {
+      "id": "rescheduleReason",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Reason for rescheduling",
+        "hi": "पुनर्निर्धारण का कारण"
+      }
+    },
+    {
+      "id": "rescheduleRequestedBy",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Reschedule requested by",
+        "hi": "पुनर्निर्धारण किसके अनुरोध पर"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "inspectionDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "satisfactory",
+        "label": {
+          "en": "Satisfactory",
+          "hi": "संतोषजनक"
+        }
+      },
+      {
+        "value": "unsatisfactory",
+        "label": {
+          "en": "Unsatisfactory",
+          "hi": "असंतोषजनक"
+        }
+      },
+      {
+        "value": "reschedule",
+        "label": {
+          "en": "Reschedule",
+          "hi": "पुनर्निर्धारित करें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_afa_limit" name="Additional factor of authentication for recurring debits" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-bank-afa-limit" name="Additional factor of authentication for recurring debits" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-bank-afa-limit_t" hitPolicy="FIRST">
+      <input id="sec-bank-afa-limit_i0" label="Merchant category"><inputExpression id="sec-bank-afa-limit_ie0" typeRef="string"><text>merchantCategory</text></inputExpression></input>
+      <input id="sec-bank-afa-limit_i1" label="Amount"><inputExpression id="sec-bank-afa-limit_ie1" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="sec-bank-afa-limit_o0" label="AFA required" name="afaRequired" typeRef="boolean"/>
+      <rule id="sec-bank-afa-limit_r0"><description>Rs 1 lakh for mutual funds, insurance premium, credit card bills</description>
+        <inputEntry id="sec-bank-afa-limit_r0_i0"><text>"MUTUAL_FUND","INSURANCE","CREDIT_CARD"</text></inputEntry>
+        <inputEntry id="sec-bank-afa-limit_r0_i1"><text>&gt; 10000000</text></inputEntry>
+        <outputEntry id="sec-bank-afa-limit_r0_o0"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-afa-limit_r1">
+        <inputEntry id="sec-bank-afa-limit_r1_i0"><text>"MUTUAL_FUND","INSURANCE","CREDIT_CARD"</text></inputEntry>
+        <inputEntry id="sec-bank-afa-limit_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-afa-limit_r1_o0"><text>false</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-afa-limit_r2"><description>Rs 15,000 otherwise</description>
+        <inputEntry id="sec-bank-afa-limit_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-bank-afa-limit_r2_i1"><text>&gt; 1500000</text></inputEntry>
+        <outputEntry id="sec-bank-afa-limit_r2_o0"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-afa-limit_r3">
+        <inputEntry id="sec-bank-afa-limit_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-bank-afa-limit_r3_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-afa-limit_r3_o0"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

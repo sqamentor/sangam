@@ -1,0 +1,83 @@
+{
+  "id": "sec.ecom.return-refund",
+  "version": "1.0.0",
+  "name": {
+    "en": "Return, replacement and refund",
+    "hi": "वापसी, प्रतिस्थापन एवं धनवापसी"
+  },
+  "domain": "E-commerce",
+  "description": "Return policy by reason and category (displayed before purchase), pickup with failure handling, quality check, seller dispute arbitrated by the marketplace, replacement or refund to the original payment method once by operationId within the refund timeline.",
+  "mainProcesses": [
+    "sangam-sec-ecom-return"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ecom-return-refund/sangam-sec-ecom-return.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ecom-return-refund/sec-ecom-return-policy.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-return-refund/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-return-refund/forms/qc.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-return-refund/forms/dispute.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ecom-return-refund/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ecom-return-refund/seed.json",
+  "connectors": [
+    {
+      "id": "shipping.pickup",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Reverse pickup"
+    },
+    {
+      "id": "order.replacement",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Replacement order"
+    },
+    {
+      "id": "pg.refund",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Refund to source"
+    }
+  ],
+  "covers": [
+    "SEC-ECOM-004",
+    "SEC-ECOM-005",
+    "UP-13",
+    "GP-13",
+    "GP-12"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "refundAmount"
+    ]
+  }
+}

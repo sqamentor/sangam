@@ -1,0 +1,232 @@
+{
+  "offices": [
+    {
+      "id": "DPW-ZONE",
+      "parent": ""
+    },
+    {
+      "id": "DPW-CIRCLE",
+      "parent": "DPW-ZONE"
+    },
+    {
+      "id": "DPW-X",
+      "parent": "DPW-CIRCLE"
+    }
+  ],
+  "seats": [
+    {
+      "id": "CLERK-DDO",
+      "role": "CLERK",
+      "office": "DPW-X",
+      "level": "FIELD_OFFICE",
+      "reportsTo": "ACCTS-HEAD",
+      "name": {
+        "en": "Accounts clerk, DDO office",
+        "hi": "लेखा लिपिक, आहरण एवं संवितरण कार्यालय"
+      }
+    },
+    {
+      "id": "AO-1",
+      "role": "AO",
+      "office": "DPW-X",
+      "level": "FIELD_OFFICE",
+      "reportsTo": "ACCTS-HEAD",
+      "name": {
+        "en": "Accounts officer 1",
+        "hi": "लेखा अधिकारी 1"
+      }
+    },
+    {
+      "id": "AO-2",
+      "role": "AO",
+      "office": "DPW-X",
+      "level": "FIELD_OFFICE",
+      "reportsTo": "ACCTS-HEAD",
+      "name": {
+        "en": "Accounts officer 2",
+        "hi": "लेखा अधिकारी 2"
+      }
+    },
+    {
+      "id": "AO-3",
+      "role": "AO",
+      "office": "DPW-X",
+      "level": "FIELD_OFFICE",
+      "reportsTo": "ACCTS-HEAD",
+      "name": {
+        "en": "Accounts officer 3",
+        "hi": "लेखा अधिकारी 3"
+      }
+    },
+    {
+      "id": "ACCTS-HEAD",
+      "role": "AO-HEAD",
+      "office": "DPW-X",
+      "level": "FIELD_OFFICE",
+      "reportsTo": "EE-DIV1",
+      "name": {
+        "en": "Head of accounts section",
+        "hi": "लेखा अनुभाग प्रमुख"
+      }
+    },
+    {
+      "id": "DDO-X",
+      "role": "DDO",
+      "office": "DPW-X",
+      "level": "FIELD_OFFICE",
+      "reportsTo": "EE-DIV1",
+      "name": {
+        "en": "Drawing and disbursing officer",
+        "hi": "आहरण एवं संवितरण अधिकारी"
+      }
+    },
+    {
+      "id": "EE-DIV1",
+      "role": "EE",
+      "office": "DPW-X",
+      "level": "FIELD_OFFICE",
+      "reportsTo": "SE-CIRCLE",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "id": "SE-CIRCLE",
+      "role": "SE",
+      "office": "DPW-CIRCLE",
+      "level": "REGIONAL_OFFICE",
+      "reportsTo": "CE-ZONE",
+      "name": {
+        "en": "Superintending Engineer",
+        "hi": "अधीक्षण अभियंता"
+      }
+    },
+    {
+      "id": "CE-ZONE",
+      "role": "CE",
+      "office": "DPW-ZONE",
+      "level": "HEAD_OFFICE",
+      "name": {
+        "en": "Chief Engineer",
+        "hi": "मुख्य अभियंता"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CLERK-DDO",
+      "person": "p1.clerk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AO-1",
+      "person": "p1.ao1",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AO-2",
+      "person": "p1.ao2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "AO-3",
+      "person": "p1.ao3",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01",
+      "to": "2026-11-12"
+    },
+    {
+      "seat": "ACCTS-HEAD",
+      "person": "p1.head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DDO-X",
+      "person": "p1.ddo",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EE-DIV1",
+      "person": "p1.ee",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01",
+      "to": "2026-11-11"
+    },
+    {
+      "seat": "EE-DIV1",
+      "person": "p1.ee2",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-11-12"
+    },
+    {
+      "seat": "EE-DIV1",
+      "person": "p1.se",
+      "basis": "ADDITIONAL_CHARGE",
+      "ref": "AC-ORDER-17",
+      "from": "2026-11-10",
+      "to": "2026-11-24"
+    },
+    {
+      "seat": "SE-CIRCLE",
+      "person": "p1.se",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CE-ZONE",
+      "person": "p1.ce",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CLERK",
+      "name": {
+        "en": "Accounts clerk",
+        "hi": "लेखा लिपिक"
+      }
+    },
+    {
+      "code": "AO",
+      "name": {
+        "en": "Accounts officer (checker)",
+        "hi": "लेखा अधिकारी (जाँचकर्ता)"
+      }
+    },
+    {
+      "code": "DDO",
+      "name": {
+        "en": "Drawing and disbursing officer",
+        "hi": "आहरण एवं संवितरण अधिकारी"
+      }
+    },
+    {
+      "code": "EE",
+      "name": {
+        "en": "Executive Engineer",
+        "hi": "अधिशासी अभियंता"
+      }
+    },
+    {
+      "code": "SE",
+      "name": {
+        "en": "Superintending Engineer",
+        "hi": "अधीक्षण अभियंता"
+      }
+    },
+    {
+      "code": "CE",
+      "name": {
+        "en": "Chief Engineer",
+        "hi": "मुख्य अभियंता"
+      }
+    }
+  ]
+}

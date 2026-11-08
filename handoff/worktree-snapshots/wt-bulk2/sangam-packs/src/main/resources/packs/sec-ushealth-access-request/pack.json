@@ -1,0 +1,95 @@
+{
+  "id": "sec.ushealth.access-request",
+  "version": "1.0.0",
+  "name": {
+    "en": "HIPAA right of access (30 days, one 30-day extension)",
+    "es": "Derecho de acceso HIPAA (30 días, una prórroga de 30 días)"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "Request logged, identity and authority verified, records assembled from the designated record set within the DMN timeframe (30 days), one extension of up to 30 days with a written notice inside the first period, reasonable cost-based fee, copy in the requested form and format or to the directed third party, written denial with basis and review by a licensed professional not involved in the denial; information-blocking exception recorded and the 10-business-day infeasibility response.",
+  "mainProcesses": [
+    "sangam-sec-ushealth-access-request"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-access-request/sangam-sec-ushealth-access-request.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-access-request/sec-ushealth-access-clocks.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-access-request/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-access-request/forms/verify.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-access-request/forms/assemble.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-access-request/forms/extend.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-access-request/forms/fee.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-access-request/forms/deliver.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-access-request/forms/deny.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-access-request/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-access-request/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-access-request/seed.json",
+  "connectors": [
+    {
+      "id": "fhir.ehiExport",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "EHI export (FHIR)"
+    },
+    {
+      "id": "notify.mail",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Notice to the requester"
+    }
+  ],
+  "covers": [
+    "US-HLT-002",
+    "US-HLT-003",
+    "US-HLT-004",
+    "US-HLT-005",
+    "US-HLT-006",
+    "US-HLT-009",
+    "US-HLT-047",
+    "US-HLT-048",
+    "US-HLT-051",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

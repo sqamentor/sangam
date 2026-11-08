@@ -1,0 +1,109 @@
+{
+  "id": "sec.ecom.order-to-cash",
+  "version": "1.0.0",
+  "name": {
+    "en": "Marketplace order to cash",
+    "hi": "मार्केटप्लेस आदेश से नकद प्राप्ति तक"
+  },
+  "domain": "E-commerce",
+  "description": "Order with fraud screen, payment authorised once, seller acceptance within the SLA (auto-cancel and refund on breach), shipment, delivery, RTO and delay handling, COD remittance, seller settlement after the return window less commission; consumer cancellation before shipment without a charge the entity does not itself bear (E-Commerce Rules r.4(10)); refunds to the source.",
+  "mainProcesses": [
+    "sangam-sec-ecom-order"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ecom-order-to-cash/sangam-sec-ecom-order.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ecom-order-to-cash/sec-ecom-commission.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-order-to-cash/forms/order.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-order-to-cash/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-order-to-cash/forms/seller.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-order-to-cash/forms/delay.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ecom-order-to-cash/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ecom-order-to-cash/seed.json",
+  "connectors": [
+    {
+      "id": "fraud.score",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Risk screen"
+    },
+    {
+      "id": "pg.authorise",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Payment authorisation"
+    },
+    {
+      "id": "pg.refund",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Refund to source"
+    },
+    {
+      "id": "logistics.ship",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Shipment"
+    },
+    {
+      "id": "logistics.codRemit",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "COD remittance"
+    },
+    {
+      "id": "nodal.settle",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "Seller settlement"
+    }
+  ],
+  "covers": [
+    "SEC-ECOM-001",
+    "SEC-ECOM-002",
+    "SEC-ECOM-003",
+    "UP-01",
+    "UP-02",
+    "UP-12",
+    "GP-12",
+    "GP-13",
+    "GP-15"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-execution"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

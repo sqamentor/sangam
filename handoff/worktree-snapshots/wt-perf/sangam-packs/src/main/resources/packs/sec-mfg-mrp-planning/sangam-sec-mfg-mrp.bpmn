@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- MRP run. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_mfg_mrp" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-mfg-mrp" name="MRP run" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.mfg.mrp-planning</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>period</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="mr_timer" name="Weekly"><timerEventDefinition><timeCycle xsi:type="tFormalExpression">0 0 2 ? * MON</timeCycle></timerEventDefinition></startEvent>
+    <serviceTask id="mr_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>plannerSeat=PLANNER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="mr_run" name="Run MRP" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>erp.mrpRun</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>run</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>mrp</operaton:string></operaton:field><operaton:field name="step"><operaton:string>mrp-run</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="mr_review" name="Review exception messages" operaton:candidateGroups="${plannerSeat}" operaton:formKey="sangam:sec-mfg-mrp-planning/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="mr_load" name="Planned orders" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>LOAD</operaton:string></operaton:field><operaton:field name="connector"><operaton:string>erp.plannedOrders</operaton:string></operaton:field><operaton:field name="sampleSize"><operaton:string>3</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="mr_open" name="Open round" operaton:class="org.sangam.packs.core.BatchDelegate"><extensionElements><operaton:field name="op"><operaton:string>OPEN</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="mr_fanOut" name="Start one instance per item (chunk)" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>FAN_OUT</operaton:string></operaton:field><operaton:field name="itemsVar"><operaton:string>items</operaton:string></operaton:field><operaton:field name="childProcessKey"><operaton:string>sangam-sec-mfg-planned-order</operaton:string></operaton:field><operaton:field name="chunkSize"><operaton:string>100</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="mr_fanGw" name="All started?" default="sec_mfg_mrp_f8"></exclusiveGateway>
+    <intermediateCatchEvent id="mr_poll" name="Poll aggregate"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT30M</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="mr_aggregate" name="Aggregate outcomes" operaton:class="org.sangam.packs.core.BatchDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="op"><operaton:string>AGGREGATE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="mr_doneGw" name="Round complete?" default="sec_mfg_mrp_f13"></exclusiveGateway>
+    <endEvent id="mr_end" name="Run closed"></endEvent>
+    <sequenceFlow id="sec_mfg_mrp_f1" sourceRef="mr_timer" targetRef="mr_defaults"/>
+    <sequenceFlow id="sec_mfg_mrp_f2" sourceRef="mr_defaults" targetRef="mr_run"/>
+    <sequenceFlow id="sec_mfg_mrp_f3" sourceRef="mr_run" targetRef="mr_review"/>
+    <sequenceFlow id="sec_mfg_mrp_f4" sourceRef="mr_review" targetRef="mr_load"/>
+    <sequenceFlow id="sec_mfg_mrp_f5" sourceRef="mr_open" targetRef="mr_fanOut"/>
+    <sequenceFlow id="sec_mfg_mrp_f6" sourceRef="mr_fanOut" targetRef="mr_fanGw"/>
+    <sequenceFlow id="sec_mfg_mrp_f7" name="next chunk" sourceRef="mr_fanGw" targetRef="mr_fanOut"><conditionExpression xsi:type="tFormalExpression">${!fanOutDone}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_mfg_mrp_f8" name="all started" sourceRef="mr_fanGw" targetRef="mr_poll"/>
+    <sequenceFlow id="sec_mfg_mrp_f9" sourceRef="mr_poll" targetRef="mr_aggregate"/>
+    <sequenceFlow id="sec_mfg_mrp_f10" sourceRef="mr_aggregate" targetRef="mr_doneGw"/>
+    <sequenceFlow id="sec_mfg_mrp_f11" name="not yet" sourceRef="mr_doneGw" targetRef="mr_poll"><conditionExpression xsi:type="tFormalExpression">${!batchComplete}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_mfg_mrp_f12" sourceRef="mr_load" targetRef="mr_open"/>
+    <sequenceFlow id="sec_mfg_mrp_f13" name="complete" sourceRef="mr_doneGw" targetRef="mr_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_mfg_mrp_diagram">
+    <bpmndi:BPMNPlane id="sec_mfg_mrp_plane" bpmnElement="sangam-sec-mfg-mrp">
+      <bpmndi:BPMNShape id="mr_timer_di" bpmnElement="mr_timer"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_defaults_di" bpmnElement="mr_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_run_di" bpmnElement="mr_run"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_review_di" bpmnElement="mr_review"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_load_di" bpmnElement="mr_load"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_open_di" bpmnElement="mr_open"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_fanOut_di" bpmnElement="mr_fanOut"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_fanGw_di" bpmnElement="mr_fanGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_poll_di" bpmnElement="mr_poll"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_aggregate_di" bpmnElement="mr_aggregate"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_doneGw_di" bpmnElement="mr_doneGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="mr_end_di" bpmnElement="mr_end"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f1_di" bpmnElement="sec_mfg_mrp_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f2_di" bpmnElement="sec_mfg_mrp_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f3_di" bpmnElement="sec_mfg_mrp_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f4_di" bpmnElement="sec_mfg_mrp_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f5_di" bpmnElement="sec_mfg_mrp_f5"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f6_di" bpmnElement="sec_mfg_mrp_f6"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f7_di" bpmnElement="sec_mfg_mrp_f7"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="142"/><di:waypoint x="1060" y="142"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f8_di" bpmnElement="sec_mfg_mrp_f8"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f9_di" bpmnElement="sec_mfg_mrp_f9"><di:waypoint x="1408" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f10_di" bpmnElement="sec_mfg_mrp_f10"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f11_di" bpmnElement="sec_mfg_mrp_f11"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="127"/><di:waypoint x="1390" y="127"/><di:waypoint x="1390" y="88"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f12_di" bpmnElement="sec_mfg_mrp_f12"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_mfg_mrp_f13_di" bpmnElement="sec_mfg_mrp_f13"><di:waypoint x="1745" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,72 @@
+{
+  "key": "challan-reconciliation/resolve",
+  "version": "1.0.0",
+  "pack": "gov.ifms.challan-reconciliation",
+  "title": {
+    "en": "Resolve challan discrepancy",
+    "hi": "चालान विसंगति का निवारण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "challanNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Challan / CIN",
+        "hi": "चालान / सीआईएन"
+      }
+    },
+    {
+      "id": "discrepancyCause",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Cause of discrepancy",
+        "hi": "विसंगति का कारण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "discDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "adjust",
+        "label": {
+          "en": "Adjust in books",
+          "hi": "बही में समायोजन"
+        }
+      },
+      {
+        "value": "recover",
+        "label": {
+          "en": "Recover from responsible person",
+          "hi": "उत्तरदायी व्यक्ति से वसूली"
+        }
+      },
+      {
+        "value": "writeOff",
+        "label": {
+          "en": "Write off",
+          "hi": "बट्टे खाते डालें"
+        }
+      }
+    ]
+  }
+}

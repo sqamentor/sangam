@@ -1,0 +1,412 @@
+{
+  "id": "gov.ifms.bill",
+  "version": "1.0.0",
+  "name": {
+    "en": "Bill by catalogue type (all bill-type families)",
+    "hi": "सूची प्रकार अनुसार बिल (सभी बिल श्रेणियाँ)"
+  },
+  "domain": "IFMS",
+  "description": "One catalogue-driven bill process: the bill type (form number, attachments, certificates, allowed heads, one-major-head rule, sanction requirement, chain, rail) comes from the tenant profile (config.documentType); the head of account is validated against the classification master; funds are checked and encumbered in the ledger at the profile control dimension (hold-for-budget queue when short); the PAO / treasury chain runs; payment goes through the rail the profile selects (rail DMN, tenant override per State) with operationId and reconciliation; consumption is posted. One thin process per bill-type family sets the family defaults.",
+  "mainProcesses": [
+    "sangam-ifms-bill"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-establishment-pay.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-personal-claim.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-contingent.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-vendor.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-grant.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-refund.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-advance.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-provident-fund.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-retirement.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-contingency-fund.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-nil-bill.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-cddo.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/ifms-bill/sangam-ifms-bill-classified.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-bill/ifms-rail-connector.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-bill/ifms-bill-authority.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/draft.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/payee-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/revise.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/establishment-pay.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/personal-claim.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/contingent.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/vendor.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/grant.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/refund.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/advance.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/provident-fund.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/retirement.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/contingency-fund.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/nil-bill.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/cddo.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/ifms-bill/forms/classified.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/ifms-bill/seed.json"
+    }
+  ],
+  "seed": "packs/ifms-bill/seed.json",
+  "connectors": [
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
+    },
+    {
+      "id": "config.documentType",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Document-type catalogue (bill types, forms, chains, rails)"
+    },
+    {
+      "id": "config.classification",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Classification validation (head of account)"
+    },
+    {
+      "id": "config.series",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Number series (token, voucher)"
+    },
+    {
+      "id": "ledger.available",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Funds available at the control dimension (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "ledger.encumber",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Encumber the bill (from the sanction commitment) (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "ledger.consume",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Post the payment (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "ledger.release",
+      "capabilityClass": "a",
+      "govTag": "G-LEDGER",
+      "purpose": "Release the encumbrance on rejection / cancel (sangam-ledger, idempotent by operationId)"
+    },
+    {
+      "id": "ifms.duplicateBill",
+      "capabilityClass": "a",
+      "govTag": "G-PFMS",
+      "purpose": "Duplicate / similar claim check"
+    },
+    {
+      "id": "registry.party",
+      "capabilityClass": "a",
+      "govTag": "G-REGISTRY",
+      "purpose": "Payee golden record (sangam-registry party registry, GA-12)"
+    },
+    {
+      "id": "pfms.payment",
+      "capabilityClass": "c",
+      "govTag": "G-PFMS",
+      "purpose": "Payment file (PFMS)"
+    },
+    {
+      "id": "rail.ekuber",
+      "capabilityClass": "c",
+      "govTag": "G-RBI",
+      "purpose": "RBI e-Kuber payment"
+    },
+    {
+      "id": "rail.agencyBank",
+      "capabilityClass": "c",
+      "govTag": "G-BANK",
+      "purpose": "Agency-bank payment"
+    },
+    {
+      "id": "rail.stateBank",
+      "capabilityClass": "c",
+      "govTag": "G-BANK",
+      "purpose": "State-owned bank (cheque / draft)"
+    },
+    {
+      "id": "rail.cheque",
+      "capabilityClass": "b",
+      "govTag": "G-TREASURY",
+      "purpose": "Treasury cheque"
+    },
+    {
+      "id": "rail.loc",
+      "capabilityClass": "b",
+      "govTag": "G-TREASURY",
+      "purpose": "Letter of credit / CCL-DCL"
+    },
+    {
+      "id": "rail.fcy",
+      "capabilityClass": "c",
+      "govTag": "G-BANK",
+      "purpose": "Foreign-currency advice"
+    }
+  ],
+  "covers": [
+    "GA-04",
+    "GA-05",
+    "GA-06",
+    "GA-10",
+    "GA-12",
+    "GP-11",
+    "GP-34",
+    "GP-50",
+    "IFC-042",
+    "IFC-050",
+    "IFC-057",
+    "IFC-058",
+    "IFC-075",
+    "IFC-077",
+    "IFC-079",
+    "IFC-085",
+    "IFC-091",
+    "IFC-092",
+    "IFC-099",
+    "IFC-100",
+    "IFC-101",
+    "IFC-102",
+    "IFC-103",
+    "IFC-104",
+    "IFC-105",
+    "IFC-106",
+    "IFC-107",
+    "IFC-108",
+    "IFC-109",
+    "IFC-110",
+    "IFC-111",
+    "IFC-114",
+    "IFC-115",
+    "IFC-116",
+    "IFC-117",
+    "IFC-118",
+    "IFC-119",
+    "IFC-120",
+    "IFC-121",
+    "IFC-122",
+    "IFC-123",
+    "IFC-124",
+    "IFC-125",
+    "IFC-166",
+    "IFC-167",
+    "IFC-168",
+    "IFC-169",
+    "IFC-171",
+    "IFC-172",
+    "IFC-177",
+    "IFC-180",
+    "IFC-182",
+    "IFC-183",
+    "IFC-246",
+    "IFC-252",
+    "IFC-253",
+    "IFS-039",
+    "IFS-041",
+    "IFS-043",
+    "IFS-044",
+    "IFS-045",
+    "IFS-046",
+    "IFS-049",
+    "IFS-050",
+    "IFS-053",
+    "IFS-054",
+    "IFS-056",
+    "IFS-064",
+    "IFS-068",
+    "IFS-071",
+    "IFS-AP-003",
+    "IFS-BR-002",
+    "IFS-CH-003",
+    "IFS-GJ-001",
+    "IFS-HP-002",
+    "IFS-HP-003",
+    "IFS-HP-004",
+    "IFS-HP-005",
+    "IFS-HR-003",
+    "IFS-JK-002",
+    "IFS-KA-001",
+    "IFS-KA-004",
+    "IFS-KA-007",
+    "IFS-KA-008",
+    "IFS-KL-005",
+    "IFS-KL-006",
+    "IFS-MH-001",
+    "IFS-MH-002",
+    "IFS-MH-003",
+    "IFS-MP-001",
+    "IFS-MP-003",
+    "IFS-OD-005",
+    "IFS-OD-009",
+    "IFS-OD-010",
+    "IFS-PB-003",
+    "IFS-PB-004",
+    "IFS-PB-005",
+    "IFS-RJ-002",
+    "IFS-RJ-004",
+    "IFS-SK-001",
+    "IFS-SK-004",
+    "IFS-TN-001",
+    "IFS-TR-001",
+    "IFS-TR-002",
+    "IFS-UP-007",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [
+    {
+      "id": "BL-1",
+      "title": "A bill mixing two major heads is refused with the rule cited",
+      "refs": [
+        "IFC-042"
+      ],
+      "given": "GOI profile, bill type CONTINGENT",
+      "when": "lines carry 2054 and 2052",
+      "then": "BILL_INVALID with RPR SI 2.2(5)(g)",
+      "startVariables": {
+        "docValid": false
+      },
+      "expectState": null,
+      "run": {
+        "expect": {
+          "audit": [
+            "CASE_REJECTED"
+          ],
+          "notAudit": [
+            "CASE_APPROVED"
+          ],
+          "ended": true
+        }
+      }
+    }
+  ],
+  "dependsOn": [
+    "sangam.core",
+    "gov.ifms.pao-chain"
+  ],
+  "tenantOverrides": [
+    {
+      "tenant": "SK",
+      "kind": "DMN",
+      "path": "packs/ifms-bill/overrides/SK/ifms-rail-connector.dmn"
+    },
+    {
+      "tenant": "HP",
+      "kind": "DMN",
+      "path": "packs/ifms-bill/overrides/HP/ifms-rail-connector.dmn"
+    }
+  ],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-closure",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-ifms-bill",
+    "sangam-ifms-pao-chain"
+  ]
+}

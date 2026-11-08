@@ -1,0 +1,49 @@
+{
+  "key": "ifms-audit-para-settlement/atn",
+  "version": "1.0.0",
+  "pack": "gov.ifms.audit-para-settlement",
+  "title": {
+    "en": "Prepare action taken note",
+    "hi": "की गई कार्रवाई टिप्पणी"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "atnText",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Action taken note",
+        "hi": "की गई कार्रवाई टिप्पणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "atnDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "forwardNext",
+        "label": {
+          "en": "Forward to next level",
+          "hi": "अगले स्तर को अग्रेषित करें"
+        }
+      }
+    ]
+  }
+}

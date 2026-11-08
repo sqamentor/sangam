@@ -1,0 +1,27 @@
+{
+  "key": "sec-health-blood-bank/collect",
+  "version": "1.0.0",
+  "pack": "sec.health.blood-bank",
+  "title": {
+    "en": "Collect blood and label",
+    "hi": "रक्त संग्रह एवं लेबल"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "sampleBarcode",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Sample barcode",
+        "hi": "नमूना बारकोड"
+      }
+    }
+  ]
+}

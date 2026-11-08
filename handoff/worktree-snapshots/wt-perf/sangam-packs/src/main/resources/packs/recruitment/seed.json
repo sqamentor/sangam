@@ -1,0 +1,110 @@
+{
+  "offices": [
+    {
+      "id": "COMMISSION",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "EXAM-CTRL",
+      "role": "EXAMCTRL",
+      "office": "COMMISSION",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "JS-R",
+      "name": {
+        "en": "Controller of examinations",
+        "hi": "परीक्षा नियंत्रक"
+      }
+    },
+    {
+      "id": "EXPERT-PANEL",
+      "role": "EXPERT",
+      "office": "COMMISSION",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "EXAM-CTRL",
+      "name": {
+        "en": "Subject expert panel",
+        "hi": "विषय विशेषज्ञ पैनल"
+      }
+    },
+    {
+      "id": "DV-BOARD",
+      "role": "DV",
+      "office": "COMMISSION",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "EXAM-CTRL",
+      "name": {
+        "en": "Document verification board",
+        "hi": "दस्तावेज़ सत्यापन बोर्ड"
+      }
+    },
+    {
+      "id": "JS-R",
+      "role": "JS",
+      "office": "COMMISSION",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Joint Secretary (recruitment)",
+        "hi": "संयुक्त सचिव (भर्ती)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "EXAM-CTRL",
+      "person": "rc.exam-ctrl",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "EXPERT-PANEL",
+      "person": "rc.expert-panel",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DV-BOARD",
+      "person": "rc.dv-board",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "JS-R",
+      "person": "rc.js-r",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "EXAMCTRL",
+      "name": {
+        "en": "Controller of examinations",
+        "hi": "परीक्षा नियंत्रक"
+      }
+    },
+    {
+      "code": "EXPERT",
+      "name": {
+        "en": "Subject expert panel",
+        "hi": "विषय विशेषज्ञ पैनल"
+      }
+    },
+    {
+      "code": "DV",
+      "name": {
+        "en": "Document verification board",
+        "hi": "दस्तावेज़ सत्यापन बोर्ड"
+      }
+    },
+    {
+      "code": "JS",
+      "name": {
+        "en": "Joint Secretary (recruitment)",
+        "hi": "संयुक्त सचिव (भर्ती)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_up01_route" name="Fulfilment route" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="up01-route" name="Fulfilment route" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="up01-route_t" hitPolicy="FIRST">
+      <input id="up01-route_i0" label="Amount"><inputExpression id="up01-route_ie0" typeRef="number"><text>amount</text></inputExpression></input>
+      <output id="up01-route_o0" label="Channel" name="fulfilmentChannel" typeRef="string"/>
+      <rule id="up01-route_r0">
+        <inputEntry id="up01-route_r0_i0"><text>&gt; 5000000</text></inputEntry>
+        <outputEntry id="up01-route_r0_o0"><text>"INSURED_COURIER"</text></outputEntry>
+      </rule>
+      <rule id="up01-route_r1">
+        <inputEntry id="up01-route_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="up01-route_r1_o0"><text>"STANDARD"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

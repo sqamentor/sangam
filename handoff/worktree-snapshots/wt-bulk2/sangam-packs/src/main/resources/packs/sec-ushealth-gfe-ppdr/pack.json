@@ -1,0 +1,74 @@
+{
+  "id": "sec.ushealth.gfe-ppdr",
+  "version": "1.0.0",
+  "name": {
+    "en": "Good-faith estimate and patient-provider dispute resolution (No Surprises Act)",
+    "es": "Presupuesto de buena fe y resolución de disputas entre paciente y proveedor (Ley No Surprises)"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "Good-faith estimate for uninsured or self-pay patients within 1 or 3 business days by scheduling lead (DMN), co-provider items, bill compared with the estimate, eligibility for patient-provider dispute resolution when the bill is at least the DMN threshold above the estimate, 120-day initiation window, collections hold while the dispute is open, SDR entity determination applied to the bill.",
+  "mainProcesses": [
+    "sangam-sec-ushealth-gfe-ppdr"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-gfe-ppdr/sangam-sec-ushealth-gfe-ppdr.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-gfe-ppdr/sec-ushealth-gfe-config.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-gfe-ppdr/forms/schedule.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-gfe-ppdr/forms/estimate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-gfe-ppdr/forms/compare.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-gfe-ppdr/forms/apply.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-gfe-ppdr/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-gfe-ppdr/seed.json",
+  "connectors": [
+    {
+      "id": "ppdr.sdr",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Selected dispute-resolution entity (via HHS portal)"
+    },
+    {
+      "id": "notify.mail",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Patient notice"
+    }
+  ],
+  "covers": [
+    "US-HLT-110",
+    "US-HLT-111",
+    "US-HLT-112",
+    "US-HLT-113",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

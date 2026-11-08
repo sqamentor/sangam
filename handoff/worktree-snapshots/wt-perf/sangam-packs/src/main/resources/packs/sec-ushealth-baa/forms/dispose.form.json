@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-baa/dispose",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.baa",
+  "title": {
+    "en": "Return or destroy PHI and keep the certificate (6 years)",
+    "es": "Devolver o destruir la PHI"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "phiDisposition",
+      "type": "attachments",
+      "required": true,
+      "label": {
+        "en": "PHI returned or destroyed (certificate)",
+        "es": "PHI devuelta o destruida (certificado)"
+      }
+    }
+  ]
+}

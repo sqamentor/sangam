@@ -1,0 +1,72 @@
+{
+  "key": "core/appeal",
+  "version": "1.0.0",
+  "pack": "sangam.core",
+  "title": {
+    "en": "Decide appeal",
+    "hi": "अपील पर निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "appealGrounds",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Grounds of appeal",
+        "hi": "अपील के आधार"
+      }
+    },
+    {
+      "id": "appealDecisionReasons",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Reasons for the appellate decision",
+        "hi": "अपीलीय निर्णय के कारण"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "appealDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "allow",
+        "label": {
+          "en": "Allow appeal",
+          "hi": "अपील स्वीकार करें"
+        }
+      },
+      {
+        "value": "remand",
+        "label": {
+          "en": "Remand for re-verification",
+          "hi": "पुनः सत्यापन हेतु वापस भेजें"
+        }
+      },
+      {
+        "value": "dismiss",
+        "label": {
+          "en": "Dismiss appeal",
+          "hi": "अपील खारिज करें"
+        }
+      }
+    ]
+  }
+}

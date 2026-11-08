@@ -1,0 +1,104 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, ADR-D-20 / ADR-D-23). Source: spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md.
+# Values under "placeholders" are [U]: unverified, configuration placeholders to confirm from official sources.
+# Written outside profilegen (frozen while LMMH-EXTRACTION runs); indexed by intl.idx.
+profile:
+  id: BRA
+  layer: jurisdiction
+  version: 2026.11.0
+  effectiveFrom: '2000-01-01'
+  extends:
+  - INTL
+  - INTL-PFM
+  - REGIME-CIVIL-LAW-EMPENHO
+  name:
+    en: Brazil (federal)
+  source: INTERNATIONAL-PFM 5
+placeholders:
+- path: classification
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (natureza da despesa, fonte)'
+- path: treasury.tsa
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (Conta Unica at the Banco
+    Central)'
+- path: fiscalRules.rules
+  reason: '[U] unverified in the research pass (INTERNATIONAL-PFM); confirm from official sources (LRF art. 42 end-of-mandate)'
+locale:
+  zone: America/Sao_Paulo
+  currency: BRL
+  grouping:
+    first: 3
+    rest: 3
+  units:
+    K: 1000
+    M: 1000000
+    BN: 1000000000
+  fiscal:
+    startMonth: 1
+    startDay: 1
+    label: START
+  languages:
+  - tag: pt
+    script: Latn
+    default: true
+integrations:
+  systems:
+  - SIAFI
+  - SIOP [U]
+ledgers:
+- id: BUDGET
+  currency: BRL
+accountingBasis:
+- basis: BUDGET_CASH_REVENUE_COMMITMENT_EXPENSE
+  ruleRef: Lei 4.320 art. 35
+- basis: ACCRUAL
+  standard: MCASP / NBC TSP [U]
+classification:
+  schemes:
+  - id: NATUREZA
+    separator: .
+    segments:
+    - id: categoria
+      width: 1
+    - id: gnd
+      width: 1
+    - id: modalidade
+      width: 2
+    - id: elemento
+      width: 2
+  - id: FONTE
+    separator: ''
+    segments:
+    - id: fonte
+      width: 3
+commitments:
+  types:
+  - ORDINARY
+  - ESTIMATIVE
+  - GLOBAL
+  noExpenseWithoutCommitment: true
+creditosAdicionais:
+- SUPLEMENTAR
+- ESPECIAL
+- EXTRAORDINARIO
+yearEnd:
+  policy: CARRY_OVER_PAYABLES
+  payables:
+  - PROCESSADOS
+  - NAO_PROCESSADOS
+treasury:
+  tsa:
+    main:
+      id: CONTA-UNICA
+      bank: BANCO_CENTRAL
+      currency: BRL
+    accounts: []
+fiscalRules:
+  aggregates: []
+  rules: []
+  ruleRef: LRF (LC 101/2000)
+  freezeInstrument: LIMITACAO_DE_EMPENHO
+intragovernmental:
+  system: intra-SIAFI
+advances:
+  kind: SUPRIMENTO_DE_FUNDOS
+  ruleRef: Lei 4.320 art. 65

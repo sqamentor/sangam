@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "PRIVACY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "DPO",
+      "role": "DPO",
+      "office": "PRIVACY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "GRO-PRIVACY",
+      "name": {
+        "en": "Data protection officer",
+        "hi": "डेटा संरक्षण अधिकारी"
+      }
+    },
+    {
+      "id": "GRO-PRIVACY",
+      "role": "GRO",
+      "office": "PRIVACY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Grievance officer (privacy)",
+        "hi": "शिकायत अधिकारी (गोपनीयता)"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DPO",
+      "person": "ldr.dpo",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "GRO-PRIVACY",
+      "person": "ldr.gro-privacy",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DPO",
+      "name": {
+        "en": "Data protection officer",
+        "hi": "डेटा संरक्षण अधिकारी"
+      }
+    },
+    {
+      "code": "GRO",
+      "name": {
+        "en": "Grievance officer (privacy)",
+        "hi": "शिकायत अधिकारी (गोपनीयता)"
+      }
+    }
+  ]
+}

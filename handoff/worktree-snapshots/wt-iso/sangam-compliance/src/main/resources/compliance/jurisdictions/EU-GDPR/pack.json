@@ -1,0 +1,238 @@
+{
+  "code": "EU-GDPR",
+  "name": "European Union / EEA: General Data Protection Regulation (EU) 2016/679",
+  "homeCountry": "EU",
+  "homeCountries": ["EU", "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "IS", "LI", "NO"],
+  "timeZone": "Europe/Brussels",
+  "_verification": "EUR-Lex returned empty pages and the EDPB page only metadata during research on 2026-11-05, so article values are [U] (taken from the published Regulation, not re-read). The adequacy list is [V] from commission.europa.eu (adequacy decisions page, read 2026-11-05). Member-state values are [U].",
+  "terminology": {
+    "dataSubject": "Data subject",
+    "controller": "Controller",
+    "processor": "Processor",
+    "supervisoryAuthority": "Lead supervisory authority",
+    "personalData": "Personal data"
+  },
+  "instruments": [
+    {"id": "GDPR", "title": "Regulation (EU) 2016/679 (General Data Protection Regulation)", "issuer": "European Parliament and Council", "reference": "OJ L 119, 4.5.2016", "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj"},
+    {"id": "SCC-2021", "title": "Standard contractual clauses for transfers to third countries", "issuer": "European Commission", "reference": "Implementing Decision (EU) 2021/914", "url": "https://eur-lex.europa.eu/eli/dec_impl/2021/914/oj"},
+    {"id": "EDPB-9-2022", "title": "Guidelines 9/2022 on personal data breach notification under GDPR, version 2.0", "issuer": "EDPB", "reference": "04 April 2023", "url": "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-92022-personal-data-breach-notification-under_en"},
+    {"id": "ADEQUACY", "title": "Adequacy decisions", "issuer": "European Commission", "reference": "list read 2026-11-05", "url": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"}
+  ],
+  "commencement": {
+    "phases": [{"id": "GDPR", "from": "2018-05-25", "provisions": ["Art"]}],
+    "defaultPhase": "GDPR"
+  },
+  "languages": [
+    {"code": "en", "name": "English", "nativeName": "English", "script": "Latn"},
+    {"code": "bg", "name": "Bulgarian", "nativeName": "български", "script": "Cyrl"},
+    {"code": "cs", "name": "Czech", "nativeName": "čeština", "script": "Latn"},
+    {"code": "da", "name": "Danish", "nativeName": "dansk", "script": "Latn"},
+    {"code": "de", "name": "German", "nativeName": "Deutsch", "script": "Latn"},
+    {"code": "el", "name": "Greek", "nativeName": "ελληνικά", "script": "Grek"},
+    {"code": "es", "name": "Spanish", "nativeName": "español", "script": "Latn"},
+    {"code": "et", "name": "Estonian", "nativeName": "eesti", "script": "Latn"},
+    {"code": "fi", "name": "Finnish", "nativeName": "suomi", "script": "Latn"},
+    {"code": "fr", "name": "French", "nativeName": "français", "script": "Latn"},
+    {"code": "ga", "name": "Irish", "nativeName": "Gaeilge", "script": "Latn"},
+    {"code": "hr", "name": "Croatian", "nativeName": "hrvatski", "script": "Latn"},
+    {"code": "hu", "name": "Hungarian", "nativeName": "magyar", "script": "Latn"},
+    {"code": "it", "name": "Italian", "nativeName": "italiano", "script": "Latn"},
+    {"code": "lt", "name": "Lithuanian", "nativeName": "lietuvių", "script": "Latn"},
+    {"code": "lv", "name": "Latvian", "nativeName": "latviešu", "script": "Latn"},
+    {"code": "mt", "name": "Maltese", "nativeName": "Malti", "script": "Latn"},
+    {"code": "nl", "name": "Dutch", "nativeName": "Nederlands", "script": "Latn"},
+    {"code": "pl", "name": "Polish", "nativeName": "polski", "script": "Latn"},
+    {"code": "pt", "name": "Portuguese", "nativeName": "português", "script": "Latn"},
+    {"code": "ro", "name": "Romanian", "nativeName": "română", "script": "Latn"},
+    {"code": "sk", "name": "Slovak", "nativeName": "slovenčina", "script": "Latn"},
+    {"code": "sl", "name": "Slovenian", "nativeName": "slovenščina", "script": "Latn"},
+    {"code": "sv", "name": "Swedish", "nativeName": "svenska", "script": "Latn"}
+  ],
+  "defaultLanguage": "en",
+  "limits": {
+    "childAgeYears": {"value": 16, "citation": "Art. 8(1): 16; Member States may provide a lower age, not below 13 [U]"}
+  },
+  "conditionalLimits": [],
+  "defaults": {
+    "languages": "en",
+    "ntp.servers": "pool.ntp.org"
+  },
+  "legalBases": [
+    {"code": "CONSENT", "citation": "Art. 6(1)(a), Art. 7 [U]", "kind": "CONSENT", "description": "Consent (freely given, specific, informed, unambiguous; demonstrable; withdrawable as easily as given)"},
+    {"code": "CONTRACT", "citation": "Art. 6(1)(b) [U]", "description": "Performance of a contract or pre-contractual steps"},
+    {"code": "LEGAL_OBLIGATION", "citation": "Art. 6(1)(c), 6(3) [U]", "requiresLegalRef": true, "impliesRetentionByLaw": true, "description": "Compliance with a legal obligation (Union or Member State law)"},
+    {"code": "VITAL_INTERESTS", "citation": "Art. 6(1)(d) [U]", "description": "Vital interests of the data subject or another person"},
+    {"code": "PUBLIC_TASK", "citation": "Art. 6(1)(e), 6(3) [U]", "requiresLegalRef": true, "objectable": true, "description": "Task in the public interest or exercise of official authority (objection under Art. 21(1))"},
+    {"code": "LEGITIMATE_INTERESTS", "citation": "Art. 6(1)(f) [U]", "objectable": true, "requiresStandardsAttestation": true, "description": "Legitimate interests, with a documented balancing test (not for public authorities in their tasks)"}
+  ],
+  "specialCategoryConditions": [
+    {"code": "ART9_2_A_EXPLICIT_CONSENT", "citation": "Art. 9(2)(a) [U]", "description": "Explicit consent"},
+    {"code": "ART9_2_B_EMPLOYMENT_SOCIAL_SECURITY", "citation": "Art. 9(2)(b) [U]", "description": "Employment, social security and social protection law"},
+    {"code": "ART9_2_C_VITAL_INTERESTS", "citation": "Art. 9(2)(c) [U]", "description": "Vital interests where consent cannot be given"},
+    {"code": "ART9_2_D_NOT_FOR_PROFIT", "citation": "Art. 9(2)(d) [U]", "description": "Not-for-profit bodies, members"},
+    {"code": "ART9_2_E_MADE_PUBLIC", "citation": "Art. 9(2)(e) [U]", "description": "Manifestly made public by the data subject"},
+    {"code": "ART9_2_F_LEGAL_CLAIMS", "citation": "Art. 9(2)(f) [U]", "description": "Legal claims; courts in their judicial capacity"},
+    {"code": "ART9_2_G_SUBSTANTIAL_PUBLIC_INTEREST", "citation": "Art. 9(2)(g) [U]", "description": "Substantial public interest under Union or Member State law"},
+    {"code": "ART9_2_H_HEALTH_SOCIAL_CARE", "citation": "Art. 9(2)(h), 9(3) [U]", "description": "Preventive or occupational medicine, diagnosis, health or social care"},
+    {"code": "ART9_2_I_PUBLIC_HEALTH", "citation": "Art. 9(2)(i) [U]", "description": "Public health"},
+    {"code": "ART9_2_J_ARCHIVING_RESEARCH", "citation": "Art. 9(2)(j), Art. 89(1) [U]", "description": "Archiving, scientific or historical research, statistics"},
+    {"code": "ART10_OFFICIAL_AUTHORITY", "citation": "Art. 10 [U]", "description": "Criminal convictions and offences under official authority or authorising law"}
+  ],
+  "exemptions": [
+    {"code": "ART17_3", "citation": "Art. 17(3)(a)-(e) [U]", "disappliesErasure": true, "description": "Erasure exceptions: expression, legal obligation or public task, public health, archiving/research, legal claims"},
+    {"code": "ART89_RESEARCH", "citation": "Art. 89 [U]", "disappliesErasure": true, "requiresStandardsAttestation": true, "description": "Archiving, research, statistics with Art. 89(1) safeguards"},
+    {"code": "ART23_MEMBER_STATE_RESTRICTION", "citation": "Art. 23 [U]", "disappliesErasure": true, "description": "Restriction of rights by Union or Member State law"}
+  ],
+  "childExemptions": [],
+  "verification": {
+    "child": [{"code": "REASONABLE_EFFORTS", "citation": "Art. 8(2): reasonable efforts to verify parental consent, taking into account available technology [U]", "description": "Reasonable verification of the holder of parental responsibility"}],
+    "guardian": [{"code": "LEGAL_REPRESENTATIVE", "citation": "national law [U]", "description": "Legal representative under national law"}]
+  },
+  "rights": [
+    {"code": "ACCESS", "category": "ACCESS", "citation": "Art. 15; period Art. 12(3) [U]", "processKey": "sangam-dsr-access", "slaKey": "access", "defaultDays": 30, "defaultMonths": 1, "extensionMonths": 2},
+    {"code": "RECTIFICATION", "category": "RECTIFICATION", "citation": "Art. 16; Art. 12(3) [U]", "processKey": "sangam-dsr-rectification", "slaKey": "rectification", "defaultDays": 30, "defaultMonths": 1, "extensionMonths": 2},
+    {"code": "ERASURE", "category": "ERASURE", "citation": "Art. 17; Art. 12(3) [U]", "processKey": "sangam-dsr-erasure", "slaKey": "erasure", "defaultDays": 30, "defaultMonths": 1, "extensionMonths": 2},
+    {"code": "RESTRICTION", "category": "RESTRICTION", "citation": "Art. 18; Art. 12(3) [U]", "processKey": "sangam-dsr-restriction", "slaKey": "restriction", "defaultDays": 30, "defaultMonths": 1, "extensionMonths": 2},
+    {"code": "PORTABILITY", "category": "PORTABILITY", "citation": "Art. 20; Art. 12(3) [U]", "processKey": "sangam-dsr-access", "slaKey": "portability", "defaultDays": 30, "defaultMonths": 1, "extensionMonths": 2},
+    {"code": "OBJECTION", "category": "OBJECTION", "citation": "Art. 21; Art. 12(3) [U]", "processKey": "sangam-dsr-objection", "slaKey": "objection", "defaultDays": 30, "defaultMonths": 1, "extensionMonths": 2},
+    {"code": "AUTOMATED_DECISION", "category": "AUTOMATED_DECISION", "citation": "Art. 22(3); Art. 12(3) [U]", "processKey": "sangam-dsr-automated-decision", "slaKey": "automated-decision", "defaultDays": 30, "defaultMonths": 1, "extensionMonths": 2}
+  ],
+  "retentionClasses": [],
+  "authorities": [
+    {"code": "SA", "role": "DATA_PROTECTION", "name": "Lead supervisory authority (Art. 56); set the member-state region", "citation": "Art. 51, 55-56 [U]"}
+  ],
+  "breach": {
+    "authority": "SA",
+    "citation": "Art. 33-34 [U]",
+    "initialTiming": "PLAN",
+    "initialItems": [
+      {"key": "nature", "citation": "Art. 33(3)(a) [U]", "label": "Nature of the breach, categories and approximate number of data subjects and records"},
+      {"key": "contact", "citation": "Art. 33(3)(b) [U]", "label": "Name and contact details of the DPO or other contact point"},
+      {"key": "likelyImpact", "citation": "Art. 33(3)(c) [U]", "label": "Likely consequences"},
+      {"key": "mitigation", "citation": "Art. 33(3)(d) [U]", "label": "Measures taken or proposed, including mitigation"}
+    ],
+    "detailedReportHours": 0,
+    "detailedItems": [],
+    "subjectTiming": "PLAN",
+    "subjectItems": [
+      {"key": "description", "citation": "Art. 34(2) [U]", "label": "Nature of the breach in clear and plain language"},
+      {"key": "contact", "citation": "Art. 34(2), 33(3)(b) [U]", "label": "DPO or contact point"},
+      {"key": "consequences", "citation": "Art. 34(2), 33(3)(c) [U]", "label": "Likely consequences"},
+      {"key": "mitigation", "citation": "Art. 34(2), 33(3)(d) [U]", "label": "Measures taken or proposed"}
+    ],
+    "riskAssessment": {
+      "presumption": "NOTIFY_IF_RISK",
+      "factors": [
+        {"key": "breachType", "citation": "EDPB Guidelines 9/2022 [U]", "label": "Type of breach (confidentiality, integrity, availability)"},
+        {"key": "natureSensitivityVolume", "citation": "EDPB Guidelines 9/2022 [U]", "label": "Nature, sensitivity and volume of personal data"},
+        {"key": "easeOfIdentification", "citation": "EDPB Guidelines 9/2022 [U]", "label": "Ease of identification of individuals"},
+        {"key": "severity", "citation": "EDPB Guidelines 9/2022 [U]", "label": "Severity of consequences; special characteristics of individuals and controller"}
+      ]
+    },
+    "notifications": [
+      {"code": "SUPERVISORY_AUTHORITY", "recipient": "AUTHORITY", "authority": "SA", "deadlineMode": "FROM_AWARENESS", "deadlineHours": 72, "citation": "Art. 33(1): without undue delay and, where feasible, not later than 72 hours; reasons for delay if later; information in phases Art. 33(4) [U]"},
+      {"code": "DATA_SUBJECTS", "recipient": "SUBJECTS", "requiresHighRisk": true, "deadlineMode": "WITHOUT_DELAY", "citation": "Art. 34(1); not required in the cases of Art. 34(3) [U]"},
+      {"code": "PROCESSOR_TO_CONTROLLER", "recipient": "CONTROLLER", "whenAttribute": "processor", "deadlineMode": "WITHOUT_DELAY", "citation": "Art. 33(2) [U]"}
+    ]
+  },
+  "contactRoles": [
+    {"code": "DPO", "citation": "Art. 37-39 [U]", "published": true, "requiredForAttributes": ["public-sector", "large-scale-monitoring", "large-scale-special-categories"], "description": "Data protection officer (mandatory for public authorities, large-scale monitoring, large-scale special categories)"},
+    {"code": "CONTACT_PERSON", "citation": "Art. 13(1)(a)-(b) [U]", "published": true, "description": "Controller identity and contact"},
+    {"code": "EU_REPRESENTATIVE", "citation": "Art. 27 [U]", "requiredForAttributes": ["non-eu-establishment"], "description": "Representative in the Union of a controller not established in the Union"},
+    {"code": "SA_POC", "citation": "Art. 33(3)(b) [U]", "description": "Contact point for the supervisory authority"}
+  ],
+  "accountability": {
+    "elevatedTierName": "Processing likely to result in a high risk (Art. 35)",
+    "impactAssessmentMonths": 36,
+    "priorConsultation": {"required": true, "evidenceKind": "PRIOR_CONSULTATION", "citation": "Art. 36(1)-(2): consult before processing; authority advice within eight weeks, extendable by six weeks [U]"},
+    "evidence": [
+      {"code": "PRIOR_CONSULTATION", "citation": "Art. 36 [U]", "months": 120, "description": "Prior consultation of the supervisory authority"},
+      {"code": "RECORDS_OF_PROCESSING_REVIEW", "citation": "Art. 30 [U]; review cycle is a Sangam default", "months": 12, "description": "Records of processing activities review"},
+      {"code": "SECURITY_TESTING", "citation": "Art. 32(1)(d): regular testing, assessing and evaluating [U]; 12 months default", "months": 12, "description": "Testing of technical and organisational measures"},
+      {"code": "TRANSFER_IMPACT_ASSESSMENT_REVIEW", "citation": "CJEU C-311/18; EDPB Recommendations 01/2020 [U]; 12 months default", "months": 12, "description": "Transfer impact assessments review"},
+      {"code": "PROCESSOR_CONTRACT_REVIEW", "citation": "Art. 28(3) [U]; 12 months default", "months": 12, "description": "Processor agreements review"}
+    ]
+  },
+  "hosting": {
+    "categories": [
+      {"code": "EEA_CLOUD", "acceptableForPublicSector": true, "citation": "Art. 28 processor contract [U]"},
+      {"code": "ON_PREMISES", "acceptableForPublicSector": true, "citation": ""},
+      {"code": "THIRD_COUNTRY_CLOUD", "acceptableForPublicSector": false, "citation": "Chapter V transfer required"},
+      {"code": "OTHER", "acceptableForPublicSector": false, "citation": ""}
+    ],
+    "localisedCategories": []
+  },
+  "transfer": {
+    "mode": "ADEQUACY_OR_SAFEGUARD",
+    "impactAssessmentRequired": true,
+    "adequate": [
+      {"country": "AD", "citation": "Andorra [V]"},
+      {"country": "AR", "citation": "Argentina [V]"},
+      {"country": "BR", "citation": "Brazil [V]"},
+      {"country": "CA", "condition": "commercial organisations", "citation": "Canada, commercial organisations [V]"},
+      {"country": "FO", "citation": "Faroe Islands [V]"},
+      {"country": "GG", "citation": "Guernsey [V]"},
+      {"country": "IL", "citation": "Israel [V]"},
+      {"country": "IM", "citation": "Isle of Man [V]"},
+      {"country": "JP", "citation": "Japan [V]"},
+      {"country": "JE", "citation": "Jersey [V]"},
+      {"country": "NZ", "citation": "New Zealand [V]"},
+      {"country": "KR", "citation": "Republic of Korea [V]"},
+      {"country": "CH", "citation": "Switzerland [V]"},
+      {"country": "GB", "citation": "United Kingdom, renewed December 2025 [V]"},
+      {"country": "US", "condition": "EU-US Data Privacy Framework participant", "citation": "United States, DPF participants only [V]"},
+      {"country": "UY", "citation": "Uruguay [V]"},
+      {"country": "EPO", "citation": "European Patent Organisation [V]"}
+    ],
+    "safeguards": [
+      {"code": "PUBLIC_AUTHORITY_INSTRUMENT", "citation": "Art. 46(2)(a) [U]", "description": "Legally binding instrument between public authorities"},
+      {"code": "BCR", "citation": "Art. 46(2)(b), Art. 47 [U]", "description": "Binding corporate rules"},
+      {"code": "SCC_2021_914", "citation": "Art. 46(2)(c); Decision (EU) 2021/914 [U]", "description": "Commission standard contractual clauses"},
+      {"code": "SA_SCC", "citation": "Art. 46(2)(d) [U]", "description": "Standard clauses adopted by a supervisory authority"},
+      {"code": "CODE_OF_CONDUCT", "citation": "Art. 46(2)(e), Art. 40 [U]", "description": "Approved code of conduct with binding commitments"},
+      {"code": "CERTIFICATION", "citation": "Art. 46(2)(f), Art. 42 [U]", "description": "Approved certification mechanism"},
+      {"code": "AUTHORISED_CLAUSES", "citation": "Art. 46(3) [U]", "description": "Ad hoc clauses or administrative arrangements authorised by the supervisory authority"}
+    ],
+    "derogations": [
+      {"code": "ART49_1_A_EXPLICIT_CONSENT", "citation": "Art. 49(1)(a) [U]", "description": "Explicit consent after being informed of the risks"},
+      {"code": "ART49_1_B_CONTRACT_WITH_SUBJECT", "citation": "Art. 49(1)(b) [U]", "description": "Contract with the data subject"},
+      {"code": "ART49_1_C_CONTRACT_IN_SUBJECT_INTEREST", "citation": "Art. 49(1)(c) [U]", "description": "Contract in the interest of the data subject"},
+      {"code": "ART49_1_D_PUBLIC_INTEREST", "citation": "Art. 49(1)(d), 49(4) [U]", "description": "Important reasons of public interest"},
+      {"code": "ART49_1_E_LEGAL_CLAIMS", "citation": "Art. 49(1)(e) [U]", "description": "Legal claims"},
+      {"code": "ART49_1_F_VITAL_INTERESTS", "citation": "Art. 49(1)(f) [U]", "description": "Vital interests where consent is impossible"},
+      {"code": "ART49_1_G_PUBLIC_REGISTER", "citation": "Art. 49(1)(g) [U]", "description": "Transfer from a public register"}
+    ]
+  },
+  "nationalIdentifiers": [],
+  "lawfulRequestBases": [
+    {"code": "ART48_INTERNATIONAL_AGREEMENT", "citation": "Art. 48: a third-country order is recognised only under an international agreement such as an MLAT [U]", "recipientKind": "STATE_AGENCY", "requiresAttestation": true},
+    {"code": "MEMBER_STATE_LAW", "citation": "Art. 6(1)(c), Art. 23 [U]", "recipientKind": "STATE_AGENCY"},
+    {"code": "LAW_ENFORCEMENT_LED", "citation": "Directive (EU) 2016/680 [U]", "withheldFromAccess": true, "recipientKind": "LAW_ENFORCEMENT"},
+    {"code": "COURT_ORDER", "citation": "Art. 6(1)(c), Art. 9(2)(f) [U]", "recipientKind": "COURT"}
+  ],
+  "securityChecklist": [
+    {"id": "GDPR-32-1-A", "citation": "Art. 32(1)(a) [U]", "description": "Pseudonymisation and encryption of personal data", "fact": "encryption.at-rest", "expected": "true"},
+    {"id": "GDPR-32-1-B", "citation": "Art. 32(1)(b) [U]", "description": "Confidentiality, integrity, availability and resilience (deny-wins access control, audit chain)", "fact": "authz.deny-wins", "expected": "true"},
+    {"id": "GDPR-32-1-C", "citation": "Art. 32(1)(c) [U]", "description": "Timely restoration of availability", "activity": "backup.restore-test", "maxAgeMonths": 12},
+    {"id": "GDPR-32-1-D", "citation": "Art. 32(1)(d) [U]", "description": "Regular testing and evaluation", "activity": "security-testing", "maxAgeMonths": 12},
+    {"id": "GDPR-25", "citation": "Art. 25 [U]", "description": "Data protection by design and by default", "fact": "privacy.by-default", "expected": "true"},
+    {"id": "GDPR-TLS", "citation": "Art. 32 [U]", "description": "Encryption in transit", "fact": "tls.enabled", "expected": "true"}
+  ],
+  "regions": [
+    {"code": "DE", "name": "Germany", "verified": false, "citation": "BDSG; age of digital consent 16 [U]", "limits": {"childAgeYears": 16}, "defaults": {"default-language": "de", "languages": "de,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "BfDI or the competent Land data protection authority", "citation": "BDSG [U]"}]},
+    {"code": "FR", "name": "France", "verified": false, "citation": "Loi Informatique et Libertés; age 15 [U]", "limits": {"childAgeYears": 15}, "defaults": {"default-language": "fr", "languages": "fr,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "CNIL", "citation": "[U]"}]},
+    {"code": "IE", "name": "Ireland", "verified": false, "citation": "Data Protection Act 2018; age 16 [U]", "limits": {"childAgeYears": 16}, "defaults": {"default-language": "en", "languages": "en,ga"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "Data Protection Commission", "citation": "[U]"}]},
+    {"code": "ES", "name": "Spain", "verified": false, "citation": "LOPDGDD; age 14 [U]", "limits": {"childAgeYears": 14}, "defaults": {"default-language": "es", "languages": "es,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "AEPD", "citation": "[U]"}]},
+    {"code": "IT", "name": "Italy", "verified": false, "citation": "Codice privacy; age 14 [U]", "limits": {"childAgeYears": 14}, "defaults": {"default-language": "it", "languages": "it,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "Garante per la protezione dei dati personali", "citation": "[U]"}]},
+    {"code": "NL", "name": "Netherlands", "verified": false, "citation": "UAVG; age 16 [U]", "limits": {"childAgeYears": 16}, "defaults": {"default-language": "nl", "languages": "nl,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "Autoriteit Persoonsgegevens", "citation": "[U]"}]},
+    {"code": "BE", "name": "Belgium", "verified": false, "citation": "Law of 30 July 2018; age 13 [U]", "limits": {"childAgeYears": 13}, "defaults": {"default-language": "nl", "languages": "nl,fr,de,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "Gegevensbeschermingsautoriteit / Autorité de protection des données", "citation": "[U]"}]},
+    {"code": "AT", "name": "Austria", "verified": false, "citation": "DSG; age 14 [U]", "limits": {"childAgeYears": 14}, "defaults": {"default-language": "de", "languages": "de,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "Datenschutzbehörde", "citation": "[U]"}]},
+    {"code": "PL", "name": "Poland", "verified": false, "citation": "age 16 (no national derogation) [U]", "limits": {"childAgeYears": 16}, "defaults": {"default-language": "pl", "languages": "pl,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "UODO", "citation": "[U]"}]},
+    {"code": "SE", "name": "Sweden", "verified": false, "citation": "Dataskyddslagen; age 13 [U]", "limits": {"childAgeYears": 13}, "defaults": {"default-language": "sv", "languages": "sv,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "IMY", "citation": "[U]"}]},
+    {"code": "DK", "name": "Denmark", "verified": false, "citation": "Databeskyttelsesloven; age 13 [U]", "limits": {"childAgeYears": 13}, "defaults": {"default-language": "da", "languages": "da,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "Datatilsynet", "citation": "[U]"}]},
+    {"code": "PT", "name": "Portugal", "verified": false, "citation": "Lei 58/2019; age 13 [U]", "limits": {"childAgeYears": 13}, "defaults": {"default-language": "pt", "languages": "pt,en"}, "authorities": [{"code": "SA", "role": "DATA_PROTECTION", "name": "CNPD", "citation": "[U]"}]}
+  ],
+  "noticeLint": ["irrevocable", "cannot withdraw", "waive", "by continuing to use", "pre-ticked", "deemed consent"],
+  "noticeTemplates": "compliance/jurisdictions/EU-GDPR/notices",
+  "obligations": "compliance/jurisdictions/EU-GDPR/obligations.tsv"
+}

@@ -1,0 +1,27 @@
+{
+  "key": "sec-scm-procure-to-pay/release",
+  "version": "1.0.0",
+  "pack": "sec.scm.procure-to-pay",
+  "title": {
+    "en": "Release payment",
+    "hi": "भुगतान जारी करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

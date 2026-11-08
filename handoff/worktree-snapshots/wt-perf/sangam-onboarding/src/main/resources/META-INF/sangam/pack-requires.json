@@ -1,0 +1,11 @@
+{
+  "rules": [
+    {"match": "*", "requires": {"sangam": ">=0.1.0-0", "engine": ">=2.2.0 <3.0.0"}},
+    {"match": "gov.ifms.*", "requires": {
+      "modules": {"sangam-config": ">=0.1.0-0", "sangam-ledger": ">=0.1.0-0"},
+      "profileKeys": ["locale.currency", "locale.fiscal", "classification.schemes", "documentTypes"]
+    }},
+    {"match": "sec.health.*", "requires": {"profileKeys": ["locale.currency"]}},
+    {"match": "sec.bank.*", "requires": {"profileKeys": ["locale.currency"]}}
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "key": "up11-change-window/implement",
+  "version": "1.0.0",
+  "pack": "universal.up11-change-window",
+  "title": {
+    "en": "Implement change",
+    "hi": "परिवर्तन लागू करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

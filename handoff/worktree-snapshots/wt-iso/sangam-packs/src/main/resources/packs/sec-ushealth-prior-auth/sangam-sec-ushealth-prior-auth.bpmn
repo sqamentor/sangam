@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Prior authorization. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_prior_auth" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_ushealth_appealDecision" name="sangam.ushealth.appealDecision"/>
+  <message id="msg_sangam_ushealth_pasUpdate" name="sangam.ushealth.pasUpdate"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-prior-auth" name="Prior authorization" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.prior-auth</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>patientName,memberId,procedureCode,priority</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pa_start" name="Order signed" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-prior-auth/order"></startEvent>
+    <serviceTask id="pa_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;memberId=@customerId;payerId=SIMPAYER;payerProgram=MA;providerNpi=1234567893;procedureCode=72148;diagnosisCode=M54.5;priority=STANDARD;crdPaRequired=true;pasDecision=PENDED;pasReasonCode=null;pasPreAuthRef=null;clinicianSeat=ORDERING-CLINICIAN;authSeat=AUTH-SPECIALIST;umSeat=UM-LEAD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pa_crd" name="Coverage requirements discovery (CDS Hooks order-sign)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>cdshooks.crd</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>call</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,payerId,procedureCode,diagnosisCode</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>crd</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pa_needGw" name="Prior authorization needed?" default="sec_ushealth_prior_auth_f5"></exclusiveGateway>
+    <endEvent id="pa_endNoAuth" name="No prior authorization required"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>NOT_REQUIRED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="pa_dtr" name="Documentation templates and rules (DTR package)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>davinci.dtr</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>questionnairePackage</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,procedureCode</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>dtr</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pa_doc" name="Complete the documentation questionnaire" operaton:candidateGroups="${clinicianSeat}" operaton:formKey="sangam:sec-ushealth-prior-auth/documentation"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <businessRuleTask id="pa_clocks" name="Decision timeframe by payer program and priority (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-pa-clocks</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="pa_deadline" name="Regulatory clock: paDecision" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>paDecision</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${paDecisionSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pa_submit" name="Submit prior authorization (PAS Claim/$submit or X12 278)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>davinci.pas</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,payerId,providerNpi,procedureCode,diagnosisCode,priority,questionnaireResponse</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>pas</operaton:string></operaton:field><operaton:field name="step"><operaton:string>pas-submit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pa_decGw" name="Payer decision?" default="sec_ushealth_prior_auth_f18"></exclusiveGateway>
+    <endEvent id="pa_endApproved" name="Authorized"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>APPROVED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['pasPreAuthRef']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <eventBasedGateway id="pa_wait" name="Pended: update or deadline"></eventBasedGateway>
+    <intermediateCatchEvent id="pa_update" name="Decision notification (Subscription)"><messageEventDefinition messageRef="msg_sangam_ushealth_pasUpdate"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="pa_late" name="Decision timeframe passed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${paDecisionDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="pa_escalate" name="Payer decision overdue: escalate and record for metrics" operaton:candidateGroups="${umSeat}" operaton:formKey="sangam:sec-ushealth-prior-auth/overdue"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <businessRuleTask id="pa_reason" name="Denial reason routing (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-pa-denial-reasons</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <userTask id="pa_denied" name="Denied with a specific reason: peer-to-peer, appeal or accept" operaton:candidateGroups="${authSeat}" operaton:formKey="sangam:sec-ushealth-prior-auth/denied"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>denialDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="pa_denGw" name="" default="sec_ushealth_prior_auth_f26"></exclusiveGateway>
+    <userTask id="pa_p2p" name="Peer-to-peer review with the payer medical director" operaton:candidateGroups="${clinicianSeat}" operaton:formKey="sangam:sec-ushealth-prior-auth/p2p"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>p2pOutcome</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="pa_p2pGw" name="" default="sec_ushealth_prior_auth_f24"></exclusiveGateway>
+    <endEvent id="pa_endP2p" name="Authorized after peer-to-peer"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>APPROVED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="pa_appeal" name="Prepare and file the appeal (reconsideration)" operaton:candidateGroups="${authSeat}" operaton:formKey="sangam:sec-ushealth-prior-auth/appeal"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="pa_endDenied" name="Denial accepted"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>pasReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="pa_appealFile" name="File the appeal with the payer" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.appeal</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>file</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,payerId,appealGrounds,pasPreAuthRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>appeal</operaton:string></operaton:field><operaton:field name="step"><operaton:string>appeal</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pa_appealDl" name="Regulatory clock: paAppeal" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>paAppeal</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${paAppealSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="pa_appealWait" name="Appeal decision or deadline"></eventBasedGateway>
+    <intermediateCatchEvent id="pa_appealDecision" name="Appeal decided"><messageEventDefinition messageRef="msg_sangam_ushealth_appealDecision"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="pa_appealLate" name="Appeal timeframe passed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${paAppealDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="pa_appealRecord" name="Record appeal outcome (external review if upheld)" operaton:candidateGroups="${authSeat}" operaton:formKey="sangam:sec-ushealth-prior-auth/appeal-outcome"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="pa_endAppeal" name="Appeal closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>APPEAL_CLOSED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ushealth_prior_auth_f1" sourceRef="pa_start" targetRef="pa_defaults"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f2" sourceRef="pa_defaults" targetRef="pa_crd"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f3" sourceRef="pa_crd" targetRef="pa_needGw"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f4" name="no-auth" sourceRef="pa_needGw" targetRef="pa_endNoAuth"><conditionExpression xsi:type="tFormalExpression">${!crdPaRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_prior_auth_f5" name="auth-needed" sourceRef="pa_needGw" targetRef="pa_dtr"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f6" sourceRef="pa_dtr" targetRef="pa_doc"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f7" sourceRef="pa_doc" targetRef="pa_clocks"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f8" sourceRef="pa_clocks" targetRef="pa_deadline"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f9" sourceRef="pa_deadline" targetRef="pa_submit"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f10" sourceRef="pa_submit" targetRef="pa_decGw"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f11" name="approved" sourceRef="pa_decGw" targetRef="pa_endApproved"><conditionExpression xsi:type="tFormalExpression">${pasDecision == 'APPROVED' || pasDecision == 'MODIFIED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_prior_auth_f12" name="pended" sourceRef="pa_decGw" targetRef="pa_wait"><conditionExpression xsi:type="tFormalExpression">${pasDecision == 'PENDED' || pasDecision == 'UNKNOWN'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_prior_auth_f13" sourceRef="pa_wait" targetRef="pa_update"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f14" sourceRef="pa_wait" targetRef="pa_late"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f15" sourceRef="pa_update" targetRef="pa_decGw"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f16" sourceRef="pa_late" targetRef="pa_escalate"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f17" sourceRef="pa_escalate" targetRef="pa_wait"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f18" name="denied" sourceRef="pa_decGw" targetRef="pa_reason"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f19" sourceRef="pa_reason" targetRef="pa_denied"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f20" sourceRef="pa_denied" targetRef="pa_denGw"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f21" name="peer-to-peer" sourceRef="pa_denGw" targetRef="pa_p2p"><conditionExpression xsi:type="tFormalExpression">${denialDecision == 'peerToPeer'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_prior_auth_f22" sourceRef="pa_p2p" targetRef="pa_p2pGw"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f23" name="overturned" sourceRef="pa_p2pGw" targetRef="pa_endP2p"><conditionExpression xsi:type="tFormalExpression">${p2pOutcome == 'overturned'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_prior_auth_f24" name="upheld: appeal" sourceRef="pa_p2pGw" targetRef="pa_appeal"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f25" name="appeal" sourceRef="pa_denGw" targetRef="pa_appeal"><conditionExpression xsi:type="tFormalExpression">${denialDecision == 'appeal'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_prior_auth_f26" name="accept" sourceRef="pa_denGw" targetRef="pa_endDenied"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f27" sourceRef="pa_appeal" targetRef="pa_appealFile"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f28" sourceRef="pa_appealFile" targetRef="pa_appealDl"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f29" sourceRef="pa_appealDl" targetRef="pa_appealWait"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f30" sourceRef="pa_appealWait" targetRef="pa_appealDecision"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f31" sourceRef="pa_appealWait" targetRef="pa_appealLate"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f32" sourceRef="pa_appealDecision" targetRef="pa_appealRecord"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f33" sourceRef="pa_appealLate" targetRef="pa_appealRecord"/>
+    <sequenceFlow id="sec_ushealth_prior_auth_f34" sourceRef="pa_appealRecord" targetRef="pa_endAppeal"/>
+    <subProcess id="pa_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="pa_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="pa_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pa_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pa_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_prior_auth_f35" sourceRef="pa_withdrawStart" targetRef="pa_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_prior_auth_f36" sourceRef="pa_withdrawKind" targetRef="pa_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_prior_auth_f37" sourceRef="pa_withdrawCall" targetRef="pa_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="pa_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="pa_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="pa_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pa_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pa_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_prior_auth_f38" sourceRef="pa_cancelStart" targetRef="pa_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_prior_auth_f39" sourceRef="pa_cancelKind" targetRef="pa_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_prior_auth_f40" sourceRef="pa_cancelCall" targetRef="pa_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_prior_auth_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_prior_auth_plane" bpmnElement="sangam-sec-ushealth-prior-auth">
+      <bpmndi:BPMNShape id="pa_start_di" bpmnElement="pa_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_defaults_di" bpmnElement="pa_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_crd_di" bpmnElement="pa_crd"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_needGw_di" bpmnElement="pa_needGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_endNoAuth_di" bpmnElement="pa_endNoAuth"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_dtr_di" bpmnElement="pa_dtr"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_doc_di" bpmnElement="pa_doc"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_clocks_di" bpmnElement="pa_clocks"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_deadline_di" bpmnElement="pa_deadline"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_submit_di" bpmnElement="pa_submit"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_decGw_di" bpmnElement="pa_decGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_endApproved_di" bpmnElement="pa_endApproved"><dc:Bounds x="1702" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_wait_di" bpmnElement="pa_wait"><dc:Bounds x="1695" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_update_di" bpmnElement="pa_update"><dc:Bounds x="1867" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_late_di" bpmnElement="pa_late"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_escalate_di" bpmnElement="pa_escalate"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_reason_di" bpmnElement="pa_reason"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_denied_di" bpmnElement="pa_denied"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_denGw_di" bpmnElement="pa_denGw"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_p2p_di" bpmnElement="pa_p2p"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_p2pGw_di" bpmnElement="pa_p2pGw"><dc:Bounds x="2355" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_endP2p_di" bpmnElement="pa_endP2p"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_appeal_di" bpmnElement="pa_appeal"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_endDenied_di" bpmnElement="pa_endDenied"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_appealFile_di" bpmnElement="pa_appealFile"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_appealDl_di" bpmnElement="pa_appealDl"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_appealWait_di" bpmnElement="pa_appealWait"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_appealDecision_di" bpmnElement="pa_appealDecision"><dc:Bounds x="3187" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_appealLate_di" bpmnElement="pa_appealLate"><dc:Bounds x="3187" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_appealRecord_di" bpmnElement="pa_appealRecord"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_endAppeal_di" bpmnElement="pa_endAppeal"><dc:Bounds x="3517" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_withdraw_di" bpmnElement="pa_withdraw" isExpanded="true"><dc:Bounds x="30" y="388" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_withdrawStart_di" bpmnElement="pa_withdrawStart"><dc:Bounds x="92" y="450" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_withdrawKind_di" bpmnElement="pa_withdrawKind"><dc:Bounds x="225" y="428" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_withdrawCall_di" bpmnElement="pa_withdrawCall"><dc:Bounds x="390" y="428" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_withdrawEnd_di" bpmnElement="pa_withdrawEnd"><dc:Bounds x="587" y="450" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_cancel_di" bpmnElement="pa_cancel" isExpanded="true"><dc:Bounds x="30" y="578" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_cancelStart_di" bpmnElement="pa_cancelStart"><dc:Bounds x="92" y="640" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_cancelKind_di" bpmnElement="pa_cancelKind"><dc:Bounds x="225" y="618" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_cancelCall_di" bpmnElement="pa_cancelCall"><dc:Bounds x="390" y="618" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pa_cancelEnd_di" bpmnElement="pa_cancelEnd"><dc:Bounds x="587" y="640" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f1_di" bpmnElement="sec_ushealth_prior_auth_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f2_di" bpmnElement="sec_ushealth_prior_auth_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f3_di" bpmnElement="sec_ushealth_prior_auth_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f4_di" bpmnElement="sec_ushealth_prior_auth_f4"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f5_di" bpmnElement="sec_ushealth_prior_auth_f5"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f6_di" bpmnElement="sec_ushealth_prior_auth_f6"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f7_di" bpmnElement="sec_ushealth_prior_auth_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f8_di" bpmnElement="sec_ushealth_prior_auth_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f9_di" bpmnElement="sec_ushealth_prior_auth_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f10_di" bpmnElement="sec_ushealth_prior_auth_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f11_di" bpmnElement="sec_ushealth_prior_auth_f11"><di:waypoint x="1580" y="70"/><di:waypoint x="1641" y="70"/><di:waypoint x="1641" y="320"/><di:waypoint x="1702" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f12_di" bpmnElement="sec_ushealth_prior_auth_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1637" y="70"/><di:waypoint x="1637" y="195"/><di:waypoint x="1695" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f13_di" bpmnElement="sec_ushealth_prior_auth_f13"><di:waypoint x="1745" y="195"/><di:waypoint x="1806" y="195"/><di:waypoint x="1806" y="320"/><di:waypoint x="1867" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f14_di" bpmnElement="sec_ushealth_prior_auth_f14"><di:waypoint x="1745" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f15_di" bpmnElement="sec_ushealth_prior_auth_f15"><di:waypoint x="1885" y="338"/><di:waypoint x="1885" y="370"/><di:waypoint x="1555" y="370"/><di:waypoint x="1555" y="95"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f16_di" bpmnElement="sec_ushealth_prior_auth_f16"><di:waypoint x="1903" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f17_di" bpmnElement="sec_ushealth_prior_auth_f17"><di:waypoint x="2050" y="235"/><di:waypoint x="2050" y="253"/><di:waypoint x="1720" y="253"/><di:waypoint x="1720" y="220"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f18_di" bpmnElement="sec_ushealth_prior_auth_f18"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f19_di" bpmnElement="sec_ushealth_prior_auth_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f20_di" bpmnElement="sec_ushealth_prior_auth_f20"><di:waypoint x="1935" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f21_di" bpmnElement="sec_ushealth_prior_auth_f21"><di:waypoint x="2075" y="70"/><di:waypoint x="2120" y="70"/><di:waypoint x="2120" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f22_di" bpmnElement="sec_ushealth_prior_auth_f22"><di:waypoint x="2265" y="195"/><di:waypoint x="2355" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f23_di" bpmnElement="sec_ushealth_prior_auth_f23"><di:waypoint x="2405" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f24_di" bpmnElement="sec_ushealth_prior_auth_f24"><di:waypoint x="2405" y="195"/><di:waypoint x="2450" y="195"/><di:waypoint x="2450" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f25_di" bpmnElement="sec_ushealth_prior_auth_f25"><di:waypoint x="2075" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f26_di" bpmnElement="sec_ushealth_prior_auth_f26"><di:waypoint x="2075" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f27_di" bpmnElement="sec_ushealth_prior_auth_f27"><di:waypoint x="2595" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f28_di" bpmnElement="sec_ushealth_prior_auth_f28"><di:waypoint x="2760" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f29_di" bpmnElement="sec_ushealth_prior_auth_f29"><di:waypoint x="2925" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f30_di" bpmnElement="sec_ushealth_prior_auth_f30"><di:waypoint x="3065" y="70"/><di:waypoint x="3126" y="70"/><di:waypoint x="3126" y="195"/><di:waypoint x="3187" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f31_di" bpmnElement="sec_ushealth_prior_auth_f31"><di:waypoint x="3065" y="70"/><di:waypoint x="3187" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f32_di" bpmnElement="sec_ushealth_prior_auth_f32"><di:waypoint x="3223" y="195"/><di:waypoint x="3271" y="195"/><di:waypoint x="3271" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f33_di" bpmnElement="sec_ushealth_prior_auth_f33"><di:waypoint x="3223" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f34_di" bpmnElement="sec_ushealth_prior_auth_f34"><di:waypoint x="3420" y="70"/><di:waypoint x="3517" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f35_di" bpmnElement="sec_ushealth_prior_auth_f35"><di:waypoint x="128" y="468"/><di:waypoint x="225" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f36_di" bpmnElement="sec_ushealth_prior_auth_f36"><di:waypoint x="325" y="468"/><di:waypoint x="390" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f37_di" bpmnElement="sec_ushealth_prior_auth_f37"><di:waypoint x="490" y="468"/><di:waypoint x="587" y="468"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f38_di" bpmnElement="sec_ushealth_prior_auth_f38"><di:waypoint x="128" y="658"/><di:waypoint x="225" y="658"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f39_di" bpmnElement="sec_ushealth_prior_auth_f39"><di:waypoint x="325" y="658"/><di:waypoint x="390" y="658"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_prior_auth_f40_di" bpmnElement="sec_ushealth_prior_auth_f40"><di:waypoint x="490" y="658"/><di:waypoint x="587" y="658"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

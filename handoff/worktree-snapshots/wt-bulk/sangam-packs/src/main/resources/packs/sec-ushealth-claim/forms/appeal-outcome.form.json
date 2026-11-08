@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-claim/appeal-outcome",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "Record the appeal outcome",
+    "es": "Registrar el resultado de la apelación"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "appealOutcome",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Appeal outcome",
+        "es": "Resultado de la apelación"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

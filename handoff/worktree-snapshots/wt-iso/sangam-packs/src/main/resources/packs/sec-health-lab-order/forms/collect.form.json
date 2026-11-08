@@ -1,0 +1,56 @@
+{
+  "key": "sec-health-lab-order/collect",
+  "version": "1.0.0",
+  "pack": "sec.health.lab-order",
+  "title": {
+    "en": "Collect sample and label",
+    "hi": "नमूना संग्रह एवं लेबल"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "sampleBarcode",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Sample barcode",
+        "hi": "नमूना बारकोड"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "collectDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "collected",
+        "label": {
+          "en": "Collected",
+          "hi": "संग्रहीत"
+        }
+      },
+      {
+        "value": "reschedule",
+        "label": {
+          "en": "Reschedule",
+          "hi": "पुनर्निर्धारित करें"
+        }
+      }
+    ]
+  }
+}

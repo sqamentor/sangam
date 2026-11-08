@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_ao_checker" name="Account opening checker" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- SYNTHETIC bands; replace with the board policy. -->
+  <decision id="sec-bank-ao-checker" name="Account opening checker" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-bank-ao-checker_t" hitPolicy="FIRST">
+      <input id="sec-bank-ao-checker_i0" label="Risk category"><inputExpression id="sec-bank-ao-checker_ie0" typeRef="string"><text>riskCategory</text></inputExpression></input>
+      <output id="sec-bank-ao-checker_o0" label="Competent role" name="competentRole" typeRef="string"/>
+      <rule id="sec-bank-ao-checker_r0"><description>high risk: branch head</description>
+        <inputEntry id="sec-bank-ao-checker_r0_i0"><text>"HIGH"</text></inputEntry>
+        <outputEntry id="sec-bank-ao-checker_r0_o0"><text>"BRANCHHEAD"</text></outputEntry>
+      </rule>
+      <rule id="sec-bank-ao-checker_r1"><description>operations checker</description>
+        <inputEntry id="sec-bank-ao-checker_r1_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-bank-ao-checker_r1_o0"><text>"OPSCHECKER"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

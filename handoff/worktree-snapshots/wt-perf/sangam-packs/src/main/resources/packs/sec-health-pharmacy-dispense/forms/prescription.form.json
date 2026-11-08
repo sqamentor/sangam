@@ -1,0 +1,63 @@
+{
+  "key": "sec-health-pharmacy-dispense/prescription",
+  "version": "1.0.0",
+  "pack": "sec.health.pharmacy-dispense",
+  "title": {
+    "en": "Prescription",
+    "hi": "पर्चा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "hi": "रोगी का नाम"
+      }
+    },
+    {
+      "id": "prescriptionRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Prescription reference",
+        "hi": "पर्चा संदर्भ"
+      }
+    },
+    {
+      "id": "drugSchedule",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Drug schedule",
+        "hi": "औषधि अनुसूची"
+      }
+    },
+    {
+      "id": "prescriberRegNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Prescriber registration number",
+        "hi": "पर्चा लेखक पंजीकरण संख्या"
+      }
+    },
+    {
+      "id": "quantity",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Quantity",
+        "hi": "मात्रा"
+      }
+    }
+  ]
+}

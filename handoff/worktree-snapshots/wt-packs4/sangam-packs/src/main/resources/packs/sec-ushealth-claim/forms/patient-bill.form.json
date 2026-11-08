@@ -1,0 +1,38 @@
+{
+  "key": "sec-ushealth-claim/patient-bill",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "Bill the patient balance",
+    "es": "Facturar el saldo al paciente"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientBalance",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Patient balance (USD)",
+        "es": "Saldo del paciente (USD)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

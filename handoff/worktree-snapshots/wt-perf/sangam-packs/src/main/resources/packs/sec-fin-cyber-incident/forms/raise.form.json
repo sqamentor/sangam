@@ -1,0 +1,63 @@
+{
+  "key": "sec-fin-cyber-incident/raise",
+  "version": "1.0.0",
+  "pack": "sec.fin.cyber-incident",
+  "title": {
+    "en": "Cyber incident",
+    "hi": "साइबर घटना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "incidentSummary",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Incident summary",
+        "hi": "घटना सारांश"
+      }
+    },
+    {
+      "id": "incidentCategory",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Incident category (CERT-In list)",
+        "hi": "घटना श्रेणी (सर्ट-इन सूची)"
+      }
+    },
+    {
+      "id": "priority",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Priority",
+        "hi": "प्राथमिकता"
+      }
+    },
+    {
+      "id": "personalDataAffected",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Personal data affected",
+        "hi": "व्यक्तिगत डेटा प्रभावित"
+      }
+    },
+    {
+      "id": "regulatedBy",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Sector regulator",
+        "hi": "क्षेत्रीय नियामक"
+      }
+    }
+  ]
+}

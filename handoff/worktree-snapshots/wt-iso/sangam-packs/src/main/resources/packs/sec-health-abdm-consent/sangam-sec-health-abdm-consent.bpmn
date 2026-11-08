@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- ABDM consent and data fetch. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_health_abdm_consent" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_abdm_consentDenied" name="sangam.abdm.consentDenied"/>
+  <message id="msg_sangam_abdm_consentGranted" name="sangam.abdm.consentGranted"/>
+  <message id="msg_sangam_abdm_consentRevoked" name="sangam.abdm.consentRevoked"/>
+  <message id="msg_sangam_abdm_dataPushed" name="sangam.abdm.dataPushed"/>
+  <process id="sangam-sec-health-abdm-consent" name="ABDM consent and data fetch" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.health.abdm-consent</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>abhaNumber,purposeOfUse,hiTypes</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="hx_start" name="Clinician requests records" operaton:initiator="initiator" operaton:formKey="sangam:sec-health-abdm-consent/request"></startEvent>
+    <serviceTask id="hx_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>abhaNumber=@customerId;purposeOfUse=CAREMGT;hiTypes=DiagnosticReport,Prescription;consentValidity=P30D;clinicianSeat=TREATING-DOCTOR</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="hx_btgGw" name="Break the glass?" default="sec_health_abdm_consent_f6"></exclusiveGateway>
+    <userTask id="hx_btg" name="Emergency access justification" operaton:candidateGroups="${clinicianSeat}" operaton:formKey="sangam:sec-health-abdm-consent/btg"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="hx_btgReview" name="Post-facto review of emergency access" operaton:candidateGroups="PRIVACY-OFFICER" operaton:formKey="sangam:sec-health-abdm-consent/btg-review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>btgDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="hx_endBtg" name="Emergency access reviewed"></endEvent>
+    <serviceTask id="hx_consent" name="Consent request to the consent manager" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>abdm.consentRequest</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>request</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>abhaNumber,purposeOfUse,hiTypes,consentValidity</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>consent</operaton:string></operaton:field><operaton:field name="step"><operaton:string>consent-request</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="hx_wait" name="Granted, denied or expired"></eventBasedGateway>
+    <intermediateCatchEvent id="hx_granted" name="Consent granted (artefact per HIP)"><messageEventDefinition messageRef="msg_sangam_abdm_consentGranted"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="hx_denied" name="Consent denied"><messageEventDefinition messageRef="msg_sangam_abdm_consentDenied"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="hx_expired" name="Request expired"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">P7D</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="hx_endDenied" name="Denied"></endEvent>
+    <endEvent id="hx_endExpired" name="Request expired"></endEvent>
+    <serviceTask id="hx_hiRequest" name="Data request to HIPs (encryption keys)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>abdm.hiRequest</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>fetch</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>abhaNumber,hiTypes</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>hi</operaton:string></operaton:field><operaton:field name="step"><operaton:string>hi-request</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="hx_dataWait" name="Data pushed or timeout"></eventBasedGateway>
+    <intermediateCatchEvent id="hx_pushed" name="Data pushed by HIP"><messageEventDefinition messageRef="msg_sangam_abdm_dataPushed"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="hx_dataTimeout" name="No data in time"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">PT1H</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <endEvent id="hx_endNoData" name="HIP did not respond"></endEvent>
+    <userTask id="hx_review" name="Review linked records" operaton:candidateGroups="${clinicianSeat}" operaton:formKey="sangam:sec-health-abdm-consent/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="hx_expiry" name="Regulatory clock: consent" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>consent</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${consentValidity}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="hx_life" name="Expiry or revocation"></eventBasedGateway>
+    <intermediateCatchEvent id="hx_consentEnd" name="Consent expired"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${consentDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="hx_revoked" name="Consent revoked"><messageEventDefinition messageRef="msg_sangam_abdm_consentRevoked"/></intermediateCatchEvent>
+    <exclusiveGateway id="hx_purgeJoin" name=""></exclusiveGateway>
+    <serviceTask id="hx_purge" name="Purge fetched records" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>records.purge</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>purge</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>abhaNumber</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>purge</operaton:string></operaton:field><operaton:field name="step"><operaton:string>purge</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="hx_end" name="Consent lifecycle closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_health_abdm_consent_f1" sourceRef="hx_start" targetRef="hx_defaults"/>
+    <sequenceFlow id="sec_health_abdm_consent_f2" sourceRef="hx_defaults" targetRef="hx_btgGw"/>
+    <sequenceFlow id="sec_health_abdm_consent_f3" name="emergency" sourceRef="hx_btgGw" targetRef="hx_btg"><conditionExpression xsi:type="tFormalExpression">${purposeOfUse == 'BTG'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_health_abdm_consent_f4" sourceRef="hx_btg" targetRef="hx_btgReview"/>
+    <sequenceFlow id="sec_health_abdm_consent_f5" sourceRef="hx_btgReview" targetRef="hx_endBtg"/>
+    <sequenceFlow id="sec_health_abdm_consent_f6" name="normal" sourceRef="hx_btgGw" targetRef="hx_consent"/>
+    <sequenceFlow id="sec_health_abdm_consent_f7" sourceRef="hx_consent" targetRef="hx_wait"/>
+    <sequenceFlow id="sec_health_abdm_consent_f8" sourceRef="hx_wait" targetRef="hx_granted"/>
+    <sequenceFlow id="sec_health_abdm_consent_f9" sourceRef="hx_wait" targetRef="hx_denied"/>
+    <sequenceFlow id="sec_health_abdm_consent_f10" sourceRef="hx_wait" targetRef="hx_expired"/>
+    <sequenceFlow id="sec_health_abdm_consent_f11" sourceRef="hx_denied" targetRef="hx_endDenied"/>
+    <sequenceFlow id="sec_health_abdm_consent_f12" sourceRef="hx_expired" targetRef="hx_endExpired"/>
+    <sequenceFlow id="sec_health_abdm_consent_f13" sourceRef="hx_granted" targetRef="hx_hiRequest"/>
+    <sequenceFlow id="sec_health_abdm_consent_f14" sourceRef="hx_hiRequest" targetRef="hx_dataWait"/>
+    <sequenceFlow id="sec_health_abdm_consent_f15" sourceRef="hx_dataWait" targetRef="hx_pushed"/>
+    <sequenceFlow id="sec_health_abdm_consent_f16" sourceRef="hx_dataWait" targetRef="hx_dataTimeout"/>
+    <sequenceFlow id="sec_health_abdm_consent_f17" sourceRef="hx_dataTimeout" targetRef="hx_endNoData"/>
+    <sequenceFlow id="sec_health_abdm_consent_f18" sourceRef="hx_pushed" targetRef="hx_review"/>
+    <sequenceFlow id="sec_health_abdm_consent_f19" sourceRef="hx_review" targetRef="hx_expiry"/>
+    <sequenceFlow id="sec_health_abdm_consent_f20" sourceRef="hx_expiry" targetRef="hx_life"/>
+    <sequenceFlow id="sec_health_abdm_consent_f21" sourceRef="hx_life" targetRef="hx_consentEnd"/>
+    <sequenceFlow id="sec_health_abdm_consent_f22" sourceRef="hx_life" targetRef="hx_revoked"/>
+    <sequenceFlow id="sec_health_abdm_consent_f23" sourceRef="hx_consentEnd" targetRef="hx_purgeJoin"/>
+    <sequenceFlow id="sec_health_abdm_consent_f24" sourceRef="hx_revoked" targetRef="hx_purgeJoin"/>
+    <sequenceFlow id="sec_health_abdm_consent_f25" sourceRef="hx_purgeJoin" targetRef="hx_purge"/>
+    <sequenceFlow id="sec_health_abdm_consent_f26" sourceRef="hx_purge" targetRef="hx_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_health_abdm_consent_diagram">
+    <bpmndi:BPMNPlane id="sec_health_abdm_consent_plane" bpmnElement="sangam-sec-health-abdm-consent">
+      <bpmndi:BPMNShape id="hx_start_di" bpmnElement="hx_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_defaults_di" bpmnElement="hx_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_btgGw_di" bpmnElement="hx_btgGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_btg_di" bpmnElement="hx_btg"><dc:Bounds x="515" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_btgReview_di" bpmnElement="hx_btgReview"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_endBtg_di" bpmnElement="hx_endBtg"><dc:Bounds x="877" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_consent_di" bpmnElement="hx_consent"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_wait_di" bpmnElement="hx_wait"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_granted_di" bpmnElement="hx_granted"><dc:Bounds x="877" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_denied_di" bpmnElement="hx_denied"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_expired_di" bpmnElement="hx_expired"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_endDenied_di" bpmnElement="hx_endDenied"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_endExpired_di" bpmnElement="hx_endExpired"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_hiRequest_di" bpmnElement="hx_hiRequest"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_dataWait_di" bpmnElement="hx_dataWait"><dc:Bounds x="1200" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_pushed_di" bpmnElement="hx_pushed"><dc:Bounds x="1372" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_dataTimeout_di" bpmnElement="hx_dataTimeout"><dc:Bounds x="1372" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_endNoData_di" bpmnElement="hx_endNoData"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_review_di" bpmnElement="hx_review"><dc:Bounds x="1505" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_expiry_di" bpmnElement="hx_expiry"><dc:Bounds x="1670" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_life_di" bpmnElement="hx_life"><dc:Bounds x="1860" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_consentEnd_di" bpmnElement="hx_consentEnd"><dc:Bounds x="2032" y="552" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_revoked_di" bpmnElement="hx_revoked"><dc:Bounds x="2032" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_purgeJoin_di" bpmnElement="hx_purgeJoin"><dc:Bounds x="2190" y="420" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_purge_di" bpmnElement="hx_purge"><dc:Bounds x="2330" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="hx_end_di" bpmnElement="hx_end"><dc:Bounds x="2527" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f1_di" bpmnElement="sec_health_abdm_consent_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f2_di" bpmnElement="sec_health_abdm_consent_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f3_di" bpmnElement="sec_health_abdm_consent_f3"><di:waypoint x="425" y="70"/><di:waypoint x="470" y="70"/><di:waypoint x="470" y="195"/><di:waypoint x="515" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f4_di" bpmnElement="sec_health_abdm_consent_f4"><di:waypoint x="615" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f5_di" bpmnElement="sec_health_abdm_consent_f5"><di:waypoint x="780" y="195"/><di:waypoint x="828" y="195"/><di:waypoint x="828" y="445"/><di:waypoint x="877" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f6_di" bpmnElement="sec_health_abdm_consent_f6"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f7_di" bpmnElement="sec_health_abdm_consent_f7"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f8_di" bpmnElement="sec_health_abdm_consent_f8"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="320"/><di:waypoint x="877" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f9_di" bpmnElement="sec_health_abdm_consent_f9"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f10_di" bpmnElement="sec_health_abdm_consent_f10"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f11_di" bpmnElement="sec_health_abdm_consent_f11"><di:waypoint x="913" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f12_di" bpmnElement="sec_health_abdm_consent_f12"><di:waypoint x="913" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f13_di" bpmnElement="sec_health_abdm_consent_f13"><di:waypoint x="913" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f14_di" bpmnElement="sec_health_abdm_consent_f14"><di:waypoint x="1110" y="320"/><di:waypoint x="1200" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f15_di" bpmnElement="sec_health_abdm_consent_f15"><di:waypoint x="1250" y="320"/><di:waypoint x="1311" y="320"/><di:waypoint x="1311" y="445"/><di:waypoint x="1372" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f16_di" bpmnElement="sec_health_abdm_consent_f16"><di:waypoint x="1250" y="320"/><di:waypoint x="1372" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f17_di" bpmnElement="sec_health_abdm_consent_f17"><di:waypoint x="1408" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f18_di" bpmnElement="sec_health_abdm_consent_f18"><di:waypoint x="1408" y="445"/><di:waypoint x="1505" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f19_di" bpmnElement="sec_health_abdm_consent_f19"><di:waypoint x="1605" y="445"/><di:waypoint x="1670" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f20_di" bpmnElement="sec_health_abdm_consent_f20"><di:waypoint x="1770" y="445"/><di:waypoint x="1860" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f21_di" bpmnElement="sec_health_abdm_consent_f21"><di:waypoint x="1910" y="445"/><di:waypoint x="1971" y="445"/><di:waypoint x="1971" y="570"/><di:waypoint x="2032" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f22_di" bpmnElement="sec_health_abdm_consent_f22"><di:waypoint x="1910" y="445"/><di:waypoint x="2032" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f23_di" bpmnElement="sec_health_abdm_consent_f23"><di:waypoint x="2068" y="570"/><di:waypoint x="2129" y="570"/><di:waypoint x="2129" y="445"/><di:waypoint x="2190" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f24_di" bpmnElement="sec_health_abdm_consent_f24"><di:waypoint x="2068" y="445"/><di:waypoint x="2190" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f25_di" bpmnElement="sec_health_abdm_consent_f25"><di:waypoint x="2240" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_health_abdm_consent_f26_di" bpmnElement="sec_health_abdm_consent_f26"><di:waypoint x="2430" y="445"/><di:waypoint x="2527" y="445"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,45 @@
+{
+  "key": "works/contract-dates",
+  "version": "1.0.0",
+  "pack": "gov.works",
+  "title": {
+    "en": "Contract dates and payee details",
+    "hi": "अनुबंध तिथियाँ एवं आदाता विवरण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "completionDueAt",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Stipulated date of completion",
+        "hi": "निर्धारित पूर्णता तिथि"
+      }
+    },
+    {
+      "id": "contractorAccount",
+      "type": "masked",
+      "required": true,
+      "label": {
+        "en": "Contractor bank account",
+        "hi": "ठेकेदार का बैंक खाता"
+      }
+    },
+    {
+      "id": "contractorIfsc",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Contractor IFSC",
+        "hi": "ठेकेदार का आईएफएससी"
+      }
+    }
+  ]
+}

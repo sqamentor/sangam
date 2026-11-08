@@ -1,0 +1,45 @@
+{
+  "key": "sec-ins-motor-claim/tp",
+  "version": "1.0.0",
+  "pack": "sec.ins.motor-claim",
+  "title": {
+    "en": "Third-party claim: defend or settle before MACT",
+    "hi": "तृतीय पक्ष दावा: एमएसीटी में बचाव या समझौता"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "caseNo",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Court case number",
+        "hi": "न्यायालय वाद संख्या"
+      }
+    },
+    {
+      "id": "court",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Court / tribunal",
+        "hi": "न्यायालय / अधिकरण"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

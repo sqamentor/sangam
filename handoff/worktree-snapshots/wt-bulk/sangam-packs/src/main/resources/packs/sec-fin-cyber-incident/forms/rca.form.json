@@ -1,0 +1,36 @@
+{
+  "key": "sec-fin-cyber-incident/rca",
+  "version": "1.0.0",
+  "pack": "sec.fin.cyber-incident",
+  "title": {
+    "en": "Root cause analysis",
+    "hi": "मूल कारण विश्लेषण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "rootCause",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Root cause",
+        "hi": "मूल कारण"
+      }
+    },
+    {
+      "id": "capaActions",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Corrective and preventive actions",
+        "hi": "सुधारात्मक एवं निवारक कार्रवाई"
+      }
+    }
+  ]
+}

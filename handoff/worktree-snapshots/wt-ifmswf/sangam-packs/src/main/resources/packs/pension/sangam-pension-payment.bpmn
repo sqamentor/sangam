@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Pension payment for one pensioner. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_pension_payment" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-pension-payment" name="Pension payment for one pensioner" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.pension</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>key,amount,bankAccount,ifsc</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pp_start" name="Item"></startEvent>
+    <serviceTask id="pp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>lifeCertificateValid=true;executionConnector=pfms.payment;executionStep=pension;verifyApproval=false;reconcileRequired=true;bankAccount=;ifsc=</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pp_lifeGw" name="Life certificate valid?" default="pension_payment_f4"></exclusiveGateway>
+    <userTask id="pp_life" name="Life certificate awaited" operaton:candidateGroups="PAO-P" operaton:formKey="sangam:pension/life-certificate"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>lifeDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <callActivity id="pp_pay" name="Pension payment (core execution)" calledElement="sangam-core-execution" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="pp_holdGw" name="" default="pension_payment_f7"></exclusiveGateway>
+    <endEvent id="pp_endHeld" name="Held"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>HELD</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="pp_endPaid" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="pp_endFailed" name="Failed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>FAILED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>opReasonCode</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="pp_exGw" name="executionOutcome?" default="pension_payment_f9"></exclusiveGateway>
+    <sequenceFlow id="pension_payment_f1" sourceRef="pp_start" targetRef="pp_defaults"/>
+    <sequenceFlow id="pension_payment_f2" sourceRef="pp_defaults" targetRef="pp_lifeGw"/>
+    <sequenceFlow id="pension_payment_f3" name="hold" sourceRef="pp_lifeGw" targetRef="pp_life"><conditionExpression xsi:type="tFormalExpression">${!lifeCertificateValid}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_payment_f4" name="valid" sourceRef="pp_lifeGw" targetRef="pp_pay"/>
+    <sequenceFlow id="pension_payment_f5" sourceRef="pp_life" targetRef="pp_holdGw"/>
+    <sequenceFlow id="pension_payment_f6" name="certificate received" sourceRef="pp_holdGw" targetRef="pp_pay"><conditionExpression xsi:type="tFormalExpression">${lifeDecision == 'proceed'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_payment_f7" name="held" sourceRef="pp_holdGw" targetRef="pp_endHeld"/>
+    <sequenceFlow id="pension_payment_f8" name="DONE" sourceRef="pp_exGw" targetRef="pp_endPaid"><conditionExpression xsi:type="tFormalExpression">${executionOutcome == 'DONE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="pension_payment_f9" name="otherwise" sourceRef="pp_exGw" targetRef="pp_endFailed"/>
+    <sequenceFlow id="pension_payment_f10" sourceRef="pp_pay" targetRef="pp_exGw"/>
+  </process>
+  <bpmndi:BPMNDiagram id="pension_payment_diagram">
+    <bpmndi:BPMNPlane id="pension_payment_plane" bpmnElement="sangam-pension-payment">
+      <bpmndi:BPMNShape id="pp_start_di" bpmnElement="pp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_defaults_di" bpmnElement="pp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_lifeGw_di" bpmnElement="pp_lifeGw"><dc:Bounds x="375" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_life_di" bpmnElement="pp_life"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_pay_di" bpmnElement="pp_pay"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_holdGw_di" bpmnElement="pp_holdGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_endHeld_di" bpmnElement="pp_endHeld"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_endPaid_di" bpmnElement="pp_endPaid"><dc:Bounds x="1207" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_endFailed_di" bpmnElement="pp_endFailed"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_exGw_di" bpmnElement="pp_exGw"><dc:Bounds x="1035" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="pension_payment_f1_di" bpmnElement="pension_payment_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f2_di" bpmnElement="pension_payment_f2"><di:waypoint x="285" y="70"/><di:waypoint x="375" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f3_di" bpmnElement="pension_payment_f3"><di:waypoint x="425" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f4_di" bpmnElement="pension_payment_f4"><di:waypoint x="425" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f5_di" bpmnElement="pension_payment_f5"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f6_di" bpmnElement="pension_payment_f6"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f7_di" bpmnElement="pension_payment_f7"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f8_di" bpmnElement="pension_payment_f8"><di:waypoint x="1085" y="195"/><di:waypoint x="1146" y="195"/><di:waypoint x="1146" y="320"/><di:waypoint x="1207" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f9_di" bpmnElement="pension_payment_f9"><di:waypoint x="1085" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="pension_payment_f10_di" bpmnElement="pension_payment_f10"><di:waypoint x="945" y="195"/><di:waypoint x="1035" y="195"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,56 @@
+{
+  "key": "sec-mfg-batch-release/qc",
+  "version": "1.0.0",
+  "pack": "sec.mfg.batch-release",
+  "title": {
+    "en": "Finished-product QC",
+    "hi": "तैयार उत्पाद गुणवत्ता जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "results",
+      "type": "json",
+      "required": true,
+      "label": {
+        "en": "Results",
+        "hi": "परिणाम"
+      }
+    },
+    {
+      "id": "deviationFound",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Deviation found",
+        "hi": "विचलन पाया गया"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "qcDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "accept",
+        "label": {
+          "en": "Accept",
+          "hi": "स्वीकार करें"
+        }
+      },
+      {
+        "value": "reject",
+        "label": {
+          "en": "Reject",
+          "hi": "अस्वीकार करें"
+        }
+      }
+    ]
+  }
+}

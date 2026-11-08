@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_breach_notification_plan" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.2.0">
+  <process id="sangam-breach-notification-plan" name="Breach risk assessment and notification plan" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <documentation>Threshold-driven notifications (US-HIPAA 164.402-414: four-factor assessment, individuals 60 days, media more than 500 in a State, HHS contemporaneous or annual; EU-GDPR Arts 33-34: authority 72 hours, subjects if high risk). Start with breachId after BreachIncidentService.register.</documentation>
+    <startEvent id="start" name="Breach registered"/>
+    <userTask id="u_assess" name="Document the risk assessment" operaton:candidateGroups="PRIVACY-OFFICER" operaton:formKey="sangam:compliance/breach-risk-assessment"></userTask>
+    <serviceTask id="s_assess" name="Record risk assessment" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.assessRisk</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="g_n" name="Notifiable?" default="f_yes"/>
+    <endEvent id="end_no" name="Not notifiable (documented)"/>
+    <serviceTask id="s_plan" name="Build notification plan" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.plan</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="u_send" name="Send planned notifications and record each" operaton:candidateGroups="PRIVACY-OFFICER" operaton:formKey="sangam:compliance/breach-plan-send"></userTask>
+    <boundaryEvent id="t_first" name="First notification due" attachedToRef="u_send" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${firstNotificationDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <serviceTask id="s_overdue" name="Record overdue notification" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.planOverdue</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="end_due" name="Overdue recorded"/>
+    <endEvent id="end" name="Notifications sent"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="u_assess"/>
+    <sequenceFlow id="f2" sourceRef="u_assess" targetRef="s_assess"/>
+    <sequenceFlow id="f3" sourceRef="s_assess" targetRef="g_n"/>
+    <sequenceFlow id="f_no" sourceRef="g_n" targetRef="end_no"><conditionExpression xsi:type="tFormalExpression">${riskOutcome == 'NOT_NOTIFIABLE'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="f_yes" sourceRef="g_n" targetRef="s_plan"/>
+    <sequenceFlow id="f4" sourceRef="s_plan" targetRef="u_send"/>
+    <sequenceFlow id="f5" sourceRef="u_send" targetRef="end"/>
+    <sequenceFlow id="f_d1" sourceRef="t_first" targetRef="s_overdue"/>
+    <sequenceFlow id="f_d2" sourceRef="s_overdue" targetRef="end_due"/>
+  </process>
+</definitions>

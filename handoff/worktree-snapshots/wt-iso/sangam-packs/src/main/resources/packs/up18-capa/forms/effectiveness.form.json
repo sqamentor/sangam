@@ -1,0 +1,56 @@
+{
+  "key": "up18-capa/effectiveness",
+  "version": "1.0.0",
+  "pack": "universal.up18-capa",
+  "title": {
+    "en": "Effectiveness check",
+    "hi": "प्रभावशीलता जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "effective",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Actions effective",
+        "hi": "कार्रवाई प्रभावी"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "effectiveDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "yes",
+        "label": {
+          "en": "Yes",
+          "hi": "हाँ"
+        }
+      },
+      {
+        "value": "no",
+        "label": {
+          "en": "No",
+          "hi": "नहीं"
+        }
+      }
+    ]
+  }
+}

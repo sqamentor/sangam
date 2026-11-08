@@ -1,0 +1,243 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: UP
+  layer: government
+  version: 2026.11.0
+  effectiveFrom: '2026-04-01'
+  extends:
+  - IN
+  - IN-PRESET-GENERAL
+  name:
+    en: Uttar Pradesh
+    hi: उत्तर प्रदेश
+  source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources UP1-UP3, accessed 2026-11-04)
+placeholders:
+- path: classification.schemes
+  reason: partially verified code structure (delta P)
+- path: delegation.tables
+  reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
+- path: delegation.rows
+  reason: '[U] values to load from the State delegation / procurement rules'
+evidence:
+  fieldsVerifiedOf8: 8
+  sources: UP1-UP3
+locale:
+  languages:
+  - tag: hi
+    script: Deva
+    scope: statewide
+    docClass:
+    - statutory
+    default: true
+  - tag: ur
+    script: Arab
+    scope: statewide
+    docClass:
+    - statutory
+    note: additional (1989)
+    direction: rtl
+  - tag: en
+    script: Latn
+    scope: statewide
+    docClass:
+    - accounts
+    - audit
+    note: accounts and audit outputs are usually English (IFMS-STATES 9.1)
+  documentLanguages:
+    treasuryForms: STATUTORY_PLUS_ENGLISH
+    accounts:
+    - en
+    status: V
+integrations:
+  systems:
+  - IFMS UP (22 modules)
+  - Rajkosh
+  - Koshvani
+  - CTS
+  snaSparsh:
+    hosting: MODULE
+  ekuber: true
+orgTopology:
+  directorate: Directorate of Treasuries
+  unitTypes:
+    DISTRICT_TREASURY: 75
+    HQ_TREASURY: 7
+  ddoCount: null
+  units: 'seed: load the unit register (code, type, banking, renditionParent, agencyBank, owningGovernment, servedGovernments,
+    physicalState, effectiveFrom)'
+rulebooks:
+  citationsOnValidation: true
+  own:
+  - id: UP_FHB
+    title: Financial Handbook Vols I-VII (TR = App. II of Vol V Pt I)
+  - id: UP_BUDGET_MANUAL
+    title: UP Budget Manual
+  - id: UP_PROCUREMENT_2016
+    title: UP Procurement Manual 2016
+paymentRails:
+  default: CENTRAL_BANK_SETTLEMENT
+treasury:
+  tokenOn: DSC_BILL_TRANSFER
+receipts:
+  portal: RAJKOSH
+budget:
+  legislatureExport: XML
+citationStyle: FHB Vol/Part/Para
+classification:
+  schemes:
+  - id: HOA_UP
+    separator: '-'
+    segments:
+    - id: major
+      width: 4
+      scheme: HOA
+      owner: jurisdiction
+    - id: subMajor
+      width: 2
+      scheme: HOA
+      owner: jurisdiction
+    - id: minor
+      width: 3
+      scheme: HOA
+      owner: jurisdiction
+    - id: subHead
+      width: 2
+    - id: detailed
+      width: 2
+    - id: object
+      width: 2
+    derive:
+    - segment: major
+      prefix: '0'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '1'
+      set:
+        section: REVENUE
+        nature: RECEIPT
+    - segment: major
+      prefix: '2'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '3'
+      set:
+        section: REVENUE
+        nature: EXPENDITURE
+    - segment: major
+      equals: '4000'
+      set:
+        section: CAPITAL
+        nature: RECEIPT
+    - segment: major
+      prefix: '4'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '5'
+      set:
+        section: CAPITAL
+        nature: EXPENDITURE
+    - segment: major
+      prefix: '6'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      prefix: '7'
+      set:
+        section: LOANS
+        nature: BOTH
+    - segment: major
+      equals: '8000'
+      set:
+        section: CONTINGENCY_FUND
+        nature: BOTH
+    - segment: major
+      prefix: '8'
+      set:
+        section: PUBLIC_ACCOUNT
+        nature: BOTH
+    - segment: major
+      matches: 255[2]|455[2]|655[2]
+      set:
+        nerLumpSum: true
+    - segment: minor
+      matches: 9\d\d
+      set:
+        deductEntry: true
+    - segment: minor
+      equals: '791'
+      set:
+        exchangeDifference: true
+    example: 2058-103-03
+    evidence: P
+    source: CAG UP Appropriation Accounts 2024-25
+  defaultScheme: HOA_UP
+  note: segments below the minor head are set by each government (LMMH GD 1.1, IFS-001)
+procurement:
+  family: RULES
+  rule: UP Procurement Manual (Goods) 2016; GO 26-11-2024
+  worksCode: FHB Vol VI
+delegation:
+  tables:
+  - key: ifms-financial-powers
+    file: in/dmn/UP/ifms-financial-powers.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: UP
+    inputs:
+    - seatRole
+    - caseType
+    outputs:
+    - allowed
+    - maxAmount
+    - ruleRef
+    status: U
+  - key: ifms-procurement-mode
+    file: in/dmn/UP/ifms-procurement-mode.dmn
+    deployAs: TENANT_OVERRIDE
+    tenant: UP
+    inputs:
+    - amount
+    - scientificDepartment
+    outputs:
+    - procurementMode
+    - ruleRef
+    status: U
+  rows:
+    financialPowers:
+    - role: DDO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from UP Procurement Manual (Goods) 2016; GO 26-11-2024 (was: RPR 2022: DDO draws
+        within a sanction; no sanction power of its own)'
+    - role: HOO
+      maxAmount: null
+      ruleRef: '[U] central default, replace from UP Procurement Manual (Goods) 2016; GO 26-11-2024 (was: DFPR 2024 r.12(4)
+        and department re-delegation order [U value])'
+    - role: HOD
+      maxAmount: null
+      ruleRef: '[U] central default, replace from UP Procurement Manual (Goods) 2016; GO 26-11-2024 (was: DFPR 2024 r.12(2)
+        re-delegation to HoD [U value])'
+    - role: SECRETARY
+      maxAmount: null
+      ruleRef: '[U] central default, replace from UP Procurement Manual (Goods) 2016; GO 26-11-2024 (was: DFPR 2024 r.11 (open
+        / limited tender up to 100 cr))'
+    - role: MINISTER
+      maxAmount: null
+      ruleRef: '[U] central default, replace from UP Procurement Manual (Goods) 2016; GO 26-11-2024 (was: DFPR 2024 r.11:
+        above the Secretary; no upper limit in this table)'
+    - role: FA
+      maxAmount: null
+      ruleRef: '[U] central default, replace from UP Procurement Manual (Goods) 2016; GO 26-11-2024 (was: advice / concurrence
+        only)'
+    procurementThresholds:
+      direct: null
+      gemL1: null
+      limitedTender: null
+      limitedTenderScientific: null

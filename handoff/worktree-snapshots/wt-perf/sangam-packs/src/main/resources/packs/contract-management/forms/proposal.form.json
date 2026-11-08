@@ -1,0 +1,81 @@
+{
+  "key": "contract-management/proposal",
+  "version": "1.0.0",
+  "pack": "gov.contract-management",
+  "title": {
+    "en": "Contract amendment",
+    "hi": "अनुबंध संशोधन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "amendmentType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Amendment type",
+        "hi": "संशोधन का प्रकार"
+      }
+    },
+    {
+      "id": "amendmentAmount",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Amendment amount (INR)",
+        "hi": "संशोधन राशि (रुपये)"
+      }
+    },
+    {
+      "id": "extensionDays",
+      "type": "integer",
+      "required": false,
+      "label": {
+        "en": "Extension of time (days)",
+        "hi": "समय विस्तार (दिन)"
+      }
+    },
+    {
+      "id": "delayDays",
+      "type": "integer",
+      "required": false,
+      "label": {
+        "en": "Delay attributable to contractor (days)",
+        "hi": "ठेकेदार के कारण विलंब (दिन)"
+      }
+    },
+    {
+      "id": "escalationIndex",
+      "type": "decimal",
+      "required": false,
+      "label": {
+        "en": "Price index change (%)",
+        "hi": "मूल्य सूचकांक परिवर्तन (%)"
+      }
+    },
+    {
+      "id": "justification",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Justification",
+        "hi": "औचित्य"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

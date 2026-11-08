@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-claim/appeal",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.claim",
+  "title": {
+    "en": "File the appeal / redetermination",
+    "es": "Presentar la apelación / redeterminación"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "appealGrounds",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Grounds of appeal",
+        "es": "Fundamentos de la apelación"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "es": "Documentos"
+      }
+    }
+  ]
+}

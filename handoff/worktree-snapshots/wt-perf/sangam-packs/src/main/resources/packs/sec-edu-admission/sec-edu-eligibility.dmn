@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_edu_eligibility" name="Eligibility (SYNTHETIC programme rule)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="sec-edu-eligibility" name="Eligibility (SYNTHETIC programme rule)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-edu-eligibility_t" hitPolicy="FIRST">
+      <input id="sec-edu-eligibility_i0" label="Score"><inputExpression id="sec-edu-eligibility_ie0" typeRef="number"><text>score</text></inputExpression></input>
+      <input id="sec-edu-eligibility_i1" label="Category"><inputExpression id="sec-edu-eligibility_ie1" typeRef="string"><text>socialCategory</text></inputExpression></input>
+      <output id="sec-edu-eligibility_o0" label="Eligible" name="eligible" typeRef="boolean"/>
+      <rule id="sec-edu-eligibility_r0">
+        <inputEntry id="sec-edu-eligibility_r0_i0"><text>&gt;= 45</text></inputEntry>
+        <inputEntry id="sec-edu-eligibility_r0_i1"><text>"GEN"</text></inputEntry>
+        <outputEntry id="sec-edu-eligibility_r0_o0"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-edu-eligibility_r1"><description>relaxation for reserved categories</description>
+        <inputEntry id="sec-edu-eligibility_r1_i0"><text>&gt;= 40</text></inputEntry>
+        <inputEntry id="sec-edu-eligibility_r1_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-edu-eligibility_r1_o0"><text>true</text></outputEntry>
+      </rule>
+      <rule id="sec-edu-eligibility_r2">
+        <inputEntry id="sec-edu-eligibility_r2_i0"><text>-</text></inputEntry>
+        <inputEntry id="sec-edu-eligibility_r2_i1"><text>-</text></inputEntry>
+        <outputEntry id="sec-edu-eligibility_r2_o0"><text>false</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

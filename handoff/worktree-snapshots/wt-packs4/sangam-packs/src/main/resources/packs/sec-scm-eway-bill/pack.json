@@ -1,0 +1,77 @@
+{
+  "id": "sec.scm.eway-bill",
+  "version": "1.0.0",
+  "name": {
+    "en": "E-way bill lifecycle",
+    "hi": "ई-वे बिल जीवनचक्र"
+  },
+  "domain": "Supply chain",
+  "description": "Movement of goods above the value threshold: e-way bill (Part A, Part B with vehicle) generated before movement, validity by distance, vehicle update on transhipment, extension within 8 hours of expiry, cancellation within 24 hours if goods do not move, recipient rejection within 72 hours (CGST Rules r.138).",
+  "mainProcesses": [
+    "sangam-sec-scm-eway-bill"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-scm-eway-bill/sangam-sec-scm-eway-bill.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-scm-eway-bill/sec-scm-ewb.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-scm-eway-bill/forms/dispatch.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-scm-eway-bill/seed.json"
+    }
+  ],
+  "seed": "packs/sec-scm-eway-bill/seed.json",
+  "connectors": [
+    {
+      "id": "ewb.generate",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Generate"
+    },
+    {
+      "id": "ewb.updateVehicle",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Part B update"
+    },
+    {
+      "id": "ewb.extend",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Extend"
+    },
+    {
+      "id": "ewb.cancel",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Cancel"
+    }
+  ],
+  "covers": [
+    "SEC-SCM-004",
+    "GP-06",
+    "GP-24"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "consignmentValue"
+    ]
+  }
+}

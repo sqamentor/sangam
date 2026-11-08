@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_works_config" name="Works pack configuration (State B: AA before TS)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <decision id="works-config" name="Works pack configuration (State B: AA before TS)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="works-config_t" hitPolicy="FIRST">
+      <input id="works-config_i0" label="Office / department"><inputExpression id="works-config_ie0" typeRef="string"><text>officeId</text></inputExpression></input>
+      <output id="works-config_o0" label="Order of sanctions" name="worksSanctionOrder" typeRef="string"/>
+      <rule id="works-config_r0"><description>State B grants administrative approval before technical sanction</description>
+        <inputEntry id="works-config_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="works-config_r0_o0"><text>"AA_FIRST"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

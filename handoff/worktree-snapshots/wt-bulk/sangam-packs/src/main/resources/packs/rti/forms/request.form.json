@@ -1,0 +1,72 @@
+{
+  "key": "rti/request",
+  "version": "1.0.0",
+  "pack": "gov.rti",
+  "title": {
+    "en": "RTI application",
+    "hi": "सूचना का अधिकार आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "applicantRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant mobile / e-mail reference",
+        "hi": "आवेदक मोबाइल / ई-मेल संदर्भ"
+      }
+    },
+    {
+      "id": "information",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Information sought",
+        "hi": "मांगी गई सूचना"
+      }
+    },
+    {
+      "id": "lifeLiberty",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Concerns life or liberty of a person (48 hours)",
+        "hi": "किसी व्यक्ति के जीवन या स्वतंत्रता से संबंधित (48 घंटे)"
+      }
+    },
+    {
+      "id": "bplApplicant",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Below poverty line (fee exempt)",
+        "hi": "गरीबी रेखा से नीचे (शुल्क मुक्त)"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

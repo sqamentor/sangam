@@ -1,0 +1,491 @@
+// SPDX-License-Identifier: Apache-2.0
+package org.sangam.engine;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
+import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.Test;
+import org.operaton.bpm.engine.ProcessEngine;
+import org.operaton.bpm.engine.history.HistoricCaseActivityInstance;
+import org.operaton.bpm.engine.history.HistoricCaseInstance;
+import org.operaton.bpm.engine.task.Task;
+import org.sangam.core.engine.SangamEngineAdapter;
+
+/**
+ * SG-08 / SG-10 / SG-11: inherited Operaton weaknesses reproduced against the Sangam engine (plugin wired, H2). Each
+ * test asserts the behaviour Sangam promises; it fails on plain Operaton semantics.
+ */
+class InheritedWeaknessH2Test {
+
+    private static final String NS = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="t">
+            """;
+
+    private static byte[] bpmn(String body) {
+        return (NS + body + "\n</definitions>").getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static void withEngine(Consumer<SangamEngineSettings> tune, Consumer<OperatonEngineAdapter> test) {
+        JdbcDataSource ds = new JdbcDataSource();
+        ds.setURL("jdbc:h2:mem:w" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
+        SangamEngineSettings s = new SangamEngineSettings();
+        s.setAllowMultipleEnginesPerJvm(true);
+        s.setEngineSchemaUpdate("true");
+        tune.accept(s);
+        try (OperatonEngineAdapter a = SangamEngineFactory.build(ds, s, "h2")) {
+            test.accept(a);
+        }
+    }
+
+    private static List<Task> tasks(ProcessEngine e, String pi) {
+        return e.getTaskService().createTaskQuery().processInstanceId(pi).list().stream()
+                .sorted(java.util.Comparator.comparing(Task::getTaskDefinitionKey)).toList();
+    }
+
+    private static List<String> keys(List<Task> ts) {
+        return ts.stream().map(Task::getTaskDefinitionKey).toList();
+    }
+
+    // ------------------------------------------------------------------ SG-08 (a) compensation order
+
+    /** Three forward steps with user-task compensation handlers (the saga shape of the UP-02 pack). */
+    private static final String SAGA = """
+              <process id="saga" isExecutable="true">
+                <startEvent id="s"/>
+                <sequenceFlow id="f1" sourceRef="s" targetRef="a"/>
+                <serviceTask id="a" operaton:expression="${true}"/>
+                <boundaryEvent id="ba" attachedToRef="a"><compensateEventDefinition/></boundaryEvent>
+                <userTask id="undoA" isForCompensation="true"/>
+                <sequenceFlow id="f2" sourceRef="a" targetRef="b"/>
+                <serviceTask id="b" operaton:expression="${true}"/>
+                <boundaryEvent id="bb" attachedToRef="b"><compensateEventDefinition/></boundaryEvent>
+                <userTask id="undoB" isForCompensation="true"/>
+                <sequenceFlow id="f3" sourceRef="b" targetRef="c"/>
+                <serviceTask id="c" operaton:expression="${true}"/>
+                <boundaryEvent id="bc" attachedToRef="c"><compensateEventDefinition/></boundaryEvent>
+                <userTask id="undoC" isForCompensation="true"/>
+                <sequenceFlow id="f4" sourceRef="c" targetRef="%s"/>
+                %s
+                <association id="x1" associationDirection="One" sourceRef="ba" targetRef="undoA"/>
+                <association id="x2" associationDirection="One" sourceRef="bb" targetRef="undoB"/>
+                <association id="x3" associationDirection="One" sourceRef="bc" targetRef="undoC"/>
+              </process>
+            """;
+
+    private static final String THROW_THEN_END = """
+                <intermediateThrowEvent id="comp"><compensateEventDefinition/></intermediateThrowEvent>
+                <sequenceFlow id="f5" sourceRef="comp" targetRef="e"/>
+                <endEvent id="e"/>
+            """;
+
+    private static final String COMP_END = """
+                <endEvent id="comp"><compensateEventDefinition/></endEvent>
+            """;
+
+    private static void assertReverseSequential(OperatonEngineAdapter a, String pi) {
+        ProcessEngine e = a.processEngine();
+        assertEquals(List.of("undoC"), keys(tasks(e, pi)), "only the last completed step is compensated first");
+        e.getTaskService().complete(tasks(e, pi).get(0).getId());
+        assertEquals(List.of("undoB"), keys(tasks(e, pi)), "then the step before it");
+        e.getTaskService().complete(tasks(e, pi).get(0).getId());
+        assertEquals(List.of("undoA"), keys(tasks(e, pi)), "then the first step");
+        e.getTaskService().complete(tasks(e, pi).get(0).getId());
+        assertTrue(a.getInstance(pi).ended(), "the throw joins after the last handler");
+    }
+
+    /** SG-08 (a): the forward steps complete in the same millisecond (frozen clock): order must still hold. */
+    @Test
+    void compensationRunsInReverseCompletionOrderOneAtATime_intermediateThrow() {
+        withEngine(s -> { }, a -> {
+            a.setClock(Instant.parse("2026-11-08T10:00:00Z"));
+            a.deploy("t1", "saga", Map.of("saga.bpmn", bpmn(SAGA.formatted("comp", THROW_THEN_END))));
+            assertReverseSequential(a, a.startProcess("t1", "saga", "S-1", Map.of()));
+        });
+    }
+
+    @Test
+    void compensationRunsInReverseCompletionOrderOneAtATime_endEvent() {
+        withEngine(s -> { }, a -> {
+            a.setClock(Instant.parse("2026-11-08T10:00:00Z"));
+            a.deploy("t1", "saga", Map.of("saga.bpmn", bpmn(SAGA.formatted("comp", COMP_END))));
+            assertReverseSequential(a, a.startProcess("t1", "saga", "S-2", Map.of()));
+        });
+    }
+
+    /** Embedded sub-process without its own handler: its inner steps are compensated in reverse, one at a time. */
+    @Test
+    void compensationOfSubProcessChildrenIsReverseSequential() {
+        String model = """
+                  <process id="sub" isExecutable="true">
+                    <startEvent id="s"/>
+                    <sequenceFlow id="f1" sourceRef="s" targetRef="sp"/>
+                    <subProcess id="sp">
+                      <startEvent id="ss"/>
+                      <sequenceFlow id="g1" sourceRef="ss" targetRef="a"/>
+                      <serviceTask id="a" operaton:expression="${true}"/>
+                      <boundaryEvent id="ba" attachedToRef="a"><compensateEventDefinition/></boundaryEvent>
+                      <userTask id="undoA" isForCompensation="true"/>
+                      <sequenceFlow id="g2" sourceRef="a" targetRef="b"/>
+                      <serviceTask id="b" operaton:expression="${true}"/>
+                      <boundaryEvent id="bb" attachedToRef="b"><compensateEventDefinition/></boundaryEvent>
+                      <userTask id="undoB" isForCompensation="true"/>
+                      <sequenceFlow id="g3" sourceRef="b" targetRef="c"/>
+                      <serviceTask id="c" operaton:expression="${true}"/>
+                      <boundaryEvent id="bc" attachedToRef="c"><compensateEventDefinition/></boundaryEvent>
+                      <userTask id="undoC" isForCompensation="true"/>
+                      <sequenceFlow id="g4" sourceRef="c" targetRef="se"/>
+                      <endEvent id="se"/>
+                      <association id="x1" associationDirection="One" sourceRef="ba" targetRef="undoA"/>
+                      <association id="x2" associationDirection="One" sourceRef="bb" targetRef="undoB"/>
+                      <association id="x3" associationDirection="One" sourceRef="bc" targetRef="undoC"/>
+                    </subProcess>
+                    <sequenceFlow id="f2" sourceRef="sp" targetRef="comp"/>
+                    <intermediateThrowEvent id="comp"><compensateEventDefinition/></intermediateThrowEvent>
+                    <sequenceFlow id="f3" sourceRef="comp" targetRef="e"/>
+                    <endEvent id="e"/>
+                  </process>
+                """;
+        withEngine(s -> { }, a -> {
+            a.setClock(Instant.parse("2026-11-08T10:00:00Z"));
+            a.deploy("t1", "sub", Map.of("sub.bpmn", bpmn(model)));
+            assertReverseSequential(a, a.startProcess("t1", "sub", "S-3", Map.of()));
+        });
+    }
+
+    // ------------------------------------------------------------------ SG-08 (b) called element binding (D-12)
+
+    private static String child(String marker) {
+        return """
+                  <process id="child" isExecutable="true">
+                    <startEvent id="cs"/>
+                    <sequenceFlow id="c1" sourceRef="cs" targetRef="%s"/>
+                    <userTask id="%s"/>
+                    <sequenceFlow id="c2" sourceRef="%s" targetRef="ce"/>
+                    <endEvent id="ce"/>
+                  </process>
+                """.formatted(marker, marker, marker);
+    }
+
+    private static final String PARENT = """
+              <process id="parent" isExecutable="true">
+                <startEvent id="ps"/>
+                <sequenceFlow id="p1" sourceRef="ps" targetRef="call"/>
+                <callActivity id="call" calledElement="child"/>
+                <sequenceFlow id="p2" sourceRef="call" targetRef="pe"/>
+                <endEvent id="pe"/>
+              </process>
+            """;
+
+    /** D-12 / X.2.4.2: an undeclared binding resolves inside the caller's package, never to a newer child version. */
+    @Test
+    void callActivityWithoutBindingCallsTheChildOfItsOwnDeployment() {
+        withEngine(s -> { }, a -> {
+            a.deploy("t1", "pkg-v1", Map.of("parent.bpmn", bpmn(PARENT), "child.bpmn", bpmn(child("v1Task"))));
+            a.deploy("t1", "child-v2", Map.of("child.bpmn", bpmn(child("v2Task"))));
+            ProcessEngine e = a.processEngine();
+            assertEquals(2, e.getRepositoryService().createProcessDefinitionQuery().processDefinitionKey("child")
+                    .tenantIdIn("t1").latestVersion().singleResult().getVersion(), "a newer child exists");
+            a.startProcess("t1", "parent", "P-1", Map.of());
+            List<String> started = e.getTaskService().createTaskQuery().tenantIdIn("t1").list().stream()
+                    .map(Task::getTaskDefinitionKey).toList();
+            assertEquals(List.of("v1Task"), started, "the call binds to the child deployed with the parent");
+        });
+    }
+
+    /** D-12: the explicit opt-in {@code latest} is still honoured (X.2.4.2 allows it with a warning). */
+    @Test
+    void explicitLatestBindingIsHonoured() {
+        withEngine(s -> { }, a -> {
+            a.deploy("t1", "pkg-v1", Map.of("parent.bpmn", bpmn(PARENT.replace("calledElement=\"child\"",
+                    "calledElement=\"child\" operaton:calledElementBinding=\"latest\"")),
+                    "child.bpmn", bpmn(child("v1Task"))));
+            a.deploy("t1", "child-v2", Map.of("child.bpmn", bpmn(child("v2Task"))));
+            a.startProcess("t1", "parent", "P-2", Map.of());
+            assertEquals(List.of("v2Task"), a.processEngine().getTaskService().createTaskQuery().tenantIdIn("t1").list()
+                    .stream().map(Task::getTaskDefinitionKey).toList());
+        });
+    }
+
+    /** D-12: a business rule task without a declared decision binding is rejected at deployment. */
+    @Test
+    void businessRuleTaskWithoutBindingIsRejected() {
+        withEngine(s -> { }, a -> {
+            String m = """
+                      <process id="brt" isExecutable="true">
+                        <startEvent id="s"/>
+                        <sequenceFlow id="f1" sourceRef="s" targetRef="r"/>
+                        <businessRuleTask id="r" operaton:decisionRef="d" operaton:resultVariable="x"/>
+                        <sequenceFlow id="f2" sourceRef="r" targetRef="e"/>
+                        <endEvent id="e"/>
+                      </process>
+                    """;
+            RuntimeException ex = org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
+                    () -> a.deploy("t1", "brt", Map.of("brt.bpmn", bpmn(m))));
+            assertTrue(String.valueOf(rootMessage(ex)).contains("D-12"), String.valueOf(rootMessage(ex)));
+        });
+    }
+
+    private static String rootMessage(Throwable t) {
+        StringBuilder b = new StringBuilder();
+        for (Throwable x = t; x != null; x = x.getCause()) {
+            b.append(x.getMessage()).append(" | ");
+        }
+        return b.toString();
+    }
+
+    // ------------------------------------------------------------------ SG-08 (c) exclusive gateway, several true
+    // The former pin test exclusiveGatewayTakesFirstTrueFlowInDocumentOrder documented Operaton's native first-match
+    // rule. The owner decision ADR-D-25 (strict XOR) replaced that rule; its tests are StrictExclusiveRoutingH2Test.
+
+    // ------------------------------------------------------------------ SG-10 CMMN history
+
+    private static final String CMMN = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL" id="cd" targetNamespace="t">
+              <case id="review">
+                <casePlanModel id="cpm" autoComplete="true">
+                  <planItem id="piTask" definitionRef="ht"/>
+                  <humanTask id="ht" name="Review"/>
+                </casePlanModel>
+              </case>
+            </definitions>
+            """;
+
+    /** SG-10: a human task completed through TaskService, and the auto-completed case, are COMPLETED in history. */
+    @Test
+    void completedCaseAndHumanTaskAreCompletedInHistory() {
+        withEngine(s -> { }, a -> {
+            a.deploy("t1", "cmmn", Map.of("review.cmmn", CMMN.getBytes(StandardCharsets.UTF_8)));
+            String ci = a.startCase("t1", "review", "C-1", Map.of());
+            ProcessEngine e = a.processEngine();
+            Task t = e.getTaskService().createTaskQuery().caseInstanceId(ci).singleResult();
+            assertNotNull(t);
+            a.completeTask(t.getId(), Map.of());
+            HistoricCaseActivityInstance h = e.getHistoryService().createHistoricCaseActivityInstanceQuery()
+                    .caseInstanceId(ci).caseActivityId("piTask").singleResult();
+            assertTrue(h.isCompleted(), "human task history: completed (terminated=" + h.isTerminated() + ")");
+            assertTrue(!h.isTerminated());
+            HistoricCaseInstance hc = e.getHistoryService().createHistoricCaseInstanceQuery().caseInstanceId(ci)
+                    .singleResult();
+            assertTrue(hc.isCompleted(), "case history: completed (terminated=" + hc.isTerminated() + ")");
+            assertTrue(!hc.isTerminated());
+        });
+    }
+
+    /** Stage B E1 / WF-3 shape: Scrutiny -> sentry -> Inspection -> sentry -> milestone; stage and case auto-complete. */
+    private static final String CMMN_CHAIN = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL" id="cd2" targetNamespace="t">
+              <case id="chain">
+                <casePlanModel id="cpm2" autoComplete="true">
+                  <planItem id="piStage" definitionRef="stage"/>
+                  <stage id="stage" autoComplete="true">
+                    <planItem id="piScrutiny" definitionRef="scrutiny"/>
+                    <planItem id="piInspection" definitionRef="inspection">
+                      <entryCriterion id="ec1" sentryRef="sScrutinyDone"/>
+                    </planItem>
+                    <planItem id="piApproved" definitionRef="approved">
+                      <entryCriterion id="ec2" sentryRef="sInspectionDone"/>
+                    </planItem>
+                    <sentry id="sScrutinyDone"><planItemOnPart id="op1" sourceRef="piScrutiny"><standardEvent>complete</standardEvent></planItemOnPart></sentry>
+                    <sentry id="sInspectionDone"><planItemOnPart id="op2" sourceRef="piInspection"><standardEvent>complete</standardEvent></planItemOnPart></sentry>
+                    <humanTask id="scrutiny" name="Scrutiny"/>
+                    <humanTask id="inspection" name="Inspection"/>
+                    <milestone id="approved" name="Approved"/>
+                  </stage>
+                </casePlanModel>
+              </case>
+            </definitions>
+            """;
+
+    /** SG-10 (Stage B E1 fail): every item that completed is COMPLETED in the engine's own CMMN history. */
+    @Test
+    void sentryChainCompletionIsRecordedAsCompleted() {
+        withEngine(s -> { }, a -> {
+            a.deploy("t1", "chain", Map.of("chain.cmmn", CMMN_CHAIN.getBytes(StandardCharsets.UTF_8)));
+            String ci = a.startCase("t1", "chain", "C-3", Map.of());
+            ProcessEngine e = a.processEngine();
+            for (String name : List.of("Scrutiny", "Inspection")) {
+                Task t = e.getTaskService().createTaskQuery().caseInstanceId(ci).taskName(name).singleResult();
+                assertNotNull(t, name);
+                a.completeTask(t.getId(), Map.of());
+            }
+            List<String> states = new ArrayList<>();
+            for (HistoricCaseActivityInstance h : e.getHistoryService().createHistoricCaseActivityInstanceQuery()
+                    .caseInstanceId(ci).list()) {
+                states.add(h.getCaseActivityId() + "=" + (h.isCompleted() ? "completed"
+                        : h.isTerminated() ? "terminated" : "other"));
+            }
+            Collections.sort(states);
+            assertEquals(List.of("piApproved=completed", "piInspection=completed", "piScrutiny=completed",
+                    "piStage=completed"), states);
+            HistoricCaseInstance hc = e.getHistoryService().createHistoricCaseInstanceQuery().caseInstanceId(ci)
+                    .singleResult();
+            assertTrue(hc.isCompleted(), "case history: completed (terminated=" + hc.isTerminated() + ")");
+        });
+    }
+
+    /** SG-10 control: a task that really is terminated (case terminated) stays TERMINATED. */
+    @Test
+    void terminatedCaseStaysTerminatedInHistory() {
+        withEngine(s -> { }, a -> {
+            a.deploy("t1", "cmmn", Map.of("review.cmmn", CMMN.getBytes(StandardCharsets.UTF_8)));
+            String ci = a.startCase("t1", "review", "C-2", Map.of());
+            ProcessEngine e = a.processEngine();
+            e.getCaseService().terminateCaseExecution(ci);
+            HistoricCaseActivityInstance h = e.getHistoryService().createHistoricCaseActivityInstanceQuery()
+                    .caseInstanceId(ci).caseActivityId("piTask").singleResult();
+            assertTrue(h.isTerminated(), "human task of a terminated case: terminated (completed=" + h.isCompleted()
+                    + ", state=" + ((org.operaton.bpm.engine.impl.history.event.HistoricCaseActivityInstanceEventEntity) h)
+                    .getCaseActivityInstanceState() + ")");
+            assertTrue(e.getHistoryService().createHistoricCaseInstanceQuery().caseInstanceId(ci).singleResult()
+                    .isTerminated());
+        });
+    }
+
+    // ------------------------------------------------------------------ SG-11 (E8) DST timer
+
+    private static final String CYCLE = """
+              <process id="cyc" isExecutable="true">
+                <startEvent id="s"/>
+                <sequenceFlow id="f1" sourceRef="s" targetRef="hold"/>
+                <userTask id="hold"/>
+                <boundaryEvent id="tick" attachedToRef="hold" cancelActivity="false">
+                  <timerEventDefinition><timeCycle xsi:type="tFormalExpression">R/PT1H</timeCycle></timerEventDefinition>
+                </boundaryEvent>
+                <sequenceFlow id="f2" sourceRef="tick" targetRef="tickTask"/>
+                <userTask id="tickTask"/>
+              </process>
+            """;
+
+    /** E8 on the Sangam engine: one firing per elapsed hour across the Berlin autumn fold and spring gap. */
+    private static void dstWindow(Instant start, int hours, Duration step) {
+        withEngine(s -> s.setTimerZone(ZoneId.of("Europe/Berlin")), a -> {
+            a.setClock(start);
+            a.deploy("t1", "cyc", Map.of("cyc.bpmn", bpmn(CYCLE)));
+            String pi = a.startProcess("t1", "cyc", "D-1", Map.of());
+            ProcessEngine e = a.processEngine();
+            Instant now = start;
+            Instant end = start.plus(Duration.ofHours(hours));
+            List<String> misplaced = new ArrayList<>();
+            long count = 0;
+            while (now.isBefore(end)) {
+                now = now.plus(step);
+                a.setClock(now);
+                a.executeDueJobs();
+                long c = e.getTaskService().createTaskQuery().processInstanceId(pi).taskDefinitionKey("tickTask").count();
+                for (long i = count; i < c; i++) {
+                    Instant due = start.plus(Duration.ofHours(i + 1));
+                    if (now.isBefore(due) || !now.isBefore(due.plus(step).plusSeconds(1))) {
+                        misplaced.add("fire " + (i + 1) + " at " + now);
+                    }
+                }
+                count = c;
+                assertTrue(count <= hours, "runaway: " + count + " fires by " + now);
+            }
+            assertEquals(hours, count, "exactly one fire per elapsed hour");
+            assertEquals(List.of(), misplaced);
+        });
+    }
+
+    @Test
+    void dstAutumnFoldFiresOncePerElapsedHour_step5m() {
+        dstWindow(Instant.parse("2026-10-24T22:00:00Z"), 6, Duration.ofMinutes(5));
+    }
+
+    @Test
+    void dstAutumnFoldFiresOncePerElapsedHour_step1m() {
+        dstWindow(Instant.parse("2026-10-24T22:00:00Z"), 6, Duration.ofMinutes(1));
+    }
+
+    @Test
+    void dstSpringGapFiresOncePerElapsedHour() {
+        dstWindow(Instant.parse("2026-03-28T23:00:00Z"), 6, Duration.ofMinutes(5));
+    }
+
+    // ------------------------------------------------------------------ SG-11 (E6) hot root under L2
+
+    /**
+     * E6 a1 on the Sangam engine: 50 parallel user tasks of one root completed from 32 threads at once. With the L2
+     * root lock every command commits (Stage B: 30-75 % failed after 5 retries without it); the join fires once.
+     */
+    @Test
+    void hotRootAllCommandsCommitUnderRootLock() throws Exception {
+        StringBuilder m = new StringBuilder("""
+                  <process id="hot" isExecutable="true">
+                    <startEvent id="s"/>
+                    <sequenceFlow id="f0" sourceRef="s" targetRef="fork"/>
+                    <parallelGateway id="fork"/>
+                    <parallelGateway id="join"/>
+                    <sequenceFlow id="fj" sourceRef="join" targetRef="after"/>
+                    <userTask id="after"/>
+                """);
+        int n = 50;
+        for (int i = 0; i < n; i++) {
+            m.append("<sequenceFlow id=\"a").append(i).append("\" sourceRef=\"fork\" targetRef=\"t").append(i).append("\"/>")
+                    .append("<userTask id=\"t").append(i).append("\"/>")
+                    .append("<sequenceFlow id=\"b").append(i).append("\" sourceRef=\"t").append(i)
+                    .append("\" targetRef=\"join\"/>");
+        }
+        m.append("</process>");
+        withEngine(s -> {
+            s.setLockTimeout(Duration.ofSeconds(30));
+            s.setStatementTimeout(Duration.ofSeconds(60));
+        }, a -> {
+            a.deploy("t1", "hot", Map.of("hot.bpmn", bpmn(m.toString())));
+            String pi = a.startProcess("t1", "hot", "H-1", Map.of());
+            List<SangamEngineAdapter.TaskView> ts = a.queryTasks(new SangamEngineAdapter.TaskQuery("t1", null, null, pi,
+                    null, 0, 100));
+            assertEquals(n, ts.size());
+            ExecutorService pool = Executors.newFixedThreadPool(32);
+            CountDownLatch go = new CountDownLatch(1);
+            List<Future<?>> fs = new ArrayList<>();
+            List<Throwable> failures = Collections.synchronizedList(new ArrayList<>());
+            for (SangamEngineAdapter.TaskView t : ts) {
+                fs.add(pool.submit(() -> {
+                    go.await();
+                    try {
+                        a.completeTask(t.id(), Map.of("v_" + t.id().replace("-", ""), 1));
+                    } catch (Throwable x) {
+                        failures.add(x);
+                    }
+                    return null;
+                }));
+            }
+            go.countDown();
+            for (Future<?> f : fs) {
+                try {
+                    f.get(5, TimeUnit.MINUTES);
+                } catch (Exception x) {
+                    failures.add(x);
+                }
+            }
+            pool.shutdown();
+            assertEquals(List.of(), failures.stream().map(InheritedWeaknessH2Test::rootMessage).toList(),
+                    "every command on the hot root commits");
+            assertEquals(List.of("after"), keys(tasks(a.processEngine(), pi)), "the join fired exactly once");
+            assertEquals(n, a.processEngine().getRuntimeService().getVariables(pi).size(), "no lost update");
+        });
+    }
+}

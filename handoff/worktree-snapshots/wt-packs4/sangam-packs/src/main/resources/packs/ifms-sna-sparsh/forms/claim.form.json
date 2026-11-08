@@ -1,0 +1,78 @@
+{
+  "key": "ifms-sna-sparsh/claim",
+  "version": "1.0.0",
+  "pack": "gov.ifms.sna-sparsh",
+  "title": {
+    "en": "SNA-SPARSH claim",
+    "hi": "एसएनए-स्पर्श दावा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "slsCode",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "State-linked scheme (SLS)",
+        "hi": "राज्य-संबद्ध योजना"
+      }
+    },
+    {
+      "id": "motherSanctionNo",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Mother sanction",
+        "hi": "मूल स्वीकृति"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "centreShare",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Centre share",
+        "hi": "केंद्र अंश"
+      }
+    },
+    {
+      "id": "stateShare",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "State share",
+        "hi": "राज्य अंश"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

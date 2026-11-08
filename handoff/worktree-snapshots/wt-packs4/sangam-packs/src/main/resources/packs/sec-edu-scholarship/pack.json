@@ -1,0 +1,91 @@
+{
+  "id": "sec.edu.scholarship",
+  "version": "1.0.0",
+  "name": {
+    "en": "Scholarship through the National Scholarship Portal",
+    "hi": "राष्ट्रीय छात्रवृत्ति पोर्टल द्वारा छात्रवृत्ति"
+  },
+  "domain": "Education",
+  "description": "Student application with income and category, institute verification (L1), district / state verification (L2), sanction, payment by Aadhaar-based DBT through PFMS once by operationId, payment failure re-verified with corrected bank details, renewal next year.",
+  "mainProcesses": [
+    "sangam-sec-edu-scholarship"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-edu-scholarship/sangam-sec-edu-scholarship.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-edu-scholarship/sec-edu-sch-eligibility.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-edu-scholarship/sec-edu-sch-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-edu-scholarship/sec-edu-sch-powers.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-scholarship/forms/apply.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-scholarship/forms/l1.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-edu-scholarship/forms/fix.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-edu-scholarship/seed.json"
+    }
+  ],
+  "seed": "packs/sec-edu-scholarship/seed.json",
+  "connectors": [
+    {
+      "id": "nsp.application",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "NSP application"
+    },
+    {
+      "id": "pfms.dbt",
+      "capabilityClass": "c",
+      "govTag": "",
+      "purpose": "DBT payment"
+    }
+  ],
+  "covers": [
+    "SEC-EDU-005",
+    "GP-16",
+    "GP-12",
+    "GP-49",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-core-execution",
+    "sangam-core-rejection",
+    "sangam-core-sanction"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "income",
+      "powerLimit"
+    ]
+  }
+}

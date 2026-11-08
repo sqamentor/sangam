@@ -1,0 +1,19 @@
+# files that differ from the main tree (changed) or exist only here (added)
+M TESTING-GAP-REGISTER.md
+M deploy/README.md
+M deploy/SUPPORT-MATRIX.md
+M sangam-engine/src/main/java/org/sangam/engine/deploy/TenantIsolationGuard.java
+M sangam-engine/src/main/java/org/sangam/engine/job/GuardedJobHandler.java
+M sangam-rest/api/gen_openapi.py
+M sangam-rest/api/sangam-api.yaml
+M sangam-server/src/test/java/org/sangam/server/acceptance/isolation/CrossTenantIsolationIT.java
+M sangam-ui/package-lock.json
+M sangam-ui/package.json
+M sangam-ui/src/api/types.ts
+M sangam-ui/src/components/embeddedForm.ts
+M sangam-ui/src/i18n/locales/en.json
+M sangam-ui/src/i18n/locales/hi.json
+M sangam-ui/src/modules/engine.tsx
+M sangam-ui/src/modules/operaton.tsx
+M sangam-ui/src/modules/operaton2.tsx
+M sangam-ui/src/modules/operaton3.tsx

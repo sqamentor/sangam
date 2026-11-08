@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Procure to pay. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_scm_p2p" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_grn_posted" name="sangam.grn.posted"/>
+  <message id="msg_sangam_invoice_received" name="sangam.invoice.received"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-scm-p2p" name="Procure to pay" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.scm.procure-to-pay</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>itemDescription,quantity,unitPrice,supplierName</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pp_start" name="Requisition raised" operaton:initiator="initiator" operaton:formKey="sangam:sec-scm-procure-to-pay/requisition"></startEvent>
+    <serviceTask id="pp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>supplierName=SUPPLIER-1;msmeSupplier=false;budgetOk=true;caseType=PURCHASE;routingDecisionKey=sec-scm-pr-authority;powersDecisionKey=sec-scm-powers;appealAllowed=false;buyerSeat=BUYER;poQty=@quantity;poPrice=@unitPrice</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pp_amount" name="Value" operaton:expression="${execution.setVariable('amount', quantity * unitPrice)}"></serviceTask>
+    <serviceTask id="pp_budget" name="Budget check" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>erp.budgetCheck</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>amount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>budget</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pp_budGw" name="Budget available?" default="sec_scm_p2p_f8"></exclusiveGateway>
+    <serviceTask id="pp_rjBud_code" name="Reason: NO_BUDGET" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>rejectionReasonCodes=NO_BUDGET</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="pp_rjBud_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="pp_rjBud_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <businessRuleTask id="pp_mode" name="Sourcing mode (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-scm-sourcing</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="pp_modeGw" name="Quotations needed?" default="sec_scm_p2p_f14"></exclusiveGateway>
+    <userTask id="pp_rfq" name="Collect quotations and comparative statement" operaton:candidateGroups="${buyerSeat}" operaton:formKey="sangam:sec-scm-procure-to-pay/rfq"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>rfqDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="pp_rfqGw" name="" default="sec_scm_p2p_f13"></exclusiveGateway>
+    <serviceTask id="pp_recompute" name="Value at the awarded price" operaton:expression="${execution.setVariable('amount', quantity * unitPrice)}"></serviceTask>
+    <callActivity id="pp_approve" name="Approve requisition (core sanction)" calledElement="sangam-core-sanction"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <callActivity id="pp_rj_reject" name="Rejection with reasons (core)" calledElement="sangam-core-rejection"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="pp_rj_endRejected" name="Rejected"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field><operaton:field name="reasonVar"><operaton:string>rejectionReasonCodes</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="pp_po" name="Create purchase order" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>erp.createPo</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>create</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>itemDescription,quantity,unitPrice,supplierName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>po</operaton:string></operaton:field><operaton:field name="step"><operaton:string>po</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pp_sanGw" name="sanctionOutcome?" default="sec_scm_p2p_f18"></exclusiveGateway>
+    <serviceTask id="pp_send" name="Send PO to the supplier" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>supplier.sendPo</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>send</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>supplierName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>poSend</operaton:string></operaton:field><operaton:field name="step"><operaton:string>po-send</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="pp_grn" name="Goods received (GRN)"><messageEventDefinition messageRef="msg_sangam_grn_posted"/></intermediateCatchEvent>
+    <userTask id="pp_qc" name="Quality inspection" operaton:candidateGroups="QC-INSPECTOR" operaton:formKey="sangam:sec-scm-procure-to-pay/qc"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>qcDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="pp_qcGw" name="" default="sec_scm_p2p_f26"></exclusiveGateway>
+    <serviceTask id="pp_debit" name="Return rejected goods / debit note" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>supplier.debitNote</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>reject</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>supplierName,receivedQty,acceptedQty</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>debit</operaton:string></operaton:field><operaton:field name="step"><operaton:string>debit-note</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pp_grnQty" name="Accepted quantity" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>grnQty=@acceptedQty</operaton:string></operaton:field></extensionElements></serviceTask>
+    <intermediateCatchEvent id="pp_invoice" name="Invoice received"><messageEventDefinition messageRef="msg_sangam_invoice_received"/></intermediateCatchEvent>
+    <callActivity id="pp_match" name="Three-way match (UP-14)" calledElement="sangam-up14-three-way-match"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <businessRuleTask id="pp_terms" name="Payment term (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-scm-payment-terms</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="pp_release_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pp_release</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${paymentTermSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pp_release" name="Release payment" operaton:candidateGroups="${treasurySeat}" operaton:formKey="sangam:sec-scm-procure-to-pay/release" operaton:dueDate="${pp_releaseDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pp_release_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pp_release</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>treasurySeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pp_release_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="pp_release_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pp_release</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>treasurySeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pp_release_breachGw" name="Deemed?" default="sec_scm_p2p_f35"></exclusiveGateway>
+    <exclusiveGateway id="pp_release_done" name=""></exclusiveGateway>
+    <serviceTask id="pp_payCfg" name="Payment settings" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>treasurySeat=AP-TREASURY;executionConnector=bank.transfer;executionStep=supplier-payment;verifyApproval=false;reconcileRequired=true;executionPayloadFields=supplierName,amount</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="pp_pay" name="Pay supplier (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="pp_end" name="Paid"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="pp_release_warn" name="SLA warning (75%)" attachedToRef="pp_release" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pp_releaseWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pp_release_breach" name="SLA breached" attachedToRef="pp_release" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pp_releaseDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_scm_p2p_f1" sourceRef="pp_start" targetRef="pp_defaults"/>
+    <sequenceFlow id="sec_scm_p2p_f2" sourceRef="pp_defaults" targetRef="pp_amount"/>
+    <sequenceFlow id="sec_scm_p2p_f3" sourceRef="pp_amount" targetRef="pp_budget"/>
+    <sequenceFlow id="sec_scm_p2p_f4" sourceRef="pp_budget" targetRef="pp_budGw"/>
+    <sequenceFlow id="sec_scm_p2p_f5" sourceRef="pp_rjBud_reject" targetRef="pp_rjBud_endRejected"/>
+    <sequenceFlow id="sec_scm_p2p_f6" sourceRef="pp_rjBud_code" targetRef="pp_rjBud_reject"/>
+    <sequenceFlow id="sec_scm_p2p_f7" name="no" sourceRef="pp_budGw" targetRef="pp_rjBud_code"><conditionExpression xsi:type="tFormalExpression">${!budgetOk}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_scm_p2p_f8" name="yes" sourceRef="pp_budGw" targetRef="pp_mode"/>
+    <sequenceFlow id="sec_scm_p2p_f9" sourceRef="pp_mode" targetRef="pp_modeGw"/>
+    <sequenceFlow id="sec_scm_p2p_f10" name="RFQ / RFP" sourceRef="pp_modeGw" targetRef="pp_rfq"><conditionExpression xsi:type="tFormalExpression">${sourcingMode != 'DIRECT'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_scm_p2p_f11" sourceRef="pp_rfq" targetRef="pp_rfqGw"/>
+    <sequenceFlow id="sec_scm_p2p_f12" name="retender" sourceRef="pp_rfqGw" targetRef="pp_rfq"><conditionExpression xsi:type="tFormalExpression">${rfqDecision == 'retender'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_scm_p2p_f13" name="award" sourceRef="pp_rfqGw" targetRef="pp_recompute"/>
+    <sequenceFlow id="sec_scm_p2p_f14" name="direct" sourceRef="pp_modeGw" targetRef="pp_approve"/>
+    <sequenceFlow id="sec_scm_p2p_f15" sourceRef="pp_recompute" targetRef="pp_approve"/>
+    <sequenceFlow id="sec_scm_p2p_f16" sourceRef="pp_rj_reject" targetRef="pp_rj_endRejected"/>
+    <sequenceFlow id="sec_scm_p2p_f17" name="SANCTIONED" sourceRef="pp_sanGw" targetRef="pp_po"><conditionExpression xsi:type="tFormalExpression">${sanctionOutcome == 'SANCTIONED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_scm_p2p_f18" name="otherwise" sourceRef="pp_sanGw" targetRef="pp_rj_reject"/>
+    <sequenceFlow id="sec_scm_p2p_f19" sourceRef="pp_approve" targetRef="pp_sanGw"/>
+    <sequenceFlow id="sec_scm_p2p_f20" sourceRef="pp_po" targetRef="pp_send"/>
+    <sequenceFlow id="sec_scm_p2p_f21" sourceRef="pp_send" targetRef="pp_grn"/>
+    <sequenceFlow id="sec_scm_p2p_f22" sourceRef="pp_grn" targetRef="pp_qc"/>
+    <sequenceFlow id="sec_scm_p2p_f23" sourceRef="pp_qc" targetRef="pp_qcGw"/>
+    <sequenceFlow id="sec_scm_p2p_f24" name="reject" sourceRef="pp_qcGw" targetRef="pp_debit"><conditionExpression xsi:type="tFormalExpression">${qcDecision == 'reject'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_scm_p2p_f25" sourceRef="pp_debit" targetRef="pp_grn"/>
+    <sequenceFlow id="sec_scm_p2p_f26" name="accept" sourceRef="pp_qcGw" targetRef="pp_grnQty"/>
+    <sequenceFlow id="sec_scm_p2p_f27" sourceRef="pp_grnQty" targetRef="pp_invoice"/>
+    <sequenceFlow id="sec_scm_p2p_f28" sourceRef="pp_invoice" targetRef="pp_match"/>
+    <sequenceFlow id="sec_scm_p2p_f29" sourceRef="pp_match" targetRef="pp_terms"/>
+    <sequenceFlow id="sec_scm_p2p_f30" sourceRef="pp_release_warn" targetRef="pp_release_warnNotify"/>
+    <sequenceFlow id="sec_scm_p2p_f31" sourceRef="pp_release_warnNotify" targetRef="pp_release_warnEnd"/>
+    <sequenceFlow id="sec_scm_p2p_f32" sourceRef="pp_release_breach" targetRef="pp_release_breachAct"/>
+    <sequenceFlow id="sec_scm_p2p_f33" sourceRef="pp_release_breachAct" targetRef="pp_release_breachGw"/>
+    <sequenceFlow id="sec_scm_p2p_f34" name="deemed" sourceRef="pp_release_breachGw" targetRef="pp_release_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_scm_p2p_f35" name="escalated" sourceRef="pp_release_breachGw" targetRef="pp_release_slaPlan"/>
+    <sequenceFlow id="sec_scm_p2p_f36" sourceRef="pp_release_slaPlan" targetRef="pp_release"/>
+    <sequenceFlow id="sec_scm_p2p_f37" sourceRef="pp_release" targetRef="pp_release_done"/>
+    <sequenceFlow id="sec_scm_p2p_f38" sourceRef="pp_terms" targetRef="pp_payCfg"/>
+    <sequenceFlow id="sec_scm_p2p_f39" sourceRef="pp_payCfg" targetRef="pp_release_slaPlan"/>
+    <sequenceFlow id="sec_scm_p2p_f40" sourceRef="pp_release_done" targetRef="pp_pay"/>
+    <sequenceFlow id="sec_scm_p2p_f41" sourceRef="pp_pay" targetRef="pp_end"/>
+    <subProcess id="pp_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="pp_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="pp_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pp_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pp_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_scm_p2p_f42" sourceRef="pp_withdrawStart" targetRef="pp_withdrawKind"/>
+      <sequenceFlow id="sec_scm_p2p_f43" sourceRef="pp_withdrawKind" targetRef="pp_withdrawCall"/>
+      <sequenceFlow id="sec_scm_p2p_f44" sourceRef="pp_withdrawCall" targetRef="pp_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="pp_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="pp_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="pp_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pp_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pp_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_scm_p2p_f45" sourceRef="pp_cancelStart" targetRef="pp_cancelKind"/>
+      <sequenceFlow id="sec_scm_p2p_f46" sourceRef="pp_cancelKind" targetRef="pp_cancelCall"/>
+      <sequenceFlow id="sec_scm_p2p_f47" sourceRef="pp_cancelCall" targetRef="pp_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_scm_p2p_diagram">
+    <bpmndi:BPMNPlane id="sec_scm_p2p_plane" bpmnElement="sangam-sec-scm-p2p">
+      <bpmndi:BPMNShape id="pp_start_di" bpmnElement="pp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_defaults_di" bpmnElement="pp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_amount_di" bpmnElement="pp_amount"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_budget_di" bpmnElement="pp_budget"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_budGw_di" bpmnElement="pp_budGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_rjBud_code_di" bpmnElement="pp_rjBud_code"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_rjBud_reject_di" bpmnElement="pp_rjBud_reject"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_rjBud_endRejected_di" bpmnElement="pp_rjBud_endRejected"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_mode_di" bpmnElement="pp_mode"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_modeGw_di" bpmnElement="pp_modeGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_rfq_di" bpmnElement="pp_rfq"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_rfqGw_di" bpmnElement="pp_rfqGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_recompute_di" bpmnElement="pp_recompute"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_approve_di" bpmnElement="pp_approve"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_rj_reject_di" bpmnElement="pp_rj_reject"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_rj_endRejected_di" bpmnElement="pp_rj_endRejected"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_po_di" bpmnElement="pp_po"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_sanGw_di" bpmnElement="pp_sanGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_send_di" bpmnElement="pp_send"><dc:Bounds x="2165" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_grn_di" bpmnElement="pp_grn"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_qc_di" bpmnElement="pp_qc"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_qcGw_di" bpmnElement="pp_qcGw"><dc:Bounds x="2685" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_debit_di" bpmnElement="pp_debit"><dc:Bounds x="2825" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_grnQty_di" bpmnElement="pp_grnQty"><dc:Bounds x="2825" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_invoice_di" bpmnElement="pp_invoice"><dc:Bounds x="3022" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_match_di" bpmnElement="pp_match"><dc:Bounds x="3155" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_terms_di" bpmnElement="pp_terms"><dc:Bounds x="3320" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_slaPlan_di" bpmnElement="pp_release_slaPlan"><dc:Bounds x="3650" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_di" bpmnElement="pp_release"><dc:Bounds x="3815" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_warnNotify_di" bpmnElement="pp_release_warnNotify"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_warnEnd_di" bpmnElement="pp_release_warnEnd"><dc:Bounds x="4177" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_breachAct_di" bpmnElement="pp_release_breachAct"><dc:Bounds x="3980" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_breachGw_di" bpmnElement="pp_release_breachGw"><dc:Bounds x="4170" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_done_di" bpmnElement="pp_release_done"><dc:Bounds x="4335" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_payCfg_di" bpmnElement="pp_payCfg"><dc:Bounds x="3485" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_pay_di" bpmnElement="pp_pay"><dc:Bounds x="4475" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_end_di" bpmnElement="pp_end"><dc:Bounds x="4672" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_warn_di" bpmnElement="pp_release_warn"><dc:Bounds x="3823" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_release_breach_di" bpmnElement="pp_release_breach"><dc:Bounds x="3853" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_withdraw_di" bpmnElement="pp_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_withdrawStart_di" bpmnElement="pp_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_withdrawKind_di" bpmnElement="pp_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_withdrawCall_di" bpmnElement="pp_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_withdrawEnd_di" bpmnElement="pp_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_cancel_di" bpmnElement="pp_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_cancelStart_di" bpmnElement="pp_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_cancelKind_di" bpmnElement="pp_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_cancelCall_di" bpmnElement="pp_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pp_cancelEnd_di" bpmnElement="pp_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f1_di" bpmnElement="sec_scm_p2p_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f2_di" bpmnElement="sec_scm_p2p_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f3_di" bpmnElement="sec_scm_p2p_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f4_di" bpmnElement="sec_scm_p2p_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f5_di" bpmnElement="sec_scm_p2p_f5"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f6_di" bpmnElement="sec_scm_p2p_f6"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f7_di" bpmnElement="sec_scm_p2p_f7"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f8_di" bpmnElement="sec_scm_p2p_f8"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f9_di" bpmnElement="sec_scm_p2p_f9"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f10_di" bpmnElement="sec_scm_p2p_f10"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f11_di" bpmnElement="sec_scm_p2p_f11"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f12_di" bpmnElement="sec_scm_p2p_f12"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="149"/><di:waypoint x="1225" y="149"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f13_di" bpmnElement="sec_scm_p2p_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f14_di" bpmnElement="sec_scm_p2p_f14"><di:waypoint x="1085" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f15_di" bpmnElement="sec_scm_p2p_f15"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f16_di" bpmnElement="sec_scm_p2p_f16"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f17_di" bpmnElement="sec_scm_p2p_f17"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f18_di" bpmnElement="sec_scm_p2p_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f19_di" bpmnElement="sec_scm_p2p_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f20_di" bpmnElement="sec_scm_p2p_f20"><di:waypoint x="2100" y="195"/><di:waypoint x="2165" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f21_di" bpmnElement="sec_scm_p2p_f21"><di:waypoint x="2265" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f22_di" bpmnElement="sec_scm_p2p_f22"><di:waypoint x="2398" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f23_di" bpmnElement="sec_scm_p2p_f23"><di:waypoint x="2595" y="195"/><di:waypoint x="2685" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f24_di" bpmnElement="sec_scm_p2p_f24"><di:waypoint x="2735" y="195"/><di:waypoint x="2780" y="195"/><di:waypoint x="2780" y="320"/><di:waypoint x="2825" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f25_di" bpmnElement="sec_scm_p2p_f25"><di:waypoint x="2875" y="360"/><di:waypoint x="2875" y="378"/><di:waypoint x="2380" y="378"/><di:waypoint x="2380" y="213"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f26_di" bpmnElement="sec_scm_p2p_f26"><di:waypoint x="2735" y="195"/><di:waypoint x="2825" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f27_di" bpmnElement="sec_scm_p2p_f27"><di:waypoint x="2925" y="195"/><di:waypoint x="3022" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f28_di" bpmnElement="sec_scm_p2p_f28"><di:waypoint x="3058" y="195"/><di:waypoint x="3155" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f29_di" bpmnElement="sec_scm_p2p_f29"><di:waypoint x="3255" y="195"/><di:waypoint x="3320" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f30_di" bpmnElement="sec_scm_p2p_f30"><di:waypoint x="3841" y="253"/><di:waypoint x="3841" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f31_di" bpmnElement="sec_scm_p2p_f31"><di:waypoint x="4080" y="320"/><di:waypoint x="4177" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f32_di" bpmnElement="sec_scm_p2p_f32"><di:waypoint x="3871" y="253"/><di:waypoint x="3871" y="195"/><di:waypoint x="3980" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f33_di" bpmnElement="sec_scm_p2p_f33"><di:waypoint x="4080" y="195"/><di:waypoint x="4170" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f34_di" bpmnElement="sec_scm_p2p_f34"><di:waypoint x="4220" y="195"/><di:waypoint x="4335" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f35_di" bpmnElement="sec_scm_p2p_f35"><di:waypoint x="4195" y="220"/><di:waypoint x="4195" y="267"/><di:waypoint x="3700" y="267"/><di:waypoint x="3700" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f36_di" bpmnElement="sec_scm_p2p_f36"><di:waypoint x="3750" y="195"/><di:waypoint x="3815" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f37_di" bpmnElement="sec_scm_p2p_f37"><di:waypoint x="3915" y="195"/><di:waypoint x="4335" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f38_di" bpmnElement="sec_scm_p2p_f38"><di:waypoint x="3420" y="195"/><di:waypoint x="3485" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f39_di" bpmnElement="sec_scm_p2p_f39"><di:waypoint x="3585" y="195"/><di:waypoint x="3650" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f40_di" bpmnElement="sec_scm_p2p_f40"><di:waypoint x="4385" y="195"/><di:waypoint x="4475" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f41_di" bpmnElement="sec_scm_p2p_f41"><di:waypoint x="4575" y="195"/><di:waypoint x="4672" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f42_di" bpmnElement="sec_scm_p2p_f42"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f43_di" bpmnElement="sec_scm_p2p_f43"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f44_di" bpmnElement="sec_scm_p2p_f44"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f45_di" bpmnElement="sec_scm_p2p_f45"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f46_di" bpmnElement="sec_scm_p2p_f46"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_scm_p2p_f47_di" bpmnElement="sec_scm_p2p_f47"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

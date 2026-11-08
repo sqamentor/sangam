@@ -1,0 +1,140 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if .Values.networkPolicy.enabled }}
+{{- $fullname := include "sangam.fullname" . -}}
+{{- $np := .Values.networkPolicy -}}
+# Server: API from the UI, the ingress controller and labelled API clients; management from monitoring.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-server
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "sangam.selectorLabels" (dict "ctx" . "component" "ui") | nindent 14 }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $np.ingressControllerNamespace }}
+        - podSelector:
+            matchLabels:
+              sangam.io/api-client: "true"
+        # SCALE: the gateway proxies tenant traffic to the cell, the control plane calls the cell admin API (IR-4)
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/instance, operator: In, values: [{{ .Release.Name | quote }}] }
+              - { key: app.kubernetes.io/component, operator: In, values: [gateway, control-plane] }
+        {{- range $np.clientNamespaces }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . }}
+          podSelector:
+            matchLabels:
+              sangam.io/api-client: "true"
+        {{- end }}
+      ports:
+        - { protocol: TCP, port: {{ .Values.server.service.port }} }
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $np.monitoringNamespace }}
+      ports:
+        - { protocol: TCP, port: {{ .Values.server.service.managementPort }} }
+  egress:
+    {{- include "sangam.np.dnsEgress" . | nindent 4 }}
+    {{- include "sangam.np.dbEgress" . | nindent 4 }}
+    {{- if $np.oidc.cidrs }}
+    - to:
+        {{- range $np.oidc.cidrs }}
+        - ipBlock: { cidr: {{ . }} }
+        {{- end }}
+      ports:
+        {{- range $np.oidc.ports }}
+        - { protocol: TCP, port: {{ . }} }
+        {{- end }}
+    {{- end }}
+    {{- if .Values.otel.enabled }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $np.otelCollector.namespace }}
+          {{- with $np.otelCollector.podLabels }}
+          podSelector:
+            matchLabels:
+              {{- toYaml . | nindent 14 }}
+          {{- end }}
+      ports:
+        - { protocol: TCP, port: 4317 }
+        - { protocol: TCP, port: 4318 }
+    {{- end }}
+    {{- if .Values.scale.cell.id }}
+    # SCALE cell: registration/heartbeat, roll-up ingest and cross-cell messages to this release's components
+    - to:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/instance, operator: In, values: [{{ .Release.Name | quote }}] }
+              - { key: app.kubernetes.io/component, operator: In, values: [gateway, control-plane, rollup] }
+    {{- end }}
+    {{- with $np.extraEgress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- if .Values.ui.enabled }}
+---
+# UI: from the ingress controller only; to the server only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-ui
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ui
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "ui") | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $np.ingressControllerNamespace }}
+      ports:
+        - { protocol: TCP, port: 8080 }
+  egress:
+    {{- include "sangam.np.dnsEgress" . | nindent 4 }}
+    - to:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/instance, operator: In, values: [{{ .Release.Name | quote }}] }
+              - { key: app.kubernetes.io/component, operator: In, values: [server, gateway] }
+      ports:
+        - { protocol: TCP, port: {{ .Values.server.service.port }} }
+        - { protocol: TCP, port: {{ .Values.scale.gateway.port }} }
+{{- end }}
+---
+# Migration job and backup jobs: no ingress; DNS + database only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-db-jobs
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: db-jobs
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/instance, operator: In, values: [{{ .Release.Name | quote }}] }
+      - { key: app.kubernetes.io/component, operator: In, values: [migration, backup] }
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    {{- include "sangam.np.dnsEgress" . | nindent 4 }}
+    {{- include "sangam.np.dbEgress" . | nindent 4 }}
+{{- end }}

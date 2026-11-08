@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Cyber incident. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_fin_cyber_incident" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-sec-fin-cyber-incident" name="Cyber incident" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.fin.cyber-incident</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>incidentSummary,incidentCategory,priority</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="ci_start" name="Incident detected" operaton:initiator="initiator" operaton:formKey="sangam:sec-fin-cyber-incident/raise"></startEvent>
+    <serviceTask id="ci_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>incidentCategory=MALWARE;personalDataAffected=false;regulatedBy=RBI;socSeat=SOC-LEAD;cisoSeat=CISO;dpoSeat=DPO</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="ci_rules" name="Reporting obligations (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-fin-incident-reporting</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <parallelGateway id="ci_fork" name="Contain and report in parallel"></parallelGateway>
+    <parallelGateway id="ci_join" name="All done"></parallelGateway>
+    <serviceTask id="ci_contain_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_contain</operaton:string></operaton:field><operaton:field name="spec"><operaton:string>4H</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ci_contain" name="Contain and preserve evidence (logs 180 days)" operaton:candidateGroups="${socSeat}" operaton:formKey="sangam:sec-fin-cyber-incident/contain" operaton:dueDate="${ci_containDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ci_contain_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_contain</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>socSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ci_contain_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ci_contain_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_contain</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>socSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ci_contain_breachGw" name="Deemed?" default="sec_fin_cyber_incident_f9"></exclusiveGateway>
+    <exclusiveGateway id="ci_contain_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="ci_certinGw" name="Report to CERT-In (6 hours)?" default="sec_fin_cyber_incident_f24"></exclusiveGateway>
+    <exclusiveGateway id="ci_certinMerge" name=""></exclusiveGateway>
+    <serviceTask id="ci_certin_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_certin</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${certInSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ci_certin" name="Report to CERT-In (6 hours)" operaton:candidateGroups="${cisoSeat}" operaton:formKey="sangam:sec-fin-cyber-incident/certin" operaton:dueDate="${ci_certinDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ci_certin_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_certin</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>cisoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ci_certin_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ci_certin_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_certin</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>cisoSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ci_certin_breachGw" name="Deemed?" default="sec_fin_cyber_incident_f20"></exclusiveGateway>
+    <exclusiveGateway id="ci_certin_done" name=""></exclusiveGateway>
+    <serviceTask id="ci_certinSend" name="Send: Report to CERT-In (6 hours)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>certin.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>incidentSummary,incidentCategory,priority</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>certinRep</operaton:string></operaton:field><operaton:field name="step"><operaton:string>certin</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ci_regulatorGw" name="Initial report to the regulator?" default="sec_fin_cyber_incident_f38"></exclusiveGateway>
+    <exclusiveGateway id="ci_regulatorMerge" name=""></exclusiveGateway>
+    <serviceTask id="ci_regulator_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_regulator</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${regulatorSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ci_regulator" name="Initial report to the regulator" operaton:candidateGroups="${cisoSeat}" operaton:formKey="sangam:sec-fin-cyber-incident/regulator" operaton:dueDate="${ci_regulatorDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ci_regulator_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_regulator</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>cisoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ci_regulator_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ci_regulator_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_regulator</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>cisoSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ci_regulator_breachGw" name="Deemed?" default="sec_fin_cyber_incident_f34"></exclusiveGateway>
+    <exclusiveGateway id="ci_regulator_done" name=""></exclusiveGateway>
+    <serviceTask id="ci_regulatorSend" name="Send: Initial report to the regulator" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>regulator.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>incidentSummary,incidentCategory,priority</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>regulatorRep</operaton:string></operaton:field><operaton:field name="step"><operaton:string>regulator</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ci_dpbGw" name="Intimate Data Protection Board and data principals (72 hours)?" default="sec_fin_cyber_incident_f52"></exclusiveGateway>
+    <exclusiveGateway id="ci_dpbMerge" name=""></exclusiveGateway>
+    <serviceTask id="ci_dpb_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_dpb</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${dpbSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ci_dpb" name="Intimate Data Protection Board and data principals (72 hours)" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:sec-fin-cyber-incident/dpb" operaton:dueDate="${ci_dpbDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ci_dpb_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_dpb</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>dpoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ci_dpb_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ci_dpb_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_dpb</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>dpoSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ci_dpb_breachGw" name="Deemed?" default="sec_fin_cyber_incident_f48"></exclusiveGateway>
+    <exclusiveGateway id="ci_dpb_done" name=""></exclusiveGateway>
+    <serviceTask id="ci_dpbSend" name="Send: Intimate Data Protection Board and data principals (72 hours)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>dpb.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>incidentSummary,incidentCategory,priority</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>dpbRep</operaton:string></operaton:field><operaton:field name="step"><operaton:string>dpb</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="ci_rca_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_rca</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${rcaSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="ci_rca" name="Root cause analysis" operaton:candidateGroups="${socSeat}" operaton:formKey="sangam:sec-fin-cyber-incident/rca" operaton:dueDate="${ci_rcaDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="ci_rca_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_rca</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>socSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="ci_rca_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="ci_rca_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>ci_rca</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>socSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ci_rca_breachGw" name="Deemed?" default="sec_fin_cyber_incident_f61"></exclusiveGateway>
+    <exclusiveGateway id="ci_rca_done" name=""></exclusiveGateway>
+    <userTask id="ci_approve" name="CISO approves RCA" operaton:candidateGroups="${cisoSeat}" operaton:formKey="sangam:sec-fin-cyber-incident/approve"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>rcaDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="ci_apGw" name="" default="sec_fin_cyber_incident_f71"></exclusiveGateway>
+    <serviceTask id="ci_final" name="Submit RCA to the regulator" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>regulator.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>rca</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>rootCause,capaActions</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>rcaRep</operaton:string></operaton:field><operaton:field name="step"><operaton:string>rca</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="ci_finalOptGw" name="Regulator RCA?" default="sec_fin_cyber_incident_f69"></exclusiveGateway>
+    <exclusiveGateway id="ci_finalOptMerge" name=""></exclusiveGateway>
+    <endEvent id="ci_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="ci_contain_warn" name="SLA warning (75%)" attachedToRef="ci_contain" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_containWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ci_contain_breach" name="SLA breached" attachedToRef="ci_contain" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_containDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ci_certin_warn" name="SLA warning (75%)" attachedToRef="ci_certin" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_certinWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ci_certin_breach" name="SLA breached" attachedToRef="ci_certin" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_certinDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ci_regulator_warn" name="SLA warning (75%)" attachedToRef="ci_regulator" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_regulatorWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ci_regulator_breach" name="SLA breached" attachedToRef="ci_regulator" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_regulatorDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ci_dpb_warn" name="SLA warning (75%)" attachedToRef="ci_dpb" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_dpbWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ci_dpb_breach" name="SLA breached" attachedToRef="ci_dpb" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_dpbDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ci_rca_warn" name="SLA warning (75%)" attachedToRef="ci_rca" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_rcaWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="ci_rca_breach" name="SLA breached" attachedToRef="ci_rca" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${ci_rcaDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="sec_fin_cyber_incident_f1" sourceRef="ci_start" targetRef="ci_defaults"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f2" sourceRef="ci_defaults" targetRef="ci_rules"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f3" sourceRef="ci_rules" targetRef="ci_fork"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f4" sourceRef="ci_contain_warn" targetRef="ci_contain_warnNotify"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f5" sourceRef="ci_contain_warnNotify" targetRef="ci_contain_warnEnd"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f6" sourceRef="ci_contain_breach" targetRef="ci_contain_breachAct"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f7" sourceRef="ci_contain_breachAct" targetRef="ci_contain_breachGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f8" name="deemed" sourceRef="ci_contain_breachGw" targetRef="ci_contain_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f9" name="escalated" sourceRef="ci_contain_breachGw" targetRef="ci_contain_slaPlan"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f10" sourceRef="ci_contain_slaPlan" targetRef="ci_contain"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f11" sourceRef="ci_contain" targetRef="ci_contain_done"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f12" sourceRef="ci_fork" targetRef="ci_contain_slaPlan"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f13" sourceRef="ci_contain_done" targetRef="ci_join"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f14" sourceRef="ci_fork" targetRef="ci_certinGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f15" sourceRef="ci_certin_warn" targetRef="ci_certin_warnNotify"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f16" sourceRef="ci_certin_warnNotify" targetRef="ci_certin_warnEnd"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f17" sourceRef="ci_certin_breach" targetRef="ci_certin_breachAct"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f18" sourceRef="ci_certin_breachAct" targetRef="ci_certin_breachGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f19" name="deemed" sourceRef="ci_certin_breachGw" targetRef="ci_certin_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f20" name="escalated" sourceRef="ci_certin_breachGw" targetRef="ci_certin_slaPlan"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f21" sourceRef="ci_certin_slaPlan" targetRef="ci_certin"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f22" sourceRef="ci_certin" targetRef="ci_certin_done"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f23" name="required" sourceRef="ci_certinGw" targetRef="ci_certin_slaPlan"><conditionExpression xsi:type="tFormalExpression">${certInRequired}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f24" name="not required" sourceRef="ci_certinGw" targetRef="ci_certinMerge"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f25" sourceRef="ci_certin_done" targetRef="ci_certinSend"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f26" sourceRef="ci_certinSend" targetRef="ci_certinMerge"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f27" sourceRef="ci_certinMerge" targetRef="ci_join"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f28" sourceRef="ci_fork" targetRef="ci_regulatorGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f29" sourceRef="ci_regulator_warn" targetRef="ci_regulator_warnNotify"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f30" sourceRef="ci_regulator_warnNotify" targetRef="ci_regulator_warnEnd"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f31" sourceRef="ci_regulator_breach" targetRef="ci_regulator_breachAct"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f32" sourceRef="ci_regulator_breachAct" targetRef="ci_regulator_breachGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f33" name="deemed" sourceRef="ci_regulator_breachGw" targetRef="ci_regulator_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f34" name="escalated" sourceRef="ci_regulator_breachGw" targetRef="ci_regulator_slaPlan"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f35" sourceRef="ci_regulator_slaPlan" targetRef="ci_regulator"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f36" sourceRef="ci_regulator" targetRef="ci_regulator_done"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f37" name="required" sourceRef="ci_regulatorGw" targetRef="ci_regulator_slaPlan"><conditionExpression xsi:type="tFormalExpression">${regulatorReport}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f38" name="not required" sourceRef="ci_regulatorGw" targetRef="ci_regulatorMerge"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f39" sourceRef="ci_regulator_done" targetRef="ci_regulatorSend"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f40" sourceRef="ci_regulatorSend" targetRef="ci_regulatorMerge"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f41" sourceRef="ci_regulatorMerge" targetRef="ci_join"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f42" sourceRef="ci_fork" targetRef="ci_dpbGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f43" sourceRef="ci_dpb_warn" targetRef="ci_dpb_warnNotify"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f44" sourceRef="ci_dpb_warnNotify" targetRef="ci_dpb_warnEnd"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f45" sourceRef="ci_dpb_breach" targetRef="ci_dpb_breachAct"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f46" sourceRef="ci_dpb_breachAct" targetRef="ci_dpb_breachGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f47" name="deemed" sourceRef="ci_dpb_breachGw" targetRef="ci_dpb_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f48" name="escalated" sourceRef="ci_dpb_breachGw" targetRef="ci_dpb_slaPlan"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f49" sourceRef="ci_dpb_slaPlan" targetRef="ci_dpb"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f50" sourceRef="ci_dpb" targetRef="ci_dpb_done"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f51" name="required" sourceRef="ci_dpbGw" targetRef="ci_dpb_slaPlan"><conditionExpression xsi:type="tFormalExpression">${personalDataAffected}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f52" name="not required" sourceRef="ci_dpbGw" targetRef="ci_dpbMerge"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f53" sourceRef="ci_dpb_done" targetRef="ci_dpbSend"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f54" sourceRef="ci_dpbSend" targetRef="ci_dpbMerge"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f55" sourceRef="ci_dpbMerge" targetRef="ci_join"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f56" sourceRef="ci_rca_warn" targetRef="ci_rca_warnNotify"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f57" sourceRef="ci_rca_warnNotify" targetRef="ci_rca_warnEnd"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f58" sourceRef="ci_rca_breach" targetRef="ci_rca_breachAct"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f59" sourceRef="ci_rca_breachAct" targetRef="ci_rca_breachGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f60" name="deemed" sourceRef="ci_rca_breachGw" targetRef="ci_rca_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f61" name="escalated" sourceRef="ci_rca_breachGw" targetRef="ci_rca_slaPlan"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f62" sourceRef="ci_rca_slaPlan" targetRef="ci_rca"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f63" sourceRef="ci_rca" targetRef="ci_rca_done"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f64" sourceRef="ci_join" targetRef="ci_rca_slaPlan"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f65" sourceRef="ci_rca_done" targetRef="ci_approve"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f66" sourceRef="ci_approve" targetRef="ci_apGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f67" name="rework" sourceRef="ci_apGw" targetRef="ci_rca_slaPlan"><conditionExpression xsi:type="tFormalExpression">${rcaDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f68" name="yes" sourceRef="ci_finalOptGw" targetRef="ci_final"><conditionExpression xsi:type="tFormalExpression">${regulatorReport}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_fin_cyber_incident_f69" name="no" sourceRef="ci_finalOptGw" targetRef="ci_finalOptMerge"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f70" sourceRef="ci_final" targetRef="ci_finalOptMerge"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f71" name="approved" sourceRef="ci_apGw" targetRef="ci_finalOptGw"/>
+    <sequenceFlow id="sec_fin_cyber_incident_f72" sourceRef="ci_finalOptMerge" targetRef="ci_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_fin_cyber_incident_diagram">
+    <bpmndi:BPMNPlane id="sec_fin_cyber_incident_plane" bpmnElement="sangam-sec-fin-cyber-incident">
+      <bpmndi:BPMNShape id="ci_start_di" bpmnElement="ci_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_defaults_di" bpmnElement="ci_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rules_di" bpmnElement="ci_rules"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_fork_di" bpmnElement="ci_fork"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_join_di" bpmnElement="ci_join"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_contain_slaPlan_di" bpmnElement="ci_contain_slaPlan"><dc:Bounds x="680" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_contain_di" bpmnElement="ci_contain"><dc:Bounds x="845" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_contain_warnNotify_di" bpmnElement="ci_contain_warnNotify"><dc:Bounds x="1010" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_contain_warnEnd_di" bpmnElement="ci_contain_warnEnd"><dc:Bounds x="1207" y="927" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_contain_breachAct_di" bpmnElement="ci_contain_breachAct"><dc:Bounds x="1010" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_contain_breachGw_di" bpmnElement="ci_contain_breachGw"><dc:Bounds x="1200" y="795" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_contain_done_di" bpmnElement="ci_contain_done"><dc:Bounds x="1365" y="795" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certinGw_di" bpmnElement="ci_certinGw"><dc:Bounds x="705" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certinMerge_di" bpmnElement="ci_certinMerge"><dc:Bounds x="1860" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certin_slaPlan_di" bpmnElement="ci_certin_slaPlan"><dc:Bounds x="845" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certin_di" bpmnElement="ci_certin"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certin_warnNotify_di" bpmnElement="ci_certin_warnNotify"><dc:Bounds x="1175" y="655" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certin_warnEnd_di" bpmnElement="ci_certin_warnEnd"><dc:Bounds x="1372" y="677" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certin_breachAct_di" bpmnElement="ci_certin_breachAct"><dc:Bounds x="1175" y="530" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certin_breachGw_di" bpmnElement="ci_certin_breachGw"><dc:Bounds x="1365" y="545" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certin_done_di" bpmnElement="ci_certin_done"><dc:Bounds x="1530" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certinSend_di" bpmnElement="ci_certinSend"><dc:Bounds x="1670" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulatorGw_di" bpmnElement="ci_regulatorGw"><dc:Bounds x="705" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulatorMerge_di" bpmnElement="ci_regulatorMerge"><dc:Bounds x="1860" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulator_slaPlan_di" bpmnElement="ci_regulator_slaPlan"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulator_di" bpmnElement="ci_regulator"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulator_warnNotify_di" bpmnElement="ci_regulator_warnNotify"><dc:Bounds x="1175" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulator_warnEnd_di" bpmnElement="ci_regulator_warnEnd"><dc:Bounds x="1372" y="427" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulator_breachAct_di" bpmnElement="ci_regulator_breachAct"><dc:Bounds x="1175" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulator_breachGw_di" bpmnElement="ci_regulator_breachGw"><dc:Bounds x="1365" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulator_done_di" bpmnElement="ci_regulator_done"><dc:Bounds x="1530" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulatorSend_di" bpmnElement="ci_regulatorSend"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpbGw_di" bpmnElement="ci_dpbGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpbMerge_di" bpmnElement="ci_dpbMerge"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpb_slaPlan_di" bpmnElement="ci_dpb_slaPlan"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpb_di" bpmnElement="ci_dpb"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpb_warnNotify_di" bpmnElement="ci_dpb_warnNotify"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpb_warnEnd_di" bpmnElement="ci_dpb_warnEnd"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpb_breachAct_di" bpmnElement="ci_dpb_breachAct"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpb_breachGw_di" bpmnElement="ci_dpb_breachGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpb_done_di" bpmnElement="ci_dpb_done"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpbSend_di" bpmnElement="ci_dpbSend"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rca_slaPlan_di" bpmnElement="ci_rca_slaPlan"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rca_di" bpmnElement="ci_rca"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rca_warnNotify_di" bpmnElement="ci_rca_warnNotify"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rca_warnEnd_di" bpmnElement="ci_rca_warnEnd"><dc:Bounds x="2692" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rca_breachAct_di" bpmnElement="ci_rca_breachAct"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rca_breachGw_di" bpmnElement="ci_rca_breachGw"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rca_done_di" bpmnElement="ci_rca_done"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_approve_di" bpmnElement="ci_approve"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_apGw_di" bpmnElement="ci_apGw"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_final_di" bpmnElement="ci_final"><dc:Bounds x="3485" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_finalOptGw_di" bpmnElement="ci_finalOptGw"><dc:Bounds x="3345" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_finalOptMerge_di" bpmnElement="ci_finalOptMerge"><dc:Bounds x="3675" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_end_di" bpmnElement="ci_end"><dc:Bounds x="3847" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_contain_warn_di" bpmnElement="ci_contain_warn"><dc:Bounds x="853" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_contain_breach_di" bpmnElement="ci_contain_breach"><dc:Bounds x="883" y="467" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certin_warn_di" bpmnElement="ci_certin_warn"><dc:Bounds x="1018" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_certin_breach_di" bpmnElement="ci_certin_breach"><dc:Bounds x="1048" y="342" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulator_warn_di" bpmnElement="ci_regulator_warn"><dc:Bounds x="1018" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_regulator_breach_di" bpmnElement="ci_regulator_breach"><dc:Bounds x="1048" y="217" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpb_warn_di" bpmnElement="ci_dpb_warn"><dc:Bounds x="1018" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_dpb_breach_di" bpmnElement="ci_dpb_breach"><dc:Bounds x="1048" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rca_warn_di" bpmnElement="ci_rca_warn"><dc:Bounds x="2338" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ci_rca_breach_di" bpmnElement="ci_rca_breach"><dc:Bounds x="2368" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f1_di" bpmnElement="sec_fin_cyber_incident_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f2_di" bpmnElement="sec_fin_cyber_incident_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f3_di" bpmnElement="sec_fin_cyber_incident_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f4_di" bpmnElement="sec_fin_cyber_incident_f4"><di:waypoint x="871" y="503"/><di:waypoint x="871" y="570"/><di:waypoint x="1010" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f5_di" bpmnElement="sec_fin_cyber_incident_f5"><di:waypoint x="1110" y="570"/><di:waypoint x="1158" y="570"/><di:waypoint x="1158" y="945"/><di:waypoint x="1207" y="945"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f6_di" bpmnElement="sec_fin_cyber_incident_f6"><di:waypoint x="901" y="503"/><di:waypoint x="901" y="445"/><di:waypoint x="1010" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f7_di" bpmnElement="sec_fin_cyber_incident_f7"><di:waypoint x="1110" y="445"/><di:waypoint x="1155" y="445"/><di:waypoint x="1155" y="820"/><di:waypoint x="1200" y="820"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f8_di" bpmnElement="sec_fin_cyber_incident_f8"><di:waypoint x="1250" y="820"/><di:waypoint x="1365" y="820"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f9_di" bpmnElement="sec_fin_cyber_incident_f9"><di:waypoint x="1225" y="845"/><di:waypoint x="1225" y="863"/><di:waypoint x="730" y="863"/><di:waypoint x="730" y="485"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f10_di" bpmnElement="sec_fin_cyber_incident_f10"><di:waypoint x="780" y="445"/><di:waypoint x="845" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f11_di" bpmnElement="sec_fin_cyber_incident_f11"><di:waypoint x="945" y="445"/><di:waypoint x="1155" y="445"/><di:waypoint x="1155" y="820"/><di:waypoint x="1365" y="820"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f12_di" bpmnElement="sec_fin_cyber_incident_f12"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="445"/><di:waypoint x="680" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f13_di" bpmnElement="sec_fin_cyber_incident_f13"><di:waypoint x="1415" y="820"/><di:waypoint x="1720" y="820"/><di:waypoint x="1720" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f14_di" bpmnElement="sec_fin_cyber_incident_f14"><di:waypoint x="590" y="70"/><di:waypoint x="647" y="70"/><di:waypoint x="647" y="320"/><di:waypoint x="705" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f15_di" bpmnElement="sec_fin_cyber_incident_f15"><di:waypoint x="1036" y="378"/><di:waypoint x="1036" y="695"/><di:waypoint x="1175" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f16_di" bpmnElement="sec_fin_cyber_incident_f16"><di:waypoint x="1275" y="695"/><di:waypoint x="1372" y="695"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f17_di" bpmnElement="sec_fin_cyber_incident_f17"><di:waypoint x="1066" y="378"/><di:waypoint x="1066" y="570"/><di:waypoint x="1175" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f18_di" bpmnElement="sec_fin_cyber_incident_f18"><di:waypoint x="1275" y="570"/><di:waypoint x="1365" y="570"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f19_di" bpmnElement="sec_fin_cyber_incident_f19"><di:waypoint x="1415" y="570"/><di:waypoint x="1472" y="570"/><di:waypoint x="1472" y="320"/><di:waypoint x="1530" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f20_di" bpmnElement="sec_fin_cyber_incident_f20"><di:waypoint x="1390" y="595"/><di:waypoint x="1390" y="634"/><di:waypoint x="895" y="634"/><di:waypoint x="895" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f21_di" bpmnElement="sec_fin_cyber_incident_f21"><di:waypoint x="945" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f22_di" bpmnElement="sec_fin_cyber_incident_f22"><di:waypoint x="1110" y="320"/><di:waypoint x="1530" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f23_di" bpmnElement="sec_fin_cyber_incident_f23"><di:waypoint x="755" y="320"/><di:waypoint x="845" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f24_di" bpmnElement="sec_fin_cyber_incident_f24"><di:waypoint x="755" y="320"/><di:waypoint x="1860" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f25_di" bpmnElement="sec_fin_cyber_incident_f25"><di:waypoint x="1580" y="320"/><di:waypoint x="1670" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f26_di" bpmnElement="sec_fin_cyber_incident_f26"><di:waypoint x="1770" y="320"/><di:waypoint x="1860" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f27_di" bpmnElement="sec_fin_cyber_incident_f27"><di:waypoint x="1910" y="320"/><di:waypoint x="1967" y="320"/><di:waypoint x="1967" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f28_di" bpmnElement="sec_fin_cyber_incident_f28"><di:waypoint x="590" y="70"/><di:waypoint x="647" y="70"/><di:waypoint x="647" y="195"/><di:waypoint x="705" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f29_di" bpmnElement="sec_fin_cyber_incident_f29"><di:waypoint x="1036" y="253"/><di:waypoint x="1036" y="445"/><di:waypoint x="1175" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f30_di" bpmnElement="sec_fin_cyber_incident_f30"><di:waypoint x="1275" y="445"/><di:waypoint x="1372" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f31_di" bpmnElement="sec_fin_cyber_incident_f31"><di:waypoint x="1066" y="253"/><di:waypoint x="1066" y="320"/><di:waypoint x="1175" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f32_di" bpmnElement="sec_fin_cyber_incident_f32"><di:waypoint x="1275" y="320"/><di:waypoint x="1365" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f33_di" bpmnElement="sec_fin_cyber_incident_f33"><di:waypoint x="1415" y="320"/><di:waypoint x="1472" y="320"/><di:waypoint x="1472" y="195"/><di:waypoint x="1530" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f34_di" bpmnElement="sec_fin_cyber_incident_f34"><di:waypoint x="1390" y="345"/><di:waypoint x="1390" y="370"/><di:waypoint x="895" y="370"/><di:waypoint x="895" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f35_di" bpmnElement="sec_fin_cyber_incident_f35"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f36_di" bpmnElement="sec_fin_cyber_incident_f36"><di:waypoint x="1110" y="195"/><di:waypoint x="1530" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f37_di" bpmnElement="sec_fin_cyber_incident_f37"><di:waypoint x="755" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f38_di" bpmnElement="sec_fin_cyber_incident_f38"><di:waypoint x="755" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f39_di" bpmnElement="sec_fin_cyber_incident_f39"><di:waypoint x="1580" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f40_di" bpmnElement="sec_fin_cyber_incident_f40"><di:waypoint x="1770" y="195"/><di:waypoint x="1860" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f41_di" bpmnElement="sec_fin_cyber_incident_f41"><di:waypoint x="1910" y="195"/><di:waypoint x="1967" y="195"/><di:waypoint x="1967" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f42_di" bpmnElement="sec_fin_cyber_incident_f42"><di:waypoint x="590" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f43_di" bpmnElement="sec_fin_cyber_incident_f43"><di:waypoint x="1036" y="128"/><di:waypoint x="1036" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f44_di" bpmnElement="sec_fin_cyber_incident_f44"><di:waypoint x="1275" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f45_di" bpmnElement="sec_fin_cyber_incident_f45"><di:waypoint x="1066" y="128"/><di:waypoint x="1066" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f46_di" bpmnElement="sec_fin_cyber_incident_f46"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f47_di" bpmnElement="sec_fin_cyber_incident_f47"><di:waypoint x="1415" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f48_di" bpmnElement="sec_fin_cyber_incident_f48"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="149"/><di:waypoint x="895" y="149"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f49_di" bpmnElement="sec_fin_cyber_incident_f49"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f50_di" bpmnElement="sec_fin_cyber_incident_f50"><di:waypoint x="1110" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f51_di" bpmnElement="sec_fin_cyber_incident_f51"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f52_di" bpmnElement="sec_fin_cyber_incident_f52"><di:waypoint x="755" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f53_di" bpmnElement="sec_fin_cyber_incident_f53"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f54_di" bpmnElement="sec_fin_cyber_incident_f54"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f55_di" bpmnElement="sec_fin_cyber_incident_f55"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f56_di" bpmnElement="sec_fin_cyber_incident_f56"><di:waypoint x="2356" y="128"/><di:waypoint x="2356" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f57_di" bpmnElement="sec_fin_cyber_incident_f57"><di:waypoint x="2595" y="195"/><di:waypoint x="2692" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f58_di" bpmnElement="sec_fin_cyber_incident_f58"><di:waypoint x="2386" y="128"/><di:waypoint x="2386" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f59_di" bpmnElement="sec_fin_cyber_incident_f59"><di:waypoint x="2595" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f60_di" bpmnElement="sec_fin_cyber_incident_f60"><di:waypoint x="2735" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f61_di" bpmnElement="sec_fin_cyber_incident_f61"><di:waypoint x="2710" y="95"/><di:waypoint x="2710" y="128"/><di:waypoint x="2215" y="128"/><di:waypoint x="2215" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f62_di" bpmnElement="sec_fin_cyber_incident_f62"><di:waypoint x="2265" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f63_di" bpmnElement="sec_fin_cyber_incident_f63"><di:waypoint x="2430" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f64_di" bpmnElement="sec_fin_cyber_incident_f64"><di:waypoint x="2075" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f65_di" bpmnElement="sec_fin_cyber_incident_f65"><di:waypoint x="2900" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f66_di" bpmnElement="sec_fin_cyber_incident_f66"><di:waypoint x="3090" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f67_di" bpmnElement="sec_fin_cyber_incident_f67"><di:waypoint x="3205" y="95"/><di:waypoint x="3205" y="142"/><di:waypoint x="2215" y="142"/><di:waypoint x="2215" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f68_di" bpmnElement="sec_fin_cyber_incident_f68"><di:waypoint x="3395" y="70"/><di:waypoint x="3485" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f69_di" bpmnElement="sec_fin_cyber_incident_f69"><di:waypoint x="3395" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f70_di" bpmnElement="sec_fin_cyber_incident_f70"><di:waypoint x="3585" y="70"/><di:waypoint x="3675" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f71_di" bpmnElement="sec_fin_cyber_incident_f71"><di:waypoint x="3230" y="70"/><di:waypoint x="3345" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_fin_cyber_incident_f72_di" bpmnElement="sec_fin_cyber_incident_f72"><di:waypoint x="3725" y="70"/><di:waypoint x="3847" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/CMMN/20151109/MODEL"
+             xmlns:operaton="http://operaton.org/schema/1.0/cmmn"
+             id="defs_up09_claim_case" targetNamespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- UP-09 dynamic case with ad-hoc work and external experts (R45, R76): triage at once; investigation steps and an
+       external expert report (group EXTERNAL-EXPERT, external principals with scoped access) are discretionary and
+       repeatable; the decision needs triage; the milestone closes the case. -->
+  <case id="sangam-up09-claim-investigation" name="UP-09 Claim investigation (case)" operaton:historyTimeToLive="3650">
+    <casePlanModel id="u9_plan" name="Claim investigation" autoComplete="true">
+      <planItem id="u9_pi_triage" definitionRef="u9_triage"/>
+      <planItem id="u9_pi_investigate" definitionRef="u9_investigate">
+        <itemControl id="u9_ic1">
+          <repetitionRule id="u9_rep1"><condition id="u9_c1">${true}</condition></repetitionRule>
+          <manualActivationRule id="u9_mar1"><condition id="u9_c2">${true}</condition></manualActivationRule>
+        </itemControl>
+      </planItem>
+      <planItem id="u9_pi_expert" definitionRef="u9_expert">
+        <itemControl id="u9_ic2">
+          <repetitionRule id="u9_rep2"><condition id="u9_c3">${true}</condition></repetitionRule>
+          <manualActivationRule id="u9_mar2"><condition id="u9_c4">${true}</condition></manualActivationRule>
+        </itemControl>
+      </planItem>
+      <planItem id="u9_pi_decide" definitionRef="u9_decide">
+        <itemControl id="u9_ic3"><requiredRule id="u9_req"><condition id="u9_c5">${true}</condition></requiredRule></itemControl>
+        <entryCriterion id="u9_ec1" sentryRef="u9_s_triaged"/>
+      </planItem>
+      <planItem id="u9_pi_closed" definitionRef="u9_closedMs">
+        <entryCriterion id="u9_ec2" sentryRef="u9_s_decided"/>
+      </planItem>
+      <sentry id="u9_s_triaged" name="Triaged">
+        <planItemOnPart id="u9_op1" sourceRef="u9_pi_triage"><standardEvent>complete</standardEvent></planItemOnPart>
+      </sentry>
+      <sentry id="u9_s_decided" name="Decided">
+        <planItemOnPart id="u9_op2" sourceRef="u9_pi_decide"><standardEvent>complete</standardEvent></planItemOnPart>
+      </sentry>
+      <humanTask id="u9_triage" name="Triage claim" operaton:candidateGroups="CLAIMS-HANDLER"/>
+      <humanTask id="u9_investigate" name="Investigation step" operaton:candidateGroups="INVESTIGATOR"/>
+      <humanTask id="u9_expert" name="External expert report" operaton:candidateGroups="EXTERNAL-EXPERT"/>
+      <humanTask id="u9_decide" name="Decide claim" operaton:candidateGroups="CLAIMS-MANAGER"/>
+      <milestone id="u9_closedMs" name="Claim decided"/>
+    </casePlanModel>
+  </case>
+</definitions>

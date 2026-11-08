@@ -1,0 +1,72 @@
+{
+  "key": "sec-edu-scholarship/apply",
+  "version": "1.0.0",
+  "pack": "sec.edu.scholarship",
+  "title": {
+    "en": "Scholarship application",
+    "hi": "छात्रवृत्ति आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "applicantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Applicant name",
+        "hi": "आवेदक का नाम"
+      }
+    },
+    {
+      "id": "schemeId",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Scheme",
+        "hi": "योजना"
+      }
+    },
+    {
+      "id": "income",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Annual family income (INR)",
+        "hi": "वार्षिक पारिवारिक आय (रुपये)"
+      }
+    },
+    {
+      "id": "socialCategory",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Social category",
+        "hi": "सामाजिक श्रेणी"
+      }
+    },
+    {
+      "id": "bankAccount",
+      "type": "masked",
+      "required": false,
+      "label": {
+        "en": "Beneficiary bank account",
+        "hi": "लाभार्थी बैंक खाता"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

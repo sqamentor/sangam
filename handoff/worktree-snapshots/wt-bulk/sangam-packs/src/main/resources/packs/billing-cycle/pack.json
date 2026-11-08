@@ -1,0 +1,89 @@
+{
+  "id": "universal.billing-cycle",
+  "version": "1.0.0",
+  "name": {
+    "en": "Billing cycle: invoice, collection, arrears, penalty, waiver",
+    "hi": "बिलिंग चक्र: बीजक, संग्रह, बकाया, दंड, माफ़ी"
+  },
+  "domain": "Billing",
+  "description": "Per cycle (timer or message) the account register is loaded and one case per account runs (GP-09): invoice from the tenant tariff (slabs, fixed, percentage, DMN), demand raised in the receivable ledger, wait for the payment or the due date; payment is collected and receipted; after the due date arrears are checked, the penalty / interest of the tariff is levied, a reminder goes out, and an officer decides waiver / write-off (maker-checker) or continued recovery. Neutral to government or sector.",
+  "mainProcesses": [
+    "sangam-billing-cycle"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/billing-cycle/sangam-billing-cycle.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/billing-cycle/sangam-billing-account.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/billing-cycle/forms/decide.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/billing-cycle/forms/approve.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/billing-cycle/seed.json"
+    }
+  ],
+  "seed": "packs/billing-cycle/seed.json",
+  "connectors": [
+    {
+      "id": "billing.accounts",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Accounts billed in the cycle (register)"
+    },
+    {
+      "id": "billing.invoice",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Raise the invoice (receivable demand)"
+    },
+    {
+      "id": "billing.collect",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Record a confirmed payment and receipt"
+    },
+    {
+      "id": "billing.arrears",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Outstanding and arrears of the account"
+    },
+    {
+      "id": "billing.penalty",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Levy penalty / interest per tariff"
+    },
+    {
+      "id": "billing.waive",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Waiver / write-off"
+    }
+  ],
+  "covers": [
+    "N10",
+    "GP-09",
+    "GP-30",
+    "GP-08",
+    "GP-48",
+    "IFC-136",
+    "IFS-055"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": []
+}

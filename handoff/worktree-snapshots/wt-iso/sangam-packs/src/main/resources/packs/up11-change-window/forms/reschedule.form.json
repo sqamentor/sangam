@@ -1,0 +1,27 @@
+{
+  "key": "up11-change-window/reschedule",
+  "version": "1.0.0",
+  "pack": "universal.up11-change-window",
+  "title": {
+    "en": "Window falls in a freeze: reschedule",
+    "hi": "परिवर्तन रोक अवधि में: पुनर्निर्धारित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "changeWindowStart",
+      "type": "datetime",
+      "required": true,
+      "label": {
+        "en": "Change window start",
+        "hi": "परिवर्तन अवधि आरंभ"
+      }
+    }
+  ]
+}

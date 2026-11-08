@@ -1,0 +1,36 @@
+{
+  "key": "sec-cap-ipo-allotment/compensation",
+  "version": "1.0.0",
+  "pack": "sec.cap.ipo-allotment",
+  "title": {
+    "en": "Investor compensation for late unblocking",
+    "hi": "विलंबित अनब्लॉकिंग पर निवेशक क्षतिपूर्ति"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "compensationAmount",
+      "type": "decimal",
+      "required": true,
+      "label": {
+        "en": "Compensation (INR)",
+        "hi": "क्षतिपूर्ति (रुपये)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

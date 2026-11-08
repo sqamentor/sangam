@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Year-end closing. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_ifms_year_end_closing" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-ifms-year-end-closing" name="Year-end closing" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.ifms.year-end-closing</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>fiscalYear,closingCut</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="yc_start" name="Closing cut opened" operaton:initiator="initiator" operaton:formKey="sangam:ifms-year-end-closing/cut"></startEvent>
+    <serviceTask id="yc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>closingCut=MARCH_PRELIM;paoSeat=PAO-1;caaSeat=SECY-1;executionConnector=accounts.render;executionStep=render;reconcileRequired=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="yc_compile_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>yc_compile</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="yc_compile" name="Compile the cut" operaton:candidateGroups="${paoSeat}" operaton:formKey="sangam:ifms-year-end-closing/compile" operaton:dueDate="${yc_compileDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>compileDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="yc_compile_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>yc_compile</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paoSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="yc_compile_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="yc_compile_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>yc_compile</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>paoSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>compileDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="yc_compile_breachGw" name="Deemed?" default="ifms_year_end_closing_f6"></exclusiveGateway>
+    <exclusiveGateway id="yc_compile_done" name=""></exclusiveGateway>
+    <serviceTask id="yc_appr" name="Appropriation Accounts from the ledger" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>appropriation-accounts</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="yc_sign_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>yc_sign</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="yc_sign" name="Sign Appropriation Accounts (CAA)" operaton:candidateGroups="${caaSeat}" operaton:formKey="sangam:ifms-year-end-closing/sign" operaton:dueDate="${yc_signDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>signDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="yc_sign_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>yc_sign</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>caaSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="yc_sign_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="yc_sign_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>yc_sign</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>caaSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>signDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="yc_sign_breachGw" name="Deemed?" default="ifms_year_end_closing_f14"></exclusiveGateway>
+    <exclusiveGateway id="yc_sign_done" name=""></exclusiveGateway>
+    <callActivity id="yc_render" name="Render (core execution)" calledElement="sangam-core-execution"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="yc_signGw" name="" default="ifms_year_end_closing_f23"></exclusiveGateway>
+    <endEvent id="yc_end" name="Closed"></endEvent>
+    <boundaryEvent id="yc_compile_warn" name="SLA warning (75%)" attachedToRef="yc_compile" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${yc_compileWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="yc_compile_breach" name="SLA breached" attachedToRef="yc_compile" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${yc_compileDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="yc_sign_warn" name="SLA warning (75%)" attachedToRef="yc_sign" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${yc_signWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="yc_sign_breach" name="SLA breached" attachedToRef="yc_sign" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${yc_signDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="ifms_year_end_closing_f1" sourceRef="yc_compile_warn" targetRef="yc_compile_warnNotify"/>
+    <sequenceFlow id="ifms_year_end_closing_f2" sourceRef="yc_compile_warnNotify" targetRef="yc_compile_warnEnd"/>
+    <sequenceFlow id="ifms_year_end_closing_f3" sourceRef="yc_compile_breach" targetRef="yc_compile_breachAct"/>
+    <sequenceFlow id="ifms_year_end_closing_f4" sourceRef="yc_compile_breachAct" targetRef="yc_compile_breachGw"/>
+    <sequenceFlow id="ifms_year_end_closing_f5" name="deemed" sourceRef="yc_compile_breachGw" targetRef="yc_compile_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_year_end_closing_f6" name="escalated" sourceRef="yc_compile_breachGw" targetRef="yc_compile_slaPlan"/>
+    <sequenceFlow id="ifms_year_end_closing_f7" sourceRef="yc_compile_slaPlan" targetRef="yc_compile"/>
+    <sequenceFlow id="ifms_year_end_closing_f8" sourceRef="yc_compile" targetRef="yc_compile_done"/>
+    <sequenceFlow id="ifms_year_end_closing_f9" sourceRef="yc_sign_warn" targetRef="yc_sign_warnNotify"/>
+    <sequenceFlow id="ifms_year_end_closing_f10" sourceRef="yc_sign_warnNotify" targetRef="yc_sign_warnEnd"/>
+    <sequenceFlow id="ifms_year_end_closing_f11" sourceRef="yc_sign_breach" targetRef="yc_sign_breachAct"/>
+    <sequenceFlow id="ifms_year_end_closing_f12" sourceRef="yc_sign_breachAct" targetRef="yc_sign_breachGw"/>
+    <sequenceFlow id="ifms_year_end_closing_f13" name="deemed" sourceRef="yc_sign_breachGw" targetRef="yc_sign_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_year_end_closing_f14" name="escalated" sourceRef="yc_sign_breachGw" targetRef="yc_sign_slaPlan"/>
+    <sequenceFlow id="ifms_year_end_closing_f15" sourceRef="yc_sign_slaPlan" targetRef="yc_sign"/>
+    <sequenceFlow id="ifms_year_end_closing_f16" sourceRef="yc_sign" targetRef="yc_sign_done"/>
+    <sequenceFlow id="ifms_year_end_closing_f17" sourceRef="yc_start" targetRef="yc_defaults"/>
+    <sequenceFlow id="ifms_year_end_closing_f18" sourceRef="yc_defaults" targetRef="yc_compile_slaPlan"/>
+    <sequenceFlow id="ifms_year_end_closing_f19" sourceRef="yc_compile_done" targetRef="yc_appr"/>
+    <sequenceFlow id="ifms_year_end_closing_f20" sourceRef="yc_appr" targetRef="yc_sign_slaPlan"/>
+    <sequenceFlow id="ifms_year_end_closing_f21" sourceRef="yc_sign_done" targetRef="yc_signGw"/>
+    <sequenceFlow id="ifms_year_end_closing_f22" name="returned" sourceRef="yc_signGw" targetRef="yc_compile_slaPlan"><conditionExpression xsi:type="tFormalExpression">${signDecision == 'returnBill'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="ifms_year_end_closing_f23" name="signed" sourceRef="yc_signGw" targetRef="yc_render"/>
+    <sequenceFlow id="ifms_year_end_closing_f24" sourceRef="yc_render" targetRef="yc_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="ifms_year_end_closing_diagram">
+    <bpmndi:BPMNPlane id="ifms_year_end_closing_plane" bpmnElement="sangam-ifms-year-end-closing">
+      <bpmndi:BPMNShape id="yc_start_di" bpmnElement="yc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_defaults_di" bpmnElement="yc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_compile_slaPlan_di" bpmnElement="yc_compile_slaPlan"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_compile_di" bpmnElement="yc_compile"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_compile_warnNotify_di" bpmnElement="yc_compile_warnNotify"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_compile_warnEnd_di" bpmnElement="yc_compile_warnEnd"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_compile_breachAct_di" bpmnElement="yc_compile_breachAct"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_compile_breachGw_di" bpmnElement="yc_compile_breachGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_compile_done_di" bpmnElement="yc_compile_done"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_appr_di" bpmnElement="yc_appr"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_sign_slaPlan_di" bpmnElement="yc_sign_slaPlan"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_sign_di" bpmnElement="yc_sign"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_sign_warnNotify_di" bpmnElement="yc_sign_warnNotify"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_sign_warnEnd_di" bpmnElement="yc_sign_warnEnd"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_sign_breachAct_di" bpmnElement="yc_sign_breachAct"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_sign_breachGw_di" bpmnElement="yc_sign_breachGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_sign_done_di" bpmnElement="yc_sign_done"><dc:Bounds x="2025" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_render_di" bpmnElement="yc_render"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_signGw_di" bpmnElement="yc_signGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_end_di" bpmnElement="yc_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_compile_warn_di" bpmnElement="yc_compile_warn"><dc:Bounds x="523" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_compile_breach_di" bpmnElement="yc_compile_breach"><dc:Bounds x="553" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_sign_warn_di" bpmnElement="yc_sign_warn"><dc:Bounds x="1513" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="yc_sign_breach_di" bpmnElement="yc_sign_breach"><dc:Bounds x="1543" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f1_di" bpmnElement="ifms_year_end_closing_f1"><di:waypoint x="541" y="128"/><di:waypoint x="541" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f2_di" bpmnElement="ifms_year_end_closing_f2"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f3_di" bpmnElement="ifms_year_end_closing_f3"><di:waypoint x="571" y="128"/><di:waypoint x="571" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f4_di" bpmnElement="ifms_year_end_closing_f4"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f5_di" bpmnElement="ifms_year_end_closing_f5"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f6_di" bpmnElement="ifms_year_end_closing_f6"><di:waypoint x="895" y="95"/><di:waypoint x="895" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f7_di" bpmnElement="ifms_year_end_closing_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f8_di" bpmnElement="ifms_year_end_closing_f8"><di:waypoint x="615" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f9_di" bpmnElement="ifms_year_end_closing_f9"><di:waypoint x="1531" y="128"/><di:waypoint x="1531" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f10_di" bpmnElement="ifms_year_end_closing_f10"><di:waypoint x="1770" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f11_di" bpmnElement="ifms_year_end_closing_f11"><di:waypoint x="1561" y="128"/><di:waypoint x="1561" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f12_di" bpmnElement="ifms_year_end_closing_f12"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f13_di" bpmnElement="ifms_year_end_closing_f13"><di:waypoint x="1910" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f14_di" bpmnElement="ifms_year_end_closing_f14"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="135"/><di:waypoint x="1390" y="135"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f15_di" bpmnElement="ifms_year_end_closing_f15"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f16_di" bpmnElement="ifms_year_end_closing_f16"><di:waypoint x="1605" y="70"/><di:waypoint x="2025" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f17_di" bpmnElement="ifms_year_end_closing_f17"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f18_di" bpmnElement="ifms_year_end_closing_f18"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f19_di" bpmnElement="ifms_year_end_closing_f19"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f20_di" bpmnElement="ifms_year_end_closing_f20"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f21_di" bpmnElement="ifms_year_end_closing_f21"><di:waypoint x="2075" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f22_di" bpmnElement="ifms_year_end_closing_f22"><di:waypoint x="2215" y="95"/><di:waypoint x="2215" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f23_di" bpmnElement="ifms_year_end_closing_f23"><di:waypoint x="2240" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ifms_year_end_closing_f24_di" bpmnElement="ifms_year_end_closing_f24"><di:waypoint x="2430" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

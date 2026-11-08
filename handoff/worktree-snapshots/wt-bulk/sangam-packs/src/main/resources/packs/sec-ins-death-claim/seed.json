@@ -1,0 +1,134 @@
+{
+  "offices": [
+    {
+      "id": "LIFE-CLAIMS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "LIFE-CLAIMS",
+      "role": "HANDLER",
+      "office": "LIFE-CLAIMS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CLAIMS-MGR",
+      "name": {
+        "en": "Life claims handler",
+        "hi": "जीवन दावा संचालक"
+      }
+    },
+    {
+      "id": "INVESTIGATOR",
+      "role": "INVESTIGATOR",
+      "office": "LIFE-CLAIMS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CLAIMS-MGR",
+      "name": {
+        "en": "Claim investigator",
+        "hi": "दावा अन्वेषक"
+      }
+    },
+    {
+      "id": "CLAIMS-MGR",
+      "role": "CLAIMSMGR",
+      "office": "LIFE-CLAIMS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CLAIMS-HEAD",
+      "name": {
+        "en": "Claims manager",
+        "hi": "दावा प्रबंधक"
+      }
+    },
+    {
+      "id": "CLAIMS-HEAD",
+      "role": "CLAIMSHEAD",
+      "office": "LIFE-CLAIMS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Head of claims",
+        "hi": "दावा प्रमुख"
+      }
+    },
+    {
+      "id": "CLAIMS-REVIEW-COMMITTEE",
+      "role": "CRC",
+      "office": "LIFE-CLAIMS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Claims review committee",
+        "hi": "दावा समीक्षा समिति"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "LIFE-CLAIMS",
+      "person": "idc.life-claims",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "INVESTIGATOR",
+      "person": "idc.investigator",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CLAIMS-MGR",
+      "person": "idc.claims-mgr",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CLAIMS-HEAD",
+      "person": "idc.claims-head",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CLAIMS-REVIEW-COMMITTEE",
+      "person": "idc.claims-review-committee",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "HANDLER",
+      "name": {
+        "en": "Life claims handler",
+        "hi": "जीवन दावा संचालक"
+      }
+    },
+    {
+      "code": "INVESTIGATOR",
+      "name": {
+        "en": "Claim investigator",
+        "hi": "दावा अन्वेषक"
+      }
+    },
+    {
+      "code": "CLAIMSMGR",
+      "name": {
+        "en": "Claims manager",
+        "hi": "दावा प्रबंधक"
+      }
+    },
+    {
+      "code": "CLAIMSHEAD",
+      "name": {
+        "en": "Head of claims",
+        "hi": "दावा प्रमुख"
+      }
+    },
+    {
+      "code": "CRC",
+      "name": {
+        "en": "Claims review committee",
+        "hi": "दावा समीक्षा समिति"
+      }
+    }
+  ]
+}

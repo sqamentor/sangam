@@ -1,0 +1,134 @@
+{
+  "offices": [
+    {
+      "id": "OT",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SURGEON",
+      "role": "SURGEON",
+      "office": "OT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "OT-IN-CHARGE",
+      "name": {
+        "en": "Surgeon",
+        "hi": "शल्य चिकित्सक"
+      }
+    },
+    {
+      "id": "ANAESTHETIST",
+      "role": "ANAES",
+      "office": "OT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "OT-IN-CHARGE",
+      "name": {
+        "en": "Anaesthetist",
+        "hi": "निश्चेतना विशेषज्ञ"
+      }
+    },
+    {
+      "id": "OT-NURSE",
+      "role": "NURSE",
+      "office": "OT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "OT-IN-CHARGE",
+      "name": {
+        "en": "OT nurse",
+        "hi": "शल्य कक्ष परिचारिका"
+      }
+    },
+    {
+      "id": "RECOVERY-NURSE",
+      "role": "NURSE",
+      "office": "OT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "OT-IN-CHARGE",
+      "name": {
+        "en": "Recovery nurse",
+        "hi": "रिकवरी परिचारिका"
+      }
+    },
+    {
+      "id": "OT-IN-CHARGE",
+      "role": "OTIC",
+      "office": "OT",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "OT in-charge",
+        "hi": "शल्य कक्ष प्रभारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SURGEON",
+      "person": "hot.surgeon",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "ANAESTHETIST",
+      "person": "hot.anaesthetist",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "OT-NURSE",
+      "person": "hot.ot-nurse",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "RECOVERY-NURSE",
+      "person": "hot.recovery-nurse",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "OT-IN-CHARGE",
+      "person": "hot.ot-in-charge",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "SURGEON",
+      "name": {
+        "en": "Surgeon",
+        "hi": "शल्य चिकित्सक"
+      }
+    },
+    {
+      "code": "ANAES",
+      "name": {
+        "en": "Anaesthetist",
+        "hi": "निश्चेतना विशेषज्ञ"
+      }
+    },
+    {
+      "code": "NURSE",
+      "name": {
+        "en": "OT nurse",
+        "hi": "शल्य कक्ष परिचारिका"
+      }
+    },
+    {
+      "code": "NURSE",
+      "name": {
+        "en": "Recovery nurse",
+        "hi": "रिकवरी परिचारिका"
+      }
+    },
+    {
+      "code": "OTIC",
+      "name": {
+        "en": "OT in-charge",
+        "hi": "शल्य कक्ष प्रभारी"
+      }
+    }
+  ]
+}

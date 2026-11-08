@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "BRANCH-LC",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "DOCS-CUSTODIAN",
+      "role": "CUSTODIAN",
+      "office": "BRANCH-LC",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "BRANCH-MGR",
+      "name": {
+        "en": "Documents custodian",
+        "hi": "दस्तावेज़ अभिरक्षक"
+      }
+    },
+    {
+      "id": "BRANCH-MGR",
+      "role": "BRANCHMGR",
+      "office": "BRANCH-LC",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Branch manager",
+        "hi": "शाखा प्रबंधक"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DOCS-CUSTODIAN",
+      "person": "blc.docs-custodian",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BRANCH-MGR",
+      "person": "blc.branch-mgr",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CUSTODIAN",
+      "name": {
+        "en": "Documents custodian",
+        "hi": "दस्तावेज़ अभिरक्षक"
+      }
+    },
+    {
+      "code": "BRANCHMGR",
+      "name": {
+        "en": "Branch manager",
+        "hi": "शाखा प्रबंधक"
+      }
+    }
+  ]
+}

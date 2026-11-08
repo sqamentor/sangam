@@ -1,0 +1,7 @@
+{
+  "id": "example.echo-ledger",
+  "version": "1.0.0",
+  "name": "Example echo ledger connector and pack",
+  "vendor": "Example Ltd",
+  "requires": {"sangam": ">=0.1.0-0", "engine": ">=2.2.0 <3.0.0", "modules": {"sangam-integration": ">=0.1.0-0"}}
+}

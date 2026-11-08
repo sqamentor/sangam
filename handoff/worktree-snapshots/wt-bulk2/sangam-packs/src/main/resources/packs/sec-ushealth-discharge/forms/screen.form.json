@@ -1,0 +1,47 @@
+{
+  "key": "sec-ushealth-discharge/screen",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.discharge",
+  "title": {
+    "en": "Discharge planning screen",
+    "es": "Evaluación inicial de planificación del alta"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "dischargeRisk",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Risk of adverse consequences without a plan",
+        "es": "Riesgo de consecuencias adversas sin un plan"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "screenDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "needsPlan",
+        "label": {
+          "en": "Discharge plan needed",
+          "es": "Se necesita un plan de alta"
+        }
+      },
+      {
+        "value": "noPlan",
+        "label": {
+          "en": "No plan needed",
+          "es": "No se necesita plan"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "SECOPS",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SOC-LEAD",
+      "role": "SOC",
+      "office": "SECOPS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "CISO",
+      "name": {
+        "en": "SOC lead",
+        "hi": "एसओसी प्रमुख"
+      }
+    },
+    {
+      "id": "CISO",
+      "role": "CISO",
+      "office": "SECOPS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Chief information security officer",
+        "hi": "मुख्य सूचना सुरक्षा अधिकारी"
+      }
+    },
+    {
+      "id": "DPO",
+      "role": "DPO",
+      "office": "SECOPS",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Data protection officer",
+        "hi": "डेटा संरक्षण अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SOC-LEAD",
+      "person": "fci.soc-lead",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CISO",
+      "person": "fci.ciso",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "DPO",
+      "person": "fci.dpo",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "SOC",
+      "name": {
+        "en": "SOC lead",
+        "hi": "एसओसी प्रमुख"
+      }
+    },
+    {
+      "code": "CISO",
+      "name": {
+        "en": "Chief information security officer",
+        "hi": "मुख्य सूचना सुरक्षा अधिकारी"
+      }
+    },
+    {
+      "code": "DPO",
+      "name": {
+        "en": "Data protection officer",
+        "hi": "डेटा संरक्षण अधिकारी"
+      }
+    }
+  ]
+}

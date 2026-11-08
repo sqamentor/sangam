@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Court case. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_court_case" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_hearingDateSet" name="sangam.hearingDateSet"/>
+  <process id="sangam-court-case" name="Court case" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.court-case</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>caseNo,court</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="cc_start" name="Notice received" operaton:initiator="initiator" operaton:formKey="sangam:court-case/notice"></startEvent>
+    <serviceTask id="cc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>nodalSeat=LEGAL-NODAL;deptSeat=DEPT-OFFICER;limitationPeriod=P90D;stayInForce=false;impugnedCaseKey=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="cc_counsel" name="Engage counsel and assign" operaton:candidateGroups="${nodalSeat}" operaton:formKey="sangam:court-case/counsel"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cc_comments_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cc_comments</operaton:string></operaton:field><operaton:field name="defaultSpec"><operaton:string>10WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="cc_comments" name="Para-wise comments" operaton:candidateGroups="${deptSeat}" operaton:formKey="sangam:court-case/comments" operaton:dueDate="${cc_commentsDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cc_comments_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cc_comments</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>deptSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="cc_comments_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="cc_comments_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>cc_comments</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>deptSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cc_comments_breachGw" name="Deemed?" default="court_case_f6"></exclusiveGateway>
+    <exclusiveGateway id="cc_comments_done" name=""></exclusiveGateway>
+    <userTask id="cc_affidavit" name="File counter affidavit" operaton:candidateGroups="${nodalSeat}" operaton:formKey="sangam:court-case/affidavit"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cc_schedule" name="Next hearing (GP-51)" operaton:class="org.sangam.packs.gov.HearingScheduleDelegate"></serviceTask>
+    <eventBasedGateway id="cc_waitA" name="Reminder or new date"></eventBasedGateway>
+    <intermediateCatchEvent id="cc_reminder" name="Three days before"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hearingReminderAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="cc_newDate1" name="Date changed (LIMBS)"><messageEventDefinition messageRef="msg_sangam_hearingDateSet"/></intermediateCatchEvent>
+    <serviceTask id="cc_brief" name="Brief counsel" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>hearing-brief</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>email,inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>nodalSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="cc_waitB" name="Hearing or new date"></eventBasedGateway>
+    <intermediateCatchEvent id="cc_hearing" name="Hearing"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${hearingAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="cc_newDate2" name="Date changed (LIMBS)"><messageEventDefinition messageRef="msg_sangam_hearingDateSet"/></intermediateCatchEvent>
+    <userTask id="cc_outcome" name="Record hearing outcome" operaton:candidateGroups="${nodalSeat}" operaton:formKey="sangam:court-case/outcome"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>hearingOutcome</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="cc_outGw" name="Outcome?" default="court_case_f28"></exclusiveGateway>
+    <serviceTask id="cc_stay" name="Stay: suspend the impugned case (GP-40)" operaton:class="org.sangam.packs.core.SuspensionDelegate"><extensionElements><operaton:field name="op"><operaton:string>SUSPEND</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cc_stayGw" name="Stay in force?" default="court_case_f30"></exclusiveGateway>
+    <serviceTask id="cc_vacate" name="Stay vacated: resume" operaton:class="org.sangam.packs.core.SuspensionDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUME</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="cc_decide" name="Comply or appeal" operaton:candidateGroups="${nodalSeat}" operaton:formKey="sangam:court-case/decide"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>judgmentDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="cc_decGw" name="" default="court_case_f36"></exclusiveGateway>
+    <serviceTask id="cc_limitation" name="Limitation period" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>limitation</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${limitationPeriod}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <userTask id="cc_fileAppeal" name="File appeal before limitation" operaton:candidateGroups="${nodalSeat}" operaton:formKey="sangam:court-case/file-appeal" operaton:dueDate="${limitationDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="cc_appealCase" name="Appeal as a linked case" operaton:class="org.sangam.packs.core.LinkedInstanceDelegate"><extensionElements><operaton:field name="processKey"><operaton:string>sangam-court-case</operaton:string></operaton:field><operaton:field name="linkType"><operaton:string>appeal</operaton:string></operaton:field><operaton:field name="inherit"><operaton:string>subject,caseNo,court,impugnedCaseKey,actingSeat,initiator</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="cc_comply" name="Implement the order" operaton:candidateGroups="${deptSeat}" operaton:formKey="sangam:court-case/comply"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <callActivity id="cc_close" name="Close (core)" calledElement="sangam-core-closure" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.0"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="cc_end" name="Closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SUCCESS</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="cc_comments_warn" name="SLA warning (75%)" attachedToRef="cc_comments" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${cc_commentsWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="cc_comments_breach" name="SLA breached" attachedToRef="cc_comments" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${cc_commentsDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="court_case_f1" sourceRef="cc_comments_warn" targetRef="cc_comments_warnNotify"/>
+    <sequenceFlow id="court_case_f2" sourceRef="cc_comments_warnNotify" targetRef="cc_comments_warnEnd"/>
+    <sequenceFlow id="court_case_f3" sourceRef="cc_comments_breach" targetRef="cc_comments_breachAct"/>
+    <sequenceFlow id="court_case_f4" sourceRef="cc_comments_breachAct" targetRef="cc_comments_breachGw"/>
+    <sequenceFlow id="court_case_f5" name="deemed" sourceRef="cc_comments_breachGw" targetRef="cc_comments_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="court_case_f6" name="escalated" sourceRef="cc_comments_breachGw" targetRef="cc_comments_slaPlan"/>
+    <sequenceFlow id="court_case_f7" sourceRef="cc_comments_slaPlan" targetRef="cc_comments"/>
+    <sequenceFlow id="court_case_f8" sourceRef="cc_comments" targetRef="cc_comments_done"/>
+    <sequenceFlow id="court_case_f9" sourceRef="cc_start" targetRef="cc_defaults"/>
+    <sequenceFlow id="court_case_f10" sourceRef="cc_defaults" targetRef="cc_counsel"/>
+    <sequenceFlow id="court_case_f11" sourceRef="cc_counsel" targetRef="cc_comments_slaPlan"/>
+    <sequenceFlow id="court_case_f12" sourceRef="cc_comments_done" targetRef="cc_affidavit"/>
+    <sequenceFlow id="court_case_f13" sourceRef="cc_affidavit" targetRef="cc_schedule"/>
+    <sequenceFlow id="court_case_f14" sourceRef="cc_schedule" targetRef="cc_waitA"/>
+    <sequenceFlow id="court_case_f15" sourceRef="cc_waitA" targetRef="cc_reminder"/>
+    <sequenceFlow id="court_case_f16" sourceRef="cc_waitA" targetRef="cc_newDate1"/>
+    <sequenceFlow id="court_case_f17" sourceRef="cc_newDate1" targetRef="cc_schedule"/>
+    <sequenceFlow id="court_case_f18" sourceRef="cc_reminder" targetRef="cc_brief"/>
+    <sequenceFlow id="court_case_f19" sourceRef="cc_brief" targetRef="cc_waitB"/>
+    <sequenceFlow id="court_case_f20" sourceRef="cc_waitB" targetRef="cc_hearing"/>
+    <sequenceFlow id="court_case_f21" sourceRef="cc_waitB" targetRef="cc_newDate2"/>
+    <sequenceFlow id="court_case_f22" sourceRef="cc_newDate2" targetRef="cc_schedule"/>
+    <sequenceFlow id="court_case_f23" sourceRef="cc_hearing" targetRef="cc_outcome"/>
+    <sequenceFlow id="court_case_f24" sourceRef="cc_outcome" targetRef="cc_outGw"/>
+    <sequenceFlow id="court_case_f25" name="adjourned" sourceRef="cc_outGw" targetRef="cc_schedule"><conditionExpression xsi:type="tFormalExpression">${hearingOutcome == 'adjourned'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="court_case_f26" name="stay" sourceRef="cc_outGw" targetRef="cc_stay"><conditionExpression xsi:type="tFormalExpression">${hearingOutcome == 'interimOrder'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="court_case_f27" sourceRef="cc_stay" targetRef="cc_schedule"/>
+    <sequenceFlow id="court_case_f28" name="judgment" sourceRef="cc_outGw" targetRef="cc_stayGw"/>
+    <sequenceFlow id="court_case_f29" name="yes" sourceRef="cc_stayGw" targetRef="cc_vacate"><conditionExpression xsi:type="tFormalExpression">${stayInForce}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="court_case_f30" name="no" sourceRef="cc_stayGw" targetRef="cc_decide"/>
+    <sequenceFlow id="court_case_f31" sourceRef="cc_vacate" targetRef="cc_decide"/>
+    <sequenceFlow id="court_case_f32" sourceRef="cc_decide" targetRef="cc_decGw"/>
+    <sequenceFlow id="court_case_f33" name="appeal" sourceRef="cc_decGw" targetRef="cc_limitation"><conditionExpression xsi:type="tFormalExpression">${judgmentDecision == 'appeal'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="court_case_f34" sourceRef="cc_limitation" targetRef="cc_fileAppeal"/>
+    <sequenceFlow id="court_case_f35" sourceRef="cc_fileAppeal" targetRef="cc_appealCase"/>
+    <sequenceFlow id="court_case_f36" name="comply" sourceRef="cc_decGw" targetRef="cc_comply"/>
+    <sequenceFlow id="court_case_f37" sourceRef="cc_appealCase" targetRef="cc_close"/>
+    <sequenceFlow id="court_case_f38" sourceRef="cc_comply" targetRef="cc_close"/>
+    <sequenceFlow id="court_case_f39" sourceRef="cc_close" targetRef="cc_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="court_case_diagram">
+    <bpmndi:BPMNPlane id="court_case_plane" bpmnElement="sangam-court-case">
+      <bpmndi:BPMNShape id="cc_start_di" bpmnElement="cc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_defaults_di" bpmnElement="cc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_counsel_di" bpmnElement="cc_counsel"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comments_slaPlan_di" bpmnElement="cc_comments_slaPlan"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comments_di" bpmnElement="cc_comments"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comments_warnNotify_di" bpmnElement="cc_comments_warnNotify"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comments_warnEnd_di" bpmnElement="cc_comments_warnEnd"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comments_breachAct_di" bpmnElement="cc_comments_breachAct"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comments_breachGw_di" bpmnElement="cc_comments_breachGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comments_done_di" bpmnElement="cc_comments_done"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_affidavit_di" bpmnElement="cc_affidavit"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_schedule_di" bpmnElement="cc_schedule"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_waitA_di" bpmnElement="cc_waitA"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_reminder_di" bpmnElement="cc_reminder"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_newDate1_di" bpmnElement="cc_newDate1"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_brief_di" bpmnElement="cc_brief"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_waitB_di" bpmnElement="cc_waitB"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_hearing_di" bpmnElement="cc_hearing"><dc:Bounds x="2362" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_newDate2_di" bpmnElement="cc_newDate2"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_outcome_di" bpmnElement="cc_outcome"><dc:Bounds x="2495" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_outGw_di" bpmnElement="cc_outGw"><dc:Bounds x="2685" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_stay_di" bpmnElement="cc_stay"><dc:Bounds x="2825" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_stayGw_di" bpmnElement="cc_stayGw"><dc:Bounds x="2850" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_vacate_di" bpmnElement="cc_vacate"><dc:Bounds x="2990" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_decide_di" bpmnElement="cc_decide"><dc:Bounds x="3155" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_decGw_di" bpmnElement="cc_decGw"><dc:Bounds x="3345" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_limitation_di" bpmnElement="cc_limitation"><dc:Bounds x="3485" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_fileAppeal_di" bpmnElement="cc_fileAppeal"><dc:Bounds x="3650" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_appealCase_di" bpmnElement="cc_appealCase"><dc:Bounds x="3815" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comply_di" bpmnElement="cc_comply"><dc:Bounds x="3485" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_close_di" bpmnElement="cc_close"><dc:Bounds x="3980" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_end_di" bpmnElement="cc_end"><dc:Bounds x="4177" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comments_warn_di" bpmnElement="cc_comments_warn"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cc_comments_breach_di" bpmnElement="cc_comments_breach"><dc:Bounds x="718" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="court_case_f1_di" bpmnElement="court_case_f1"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f2_di" bpmnElement="court_case_f2"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f3_di" bpmnElement="court_case_f3"><di:waypoint x="736" y="128"/><di:waypoint x="736" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f4_di" bpmnElement="court_case_f4"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f5_di" bpmnElement="court_case_f5"><di:waypoint x="1085" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f6_di" bpmnElement="court_case_f6"><di:waypoint x="1060" y="95"/><di:waypoint x="1060" y="135"/><di:waypoint x="565" y="135"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f7_di" bpmnElement="court_case_f7"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f8_di" bpmnElement="court_case_f8"><di:waypoint x="780" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f9_di" bpmnElement="court_case_f9"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f10_di" bpmnElement="court_case_f10"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f11_di" bpmnElement="court_case_f11"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f12_di" bpmnElement="court_case_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f13_di" bpmnElement="court_case_f13"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f14_di" bpmnElement="court_case_f14"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f15_di" bpmnElement="court_case_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1806" y="70"/><di:waypoint x="1806" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f16_di" bpmnElement="court_case_f16"><di:waypoint x="1745" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f17_di" bpmnElement="court_case_f17"><di:waypoint x="1885" y="88"/><di:waypoint x="1885" y="128"/><di:waypoint x="1555" y="128"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f18_di" bpmnElement="court_case_f18"><di:waypoint x="1903" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f19_di" bpmnElement="court_case_f19"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f20_di" bpmnElement="court_case_f20"><di:waypoint x="2240" y="195"/><di:waypoint x="2301" y="195"/><di:waypoint x="2301" y="320"/><di:waypoint x="2362" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f21_di" bpmnElement="court_case_f21"><di:waypoint x="2240" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f22_di" bpmnElement="court_case_f22"><di:waypoint x="2380" y="213"/><di:waypoint x="2380" y="238"/><di:waypoint x="1555" y="238"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f23_di" bpmnElement="court_case_f23"><di:waypoint x="2398" y="320"/><di:waypoint x="2495" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f24_di" bpmnElement="court_case_f24"><di:waypoint x="2595" y="320"/><di:waypoint x="2685" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f25_di" bpmnElement="court_case_f25"><di:waypoint x="2710" y="345"/><di:waypoint x="2710" y="363"/><di:waypoint x="1555" y="363"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f26_di" bpmnElement="court_case_f26"><di:waypoint x="2735" y="320"/><di:waypoint x="2780" y="320"/><di:waypoint x="2780" y="445"/><di:waypoint x="2825" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f27_di" bpmnElement="court_case_f27"><di:waypoint x="2875" y="485"/><di:waypoint x="2875" y="517"/><di:waypoint x="1555" y="517"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f28_di" bpmnElement="court_case_f28"><di:waypoint x="2735" y="320"/><di:waypoint x="2850" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f29_di" bpmnElement="court_case_f29"><di:waypoint x="2900" y="320"/><di:waypoint x="2990" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f30_di" bpmnElement="court_case_f30"><di:waypoint x="2900" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f31_di" bpmnElement="court_case_f31"><di:waypoint x="3090" y="320"/><di:waypoint x="3155" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f32_di" bpmnElement="court_case_f32"><di:waypoint x="3255" y="320"/><di:waypoint x="3345" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f33_di" bpmnElement="court_case_f33"><di:waypoint x="3395" y="320"/><di:waypoint x="3440" y="320"/><di:waypoint x="3440" y="445"/><di:waypoint x="3485" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f34_di" bpmnElement="court_case_f34"><di:waypoint x="3585" y="445"/><di:waypoint x="3650" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f35_di" bpmnElement="court_case_f35"><di:waypoint x="3750" y="445"/><di:waypoint x="3815" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f36_di" bpmnElement="court_case_f36"><di:waypoint x="3395" y="320"/><di:waypoint x="3485" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f37_di" bpmnElement="court_case_f37"><di:waypoint x="3915" y="445"/><di:waypoint x="3947" y="445"/><di:waypoint x="3947" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f38_di" bpmnElement="court_case_f38"><di:waypoint x="3585" y="320"/><di:waypoint x="3980" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="court_case_f39_di" bpmnElement="court_case_f39"><di:waypoint x="4080" y="320"/><di:waypoint x="4177" y="320"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Default generic approval of a booking (N01, C02). Started by BookingService.confirm through the ApprovalPort with the
+     variables bookingId, bookingRef, resourceId, typeId, requesterId, startsAt, endsAt, entitlementClass, tenantId,
+     approverSeatId (from the resource type configuration: extra.approverSeat) and approvalTimeout (ISO-8601 duration,
+     from extra.approvalHoldMinutes). The approver is the person holding the configured seat at task time (sangam-security
+     seat assignment, sangam.seatVariable). A pack may deploy its own process under the same key; a tenant-specific
+     deployment wins over this shared one. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:operaton="http://operaton.org/schema/1.0/bpmn"
+                  id="sangam-booking-approval-definitions"
+                  targetNamespace="http://sangam.org/resources">
+
+  <bpmn:process id="sangam-booking-approval" name="Booking approval" isExecutable="true"
+                operaton:historyTimeToLive="P180D">
+    <bpmn:extensionElements>
+      <operaton:properties>
+        <operaton:property name="sangam.recordInitiator" value="true"/>
+      </operaton:properties>
+    </bpmn:extensionElements>
+
+    <bpmn:startEvent id="start" name="Approval requested">
+      <bpmn:outgoing>toReview</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:sequenceFlow id="toReview" sourceRef="start" targetRef="review"/>
+
+    <bpmn:userTask id="review" name="Review booking ${bookingRef}">
+      <bpmn:extensionElements>
+        <operaton:properties>
+          <operaton:property name="sangam.seatVariable" value="approverSeatId"/>
+          <operaton:property name="sangam.duty" value="APPROVER"/>
+          <operaton:property name="sangam.caseVariable" value="bookingId"/>
+        </operaton:properties>
+        <operaton:formData>
+          <operaton:formField id="approved" label="Approve" type="boolean" defaultValue="false"/>
+          <operaton:formField id="reason" label="Reason" type="string"/>
+        </operaton:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toReview</bpmn:incoming>
+      <bpmn:outgoing>toDecision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:boundaryEvent id="timeout" name="No decision in time" attachedToRef="review" cancelActivity="true">
+      <bpmn:outgoing>toTimeoutDecision</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="timeoutTimer">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${approvalTimeout}</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <bpmn:sequenceFlow id="toDecision" sourceRef="review" targetRef="decision"/>
+    <bpmn:sequenceFlow id="toTimeoutDecision" sourceRef="timeout" targetRef="timeoutDecision"/>
+
+    <bpmn:serviceTask id="decision" name="Apply decision"
+                      operaton:class="org.sangam.resources.bpmn.BookingActionDelegate">
+      <bpmn:extensionElements>
+        <operaton:field name="action" stringValue="APPROVAL_DECISION"/>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toDecision</bpmn:incoming>
+      <bpmn:outgoing>toEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="timeoutDecision" name="Reject on timeout"
+                      operaton:class="org.sangam.resources.bpmn.BookingActionDelegate">
+      <bpmn:extensionElements>
+        <operaton:field name="action" stringValue="APPROVAL_DECISION"/>
+        <operaton:inputOutput>
+          <operaton:inputParameter name="approved">${false}</operaton:inputParameter>
+          <operaton:inputParameter name="reason">approval timed out</operaton:inputParameter>
+        </operaton:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>toTimeoutDecision</bpmn:incoming>
+      <bpmn:outgoing>toEndTimeout</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:sequenceFlow id="toEnd" sourceRef="decision" targetRef="end"/>
+    <bpmn:sequenceFlow id="toEndTimeout" sourceRef="timeoutDecision" targetRef="endTimeout"/>
+
+    <!-- the booking may already have lapsed (hold-expiry sweeper); the delegate then raises BpmnError INVALID_STATE -->
+    <bpmn:boundaryEvent id="stale" name="Booking no longer pending" attachedToRef="decision" cancelActivity="true">
+      <bpmn:outgoing>toEndStale</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="staleError" errorRef="invalidState"/>
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="staleTimeout" name="Booking no longer pending" attachedToRef="timeoutDecision" cancelActivity="true">
+      <bpmn:outgoing>toEndStaleTimeout</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="staleTimeoutError" errorRef="invalidState"/>
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="toEndStale" sourceRef="stale" targetRef="endStale"/>
+    <bpmn:sequenceFlow id="toEndStaleTimeout" sourceRef="staleTimeout" targetRef="endStale"/>
+
+    <bpmn:endEvent id="end" name="Decided">
+      <bpmn:incoming>toEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="endTimeout" name="Rejected on timeout">
+      <bpmn:incoming>toEndTimeout</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="endStale" name="Nothing to decide">
+      <bpmn:incoming>toEndStale</bpmn:incoming>
+      <bpmn:incoming>toEndStaleTimeout</bpmn:incoming>
+    </bpmn:endEvent>
+  </bpmn:process>
+
+  <bpmn:error id="invalidState" name="Invalid state" errorCode="INVALID_STATE"/>
+
+  <bpmndi:BPMNDiagram id="diagram">
+    <bpmndi:BPMNPlane id="plane" bpmnElement="sangam-booking-approval">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="100" y="100" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="review_di" bpmnElement="review"><dc:Bounds x="190" y="78" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="timeout_di" bpmnElement="timeout"><dc:Bounds x="222" y="140" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="decision_di" bpmnElement="decision"><dc:Bounds x="350" y="78" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="stale_di" bpmnElement="stale"><dc:Bounds x="382" y="140" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="timeoutDecision_di" bpmnElement="timeoutDecision"><dc:Bounds x="350" y="220" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="staleTimeout_di" bpmnElement="staleTimeout"><dc:Bounds x="382" y="282" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="510" y="100" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endTimeout_di" bpmnElement="endTimeout"><dc:Bounds x="510" y="242" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endStale_di" bpmnElement="endStale"><dc:Bounds x="510" y="350" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="toReview_di" bpmnElement="toReview"><di:waypoint x="136" y="118"/><di:waypoint x="190" y="118"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toDecision_di" bpmnElement="toDecision"><di:waypoint x="290" y="118"/><di:waypoint x="350" y="118"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toTimeoutDecision_di" bpmnElement="toTimeoutDecision"><di:waypoint x="240" y="176"/><di:waypoint x="240" y="260"/><di:waypoint x="350" y="260"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEnd_di" bpmnElement="toEnd"><di:waypoint x="450" y="118"/><di:waypoint x="510" y="118"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEndTimeout_di" bpmnElement="toEndTimeout"><di:waypoint x="450" y="260"/><di:waypoint x="510" y="260"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEndStale_di" bpmnElement="toEndStale"><di:waypoint x="400" y="176"/><di:waypoint x="400" y="200"/><di:waypoint x="480" y="200"/><di:waypoint x="480" y="368"/><di:waypoint x="510" y="368"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="toEndStaleTimeout_di" bpmnElement="toEndStaleTimeout"><di:waypoint x="400" y="318"/><di:waypoint x="400" y="368"/><di:waypoint x="510" y="368"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
