@@ -44,6 +44,46 @@ try {
   check((await run(['verify'])).code !== 0, 'a lost or rewritten mirror is reported');
   writeFileSync(join(mirrorDir, 'mirror.jsonl'), mirror);
 
+  // ── owner-signed approvals (throwaway keys generated here, deleted at the end; never the owner's key) ──
+  const { execFileSync } = await import('node:child_process');
+  const kdir = mkdtempSync(join(tmpdir(), 'sangam-push-keys-'));
+  try {
+    for (const k of ['owner', 'other']) {
+      execFileSync('ssh-keygen', ['-q', '-t', 'ed25519', '-N', '', '-C', k, '-f', join(kdir, k)], { stdio: 'ignore' });
+    }
+    const pub = readFileSync(join(kdir, 'owner.pub'), 'utf8').trim().split(' ');
+    const signers = join(kdir, 'allowed_signers');
+    writeFileSync(signers, `owner@sangam namespaces="sangam-push" ${pub[0]} ${pub[1]}\n`);
+    const senv = { ...env, SANGAM_ALLOWED_SIGNERS: signers };
+    const runS = (args) => new Promise((res) => {
+      const p = spawn(process.execPath, [TOOL, ...args], { env: senv, stdio: ['ignore', 'pipe', 'pipe'] });
+      let out = ''; p.stdout.on('data', (d) => { out += d; }); p.stderr.on('data', (d) => { out += d; });
+      p.on('close', (code) => res({ code, out }));
+    });
+    const sha2 = 'a'.repeat(40);
+    const txt = (await runS(['text', '--sha', sha2, '--remote', 'r', '--ref', 'refs/heads/main', '--words', 'push it'])).out;
+    const tf = join(kdir, 'a.txt');
+    writeFileSync(tf, txt);
+    execFileSync('ssh-keygen', ['-Y', 'sign', '-f', join(kdir, 'owner'), '-n', 'sangam-push', tf], { stdio: 'ignore' });
+    const good = await runS(['record', '--signed', tf, '--sig', tf + '.sig', '--conversation', 'c']);
+    check(good.code === 0 && /SIGNED APPROVAL/.test(good.out), 'owner-signed approval is verified and recorded');
+    const unsigned = await runS(['record', '--sha', sha2, '--remote', 'r', '--ref', 'refs/heads/main', '--words', 'x',
+        '--source', 'user-message', '--conversation', 'c']);
+    check(unsigned.code !== 0, 'unsigned approval is refused once allowed_signers lists a signer');
+    const tf2 = join(kdir, 'b.txt');
+    writeFileSync(tf2, txt);
+    execFileSync('ssh-keygen', ['-Y', 'sign', '-f', join(kdir, 'other'), '-n', 'sangam-push', tf2], { stdio: 'ignore' });
+    const wrong = await runS(['record', '--signed', tf2, '--sig', tf2 + '.sig', '--conversation', 'c']);
+    check(wrong.code !== 0, 'approval signed with a key not in allowed_signers is refused');
+    const tampered2 = join(kdir, 'c.txt');
+    writeFileSync(tampered2, txt.replace('push it', 'push something else'));
+    writeFileSync(tampered2 + '.sig', readFileSync(tf + '.sig'));
+    const forged = await runS(['record', '--signed', tampered2, '--sig', tampered2 + '.sig', '--conversation', 'c']);
+    check(forged.code !== 0, 'signed text changed after signing is refused');
+  } finally {
+    rmSync(kdir, { recursive: true, force: true });
+  }
+
   // Change the content of record 3 (whatever its n is), keep its stored hashes: a forged edit.
   const tampered = lines.map((l, i) => {
     if (i !== 3) return l;

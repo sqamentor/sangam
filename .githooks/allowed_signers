@@ -1,0 +1,4 @@
+# Owner keys allowed to sign Sangam push approvals (ssh-keygen allowed_signers format, namespace sangam-push).
+# Once a signer line exists, every push approval MUST be signed by one of these keys (tools/governance/push-approval.mjs).
+# Format:  <principal> namespaces="sangam-push" <key-type> <public-key>
+# Only the owner adds a line, with the PUBLIC key of a passphrase-protected key the owner generated personally.

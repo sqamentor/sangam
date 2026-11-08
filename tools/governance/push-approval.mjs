@@ -153,7 +153,71 @@ async function readTtyWords() {
   return answer.trim();
 }
 
+/**
+ * Owner-signed approvals (owner decision 2026-11-08, SG-32). The approval text is canonical and binds the exact
+ * push; the owner signs it with their own SSH key (passphrase known only to them):
+ *     node tools/governance/push-approval.mjs text --sha <sha> --remote <url> --ref <ref> --words "<words>" > a.txt
+ *     ssh-keygen -Y sign -f ~/.ssh/<owner key> -n sangam-push a.txt          (writes a.txt.sig)
+ *     node tools/governance/push-approval.mjs record --signed a.txt --sig a.txt.sig --conversation <id>
+ * The gate verifies the signature against .githooks/allowed_signers (namespace sangam-push). When that file
+ * lists at least one signer, every approval MUST be signed; unsigned approvals are refused.
+ */
+const NAMESPACE = 'sangam-push';
+function allowedSigners() {
+  const top = resolve(execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim());
+  const f = process.env.SANGAM_ALLOWED_SIGNERS || join(top, '.githooks', 'allowed_signers');
+  if (!existsSync(f)) return null;
+  const has = readFileSync(f, 'utf8').split('\n').some((l) => l.trim() && !l.trim().startsWith('#'));
+  return has ? f : null;
+}
+export function approvalText({ sha, remote, ref, words }) {
+  return `sangam-push-approval v1\nsha=${sha}\nremote=${remote}\nref=${ref}\nwords=${words.replace(/\n/g, ' ')}\n`;
+}
+function parseApprovalText(text) {
+  const m = /^sangam-push-approval v1\nsha=([0-9a-f]{40})\nremote=(.+)\nref=(.+)\nwords=(.*)\n$/.exec(text);
+  if (!m) throw new Error('signed file is not a canonical sangam-push-approval v1 text');
+  return { sha: m[1], remote: m[2], ref: m[3], words: m[4] };
+}
+function verifySignature(textFile, sigFile, signersFile) {
+  const principals = readFileSync(signersFile, 'utf8').split('\n').map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('#')).map((l) => l.split(/\s+/)[0]);
+  for (const id of principals) {
+    try {
+      execFileSync('ssh-keygen', ['-Y', 'verify', '-f', signersFile, '-I', id, '-n', NAMESPACE, '-s', sigFile],
+          { input: readFileSync(textFile), stdio: ['pipe', 'ignore', 'ignore'] });
+      return id;
+    } catch { /* try next principal */ }
+  }
+  throw new Error(`signature ${sigFile} does not verify for any principal in ${signersFile} (namespace ${NAMESPACE})`);
+}
+
+function cmdText() {
+  const sha = arg('sha'), remote = arg('remote'), ref = arg('ref'), words = arg('words');
+  if (!/^[0-9a-f]{40}$/.test(sha || '') || !remote || !ref || !words) {
+    throw new Error('text needs --sha (40 hex) --remote --ref --words');
+  }
+  process.stdout.write(approvalText({ sha, remote, ref, words }));
+}
+
 async function cmdRecord() {
+  const signedFile = arg('signed');
+  if (signedFile) {
+    const sigFile = arg('sig'), conv = arg('conversation');
+    if (!sigFile || !conv) throw new Error('--signed needs --sig <file> and --conversation <id>');
+    const signers = allowedSigners();
+    if (!signers) throw new Error('no .githooks/allowed_signers with at least one signer; cannot verify a signature');
+    const text = readFileSync(signedFile, 'utf8');
+    const a = parseApprovalText(text);
+    const signer = verifySignature(signedFile, sigFile, signers);
+    const rec = append({ kind: 'APPROVAL', ...a, conversation: conv, source: 'ssh-signature', signer,
+        ttyVerified: false, signatureVerified: true, approvalTextSha256: sha256(text),
+        signature: readFileSync(sigFile, 'utf8') });
+    console.log(`  SIGNED APPROVAL recorded #${rec.index} by ${signer} for ${a.sha.slice(0, 12)} → ${a.ref} on ${a.remote}`);
+    return;
+  }
+  if (allowedSigners()) {
+    throw new Error('owner-signed approvals are required (.githooks/allowed_signers lists a signer); use --signed/--sig');
+  }
   const sha = arg('sha'), remote = arg('remote'), ref = arg('ref'), conv = arg('conversation');
   const tty = process.argv.includes('--tty');
   const source = tty ? 'tty' : arg('source');
@@ -199,7 +263,9 @@ function cmdCheck(remoteUrl) {
     if (!v.ok) throw new Error('push-approval ledger does not verify:\n  ' + v.issues.join('\n  '));
     const consumed = new Set(chain.filter((r) => r.kind === 'CONSUMED').map((r) => r.approvalIndex));
     const now = Date.now();
+    const mustBeSigned = !!allowedSigners();
     const ok = chain.filter((r) => r.kind === 'APPROVAL' && r.sha === localSha && r.ref === remoteRef
+        && (!mustBeSigned || r.signatureVerified === true)
         && r.remote === remoteUrl && !consumed.has(r.index) && now - Date.parse(r.at) <= TTL_MS).pop();
     if (!ok) {
       throw new Error(`no unconsumed approval for ${localSha} → ${remoteRef} on ${remoteUrl} within ${TTL_MS / 60000} min.\n`
@@ -213,7 +279,8 @@ function cmdCheck(remoteUrl) {
 
 const cmd = process.argv[2];
 try {
-  if (cmd === 'record') await cmdRecord();
+  if (cmd === 'text') cmdText();
+  else if (cmd === 'record') await cmdRecord();
   else if (cmd === 'check') cmdCheck(process.argv[4] || process.argv[3]);
   else if (cmd === 'verify') process.exit(cmdVerify());
   else if (cmd === '--selftest-append') { append({ kind: 'TEST', n: Number(arg('n')) }); }
