@@ -223,8 +223,10 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         incidents.add(new SangamIncidentHandler("failedJob", components.incidentSink(), s.getDefaultTenantId()));
         incidents.add(new SangamIncidentHandler("failedExternalTask", components.incidentSink(), s.getDefaultTenantId()));
         // ADR-D-25: AMBIGUOUS_ROUTE / NO_MATCHING_ROUTE at a strict exclusive gateway
-        incidents.add(new SangamIncidentHandler(org.sangam.engine.deploy.StrictExclusiveGatewayBehavior.INCIDENT_TYPE,
-                components.incidentSink(), s.getDefaultTenantId()));
+        // SG-35: also audited in the hash chain (ROUTING_INCIDENT with the stable code), never a silent park
+        incidents.add(new org.sangam.engine.incident.RoutingIncidentHandler(
+                org.sangam.engine.deploy.StrictExclusiveGatewayBehavior.INCIDENT_TYPE,
+                components.incidentSink(), components.auditSink(), s.getDefaultTenantId()));
         cfg.setCustomIncidentHandlers(incidents);
     }
 

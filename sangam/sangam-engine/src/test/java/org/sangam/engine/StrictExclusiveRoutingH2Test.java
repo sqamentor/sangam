@@ -219,6 +219,101 @@ class StrictExclusiveRoutingH2Test {
         });
     }
 
+    /** SG-35 (IFMS Trial 2, kit X-13): the works-bill band gateway reached by completing the preparer's task. */
+    private static final String BILL_BANDS = """
+              <process id="bill" isExecutable="true">
+                <startEvent id="s"/>
+                <sequenceFlow id="f0" sourceRef="s" targetRef="JEN"/>
+                <userTask id="JEN"/>
+                <sequenceFlow id="f1" sourceRef="JEN" targetRef="gwBand"/>
+                <exclusiveGateway id="gwBand" %s/>
+                <sequenceFlow id="fAen" sourceRef="gwBand" targetRef="post_AEN"><conditionExpression xsi:type="tFormalExpression">${amount &lt;= 100000}</conditionExpression></sequenceFlow>
+                <sequenceFlow id="fXen" sourceRef="gwBand" targetRef="post_XEN"><conditionExpression xsi:type="tFormalExpression">${amount &gt; %s &amp;&amp; amount &lt;= 1000000}</conditionExpression></sequenceFlow>
+                <sequenceFlow id="fSen" sourceRef="gwBand" targetRef="post_SEN"><conditionExpression xsi:type="tFormalExpression">${amount &gt; 1000000 &amp;&amp; amount &lt;= 5000000}</conditionExpression></sequenceFlow>
+                <serviceTask id="post_AEN" operaton:class="%3$s"/><sequenceFlow id="gA" sourceRef="post_AEN" targetRef="AEN"/><userTask id="AEN"/>
+                <serviceTask id="post_XEN" operaton:class="%3$s"/><sequenceFlow id="gX" sourceRef="post_XEN" targetRef="XEN"/><userTask id="XEN"/>
+                <serviceTask id="post_SEN" operaton:class="%3$s"/><sequenceFlow id="gS" sourceRef="post_SEN" targetRef="SEN"/><userTask id="SEN"/>
+              </process>""";
+
+    private static String billBands(String lowerXenBound) {
+        return BILL_BANDS.formatted("", lowerXenBound, Posting.class.getName());
+    }
+
+    /** Audit chain payloads of {@code ROUTING_INCIDENT} events of one instance tree root. */
+    private static List<String> routingAudit(OperatonEngineAdapter a, String root) {
+        return a.inEngineTransaction(c -> Jdbc.query(c, "SELECT p.payload FROM AUDIT_EVENT ev JOIN AUDIT_PAYLOAD p"
+                + " ON p.event_id = ev.event_id WHERE ev.event_type = 'ROUTING_INCIDENT' AND ev.chain_id = ?",
+                rs -> rs.getString(1), root));
+    }
+
+    /** No running instance may be left without an open task and without an open incident (a silent park). */
+    private static void assertNoSilentPark(OperatonEngineAdapter a) {
+        ProcessEngine e = a.processEngine();
+        for (var pi : e.getRuntimeService().createProcessInstanceQuery().list()) {
+            boolean task = e.getTaskService().createTaskQuery().processInstanceId(pi.getId()).count() > 0;
+            boolean incident = e.getRuntimeService().createIncidentQuery().processInstanceId(pi.getId()).count() > 0;
+            boolean job = e.getManagementService().createJobQuery().processInstanceId(pi.getId()).count() > 0;
+            assertTrue(task || incident || job, "instance " + pi.getId() + " is parked silently: no task, incident or job");
+        }
+    }
+
+    /**
+     * SG-35: completing the preparer's task with an amount above every band (6,000,000 as a Long, as IFMS sends it)
+     * and no default flow: a NO_MATCHING_ROUTE incident at gwBand, reported to reconciliation and audited in the
+     * hash chain in the same command; no band taken, no posting, no silent park; the audited correction resumes.
+     */
+    @Test
+    void sg35NoMatchingBandIsAnAuditedIncidentNeverASilentPark() {
+        withEngine(a -> {
+            a.deploy("t1", "bill", Map.of("bill.bpmn", bpmn(billBands("100000"))));
+            ProcessEngine e = a.processEngine();
+            String pi = a.startProcess("t1", "bill", "X13-1", Map.of("amount", 6_000_000L));
+            e.getTaskService().complete(e.getTaskService().createTaskQuery().processInstanceId(pi).singleResult().getId());
+
+            List<Incident> inc = routingIncidents(e, pi);
+            assertEquals(1, inc.size(), "one routing incident");
+            assertTrue(inc.get(0).getIncidentMessage().startsWith("NO_MATCHING_ROUTE"), inc.get(0).getIncidentMessage());
+            assertEquals("gwBand", inc.get(0).getActivityId());
+            List<String> audit = routingAudit(a, pi);
+            assertEquals(1, audit.size(), "exactly one audited routing incident: " + audit);
+            assertTrue(audit.get(0).contains("NO_MATCHING_ROUTE") && audit.get(0).contains("gwBand")
+                    && audit.get(0).contains(inc.get(0).getId()), audit.get(0));
+            String reconciliation = a.inEngineTransaction(c -> Jdbc.one(c, "SELECT state FROM SANGAM_ENGINE_INCIDENT"
+                    + " WHERE incident_id = ?", rs -> rs.getString(1), inc.get(0).getId()).orElse(null));
+            assertEquals("OPEN", reconciliation, "reconciliation row");
+            assertEquals(0, postings(a, pi), "no posting");
+            assertEquals(List.of(), taskKeys(e, pi), "no band task");
+            assertFalse(a.getInstance(pi).ended());
+            assertNoSilentPark(a);
+
+            assertEquals(List.of("gwBand"), a.correctRoute(person("officer-7", "ROUTE_FIXER"), pi,
+                    Map.of("amount", 4_000_000L), "amount was mistyped"));
+            assertEquals(List.of("SEN"), taskKeys(e, pi));
+            assertEquals(1, postings(a, pi));
+            assertEquals(0, routingIncidents(e, pi).size());
+            assertEquals(1, routingAudit(a, pi).size(), "the correction does not re-audit the incident");
+        });
+    }
+
+    /** SG-35: the same band gateway with overlapping bands still gives an audited AMBIGUOUS_ROUTE incident. */
+    @Test
+    void sg35OverlappingBandsStayAuditedAmbiguousRoute() {
+        withEngine(a -> {
+            a.deploy("t1", "bill", Map.of("bill.bpmn", bpmn(billBands("50000"))));
+            ProcessEngine e = a.processEngine();
+            String pi = a.startProcess("t1", "bill", "X13-2", Map.of("amount", 80_000L));
+            e.getTaskService().complete(e.getTaskService().createTaskQuery().processInstanceId(pi).singleResult().getId());
+            List<Incident> inc = routingIncidents(e, pi);
+            assertEquals(1, inc.size());
+            assertTrue(inc.get(0).getIncidentMessage().startsWith("AMBIGUOUS_ROUTE"), inc.get(0).getIncidentMessage());
+            List<String> audit = routingAudit(a, pi);
+            assertEquals(1, audit.size(), audit.toString());
+            assertTrue(audit.get(0).contains("AMBIGUOUS_ROUTE") && audit.get(0).contains("gwBand"), audit.get(0));
+            assertEquals(0, postings(a, pi));
+            assertNoSilentPark(a);
+        });
+    }
+
     /** A missing variable is an error, never "false": the command fails, the default is not taken, nothing posts. */
     @Test
     void missingVariableIsAnErrorNotTheDefault() {
